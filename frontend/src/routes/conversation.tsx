@@ -16,7 +16,7 @@ import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useSettings } from "#/hooks/query/use-settings";
+
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import OpenHands from "#/api/open-hands";
@@ -26,13 +26,12 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
-import { Controls } from "#/components/features/controls/controls";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 
 function AppContent() {
   useConversationConfig();
-  const { data: settings } = useSettings();
+
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
@@ -87,8 +86,6 @@ function AppContent() {
             <div className="flex h-full overflow-auto">
               <ConversationMain />
             </div>
-
-            <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

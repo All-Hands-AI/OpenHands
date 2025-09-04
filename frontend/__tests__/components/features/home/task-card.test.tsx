@@ -105,16 +105,6 @@ describe("TaskCard", () => {
     });
   });
 
-  it("should disable the launch button and update text content when creating a conversation", async () => {
-    renderTaskCard();
-
-    const launchButton = screen.getByTestId("task-launch-button");
-    await userEvent.click(launchButton);
-
-    expect(launchButton).toHaveTextContent(/Loading/i);
-    expect(launchButton).toBeDisabled();
-  });
-
   it("should navigate to the conversation page after creating a conversation", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
     createConversationSpy.mockResolvedValue({

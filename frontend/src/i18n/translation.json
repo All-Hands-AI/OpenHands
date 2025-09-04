@@ -14302,5 +14302,37 @@
     "tr": "Devam Ediyor",
     "de": "In Bearbeitung",
     "uk": "В процесі"
+  },
+  "COMMON$STOP_RUNTIME": {
+    "en": "Stop Runtime",
+    "ja": "ランタイムを停止",
+    "zh-CN": "停止运行时",
+    "zh-TW": "停止執行階段",
+    "ko-KR": "런타임 중지",
+    "no": "Stopp kjøretid",
+    "it": "Arresta runtime",
+    "pt": "Parar runtime",
+    "es": "Detener runtime",
+    "ar": "إيقاف وقت التشغيل",
+    "fr": "Arrêter le runtime",
+    "tr": "Çalışma zamanını durdur",
+    "de": "Runtime stoppen",
+    "uk": "Зупинити середовище виконання"
+  },
+  "COMMON$START_RUNTIME": {
+    "en": "Start Runtime",
+    "ja": "ランタイムを開始",
+    "zh-CN": "启动运行时",
+    "zh-TW": "啟動執行階段",
+    "ko-KR": "런타임 시작",
+    "no": "Start kjøretid",
+    "it": "Avvia runtime",
+    "pt": "Iniciar runtime",
+    "es": "Iniciar runtime",
+    "ar": "بدء وقت التشغيل",
+    "fr": "Démarrer le runtime",
+    "tr": "Çalışma zamanını başlat",
+    "de": "Runtime starten",
+    "uk": "Запустити середовище виконання"
   }
 }

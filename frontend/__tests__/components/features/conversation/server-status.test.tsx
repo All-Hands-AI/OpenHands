@@ -35,6 +35,7 @@ vi.mock("react-redux", () => ({
 
 // Mock the custom hooks
 const mockStartConversationMutate = vi.fn();
+const mockStopConversationMutate = vi.fn();
 
 vi.mock("#/hooks/mutation/use-start-conversation", () => ({
   useStartConversation: () => ({
@@ -42,17 +43,9 @@ vi.mock("#/hooks/mutation/use-start-conversation", () => ({
   }),
 }));
 
-// Mock the useConversationNameContextMenu hook
-const mockHandleStop = vi.fn();
-const mockHandleConfirmStop = vi.fn();
-const mockSetConfirmStopModalVisible = vi.fn();
-
-vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
-  useConversationNameContextMenu: () => ({
-    handleStop: mockHandleStop,
-    handleConfirmStop: mockHandleConfirmStop,
-    confirmStopModalVisible: false,
-    setConfirmStopModalVisible: mockSetConfirmStopModalVisible,
+vi.mock("#/hooks/mutation/use-stop-conversation", () => ({
+  useStopConversation: () => ({
+    mutate: mockStopConversationMutate,
   }),
 }));
 
@@ -80,9 +73,8 @@ vi.mock("react-i18next", async () => {
           COMMON$SERVER_STOPPED: "Server Stopped",
           COMMON$ERROR: "Error",
           COMMON$STARTING: "Starting",
-          COMMON$CLOSE_CONVERSATION_STOP_RUNTIME:
-            "Close Conversation & Stop Runtime",
-          COMMON$START_CONVERSATION: "Start Conversation",
+          COMMON$STOP_RUNTIME: "Stop Runtime",
+          COMMON$START_RUNTIME: "Start Runtime",
         };
         return translations[key] || key;
       },
@@ -165,11 +157,11 @@ describe("ServerStatus", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should call handleStop when stop server is clicked", async () => {
+  it("should call stop conversation mutation when stop server is clicked", async () => {
     const user = userEvent.setup();
 
     // Clear previous calls
-    mockHandleStop.mockClear();
+    mockStopConversationMutate.mockClear();
 
     renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
@@ -179,7 +171,9 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    expect(mockHandleStop).toHaveBeenCalledTimes(1);
+    expect(mockStopConversationMutate).toHaveBeenCalledWith({
+      conversationId: "test-conversation-id",
+    });
   });
 
   it("should call start conversation mutation when start server is clicked", async () => {
@@ -212,8 +206,10 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    // Context menu should be closed (handled by handleStop)
-    expect(mockHandleStop).toHaveBeenCalledTimes(1);
+    // Context menu should be closed (handled by the component)
+    expect(mockStopConversationMutate).toHaveBeenCalledWith({
+      conversationId: "test-conversation-id",
+    });
   });
 
   it("should close context menu after start server action", async () => {
@@ -260,9 +256,7 @@ describe("ServerStatusContextMenu", () => {
     );
 
     expect(screen.getByTestId("stop-server-button")).toBeInTheDocument();
-    expect(
-      screen.getByText("Close Conversation & Stop Runtime"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Stop Runtime")).toBeInTheDocument();
   });
 
   it("should render start server button when status is STOPPED", () => {
@@ -275,7 +269,7 @@ describe("ServerStatusContextMenu", () => {
     );
 
     expect(screen.getByTestId("start-server-button")).toBeInTheDocument();
-    expect(screen.getByText("Start Conversation")).toBeInTheDocument();
+    expect(screen.getByText("Start Runtime")).toBeInTheDocument();
   });
 
   it("should not render stop server button when onStopServer is not provided", () => {
@@ -346,7 +340,7 @@ describe("ServerStatusContextMenu", () => {
     );
 
     expect(screen.getByTestId("stop-server-button")).toHaveTextContent(
-      "Close Conversation & Stop Runtime",
+      "Stop Runtime",
     );
   });
 
@@ -360,7 +354,7 @@ describe("ServerStatusContextMenu", () => {
     );
 
     expect(screen.getByTestId("start-server-button")).toHaveTextContent(
-      "Start Conversation",
+      "Start Runtime",
     );
   });
 
