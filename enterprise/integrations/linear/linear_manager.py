@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from typing import Optional
+from typing import Dict, Optional, Tuple
 
 import httpx
 from fastapi import Request
@@ -82,7 +82,7 @@ class LinearManager(Manager):
 
     async def validate_request(
         self, request: Request
-    ) -> tuple[bool, Optional[str], Optional[dict]]:
+    ) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """Verify Linear webhook signature."""
         signature = request.headers.get('linear-signature')
         body = await request.body()
@@ -132,7 +132,7 @@ class LinearManager(Manager):
 
         return False, None, None
 
-    def parse_webhook(self, payload: dict) -> JobContext | None:
+    def parse_webhook(self, payload: Dict) -> JobContext | None:
         action = payload.get('action')
         type = payload.get('type')
 
@@ -405,7 +405,7 @@ class LinearManager(Manager):
         except Exception as e:
             logger.error(f'[Linear] Failed to send response message: {str(e)}')
 
-    async def _query_api(self, query: str, variables: dict, api_key: str) -> dict:
+    async def _query_api(self, query: str, variables: Dict, api_key: str) -> Dict:
         """Query Linear GraphQL API."""
         headers = {'Authorization': api_key}
         async with httpx.AsyncClient() as client:
@@ -417,7 +417,7 @@ class LinearManager(Manager):
             response.raise_for_status()
             return response.json()
 
-    async def get_issue_details(self, issue_id: str, api_key: str) -> tuple[str, str]:
+    async def get_issue_details(self, issue_id: str, api_key: str) -> Tuple[str, str]:
         """Get issue details from Linear API."""
         query = """
             query Issue($issueId: String!) {

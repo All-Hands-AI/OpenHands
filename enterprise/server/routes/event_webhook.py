@@ -1,7 +1,7 @@
 import base64
 import json
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Tuple
 
 from fastapi import (
     APIRouter,
@@ -213,7 +213,7 @@ async def on_delete(path: str, x_session_api_key: Annotated[str | None, Header()
     return Response(status_code=status.HTTP_200_OK)
 
 
-def _parse_conversation_id_and_subpath(path: str) -> tuple[str, str]:
+def _parse_conversation_id_and_subpath(path: str) -> Tuple[str, str]:
     try:
         items = path.split('/')
         assert items[0] == 'sessions'

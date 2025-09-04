@@ -115,7 +115,9 @@ class RateLimitException(HTTPException):
 
     def __init__(self, result: RateLimitResult) -> None:
         self.result = result
-        super().__init__(status_code=429, detail=result.description)
+        super(RateLimitException, self).__init__(
+            status_code=429, detail=result.description
+        )
 
 
 def _rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
@@ -125,7 +127,7 @@ def _rate_limit_exceeded_handler(request: Request, exc: Exception) -> Response:
     logger.info(exc.__class__.__name__)
     if isinstance(exc, RateLimitException):
         response = JSONResponse(
-            {'error': f'Rate limit exceeded: {exc.detail}'}, status_code=429
+            {'error': f'Rate limit exceeded: { exc.detail}'}, status_code=429
         )
         if exc.result:
             exc.result.add_headers(response)

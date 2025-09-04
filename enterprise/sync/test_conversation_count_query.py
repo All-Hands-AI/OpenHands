@@ -41,7 +41,7 @@ def test_conversation_count_query():
         # Print the first 5 results
         for i, user_data in enumerate(user_counts[:5]):
             print(
-                f'User {i + 1}: {user_data["user_id"]} - {user_data["conversation_count"]} conversations'
+                f"User {i+1}: {user_data['user_id']} - {user_data['conversation_count']} conversations"
             )
 
         # Test the user_entity query for the first user (if any)

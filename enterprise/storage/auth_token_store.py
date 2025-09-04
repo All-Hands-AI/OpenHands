@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import Awaitable, Callable
+from typing import Awaitable, Callable, Dict
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
@@ -69,10 +69,10 @@ class AuthTokenStore:
     async def load_tokens(
         self,
         check_expiration_and_refresh: Callable[
-            [ProviderType, str, int, int], Awaitable[dict[str, str | int]]
+            [ProviderType, str, int, int], Awaitable[Dict[str, str | int]]
         ]
         | None = None,
-    ) -> dict[str, str | int] | None:
+    ) -> Dict[str, str | int] | None:
         """
         Load authentication tokens from the database and refresh them if necessary.
 

@@ -403,14 +403,11 @@ class TestLegacyConversationManagerIntegration:
         mock_monitoring_listener,
     ):
         """Test that get_instance creates a properly configured manager."""
-        with (
-            patch(
-                'server.legacy_conversation_manager.SaasNestedConversationManager'
-            ) as mock_saas,
-            patch(
-                'server.legacy_conversation_manager.ClusteredConversationManager'
-            ) as mock_clustered,
-        ):
+        with patch(
+            'server.legacy_conversation_manager.SaasNestedConversationManager'
+        ) as mock_saas, patch(
+            'server.legacy_conversation_manager.ClusteredConversationManager'
+        ) as mock_clustered:
             mock_saas.get_instance.return_value = MagicMock()
             mock_clustered.get_instance.return_value = MagicMock()
 

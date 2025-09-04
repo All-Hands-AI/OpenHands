@@ -3,6 +3,7 @@ from experiments.constants import (
 )
 from experiments.experiment_versions import (
     handle_claude4_vs_gpt5_experiment,
+    handle_condenser_max_step_experiment,
     handle_system_prompt_experiment,
 )
 
@@ -39,8 +40,11 @@ class SaaSExperimentManager(ExperimentManager):
             )
             return conversation_settings
 
-        # Call the litellm_default_model_experiment handler directly
+        # Apply conversation-scoped experiments
         conversation_settings = handle_claude4_vs_gpt5_experiment(
+            user_id, conversation_id, conversation_settings
+        )
+        conversation_settings = handle_condenser_max_step_experiment(
             user_id, conversation_id, conversation_settings
         )
 
@@ -81,4 +85,6 @@ class SaaSExperimentManager(ExperimentManager):
             user_id, conversation_id, config
         )
 
+        # Condenser max step experiment is applied via conversation variant test,
+        # not config variant test. Return modified config from system prompt only.
         return modified_config

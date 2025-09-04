@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Dict, List, Optional, Tuple
 
 import gspread
 from google.auth import default
@@ -14,7 +14,7 @@ class GoogleSheetsClient:
         """
         logger.info('Initializing Google Sheets client with workload identity')
         self.client = None
-        self._cache: dict[tuple[str, str], tuple[list[str], datetime]] = {}
+        self._cache: Dict[Tuple[str, str], Tuple[List[str], datetime]] = {}
         self._cache_ttl = timedelta(seconds=15)
         try:
             credentials, project = default(
@@ -29,7 +29,7 @@ class GoogleSheetsClient:
 
     def _get_from_cache(
         self, spreadsheet_id: str, range_name: str
-    ) -> Optional[list[str]]:
+    ) -> Optional[List[str]]:
         """Get usernames from cache if available and not expired.
         Args:
             spreadsheet_id: The ID of the Google Sheet
@@ -53,7 +53,7 @@ class GoogleSheetsClient:
         return usernames
 
     def _update_cache(
-        self, spreadsheet_id: str, range_name: str, usernames: list[str]
+        self, spreadsheet_id: str, range_name: str, usernames: List[str]
     ) -> None:
         """Update cache with new usernames and current timestamp.
         Args:
@@ -64,7 +64,7 @@ class GoogleSheetsClient:
         cache_key = (spreadsheet_id, range_name)
         self._cache[cache_key] = (usernames, datetime.now())
 
-    def get_usernames(self, spreadsheet_id: str, range_name: str = 'A:A') -> list[str]:
+    def get_usernames(self, spreadsheet_id: str, range_name: str = 'A:A') -> List[str]:
         """Get list of usernames from specified Google Sheet.
         Uses cached data if available and less than 15 seconds old.
         Args:

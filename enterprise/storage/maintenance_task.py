@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
+from typing import Type
 
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, Text, text
@@ -89,7 +90,7 @@ class MaintenanceTask(Base):  # type: ignore
             MaintenanceTaskProcessor: The processor instance
         """
         # Import the processor class dynamically
-        processor_type: type[MaintenanceTaskProcessor] = get_impl(
+        processor_type: Type[MaintenanceTaskProcessor] = get_impl(
             MaintenanceTaskProcessor, self.processor_type
         )
         processor = processor_type.model_validate_json(self.processor_json)

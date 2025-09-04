@@ -2,21 +2,26 @@
 import typing
 from datetime import UTC, datetime
 from decimal import Decimal
+from enum import Enum
 
 import httpx
 import stripe
+from dateutil.relativedelta import relativedelta  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from integrations import stripe_service
 from pydantic import BaseModel
 from server.constants import (
     LITE_LLM_API_KEY,
     LITE_LLM_API_URL,
     STRIPE_API_KEY,
+    STRIPE_WEBHOOK_SECRET,
+    SUBSCRIPTION_PRICE_DATA,
 )
 from server.logger import logger
 from storage.billing_session import BillingSession
 from storage.database import session_maker
+from storage.subscription_access import SubscriptionAccess
 
 from openhands.server.user_auth import get_user_id
 
@@ -24,8 +29,19 @@ stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')
 
 
+class BillingSessionType(Enum):
+    DIRECT_PAYMENT = 'DIRECT_PAYMENT'
+    MONTHLY_SUBSCRIPTION = 'MONTHLY_SUBSCRIPTION'
+
+
 class GetCreditsResponse(BaseModel):
     credits: Decimal | None = None
+
+
+class SubscriptionAccessResponse(BaseModel):
+    start_at: datetime
+    end_at: datetime
+    created_at: datetime
 
 
 class CreateCheckoutSessionRequest(BaseModel):
@@ -62,6 +78,31 @@ async def get_credits(user_id: str = Depends(get_user_id)) -> GetCreditsResponse
         user_json = await _get_litellm_user(client, user_id)
         credits = calculate_credits(user_json['user_info'])
     return GetCreditsResponse(credits=Decimal('{:.2f}'.format(credits)))
+
+
+# Endpoint to retrieve user's current subscription access
+@billing_router.get('/subscription-access')
+async def get_subscription_access(
+    user_id: str = Depends(get_user_id),
+) -> SubscriptionAccessResponse | None:
+    """Get details of the currently valid subscription for the user"""
+    with session_maker() as session:
+        now = datetime.now(UTC)
+        subscription_access = (
+            session.query(SubscriptionAccess)
+            .filter(SubscriptionAccess.status == 'ACTIVE')
+            .filter(SubscriptionAccess.user_id == user_id)
+            .filter(SubscriptionAccess.start_at <= now)
+            .filter(SubscriptionAccess.end_at >= now)
+            .first()
+        )
+        if not subscription_access:
+            return None
+        return SubscriptionAccessResponse(
+            start_at=subscription_access.start_at,
+            end_at=subscription_access.end_at,
+            created_at=subscription_access.created_at,
+        )
 
 
 # Endpoint to check if a user has entered a payment method into stripe
@@ -110,7 +151,7 @@ async def create_checkout_session(
                     'tax_behavior': 'exclusive',
                 },
                 'quantity': 1,
-            },
+            }
         ],
         mode='payment',
         payment_method_types=['card'],
@@ -131,12 +172,85 @@ async def create_checkout_session(
     )
     with session_maker() as session:
         billing_session = BillingSession(
-            id=checkout_session.id, user_id=user_id, price=body.amount, price_code='NA'
+            id=checkout_session.id,
+            user_id=user_id,
+            price=body.amount,
+            price_code='NA',
+            billing_session_type=BillingSessionType.DIRECT_PAYMENT.value,
         )
         session.add(billing_session)
         session.commit()
 
     return CreateBillingSessionResponse(redirect_url=checkout_session.url)  # type: ignore[arg-type]
+
+
+@billing_router.post('/subscription-checkout-session')
+async def create_subscription_checkout_session(
+    request: Request,
+    billing_session_type: BillingSessionType = BillingSessionType.MONTHLY_SUBSCRIPTION,
+    user_id: str = Depends(get_user_id),
+) -> CreateBillingSessionResponse:
+    customer_id = await stripe_service.find_or_create_customer(user_id)
+    subscription_price_data = SUBSCRIPTION_PRICE_DATA[billing_session_type.value]
+    # TODO: Prevent duplicate subscriptions for the same user
+    checkout_session = await stripe.checkout.Session.create_async(
+        customer=customer_id,
+        line_items=[
+            {
+                'price_data': subscription_price_data,
+                'quantity': 1,
+            }
+        ],
+        mode='subscription',
+        payment_method_types=['card'],
+        saved_payment_method_options={
+            'payment_method_save': 'enabled',
+        },
+        success_url=f'{request.base_url}api/billing/success?session_id={{CHECKOUT_SESSION_ID}}',
+        cancel_url=f'{request.base_url}api/billing/cancel?session_id={{CHECKOUT_SESSION_ID}}',
+        subscription_data={
+            'metadata': {
+                'user_id': user_id,
+                'billing_session_type': billing_session_type.value,
+            }
+        },
+    )
+    logger.info(
+        'created_stripe_subscription_checkout_session',
+        extra={
+            'stripe_customer_id': customer_id,
+            'user_id': user_id,
+            'checkout_session_id': checkout_session.id,
+            'billing_session_type': billing_session_type.value,
+        },
+    )
+    with session_maker() as session:
+        billing_session = BillingSession(
+            id=checkout_session.id,
+            user_id=user_id,
+            price=subscription_price_data['unit_amount'],
+            price_code='NA',
+            billing_session_type=billing_session_type.value,
+        )
+        session.add(billing_session)
+        session.commit()
+
+    return CreateBillingSessionResponse(
+        redirect_url=typing.cast(str, checkout_session.url)
+    )
+
+
+@billing_router.get('/create-subscription-checkout-session')
+async def create_subscription_checkout_session_via_get(
+    request: Request,
+    billing_session_type: BillingSessionType = BillingSessionType.MONTHLY_SUBSCRIPTION,
+    user_id: str = Depends(get_user_id),
+) -> RedirectResponse:
+    """Create a subscription checkout session using a GET request (For easier copy / paste to URL bar)"""
+    response = await create_subscription_checkout_session(
+        request, billing_session_type, user_id
+    )
+    return RedirectResponse(response.redirect_url)
 
 
 # Callback endpoint for successful Stripe payments - updates user credits and billing session status
@@ -157,6 +271,15 @@ async def success_callback(session_id: str, request: Request):
                 'session_id_not_found', extra={'checkout_session_id': session_id}
             )
             raise HTTPException(status.HTTP_400_BAD_REQUEST)
+
+        # Any non direct payment (Subscription) is processed in the invoice_payment.paid by the webhook
+        if (
+            billing_session.billing_session_type
+            != BillingSessionType.DIRECT_PAYMENT.value
+        ):
+            return RedirectResponse(
+                f'{request.base_url}settings/billing?checkout=success', status_code=302
+            )
 
         stripe_session = stripe.checkout.Session.retrieve(session_id)
         if stripe_session.status != 'complete':
@@ -228,6 +351,59 @@ async def cancel_callback(session_id: str, request: Request):
     return RedirectResponse(
         f'{request.base_url}settings/billing?checkout=cancel', status_code=302
     )
+
+
+@billing_router.post('/stripe-webhook')
+async def stripe_webhook(request: Request) -> JSONResponse:
+    """Endpoint for stripe webhooks"""
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError as e:
+        # Invalid payload
+        raise HTTPException(status_code=400, detail=f'Invalid payload: {e}')
+    except stripe.SignatureVerificationError as e:
+        # Invalid signature
+        raise HTTPException(status_code=400, detail=f'Invalid signature: {e}')
+
+    # Handle the event
+    logger.info('stripe_webhook_event', extra={'event': event})
+    event_type = event['type']
+    if event_type == 'invoice.paid':
+        invoice = event['data']['object']
+        amount_paid = invoice.amount_paid
+        metadata = invoice.parent.subscription_details.metadata  # type: ignore
+        billing_session_type = metadata.billing_session_type
+        assert (
+            amount_paid == SUBSCRIPTION_PRICE_DATA[billing_session_type]['unit_amount']
+        )
+        user_id = metadata.user_id
+
+        start_at = datetime.now(UTC)
+        if billing_session_type == BillingSessionType.MONTHLY_SUBSCRIPTION.value:
+            end_at = start_at + relativedelta(months=1)
+        else:
+            raise ValueError(f'unknown_billing_session_type:{billing_session_type}')
+
+        with session_maker() as session:
+            subscription_access = SubscriptionAccess(
+                status='ACTIVE',
+                user_id=user_id,
+                start_at=start_at,
+                end_at=end_at,
+                amount_paid=amount_paid,
+                stripe_invoice_payment_id=invoice.payment_intent,
+            )
+            session.add(subscription_access)
+            session.commit()
+    else:
+        logger.info('stripe_webhook_unhandled_event_type', extra={'type': event_type})
+
+    return JSONResponse({'status': 'success'})
 
 
 async def _get_litellm_user(client: httpx.AsyncClient, user_id: str) -> dict:

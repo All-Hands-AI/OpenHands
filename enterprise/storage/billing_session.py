@@ -11,6 +11,7 @@ class BillingSession(Base):  # type: ignore
     """
 
     __tablename__ = 'billing_sessions'
+
     id = Column(String, primary_key=True)
     user_id = Column(String, nullable=False)
     status = Column(
@@ -22,6 +23,15 @@ class BillingSession(Base):  # type: ignore
             name='billing_session_status_enum',
         ),
         default='in_progress',
+    )
+    billing_session_type = Column(
+        Enum(
+            'DIRECT_PAYMENT',
+            'MONTHLY_SUBSCRIPTION',
+            name='billing_session_type_enum',
+        ),
+        nullable=False,
+        default='DIRECT_PAYMENT',
     )
     price = Column(DECIMAL(19, 4), nullable=False)
     price_code = Column(String, nullable=False)

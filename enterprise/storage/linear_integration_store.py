@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from storage.database import session_maker
 from storage.linear_conversation import LinearConversation
@@ -45,11 +46,11 @@ class LinearIntegrationStore:
     async def update_workspace(
         self,
         id: int,
-        linear_org_id: str | None = None,
-        encrypted_webhook_secret: str | None = None,
-        svc_acc_email: str | None = None,
-        encrypted_svc_acc_api_key: str | None = None,
-        status: str | None = None,
+        linear_org_id: Optional[str] = None,
+        encrypted_webhook_secret: Optional[str] = None,
+        svc_acc_email: Optional[str] = None,
+        encrypted_svc_acc_api_key: Optional[str] = None,
+        status: Optional[str] = None,
     ) -> LinearWorkspace:
         """Update an existing Linear workspace with encrypted sensitive data."""
         with session_maker() as session:
@@ -107,7 +108,7 @@ class LinearIntegrationStore:
         )
         return linear_user
 
-    async def get_workspace_by_id(self, workspace_id: int) -> LinearWorkspace | None:
+    async def get_workspace_by_id(self, workspace_id: int) -> Optional[LinearWorkspace]:
         """Retrieve workspace by ID."""
         with session_maker() as session:
             return (
@@ -118,7 +119,7 @@ class LinearIntegrationStore:
 
     async def get_workspace_by_name(
         self, workspace_name: str
-    ) -> LinearWorkspace | None:
+    ) -> Optional[LinearWorkspace]:
         """Retrieve workspace by name."""
         with session_maker() as session:
             return (
@@ -143,7 +144,7 @@ class LinearIntegrationStore:
 
     async def get_user_by_keycloak_id_and_workspace(
         self, keycloak_user_id: str, linear_workspace_id: int
-    ) -> LinearUser | None:
+    ) -> Optional[LinearUser]:
         """Get Linear user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (
@@ -157,7 +158,7 @@ class LinearIntegrationStore:
 
     async def get_active_user(
         self, linear_user_id: str, linear_workspace_id: int
-    ) -> LinearUser | None:
+    ) -> Optional[LinearUser]:
         """Get Linear user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (

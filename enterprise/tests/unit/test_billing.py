@@ -20,6 +20,7 @@ from server.routes.billing import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.datastructures import URL
+from storage.billing_session_type import BillingSessionType
 from storage.stripe_customer import Base as StripeCustomerBase
 
 
@@ -217,6 +218,7 @@ async def test_success_callback_stripe_incomplete():
     mock_billing_session = MagicMock()
     mock_billing_session.status = 'in_progress'
     mock_billing_session.user_id = 'mock_user'
+    mock_billing_session.billing_session_type = BillingSessionType.DIRECT_PAYMENT.value
 
     with (
         patch('server.routes.billing.session_maker') as mock_session_maker,
@@ -244,6 +246,7 @@ async def test_success_callback_success():
     mock_billing_session = MagicMock()
     mock_billing_session.status = 'in_progress'
     mock_billing_session.user_id = 'mock_user'
+    mock_billing_session.billing_session_type = BillingSessionType.DIRECT_PAYMENT.value
 
     mock_lite_llm_response = Response(
         status_code=200,
@@ -315,6 +318,7 @@ async def test_success_callback_lite_llm_error():
     mock_billing_session = MagicMock()
     mock_billing_session.status = 'in_progress'
     mock_billing_session.user_id = 'mock_user'
+    mock_billing_session.billing_session_type = BillingSessionType.DIRECT_PAYMENT.value
 
     with (
         patch('server.routes.billing.session_maker') as mock_session_maker,

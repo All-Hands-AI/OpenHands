@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from typing import Optional
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 import httpx
@@ -84,7 +84,7 @@ class JiraManager(Manager):
 
     async def validate_request(
         self, request: Request
-    ) -> tuple[bool, Optional[str], Optional[dict]]:
+    ) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """Verify Jira webhook signature."""
         signature_header = request.headers.get('x-hub-signature')
         signature = signature_header.split('=')[1] if signature_header else None
@@ -130,7 +130,7 @@ class JiraManager(Manager):
 
         return False, None, None
 
-    def parse_webhook(self, payload: dict) -> JobContext | None:
+    def parse_webhook(self, payload: Dict) -> JobContext | None:
         event_type = payload.get('webhookEvent')
 
         if event_type == 'comment_created':
@@ -406,7 +406,7 @@ class JiraManager(Manager):
         jira_cloud_id: str,
         svc_acc_email: str,
         svc_acc_api_key: str,
-    ) -> tuple[str, str]:
+    ) -> Tuple[str, str]:
         url = f'{JIRA_CLOUD_API_URL}/{jira_cloud_id}/rest/api/2/issue/{job_context.issue_key}'
         async with httpx.AsyncClient() as client:
             response = await client.get(url, auth=(svc_acc_email, svc_acc_api_key))

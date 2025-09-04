@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from typing import Optional
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 import httpx
@@ -99,7 +99,7 @@ class JiraDcManager(Manager):
 
     async def validate_request(
         self, request: Request
-    ) -> tuple[bool, Optional[str], Optional[dict]]:
+    ) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """Verify Jira DC webhook signature."""
         signature_header = request.headers.get('x-hub-signature')
         signature = signature_header.split('=')[1] if signature_header else None
@@ -145,7 +145,7 @@ class JiraDcManager(Manager):
 
         return False, None, None
 
-    def parse_webhook(self, payload: dict) -> JobContext | None:
+    def parse_webhook(self, payload: Dict) -> JobContext | None:
         event_type = payload.get('webhookEvent')
 
         if event_type == 'comment_created':
@@ -418,7 +418,7 @@ class JiraDcManager(Manager):
 
     async def get_issue_details(
         self, job_context: JobContext, svc_acc_api_key: str
-    ) -> tuple[str, str]:
+    ) -> Tuple[str, str]:
         """Get issue details from Jira DC API."""
         url = f'{job_context.base_api_url}/rest/api/2/issue/{job_context.issue_key}'
         headers = {'Authorization': f'Bearer {svc_acc_api_key}'}

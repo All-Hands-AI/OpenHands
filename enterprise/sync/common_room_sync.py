@@ -13,7 +13,7 @@ import os
 import sys
 import time
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import requests
 from sqlalchemy import text
@@ -60,7 +60,7 @@ class KeycloakClientError(CommonRoomSyncError):
     """Exception for Keycloak client errors."""
 
 
-def get_recent_conversations(minutes: int = 60) -> list[dict[str, Any]]:
+def get_recent_conversations(minutes: int = 60) -> List[Dict[str, Any]]:
     """Get conversations created in the past N minutes.
 
     Args:
@@ -106,7 +106,7 @@ def get_recent_conversations(minutes: int = 60) -> list[dict[str, Any]]:
         raise DatabaseError(f'Failed to query recent conversations: {e}')
 
 
-async def get_users_from_keycloak(user_ids: set[str]) -> dict[str, dict[str, Any]]:
+async def get_users_from_keycloak(user_ids: Set[str]) -> Dict[str, Dict[str, Any]]:
     """Get user information from Keycloak for a set of user IDs.
 
     Args:
@@ -165,7 +165,7 @@ async def get_users_from_keycloak(user_ids: set[str]) -> dict[str, dict[str, Any
         raise KeycloakClientError(error_msg)
 
 
-async def get_user_by_id(keycloak_admin, user_id: str) -> Optional[dict[str, Any]]:
+async def get_user_by_id(keycloak_admin, user_id: str) -> Optional[Dict[str, Any]]:
     """Get a user from Keycloak by ID.
 
     Args:
@@ -180,7 +180,7 @@ async def get_user_by_id(keycloak_admin, user_id: str) -> Optional[dict[str, Any
         user = keycloak_admin.get_user(user_id)
         if user:
             logger.debug(
-                f'Found user in Keycloak: {user.get("username")}, {user.get("email")}'
+                f"Found user in Keycloak: {user.get('username')}, {user.get('email')}"
             )
             return user
         else:
@@ -192,8 +192,8 @@ async def get_user_by_id(keycloak_admin, user_id: str) -> Optional[dict[str, Any
 
 
 def get_user_info(
-    user_id: str, user_info_cache: dict[str, dict[str, Any]]
-) -> Optional[dict[str, str]]:
+    user_id: str, user_info_cache: Dict[str, Dict[str, Any]]
+) -> Optional[Dict[str, str]]:
     """Get the email address and GitHub username for a user from the cache.
 
     Args:
@@ -207,7 +207,7 @@ def get_user_info(
     if user_id in user_info_cache:
         user_info = user_info_cache[user_id]
         logger.debug(
-            f'Found user info in cache: {user_info.get("username")}, {user_info.get("email")}'
+            f"Found user info in cache: {user_info.get('username')}, {user_info.get('email')}"
         )
         return user_info
     else:
@@ -217,7 +217,7 @@ def get_user_info(
 
 def register_user_in_common_room(
     user_id: str, email: str, github_username: str
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Create or update a user in Common Room.
 
     Args:
@@ -281,7 +281,7 @@ def register_conversation_activity(
     created_at: datetime,
     email: str,
     github_username: str,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Create an activity in Common Room for a new conversation.
 
     Args:

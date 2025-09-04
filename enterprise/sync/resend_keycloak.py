@@ -28,10 +28,9 @@ Optional environment variables:
 import os
 import sys
 import time
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 import resend
-from keycloak.exceptions import KeycloakError
 from resend.exceptions import ResendError
 from server.auth.token_manager import get_keycloak_admin
 from tenacity import (
@@ -41,6 +40,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from keycloak.exceptions import KeycloakError
 from openhands.core.logger import openhands_logger as logger
 
 # Get Keycloak configuration from environment variables
@@ -90,7 +90,7 @@ class ResendAPIError(ResendSyncError):
     pass
 
 
-def get_keycloak_users(offset: int = 0, limit: int = 100) -> list[dict[str, Any]]:
+def get_keycloak_users(offset: int = 0, limit: int = 100) -> List[Dict[str, Any]]:
     """Get users from Keycloak using the admin client.
 
     Args:
@@ -108,7 +108,7 @@ def get_keycloak_users(offset: int = 0, limit: int = 100) -> list[dict[str, Any]
 
         # Get users with pagination
         # The Keycloak API uses 'first' for offset and 'max' for limit
-        params: dict[str, Any] = {
+        params: Dict[str, Any] = {
             'first': offset,
             'max': limit,
             'briefRepresentation': False,  # Get full user details
@@ -161,7 +161,7 @@ def get_total_keycloak_users() -> int:
         raise
 
 
-def get_resend_contacts(audience_id: str) -> dict[str, dict[str, Any]]:
+def get_resend_contacts(audience_id: str) -> Dict[str, Dict[str, Any]]:
     """Get contacts from Resend.
 
     Args:
@@ -199,7 +199,7 @@ def add_contact_to_resend(
     email: str,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Add a contact to the Resend audience with retry logic.
 
     Args:
@@ -233,7 +233,7 @@ def send_welcome_email(
     email: str,
     first_name: Optional[str] = None,
     last_name: Optional[str] = None,
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Send a welcome email to a new contact.
 
     Args:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 from server.constants import CURRENT_USER_SETTINGS_VERSION
 from server.logger import logger
 from storage.database import session_maker
@@ -18,7 +20,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
     whose user_version is less than CURRENT_USER_SETTINGS_VERSION.
     """
 
-    user_ids: list[str]
+    user_ids: List[str]
 
     async def __call__(self, task: MaintenanceTask) -> dict:
         """

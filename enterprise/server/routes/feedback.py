@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -15,7 +15,7 @@ from openhands.utils.async_utils import call_sync_from_async
 router = APIRouter(prefix='/feedback', tags=['feedback'])
 
 
-async def get_event_ids(conversation_id: str, user_id: str) -> list[int]:
+async def get_event_ids(conversation_id: str, user_id: str) -> List[int]:
     """Get all event IDs for a given conversation.
 
     Args:
@@ -68,7 +68,7 @@ class FeedbackRequest(BaseModel):
     event_id: Optional[int] = None
     rating: int = Field(..., ge=1, le=5)
     reason: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 @router.post('/conversation', status_code=status.HTTP_201_CREATED)

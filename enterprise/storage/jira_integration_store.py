@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from storage.database import session_maker
 from storage.jira_conversation import JiraConversation
@@ -45,11 +46,11 @@ class JiraIntegrationStore:
     async def update_workspace(
         self,
         id: int,
-        jira_cloud_id: str | None = None,
-        encrypted_webhook_secret: str | None = None,
-        svc_acc_email: str | None = None,
-        encrypted_svc_acc_api_key: str | None = None,
-        status: str | None = None,
+        jira_cloud_id: Optional[str] = None,
+        encrypted_webhook_secret: Optional[str] = None,
+        svc_acc_email: Optional[str] = None,
+        encrypted_svc_acc_api_key: Optional[str] = None,
+        status: Optional[str] = None,
     ) -> JiraWorkspace:
         """Update an existing Jira workspace with encrypted sensitive data."""
         with session_maker() as session:
@@ -108,7 +109,7 @@ class JiraIntegrationStore:
         )
         return jira_user
 
-    async def get_workspace_by_id(self, workspace_id: int) -> JiraWorkspace | None:
+    async def get_workspace_by_id(self, workspace_id: int) -> Optional[JiraWorkspace]:
         """Retrieve workspace by ID."""
         with session_maker() as session:
             return (
@@ -117,7 +118,9 @@ class JiraIntegrationStore:
                 .first()
             )
 
-    async def get_workspace_by_name(self, workspace_name: str) -> JiraWorkspace | None:
+    async def get_workspace_by_name(
+        self, workspace_name: str
+    ) -> Optional[JiraWorkspace]:
         """Retrieve workspace by name."""
         with session_maker() as session:
             return (
@@ -128,7 +131,7 @@ class JiraIntegrationStore:
 
     async def get_user_by_active_workspace(
         self, keycloak_user_id: str
-    ) -> JiraUser | None:
+    ) -> Optional[JiraUser]:
         """Get Jira user by Keycloak user ID."""
         with session_maker() as session:
             return (
@@ -142,7 +145,7 @@ class JiraIntegrationStore:
 
     async def get_user_by_keycloak_id_and_workspace(
         self, keycloak_user_id: str, jira_workspace_id: int
-    ) -> JiraUser | None:
+    ) -> Optional[JiraUser]:
         """Get Jira user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (
@@ -156,7 +159,7 @@ class JiraIntegrationStore:
 
     async def get_active_user(
         self, jira_user_id: str, jira_workspace_id: int
-    ) -> JiraUser | None:
+    ) -> Optional[JiraUser]:
         """Get Jira user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (

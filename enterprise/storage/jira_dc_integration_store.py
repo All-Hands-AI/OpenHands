@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from storage.database import session_maker
 from storage.jira_dc_conversation import JiraDcConversation
@@ -41,10 +42,10 @@ class JiraDcIntegrationStore:
     async def update_workspace(
         self,
         id: int,
-        encrypted_webhook_secret: str | None = None,
-        svc_acc_email: str | None = None,
-        encrypted_svc_acc_api_key: str | None = None,
-        status: str | None = None,
+        encrypted_webhook_secret: Optional[str] = None,
+        svc_acc_email: Optional[str] = None,
+        encrypted_svc_acc_api_key: Optional[str] = None,
+        status: Optional[str] = None,
     ) -> JiraDcWorkspace:
         """Update an existing Jira DC workspace with encrypted sensitive data."""
         with session_maker() as session:
@@ -100,7 +101,7 @@ class JiraDcIntegrationStore:
         )
         return jira_dc_user
 
-    async def get_workspace_by_id(self, workspace_id: int) -> JiraDcWorkspace | None:
+    async def get_workspace_by_id(self, workspace_id: int) -> Optional[JiraDcWorkspace]:
         """Retrieve workspace by ID."""
         with session_maker() as session:
             return (
@@ -111,7 +112,7 @@ class JiraDcIntegrationStore:
 
     async def get_workspace_by_name(
         self, workspace_name: str
-    ) -> JiraDcWorkspace | None:
+    ) -> Optional[JiraDcWorkspace]:
         """Retrieve workspace by name."""
         with session_maker() as session:
             return (
@@ -122,7 +123,7 @@ class JiraDcIntegrationStore:
 
     async def get_user_by_active_workspace(
         self, keycloak_user_id: str
-    ) -> JiraDcUser | None:
+    ) -> Optional[JiraDcUser]:
         """Retrieve user by Keycloak user ID."""
 
         with session_maker() as session:
@@ -137,7 +138,7 @@ class JiraDcIntegrationStore:
 
     async def get_user_by_keycloak_id_and_workspace(
         self, keycloak_user_id: str, jira_dc_workspace_id: int
-    ) -> JiraDcUser | None:
+    ) -> Optional[JiraDcUser]:
         """Get Jira DC user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (
@@ -151,7 +152,7 @@ class JiraDcIntegrationStore:
 
     async def get_active_user(
         self, jira_dc_user_id: str, jira_dc_workspace_id: int
-    ) -> JiraDcUser | None:
+    ) -> Optional[JiraDcUser]:
         """Get Jira DC user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (
@@ -166,7 +167,7 @@ class JiraDcIntegrationStore:
 
     async def get_active_user_by_keycloak_id_and_workspace(
         self, keycloak_user_id: str, jira_dc_workspace_id: int
-    ) -> JiraDcUser | None:
+    ) -> Optional[JiraDcUser]:
         """Get Jira DC user by Keycloak user ID and workspace ID."""
         with session_maker() as session:
             return (

@@ -32,6 +32,9 @@ EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT = os.environ.get(
 )
 
 EXPERIMENT_CLAUDE4_VS_GPT5 = os.environ.get('EXPERIMENT_CLAUDE4_VS_GPT5', '')
+
+EXPERIMENT_CONDENSER_MAX_STEP = os.environ.get('EXPERIMENT_CONDENSER_MAX_STEP', '')
+
 logger.info(
     'experiment_manager:run_conversation_variant_test:experiment_config',
     extra={
@@ -39,5 +42,6 @@ logger.info(
         'experiment_litellm_default_model_experiment': EXPERIMENT_LITELLM_DEFAULT_MODEL_EXPERIMENT,
         'experiment_system_prompt_experiment': EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
         'experiment_claude4_vs_gpt5_experiment': EXPERIMENT_CLAUDE4_VS_GPT5,
+        'experiment_condenser_max_step': EXPERIMENT_CONDENSER_MAX_STEP,
     },
 )
