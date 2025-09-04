@@ -44,6 +44,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_agent_config_arg,
     get_evaluation_parser,
     get_llm_config_arg,
 )
@@ -788,7 +789,7 @@ if __name__ == '__main__':
 
     llm_config = None
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        llm_config = get_llm_config_arg(args.llm_config, args.config_file)
         llm_config.log_completions = True
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
@@ -799,7 +800,7 @@ if __name__ == '__main__':
     # Get condenser config from environment variable
     condenser_name = os.environ.get('EVAL_CONDENSER')
     if condenser_name:
-        condenser_config = get_condenser_config_arg(condenser_name)
+        condenser_config = get_condenser_config_arg(condenser_name, args.config_file)
         if condenser_config is None:
             raise ValueError(
                 f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
@@ -811,20 +812,25 @@ if __name__ == '__main__':
             'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
         )
 
+    agent_config = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config, args.config_file)
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
+    dataset_description = (
         args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     )
     metadata = make_metadata(
         llm_config,
-        dataset_descrption,
+        dataset_description,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        agent_config=agent_config,
         condenser_config=condenser_config,
     )
 
