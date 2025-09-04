@@ -5,6 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { RootState } from "#/store";
+import { cn } from "#/utils/utils";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -16,15 +17,13 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
     (state: RootState) => state.conversation.shouldHideSuggestions,
   );
 
-  // Don't render if suggestions should be hidden
-  if (shouldHideSuggestions) {
-    return null;
-  }
-
   return (
     <div
       data-testid="chat-suggestions"
-      className="flex flex-col h-full items-center justify-center"
+      className={cn(
+        "flex flex-col h-full items-center justify-center transition-opacity duration-300 ease-in-out",
+        shouldHideSuggestions ? "opacity-0 pointer-events-none" : "opacity-100",
+      )}
     >
       <div className="flex flex-col items-center p-4 rounded-xl w-full">
         <BuildIt width={86} height={103} />
