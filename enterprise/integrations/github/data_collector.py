@@ -390,24 +390,24 @@ class GitHubDataCollector:
         merged_by = None
         merge_commit_sha = None
         if is_merged:
-            merged_by = pr_data.get('mergedBy', {}).get('login')
-            merge_commit_sha = pr_data.get('mergeCommit', {}).get('oid')
+            merged_by = (pr_data.get('mergedBy') or {}).get('login')
+            merge_commit_sha = (pr_data.get('mergeCommit') or {}).get('oid')
 
         return {
             'repo_metadata': self._extract_repo_metadata(repo_data),
             'pr_metadata': {
-                'username': pr_data.get('author', {}).get('login'),
-                'number': pr_data['number'],
-                'title': pr_data['title'],
-                'body': pr_data['body'],
+                'username': (pr_data.get('author') or {}).get('login'),
+                'number': pr_data.get('number'),
+                'title': pr_data.get('title'),
+                'body': pr_data.get('body'),
                 'comments': pr_comments,
             },
             'commits': commits,
             'review_comments': review_comments,
             'merge_status': {
-                'merged': pr_data['merged'],
+                'merged': pr_data.get('merged'),
                 'merged_by': merged_by,
-                'state': pr_data['state'],
+                'state': pr_data.get('state'),
                 'merge_commit_sha': merge_commit_sha,
             },
             'openhands_stats': {
