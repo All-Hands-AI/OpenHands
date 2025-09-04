@@ -37,7 +37,7 @@ export function ServerStatusContextMenu({
       {conversationStatus === "RUNNING" && onStopServer && (
         <ServerStatusContextMenuIconText
           icon={<StopCircleIcon width={18} height={18} />}
-          text={t(I18nKey.COMMON$CLOSE_CONVERSATION_STOP_RUNTIME)}
+          text={t(I18nKey.COMMON$STOP_RUNTIME)}
           onClick={onStopServer}
           testId="stop-server-button"
         />
@@ -46,7 +46,7 @@ export function ServerStatusContextMenu({
       {conversationStatus === "STOPPED" && onStartServer && (
         <ServerStatusContextMenuIconText
           icon={<PlayCircleIcon width={18} height={18} />}
-          text={t(I18nKey.COMMON$START_CONVERSATION)}
+          text={t(I18nKey.COMMON$START_RUNTIME)}
           onClick={onStartServer}
           testId="start-server-button"
         />
