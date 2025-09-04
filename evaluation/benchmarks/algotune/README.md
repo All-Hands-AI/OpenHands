@@ -37,7 +37,7 @@ poetry run python evaluation/benchmarks/algotune/run_infer.py \
   --agent-cls CodeActAgent \
   --llm-config llm.gpt-5 \
   --optim_task all \
-  --max-iterations 20 \
+  --max-iterations 500 \
   --eval-num-workers 7
 ```
 
