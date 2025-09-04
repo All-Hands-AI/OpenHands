@@ -66,6 +66,7 @@ class BrowsingActionParserMessage(ActionParser):
             browser_actions=msg,
             thought=action_str,
             browsergym_send_msg_to_user=action_str,
+            return_axtree=True,
         )
 
 
@@ -123,4 +124,5 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
             browser_actions=browser_actions,
             thought=thought,
             browsergym_send_msg_to_user=msg_content,
+            return_axtree=True,
         )
