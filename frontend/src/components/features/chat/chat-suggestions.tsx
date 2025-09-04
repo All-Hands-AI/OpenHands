@@ -24,7 +24,7 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   return (
     <div
       data-testid="chat-suggestions"
-      className="flex flex-col h-full px-4 items-center justify-center"
+      className="flex flex-col h-full items-center justify-center"
     >
       <div className="flex flex-col items-center p-4 rounded-xl w-full">
         <BuildIt width={86} height={103} />
