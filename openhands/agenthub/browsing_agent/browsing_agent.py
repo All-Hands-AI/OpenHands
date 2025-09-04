@@ -189,12 +189,16 @@ class BrowsingAgent(Agent):
             cur_url = last_obs.url
 
             try:
-                cur_axtree_txt = flatten_axtree_to_str(
-                    last_obs.axtree_object,
-                    extra_properties=last_obs.extra_element_properties,
-                    with_clickable=True,
-                    filter_visible_only=True,
-                )
+                # Check if axtree_object has the required 'nodes' key
+                if not last_obs.axtree_object or 'nodes' not in last_obs.axtree_object:
+                    cur_axtree_txt = '[No accessibility tree available]'
+                else:
+                    cur_axtree_txt = flatten_axtree_to_str(
+                        last_obs.axtree_object,
+                        extra_properties=last_obs.extra_element_properties,
+                        with_clickable=True,
+                        filter_visible_only=True,
+                    )
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e

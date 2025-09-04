@@ -250,19 +250,23 @@ Note:
                 )
             tabs = get_tabs(last_obs)
             try:
-                # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
-                cur_axtree_txt = flatten_axtree_to_str(
-                    last_obs.axtree_object,
-                    extra_properties=last_obs.extra_element_properties,
-                    with_visible=True,
-                    with_clickable=True,
-                    with_center_coords=False,
-                    with_bounding_box_coords=False,
-                    filter_visible_only=False,
-                    filter_with_bid_only=False,
-                    filter_som_only=False,
-                )
-                cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
+                # Check if axtree_object has the required 'nodes' key
+                if not last_obs.axtree_object or 'nodes' not in last_obs.axtree_object:
+                    cur_axtree_txt = '[No accessibility tree available]'
+                else:
+                    # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
+                    cur_axtree_txt = flatten_axtree_to_str(
+                        last_obs.axtree_object,
+                        extra_properties=last_obs.extra_element_properties,
+                        with_visible=True,
+                        with_clickable=True,
+                        with_center_coords=False,
+                        with_bounding_box_coords=False,
+                        filter_visible_only=False,
+                        filter_with_bid_only=False,
+                        filter_som_only=False,
+                    )
+                    cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
