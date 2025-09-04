@@ -29,10 +29,10 @@ def get_action_execution_server_startup_command(
     python_executable: str = 'python',
 ) -> list[str]:
     sandbox_config = app_config.sandbox
-    logger.info(f'app_config {vars(app_config)}')
-    logger.info(f'sandbox_config {vars(sandbox_config)}')
-    logger.info(f'RUNTIME_USERNAME {RUNTIME_USERNAME}, RUNTIME_UID {RUNTIME_UID}')
-    logger.info(
+    logger.debug(f'app_config {vars(app_config)}')
+    logger.debug(f'sandbox_config {vars(sandbox_config)}')
+    logger.debug(f'RUNTIME_USERNAME {RUNTIME_USERNAME}, RUNTIME_UID {RUNTIME_UID}')
+    logger.debug(
         f'override_username {override_username}, override_user_id {override_user_id}'
     )
 
@@ -56,7 +56,7 @@ def get_action_execution_server_startup_command(
     user_id = (
         override_user_id or RUNTIME_UID or (1000 if app_config.run_as_openhands else 0)
     )
-    logger.info(f'username {username}, user_id {user_id}')
+    logger.debug(f'username {username}, user_id {user_id}')
 
     base_cmd = [
         *python_prefix,
@@ -77,6 +77,6 @@ def get_action_execution_server_startup_command(
 
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')
-    logger.info(f'get_action_execution_server_startup_command: {base_cmd}')
+    logger.debug(f'get_action_execution_server_startup_command: {base_cmd}')
 
     return base_cmd

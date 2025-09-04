@@ -20,6 +20,8 @@ from openhands.events.observation.commands import (
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+
 
 def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
@@ -193,8 +195,9 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
-        # This starts a non-login (new) shell for the given user
-        _shell_command = f'su {self.username} -'
+        if self.username in list(filter(None, [RUNTIME_USERNAME, 'root', 'openhands'])):
+            # This starts a non-login (new) shell for the given user
+            _shell_command = f'su {self.username} -'
 
         # FIXME: we will introduce memory limit using sysbox-runc in coming PR
         # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
