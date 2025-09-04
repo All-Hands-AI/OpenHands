@@ -171,7 +171,7 @@ export function ChatInterface() {
 
   return (
     <ScrollProvider value={scrollProviderValue}>
-      <div className="h-full flex flex-col justify-between">
+      <div className="h-full flex flex-col justify-between pr-4">
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
           !events.some(
@@ -214,7 +214,7 @@ export function ChatInterface() {
             )}
         </div>
 
-        <div className="flex flex-col gap-[6px] px-4">
+        <div className="flex flex-col gap-[6px]">
           <div className="flex justify-between relative">
             {events.length > 0 && (
               <TrajectoryActions

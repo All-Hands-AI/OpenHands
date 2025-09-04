@@ -93,7 +93,7 @@ export function Sidebar() {
             />
           </div>
 
-          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-[27px]">
+          <div className="flex flex-row md:flex-col md:items-center gap-[26px]">
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined

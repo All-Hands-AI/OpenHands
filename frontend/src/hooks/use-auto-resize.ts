@@ -104,7 +104,7 @@ export const useAutoResize = (
         element.style.height = `${finalHeight}px`;
         element.style.overflowY = "hidden";
       } else {
-        // Keep manual height but show scrollbar
+        // Keep manual height but show scrollbar since content exceeds visible area
         element.style.overflowY = "auto";
         finalHeight = currentHeight;
       }
@@ -146,7 +146,12 @@ export const useAutoResize = (
         const element = elementRef.current;
         if (element) {
           element.style.height = `${newHeight}px`;
-          element.style.overflowY = newHeight >= maxHeight ? "auto" : "hidden";
+
+          // Check if content exceeds the new height to determine scrollbar visibility
+          const contentHeight = element.scrollHeight;
+          const shouldShowScrollbar =
+            contentHeight > newHeight || newHeight >= maxHeight;
+          element.style.overflowY = shouldShowScrollbar ? "auto" : "hidden";
 
           // Call the height change callback if provided
           if (onHeightChange) {
