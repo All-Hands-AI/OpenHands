@@ -56,7 +56,7 @@ def discover_tasks():
 
 def algotune_user_response(state, runtime: Runtime, **kwargs):
     """User response function for algorithm optimization training with iterative feedback."""
-    base_msg = f"Please continue developing and optimizing your algorithm."
+    base_msg = f"Please continue on whatever approach you think is suitable.\nIf you think you have solved the task, please finish the interaction."
     base_msg += (
         '\n\nIMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
@@ -534,8 +534,7 @@ if __name__ == '__main__':
         metadata=metadata,
         output_file=output_file,
         num_workers=args.eval_num_workers,
-        process_instance_func=process_task,
-        timeout_seconds=1800
+        process_instance_func=process_task
     )
 
     logger.info(f"Evaluation finished. Results are in {output_file}")
