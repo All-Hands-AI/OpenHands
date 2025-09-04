@@ -1,6 +1,15 @@
 """Tests for bash command preprocessor."""
 
-from openhands.runtime.utils.bash_preprocessor import BashCommandPreprocessor
+import sys
+from pathlib import Path
+
+# Add the module path directly to avoid full OpenHands import chain
+test_dir = Path(__file__).parent
+utils_dir = test_dir.parent.parent.parent.parent / 'openhands' / 'runtime' / 'utils'
+sys.path.insert(0, str(utils_dir))
+
+# ruff: noqa: E402
+from bash_preprocessor import BashCommandPreprocessor
 
 
 class TestBashCommandPreprocessor:

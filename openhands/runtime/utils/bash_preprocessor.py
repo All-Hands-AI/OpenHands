@@ -6,9 +6,14 @@ problematic shell options like 'set -e', 'set -eu', or 'set -euo pipefail' which
 cause the bash session to exit unexpectedly when commands fail.
 """
 
+import logging
 import re
 
-from openhands.core.logger import openhands_logger as logger
+# Use standard Python logging, fallback if OpenHands logger not available
+try:
+    from openhands.core.logger import openhands_logger as logger
+except ImportError:
+    logger = logging.getLogger(__name__)
 
 
 class BashCommandPreprocessor:
@@ -33,9 +38,19 @@ class BashCommandPreprocessor:
     # Combined pattern for any problematic set command
     PROBLEMATIC_SET_PATTERN = re.compile(
         r'\bset\s+(?:'
-        r'-[a-zA-Z]*[eu][a-zA-Z]*(?:\s|$)|'  # set -e, set -u, set -eu, etc.
-        r'-o\s+(?:errexit|nounset|pipefail)(?:\s|$)|'  # set -o errexit/nounset/pipefail
-        r'--(?:errexit|nounset|pipefail)(?:\s|$)'  # set --errexit/nounset/pipefail
+        r'-[a-zA-Z]*[eu][a-zA-Z]*(?:\s+\w+)*(?:\s|;|&&|\|\||$)|'  # set -e, set -u, set -eu, etc.
+        r'-o\s+(?:errexit|nounset|pipefail)(?:\s|;|&&|\|\||$)|'  # set -o errexit/nounset/pipefail
+        r'--(?:errexit|nounset|pipefail)(?:\s|;|&&|\|\||$)'  # set --errexit/nounset/pipefail
+        r')',
+        re.IGNORECASE,
+    )
+
+    # Pattern to extract full set commands including all arguments
+    FULL_SET_COMMAND_PATTERN = re.compile(
+        r'\bset\s+(?:'
+        r'-[a-zA-Z]*[eu][a-zA-Z]*(?:\s+\w+)*|'  # set -e, set -u, set -euo pipefail, etc.
+        r'-o\s+(?:errexit|nounset|pipefail)|'  # set -o errexit/nounset/pipefail
+        r'--(?:errexit|nounset|pipefail)'  # set --errexit/nounset/pipefail
         r')',
         re.IGNORECASE,
     )
@@ -71,7 +86,7 @@ class BashCommandPreprocessor:
             List of set command strings found in the command
         """
         set_commands = []
-        matches = self.PROBLEMATIC_SET_PATTERN.finditer(command)
+        matches = self.FULL_SET_COMMAND_PATTERN.finditer(command)
 
         for match in matches:
             set_commands.append(match.group(0).strip())
