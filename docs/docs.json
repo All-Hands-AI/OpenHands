@@ -153,6 +153,7 @@
                 "group": "Architecture",
                 "pages": [
                   "usage/architecture/backend",
+                  "usage/architecture/runtime",
                   "usage/architecture/auth_system"
                 ]
               },
