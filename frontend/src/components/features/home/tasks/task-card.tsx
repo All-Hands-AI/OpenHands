@@ -22,7 +22,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const { setOptimisticUserMessage } = useOptimisticUserMessage();
-  const { mutate: createConversation, isPending } = useCreateConversation();
+  const { mutate: createConversation } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -80,17 +80,12 @@ export function TaskCard({ task }: TaskCardProps) {
             {getTaskTypeMap(t)[task.task_type]}
           </span>
           <span
-            className="text-xs text-[#A3A3A3] leading-4 font-normal max-w-50 truncate"
+            className="text-xs text-[#A3A3A3] leading-4 font-normal max-w-70 truncate"
             title={task.title}
           >
             {task.title}
           </span>
         </div>
-      </div>
-
-      <div className="text-xs text-[#A3A3A3] leading-4 font-normal">
-        {!isPending && t("HOME$LAUNCH")}
-        {isPending && t("HOME$LOADING")}
       </div>
     </button>
   );
