@@ -279,11 +279,11 @@ RUN mkdir -p /openhands/micromamba/bin && \
     # Set up environment variables for system-wide access
     echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /etc/environment
 
-# Create the openhands virtual environment and install poetry and python
+# Create the openhands virtual environment and install Python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
     /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge python=3.12 -y
 
-# Create a clean openhands directory including only the pyproject.toml, poetry.lock and openhands/__init__.py
+# Create a clean openhands directory including only the pyproject.toml, lock file and openhands/__init__.py
 RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
