@@ -42,8 +42,6 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    create_provider_tokens_object,
-    initialize_conversation,
     setup_init_conversation_settings,
 )
 from openhands.server.shared import (
@@ -377,7 +375,7 @@ async def delete_conversation(
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:
         return False
-    
+
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
@@ -385,7 +383,7 @@ async def delete_conversation(
         runtime_cls = get_runtime_cls(config.runtime)
         await runtime_cls.delete(conversation_id)
     except Exception as e:
-        logger.warning(f"Error deleting container: {str(e)}")
+        logger.warning(f'Error deleting container: {str(e)}')
     await conversation_store.delete_metadata(conversation_id)
     return True
 
@@ -621,46 +619,52 @@ async def reset_conversation(
     user_secrets: UserSecrets = Depends(get_user_secrets),
 ) -> ConversationResponse:
     """Reset a conversation by reusing the same Docker container/environment.
-    
+
     This endpoint creates a new conversation with the same settings as the current one,
     but reuses the existing Docker container by renaming it to match the new conversation ID.
     """
     logger.info(f'Resetting conversation: {conversation_id}')
-    
+
     try:
         # Get the current conversation metadata to preserve settings
         current_metadata = None
         try:
             current_metadata = await conversation_store.get_metadata(conversation_id)
-        finally:
-            if not current_metadata:
-                return JSONResponse(
-                    content={
-                        'status': 'error',
-                        'conversation_id': conversation_id,
-                        'message': 'Conversation not found',
-                    },
-                    status_code=status.HTTP_404_NOT_FOUND,
-                )
+        except Exception:
+            current_metadata = None
+
+        if not current_metadata:
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'conversation_id': conversation_id,
+                    'message': 'Conversation not found',
+                },
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
         # Create new conversation with preserved settings from existing conversation
         new_conversation_id = await clone_conversation(
             git_provider_tokens=provider_tokens,
             user_secrets=user_secrets,
-            current_metadata=current_metadata
+            current_metadata=current_metadata,
         )
-        
-        container_was_reused = await rename_container(conversation_id, new_conversation_id)
+
+        container_was_reused = await rename_container(
+            conversation_id, new_conversation_id
+        )
 
         if reset_request.delete_old_conversation:
             try:
                 success = await delete_conversation(conversation_id, user_id)
                 if success:
-                    logger.info(f"Deleted old conversation: {conversation_id}")
+                    logger.info(f'Deleted old conversation: {conversation_id}')
                 else:
-                    logger.info(f"Conversation {conversation_id} not found, skipping deletion")
+                    logger.info(
+                        f'Conversation {conversation_id} not found, skipping deletion'
+                    )
             except Exception as e:
-                logger.warning(f"Error deleting old conversation: {str(e)}")
+                logger.warning(f'Error deleting old conversation: {str(e)}')
         else:
             # Update old conversation to mark it as replaced
             try:
@@ -668,13 +672,17 @@ async def reset_conversation(
                 if old_metadata:
                     old_metadata.replaced_by_conversation_id = new_conversation_id
                     await conversation_store.save_metadata(old_metadata)
-                    logger.info(f'Updated old conversation with replacement reference: {conversation_id} -> {new_conversation_id}')
+                    logger.info(
+                        f'Updated old conversation with replacement reference: {conversation_id} -> {new_conversation_id}'
+                    )
             except FileNotFoundError:
                 # Conversation doesn't exist, skip update
-                logger.info(f"Old conversation {conversation_id} not found, skipping update")
+                logger.info(
+                    f'Old conversation {conversation_id} not found, skipping update'
+                )
             except Exception as e:
                 logger.warning(f'Error updating old conversation title: {str(e)}')
-        
+
         return ConversationResponse(
             status='ok',
             conversation_id=new_conversation_id,
@@ -697,44 +705,51 @@ async def reset_conversation(
 
 async def rename_container(old_conversation_id: str, new_conversation_id: str) -> bool:
     """Handle Docker container renaming when resetting a conversation.
-    
+
     Args:
         old_conversation_id: The ID of the conversation being reset
         new_conversation_id: The ID of the new conversation
-        
+
     Returns:
         bool: True if container was successfully reused, False otherwise
     """
     old_container_name = f'openhands-runtime-{old_conversation_id}'
     new_container_name = f'openhands-runtime-{new_conversation_id}'
-    
+
     try:
         import docker
+
         docker_client = docker.from_env()
-        
+
         # Try to get the old container
         try:
             container = docker_client.containers.get(old_container_name)
-            
+
             # Stop the container first
             if container.status == 'running':
                 container.stop()
-            
+
             # Rename the container to match new conversation ID
             container.rename(new_container_name)
-            logger.info(f'Renamed container from {old_container_name} to {new_container_name}')
-            
+            logger.info(
+                f'Renamed container from {old_container_name} to {new_container_name}'
+            )
+
             # Update container labels and environment
             container.reload()
             return True
-            
+
         except docker.errors.NotFound:
             # Container doesn't exist, will create new one
-            logger.info(f'No existing container found for {old_container_name}, will create new one')
+            logger.info(
+                f'No existing container found for {old_container_name}, will create new one'
+            )
             return False
-            
+
     except Exception as e:
-        logger.warning(f'Error handling container rename: {str(e)}, will proceed with new container')
+        logger.warning(
+            f'Error handling container rename: {str(e)}, will proceed with new container'
+        )
         return False
 
 
@@ -759,21 +774,23 @@ async def clone_conversation(
         conversation_instructions=None,
         conversation_trigger=current_metadata.trigger or ConversationTrigger.GUI,
         git_provider=current_metadata.git_provider,
-        mcp_config=settings.mcp_config if settings else None
+        mcp_config=settings.mcp_config if settings else None,
     )
-    
+
     # Update the conversation metadata to preserve settings that currently can't be passed to create_new_conversation()
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
-        new_metadata = await conversation_store.get_metadata(agent_loop_info.conversation_id)
+        new_metadata = await conversation_store.get_metadata(
+            agent_loop_info.conversation_id
+        )
         if new_metadata:
             new_metadata.title = current_metadata.title
             new_metadata.llm_model = current_metadata.llm_model
             new_metadata.pr_number = current_metadata.pr_number
             await conversation_store.save_metadata(new_metadata)
     except Exception as e:
-        logger.warning(f"Failed to update conversation metadata: {str(e)}")
-    
+        logger.warning(f'Failed to update conversation metadata: {str(e)}')
+
     return agent_loop_info.conversation_id
 
 

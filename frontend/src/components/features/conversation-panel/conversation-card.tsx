@@ -222,7 +222,7 @@ export function ConversationCard({
                 data-testid="conversation-card-title"
                 className={cn(
                   "text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden",
-                  replacedByConversationId && "line-through text-neutral-500"
+                  replacedByConversationId && "line-through text-neutral-500",
                 )}
                 title={title}
               >
