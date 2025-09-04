@@ -166,11 +166,11 @@ include = [
 
 [tool.hatch.build.targets.sdist.force-include]
 "pyproject.toml" = "openhands/pyproject.toml"
-"poetry.lock" = "openhands/poetry.lock"
+"uv.lock" = "openhands/uv.lock"
 
 [tool.hatch.build.targets.wheel.force-include]
 "pyproject.toml" = "openhands/pyproject.toml"
-"poetry.lock" = "openhands/poetry.lock"
+"uv.lock" = "openhands/uv.lock"
 
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue
