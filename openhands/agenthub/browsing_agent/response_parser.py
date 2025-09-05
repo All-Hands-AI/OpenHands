@@ -65,10 +65,19 @@ class BrowsingActionParserMessage(ActionParser):
         # error-like message, recover by requesting another observation instead
         # of finishing immediately.
         lowered = action_str.strip().lower()
-        if 'error encountered when browsing' in lowered:
+        # Check for various forms of the generic browsing error message
+        generic_error_patterns = [
+            'error encountered when browsing',
+            'error encountered while browsing', 
+            'error encountered during browsing',
+            'an error encountered when browsing',
+            'an error encountered while browsing',
+            'an error encountered during browsing'
+        ]
+        if any(pattern in lowered for pattern in generic_error_patterns):
             return BrowseInteractiveAction(
                 browser_actions='noop()',
-                thought=action_str,
+                thought='Recovered from generic browsing error message',
                 browsergym_send_msg_to_user='',
                 return_axtree=True,
             )
@@ -115,7 +124,15 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
 
         # Guard against generic error message leading to premature finish
         lowered = browser_actions.strip().lower()
-        if 'error encountered when browsing' in lowered:
+        generic_error_patterns = [
+            'error encountered when browsing',
+            'error encountered while browsing', 
+            'error encountered during browsing',
+            'an error encountered when browsing',
+            'an error encountered while browsing',
+            'an error encountered during browsing'
+        ]
+        if any(pattern in lowered for pattern in generic_error_patterns):
             return BrowseInteractiveAction(
                 browser_actions='noop()',
                 thought=thought,
@@ -142,7 +159,16 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
                         msg_content = ''
 
         # Also guard if the extracted message content is the generic error
-        if msg_content.strip().lower().find('error encountered when browsing') != -1:
+        lowered_msg = msg_content.strip().lower()
+        generic_error_patterns = [
+            'error encountered when browsing',
+            'error encountered while browsing', 
+            'error encountered during browsing',
+            'an error encountered when browsing',
+            'an error encountered while browsing',
+            'an error encountered during browsing'
+        ]
+        if any(pattern in lowered_msg for pattern in generic_error_patterns):
             return BrowseInteractiveAction(
                 browser_actions='noop()',
                 thought=thought,

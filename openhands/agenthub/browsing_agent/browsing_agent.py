@@ -162,12 +162,18 @@ class BrowsingAgent(Agent):
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded with a message. Avoid finishing on generic browsing error string.
+                # Check for various forms of the generic browsing error message
+                generic_error_patterns = [
+                    'error encountered when browsing',
+                    'error encountered while browsing', 
+                    'error encountered during browsing',
+                    'an error encountered when browsing',
+                    'an error encountered while browsing',
+                    'an error encountered during browsing'
+                ]
                 if (
                     event.content
-                    and event.content.strip()
-                    .lower()
-                    .find('error encountered when browsing')
-                    != -1
+                    and any(pattern in event.content.strip().lower() for pattern in generic_error_patterns)
                 ):
                     logger.warning(
                         'Ignoring generic error message from agent; continuing.'
@@ -189,7 +195,15 @@ class BrowsingAgent(Agent):
         ):
             # Avoid prematurely finishing on generic error messages
             msg_content = last_action.browsergym_send_msg_to_user.strip()
-            if msg_content.lower().find('error encountered when browsing') != -1:
+            generic_error_patterns = [
+                'error encountered when browsing',
+                'error encountered while browsing', 
+                'error encountered during browsing',
+                'an error encountered when browsing',
+                'an error encountered while browsing',
+                'an error encountered during browsing'
+            ]
+            if any(pattern in msg_content.lower() for pattern in generic_error_patterns):
                 logger.warning('Ignoring generic error message from model; continuing.')
                 # Do not finish; proceed to compute next action
             else:
