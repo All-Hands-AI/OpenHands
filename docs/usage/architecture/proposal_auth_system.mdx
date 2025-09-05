@@ -291,6 +291,42 @@ flowchart TD
 - Auth is about who/what; request scope/user scope is about where resources live. Both are configuration/policy that should be decided at the web/app boundary per request and injected, not hard-coded into core signatures and services.
 - Boundaries (UserContext, TokenProvider) make those policies explicit and replace ad-hoc threading, while keeping business logic focused on its job.
 
+
+## Linus' Philosophy: No Special Cases (Fun section)
+
+> Core code sees uniform interfaces. Only the boundary decides scope (auth/request), then injects a context. No per-call if/else.
+
+Second Layer: Special Case Identification
+- Identify branches observed today:
+  - Path building: if user_id then users/{user_id}/conversations/{sid}/ else sessions/{sid}/
+  - State save/cleanup: write(user-path) then if user_id: delete old non-user path
+  - Factories/DI: get_instance(config, user_id) patterns and repeated None checks
+- Keep as true business logic:
+  - Access validation (e.g., attach_to_conversation(conversation_id, user_id) ensuring the caller can access the resource)
+  - Policy enforcement/tenancy checks at the edges
+- Remove as design patches by redesigning data/abstractions:
+  - Make scope first-class and non-optional via UserContext (or ScopeKey)
+  - Standardize storage layout so callers do not branch on user_id
+  - Encapsulate path derivations in ConversationPaths or UserContext helpers
+  - Optionally namespace conversation IDs (composite) to avoid threading multiple params and prevent cross-scope access
+  - Perform a one-time migration; then delete cleanup branches
+
+Conceptual uniform path (no special case):
+```python
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass(frozen=True)
+class ScopeKey:
+    kind: Literal["anon", "user"]
+    id: str  # e.g., "_" for anon
+
+def conversation_dir(scope: ScopeKey, sid: str) -> str:
+    return f"root/{scope.kind}/{scope.id}/conversations/{sid}/"
+```
+
+This aligns with the proposal’s boundaries: the boundary constructs UserContext once per request (deciding scope); core uses uniform helpers and never branches on user identity.
+
 ## SU note (secure single-user mode)
 - SU is a practical, secure way to run OpenHands for an individual: authenticate once (e.g., GitHub OAuth), establish a stable user id, and keep secrets/namespacing server-side. You can reach the server from anywhere via browser, while core remains unchanged. The MU case stays in a separate app that implements its own UserAuth/TokenProvider.
 
