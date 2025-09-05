@@ -73,7 +73,7 @@ COPY --chown=openhands:openhands --chmod=770 --from=backend-builder ${VIRTUAL_EN
 COPY --chown=openhands:openhands --chmod=770 ./microagents ./microagents
 COPY --chown=openhands:openhands --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:openhands --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:openhands pyproject.toml README.md MANIFEST.in LICENSE ./
+COPY --chown=openhands:openhands pyproject.toml uv.lock README.md MANIFEST.in LICENSE ./
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
 RUN python openhands/core/download.py # No-op to download assets
