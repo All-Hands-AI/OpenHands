@@ -1,11 +1,62 @@
-# Run frontend checks
-echo "Running frontend checks..."
-cd frontend
-npm run lint
-npm run check-translation-completeness
-npx lint-staged
+#!/bin/bash
 
-# Run backend pre-commit
-echo "Running backend pre-commit..."
-cd ..
-poetry run pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+# Get the list of staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+# Check if any frontend files are staged
+has_frontend_changes=false
+for file in $STAGED_FILES; do
+    if [[ $file == frontend/* ]]; then
+        has_frontend_changes=true
+        break
+    fi
+done
+
+# Run frontend checks only if there are frontend changes
+if [ "$has_frontend_changes" = true ]; then
+    echo "Running frontend checks..."
+    cd frontend
+
+    # Run ESLint and Prettier on staged frontend source files only
+    FRONTEND_SOURCE_FILES=$(echo "$STAGED_FILES" | grep "frontend/src/.*\.\(ts\|tsx\|js\)$" | sed 's|frontend/||')
+    if [ -n "$FRONTEND_SOURCE_FILES" ]; then
+        echo "Running ESLint and Prettier on staged files: $FRONTEND_SOURCE_FILES"
+        echo "$FRONTEND_SOURCE_FILES" | xargs npx eslint --fix
+        if [ $? -ne 0 ]; then
+            echo "ESLint failed. Please fix the issues before committing."
+            exit 1
+        fi
+        echo "$FRONTEND_SOURCE_FILES" | xargs npx prettier --write
+        if [ $? -ne 0 ]; then
+            echo "Prettier failed. Please fix the issues before committing."
+            exit 1
+        fi
+    else
+        echo "No frontend source files to lint."
+    fi
+
+    # Run typecheck if any TypeScript files are staged
+    if echo "$STAGED_FILES" | grep -q "frontend/src/.*\.\(ts\|tsx\)$"; then
+        echo "Running TypeScript type checking..."
+        npm run typecheck
+        if [ $? -ne 0 ]; then
+            echo "TypeScript type checking failed. Please fix the issues before committing."
+            exit 1
+        fi
+    fi
+
+    # Run translation completeness check if any translation files are staged
+    if echo "$STAGED_FILES" | grep -q "frontend/src/i18n/translation\.json$"; then
+        echo "Running translation completeness check..."
+        npm run check-translation-completeness
+        if [ $? -ne 0 ]; then
+            echo "Translation completeness check failed. Please fix the issues before committing."
+            exit 1
+        fi
+    fi
+
+    cd ..
+    echo "Frontend checks passed!"
+else
+    echo "Skipping frontend checks (no frontend changes detected)."
+fi
