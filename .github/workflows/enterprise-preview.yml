@@ -18,7 +18,6 @@ jobs:
     name: Enterprise preview
     if: github.event.label.name == 'deploy'
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    needs: [ghcr_build_enterprise]
     steps:
       # This should match the version in ghcr-build.yml
       - name: Trigger remote job
