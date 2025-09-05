@@ -13,7 +13,7 @@ CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
 KIND_CLUSTER_NAME = "local-hands"
-PLAYWRIGHT_BIN := .venv/bin/playwright
+PLAYWRIGHT_BIN := $(shell uv run which playwright 2>/dev/null)
 PLAYWRIGHT_SENTINEL := cache/playwright_chromium_is_installed.$(shell $(PLAYWRIGHT_BIN) --version 2>/dev/null | awk '{print $$2}' || echo unknown).txt
 
 # ANSI color codes
@@ -226,7 +226,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@.venv/bin/uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
+	@uv run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
 
 # Start frontend
 start-frontend:
@@ -248,7 +248,7 @@ _run_setup:
 	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
-	@.venv/bin/uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
+	@uv run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
