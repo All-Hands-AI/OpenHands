@@ -33,6 +33,76 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 5. Subsequent requests → SaasUserAuth.get_instance()
 ```
 
+## User Registration and Login Flow
+
+### New User Journey
+
+**There is no traditional "registration" system** - OpenHands Enterprise uses **OAuth-based authentication** with automatic user provisioning:
+
+#### 1. **Initial Access**
+- New users visit the OpenHands application
+- System displays [`AuthModal`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/src/components/features/waitlist/auth-modal.tsx) with provider options:
+  - **GitHub** (most common)
+  - **GitLab**
+  - **Bitbucket**
+  - **Enterprise SSO** (SAML/OIDC)
+
+#### 2. **OAuth Authentication Flow**
+- User clicks provider button → redirects to Keycloak OAuth URL
+- OAuth URL format: `https://auth.{domain}/realms/allhands/protocol/openid-connect/auth`
+- Parameters include: `client_id=allhands`, `kc_idp_hint={provider}`, `response_type=code`
+- User authenticates with chosen provider (GitHub, GitLab, etc.)
+- Provider redirects back to [`/oauth/keycloak/callback`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L98)
+
+#### 3. **User Provisioning** (Automatic)
+- [`keycloak_callback()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L98) processes OAuth response
+- Extracts user info: `user_id` (Keycloak sub), `preferred_username`, `identity_provider`
+- **No explicit registration** - user record created automatically on first login
+- Stores provider tokens via [`TokenManager.store_idp_tokens()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/token_manager.py)
+
+#### 4. **Waitlist Verification** (Optional)
+- [`UserVerifier`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/auth_utils.py#L8) checks if user is allowed
+- Configured via `GITHUB_USER_LIST_FILE` or `GITHUB_USERS_SHEET_ID`
+- Can be disabled with `DISABLE_WAITLIST=true`
+- If not on waitlist: returns `401 Unauthorized`
+
+#### 5. **Terms of Service Acceptance**
+- System checks if user has accepted TOS in [`UserSettings`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/user_settings.py)
+- If not accepted: redirects to [`/accept-tos`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/src/routes/accept-tos.tsx) page
+- User must check TOS checkbox and click "Continue"
+- [`/api/accept_tos`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L324) endpoint records acceptance
+
+#### 6. **Session Establishment**
+- Creates signed JWT cookie with Keycloak tokens
+- Cookie name: `keycloak_auth`
+- Contains: `access_token`, `refresh_token`, `accepted_tos` flag
+- Sets up PostHog analytics tracking
+- Redirects user to application
+
+### Key Characteristics
+
+- **No Username/Password**: Pure OAuth-based authentication
+- **No Email Verification**: Relies on provider's email verification
+- **Automatic Provisioning**: Users created on first successful OAuth login
+- **Provider Flexibility**: Supports multiple OAuth providers simultaneously
+- **Waitlist Control**: Optional user access control via external lists
+- **TOS Enforcement**: Mandatory terms acceptance before app access
+
+### Authentication States
+
+1. **Unauthenticated**: Shows AuthModal with provider options
+2. **Authenticated but No TOS**: Redirects to TOS acceptance page
+3. **Fully Authenticated**: Access to full application functionality
+4. **Waitlisted**: Shows "Not authorized via waitlist" error
+
+### Session Management
+
+- **Access Tokens**: Short-lived (minutes), used for API calls
+- **Refresh Tokens**: Long-lived (hours/days), used to refresh access tokens
+- **Offline Tokens**: Stored for provider API access (GitHub, GitLab, etc.)
+- **Cookie Security**: HttpOnly, Secure, SameSite protection
+- **Logout**: [`/api/logout`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L383) clears cookies and revokes tokens
+
 ## User ID Forms and Occurrences
 
 ### Total Count: 1,022 occurrences across enterprise codebase
