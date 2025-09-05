@@ -54,11 +54,13 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 - User authenticates with chosen provider (GitHub, GitLab, etc.)
 - Provider redirects back to [`/oauth/keycloak/callback`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L98)
 
-#### 3. **User Provisioning** (Automatic)
+#### 3. **User Provisioning** (Automatic - Two-Stage Database Save)
 - [`keycloak_callback()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L98) processes OAuth response
 - Extracts user info: `user_id` (Keycloak sub), `preferred_username`, `identity_provider`
-- **No explicit registration** - user record created automatically on first login
-- Stores provider tokens via [`TokenManager.store_idp_tokens()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/token_manager.py)
+- **FIRST DATABASE SAVE**: [`TokenManager.store_idp_tokens()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L150) at line 150
+  - **Table**: `AuthTokens` via [`AuthTokenStore.store_tokens()`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/auth_token_store.py#L57-65)
+  - **Data**: `keycloak_user_id`, `identity_provider`, encrypted tokens, expiration times
+  - **Timing**: BEFORE waitlist check, BEFORE TOS acceptance
 
 #### 4. **Waitlist Verification** (Optional)
 - [`UserVerifier`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/auth_utils.py#L8) checks if user is allowed
@@ -70,7 +72,10 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 - System checks if user has accepted TOS in [`UserSettings`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/user_settings.py)
 - If not accepted: redirects to [`/accept-tos`](https://github.com/All-Hands-AI/OpenHands/blob/main/frontend/src/routes/accept-tos.tsx) page
 - User must check TOS checkbox and click "Continue"
-- [`/api/accept_tos`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L324) endpoint records acceptance
+- **SECOND DATABASE SAVE**: [`/api/accept_tos`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py#L356-362) at lines 356-362
+  - **Table**: `UserSettings`
+  - **Data**: `keycloak_user_id`, `accepted_tos` timestamp, `user_version`
+  - **Timing**: Only when user explicitly accepts Terms of Service
 
 #### 6. **Session Establishment**
 - Creates signed JWT cookie with Keycloak tokens
