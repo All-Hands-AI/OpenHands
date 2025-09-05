@@ -10,6 +10,7 @@ function PauseIcon() {
       stroke="currentColor"
       className="w-5 h-5"
     >
+      <circle cx="12" cy="12" r="10" fill="#e5e7eb" />
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
