@@ -113,6 +113,16 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
         )
         thought = parts[0].strip() if parts[1].strip() != '' else ''
 
+        # Guard against generic error message leading to premature finish
+        lowered = browser_actions.strip().lower()
+        if 'error encountered when browsing' in lowered:
+            return BrowseInteractiveAction(
+                browser_actions='noop()',
+                thought=thought,
+                browsergym_send_msg_to_user='',
+                return_axtree=True,
+            )
+
         # if the LLM wants to talk to the user, we extract the message
         msg_content = ''
         for sub_action in browser_actions.split('\n'):
@@ -125,11 +135,20 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
                     logger.error(f'Error parsing action: {sub_action}')
                     # the syntax was not correct, but we can still try to get the message
                     # e.g. send_msg_to_user("Hello, world!") or send_msg_to_user('Hello, world!'
-                    match = re.search(r'send_msg_to_user\((["\'])(.*?)\1\)', sub_action)
+                    match = re.search(r'send_msg_to_user\((["])(.*?)\1\)', sub_action)
                     if match:
                         msg_content = match.group(2)
                     else:
                         msg_content = ''
+
+        # Also guard if the extracted message content is the generic error
+        if msg_content.strip().lower().find('error encountered when browsing') != -1:
+            return BrowseInteractiveAction(
+                browser_actions='noop()',
+                thought=thought,
+                browsergym_send_msg_to_user='',
+                return_axtree=True,
+            )
 
         return BrowseInteractiveAction(
             browser_actions=browser_actions,
