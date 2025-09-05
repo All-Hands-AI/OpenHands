@@ -14,9 +14,10 @@ from server.constants import (
 from storage.experiment_assignment_store import ExperimentAssignmentStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.session.conversation_init_data import ConversationInitData
 
 
-def _get_model_variant(user_id, conversation_id) -> str | None:
+def _get_model_variant(user_id: str | None, conversation_id: str) -> str | None:
     if not EXPERIMENT_CLAUDE4_VS_GPT5:
         logger.info(
             'experiment_manager:ab_testing:skipped',
@@ -104,7 +105,11 @@ def _get_model_variant(user_id, conversation_id) -> str | None:
     return enabled_variant
 
 
-def handle_claude4_vs_gpt5_experiment(user_id, conversation_id, conversation_settings):
+def handle_claude4_vs_gpt5_experiment(
+    user_id: str | None,
+    conversation_id: str,
+    conversation_settings: ConversationInitData,
+) -> ConversationInitData:
     """
     Handle the LiteLLM model experiment.
 
@@ -120,7 +125,7 @@ def handle_claude4_vs_gpt5_experiment(user_id, conversation_id, conversation_set
     enabled_variant = _get_model_variant(user_id, conversation_id)
 
     if not enabled_variant:
-        return None
+        return conversation_settings
 
     # Set the model based on the feature flag variant
     if enabled_variant == 'gpt5':
