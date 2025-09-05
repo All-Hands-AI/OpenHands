@@ -250,19 +250,45 @@ Note:
                 )
             tabs = get_tabs(last_obs)
             try:
+                # Debug logging to understand the structure
+                logger.info(
+                    f'VISUAL DEBUG: axtree_object type: {type(last_obs.axtree_object)}'
+                )
+                logger.info(
+                    f'VISUAL DEBUG: axtree_object is None: {last_obs.axtree_object is None}'
+                )
+                if isinstance(last_obs.axtree_object, dict):
+                    logger.info(
+                        f'VISUAL DEBUG: axtree_object keys: {list(last_obs.axtree_object.keys())}'
+                    )
+                    if 'nodes' in last_obs.axtree_object:
+                        logger.info(
+                            f'VISUAL DEBUG: nodes type: {type(last_obs.axtree_object["nodes"])}'
+                        )
+                        logger.info(
+                            f'VISUAL DEBUG: nodes length: {len(last_obs.axtree_object["nodes"]) if last_obs.axtree_object["nodes"] else 0}'
+                        )
+
                 # Check if axtree_object exists and has the expected structure
                 if not last_obs.axtree_object or not isinstance(
                     last_obs.axtree_object, dict
                 ):
+                    logger.info(
+                        'VISUAL DEBUG: Using fallback - no axtree_object or not dict'
+                    )
                     cur_axtree_txt = '[No accessibility tree available]'
                 elif (
                     'nodes' not in last_obs.axtree_object
                     or not last_obs.axtree_object['nodes']
                 ):
                     # axtree_object exists but is empty or missing nodes - this is the common case
+                    logger.info(
+                        'VISUAL DEBUG: Using fallback - missing nodes or empty nodes'
+                    )
                     cur_axtree_txt = '[Accessibility tree not yet loaded]'
                 else:
                     # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
+                    logger.info('VISUAL DEBUG: Calling flatten_axtree_to_str')
                     cur_axtree_txt = flatten_axtree_to_str(
                         last_obs.axtree_object,
                         extra_properties=last_obs.extra_element_properties,
@@ -278,6 +304,9 @@ Note:
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
+                )
+                logger.error(
+                    f'VISUAL DEBUG: Exception occurred with axtree_object: {last_obs.axtree_object}'
                 )
                 # Fall back gracefully without aborting the task
                 cur_axtree_txt = (
