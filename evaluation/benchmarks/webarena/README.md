@@ -56,13 +56,25 @@ Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 
 ### Step 2: Evaluate Results
 
-To evaluate the results and calculate success rate, run:
+To evaluate the results and calculate success rate using the official WebArena harness, you must have the official WebArena repo and its Python dependencies available locally:
+
+1) Clone the official repo and install deps (one-time):
 
 ```bash
-python evaluation/benchmarks/webarena/eval_infer.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+cd /workspace/project
+git clone https://github.com/web-arena-x/webarena
+cd webarena && pip install -e .
 ```
 
-This will generate a detailed evaluation report with individual task results and overall success metrics.
+2) Then run the evaluator:
+
+```bash
+poetry run python evaluation/benchmarks/webarena/eval_infer.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+```
+
+Notes:
+- The evaluator expects WEBARENA_BASE_URL to be set and the WebArena services to be reachable.
+- If you skip installing the official harness, you can still inspect output.jsonl manually or write your own scorer, but the script above will fail without the harness.
 
 ## Submit your evaluation results
 
