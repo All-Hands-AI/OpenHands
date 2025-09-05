@@ -102,15 +102,34 @@ def initialize_runtime(
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
+    Also performs initial navigation to the task's start_url because USE_NAV is disabled during evaluation.
     """
     logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
-    # Set instance id
+    # Ensure workspace exists
     action = CmdRunAction(command='mkdir -p /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
+
+    # Navigate to the configured start_url so the page is ready for the agent
+    try:
+        from openhands.events.action import BrowseInteractiveAction
+
+        start_url = task_config.get('start_url')
+        if start_url:
+            browse_action = BrowseInteractiveAction(
+                browser_actions=f'goto("{start_url}")',
+                return_axtree=True,
+            )
+            runtime.browse_interactive(browse_action)
+        else:
+            logger.warning(
+                'No start_url found in task_config; skipping initial navigation'
+            )
+    except Exception as e:
+        logger.error(f'Failed to perform initial navigation: {e}')
 
     logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
