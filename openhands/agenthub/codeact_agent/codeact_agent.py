@@ -92,6 +92,9 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
+        # Override with router if needed
+        self.llm = self.llm_registry.get_router(self.config)
+
     @property
     def prompt_manager(self) -> PromptManager:
         if self._prompt_manager is None:

@@ -108,10 +108,24 @@ class LLMRegistry:
     def get_active_llm(self) -> LLM:
         return self.active_agent_llm
 
-    def _set_active_llm(self, service_id) -> None:
-        if service_id not in self.service_to_llm:
-            raise ValueError(f'Unrecognized service ID: {service_id}')
-        self.active_agent_llm = self.service_to_llm[service_id]
+    def get_router(self, agent_config: AgentConfig) -> 'LLM':
+        """
+        Get a router instance that inherits from LLM.
+        """
+        # Import here to avoid circular imports
+        from openhands.llm.router import RouterLLM
+
+        router_name = agent_config.model_routing.router_name
+
+        if router_name == 'noop_router':
+            # Return the main LLM directly (no routing)
+            return self.get_llm_from_agent_config('agent', agent_config)
+
+        return RouterLLM.from_config(
+            agent_config=agent_config,
+            llm_registry=self,
+            retry_listener=self.retry_listner,
+        )
 
     def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:
         self.subscriber = callback
