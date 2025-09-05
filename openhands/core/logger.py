@@ -14,8 +14,8 @@ from pythonjsonlogger.json import JsonFormatter
 from termcolor import colored
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
-DEBUG = os.getenv('DEBUG', 'True').lower() in ['true', '1', 'yes']
-DEBUG_LLM = os.getenv('DEBUG_LLM', 'True').lower() in ['true', '1', 'yes']
+DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
+DEBUG_LLM = os.getenv('DEBUG_LLM', 'False').lower() in ['true', '1', 'yes']
 
 # Structured logs with JSON, disabled by default
 LOG_JSON = os.getenv('LOG_JSON', 'False').lower() in ['true', '1', 'yes']
