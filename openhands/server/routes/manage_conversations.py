@@ -397,7 +397,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
+    prompt = await generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -413,7 +413,7 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(
+async def generate_prompt(
     llm_config: LLMConfig, prompt_template: str, conversation_id: str
 ) -> str:
     messages = [
@@ -427,7 +427,7 @@ def generate_prompt(
         },
     ]
 
-    raw_prompt = ConversationManagerImpl.request_llm_completion(
+    raw_prompt = await conversation_manager.request_llm_completion(
         'remember_prompt', conversation_id, llm_config, messages
     )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
