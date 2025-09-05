@@ -1,0 +1,51 @@
+[
+  {
+    "file": "./openhands/storage/locations.py",
+    "line": 5,
+    "header": "    if user_id:",
+    "body_uses_user_id": true,
+    "body_preview": "        return f'users/{user_id}/conversations/{sid}/'\n"
+  },
+  {
+    "file": "./openhands/server/routes/manage_conversations.py",
+    "line": 674,
+    "header": "        if user_id and metadata.user_id != user_id:",
+    "body_uses_user_id": true,
+    "body_preview": "            logger.warning(\n\n                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',\n\n                extra={'session_id': conversation_id, 'user_id': user_id},\n\n            )\n\n            return JSONResponse(\n\n                content={\n\n                    'status': 'error',\n\n                    'message': 'Permission denied: You can only update your own conversations',\n"
+  },
+  {
+    "file": "./openhands/server/conversation_manager/standalone_conversation_manager.py",
+    "line": 257,
+    "header": "        if user_id:",
+    "body_uses_user_id": true,
+    "body_preview": "            items = (item for item in items if item[1].user_id == user_id)\n\n\n"
+  },
+  {
+    "file": "./openhands/server/conversation_manager/standalone_conversation_manager.py",
+    "line": 273,
+    "header": "        if user_id:",
+    "body_uses_user_id": true,
+    "body_preview": "            for connection_id, sid in list(connections.items()):\n\n                session = self._local_agent_loops_by_sid.get(sid)\n\n                if not session or session.user_id != user_id:\n\n                    connections.pop(connection_id)\n"
+  },
+  {
+    "file": "./openhands/server/conversation_manager/standalone_conversation_manager.py",
+    "line": 718,
+    "header": "            if user_id and session.user_id != user_id:",
+    "body_uses_user_id": false,
+    "body_preview": "                continue\n"
+  },
+  {
+    "file": "./openhands/controller/state/state.py",
+    "line": 137,
+    "header": "            if user_id:",
+    "body_uses_user_id": false,
+    "body_preview": "                filename = get_conversation_agent_state_filename(sid)\n\n                try:\n\n                    file_store.delete(filename)\n\n                except Exception:\n\n                    pass\n"
+  },
+  {
+    "file": "./openhands/controller/state/state.py",
+    "line": 164,
+    "header": "            if user_id:",
+    "body_uses_user_id": false,
+    "body_preview": "                filename = get_conversation_agent_state_filename(sid)\n\n                encoded = file_store.read(filename)\n\n                pickled = base64.b64decode(encoded)\n\n                state = pickle.loads(pickled)\n"
+  }
+]
