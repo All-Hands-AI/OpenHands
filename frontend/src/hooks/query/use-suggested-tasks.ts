@@ -3,13 +3,13 @@ import { SuggestionsService } from "#/api/suggestions-service/suggestions-servic
 import { groupSuggestedTasks } from "#/utils/group-suggested-tasks";
 import { useIsAuthed } from "./use-is-authed";
 
-export const useSuggestedTasks = () => {
+export const useSuggestedTasks = (providersAreSet: boolean = false) => {
   const { data: userIsAuthenticated } = useIsAuthed();
 
   return useQuery({
     queryKey: ["tasks"],
     queryFn: SuggestionsService.getSuggestedTasks,
     select: groupSuggestedTasks,
-    enabled: !!userIsAuthenticated,
+    enabled: !!userIsAuthenticated && providersAreSet,
   });
 };

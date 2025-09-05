@@ -33,7 +33,7 @@ vi.mock("#/hooks/query/use-is-authed", () => ({
 const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
-      Component: () => <TaskSuggestions />,
+      Component: () => <TaskSuggestions providersAreSet={true} />,
       path: "/",
     },
     {

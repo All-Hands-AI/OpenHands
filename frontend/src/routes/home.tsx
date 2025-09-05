@@ -6,6 +6,7 @@ import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestio
 import { GitRepository } from "#/types/git";
 import { NewConversation } from "#/components/features/home/new-conversation";
 import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -13,6 +14,10 @@ function HomeScreen() {
   const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(
     null,
   );
+
+  const { providers } = useUserProviders();
+
+  const providersAreSet = providers.length > 0;
 
   return (
     <div
@@ -37,7 +42,10 @@ function HomeScreen() {
           data-testid="home-screen-recent-conversations-section"
         >
           <RecentConversations />
-          <TaskSuggestions filterFor={selectedRepo} />
+          <TaskSuggestions
+            filterFor={selectedRepo}
+            providersAreSet={providersAreSet}
+          />
         </div>
       </div>
     </div>
