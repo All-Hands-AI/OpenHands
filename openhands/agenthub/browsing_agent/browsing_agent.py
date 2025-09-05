@@ -161,8 +161,19 @@ class BrowsingAgent(Agent):
                 prev_actions.append(event.browser_actions)
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                # agent has responded with a message. Avoid finishing on generic browsing error string.
+                if (
+                    event.content
+                    and event.content.strip()
+                    .lower()
+                    .find('error encountered when browsing')
+                    != -1
+                ):
+                    logger.warning(
+                        'Ignoring generic error message from agent; continuing.'
+                    )
+                else:
+                    return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
                 last_obs = event
 
