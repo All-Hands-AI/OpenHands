@@ -4,8 +4,6 @@ import base64
 import mimetypes
 import os
 
-from openhands.utils.encoding import safe_open
-
 
 def generate_file_viewer_html(file_path: str) -> str:
     """Generate HTML content for viewing different file types.
@@ -54,7 +52,7 @@ def generate_file_viewer_html(file_path: str) -> str:
             file_content = base64.b64encode(file.read()).decode('utf-8')
     # For text files, read as text
     else:
-        with safe_open(file_path, 'r') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:
             file_content = file.read()
 
     return f"""<!DOCTYPE html>

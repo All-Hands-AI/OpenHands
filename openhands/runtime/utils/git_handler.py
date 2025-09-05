@@ -1,11 +1,11 @@
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils import git_changes, git_diff
-from openhands.utils.encoding import safe_read, safe_open
 
 GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.py'
 GIT_DIFF_CMD = (
@@ -51,69 +51,52 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
-        # Try mktemp first (Unix/Linux), fall back to Windows-compatible approach
+        # Try mktemp first (Unix/Linux). If it fails, create a temp dir via PowerShell in Windows containers.
         result = self.execute('mktemp -d', self.cwd)
-        
-        if result.exit_code != 0:
-            # mktemp failed (likely on Windows), use a different approach
-            import tempfile
-            import os
-            
-            # Convert Unix-style path to Windows-style if needed
-            target_dir = self.cwd
-            if target_dir and target_dir.startswith('/'):
-                # Convert Unix path to Windows path for tempfile.mkdtemp
-                if target_dir == '/workspace':
-                    target_dir = 'C:\\workspace'
-                else:
-                    target_dir = 'C:' + target_dir.replace('/', '\\')
-            
-            try:
-                # Try to create in the target directory first
-                if target_dir and os.path.exists(target_dir):
-                    temp_dir = tempfile.mkdtemp(dir=target_dir)
-                else:
-                    # Fall back to a safe directory in the container
-                    # Use C:\temp or C:\openhands\temp as fallback
-                    fallback_dirs = ['C:\\temp', 'C:\\openhands\\temp', 'C:\\openhands\\workspace']
-                    temp_dir = None
-                    for fallback_dir in fallback_dirs:
-                        try:
-                            if not os.path.exists(fallback_dir):
-                                os.makedirs(fallback_dir, exist_ok=True)
-                            temp_dir = tempfile.mkdtemp(dir=fallback_dir)
-                            break
-                        except (OSError, PermissionError):
-                            continue
-                    
-                    # If all fallbacks fail, use system temp but with explicit directory
-                    if temp_dir is None:
-                        temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
-            except (OSError, PermissionError) as e:
-                # Last resort: use system temp directory
-                logger.warning(f"Could not create temp directory in {target_dir}: {e}")
-                temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
-            
-            script_file = Path(temp_dir, Path(file).name)
-        else:
-            # mktemp succeeded, use the result
+
+        temp_dir: str | None = None
+        mktemp_worked = result.exit_code == 0
+        if mktemp_worked:
             temp_path = result.content.strip()
-            if not temp_path or not os.path.isabs(temp_path):
-                # Invalid result from mktemp, fall back to tempfile
-                import tempfile
-                try:
-                    temp_dir = tempfile.mkdtemp(dir='C:\\openhands\\workspace')
-                except (OSError, PermissionError):
-                    temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
-                script_file = Path(temp_dir, Path(file).name)
+            if temp_path and os.path.isabs(temp_path):
+                temp_dir = temp_path
+
+        if temp_dir is None:
+            ps_cmd = (
+                'pwsh -NoProfile -Command '
+                '"$base = $env:TEMP; '
+                '$name = [System.Guid]::NewGuid().ToString(); '
+                '$dir = [System.IO.Path]::Combine($base, $name); '
+                'New-Item -ItemType Directory -Force -Path $dir | Out-Null; '
+                'Write-Output $dir"'
+            )
+            ps_result = self.execute(ps_cmd, self.cwd)
+            if ps_result.exit_code == 0 and ps_result.content.strip():
+                temp_dir = ps_result.content.strip()
             else:
-                script_file = Path(temp_path, Path(file).name)
-        
-        with safe_open(file, 'r') as f:
+                ps_fallback_cmd = (
+                    'pwsh -NoProfile -Command '
+                    '"$base = \"C:\\Windows\\Temp\"; '
+                    'if (!(Test-Path $base)) { New-Item -ItemType Directory -Path $base | Out-Null }; '
+                    '$name = [System.Guid]::NewGuid().ToString(); '
+                    '$dir = Join-Path $base $name; '
+                    'New-Item -ItemType Directory -Force -Path $dir | Out-Null; '
+                    'Write-Output $dir"'
+                )
+                ps_result2 = self.execute(ps_fallback_cmd, self.cwd)
+                if ps_result2.exit_code == 0 and ps_result2.content.strip():
+                    temp_dir = ps_result2.content.strip()
+
+        if not temp_dir:
+            raise RuntimeError('Failed to create temporary directory for script file')
+
+        script_file = Path(temp_dir, Path(file).name)
+
+        with open(file, 'r', encoding='utf-8') as f:
             self.create_file_fn(str(script_file), f.read())
             # Only try chmod on Unix-like systems
-            if result.exit_code == 0:  # Only if mktemp worked (Unix-like)
-                result = self.execute(f'chmod +x "{script_file}"', self.cwd)
+            if mktemp_worked:
+                _ = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
 
     def get_current_branch(self) -> str | None:

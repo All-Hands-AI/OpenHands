@@ -35,7 +35,6 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
 from openhands.core.config.mcp_config import MCPStdioServerConfig
-from openhands.utils.encoding import safe_open
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -488,7 +487,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with safe_open(filepath, 'r') as file:
+            with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
