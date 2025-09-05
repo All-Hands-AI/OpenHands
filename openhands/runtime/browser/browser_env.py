@@ -80,6 +80,7 @@ class BrowserEnv:
             timeout=100000,
             pw_context_kwargs={'accept_downloads': True},
             pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
+            pre_observation_delay=2.0,  # Increase delay to allow accessibility trees to load
         )
         obs, info = env.reset()
 
@@ -155,6 +156,24 @@ class BrowserEnv:
 
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
+
+                    # DEBUG: Log what's in the BrowserGym observation
+                    logger.info(f'DEBUG: BrowserGym obs keys: {list(obs.keys())}')
+                    if 'axtree_object' in obs:
+                        axtree_obj = obs['axtree_object']
+                        logger.info(f'DEBUG: axtree_object type: {type(axtree_obj)}')
+                        if isinstance(axtree_obj, dict):
+                            logger.info(
+                                f'DEBUG: axtree_object keys: {list(axtree_obj.keys())}'
+                            )
+                            if 'nodes' in axtree_obj:
+                                logger.info(
+                                    f'DEBUG: axtree_object nodes length: {len(axtree_obj["nodes"]) if axtree_obj["nodes"] else 0}'
+                                )
+                        else:
+                            logger.info(f'DEBUG: axtree_object value: {axtree_obj}')
+                    else:
+                        logger.info('DEBUG: No axtree_object in BrowserGym observation')
 
                     # add text content of the page
                     html_str = flatten_dom_to_str(obs['dom_object'])
