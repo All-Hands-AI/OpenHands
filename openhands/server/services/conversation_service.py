@@ -107,13 +107,10 @@ async def start_conversation(
         # but that would run a tiny inference.
         model_name = settings.llm_model or ''
         is_bedrock_model = model_name.startswith('bedrock/')
-        
-        if (
-            not is_bedrock_model
-            and (
-                not settings.llm_api_key
-                or settings.llm_api_key.get_secret_value().isspace()
-            )
+
+        if not is_bedrock_model and (
+            not settings.llm_api_key
+            or settings.llm_api_key.get_secret_value().isspace()
         ):
             logger.warning(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
