@@ -9,6 +9,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 from pydantic import SecretStr
 
 from openhands.cli.pt_style import COLOR_GREY, get_cli_style
+from openhands.cli.snowcode_auth import snowcode_auth
 from openhands.cli.tui import (
     UserCancelledError,
     cli_confirm,
@@ -384,9 +385,9 @@ async def modify_llm_settings_basic(
                     config,
                     'Do you want to use a different model?',
                     [f'Use {default_model}', 'Select another model'],
-                    initial_selection=0
-                    if (current_model or default_model) == default_model
-                    else 1,
+                    initial_selection=(
+                        0 if (current_model or default_model) == default_model else 1
+                    ),
                 )
                 == 1
             )
@@ -418,7 +419,9 @@ async def modify_llm_settings_basic(
                     error_message='Model name cannot be empty',
                     default_value=(
                         # Prefill only for models that are not the default model.
-                        current_model if current_model != default_model else ''
+                        current_model
+                        if current_model != default_model
+                        else ''
                     ),
                 )
             else:
@@ -490,119 +493,62 @@ async def modify_llm_settings_basic(
 async def modify_llm_settings_advanced(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
-    session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
-    llm_config = config.get_llm_config()
+    """Automatically configure Snowcode model settings without user input."""
 
-    custom_model = None
-    base_url = None
-    api_key = None
-    agent = None
-
-    try:
-        custom_model = await get_validated_input(
-            session,
-            '(Step 1/6) Custom Model (CTRL-c to cancel): ',
-            error_message='Custom Model cannot be empty',
-            default_value=llm_config.model or '',
-        )
-
-        base_url = await get_validated_input(
-            session,
-            '(Step 2/6) Base URL (CTRL-c to cancel): ',
-            error_message='Base URL cannot be empty',
-            default_value=llm_config.base_url or '',
-        )
-
-        prompt_text = '(Step 3/6) API Key (CTRL-c to cancel): '
-        current_api_key = (
-            llm_config.api_key.get_secret_value() if llm_config.api_key else ''
-        )
-        if current_api_key:
-            prompt_text = f'(Step 3/6) API Key [{current_api_key[:4]}***{current_api_key[-4:]}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
-        api_key = await get_validated_input(
-            session,
-            prompt_text,
-            error_message='API Key cannot be empty',
-            default_value='',
-            enter_keeps_value=current_api_key,
-        )
-
-        agent_list = Agent.list_agents()
-        agent_completer = FuzzyWordCompleter(agent_list, WORD=True)
-        agent = await get_validated_input(
-            session,
-            '(Step 4/6) Agent (TAB for options, CTRL-c to cancel): ',
-            completer=agent_completer,
-            validator=lambda x: x in agent_list,
-            error_message='Invalid agent selected',
-            default_value=config.default_agent or '',
-        )
-
-        enable_confirmation_mode = (
-            cli_confirm(
-                config,
-                question='(Step 5/6) Confirmation Mode (CTRL-c to cancel):',
-                choices=['Enable', 'Disable'],
-                initial_selection=0 if config.security.confirmation_mode else 1,
-            )
-            == 0
-        )
-
-        enable_memory_condensation = (
-            cli_confirm(
-                config,
-                question='(Step 6/6) Memory Condensation (CTRL-c to cancel):',
-                choices=['Enable', 'Disable'],
-                initial_selection=0 if config.enable_default_condenser else 1,
-            )
-            == 0
-        )
-
-    except (
-        UserCancelledError,
-        KeyboardInterrupt,
-        EOFError,
-    ):
-        return  # Return on exception
-
-    # The try-except block above ensures we either have valid inputs or we've already returned
-    # No need to check for None values here
-
-    save_settings = save_settings_confirmation(config)
-
-    if not save_settings:
+    # Get user token from snowcode_auth
+    auth_data = snowcode_auth.load_token()
+    if not auth_data or not auth_data.get('token'):
+        print("❌ Not authenticated with Snowcode. Please login first.")
         return
 
+    user_token = auth_data['token']
+
+    # Use the create_default_config method from snowcode_auth
+    default_config = snowcode_auth.create_default_config()
+
+    if not default_config:
+        print("❌ Could not load default configuration.")
+        return
+
+    # Extract configuration values
+    custom_model = default_config['model']
+    base_url = default_config['base_url']
+    api_key = default_config['api_key']
+    agent = default_config['agent']
+    enable_confirmation_mode = default_config['confirmation_mode']
+    enable_memory_condensation = default_config['memory_condensation']
+
+    # Update LLM configuration
     llm_config = config.get_llm_config()
     llm_config.model = custom_model
     llm_config.base_url = base_url
     llm_config.api_key = SecretStr(api_key)
     config.set_llm_config(llm_config)
 
+    # Update agent configuration
     config.default_agent = agent
-
     config.security.confirmation_mode = enable_confirmation_mode
     config.enable_default_condenser = enable_memory_condensation
 
+    # Configure agent with memory condensation
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
         agent_config.condenser = CondenserPipelineConfig(
             type='pipeline',
             condensers=[
                 ConversationWindowCondenserConfig(type='conversation_window'),
-                # Use LLMSummarizingCondenserConfig with the custom llm_config
                 LLMSummarizingCondenserConfig(
                     llm_config=llm_config, type='llm', keep_first=4, max_size=120
                 ),
             ],
         )
-
     else:
         agent_config.condenser = ConversationWindowCondenserConfig(
             type='conversation_window'
         )
     config.set_agent_config(agent_config)
 
+    # Update settings store
     settings = await settings_store.load()
     if not settings:
         settings = Settings()
@@ -615,6 +561,11 @@ async def modify_llm_settings_advanced(
     settings.enable_default_condenser = enable_memory_condensation
 
     await settings_store.store(settings)
+
+    print("✅ Snowcode model configuration applied automatically!")
+    print(f"🎯 Model: {custom_model}")
+    print(f"🌐 Base URL: {base_url}")
+    print(f"🤖 Agent: {agent}")
 
 
 async def modify_search_api_settings(
