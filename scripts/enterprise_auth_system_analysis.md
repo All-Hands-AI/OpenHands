@@ -8,17 +8,17 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 
 ### Primary Components
 
-1. **SaasUserAuth** (`/enterprise/server/auth/saas_user_auth.py`)
+1. **SaasUserAuth** ([`/enterprise/server/auth/saas_user_auth.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/saas_user_auth.py))
    - Main authentication class extending base UserAuth
    - Handles both cookie-based and API key authentication
    - Manages token refresh and provider token retrieval
 
-2. **TokenManager** (`/enterprise/server/auth/token_manager.py`)
+2. **TokenManager** ([`/enterprise/server/auth/token_manager.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/token_manager.py))
    - Manages Keycloak tokens and provider-specific tokens
    - Handles token encryption/decryption
    - Orchestrates OAuth flows for GitHub, GitLab, Bitbucket
 
-3. **Auth Routes** (`/enterprise/server/routes/auth.py`)
+3. **Auth Routes** ([`/enterprise/server/routes/auth.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/auth.py))
    - OAuth callback handlers
    - Authentication endpoints
    - Token refresh endpoints
@@ -43,47 +43,47 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 - **Purpose**: Primary user identifier from Keycloak SSO
 - **Usage**: Authentication, resource scoping, primary key for user data
 - **Key Files**:
-  - `storage/auth_tokens.py:8` - Links auth tokens to users
-  - `storage/user_settings.py:9` - User preferences and settings
-  - `storage/slack_user.py:8` - Links Slack users to Keycloak users
-  - `storage/jira_user.py:8` - Links Jira users to Keycloak users
-  - `storage/linear_user.py:8` - Links Linear users to Keycloak users
+  - [`storage/auth_tokens.py:8`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/auth_tokens.py#L8) - Links auth tokens to users
+  - [`storage/user_settings.py:9`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/user_settings.py#L9) - User preferences and settings
+  - [`storage/slack_user.py:8`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/slack_user.py#L8) - Links Slack users to Keycloak users
+  - [`storage/jira_user.py:8`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/jira_user.py#L8) - Links Jira users to Keycloak users
+  - [`storage/linear_user.py:8`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/linear_user.py#L8) - Links Linear users to Keycloak users
 
 #### 2. **user_id** (Generic/Context-dependent)
 - **Purpose**: Often aliases keycloak_user_id, sometimes refers to provider-specific IDs
 - **Usage**: API parameters, function arguments, database queries
 - **Key Files**:
-  - `storage/api_key.py:13` - Links API keys to users
-  - `storage/stored_conversation_metadata.py:14` - Conversation ownership
-  - `server/auth/saas_user_auth.py:45` - Auth class user identifier
+  - [`storage/api_key.py:13`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/api_key.py#L13) - Links API keys to users
+  - [`storage/stored_conversation_metadata.py:14`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/stored_conversation_metadata.py#L14) - Conversation ownership
+  - [`server/auth/saas_user_auth.py:45`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/auth/saas_user_auth.py#L45) - Auth class user identifier
 
 #### 3. **github_user_id** (GitHub Integration)
 - **Purpose**: GitHub-specific user identifier for repository access
 - **Usage**: Repository permissions, GitHub API calls, PR management
 - **Key Files**:
-  - `storage/stored_conversation_metadata.py:13` - GitHub user for conversations
-  - `integrations/github/` - GitHub service integration
+  - [`storage/stored_conversation_metadata.py:13`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/stored_conversation_metadata.py#L13) - GitHub user for conversations
+  - [`integrations/github/`](https://github.com/All-Hands-AI/OpenHands/tree/main/enterprise/integrations/github) - GitHub service integration
 
 #### 4. **slack_user_id** (Slack Integration)
 - **Purpose**: Slack-specific user identifier for workspace integration
 - **Usage**: Slack bot interactions, message routing, user mapping
 - **Key Files**:
-  - `storage/slack_user.py:9` - Slack user mapping
-  - `storage/slack_conversation.py` - Slack conversation management
+  - [`storage/slack_user.py:9`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/slack_user.py#L9) - Slack user mapping
+  - [`storage/slack_conversation.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/slack_conversation.py) - Slack conversation management
 
 #### 5. **jira_user_id** (Jira Integration)
 - **Purpose**: Jira-specific user identifier for issue management
 - **Usage**: Issue assignment, Jira API calls, workspace permissions
 - **Key Files**:
-  - `storage/jira_user.py:9` - Jira user mapping
-  - `storage/jira_conversation.py` - Jira conversation management
+  - [`storage/jira_user.py:9`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/jira_user.py#L9) - Jira user mapping
+  - [`storage/jira_conversation.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/jira_conversation.py) - Jira conversation management
 
 #### 6. **linear_user_id** (Linear Integration)
 - **Purpose**: Linear-specific user identifier for issue tracking
 - **Usage**: Issue management, Linear API calls, workspace access
 - **Key Files**:
-  - `storage/linear_user.py:9` - Linear user mapping
-  - `storage/linear_conversation.py` - Linear conversation management
+  - [`storage/linear_user.py:9`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/linear_user.py#L9) - Linear user mapping
+  - [`storage/linear_conversation.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/linear_conversation.py) - Linear conversation management
 
 #### 7. **gitlab_user_id** (GitLab Integration)
 - **Purpose**: GitLab-specific user identifier for repository access
@@ -95,7 +95,7 @@ The OpenHands Enterprise authentication system is built around **Keycloak** as t
 
 ## API Route Dependencies
 
-### Primary Dependency Functions (`/openhands/server/user_auth/__init__.py`)
+### Primary Dependency Functions ([`/openhands/server/user_auth/__init__.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/server/user_auth/__init__.py))
 
 ```python
 async def get_user_id(request: Request) -> str | None
@@ -112,16 +112,16 @@ async def get_auth_type(request: Request) -> AuthType | None
 
 All enterprise API routes use `Depends(get_user_id)` for user identification:
 
-- **Billing Routes** (`server/routes/billing.py`): Credit management, payment processing
-- **API Key Routes** (`server/routes/api_keys.py`): API key CRUD operations
-- **User Routes** (`server/routes/user.py`): User profile and settings
-- **Integration Routes** (`server/routes/integration/`): Provider-specific operations
+- **Billing Routes** ([`server/routes/billing.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/billing.py)): Credit management, payment processing
+- **API Key Routes** ([`server/routes/api_keys.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/api_keys.py)): API key CRUD operations
+- **User Routes** ([`server/routes/user.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/user.py)): User profile and settings
+- **Integration Routes** ([`server/routes/integration/`](https://github.com/All-Hands-AI/OpenHands/tree/main/enterprise/server/routes/integration)): Provider-specific operations
 
 ## Data Structures and Storage Models
 
 ### Core Auth Models
 
-#### AuthTokens (`storage/auth_tokens.py`)
+#### AuthTokens ([`storage/auth_tokens.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/auth_tokens.py))
 ```python
 class AuthTokens(Base):
     keycloak_user_id = Column(String, nullable=False, index=True)
@@ -130,7 +130,7 @@ class AuthTokens(Base):
     refresh_token = Column(String, nullable=False)
 ```
 
-#### ApiKey (`storage/api_key.py`)
+#### ApiKey ([`storage/api_key.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/api_key.py))
 ```python
 class ApiKey(Base):
     user_id = Column(String(255), nullable=False, index=True)
@@ -138,7 +138,7 @@ class ApiKey(Base):
     name = Column(String(255), nullable=True)
 ```
 
-#### UserSettings (`storage/user_settings.py`)
+#### UserSettings ([`storage/user_settings.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/user_settings.py))
 ```python
 class UserSettings(Base):
     keycloak_user_id = Column(String, nullable=True, index=True)
@@ -147,14 +147,14 @@ class UserSettings(Base):
 
 ### Integration Mapping Models
 
-#### SlackUser (`storage/slack_user.py`)
+#### SlackUser ([`storage/slack_user.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/slack_user.py))
 ```python
 class SlackUser(Base):
     keycloak_user_id = Column(String, nullable=False, index=True)
     slack_user_id = Column(String, nullable=False, index=True)
 ```
 
-#### JiraUser (`storage/jira_user.py`)
+#### JiraUser ([`storage/jira_user.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/jira_user.py))
 ```python
 class JiraUser(Base):
     keycloak_user_id = Column(String, nullable=False, index=True)
@@ -162,7 +162,7 @@ class JiraUser(Base):
     jira_workspace_id = Column(Integer, nullable=False, index=True)
 ```
 
-#### LinearUser (`storage/linear_user.py`)
+#### LinearUser ([`storage/linear_user.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/linear_user.py))
 ```python
 class LinearUser(Base):
     keycloak_user_id = Column(String, nullable=False, index=True)
@@ -172,7 +172,7 @@ class LinearUser(Base):
 
 ### Conversation and Resource Models
 
-#### StoredConversationMetadata (`storage/stored_conversation_metadata.py`)
+#### StoredConversationMetadata ([`storage/stored_conversation_metadata.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/stored_conversation_metadata.py))
 ```python
 class StoredConversationMetadata(Base):
     user_id = Column(String, nullable=False)  # Keycloak User ID
@@ -245,22 +245,22 @@ class StoredConversationMetadata(Base):
 ### 1. **Experiment System**
 - **Purpose**: A/B testing and feature flags
 - **User Scoping**: Uses user_id for consistent experiment assignment
-- **Files**: `experiments/experiment_manager.py`, `experiments/experiment_versions/`
+- **Files**: [`experiments/experiment_manager.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/experiments/experiment_manager.py), [`experiments/experiment_versions/`](https://github.com/All-Hands-AI/OpenHands/tree/main/enterprise/experiments/experiment_versions)
 
 ### 2. **Billing System**
 - **Purpose**: Usage tracking and payment processing
 - **User Scoping**: Credits and billing tied to keycloak_user_id
-- **Files**: `server/routes/billing.py`, `storage/billing_session.py`
+- **Files**: [`server/routes/billing.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/server/routes/billing.py), [`storage/billing_session.py`](https://github.com/All-Hands-AI/OpenHands/blob/main/enterprise/storage/billing_session.py)
 
 ### 3. **Integration Managers**
 - **Purpose**: Provider-specific business logic
 - **User Mapping**: Maps keycloak_user_id to provider-specific user IDs
-- **Files**: `integrations/*/manager.py` files
+- **Files**: [`integrations/*/manager.py`](https://github.com/All-Hands-AI/OpenHands/tree/main/enterprise/integrations) files
 
 ### 4. **Conversation Management**
 - **Purpose**: Multi-user conversation handling
 - **User Scoping**: Conversations owned by specific users
-- **Files**: `server/*conversation_manager.py`
+- **Files**: [`server/*conversation_manager.py`](https://github.com/All-Hands-AI/OpenHands/tree/main/enterprise/server)
 
 ## Summary of User ID Purposes
 
