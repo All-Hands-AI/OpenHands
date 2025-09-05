@@ -115,8 +115,8 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
@@ -124,7 +124,7 @@ jobs:
       - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: .venv/bin/python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: uv run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -196,8 +196,8 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
@@ -208,10 +208,10 @@ jobs:
         shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          .venv/bin/pip install pytest-xdist
+          uv pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
-          .venv/bin/pip install pytest-rerunfailures
+          uv pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
@@ -223,7 +223,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          .venv/bin/pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -257,8 +257,8 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
@@ -269,10 +269,10 @@ jobs:
         shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          .venv/bin/pip install pytest-xdist
+          uv run pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
-          .venv/bin/pip install pytest-rerunfailures
+          uv run pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
@@ -281,7 +281,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          .venv/bin/pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 

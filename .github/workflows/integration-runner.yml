@@ -31,8 +31,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
 
       - name: Set up Python
         uses: useblacksmith/setup-python@v6

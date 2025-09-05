@@ -1,4 +1,4 @@
-SHELL=/usr/bin/env bash
+SHELL := /usr/bin/env bash
 # Makefile for OpenHands project
 
 # Variables
@@ -14,14 +14,13 @@ PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
 KIND_CLUSTER_NAME = "local-hands"
 PLAYWRIGHT_BIN := $(shell uv run which playwright 2>/dev/null)
-PLAYWRIGHT_SENTINEL := cache/playwright_chromium_is_installed.$(shell $(PLAYWRIGHT_BIN) --version 2>/dev/null | awk '{print $$2}' || echo unknown).txt
 
 # ANSI color codes
-GREEN=$(shell tput -Txterm setaf 2)
-YELLOW=$(shell tput -Txterm setaf 3)
-RED=$(shell tput -Txterm setaf 1)
-BLUE=$(shell tput -Txterm setaf 6)
-RESET=$(shell tput -Txterm sgr0)
+GREEN  := $(shell tput -Txterm setaf 2)
+YELLOW := $(shell tput -Txterm setaf 3)
+RED    := $(shell tput -Txterm setaf 1)
+BLUE   := $(shell tput -Txterm setaf 6)
+RESET  := $(shell tput -Txterm sgr0)
 
 # Build
 build:
@@ -117,10 +116,9 @@ check-tmux:
 		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
 	fi
 
-
-install-python-dependencies:
+install-python-dependencies: check-uv
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	@if [ -z "${TZ}" ]; then \
+	@if [ -z "${TZ:-}" ]; then \
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
@@ -128,27 +126,39 @@ install-python-dependencies:
 	@uv sync --group dev --group test --group runtime
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
-		export HNSWLIB_NO_NATIVE=1; \
-		uv pip install chroma-hnswlib; \
+		HNSWLIB_NO_NATIVE=1 uv pip install chroma-hnswlib; \
 	fi
-
-	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
+	@if [ "${INSTALL_PLAYWRIGHT:-}" != "false" ] && [ "${INSTALL_PLAYWRIGHT:-}" != "0" ]; then \
+		PLAYWRIGHT_BIN_PATH="$$(uv run which playwright 2>/dev/null || echo '')"; \
+		if [ -n "$$PLAYWRIGHT_BIN_PATH" ]; then \
+			PLAYWRIGHT_VERSION="$$( "$$PLAYWRIGHT_BIN_PATH" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
+		else \
+			PLAYWRIGHT_VERSION=unknown; \
+		fi; \
+		PLAYWRIGHT_SENTINEL="cache/playwright_chromium_is_installed.$$PLAYWRIGHT_VERSION.txt"; \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			$(PLAYWRIGHT_BIN) install chromium; \
-		else \
-			if [ ! -f "$(PLAYWRIGHT_SENTINEL)" ]; then \
-				echo "Running playwright install --with-deps chromium..."; \
+			if [ -z "$$PLAYWRIGHT_BIN_PATH" ] || [ ! -x "$$PLAYWRIGHT_BIN_PATH" ]; then \
 				uv pip install playwright; \
-				$(PLAYWRIGHT_BIN) install --with-deps chromium; \
-				mkdir -p cache; \
-				touch "$(PLAYWRIGHT_SENTINEL)"; \
-			else \
-				echo "Playwright setup already done (sentinel: $(PLAYWRIGHT_SENTINEL)). Skipping."; \
+				PLAYWRIGHT_BIN_PATH="$$(uv run which playwright)"; \
 			fi; \
-		fi \
+			"$$PLAYWRIGHT_BIN_PATH" install chromium; \
+		else \
+			if [ ! -f "$$PLAYWRIGHT_SENTINEL" ]; then \
+				echo "Running playwright install --with-deps chromium..."; \
+				if [ -z "$$PLAYWRIGHT_BIN_PATH" ]; then \
+					uv pip install playwright; \
+					PLAYWRIGHT_BIN_PATH="$$(uv run which playwright)"; \
+				fi; \
+				"$$PLAYWRIGHT_BIN_PATH" install --with-deps chromium; \
+				mkdir -p cache; \
+				touch "$$PLAYWRIGHT_SENTINEL"; \
+			else \
+				echo "Playwright setup already done (sentinel: $$PLAYWRIGHT_SENTINEL). Skipping."; \
+			fi; \
+		fi; \
 	else \
-		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT:-})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
@@ -160,15 +170,15 @@ install-frontend-dependencies: check-npm check-nodejs
 	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
-install-pre-commit-hooks: check-python check-uv install-python-dependencies
+install-pre-commit-hooks: check-uv install-python-dependencies
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
-	@.venv/bin/pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@uv run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@.venv/bin/pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@uv run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend: install-frontend-dependencies
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -274,7 +284,6 @@ docker-run:
 		docker compose up $(OPTIONS); \
 	fi
 
-
 # Setup config.toml
 setup-config:
 	@echo "$(YELLOW)Setting up config.toml...$(RESET)"
@@ -284,21 +293,16 @@ setup-config:
 
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
-
 	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
-
 	@echo "" >> $(CONFIG_FILE).tmp
-
 	@echo "[llm]" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your LLM model name, used for running without UI. Set the model in the UI after you start the app. (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
 	 echo "model=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
-
 	@read -p "Enter your LLM api key: " llm_api_key; \
 	 echo "api_key=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
-
 	@read -p "Enter your LLM base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
@@ -345,5 +349,4 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
-.PHONY: kind
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help kind

@@ -21,8 +21,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -74,11 +74,11 @@ jobs:
 
           # Install Chromium Headless Shell for Playwright (needed for pytest-playwright)
           echo "Installing Chromium Headless Shell for Playwright..."
-          .venv/bin/playwright install chromium-headless-shell
+          uv run playwright install chromium-headless-shell
 
           # Verify Playwright browsers are installed (for e2e tests only)
           echo "Verifying Playwright browsers installation for e2e tests..."
-          BROWSER_CHECK=$(.venv/bin/python tests/e2e/check_playwright.py 2>/dev/null)
+          BROWSER_CHECK=$(uv run python tests/e2e/check_playwright.py 2>/dev/null)
 
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
             echo "ERROR: Chromium browser not found or not working for e2e tests"
@@ -178,7 +178,7 @@ jobs:
 
           # Run the tests with detailed output
           cd tests/e2e
-          .venv/bin/python -m pytest \
+          uv run python -m pytest \
             test_settings.py::test_github_token_configuration \
             test_conversation.py::test_conversation_start \
             test_browsing_catchphrase.py::test_browsing_catchphrase \

@@ -18,8 +18,8 @@ jobs:
       - uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
-      - name: Install uv via pipx
-        run: pipx install uv
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
       - name: Build package
         run: uv build
       - name: Publish package to PyPI
