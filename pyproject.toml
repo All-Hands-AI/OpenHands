@@ -74,6 +74,7 @@ dependencies = [
   "memory-profiler>=0.61.0,<1.0.0",
   "jupyter_kernel_gateway",
   "httpx-aiohttp>=0.1.8,<0.2.0",
+  "tomlkit>=0.13.3",
 ]
 
 [project.urls]
