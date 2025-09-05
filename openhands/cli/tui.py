@@ -82,7 +82,7 @@ COMMANDS = {
     '/init': 'Initialize a new repository',
     '/status': 'Display conversation details and usage metrics',
     '/new': 'Create a new conversation',
-    '/settings': 'Display and modify current settings',
+    # '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
 }
@@ -156,7 +156,7 @@ def display_banner(session_id: str) -> None:
     \___ \| '_ \ / _ \ \ /\ / / __/ _ \ / _` |/ _ \
      ___) | | | | (_) \ V  V / (_| (_) | (_| |  __/
     |____/|_| |_|\___/ \_/\_/ \___\___/ \__,_|\___|
-     
+
     </gold>"""
         ),
         style=DEFAULT_STYLE,
