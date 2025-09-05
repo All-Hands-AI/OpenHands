@@ -276,8 +276,6 @@ class TestLocalRuntime:
                 runtime.config.workspace_mount_path_in_sandbox = temp_dir
 
                 # Now check that the working_dir should be the temp_dir, not /workspace
-                # This is the bug: currently working_dir is hardcoded to /workspace
-                # but it should be the actual filesystem path for local runtime
                 assert runtime.config.workspace_mount_path_in_sandbox == temp_dir
                 assert runtime.config.workspace_mount_path_in_sandbox != '/workspace'
 
