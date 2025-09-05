@@ -1,18 +1,20 @@
 from __future__ import annotations
 
+import os
+
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     ConversationWindowCondenserConfig,
 )
-import os
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
 
 USE_INTERACTION_PROMPT = os.getenv('USE_INTERACTION_PROMPT', 'false').lower() == 'true'
 USE_TOM_PROMPT = os.getenv('USE_TOM_PROMPT', 'false').lower() == 'true'
+
 
 class AgentConfig(BaseModel):
     cli_mode: bool = Field(default=False)
@@ -62,9 +64,6 @@ class AgentConfig(BaseModel):
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
-    system_prompt_filename: str = Field(default='system_prompt.j2')
-    """Filename of the system prompt template file within the agent's prompt directory. Defaults to 'system_prompt.j2'."""
-
     # Tom agent integration settings (only used by TomCodeActAgent)
     enable_tom_integration: bool = Field(default=True)
     """Whether to enable Tom agent integration for personalized guidance"""
@@ -85,10 +84,10 @@ class AgentConfig(BaseModel):
         unless a custom system_prompt_filename was explicitly set (not the default).
         """
         if self.enable_plan_mode and self.system_prompt_filename == 'system_prompt.j2':
-            return 'system_prompt_long_horizon.j2'
+            return 'system_prompt_long_horizon_tom.j2'
         if self.system_prompt_filename:
             return self.system_prompt_filename
-        return 'system_prompt.j2'
+        return 'system_prompt_tom.j2'
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
