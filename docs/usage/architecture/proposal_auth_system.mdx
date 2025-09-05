@@ -74,7 +74,7 @@ async def new_conversation(
     ...
 ```
 
-### Decision: Introduce a UserContext boundary (and optional ConversationPaths)
+### Proposal: Introduce a UserContext boundary (and optional ConversationPaths)
 
 Rationale: user-specific resource scoping is a boundary concern. It should be established once per request and injected where needed, not threaded through every method. Keeping request and auth details at the boundary:
 - avoids signature bloat and scattered if-guards
@@ -133,18 +133,22 @@ class ConversationPaths:
 
 Routes/services then depend on UserContext rather than user_id directly; internals call user.conversation_dir(sid) or paths.* helpers.
 
-Mermaid (Before → After) for user-scoped resources
+Mermaid (Before and After) for user-scoped resources
 ```mermaid
 flowchart TD
   subgraph Before
-    RouteB[/Route/] -->|Depends(get_user_id)| user_id[(user_id)]
+    RouteB[/Route/] --> user_id[(user_id)]
+    note1{{"Depends(get_user_id)"}}
+    RouteB -.-> note1
     RouteB --> ServicesB
-    ServicesB -->|pass user_id| LocationsB[get_conversation_dir(sid, user_id)]
+    ServicesB --> LocationsB[get_conversation_dir(sid, user_id)]
   end
 
   subgraph After
-    RouteA[/Route/] -->|Depends(get_user_context)| UserContext
-    ServicesA -->|use| PathsA[conversation_dir(sid) from UserContext]
+    RouteA[/Route/] --> UserContext
+    note2{{"Depends(get_user_context)"}}
+    RouteA -.-> note2
+    ServicesA --> PathsA[conversation_dir(sid) from UserContext]
   end
 ```
 
@@ -183,7 +187,7 @@ resp = await client.get(
 )
 ```
 
-### Decision: Introduce a TokenProvider boundary and make ProviderHandler consume it
+### Proposal: Introduce a TokenProvider boundary and have ProviderHandler consume it
 
 Rationale: acquiring, caching, and refreshing provider tokens is an auth boundary concern. Core should only request a token for a provider, not know how to mint/refresh it. This:
 - stops threading token maps through signatures
@@ -271,25 +275,27 @@ async def get_user_repositories(
     return await client.get_repositories(sort, server_config.app_mode, selected_provider, page, per_page, installation_id)
 ```
 
-Mermaid (Before → After) for token flow
+Mermaid (Before and After) for token flow
 ```mermaid
 flowchart TD
   subgraph Before
-    FE[Frontend] -->|HTTP| RouteB[/Route/]
-    RouteB -->|Depends(get_provider_tokens)| ProviderTokens[(Mapping)]
+    FE[Frontend] --> RouteB[/Route/]
+    note3{{"Depends(get_provider_tokens)"}}
+    RouteB -.-> note3
     RouteB --> ProviderHandlerOld
-    ProviderHandlerOld -->|uses| ProviderTokens
-    ProviderHandlerOld -->|builds| REFRESH_TOKEN_URL
-    ProviderHandlerOld --> MUApp[(MU App)]
+    ProviderHandlerOld --> ProviderTokens[(Mapping)]
+    ProviderHandlerOld --> REFRESH_TOKEN_URL
+    REFRESH_TOKEN_URL -. MU-only .-> MUApp
   end
 
   subgraph After
-    FE -->|HTTP| RouteA[/Route/]
-    RouteA -->|Depends(get_token_provider)| TokenProvider
+    FE --> RouteA[/Route/]
+    note4{{"Depends(get_token_provider)"}}
+    RouteA -.-> note4
     RouteA --> ProviderHandlerNew
-    ProviderHandlerNew -->|TokenProvider.get| ProviderToken
+    ProviderHandlerNew --> TokenProvider
+    TokenProvider --> ProviderToken
     ProviderHandlerNew --> GitService
-    MUApp -. provides its own .-> TokenProvider (outside OH)
   end
 ```
 
