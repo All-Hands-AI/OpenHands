@@ -21,14 +21,22 @@ def get_axtree_str(
     extra_element_properties: dict[str, Any],
     filter_visible_only: bool = False,
 ) -> str:
-    cur_axtree_txt = flatten_axtree_to_str(
-        axtree_object,
-        extra_properties=extra_element_properties,
-        with_clickable=True,
-        skip_generic=False,
-        filter_visible_only=filter_visible_only,
-    )
-    return str(cur_axtree_txt)
+    # Check if axtree_object exists and has the expected structure
+    if not axtree_object or not isinstance(axtree_object, dict):
+        return '[No accessibility tree available]'
+    elif 'nodes' not in axtree_object or not axtree_object['nodes']:
+        # axtree_object exists but is empty or missing nodes - this is the common case
+        return '[Accessibility tree not yet loaded]'
+    else:
+        # axtree_object has the expected structure with nodes
+        cur_axtree_txt = flatten_axtree_to_str(
+            axtree_object,
+            extra_properties=extra_element_properties,
+            with_clickable=True,
+            skip_generic=False,
+            filter_visible_only=filter_visible_only,
+        )
+        return str(cur_axtree_txt)
 
 
 def get_agent_obs_text(obs: BrowserOutputObservation) -> str:

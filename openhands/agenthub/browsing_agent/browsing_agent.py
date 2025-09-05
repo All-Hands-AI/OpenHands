@@ -220,10 +220,19 @@ class BrowsingAgent(Agent):
             cur_url = last_obs.url
 
             try:
-                # Check if axtree_object has the required 'nodes' key
-                if not last_obs.axtree_object or 'nodes' not in last_obs.axtree_object:
+                # Check if axtree_object exists and has the expected structure
+                if not last_obs.axtree_object or not isinstance(
+                    last_obs.axtree_object, dict
+                ):
                     cur_axtree_txt = '[No accessibility tree available]'
+                elif (
+                    'nodes' not in last_obs.axtree_object
+                    or not last_obs.axtree_object['nodes']
+                ):
+                    # axtree_object exists but is empty or missing nodes - this is the common case
+                    cur_axtree_txt = '[Accessibility tree not yet loaded]'
                 else:
+                    # axtree_object has the expected structure with nodes
                     cur_axtree_txt = flatten_axtree_to_str(
                         last_obs.axtree_object,
                         extra_properties=last_obs.extra_element_properties,
