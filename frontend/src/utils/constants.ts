@@ -37,3 +37,13 @@ export const DOCUMENTATION_URL = {
       "https://docs.all-hands.dev/usage/prompting/microagents-org",
   },
 };
+
+export const PRODUCT_URL = {
+  PRODUCTION: "https://app.all-hands.dev",
+};
+
+export const SETTINGS_FORM = {
+  LABEL_CLASSNAME: "text-[11px] font-medium leading-4 tracking-[0.11px]",
+  HELP_LINK_CLASSNAME: "text-sm text-[#A3A3A3] font-normal leading-5.5",
+  HELP_LINK_LINK_TEXT_CLASSNAME: "text-white",
+};

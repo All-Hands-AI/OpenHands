@@ -389,6 +389,7 @@ function LlmSettingsScreen() {
                     models={modelsAndProviders}
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
+                    wrapperClassName="!flex-col !gap-6"
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
@@ -397,7 +398,7 @@ function LlmSettingsScreen() {
                       text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
                       linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                       href="https://app.all-hands.dev/settings/api-keys"
-                      suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
                     />
                   )}
                 </>
@@ -472,7 +473,7 @@ function LlmSettingsScreen() {
                   text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
                   linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                   href="https://app.all-hands.dev/settings/api-keys"
-                  suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                  suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
                 />
               )}
 
