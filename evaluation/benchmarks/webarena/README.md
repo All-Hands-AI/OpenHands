@@ -32,11 +32,24 @@ Follow the WebArena environment setup guide carefully, and make sure the URL fie
 ## Run Evaluation
 
 ### Step 1: Run Inference
+Before running, you must provide an LLM config in a local config.toml and pass its name to run_infer.sh:
+
+1) Create config.toml in the repo root (this file is gitignored):
+
+```toml
+[llm.eval_openai]
+model = "gpt-4o"
+api_key = "sk-..."   # Your OpenAI API key
+```
+
+2) Ensure Docker is installed and running (the first run will build a browser-enabled runtime image).
+
 
 ```bash
 export WEBARENA_BASE_URL=<YOUR_SERVER_URL_HERE>
 export OPENAI_API_KEY="yourkey" # this key is required for some WebArena validators that utilize LLMs
-bash evaluation/benchmarks/webarena/scripts/run_infer.sh
+# args: MODEL_CONFIG  COMMIT_HASH  AGENT  EVAL_LIMIT  NUM_WORKERS
+bash evaluation/benchmarks/webarena/scripts/run_infer.sh llm.eval_openai HEAD BrowsingAgent 3 1
 ```
 
 Results will be in `evaluation/evaluation_outputs/outputs/webarena/`

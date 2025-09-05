@@ -1,5 +1,4 @@
 import asyncio
-import json
 import os
 from typing import Any
 
@@ -221,7 +220,9 @@ def process_instance(
         error=state.last_error if state and state.last_error else None,
         test_result={
             'task_config': task_config,  # Store task config for later evaluation
-            'final_accessibility_tree': return_val.get('final_accessibility_tree') if return_val else None,
+            'final_accessibility_tree': return_val.get('final_accessibility_tree')
+            if return_val
+            else None,
         },
     )
     return output
@@ -235,30 +236,32 @@ if __name__ == '__main__':
     base_url = os.environ.get('WEBARENA_BASE_URL', None)
     if not base_url:
         raise ValueError('WEBARENA_BASE_URL must be set')
-    
+
     # Set up the WA_ prefixed environment variables that BrowserGym expects
     os.environ['WA_SHOPPING'] = f'{base_url}:7770/'
     os.environ['WA_SHOPPING_ADMIN'] = f'{base_url}:7780/admin'
     os.environ['WA_REDDIT'] = f'{base_url}:9999'
     os.environ['WA_GITLAB'] = f'{base_url}:8023'
-    os.environ['WA_WIKIPEDIA'] = f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing'
+    os.environ['WA_WIKIPEDIA'] = (
+        f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing'
+    )
     os.environ['WA_MAP'] = f'{base_url}:3000'
     os.environ['WA_HOMEPAGE'] = f'{base_url}:4399'
-    
+
     # Load webarena task configs from BrowserGym
-    from browsergym.webarena.task import GenericWebArenaTask
     from browsergym.webarena.config import TASK_IDS
-    
+    from browsergym.webarena.task import GenericWebArenaTask
+
     task_configs = []
-    
+
     # Load a subset of tasks for testing (first 10 tasks)
     test_task_ids = list(TASK_IDS)[:10]  # Use first 10 tasks for testing
-    
+
     for task_id in test_task_ids:
         try:
             # Create a temporary task to get the config
             temp_task = GenericWebArenaTask(seed=42, task_id=task_id)
-            
+
             # Get the first (and likely only) task config for this task_id
             if temp_task.task_configs:
                 task_config = temp_task.task_configs[0]

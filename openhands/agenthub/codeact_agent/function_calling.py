@@ -250,8 +250,7 @@ def response_to_actions(
                 # Allow user to specify whether they need accessibility tree
                 return_axtree = arguments.get('return_axtree', False)
                 action = BrowseInteractiveAction(
-                    browser_actions=arguments['code'],
-                    return_axtree=return_axtree
+                    browser_actions=arguments['code'], return_axtree=return_axtree
                 )
                 set_security_risk(action, arguments)
 
