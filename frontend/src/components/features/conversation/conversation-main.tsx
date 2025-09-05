@@ -48,59 +48,50 @@ export function ConversationMain() {
   }
 
   return (
-    <div className="flex h-full w-full min-h-0 min-w-0 overflow-x-hidden">
+    <div
+      className={cn(
+        "grid h-full w-full min-h-0 min-w-0 overflow-x-hidden transition-all duration-300 ease-in-out",
+        isRightPanelShown ? "grid-cols-[1fr_1fr]" : "grid-cols-[1fr_0fr]",
+      )}
+    >
       {/* Left Panel - Chat Interface */}
-      <motion.div
-        className="flex-1 overflow-hidden bg-base h-full"
-        layout
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30,
-          duration: 0.3,
-        }}
-      >
+      <div className="overflow-hidden bg-base h-full">
         <div className="flex justify-center w-full h-full">
-          <motion.div
+          <div
             className={cn(
               "w-full h-full",
               !isRightPanelShown && "max-w-[768px]",
             )}
-            layout
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              duration: 0.3,
-            }}
           >
             <ChatInterface />
-          </motion.div>
+          </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Right Panel - Conversation Tabs */}
-      <AnimatePresence mode="wait">
-        {isRightPanelShown && (
-          <motion.div
-            key="right-panel"
-            initial={{ x: "100%", opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: "100%", opacity: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              duration: 0.3,
-            }}
-            className="flex-1 h-full flex flex-col overflow-hidden"
-          >
-            <div className="flex flex-col flex-1 gap-3">
-              <ConversationTabContent />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="overflow-hidden h-full">
+        <AnimatePresence>
+          {isRightPanelShown && (
+            <motion.div
+              key="right-panel"
+              initial={{ x: "100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                duration: 0.3,
+              }}
+              className="w-full h-full flex flex-col overflow-hidden"
+            >
+              <div className="flex flex-col flex-1 gap-3">
+                <ConversationTabContent />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
