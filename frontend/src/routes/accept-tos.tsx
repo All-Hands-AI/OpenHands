@@ -78,7 +78,7 @@ export default function AcceptTOS() {
           type="button"
           variant="primary"
           onClick={handleAcceptTOS}
-          className="w-full"
+          className="w-full font-semibold"
         >
           {isSubmitting ? t(I18nKey.HOME$LOADING) : t(I18nKey.TOS$CONTINUE)}
         </BrandButton>
