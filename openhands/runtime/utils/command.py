@@ -7,6 +7,8 @@ DEFAULT_PYTHON_PREFIX = [
     'run',
     '-n',
     'openhands',
+    'uv',
+    'run',
 ]
 DEFAULT_MAIN_MODULE = 'openhands.runtime.action_execution_server'
 
