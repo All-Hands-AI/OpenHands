@@ -271,7 +271,10 @@ Note:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
                 )
-                return MessageAction('Error encountered when browsing.')
+                # Fall back gracefully without aborting the task
+                cur_axtree_txt = (
+                    '[Accessibility tree unavailable due to processing error]'
+                )
             set_of_marks = last_obs.set_of_marks
         goal, image_urls = state.get_current_user_intent()
 
