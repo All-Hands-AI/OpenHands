@@ -204,7 +204,7 @@ class CodeActAgent(Agent):
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
+            'messages': messages,
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
         params['extra_body'] = {
