@@ -19,11 +19,11 @@ ENV UV_CACHE_DIR=/tmp/uv_cache
 
 RUN apt-get update -y \
     && apt-get install -y curl make git build-essential jq gettext ca-certificates \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && pip install uv \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml ./
-RUN uv venv && uv sync --no-install-project && rm -rf /tmp/uv_cache
+RUN uv venv && uv sync --no-install-project && rm -rf "${UV_CACHE_DIR}"
 
 FROM base AS openhands-app
 
