@@ -68,57 +68,6 @@ Result:
 - Matches the boundary rule: decide scope/auth at the boundary, inject context; core uses uniform interfaces
 
 
-### Alternative: App factory (no MU mentions in OH code)
-
-OH exports an app factory that accepts the dependency to use. OH default passes its own; MU passes theirs at composition time.
-
-```python
-# --- OpenHands (OH) ---
-from fastapi import Depends, FastAPI, APIRouter
-from typing import Callable, Annotated
-from openhands.auth.token_provider import TokenProvider
-from openhands.integrations.provider import ProviderHandler
-
-# OH default dependency
-async def get_token_provider_default(user_secrets=Depends(get_user_secrets)) -> TokenProvider:
-    tokens = user_secrets.provider_tokens if user_secrets else None
-    return SecretsStoreTokenProvider(tokens)
-
-# App factory: caller supplies which dependency to use
-def create_oh_app(token_provider_dep: Callable[..., TokenProvider]) -> FastAPI:
-    app = FastAPI()
-    router = APIRouter()
-
-    @router.get('/repositories')
-    async def list_repos(tp: Annotated[TokenProvider, Depends(token_provider_dep)]):
-        handler = ProviderHandler(tp)
-        return await handler.get_repositories(...)
-
-    app.include_router(router)
-    return app
-
-# OH default startup
-app = create_oh_app(get_token_provider_default)
-```
-
-```python
-# --- MU application ---
-from fastapi import Depends
-from openhands.server.user_auth import get_user_auth
-from openhands.auth.token_provider import TokenProvider
-
-async def mu_get_token_provider(user_auth = Depends(get_user_auth)) -> TokenProvider:
-    access_token = await user_auth.get_access_token()
-    tokens = await fetch_provider_tokens_from_mu(access_token)
-    return RemoteTokenProvider(tokens)
-
-app = create_oh_app(mu_get_token_provider)
-```
-
-Result:
-- OH code never references MU; it only accepts a dependency injection point.
-- MU supplies its own dependency when composing the app, keeping route signatures clean and identical.
-
 ## 2) TokenProvider protocol (reference)
 ```python
 # openhands/auth/token_provider.py (proposed)
