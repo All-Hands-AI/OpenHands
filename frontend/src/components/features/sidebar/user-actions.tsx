@@ -36,10 +36,11 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     closeAccountMenu();
   };
 
+  const isOSS = config?.APP_MODE === "oss";
+
   // Show the menu based on the new logic
   const showMenu =
-    accountContextMenuIsVisible &&
-    (shouldShowUserActions || config?.APP_MODE === "oss");
+    accountContextMenuIsVisible && (shouldShowUserActions || isOSS);
 
   return (
     <div
@@ -52,7 +53,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      {(shouldShowUserActions || config?.APP_MODE === "oss") && (
+      {(shouldShowUserActions || isOSS) && (
         <div
           className={cn(
             "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
