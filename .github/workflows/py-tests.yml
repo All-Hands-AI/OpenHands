@@ -21,10 +21,10 @@ jobs:
     name: Python Tests on Linux
     runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
-      INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
+      INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -39,7 +39,7 @@ jobs:
       - uses: hynek/setup-cached-uv@v2
         name: Setup uv
       - name: Install Python dependencies using uv
-        run: uv sync --group dev --group test --group runtime --python 3.12
+        run: uv sync --python ${{ matrix.python-version }} --group dev --group test --group runtime
       - name: Build Environment
         run: make build
       - name: Run Unit Tests
@@ -53,7 +53,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ['3.12']
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
       - uses: hynek/setup-cached-uv@v2
@@ -63,12 +63,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install Python dependencies using uv
-        run: |
-          uv venv --python 3.12
-          uv pip install --python .venv/Scripts/python.exe -e .
-          .venv\Scripts\pip install pytest
+        run: uv sync --group dev --group test --group runtime --python ${{ matrix.python-version }}
       - name: Run Windows unit tests
-        run: .venv\Scripts\pytest -svv tests/unit/runtime/utils/test_windows_bash.py
+        run: uv run pytest -svv tests/unit/runtime/utils/test_windows_bash.py
         env:
           PYTHONPATH: ".;$env:PYTHONPATH"
           DEBUG: "1"
@@ -78,3 +75,23 @@ jobs:
           PYTHONPATH: ".;$env:PYTHONPATH"
           TEST_RUNTIME: local
           DEBUG: "1"
+  test-enterprise:
+    name: Enterprise Python Unit Tests
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
+      - name: Set up Python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Python dependencies using uv
+        working-directory: ./enterprise
+        run: uv sync --group dev --group test
+      - name: Run Unit Tests
+        working-directory: ./enterprise
+        run: PYTHONPATH=".:$PYTHONPATH" uv run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit

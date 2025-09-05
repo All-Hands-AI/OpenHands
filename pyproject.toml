@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openhands-ai"
-version = "0.54.0"
+version = "0.55.0"
 description = "OpenHands: Code Less, Make More"
 readme = "README.md"
 license = { text = "MIT" }
