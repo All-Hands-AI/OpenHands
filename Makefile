@@ -118,7 +118,7 @@ check-tmux:
 
 install-python-dependencies: check-uv
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
-	@if [ -z "${TZ:-}" ]; then \
+	@if [ -z "${TZ}" ]; then \
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
@@ -128,29 +128,23 @@ install-python-dependencies: check-uv
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		HNSWLIB_NO_NATIVE=1 uv pip install chroma-hnswlib; \
 	fi
-	@if [ "${INSTALL_PLAYWRIGHT:-}" != "false" ] && [ "${INSTALL_PLAYWRIGHT:-}" != "0" ]; then \
-		PLAYWRIGHT_BIN_PATH="$$(uv run which playwright 2>/dev/null || echo '')"; \
-		if [ -n "$$PLAYWRIGHT_BIN_PATH" ]; then \
-			PLAYWRIGHT_VERSION="$$( "$$PLAYWRIGHT_BIN_PATH" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
+	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
+		if [ -n "$(PLAYWRIGHT_BIN)" ]; then \
+			PLAYWRIGHT_VERSION="$$( "$(PLAYWRIGHT_BIN)" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
 		else \
 			PLAYWRIGHT_VERSION=unknown; \
 		fi; \
 		PLAYWRIGHT_SENTINEL="cache/playwright_chromium_is_installed.$$PLAYWRIGHT_VERSION.txt"; \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			if [ -z "$$PLAYWRIGHT_BIN_PATH" ] || [ ! -x "$$PLAYWRIGHT_BIN_PATH" ]; then \
-				uv pip install playwright; \
-				PLAYWRIGHT_BIN_PATH="$$(uv run which playwright)"; \
-			fi; \
-			"$$PLAYWRIGHT_BIN_PATH" install chromium; \
+			# Ensure package present (idempotent)
+			if [ -z "$(PLAYWRIGHT_BIN)" ] || [ ! -x "$(PLAYWRIGHT_BIN)" ]; then uv pip install playwright; fi; \
+			$(PLAYWRIGHT_BIN) install chromium; \
 		else \
 			if [ ! -f "$$PLAYWRIGHT_SENTINEL" ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
-				if [ -z "$$PLAYWRIGHT_BIN_PATH" ]; then \
-					uv pip install playwright; \
-					PLAYWRIGHT_BIN_PATH="$$(uv run which playwright)"; \
-				fi; \
-				"$$PLAYWRIGHT_BIN_PATH" install --with-deps chromium; \
+				uv pip install playwright; \
+				$(PLAYWRIGHT_BIN) install --with-deps chromium; \
 				mkdir -p cache; \
 				touch "$$PLAYWRIGHT_SENTINEL"; \
 			else \
@@ -158,7 +152,7 @@ install-python-dependencies: check-uv
 			fi; \
 		fi; \
 	else \
-		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT:-})."; \
+		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
