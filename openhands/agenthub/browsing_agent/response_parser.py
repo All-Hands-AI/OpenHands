@@ -61,6 +61,17 @@ class BrowsingActionParserMessage(ActionParser):
         return '```' not in action_str
 
     def parse(self, action_str: str) -> Action:
+        # If the model emitted a plain message (no code fence). If it is an
+        # error-like message, recover by requesting another observation instead
+        # of finishing immediately.
+        lowered = action_str.strip().lower()
+        if 'error encountered when browsing' in lowered:
+            return BrowseInteractiveAction(
+                browser_actions='noop()',
+                thought=action_str,
+                browsergym_send_msg_to_user='',
+                return_axtree=True,
+            )
         msg = f'send_msg_to_user("""{action_str}""")'
         return BrowseInteractiveAction(
             browser_actions=msg,
