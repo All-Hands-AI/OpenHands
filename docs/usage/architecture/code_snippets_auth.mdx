@@ -1,0 +1,199 @@
+---
+title: Auth System – Auxiliary Code Snippets and Evidence
+---
+
+# Auth System – Auxiliary Code Snippets and Evidence
+
+This companion file collects concrete code snippets, grep evidence, and small patterns referenced by the Proposal: Auth System.
+
+Goals:
+- Make the boundary patterns tangible (how MU can use the same routes without leaking access_token)
+- Show where auth and user_id concerns currently leak into core (hotspots)
+- Capture the “useless/noisy” patterns we intend to eliminate via TokenProvider and UserContext
+
+## 1) Boundary override pattern (same routes, different dependency)
+
+Core (OSS) – clean routes depend only on TokenProvider
+```python
+# openhands/server/dependencies_token_provider.py (proposed)
+from fastapi import Depends
+from openhands.server.user_auth import get_user_secrets
+from openhands.auth.token_provider import TokenProvider, SecretsStoreTokenProvider
+
+async def get_token_provider(
+    user_secrets = Depends(get_user_secrets),
+) -> TokenProvider:
+    tokens = user_secrets.provider_tokens if user_secrets else None
+    return SecretsStoreTokenProvider(tokens)
+```
+
+A route using it (no access_token parameter)
+```python
+# openhands/server/routes/git.py (proposed shape)
+from fastapi import Depends
+from openhands.server.dependencies_token_provider import get_token_provider
+from openhands.auth.token_provider import TokenProvider
+from openhands.integrations.provider import ProviderHandler
+
+@app.get('/repositories')
+async def list_repos(
+    token_provider: TokenProvider = Depends(get_token_provider),
+):
+    handler = ProviderHandler(token_provider)
+    return await handler.get_repositories(...)
+```
+
+MU app – override only the dependency (not the route)
+```python
+# in MU application wiring code
+from fastapi import Depends, Request
+from openhands.server.user_auth import get_user_auth
+from openhands.auth.token_provider import TokenProvider
+from openhands.server.dependencies_token_provider import get_token_provider  # target to override
+
+async def mu_get_token_provider(
+    request: Request,
+    user_auth = Depends(get_user_auth),
+) -> TokenProvider:
+    access_token = await user_auth.get_access_token()  # cookie/bearer parsed in MU's UserAuth
+    tokens = await fetch_provider_tokens_from_mu(access_token)  # MU-specific
+    return RemoteTokenProvider(tokens)  # implements TokenProvider
+
+app.dependency_overrides[get_token_provider] = mu_get_token_provider
+```
+
+Result:
+- Same endpoints and URL shapes for OSS and MU
+- Core never sees `access_token` directly; MU consumes it inside the override to mint provider tokens
+- Matches the boundary rule: decide scope/auth at the boundary, inject context; core uses uniform interfaces
+
+## 2) TokenProvider protocol (reference)
+```python
+# openhands/auth/token_provider.py (proposed)
+from types import MappingProxyType
+from typing import Mapping, Protocol, Optional
+from pydantic import SecretStr
+from openhands.integrations.provider import ProviderToken
+from openhands.integrations.service_types import ProviderType
+
+class TokenProvider(Protocol):
+    async def get(self, provider: ProviderType) -> Optional[ProviderToken]: ...
+    async def get_all(self) -> Mapping[ProviderType, ProviderToken]: ...
+
+class SecretsStoreTokenProvider(TokenProvider):
+    def __init__(self, tokens: Mapping[ProviderType, ProviderToken] | None):
+        self._tokens = MappingProxyType(tokens or {})
+    async def get(self, provider: ProviderType) -> Optional[ProviderToken]:
+        return self._tokens.get(provider)
+    async def get_all(self) -> Mapping[ProviderType, ProviderToken]:
+        return self._tokens
+```
+
+## 3) UserContext (reference)
+```python
+# openhands/server/user_context.py (proposed)
+from dataclasses import dataclass
+from typing import Optional
+from fastapi import Depends
+from openhands.server.user_auth import get_user_auth
+from openhands.auth.token_provider import TokenProvider
+from openhands.storage.locations import get_conversation_dir
+
+@dataclass
+class UserContext:
+    user_id: Optional[str]
+    token_provider: TokenProvider
+    def conversation_dir(self, sid: str) -> str:
+        return get_conversation_dir(sid, self.user_id)
+
+async def get_user_context(
+    user_auth = Depends(get_user_auth),
+    token_provider: TokenProvider = Depends(get_token_provider),
+) -> UserContext:
+    user_id = await user_auth.get_user_id()
+    return UserContext(user_id, token_provider)
+```
+
+## 4) Auth categories and hotspots (grep-guided)
+
+- Server/UserAuth seam (keep: correct boundary)
+  - openhands/server/user_auth/user_auth.py: UserAuth ABC, AuthType, get_user_auth()
+  - openhands/server/config/server_config.py: user_auth_class seam
+  - openhands/server/user_auth/default_user_auth.py: Default implementation (None identity)
+
+- Routes threading auth details (to fix)
+  - openhands/server/routes/git.py: passes `provider_tokens`, `user_id`, `access_token`; many AuthenticationError paths and messages
+  - openhands/server/routes/mcp.py: same patterns
+  - openhands/server/routes/settings.py, manage_conversations.py: mixes of user_id/auth checks
+
+- Integrations provider stack coupling (to fix)
+  - openhands/integrations/provider.py: stores `external_auth_id`/`external_auth_token`, composes REFRESH_TOKEN_URL, builds authenticated git URLs
+  - openhands/integrations/service_types.py and specific services (github/gitlab/bitbucket): constructors accept `external_auth_id`/`external_auth_token`; HTTP clients attach Authorization headers
+
+- Runtime auth (local concerns; keep)
+  - runtime/action_execution_server.py: auth_enabled gate and middleware
+  - runtime/mcp/proxy: api_key flow for proxy
+
+- LLM auth (keep)
+  - openhands/llm/llm.py: Authorization: Bearer <api_key> to LLM providers
+
+Representative lines (from ripgrep)
+```text
+openhands/server/routes/git.py:48:            external_auth_token=access_token,
+openhands/server/routes/git.py:49:            external_auth_id=user_id,
+openhands/server/routes/git.py:100:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/integrations/provider.py:116:        external_auth_id: str | None = None,
+openhands/integrations/provider.py:117:        external_auth_token: SecretStr | None = None,
+openhands/integrations/service_types.py:449:        """Initialize the service with authentication details"""
+openhands/integrations/gitlab/service/base.py:31:            'Authorization': f'Bearer {self.token.get_secret_value()}',
+openhands/runtime/file_viewer_server.py:2:This server has no authentication and only listens to localhost traffic.
+```
+
+## 5) access_token audit (grep-guided)
+
+- Where it’s introduced and threaded
+  - openhands/server/user_auth/__init__.py: get_access_token() from UserAuth
+  - openhands/server/routes/git.py and mcp.py: `Depends(get_access_token)`; plumbed into ProviderHandler as `external_auth_token`
+  - openhands/server/user_auth/default_user_auth.py: returns None by default (OSS)
+
+Representative lines
+```text
+openhands/server/user_auth/__init__.py:18:async def get_access_token(request: Request) -> SecretStr | None:
+openhands/server/routes/git.py:42:    access_token: SecretStr | None = Depends(get_access_token),
+openhands/server/routes/git.py:48:            external_auth_token=access_token,
+openhands/server/routes/mcp.py:117:        external_auth_token=access_token,
+```
+
+## 6) Specific “useless/noisy” patterns today (and fixes)
+
+- external_auth_id / external_auth_token plumbed through core
+  - Why it’s noisy: OSS DefaultUserAuth returns None, yet routes and providers carry it everywhere; leaks MU concerns.
+  - Fix: ProviderHandler(TokenProvider) only; MU provides its own TokenProvider via dependency override.
+
+- access_token dependency in routes
+  - Why it’s noisy: default is None; forces signature bloat and branches.
+  - Fix: move to MU dependency override; core routes never see access_token directly.
+
+- user_id in provider stack and path-building branches
+  - Why it’s noisy: user_id used for request-scoped storage paths, not core logic.
+  - Fix: UserContext + ConversationPaths; standardize storage layout; remove if/else.
+
+- Verbose per-route auth errors
+  - Why it’s noisy: repeated strings and checks across endpoints.
+  - Fix: raise AuthenticationError and centralize handling at boundary.
+
+## 7) “No special cases” uniform interface sketch
+```python
+from dataclasses import dataclass
+from typing import Literal
+
+@dataclass(frozen=True)
+class ScopeKey:
+    kind: Literal['anon','user']
+    id: str  # '_' for anon
+
+def conversation_dir(scope: ScopeKey, sid: str) -> str:
+    return f"root/{scope.kind}/{scope.id}/conversations/{sid}/"
+```
+
+This keeps scope logic at the boundary; core never branches on user identity.
