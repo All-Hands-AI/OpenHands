@@ -464,7 +464,7 @@ class GitService(Protocol):
         ...
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
@@ -476,6 +476,7 @@ class GitService(Protocol):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ) -> list[Repository]:
         """Get a page of repositories for the authenticated user"""
         ...
