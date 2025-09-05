@@ -252,7 +252,6 @@ if __name__ == '__main__':
         )
 
     details = {'mode': 'interact'}
-    _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
         args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')

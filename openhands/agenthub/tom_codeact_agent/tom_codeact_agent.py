@@ -395,10 +395,11 @@ class TomCodeActAgent(CodeActAgent):
                 )
             else:
                 overall_user_model = {'user_profile': 'unknown'}
-            track_tom_event(
-                event='tom_sleeptime_triggered',
-                properties=overall_user_model,
-            )
+            if CLI_AVAILABLE:
+                track_tom_event(
+                    event='tom_sleeptime_triggered',
+                    properties=overall_user_model,
+                )
         except Exception as e:
             logger.error(f'Failed to track sleeptime compute trigger: {e}')
 
