@@ -44,6 +44,7 @@ from openhands.storage.locations import CONVERSATION_BASE_DIR
 from openhands.utils.prompt import PromptManager
 
 CLI_AVAILABLE = os.environ.get('CLI_AVAILABLE', 'True').lower() == 'true'
+TOM_AGENT_MODEL = os.environ.get('TOM_AGENT_MODEL', '')
 
 
 class TomCodeActAgent(CodeActAgent):
@@ -78,7 +79,7 @@ class TomCodeActAgent(CodeActAgent):
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
             enable_rag=config.tom_enable_rag,
-            llm_model=self.llm.config.model,
+            llm_model=TOM_AGENT_MODEL if TOM_AGENT_MODEL else self.llm.config.model,
             api_key=self.llm.config.api_key.get_secret_value()
             if self.llm.config.api_key
             else None,
