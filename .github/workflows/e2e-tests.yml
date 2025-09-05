@@ -67,6 +67,7 @@ jobs:
           INSTALL_PLAYWRIGHT: 1
         run: |
           # Using uv; no lockfile fix needed
+          uv lock
 
           # Build OpenHands using make build
           echo "Running make build..."
