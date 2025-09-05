@@ -4,7 +4,6 @@ LiteLLM model experiment handler.
 This module contains the handler for the LiteLLM model experiment.
 """
 
-from openhands.server.session.conversation_init_data import ConversationInitData
 import posthog
 from experiments.constants import EXPERIMENT_CLAUDE4_VS_GPT5
 from server.constants import (
@@ -15,6 +14,7 @@ from server.constants import (
 from storage.experiment_assignment_store import ExperimentAssignmentStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.session.conversation_init_data import ConversationInitData
 
 
 def _get_model_variant(user_id: str | None, conversation_id: str) -> str | None:
@@ -105,7 +105,11 @@ def _get_model_variant(user_id: str | None, conversation_id: str) -> str | None:
     return enabled_variant
 
 
-def handle_claude4_vs_gpt5_experiment(user_id: str | None, conversation_id: str, conversation_settings: ConversationInitData) -> ConversationInitData:
+def handle_claude4_vs_gpt5_experiment(
+    user_id: str | None,
+    conversation_id: str,
+    conversation_settings: ConversationInitData,
+) -> ConversationInitData:
     """
     Handle the LiteLLM model experiment.
 

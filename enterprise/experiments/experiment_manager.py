@@ -15,7 +15,9 @@ from openhands.server.session.conversation_init_data import ConversationInitData
 
 class SaaSExperimentManager(ExperimentManager):
     @staticmethod
-    def run_conversation_variant_test(user_id, conversation_id, conversation_settings) -> ConversationInitData:
+    def run_conversation_variant_test(
+        user_id, conversation_id, conversation_settings
+    ) -> ConversationInitData:
         """
         Run conversation variant test and potentially modify the conversation settings
         based on the PostHog feature flags.
