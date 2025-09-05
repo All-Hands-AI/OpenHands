@@ -176,7 +176,13 @@ class BrowsingAgent(Agent):
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user
         ):
-            return MessageAction(last_action.browsergym_send_msg_to_user)
+            # Avoid prematurely finishing on generic error messages
+            msg_content = last_action.browsergym_send_msg_to_user.strip()
+            if msg_content.lower().find('error encountered when browsing') != -1:
+                logger.warning('Ignoring generic error message from model; continuing.')
+                # Do not finish; proceed to compute next action
+            else:
+                return MessageAction(last_action.browsergym_send_msg_to_user)
 
         if isinstance(last_obs, BrowserOutputObservation):
             if last_obs.error:

@@ -188,6 +188,14 @@ def make_metadata(
     pathlib.Path(os.path.join(eval_output_path, 'logs')).mkdir(
         parents=True, exist_ok=True
     )
+    # Allow overriding the evaluation output directory via env for smoke runs
+    override_output_dir = os.environ.get('EVAL_OUTPUT_DIR')
+    if override_output_dir:
+        eval_output_path = override_output_dir
+        pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(os.path.join(eval_output_path, 'logs')).mkdir(
+            parents=True, exist_ok=True
+        )
     logger.info(f'Using evaluation output directory: {eval_output_path}')
 
     metadata = EvalMetadata(
