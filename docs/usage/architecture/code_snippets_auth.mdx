@@ -11,6 +11,11 @@ Goals:
 - Show where auth and user_id concerns currently leak into core (hotspots)
 - Capture the “useless/noisy” patterns we intend to eliminate via TokenProvider and UserContext
 
+See also:
+- Proposal: Boundary-first Auth/Scope Refactor
+- Proposal: Auth System (None, SU, MU)
+
+
 ## 1) Boundary override pattern (same routes, different dependency)
 
 Core (OpenHands, a.k.a. OH) – clean routes depend only on TokenProvider
