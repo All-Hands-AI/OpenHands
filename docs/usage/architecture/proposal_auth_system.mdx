@@ -137,18 +137,18 @@ Mermaid (Before and After) for user-scoped resources
 ```mermaid
 flowchart TD
   subgraph Before
-    RouteB[/Route/] --> user_id[(user_id)]
+    RouteB[/Route/] --> user_id["user_id"]
     note1{{"Depends(get_user_id)"}}
     RouteB -.-> note1
     RouteB --> ServicesB
-    ServicesB --> LocationsB[get_conversation_dir(sid, user_id)]
+    ServicesB --> LocationsB["get_conversation_dir(sid, user_id)"]
   end
 
   subgraph After
-    RouteA[/Route/] --> UserContext
+    RouteA[/Route/] --> UserContext["UserContext"]
     note2{{"Depends(get_user_context)"}}
     RouteA -.-> note2
-    ServicesA --> PathsA[conversation_dir(sid) from UserContext]
+    ServicesA --> PathsA["conversation_dir(sid) from UserContext"]
   end
 ```
 
