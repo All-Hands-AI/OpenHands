@@ -45,7 +45,6 @@ from openhands.server.services.conversation_service import (
     setup_init_conversation_settings,
 )
 from openhands.server.shared import (
-    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
