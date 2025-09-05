@@ -11,6 +11,7 @@ from server.constants import IS_FEATURE_ENV
 from storage.experiment_assignment_store import ExperimentAssignmentStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.session.conversation_init_data import ConversationInitData
 
 
 def _get_condenser_max_step_variant(user_id, conversation_id):
@@ -114,8 +115,10 @@ def _get_condenser_max_step_variant(user_id, conversation_id):
 
 
 def handle_condenser_max_step_experiment(
-    user_id: str, conversation_id: str, conversation_settings
-):
+    user_id: str | None,
+    conversation_id: str,
+    conversation_settings: ConversationInitData,
+) -> ConversationInitData:
     """
     Handle the condenser max step experiment for conversation settings.
 
