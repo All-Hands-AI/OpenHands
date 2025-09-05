@@ -190,6 +190,12 @@ Rationale: acquiring, caching, and refreshing provider tokens is an auth boundar
 - removes MU refresh URLs and headers from OH core
 - lets MU apps implement their own TokenProvider entirely outside OH
 
+
+#### Access token dependency in routes (noisy -> fix)
+- Why it’s noisy: In OH default mode, `get_access_token()` returns None; threading it through route signatures creates bloat and conditional branches without value.
+- Fix: Core routes depend on `TokenProvider` only. MU apps override the dependency that builds the `TokenProvider` and derive provider tokens from their own `get_access_token()` behind the boundary. Core never sees `access_token` directly.
+- FastAPI note: Dependency overrides don’t need identical function signatures. The override can have different parameters/sub-dependencies; FastAPI just uses the returned value in place of the original dependency. See FastAPI docs: https://fastapi.tiangolo.com/advanced/testing-dependencies/ (example overrides a dependency taking `q, skip, limit` with one taking only `q`).
+
 Protocol and OpenHands (secrets-driven) implementation:
 
 ```python
