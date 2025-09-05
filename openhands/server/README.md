@@ -5,9 +5,7 @@ This is a WebSocket server that executes tasks using an agent.
 ## Recommended Prerequisites
 
 - [Initialize the frontend code](../../frontend/README.md)
-- Install Python 3.12 (`brew install python` for those using homebrew)
-- Install pipx: (`brew install pipx` followed by `pipx ensurepath`)
-- Install uv: (`pipx install uv`)
+- Install uv: (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ## Install
 
