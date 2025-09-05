@@ -13,6 +13,8 @@ CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
 KIND_CLUSTER_NAME = "local-hands"
+PLAYWRIGHT_BIN := .venv/bin/playwright
+PLAYWRIGHT_SENTINEL := cache/playwright_chromium_is_installed.$(shell $(PLAYWRIGHT_BIN) --version 2>/dev/null | awk '{print $$2}' || echo unknown).txt
 
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
@@ -34,7 +36,6 @@ build:
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
 	@$(MAKE) -s check-system
-	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
 	@$(MAKE) -s check-nodejs
 ifeq ($(INSTALL_DOCKER),)
@@ -58,15 +59,6 @@ check-system:
 		echo "$(BLUE)Windows Subsystem for Linux detected.$(RESET)"; \
 	else \
 		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
-		exit 1; \
-	fi
-
-check-python:
-	@echo "$(YELLOW)Checking Python installation...$(RESET)"
-	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
-		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
-	else \
-		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -132,32 +124,28 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	@if ! command -v uv > /dev/null; then \
-		echo "$(RED)uv is not installed. Please install uv from https://docs.astral.sh/uv/ before continuing.$(RESET)"; \
-		exit 1; \
-	fi
-	@uv venv --python python$(PYTHON_VERSION)
+	@uv python pin $(PYTHON_VERSION)
+	@uv sync --group dev --group test --group runtime
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
-		uv pip install --python .venv/bin/python chroma-hnswlib; \
+		uv pip install chroma-hnswlib; \
 	fi
-	@uv pip install --python .venv/bin/python -e .
+
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			uv pip install --python .venv/bin/python playwright; \
-			.venv/bin/playwright install chromium; \
+			$(PLAYWRIGHT_BIN) install chromium; \
 		else \
-			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			if [ ! -f "$(PLAYWRIGHT_SENTINEL)" ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
-				uv pip install --python .venv/bin/python playwright; \
-				.venv/bin/playwright install --with-deps chromium; \
+				uv pip install playwright; \
+				$(PLAYWRIGHT_BIN) install --with-deps chromium; \
 				mkdir -p cache; \
-				touch cache/playwright_chromium_is_installed.txt; \
+				touch "$(PLAYWRIGHT_SENTINEL)"; \
 			else \
-				echo "Setup already done. Skipping Playwright installation."; \
-			fi \
+				echo "Playwright setup already done (sentinel: $(PLAYWRIGHT_SENTINEL)). Skipping."; \
+			fi; \
 		fi \
 	else \
 		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \

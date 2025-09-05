@@ -36,22 +36,16 @@ jobs:
         uses: useblacksmith/setup-node@v5
         with:
           node-version: '22.x'
-      - name: Install uv via pipx
-        run: pipx install uv
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
       - name: Install Python dependencies using uv
-        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+        run: uv sync --group dev --group test --group runtime --python 3.12
       - name: Build Environment
         run: make build
-      - name: Install test runner dependencies
-        run: .venv/bin/pip install pytest pytest-xdist pytest-forked
       - name: Run Unit Tests
-        run: PYTHONPATH=".:$PYTHONPATH" .venv/bin/pytest --forked -n auto -svv ./tests/unit
+        run: PYTHONPATH=".:$PYTHONPATH" uv run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
-        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli .venv/bin/pytest -svv tests/runtime/test_bash.py
+        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli uv run pytest -svv tests/runtime/test_bash.py
 
   # Run specific Windows python tests
   test-on-windows:
