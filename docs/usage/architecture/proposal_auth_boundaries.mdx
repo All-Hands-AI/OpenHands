@@ -152,9 +152,6 @@ flowchart TD
   end
 ```
 
-Security note on SU (single user)
-- SU can be offered as a secure way to run OpenHands and access it remotely: the user authenticates (e.g., via GitHub OAuth in an SU flow), a stable user id is established, and server-side resources are properly scoped. No multi-tenant DB is required for SU; tokens/settings can remain in local secure stores. The important part for core is that UserContext surfaces a stable user_id when SU is enabled, and None otherwise.
-
 
 ## 2) Problem: provider token threading and MU refresh logic in core
 
