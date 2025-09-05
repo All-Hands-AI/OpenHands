@@ -9,16 +9,12 @@ import { GitRepository } from "#/types/git";
 
 interface TaskSuggestionsProps {
   filterFor?: GitRepository | null;
-  providersAreSet: boolean;
 }
 
-export function TaskSuggestions({
-  filterFor,
-  providersAreSet,
-}: TaskSuggestionsProps) {
+export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
-  const { data: tasks, isLoading } = useSuggestedTasks(providersAreSet);
+  const { data: tasks, isLoading } = useSuggestedTasks();
 
   const suggestedTasks = filterFor
     ? tasks?.filter(
