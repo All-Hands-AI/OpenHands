@@ -212,7 +212,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=f'webarena.{task_id}',
+        instance_id=str(task_id),
         instruction=instruction,
         metadata=metadata,
         history=histories,
