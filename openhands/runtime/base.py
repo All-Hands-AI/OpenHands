@@ -36,7 +36,7 @@ from openhands.events.action import (
     TaskTrackingAction,
 )
 from openhands.events.action.mcp import MCPAction
-from openhands.events.action.tom import ImproveInstructionAction
+from openhands.events.action.tom import ConsultTomAgentAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentThinkObservation,
@@ -48,7 +48,7 @@ from openhands.events.observation import (
     TaskTrackingObservation,
     UserRejectObservation,
 )
-from openhands.events.observation.tom import ImproveInstructionObservation
+from openhands.events.observation.tom import ConsultTomAgentObservation
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -891,8 +891,8 @@ fi
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
-            elif isinstance(action, ImproveInstructionAction):
-                return ImproveInstructionObservation(
+            elif isinstance(action, ConsultTomAgentAction):
+                return ConsultTomAgentObservation(
                     content='</Done_communicating_with_Tom_agent>',
                 )
             elif isinstance(action, TaskTrackingAction):

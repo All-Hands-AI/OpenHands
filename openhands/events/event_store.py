@@ -141,7 +141,7 @@ class EventStore(EventStoreABC):
         try:
             data = json.loads(content)
             return event_from_dict(data)
-        except Exception as e:
+        except Exception:
             return None
 
     def get_latest_event(self) -> Event | None:

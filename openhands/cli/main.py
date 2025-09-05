@@ -182,11 +182,19 @@ async def run_session(
 
     usage_metrics = UsageMetrics()
 
-    async def prompt_for_next_task(agent_state: str) -> None:
+    async def prompt_for_next_task(agent_state: str, prefill_text: str = '') -> None:
         nonlocal reload_microagents, new_session_requested, exit_reason
+        first_prompt = True
         while True:
+            # Only use prefill_text for the first prompt in the loop
+            current_prefill = prefill_text if first_prompt else ''
+            first_prompt = False
+
             next_message = await read_prompt_input(
-                config, agent_state, multiline=config.cli_multiline_input
+                config,
+                agent_state,
+                multiline=config.cli_multiline_input,
+                prefill_text=current_prefill,
             )
 
             if not next_message.strip():
@@ -427,7 +435,7 @@ async def run_session(
         event_stream.add_event(MessageAction(content=initial_message), EventSource.USER)
     else:
         # No session restored, no initial action: prompt for the user's first message
-        asyncio.create_task(prompt_for_next_task(''))
+        asyncio.create_task(prompt_for_next_task('', prefill_text='/sleeptime'))
 
     await run_agent_until_done(
         controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
