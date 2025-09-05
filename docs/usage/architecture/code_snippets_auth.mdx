@@ -13,7 +13,7 @@ Goals:
 
 ## 1) Boundary override pattern (same routes, different dependency)
 
-Core (OSS) – clean routes depend only on TokenProvider
+Core (OpenHands, a.k.a. OH) – clean routes depend only on TokenProvider
 ```python
 # openhands/server/dependencies_token_provider.py (proposed)
 from fastapi import Depends
@@ -63,7 +63,7 @@ app.dependency_overrides[get_token_provider] = mu_get_token_provider
 ```
 
 Result:
-- Same endpoints and URL shapes for OSS and MU
+- Same endpoints and URL shapes for OH and MU
 - Core never sees `access_token` directly; MU consumes it inside the override to mint provider tokens
 - Matches the boundary rule: decide scope/auth at the boundary, inject context; core uses uniform interfaces
 
@@ -154,7 +154,7 @@ openhands/runtime/file_viewer_server.py:2:This server has no authentication and 
 - Where it’s introduced and threaded
   - openhands/server/user_auth/__init__.py: get_access_token() from UserAuth
   - openhands/server/routes/git.py and mcp.py: `Depends(get_access_token)`; plumbed into ProviderHandler as `external_auth_token`
-  - openhands/server/user_auth/default_user_auth.py: returns None by default (OSS)
+  - openhands/server/user_auth/default_user_auth.py: returns None by default (in OH default mode)
 
 Representative lines
 ```text
@@ -167,7 +167,7 @@ openhands/server/routes/mcp.py:117:        external_auth_token=access_token,
 ## 6) Specific “useless/noisy” patterns today (and fixes)
 
 - external_auth_id / external_auth_token plumbed through core
-  - Why it’s noisy: OSS DefaultUserAuth returns None, yet routes and providers carry it everywhere; leaks MU concerns.
+  - Why it’s noisy: OH DefaultUserAuth returns None in default mode, yet routes and providers carry it everywhere; leaks MU concerns.
   - Fix: ProviderHandler(TokenProvider) only; MU provides its own TokenProvider via dependency override.
 
 - access_token dependency in routes
