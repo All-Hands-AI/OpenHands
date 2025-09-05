@@ -272,9 +272,9 @@ def main():
 
         # Find corresponding config file
         config_file = None
-        if instance_id.startswith('webarena.'):
-            task_num = instance_id.split('.')[-1]
-            config_file = f'{args.config_dir}/{task_num}.json'
+        # Accept either plain numeric id ("8") or legacy prefixed id ("webarena.8")
+        task_num = instance_id.split('.')[-1]
+        config_file = f'{args.config_dir}/{task_num}.json'
 
         if config_file and os.path.exists(config_file):
             eval_result = evaluate_with_official_webarena_harness(result, config_file)
