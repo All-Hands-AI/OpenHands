@@ -263,7 +263,8 @@ class BrowsingAgent(Agent):
                     )
             except Exception as e:
                 logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
+                    'BROWSING AGENT ERROR when trying to process the accessibility tree: %s',
+                    e,
                 )
                 logger.error(
                     f'DEBUG: Exception occurred with axtree_object: {last_obs.axtree_object}'

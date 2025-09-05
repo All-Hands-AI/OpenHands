@@ -303,7 +303,8 @@ Note:
                     cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
             except Exception as e:
                 logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
+                    'VISUAL BROWSING AGENT ERROR when trying to process the accessibility tree: %s',
+                    e,
                 )
                 logger.error(
                     f'VISUAL DEBUG: Exception occurred with axtree_object: {last_obs.axtree_object}'
