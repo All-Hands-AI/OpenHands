@@ -1,11 +1,11 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { RootState } from "#/store";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { JupyterCell } from "./jupyter-cell";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { WaitingForRuntimeMessage } from "#/components/features/chat/waiting-for-runtime-message";
 
 interface JupyterEditorProps {
   maxWidth: number;
@@ -17,8 +17,6 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
 
   const jupyterRef = React.useRef<HTMLDivElement>(null);
 
-  const { t } = useTranslation();
-
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
@@ -26,11 +24,7 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
 
   return (
     <>
-      {isRuntimeInactive && (
-        <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-        </div>
-      )}
+      {isRuntimeInactive && <WaitingForRuntimeMessage />}
       {!isRuntimeInactive && (
         <div className="flex-1 h-full flex flex-col" style={{ maxWidth }}>
           <div
