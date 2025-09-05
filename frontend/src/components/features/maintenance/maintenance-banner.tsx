@@ -78,7 +78,7 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
       data-testid="maintenance-banner"
       className={cn(
         "bg-primary text-[#0D0F11] p-4 rounded",
-        "flex flex-row items-center justify-between",
+        "flex flex-row items-center justify-between m-1",
       )}
     >
       <div className="flex items-center">
