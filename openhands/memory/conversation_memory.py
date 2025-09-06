@@ -284,12 +284,7 @@ class ConversationMemory:
                 content = assistant_msg.content or ''
 
                 # Update the Thought text with assistant content when present
-                try:
-                    cur_text = action.thought.text
-                except AttributeError:
-                    # Backward compatibility: tolerate legacy str instance in tests
-                    action.thought = Thought(text=str(action.thought))
-                    cur_text = action.thought.text
+                cur_text = action.thought.text
                 if cur_text != content:
                     action.thought.text = (
                         (cur_text + '\n' + content) if cur_text else content

@@ -6,6 +6,7 @@ from openhands.events.action import (
     ChangeAgentStateAction,
     MessageAction,
     NullAction,
+    Thought,
 )
 from openhands.events.event import EventSource
 from openhands.events.observation import (
@@ -53,21 +54,12 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
 
         function = Function(name=action.action, arguments=args)
         if thought is not None:
-            # Thought can be a Thought dataclass (preferred), a dict (serialized), or a string (legacy)
-            thought_str = ''
-            # If it looks like a Thought-like object with a 'text' attribute, use it
-            if hasattr(thought, 'text'):
-                try:
-                    thought_str = str(getattr(thought, 'text'))
-                except Exception:
-                    thought_str = ''
-            elif isinstance(thought, dict):
-                thought_str = thought.get('text') or thought.get('thought') or ''
-            elif isinstance(thought, str):
-                thought_str = thought
+            # We assume Thought is a Thought instance here
+            if isinstance(thought, Thought):
+                inv_trace.append(Message(role='assistant', content=thought.text))
             else:
-                thought_str = str(thought)
-            inv_trace.append(Message(role='assistant', content=thought_str))
+                # If for some reason it's not Thought (shouldn't happen here), emit empty
+                inv_trace.append(Message(role='assistant', content=''))
         inv_trace.append(ToolCall(id=next_id, type='function', function=function))
     else:
         logger.error(f'Unknown action type: {type(action)}')
