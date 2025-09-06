@@ -51,7 +51,7 @@ export function RecentConversations() {
   return (
     <section
       data-testid="recent-conversations"
-      className="flex flex-col w-full"
+      className="flex flex-1 min-w-0 flex-col"
     >
       <div
         className={cn(

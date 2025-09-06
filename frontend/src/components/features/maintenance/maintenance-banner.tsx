@@ -1,3 +1,4 @@
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
 import { useLocalStorage } from "@uidotdev/usehooks";
@@ -15,6 +16,8 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
     "maintenance_banner_dismissed_at",
     null,
   );
+
+  const { pathname } = useLocation();
 
   // Convert EST timestamp to user's local timezone
   const formatMaintenanceTime = (estTimeString: string): string => {
@@ -78,7 +81,8 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
       data-testid="maintenance-banner"
       className={cn(
         "bg-primary text-[#0D0F11] p-4 rounded",
-        "flex flex-row items-center justify-between",
+        "flex flex-row items-center justify-between m-1",
+        pathname === "/" && "mt-3 mr-3",
       )}
     >
       <div className="flex items-center">

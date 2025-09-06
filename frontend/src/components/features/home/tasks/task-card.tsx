@@ -72,11 +72,11 @@ export function TaskCard({ task }: TaskCardProps) {
       disabled={isCreatingConversation}
       onClick={handleLaunchConversation}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 min-w-0 w-full">
         <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
-        <div className="flex flex-col gap-1">
-          <span className="text-xs text-white leading-6 font-normal">
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <span className="text-xs text-white leading-6 font-normal truncate">
             {getTaskTypeMap(t)[task.task_type]}
           </span>
           <span
