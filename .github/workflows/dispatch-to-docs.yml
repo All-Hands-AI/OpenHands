@@ -17,7 +17,7 @@ jobs:
       - name: Push to docs repo
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ALLHANDS_BOT_GITHUB_PAT }}
           repository: ${{ matrix.repo }}
           event-type: update
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "module": "openhands-repo", "branch": "main"}'
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "module": "openhands", "branch": "main"}'
