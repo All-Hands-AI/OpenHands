@@ -59,6 +59,7 @@ The easiest way to run OpenHands locally is using the CLI launcher with [uv](htt
 **Install uv** (if you haven't already):
 
 See the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for the latest installation instructions for your platform.
+You also need [docker to be installed](https://docs.docker.com/engine/install/) to launch OpenHands.  
 
 **Launch OpenHands**:
 ```bash
