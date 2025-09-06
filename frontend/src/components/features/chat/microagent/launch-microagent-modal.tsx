@@ -76,6 +76,10 @@ export function LaunchMicroagentModal({
             </button>
           </div>
 
+          <span className="text-sm text-[#A3A3A3] font-normal leading-5">
+            {t("MICROAGENT$DEFINITION")}
+          </span>
+
           <form
             data-testid="launch-microagent-modal"
             onSubmit={onSubmit}

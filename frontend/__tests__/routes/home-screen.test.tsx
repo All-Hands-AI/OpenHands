@@ -37,34 +37,27 @@ const selectRepository = async (repoName: string) => {
 
   // First select the provider
   const providerDropdown = await waitFor(() =>
-    screen.getByText("Select Provider"),
+    screen.getByTestId("git-provider-dropdown"),
   );
   await userEvent.click(providerDropdown);
-  await userEvent.click(screen.getByText("Github"));
+  await userEvent.click(screen.getByText("GitHub"));
 
   // Then select the repository
-  const dropdown = within(repoConnector).getByTestId("repo-dropdown");
-  const repoInput = within(dropdown).getByRole("combobox");
+  const repoInput = within(repoConnector).getByTestId("git-repo-dropdown");
   await userEvent.click(repoInput);
 
   // Wait for the options to be loaded and displayed
   await waitFor(() => {
-    const options = screen.getAllByText(repoName);
-    // Find the option in the dropdown (it will have role="option")
-    const dropdownOption = options.find(
-      (el) => el.getAttribute("role") === "option",
-    );
-    expect(dropdownOption).toBeInTheDocument();
+    const dropdownMenu = screen.getByTestId("git-repo-dropdown-menu");
+    expect(within(dropdownMenu).getByText(repoName)).toBeInTheDocument();
   });
-  const options = screen.getAllByText(repoName);
-  const dropdownOption = options.find(
-    (el) => el.getAttribute("role") === "option",
-  );
-  await userEvent.click(dropdownOption!);
+  const dropdownMenu = screen.getByTestId("git-repo-dropdown-menu");
+  await userEvent.click(within(dropdownMenu).getByText(repoName));
 
   // Wait for the branch to be auto-selected
   await waitFor(() => {
-    expect(screen.getByText("main")).toBeInTheDocument();
+    const branchInput = screen.getByTestId("git-branch-dropdown-input");
+    expect(branchInput).toHaveValue("main");
   });
 };
 
@@ -85,12 +78,14 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     full_name: "octocat/hello-world",
     git_provider: "github",
     is_public: true,
+    main_branch: "main",
   },
   {
     id: "2",
     full_name: "octocat/earth",
     git_provider: "github",
     is_public: true,
+    main_branch: "main",
   },
 ];
 
@@ -100,8 +95,8 @@ describe("HomeScreen", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: null,
-        gitlab: null,
+        github: "fake-token",
+        gitlab: "fake-token",
       },
     });
   });
@@ -123,27 +118,144 @@ describe("HomeScreen", () => {
   it("should have responsive layout for mobile and desktop screens", async () => {
     renderHomeScreen();
 
-    const mainContainer = screen
-      .getByTestId("home-screen")
-      .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
+    const homeScreenNewConversationSection = screen.getByTestId(
+      "home-screen-new-conversation-section",
+    );
+    expect(homeScreenNewConversationSection).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+    );
+
+    const homeScreenRecentConversationsSection = screen.getByTestId(
+      "home-screen-recent-conversations-section",
+    );
+    expect(homeScreenRecentConversationsSection).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+    );
   });
 
-  // TODO: Fix this test
-  it.skip("should filter and reset the suggested tasks based on repository selection", async () => {});
+  it("should filter the suggested tasks based on the selected repository", async () => {
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
+    // Mock the repository branches API call
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
+
+    renderHomeScreen();
+
+    const taskSuggestions = await screen.findByTestId("task-suggestions");
+
+    // Initially, all tasks should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/earth");
+    });
+
+    // Select a repository using the helper function
+    await selectRepository("octocat/hello-world");
+
+    // After selecting a repository, only tasks related to that repository should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      expect(
+        within(taskSuggestions).queryByText("octocat/earth"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("should filter tasks when different repositories are selected", async () => {
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
+    // Mock the repository branches API call
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
+
+    renderHomeScreen();
+
+    const taskSuggestions = await screen.findByTestId("task-suggestions");
+
+    // Initially, all tasks should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      within(taskSuggestions).getByText("octocat/earth");
+    });
+
+    // Select the first repository
+    await selectRepository("octocat/hello-world");
+
+    // After selecting first repository, only tasks related to that repository should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/hello-world");
+      expect(
+        within(taskSuggestions).queryByText("octocat/earth"),
+      ).not.toBeInTheDocument();
+    });
+
+    // Now select the second repository
+    await selectRepository("octocat/earth");
+
+    // After selecting second repository, only tasks related to that repository should be visible
+    await waitFor(() => {
+      within(taskSuggestions).getByText("octocat/earth");
+      expect(
+        within(taskSuggestions).queryByText("octocat/hello-world"),
+      ).not.toBeInTheDocument();
+    });
+  });
 
   describe("launch buttons", () => {
     const setupLaunchButtons = async () => {
-      let headerLaunchButton = screen.getByTestId("header-launch-button");
+      let headerLaunchButton = screen.getByTestId(
+        "launch-new-conversation-button",
+      );
       let repoLaunchButton = await screen.findByTestId("repo-launch-button");
       let tasksLaunchButtons =
         await screen.findAllByTestId("task-launch-button");
 
       // Mock the repository branches API call
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
-        { name: "main", commit_sha: "123", protected: false },
-        { name: "develop", commit_sha: "456", protected: false },
-      ]);
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+        branches: [
+          { name: "main", commit_sha: "123", protected: false },
+          { name: "develop", commit_sha: "456", protected: false },
+        ],
+        has_next_page: false,
+        current_page: 1,
+        per_page: 30,
+        total_count: 2,
+      });
 
       // Select a repository to enable the repo launch button
       await selectRepository("octocat/hello-world");
@@ -157,8 +269,7 @@ describe("HomeScreen", () => {
         });
       });
 
-      // Get fresh references to the buttons
-      headerLaunchButton = screen.getByTestId("header-launch-button");
+      headerLaunchButton = screen.getByTestId("launch-new-conversation-button");
       repoLaunchButton = screen.getByTestId("repo-launch-button");
       tasksLaunchButtons = await screen.findAllByTestId("task-launch-button");
 
@@ -239,16 +350,6 @@ describe("HomeScreen", () => {
         });
       });
     });
-  });
-
-  it("should hide the suggested tasks section if not authed with git(hub|lab)", async () => {
-    renderHomeScreen();
-
-    const taskSuggestions = screen.queryByTestId("task-suggestions");
-    const repoConnector = screen.getByTestId("repo-connector");
-
-    expect(taskSuggestions).not.toBeInTheDocument();
-    expect(repoConnector).toBeInTheDocument();
   });
 });
 

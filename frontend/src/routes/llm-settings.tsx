@@ -12,7 +12,7 @@ import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import QuestionCircleIcon from "#/icons/question-circle.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
-import { HelpLink } from "#/components/features/settings/help-link";
+import { HelpLink } from "#/ui/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import {
   displayErrorToast,
@@ -48,6 +48,7 @@ function LlmSettingsScreen() {
     confirmationMode: false,
     enableDefaultCondenser: false,
     securityAnalyzer: false,
+    condenserMaxSize: false,
   });
 
   // Track the currently selected model to show help text
@@ -124,6 +125,7 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      condenserMaxSize: false,
     });
   };
 
@@ -181,6 +183,17 @@ function LlmSettingsScreen() {
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
+    const condenserMaxSizeStr = formData
+      .get("condenser-max-size-input")
+      ?.toString();
+    const condenserMaxSizeRaw = condenserMaxSizeStr
+      ? Number.parseInt(condenserMaxSizeStr, 10)
+      : undefined;
+    const condenserMaxSize =
+      condenserMaxSizeRaw !== undefined
+        ? Math.max(20, condenserMaxSizeRaw)
+        : undefined;
+
     const securityAnalyzer = formData
       .get("security-analyzer-input")
       ?.toString();
@@ -194,6 +207,8 @@ function LlmSettingsScreen() {
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
+        CONDENSER_MAX_SIZE:
+          condenserMaxSize ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
         SECURITY_ANALYZER:
           securityAnalyzer === "none"
             ? null
@@ -222,6 +237,7 @@ function LlmSettingsScreen() {
       confirmationMode: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
+      condenserMaxSize: false,
     });
   };
 
@@ -305,6 +321,18 @@ function LlmSettingsScreen() {
     setDirtyInputs((prev) => ({
       ...prev,
       enableDefaultCondenser: enableDefaultCondenserIsDirty,
+    }));
+  };
+
+  const handleCondenserMaxSizeIsDirty = (value: string) => {
+    const parsed = value ? Number.parseInt(value, 10) : undefined;
+    const bounded = parsed !== undefined ? Math.max(20, parsed) : undefined;
+    const condenserMaxSizeIsDirty =
+      (bounded ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE) !==
+      (settings?.CONDENSER_MAX_SIZE ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE);
+    setDirtyInputs((prev) => ({
+      ...prev,
+      condenserMaxSize: condenserMaxSizeIsDirty,
     }));
   };
 
@@ -565,6 +593,26 @@ function LlmSettingsScreen() {
                   wrapperClassName="w-full max-w-[680px]"
                 />
               )}
+
+              <div className="w-full max-w-[680px]">
+                <SettingsInput
+                  testId="condenser-max-size-input"
+                  name="condenser-max-size-input"
+                  type="number"
+                  min={20}
+                  step={1}
+                  label={t(I18nKey.SETTINGS$CONDENSER_MAX_SIZE)}
+                  defaultValue={(
+                    settings.CONDENSER_MAX_SIZE ??
+                    DEFAULT_SETTINGS.CONDENSER_MAX_SIZE
+                  )?.toString()}
+                  onChange={(value) => handleCondenserMaxSizeIsDirty(value)}
+                  isDisabled={!settings.ENABLE_DEFAULT_CONDENSER}
+                />
+                <p className="text-xs text-tertiary-alt mt-1">
+                  {t(I18nKey.SETTINGS$CONDENSER_MAX_SIZE_TOOLTIP)}
+                </p>
+              </div>
 
               <SettingsSwitch
                 testId="enable-memory-condenser-switch"

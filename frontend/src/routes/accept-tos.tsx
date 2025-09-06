@@ -8,6 +8,7 @@ import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { openHands } from "#/api/open-hands-axios";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 export default function AcceptTOS() {
   const { t } = useTranslation();
@@ -57,7 +58,7 @@ export default function AcceptTOS() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full">
+    <ModalBackdrop>
       <div className="border border-tertiary p-8 rounded-lg max-w-md w-full flex flex-col gap-6 items-center bg-base-secondary">
         <AllHandsLogo width={68} height={46} />
 
@@ -77,11 +78,11 @@ export default function AcceptTOS() {
           type="button"
           variant="primary"
           onClick={handleAcceptTOS}
-          className="w-full"
+          className="w-full font-semibold"
         >
           {isSubmitting ? t(I18nKey.HOME$LOADING) : t(I18nKey.TOS$CONTINUE)}
         </BrandButton>
       </div>
-    </div>
+    </ModalBackdrop>
   );
 }

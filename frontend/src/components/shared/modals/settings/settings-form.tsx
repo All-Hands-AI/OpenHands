@@ -11,7 +11,7 @@ import { ModelSelector } from "./model-selector";
 import { Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsInput } from "#/components/features/settings/settings-input";
-import { HelpLink } from "#/components/features/settings/help-link";
+import { HelpLink } from "#/ui/help-link";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SETTINGS_FORM } from "#/utils/constants";
 
@@ -99,8 +99,8 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
             linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
             href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
-            className={SETTINGS_FORM.HELP_LINK_CLASSNAME}
-            linkTextClassName={SETTINGS_FORM.HELP_LINK_LINK_TEXT_CLASSNAME}
+            size="settings"
+            linkColor="white"
           />
         </div>
 

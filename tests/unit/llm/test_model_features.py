@@ -87,6 +87,15 @@ def test_model_matches_provider_qualified(name, pattern, expected):
             ),
         ),
         (
+            'gpt-5-mini-2025-08-07',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=True,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
+        ),
+        (
             'o3-mini',
             ModelFeatures(
                 supports_function_calling=True,
@@ -172,6 +181,7 @@ def test_get_features(model, expect):
         'gpt-4o',
         'gpt-4.1',
         'gpt-5',
+        'gpt-5-mini-2025-08-07',
         # o-series
         'o1-2024-12-17',
         'o3-mini',
@@ -199,6 +209,7 @@ def test_function_calling_models(model):
         'gemini-2.5-flash',
         'gemini-2.5-pro',
         'gpt-5',
+        'gpt-5-mini-2025-08-07',
     ],
 )
 def test_reasoning_effort_models(model):
@@ -252,6 +263,7 @@ def test_prompt_cache_models(model):
         ('gemini-2.5-pro', True),
         ('gpt-5', True),
         ('gpt-5-2025-08-07', True),
+        ('gpt-5-mini-2025-08-07', True),
         ('claude-opus-4-1-20250805', False),
         # DeepSeek
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', True),

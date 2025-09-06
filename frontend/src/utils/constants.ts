@@ -44,6 +44,26 @@ export const PRODUCT_URL = {
 
 export const SETTINGS_FORM = {
   LABEL_CLASSNAME: "text-[11px] font-medium leading-4 tracking-[0.11px]",
-  HELP_LINK_CLASSNAME: "text-sm text-[#A3A3A3] font-normal leading-5.5",
-  HELP_LINK_LINK_TEXT_CLASSNAME: "text-white",
+};
+
+export const GIT_PROVIDER_OPTIONS = [
+  {
+    label: "GitHub",
+    value: "github",
+  },
+  {
+    label: "GitLab",
+    value: "gitlab",
+  },
+  {
+    label: "Bitbucket",
+    value: "bitbucket",
+  },
+];
+
+export const CONTEXT_MENU_ICON_TEXT_CLASSNAME = "h-[30px]";
+
+// Chat input constants
+export const CHAT_INPUT = {
+  HEIGHT_THRESHOLD: 100, // Height in pixels when suggestions should be hidden
 };

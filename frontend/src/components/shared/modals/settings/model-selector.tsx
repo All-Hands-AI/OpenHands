@@ -14,8 +14,8 @@ import {
 } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
 import { cn } from "#/utils/utils";
-import { HelpLink } from "#/components/features/settings/help-link";
-import { PRODUCT_URL, SETTINGS_FORM } from "#/utils/constants";
+import { HelpLink } from "#/ui/help-link";
+import { PRODUCT_URL } from "#/utils/constants";
 
 interface ModelSelectorProps {
   isDisabled?: boolean;
@@ -156,8 +156,8 @@ export function ModelSelector({
           text={t(I18nKey.SETTINGS$NEED_OPENHANDS_ACCOUNT)}
           linkText={t(I18nKey.SETTINGS$CLICK_HERE)}
           href={PRODUCT_URL.PRODUCTION}
-          className={SETTINGS_FORM.HELP_LINK_CLASSNAME}
-          linkTextClassName={SETTINGS_FORM.HELP_LINK_LINK_TEXT_CLASSNAME}
+          size="settings"
+          linkColor="white"
         />
       )}
 
