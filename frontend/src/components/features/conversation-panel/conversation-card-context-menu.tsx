@@ -10,9 +10,9 @@ import {
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
+import { Divider } from "#/ui/divider";
 import { I18nKey } from "#/i18n/declaration";
 import { ContextMenuIconText } from "../context-menu/context-menu-icon-text";
 
@@ -68,7 +68,7 @@ export function ConversationCardContextMenu({
       )}
 
       {hasEdit && (hasDownload || hasTools || hasInfo || hasControl) && (
-        <ContextMenuSeparator />
+        <Divider />
       )}
 
       {onDownloadViaVSCode && (
@@ -83,9 +83,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasDownload && (hasTools || hasInfo || hasControl) && (
-        <ContextMenuSeparator />
-      )}
+      {hasDownload && (hasTools || hasInfo || hasControl) && <Divider />}
 
       {onShowAgentTools && (
         <ContextMenuListItem
@@ -111,7 +109,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasTools && (hasInfo || hasControl) && <ContextMenuSeparator />}
+      {hasTools && (hasInfo || hasControl) && <Divider />}
 
       {onDisplayCost && (
         <ContextMenuListItem
@@ -125,7 +123,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasInfo && hasControl && <ContextMenuSeparator />}
+      {hasInfo && hasControl && <Divider />}
 
       {onStop && (
         <ContextMenuListItem testId="stop-button" onClick={onStop}>

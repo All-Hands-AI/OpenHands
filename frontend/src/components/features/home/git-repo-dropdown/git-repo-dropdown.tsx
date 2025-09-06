@@ -6,21 +6,28 @@ import React, {
   useEffect,
 } from "react";
 import { useCombobox } from "downshift";
-import { Provider } from "#/types/settings";
+import { useTranslation } from "react-i18next";
+import { Provider, ProviderOptions } from "#/types/settings";
 import { GitRepository } from "#/types/git";
 import { useDebounce } from "#/hooks/use-debounce";
 import { cn } from "#/utils/utils";
-import { LoadingSpinner } from "../shared/loading-spinner";
+
 import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
 import { ErrorMessage } from "../shared/error-message";
+import { DropdownItem } from "../shared/dropdown-item";
+import { EmptyState } from "../shared/empty-state";
 import { useUrlSearch } from "./use-url-search";
 import { useRepositoryData } from "./use-repository-data";
-import { DropdownMenu } from "./dropdown-menu";
+import { GenericDropdownMenu } from "../shared/generic-dropdown-menu";
+import { useConfig } from "#/hooks/query/use-config";
+import { I18nKey } from "#/i18n/declaration";
+import RepoIcon from "#/icons/repo.svg?react";
 
 export interface GitRepoDropdownProps {
   provider: Provider;
   value?: string | null;
+  repositoryName?: string | null;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -30,11 +37,14 @@ export interface GitRepoDropdownProps {
 export function GitRepoDropdown({
   provider,
   value,
+  repositoryName,
   placeholder = "Search repositories...",
   className,
   disabled = false,
   onChange,
 }: GitRepoDropdownProps) {
+  const { t } = useTranslation();
+  const { data: config } = useConfig();
   const [inputValue, setInputValue] = useState("");
   const [localSelectedItem, setLocalSelectedItem] =
     useState<GitRepository | null>(null);
@@ -75,6 +85,7 @@ export function GitRepoDropdown({
     urlSearchResults,
     inputValue,
     value,
+    repositoryName,
   );
 
   // Filter repositories based on input value
@@ -189,26 +200,90 @@ export function GitRepoDropdown({
   const isLoadingState =
     isLoading || isSearchLoading || isFetchingNextPage || isUrlSearchLoading;
 
+  // Create sticky footer item for GitHub provider
+  const stickyFooterItem = useMemo(() => {
+    if (
+      !config ||
+      !config.APP_SLUG ||
+      provider !== ProviderOptions.github ||
+      config.APP_MODE !== "saas"
+    )
+      return null;
+
+    const githubHref = `https://github.com/apps/${config.APP_SLUG}/installations/new`;
+
+    return (
+      <a
+        href={githubHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#5C5D62] rounded-md transition-colors duration-150 font-normal"
+        onMouseDown={(e) => {
+          // Prevent downshift from closing the menu when clicking the sticky footer
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
+        {t(I18nKey.HOME$ADD_GITHUB_REPOS)}
+      </a>
+    );
+  }, [provider, config, t]);
+
+  const renderItem = (
+    item: GitRepository,
+    index: number,
+    itemHighlightedIndex: number,
+    itemSelectedItem: GitRepository | null,
+    itemGetItemProps: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  ) => (
+    <DropdownItem
+      key={item.id}
+      item={item}
+      index={index}
+      isHighlighted={itemHighlightedIndex === index}
+      isSelected={itemSelectedItem?.id === item.id}
+      getItemProps={itemGetItemProps}
+      getDisplayText={(repo) => repo.full_name}
+      getItemKey={(repo) => repo.id}
+    />
+  );
+
+  const renderEmptyState = (emptyInputValue: string) => (
+    <EmptyState
+      inputValue={emptyInputValue}
+      searchMessage={t(I18nKey.MICROAGENT$NO_REPOSITORY_FOUND)}
+      emptyMessage={t(I18nKey.COMMON$NO_REPOSITORY)}
+      testId="git-repo-dropdown-empty"
+    />
+  );
+
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
+          {isLoadingState ? (
+            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+          ) : (
+            <RepoIcon width={16} height={16} />
+          )}
+        </div>
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
             disabled,
             placeholder,
             className: cn(
-              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
-              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
-              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "w-full px-3 py-2 border border-[#727987] rounded-sm shadow-none h-[42px] min-h-[42px] max-h-[42px]",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
+              "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10", // Space for toggle button
+              "pl-7 pr-16 text-sm font-normal leading-5", // Space for clear and toggle buttons
             ),
           })}
           data-testid="git-repo-dropdown"
         />
 
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center">
           {selectedRepository && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
@@ -217,17 +292,14 @@ export function GitRepoDropdown({
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName="w-10 h-10"
           />
         </div>
-
-        {isLoadingState && (
-          <LoadingSpinner hasSelection={!!selectedRepository} />
-        )}
       </div>
 
-      <DropdownMenu
+      <GenericDropdownMenu
         isOpen={isOpen}
-        filteredRepositories={filteredRepositories}
+        filteredItems={filteredRepositories}
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}
@@ -235,6 +307,10 @@ export function GitRepoDropdown({
         getItemProps={getItemProps}
         onScroll={handleMenuScroll}
         menuRef={menuRef}
+        renderItem={renderItem}
+        renderEmptyState={renderEmptyState}
+        stickyFooterItem={stickyFooterItem}
+        testId="git-repo-dropdown-menu"
       />
 
       <ErrorMessage isError={isError} />

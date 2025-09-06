@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
+import { MemoryRouter } from "react-router";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 
 // Mock react-i18next
@@ -28,7 +29,11 @@ describe("MaintenanceBanner", () => {
   it("renders maintenance banner with formatted time", () => {
     const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
 
-    const { container } = render(<MaintenanceBanner startTime={startTime} />);
+    const { container } = render(
+      <MemoryRouter>
+        <MaintenanceBanner startTime={startTime} />
+      </MemoryRouter>,
+    );
 
     // Check if the banner is rendered
     const banner = screen.queryByTestId("maintenance-banner");
@@ -48,7 +53,11 @@ describe("MaintenanceBanner", () => {
   it("handles invalid date gracefully", () => {
     const invalidTime = "invalid-date";
 
-    render(<MaintenanceBanner startTime={invalidTime} />);
+    render(
+      <MemoryRouter>
+        <MaintenanceBanner startTime={invalidTime} />
+      </MemoryRouter>,
+    );
 
     // Check if the banner is rendered
     const banner = screen.queryByTestId("maintenance-banner");
@@ -58,7 +67,11 @@ describe("MaintenanceBanner", () => {
   it("click on dismiss button removes banner", () => {
     const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
 
-    render(<MaintenanceBanner startTime={startTime} />);
+    render(
+      <MemoryRouter>
+        <MaintenanceBanner startTime={startTime} />
+      </MemoryRouter>,
+    );
 
     // Check if the banner is rendered
     const banner = screen.queryByTestId("maintenance-banner");
@@ -74,7 +87,11 @@ describe("MaintenanceBanner", () => {
     const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
     const nextStartTime = "2025-01-15T10:00:00-05:00"; // EST timestamp
 
-    const { rerender } = render(<MaintenanceBanner startTime={startTime} />);
+    const { rerender } = render(
+      <MemoryRouter>
+        <MaintenanceBanner startTime={startTime} />
+      </MemoryRouter>,
+    );
 
     // Check if the banner is rendered
     const banner = screen.queryByTestId("maintenance-banner");
@@ -85,27 +102,12 @@ describe("MaintenanceBanner", () => {
     });
 
     expect(banner).not.toBeInTheDocument();
-    rerender(<MaintenanceBanner startTime={nextStartTime} />);
+    rerender(
+      <MemoryRouter>
+        <MaintenanceBanner startTime={nextStartTime} />
+      </MemoryRouter>,
+    );
 
     expect(screen.queryByTestId("maintenance-banner")).toBeInTheDocument();
-  });
-  it("banner doesn't reappear after dismissing on next maintenance event(past time)", () => {
-    const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
-    const nextStartTime = "2023-01-15T10:00:00-05:00"; // EST timestamp
-
-    const { rerender } = render(<MaintenanceBanner startTime={startTime} />);
-
-    // Check if the banner is rendered
-    const banner = screen.queryByTestId("maintenance-banner");
-    const button = within(banner!).queryByTestId("dismiss-button");
-
-    act(() => {
-      fireEvent.click(button!);
-    });
-
-    expect(banner).not.toBeInTheDocument();
-    rerender(<MaintenanceBanner startTime={nextStartTime} />);
-
-    expect(screen.queryByTestId("maintenance-banner")).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,13 @@ HTMLCanvasElement.prototype.getContext = vi.fn();
 HTMLElement.prototype.scrollTo = vi.fn();
 window.scrollTo = vi.fn();
 
+// Mock ResizeObserver for test environment
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
 // Mock the i18n provider
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-i18next")>()),
@@ -24,10 +31,16 @@ vi.mock("#/hooks/use-is-on-tos-page", () => ({
 }));
 
 // Mock requests during tests
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "bypass" });
+  vi.stubGlobal("ResizeObserver", MockResizeObserver);
+});
 afterEach(() => {
   server.resetHandlers();
   // Cleanup the document body after each test
   cleanup();
 });
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+  vi.unstubAllGlobals();
+});

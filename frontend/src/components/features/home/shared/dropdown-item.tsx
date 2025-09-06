@@ -9,6 +9,9 @@ interface DropdownItemProps<T> {
   getItemProps: <Options>(options: any & Options) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
   getDisplayText: (item: T) => string;
   getItemKey: (item: T) => string;
+  isProviderDropdown?: boolean;
+  renderIcon?: (item: T) => React.ReactNode;
+  itemClassName?: string;
 }
 
 export function DropdownItem<T>({
@@ -19,26 +22,35 @@ export function DropdownItem<T>({
   getItemProps,
   getDisplayText,
   getItemKey,
+  isProviderDropdown = false,
+  renderIcon,
+  itemClassName,
 }: DropdownItemProps<T>) {
   const itemProps = getItemProps({
     index,
     item,
     className: cn(
-      "px-3 py-2 cursor-pointer text-sm rounded-lg mx-0.5 my-0.5",
-      "text-[#ECEDEE] focus:outline-none",
+      isProviderDropdown
+        ? "px-2 py-0 cursor-pointer text-xs rounded-md mx-0 my-0 h-6 flex items-center"
+        : "px-2 py-2 cursor-pointer text-sm rounded-md mx-0 my-0.5",
+      "text-white focus:outline-none font-normal",
       {
-        "bg-[#24272E]": isHighlighted && !isSelected,
+        "bg-[#5C5D62]": isHighlighted && !isSelected,
         "bg-[#C9B974] text-black": isSelected,
-        "hover:bg-[#24272E]": !isSelected,
+        "hover:bg-[#5C5D62]": !isSelected,
         "hover:bg-[#C9B974] hover:text-black": isSelected,
       },
+      itemClassName,
     ),
   });
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
     <li key={getItemKey(item)} {...itemProps}>
-      <span className="font-medium">{getDisplayText(item)}</span>
+      <div className="flex items-center gap-2">
+        {renderIcon && renderIcon(item)}
+        <span className="font-medium">{getDisplayText(item)}</span>
+      </div>
     </li>
   );
 }

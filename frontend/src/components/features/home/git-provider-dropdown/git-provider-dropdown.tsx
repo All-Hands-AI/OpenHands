@@ -8,6 +8,7 @@ import { ToggleButton } from "../shared/toggle-button";
 import { LoadingSpinner } from "../shared/loading-spinner";
 import { ErrorMessage } from "../shared/error-message";
 import { EmptyState } from "../shared/empty-state";
+import { GitProviderIcon } from "#/components/shared/git-provider-icon";
 
 export interface GitProviderDropdownProps {
   providers: Provider[];
@@ -18,6 +19,9 @@ export interface GitProviderDropdownProps {
   disabled?: boolean;
   isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
+  inputClassName?: string;
+  toggleButtonClassName?: string;
+  itemClassName?: string;
 }
 
 export function GitProviderDropdown({
@@ -29,6 +33,9 @@ export function GitProviderDropdown({
   disabled = false,
   isLoading = false,
   onChange,
+  inputClassName,
+  toggleButtonClassName,
+  itemClassName,
 }: GitProviderDropdownProps) {
   const [inputValue, setInputValue] = useState("");
   const [localSelectedItem, setLocalSelectedItem] = useState<Provider | null>(
@@ -132,6 +139,8 @@ export function GitProviderDropdown({
       getItemProps={currentGetItemProps}
       getDisplayText={formatProviderName}
       getItemKey={(provider) => provider}
+      isProviderDropdown
+      itemClassName={itemClassName}
     />
   );
 
@@ -147,6 +156,16 @@ export function GitProviderDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        {/* Provider icon */}
+        {selectedItem && (
+          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
+            <GitProviderIcon
+              gitProvider={selectedItem}
+              className="min-w-[14px] min-h-[14px] w-[14px] h-[14px]"
+            />
+          </div>
+        )}
+
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
@@ -154,21 +173,27 @@ export function GitProviderDropdown({
             placeholder,
             readOnly: true, // Make it non-searchable like the original
             className: cn(
-              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
-              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
-              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "w-29.5 h-6 py-0 border border-[#727987] rounded shadow-none h-6 min-h-6 max-h-6 ",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
+              "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10 cursor-pointer", // Space for toggle button and pointer cursor
+              "pl-1.5 pr-[1px] cursor-pointer text-xs font-normal leading-5", // Space for toggle button and pointer cursor
+              selectedItem && "pl-6",
+              inputClassName,
             ),
           })}
           data-testid="git-provider-dropdown"
         />
 
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           <ToggleButton
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName={cn(
+              "w-[23px] h-[23px] translate-y-[1px]",
+              toggleButtonClassName,
+            )}
           />
         </div>
 

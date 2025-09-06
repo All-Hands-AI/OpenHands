@@ -169,11 +169,12 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeEnabled();
   });
 
-  it("should render the 'add github repos' link if saas mode and github provider is set", async () => {
+  it("should render the 'add github repos' link in dropdown if saas mode and github provider is set", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return the APP_MODE
+    // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
+      APP_SLUG: "openhands",
     });
 
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -185,16 +186,42 @@ describe("RepoConnector", () => {
       },
     });
 
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
-    await screen.findByText("HOME$ADD_GITHUB_REPOS");
+    // First select the GitHub provider
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitHub"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should be in the dropdown
+    await waitFor(() => {
+      expect(screen.getByText("HOME$ADD_GITHUB_REPOS")).toBeInTheDocument();
+    });
   });
 
   it("should not render the 'add github repos' link if github provider is not set", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return the APP_MODE
+    // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
+      APP_SLUG: "openhands",
     });
 
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
@@ -206,22 +233,76 @@ describe("RepoConnector", () => {
       },
     });
 
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
+    // First select the GitLab provider (not GitHub)
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitLab"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should NOT be in the dropdown for GitLab
     expect(screen.queryByText("HOME$ADD_GITHUB_REPOS")).not.toBeInTheDocument();
   });
 
-  it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
+  it("should not render the 'add github repos' link in dropdown if oss mode", async () => {
     const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
       APP_MODE: "oss",
     });
 
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+        gitlab: null,
+      },
+    });
+
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
-    expect(screen.queryByText("Add GitHub repos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add GitLab repos")).not.toBeInTheDocument();
+    // First select the GitHub provider
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitHub"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should NOT be in the dropdown for OSS mode
+    expect(screen.queryByText("HOME$ADD_GITHUB_REPOS")).not.toBeInTheDocument();
   });
 
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {

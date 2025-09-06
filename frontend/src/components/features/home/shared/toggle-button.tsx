@@ -1,5 +1,5 @@
-import React from "react";
 import { cn } from "#/utils/utils";
+import ChevronDownSmallIcon from "#/icons/chevron-down-small.svg?react";
 
 interface ToggleButtonProps {
   isOpen: boolean;
@@ -7,12 +7,14 @@ interface ToggleButtonProps {
   getToggleButtonProps: (
     props?: Record<string, unknown>,
   ) => Record<string, unknown>;
+  iconClassName?: string;
 }
 
 export function ToggleButton({
   isOpen,
   disabled,
   getToggleButtonProps,
+  iconClassName,
 }: ToggleButtonProps) {
   return (
     <button
@@ -20,26 +22,20 @@ export function ToggleButton({
       {...getToggleButtonProps({
         disabled,
         className: cn(
-          "p-1 text-[#B7BDC2] hover:text-[#ECEDEE]",
+          "text-[#fff]",
           "disabled:cursor-not-allowed disabled:opacity-60",
         ),
       })}
       type="button"
       aria-label="Toggle menu"
     >
-      <svg
-        className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
+      <ChevronDownSmallIcon
+        className={cn(
+          "w-4 h-4 transition-transform",
+          isOpen && "rotate-180",
+          iconClassName,
+        )}
+      />
     </button>
   );
 }
