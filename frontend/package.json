@@ -81,6 +81,9 @@
     "src/**/*.{ts,tsx,js}": [
       "eslint --fix",
       "prettier --write"
+    ],
+    "src/**/*": [
+      "npm run check-translation-completeness"
     ]
   },
   "devDependencies": {
