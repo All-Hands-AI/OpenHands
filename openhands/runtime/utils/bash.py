@@ -18,6 +18,7 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+from openhands.runtime.utils.bash_preprocessor import bash_preprocessor
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -317,6 +318,8 @@ class BashSession:
         pane_content: str,
         ps1_matches: list[re.Match],
         hidden: bool,
+        original_command: str | None = None,
+        command_was_transformed: bool = False,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -346,11 +349,18 @@ class BashSession:
             num_lines = len(raw_command_output.splitlines())
             metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
 
-        metadata.suffix = (
+        base_suffix = (
             f'\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key
             else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
         )
+
+        # Add transformation information if the command was transformed
+        if command_was_transformed and original_command:
+            transformation_info = f'\n[NOTE: Command was transformed for safety. Original: {original_command.strip()} -> Executed: {command.strip()}]'
+            metadata.suffix = base_suffix + transformation_info
+        else:
+            metadata.suffix = base_suffix
         command_output = self._get_command_output(
             command,
             raw_command_output,
@@ -484,6 +494,19 @@ class BashSession:
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
         is_input: bool = action.is_input
+
+        # Preprocess the command to handle problematic shell options
+        # Only preprocess if it's not an input to a running process and command is not empty
+        original_command = command
+        command_was_transformed = False
+        if not is_input and command:
+            command, command_was_transformed = bash_preprocessor.transform_command(
+                command
+            )
+            if command_was_transformed:
+                logger.warning(
+                    bash_preprocessor.get_warning_message(original_command, command)
+                )
 
         # If the previous command is not completed, we need to check if the command is empty
         if self.prev_status not in {
@@ -621,6 +644,8 @@ class BashSession:
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                     hidden=getattr(action, 'hidden', False),
+                    original_command=original_command,
+                    command_was_transformed=command_was_transformed,
                 )
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.
