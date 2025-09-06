@@ -129,22 +129,30 @@ install-python-dependencies: check-uv
 		HNSWLIB_NO_NATIVE=1 uv pip install chroma-hnswlib; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
-		if [ -n "$(PLAYWRIGHT_BIN)" ]; then \
-			PLAYWRIGHT_VERSION="$$( "$(PLAYWRIGHT_BIN)" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
-		else \
-			PLAYWRIGHT_VERSION=unknown; \
-		fi; \
-		PLAYWRIGHT_SENTINEL="cache/playwright_chromium_is_installed.$$PLAYWRIGHT_VERSION.txt"; \
+		PLAYWRIGHT_BIN=$$(uv run which playwright 2>/dev/null || true); \
+		NEED_INSTALL=0; \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			# Ensure package present (idempotent)
-			if [ -z "$(PLAYWRIGHT_BIN)" ] || [ ! -x "$(PLAYWRIGHT_BIN)" ]; then uv pip install playwright; fi; \
-			$(PLAYWRIGHT_BIN) install chromium; \
+			if [ -z "$$PLAYWRIGHT_BIN" ] || [ ! -x "$$PLAYWRIGHT_BIN" ]; then \
+				uv pip install playwright; \
+				PLAYWRIGHT_BIN=$$(uv run which playwright 2>/dev/null); \
+			fi; \
+			"$$PLAYWRIGHT_BIN" install chromium; \
 		else \
-			if [ ! -f "$$PLAYWRIGHT_SENTINEL" ]; then \
+			if [ -n "$$PLAYWRIGHT_BIN" ] && [ -x "$$PLAYWRIGHT_BIN" ]; then \
+				PLAYWRIGHT_VERSION="$$( "$$PLAYWRIGHT_BIN" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
+				PLAYWRIGHT_SENTINEL="cache/playwright_chromium_is_installed.$$PLAYWRIGHT_VERSION.txt"; \
+				if [ ! -f "$$PLAYWRIGHT_SENTINEL" ]; then NEED_INSTALL=1; fi; \
+			else \
+				NEED_INSTALL=1; \
+			fi; \
+			if [ "$$NEED_INSTALL" -eq 1 ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
 				uv pip install playwright; \
-				$(PLAYWRIGHT_BIN) install --with-deps chromium; \
+				PLAYWRIGHT_BIN=$$(uv run which playwright 2>/dev/null); \
+				PLAYWRIGHT_VERSION="$$( "$$PLAYWRIGHT_BIN" --version 2>/dev/null | awk '{print $$2}' || echo unknown )"; \
+				PLAYWRIGHT_SENTINEL="cache/playwright_chromium_is_installed.$$PLAYWRIGHT_VERSION.txt"; \
+				"$$PLAYWRIGHT_BIN" install --with-deps chromium; \
 				mkdir -p cache; \
 				touch "$$PLAYWRIGHT_SENTINEL"; \
 			else \
