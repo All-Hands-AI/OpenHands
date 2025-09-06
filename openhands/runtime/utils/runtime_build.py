@@ -292,7 +292,7 @@ def prep_build_folder(
 
     lock_name = 'uv.lock'
     src = Path(openhands_source_dir, lock_name)
-        shutil.copy2(src, Path(build_folder, 'code', lock_name))
+    shutil.copy2(src, Path(build_folder, 'code', lock_name))
 
     # Create a Dockerfile and write it to build_folder
     dockerfile_content = _generate_dockerfile(
