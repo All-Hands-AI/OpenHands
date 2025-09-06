@@ -51,7 +51,7 @@ EVAL_NOTE="$OPENHANDS_VERSION-no-hint-$EXP_NAME"
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
+  COMMAND="uv run python evaluation/benchmarks/swe_bench/run_infer.py \
     --agent-cls CodeActAgent \
     --llm-config $MODEL \
     --max-iterations $MAX_ITER \
@@ -97,7 +97,7 @@ for run_idx in $(seq 1 $N_RUNS); do
 
     while true; do
         echo "### Evaluating on $OUTPUT_FILE ... ###"
-        COMMAND="poetry run python evaluation/benchmarks/swe_bench/eval_infer.py \
+        COMMAND="uv run python evaluation/benchmarks/swe_bench/eval_infer.py \
         --eval-num-workers $((N_WORKERS * 2)) \
         --input-file $OUTPUT_FILE \
         --dataset $DATASET \
@@ -123,10 +123,10 @@ for run_idx in $(seq 1 $N_RUNS); do
 
     # update the output with evaluation results
     echo "### Updating the output with evaluation results... ###"
-    poetry run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $OUTPUT_FILE
+    uv run python evaluation/benchmarks/swe_bench/scripts/eval/update_output_with_eval.py $OUTPUT_FILE
 
     echo "### Combining the final completions... ###"
-    poetry run python evaluation/benchmarks/swe_bench/scripts/eval/combine_final_completions.py $OUTPUT_FILE
+    uv run python evaluation/benchmarks/swe_bench/scripts/eval/combine_final_completions.py $OUTPUT_FILE
 
     echo "### DONE for run $run_idx! ###"
     echo "You can find the final output at $(dirname $OUTPUT_FILE)/$FINAL_OUTPUT_FILE"

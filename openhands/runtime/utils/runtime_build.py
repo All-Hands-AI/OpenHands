@@ -285,12 +285,14 @@ def prep_build_folder(
         Path(project_root, 'microagents'), Path(build_folder, 'code', 'microagents')
     )
 
-    # Copy pyproject.toml and poetry.lock files
-    for file in ['pyproject.toml', 'poetry.lock']:
-        src = Path(openhands_source_dir, file)
-        if not src.exists():
-            src = Path(project_root, file)
-        shutil.copy2(src, Path(build_folder, 'code', file))
+    # Copy pyproject.toml and uv.lock if present
+    # Always copy pyproject.toml
+    src = Path(openhands_source_dir, 'pyproject.toml')
+    shutil.copy2(src, Path(build_folder, 'code', 'pyproject.toml'))
+
+    lock_name = 'uv.lock'
+    src = Path(openhands_source_dir, lock_name)
+    shutil.copy2(src, Path(build_folder, 'code', lock_name))
 
     # Create a Dockerfile and write it to build_folder
     dockerfile_content = _generate_dockerfile(
@@ -324,7 +326,10 @@ def get_hash_for_lock_files(base_image: str, enable_browser: bool = True) -> str
     # Only include enable_browser in hash when it's False for backward compatibility
     if not enable_browser:
         md5.update(str(enable_browser).encode())
-    for file in ['pyproject.toml', 'poetry.lock']:
+    # Hash pyproject.toml and uv.lock if present
+    files_to_hash: list[str] = ['pyproject.toml', 'uv.lock']
+
+    for file in files_to_hash:
         src = Path(openhands_source_dir, file)
         if not src.exists():
             src = Path(openhands_source_dir.parent, file)
