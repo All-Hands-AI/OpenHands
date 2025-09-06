@@ -15,6 +15,7 @@ from openhands.server.shared import conversation_manager, file_store
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_metadata
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from openhands.storage.paths import ConversationPaths
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
@@ -140,9 +141,8 @@ async def search_events(
 
     # Create an event store to access the events directly
     event_store = EventStore(
-        sid=conversation_id,
+        ConversationPaths(conversation_id, user_id),
         file_store=file_store,
-        user_id=user_id,
     )
 
     # Get matching events from the store
