@@ -6,6 +6,7 @@ import "@xterm/xterm/css/xterm.css";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
+import { WaitingForRuntimeMessage } from "#/components/features/chat/waiting-for-runtime-message";
 
 function Terminal() {
   const { commands } = useSelector((state: RootState) => state.cmd);
@@ -27,11 +28,7 @@ function Terminal() {
         </span>
       </div>
 
-      {isRuntimeInactive && (
-        <div className="w-full flex items-center text-center justify-center text-2xl text-tertiary-light pt-16">
-          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-        </div>
-      )}
+      {isRuntimeInactive && <WaitingForRuntimeMessage className="pt-16" />}
 
       <div className="flex-1 min-h-0 p-4">
         <div

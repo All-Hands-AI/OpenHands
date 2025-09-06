@@ -6,6 +6,7 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { VSCODE_IN_NEW_TAB } from "#/utils/feature-flags";
+import { WaitingForRuntimeMessage } from "#/components/features/chat/waiting-for-runtime-message";
 
 function VSCodeTab() {
   const { t } = useTranslation();
@@ -39,20 +40,8 @@ function VSCodeTab() {
     }
   };
 
-  if (isRuntimeInactive) {
-    return (
-      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-      </div>
-    );
+  if (isRuntimeInactive || isLoading) {
+    return <WaitingForRuntimeMessage />;
   }
 
   if (error || (data && data.error) || !data?.url || iframeError) {
