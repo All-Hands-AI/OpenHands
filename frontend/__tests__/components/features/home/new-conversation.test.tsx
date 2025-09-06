@@ -5,7 +5,7 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { NewConversation } from "#/components/features/home/new-conversation";
+import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
 import OpenHands from "#/api/open-hands";
 
 // Mock the translation function
