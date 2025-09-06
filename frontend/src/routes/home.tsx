@@ -1,6 +1,6 @@
 import React from "react";
 import { PrefetchPageLinks } from "react-router";
-import { HomeHeader } from "#/components/features/home/home-header";
+import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { GitRepository } from "#/types/git";
