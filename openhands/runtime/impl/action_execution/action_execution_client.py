@@ -379,6 +379,29 @@ class ActionExecutionClient(Runtime):
         if extra_stdio_servers:
             current_stdio_servers.extend(extra_stdio_servers)
 
+        # If a search API key is configured, defensively drop any stdio server named "fetch"
+        try:
+            has_search_key = getattr(self.config, 'search_api_key', None) is not None
+        except Exception:
+            has_search_key = False
+        if has_search_key:
+            before = len(current_stdio_servers)
+            current_stdio_servers = [
+                s for s in current_stdio_servers if getattr(s, 'name', '') != 'fetch'
+            ]
+            # Also ensure we don't re-add previously cached "fetch" entries
+            self._last_updated_mcp_stdio_servers = [
+                s
+                for s in self._last_updated_mcp_stdio_servers
+                if getattr(s, 'name', '') != 'fetch'
+            ]
+            removed = before - len(current_stdio_servers)
+            if removed:
+                self.log(
+                    'info',
+                    f'Dropped {removed} default network MCP stdio server(s) due to search engine being configured',
+                )
+
         # Check if there are any new servers using the __eq__ operator
         new_servers = [
             server
