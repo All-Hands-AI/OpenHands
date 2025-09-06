@@ -1,7 +1,7 @@
 import { GitProviderIcon } from "#/components/shared/git-provider-icon";
 import { GitRepository } from "#/types/git";
 import { MicroagentManagementAddMicroagentButton } from "./microagent-management-add-microagent-button";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 
 interface MicroagentManagementAccordionTitleProps {
   repository: GitRepository;
@@ -14,15 +14,16 @@ export function MicroagentManagementAccordionTitle({
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <GitProviderIcon gitProvider={repository.git_provider} />
-        <TooltipButton
-          tooltip={repository.full_name}
+        <UnifiedButton
+          withTooltip
+          tooltipContent={repository.full_name}
           ariaLabel={repository.full_name}
-          className="text-white text-base font-normal bg-transparent p-0 min-w-0 h-auto cursor-pointer truncate max-w-[194px] translate-y-[-1px]"
+          className="text-white text-base font-normal bg-transparent p-0 min-w-0 h-auto cursor-pointer translate-y-[-1px] hover:bg-transparent text-left justify-start"
           testId="repository-name-tooltip"
-          placement="bottom"
+          tooltipProps={{ placement: "bottom" }}
         >
-          <span>{repository.full_name}</span>
-        </TooltipButton>
+          <span className="truncate max-w-[194px]">{repository.full_name}</span>
+        </UnifiedButton>
       </div>
       <MicroagentManagementAddMicroagentButton repository={repository} />
     </div>

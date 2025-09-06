@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { cn, getConversationStatusLabel } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 
 interface ConversationStatusIndicatorProps {
   conversationStatus: ConversationStatus;
@@ -34,13 +34,16 @@ export function ConversationStatusIndicator({
   );
 
   return (
-    <TooltipButton
-      tooltip={statusLabel}
+    <UnifiedButton
+      withTooltip
+      tooltipContent={statusLabel}
       ariaLabel={statusLabel}
-      placement="right"
-      showArrow
-      className="p-0 border-0 bg-transparent hover:opacity-100"
-      tooltipClassName="bg-[#1a1a1a] text-white text-xs shadow-lg"
+      tooltipProps={{
+        placement: "right",
+        showArrow: true,
+        className: "bg-[#1a1a1a] text-white text-xs shadow-lg",
+      }}
+      className="p-0 border-0 bg-transparent hover:opacity-100 hover:bg-transparent"
     >
       <div
         className={cn(
@@ -48,6 +51,6 @@ export function ConversationStatusIndicator({
           conversationStatusBackgroundColor,
         )}
       />
-    </TooltipButton>
+    </UnifiedButton>
   );
 }
