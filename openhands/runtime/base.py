@@ -863,7 +863,7 @@ fi
             # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
+                f'.openhands_instructions not present, trying to load from repository microagents_dir={microagents_dir}',
             )
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))
