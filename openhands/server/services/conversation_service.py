@@ -105,7 +105,10 @@ async def start_conversation(
         session_init_args = {**settings.__dict__, **session_init_args}
         # We could use litellm.check_valid_key for a more accurate check,
         # but that would run a tiny inference.
-        if (
+        model_name = settings.llm_model or ''
+        is_bedrock_model = model_name.startswith('bedrock/')
+
+        if not is_bedrock_model and (
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
@@ -113,6 +116,8 @@ async def start_conversation(
             raise LLMAuthenticationError(
                 'Error authenticating with the LLM provider. Please check your API key'
             )
+        elif is_bedrock_model:
+            logger.info(f'Bedrock model detected ({model_name}), API key not required')
 
     else:
         logger.warning('Settings not present, not starting conversation')
