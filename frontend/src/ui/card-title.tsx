@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "#/utils/utils";
 
-const headerWithIconVariants = cva("flex items-center", {
+const cardTitleVariants = cva("flex items-center", {
   variants: {
     gap: {
       default: "gap-[10px]",
@@ -29,14 +29,13 @@ const headerWithIconVariants = cva("flex items-center", {
   },
 });
 
-interface HeaderWithIconProps
-  extends VariantProps<typeof headerWithIconVariants> {
-  icon: ReactNode;
+interface CardTitleProps extends VariantProps<typeof cardTitleVariants> {
+  icon?: ReactNode;
   children: ReactNode;
   className?: string;
 }
 
-export function HeaderWithIcon({
+export function CardTitle({
   icon,
   children,
   className = "",
@@ -45,11 +44,11 @@ export function HeaderWithIcon({
   fontWeight,
   textColor,
   lineHeight,
-}: HeaderWithIconProps) {
+}: CardTitleProps) {
   return (
     <div
       className={cn(
-        headerWithIconVariants({
+        cardTitleVariants({
           gap,
           textSize,
           fontWeight,
@@ -62,7 +61,7 @@ export function HeaderWithIcon({
       {icon}
       <span
         className={cn(
-          headerWithIconVariants({
+          cardTitleVariants({
             lineHeight,
             textSize,
             fontWeight,
