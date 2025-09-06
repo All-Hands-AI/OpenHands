@@ -64,7 +64,7 @@ scroll(delta_x: float, delta_y: float)
 
         scroll(-50.2, -100.5)
 
-fill(bid: str, value: str)
+fill(bid: str, value: str, enable_autocomplete_menu: bool = False)
     Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
     Examples:
         fill('237', 'example value')
@@ -158,6 +158,11 @@ BrowserTool = ChatCompletionToolParam(
                         'The Python code that interacts with the browser.\n'
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
+                },
+                'return_axtree': {
+                    'type': 'boolean',
+                    'description': 'Whether to return the accessibility tree in the observation. Set to true if you need to analyze page structure or find elements by text content. Default is false for performance.',
+                    'default': False,
                 },
                 'security_risk': {
                     'type': 'string',

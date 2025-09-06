@@ -154,15 +154,32 @@ class BrowsingAgent(Agent):
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(browser_actions='noop()')
+            return BrowseInteractiveAction(browser_actions='noop()', return_axtree=True)
 
         for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
                 prev_actions.append(event.browser_actions)
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                # agent has responded with a message. Avoid finishing on generic browsing error string.
+                # Check for various forms of the generic browsing error message
+                generic_error_patterns = [
+                    'error encountered when browsing',
+                    'error encountered while browsing', 
+                    'error encountered during browsing',
+                    'an error encountered when browsing',
+                    'an error encountered while browsing',
+                    'an error encountered during browsing'
+                ]
+                if (
+                    event.content
+                    and any(pattern in event.content.strip().lower() for pattern in generic_error_patterns)
+                ):
+                    logger.warning(
+                        'Ignoring generic error message from agent; continuing.'
+                    )
+                else:
+                    return AgentFinishAction(outputs={'content': event.content})
             elif isinstance(event, Observation):
                 last_obs = event
 
@@ -176,7 +193,21 @@ class BrowsingAgent(Agent):
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user
         ):
-            return MessageAction(last_action.browsergym_send_msg_to_user)
+            # Avoid prematurely finishing on generic error messages
+            msg_content = last_action.browsergym_send_msg_to_user.strip()
+            generic_error_patterns = [
+                'error encountered when browsing',
+                'error encountered while browsing', 
+                'error encountered during browsing',
+                'an error encountered when browsing',
+                'an error encountered while browsing',
+                'an error encountered during browsing'
+            ]
+            if any(pattern in msg_content.lower() for pattern in generic_error_patterns):
+                logger.warning('Ignoring generic error message from model; continuing.')
+                # Do not finish; proceed to compute next action
+            else:
+                return MessageAction(last_action.browsergym_send_msg_to_user)
 
         if isinstance(last_obs, BrowserOutputObservation):
             if last_obs.error:
@@ -189,17 +220,59 @@ class BrowsingAgent(Agent):
             cur_url = last_obs.url
 
             try:
-                cur_axtree_txt = flatten_axtree_to_str(
-                    last_obs.axtree_object,
-                    extra_properties=last_obs.extra_element_properties,
-                    with_clickable=True,
-                    filter_visible_only=True,
+                # Debug logging to understand the structure
+                logger.info(
+                    f'DEBUG: axtree_object type: {type(last_obs.axtree_object)}'
                 )
+                logger.info(
+                    f'DEBUG: axtree_object is None: {last_obs.axtree_object is None}'
+                )
+                if isinstance(last_obs.axtree_object, dict):
+                    logger.info(
+                        f'DEBUG: axtree_object keys: {list(last_obs.axtree_object.keys())}'
+                    )
+                    if 'nodes' in last_obs.axtree_object:
+                        logger.info(
+                            f'DEBUG: nodes type: {type(last_obs.axtree_object["nodes"])}'
+                        )
+                        logger.info(
+                            f'DEBUG: nodes length: {len(last_obs.axtree_object["nodes"]) if last_obs.axtree_object["nodes"] else 0}'
+                        )
+
+                # Check if axtree_object exists and has the expected structure
+                if not last_obs.axtree_object or not isinstance(
+                    last_obs.axtree_object, dict
+                ):
+                    logger.info('DEBUG: Using fallback - no axtree_object or not dict')
+                    cur_axtree_txt = '[No accessibility tree available]'
+                elif (
+                    'nodes' not in last_obs.axtree_object
+                    or not last_obs.axtree_object['nodes']
+                ):
+                    # axtree_object exists but is empty or missing nodes - this is the common case
+                    logger.info('DEBUG: Using fallback - missing nodes or empty nodes')
+                    cur_axtree_txt = '[Accessibility tree not yet loaded]'
+                else:
+                    # axtree_object has the expected structure with nodes
+                    logger.info('DEBUG: Calling flatten_axtree_to_str')
+                    cur_axtree_txt = flatten_axtree_to_str(
+                        last_obs.axtree_object,
+                        extra_properties=last_obs.extra_element_properties,
+                        with_clickable=True,
+                        filter_visible_only=True,
+                    )
             except Exception as e:
                 logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
+                    'BROWSING AGENT ERROR when trying to process the accessibility tree: %s',
+                    e,
                 )
-                return MessageAction('Error encountered when browsing.')
+                logger.error(
+                    f'DEBUG: Exception occurred with axtree_object: {last_obs.axtree_object}'
+                )
+                # Fall back gracefully without aborting the task
+                cur_axtree_txt = (
+                    '[Accessibility tree unavailable due to processing error]'
+                )
 
         goal, _ = state.get_current_user_intent()
 

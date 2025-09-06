@@ -38,7 +38,7 @@ EVAL_NOTE="$OPENHANDS_VERSION"
 COMMAND="poetry run python evaluation/benchmarks/webarena/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
-  --max-iterations 15 \
+  --max-iterations 30 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 

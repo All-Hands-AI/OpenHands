@@ -1,5 +1,4 @@
 import atexit
-import json
 import multiprocessing
 import time
 import uuid
@@ -21,14 +20,18 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 
 
 class BrowserEnv:
-    def __init__(self, browsergym_eval_env: str | None = None):
+    def __init__(
+        self,
+        browsergym_eval_env: str | None = None,
+        browser_logging_dir: str | None = None,
+    ):
         self.html_text_converter = self.get_html_text_converter()
         self.eval_mode = False
         self.eval_dir = ''
 
-        # EVAL only: browsergym_eval_env must be provided for evaluation
-        self.browsergym_eval_env = browsergym_eval_env
-        self.eval_mode = bool(browsergym_eval_env)
+        # Browser state logging configuration (for WebArena evaluation)
+        self.browser_logging_dir = browser_logging_dir
+        self.enable_state_logging = browser_logging_dir is not None
 
         # Initialize browser environment process
         multiprocessing.set_start_method('spawn', force=True)
@@ -67,58 +70,42 @@ class BrowserEnv:
             raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self) -> None:
-        if self.eval_mode:
-            assert self.browsergym_eval_env is not None
-            logger.info('Initializing browser env for web browsing evaluation.')
-            if not self.browsergym_eval_env.startswith('browsergym/'):
-                self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
-            if 'visualwebarena' in self.browsergym_eval_env:
-                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
-                import nltk
-
-                nltk.download('punkt_tab')
-            elif 'webarena' in self.browsergym_eval_env:
-                import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
-            elif 'miniwob' in self.browsergym_eval_env:
-                import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
-            else:
-                raise ValueError(
-                    f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
-                )
-            env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
-        else:
-            env = gym.make(
-                'browsergym/openended',
-                task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
-                wait_for_user_message=False,
-                headless=True,
-                disable_env_checker=True,
-                tags_to_mark='all',
-                timeout=100000,
-                pw_context_kwargs={'accept_downloads': True},
-                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
-            )
+        env = gym.make(
+            'browsergym/openended',
+            task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
+            wait_for_user_message=False,
+            headless=True,
+            disable_env_checker=True,
+            tags_to_mark='all',
+            timeout=100000,
+            pw_context_kwargs={'accept_downloads': True},
+            pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
+            pre_observation_delay=2.0,  # Increase delay to allow accessibility trees to load
+        )
         obs, info = env.reset()
 
         logger.info('Successfully called env.reset')
-        # EVAL ONLY: save the goal into file for evaluation
-        self.eval_goal = None
-        self.goal_image_urls = []
-        self.eval_rewards: list[float] = []
-        if self.eval_mode:
-            self.eval_goal = obs['goal']
-            if 'goal_object' in obs:
-                obs['goal_object'] = list(obs['goal_object'])
-                if len(obs['goal_object']) > 0:
-                    self.eval_goal = obs['goal_object'][0]['text']
-                for message in obs['goal_object']:
-                    if message['type'] == 'image_url':
-                        image_src = message['image_url']
-                        if isinstance(image_src, dict):
-                            image_src = image_src['url']
-                        self.goal_image_urls.append(image_src)
-            logger.debug(f'Browsing goal: {self.eval_goal}')
         logger.info('Browser env started.')
+
+        # Initialize browser state capture for WebArena evaluation
+        state_capture = None
+        if self.enable_state_logging:
+            try:
+                from evaluation.benchmarks.webarena.browsergym_state_capture import (
+                    BrowserGymStateCapture,
+                )
+
+                state_capture = BrowserGymStateCapture(
+                    output_dir=self.browser_logging_dir or '/tmp/webarena_states'
+                )
+                logger.info(
+                    f'Browser state logging enabled: {self.browser_logging_dir}'
+                )
+            except ImportError:
+                logger.warning(
+                    'Could not import BrowserGymStateCapture, state logging disabled'
+                )
+                state_capture = None
 
         while should_continue():
             try:
@@ -133,34 +120,60 @@ class BrowserEnv:
                     elif unique_request_id == 'IS_ALIVE':
                         self.browser_side.send(('ALIVE', None))
                         continue
-
-                    # EVAL ONLY: Get evaluation info
-                    if action_data['action'] == BROWSER_EVAL_GET_GOAL_ACTION:
-                        self.browser_side.send(
-                            (
-                                unique_request_id,
-                                {
-                                    'text_content': self.eval_goal,
-                                    'image_content': self.goal_image_urls,
-                                },
+                    elif unique_request_id == 'SET_WEBARENA_INSTANCE':
+                        # Set WebArena instance ID for state capture
+                        if state_capture and 'instance_id' in action_data:
+                            state_capture.set_instance_id(action_data['instance_id'])
+                            logger.info(
+                                f'Set WebArena instance ID: {action_data["instance_id"]}'
                             )
-                        )
+                        self.browser_side.send((unique_request_id, {'status': 'ok'}))
                         continue
-                    elif action_data['action'] == BROWSER_EVAL_GET_REWARDS_ACTION:
-                        self.browser_side.send(
-                            (
-                                unique_request_id,
-                                {'text_content': json.dumps(self.eval_rewards)},
+                    elif unique_request_id == 'CAPTURE_WEBARENA_STATE':
+                        # Capture final browser state for WebArena evaluation
+                        if state_capture:
+                            try:
+                                state_file = state_capture.save_state(env)
+                                self.browser_side.send(
+                                    (
+                                        unique_request_id,
+                                        {'status': 'ok', 'state_file': state_file},
+                                    )
+                                )
+                            except Exception as e:
+                                logger.error(f'Failed to capture WebArena state: {e}')
+                                self.browser_side.send(
+                                    (
+                                        unique_request_id,
+                                        {'status': 'error', 'error': str(e)},
+                                    )
+                                )
+                        else:
+                            self.browser_side.send(
+                                (unique_request_id, {'status': 'disabled'})
                             )
-                        )
                         continue
 
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
 
-                    # EVAL ONLY: Save the rewards into file for evaluation
-                    if self.eval_mode:
-                        self.eval_rewards.append(reward)
+                    # DEBUG: Log what's in the BrowserGym observation
+                    logger.info(f'DEBUG: BrowserGym obs keys: {list(obs.keys())}')
+                    if 'axtree_object' in obs:
+                        axtree_obj = obs['axtree_object']
+                        logger.info(f'DEBUG: axtree_object type: {type(axtree_obj)}')
+                        if isinstance(axtree_obj, dict):
+                            logger.info(
+                                f'DEBUG: axtree_object keys: {list(axtree_obj.keys())}'
+                            )
+                            if 'nodes' in axtree_obj:
+                                logger.info(
+                                    f'DEBUG: axtree_object nodes length: {len(axtree_obj["nodes"]) if axtree_obj["nodes"] else 0}'
+                                )
+                        else:
+                            logger.info(f'DEBUG: axtree_object value: {axtree_obj}')
+                    else:
+                        logger.info('DEBUG: No axtree_object in BrowserGym observation')
 
                     # add text content of the page
                     html_str = flatten_dom_to_str(obs['dom_object'])
@@ -207,6 +220,48 @@ class BrowserEnv:
                 return True
             logger.debug(f'Browser env is not alive. Response ID: {response_id}')
         return False
+
+    def set_webarena_instance_id(self, instance_id: str, timeout: float = 10) -> bool:
+        """Set the WebArena instance ID for browser state capture."""
+        if not self.enable_state_logging:
+            logger.warning('Browser state logging is not enabled')
+            return False
+
+        unique_request_id = 'SET_WEBARENA_INSTANCE'
+        self.agent_side.send((unique_request_id, {'instance_id': instance_id}))
+        start_time = time.time()
+        while True:
+            if should_exit() or time.time() - start_time > timeout:
+                logger.error('Timeout setting WebArena instance ID')
+                return False
+            if self.agent_side.poll(timeout=0.01):
+                response_id, response = self.agent_side.recv()
+                if response_id == unique_request_id:
+                    return response.get('status') == 'ok'
+
+    def capture_webarena_state(self, timeout: float = 30) -> str | None:
+        """Capture the current browser state for WebArena evaluation."""
+        if not self.enable_state_logging:
+            logger.warning('Browser state logging is not enabled')
+            return None
+
+        unique_request_id = 'CAPTURE_WEBARENA_STATE'
+        self.agent_side.send((unique_request_id, {}))
+        start_time = time.time()
+        while True:
+            if should_exit() or time.time() - start_time > timeout:
+                logger.error('Timeout capturing WebArena state')
+                return None
+            if self.agent_side.poll(timeout=0.01):
+                response_id, response = self.agent_side.recv()
+                if response_id == unique_request_id:
+                    if response.get('status') == 'ok':
+                        return response.get('state_file')
+                    else:
+                        logger.error(
+                            f'Failed to capture state: {response.get("error", "unknown error")}'
+                        )
+                        return None
 
     def close(self) -> None:
         if not self.process.is_alive():
