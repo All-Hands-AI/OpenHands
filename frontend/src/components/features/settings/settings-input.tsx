@@ -19,6 +19,7 @@ interface SettingsInputProps {
   max?: number;
   step?: number;
   pattern?: string;
+  labelClassName?: string;
 }
 
 export function SettingsInput({
@@ -39,12 +40,13 @@ export function SettingsInput({
   max,
   step,
   pattern,
+  labelClassName,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
       <div className="flex items-center gap-2">
         {startContent}
-        <span className="text-sm">{label}</span>
+        <span className={cn("text-sm", labelClassName)}>{label}</span>
         {showOptionalTag && <OptionalTag />}
       </div>
       <input
