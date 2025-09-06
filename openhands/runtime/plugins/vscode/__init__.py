@@ -15,6 +15,8 @@ from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils.system import check_port_available
 from openhands.utils.shutdown_listener import should_continue
 
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+
 
 @dataclass
 class VSCodeRequirement(PluginRequirement):
@@ -37,7 +39,7 @@ class VSCodePlugin(Plugin):
             )
             return
 
-        if username not in ['root', 'openhands']:
+        if username not in filter(None, [RUNTIME_USERNAME, 'root', 'openhands']):
             self.vscode_port = None
             self.vscode_connection_token = None
             logger.warning(

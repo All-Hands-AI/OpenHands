@@ -319,12 +319,15 @@ export function WsClientProvider({
 
     let baseUrl: string | null = null;
     let socketPath: string;
+    console.log(`conversation URL: ${conversation.url}`);
     if (conversation.url && !conversation.url.startsWith("/")) {
       const u = new URL(conversation.url);
       baseUrl = u.host;
       const pathBeforeApi = u.pathname.split("/api/conversations")[0] || "/";
+      console.log(`pathBeforeApi: ${pathBeforeApi}`);
       // Socket.IO server default path is /socket.io; prefix with pathBeforeApi for path mode
       socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
+      console.log(`socketPath: ${socketPath}`);
     } else {
       baseUrl =
         (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
