@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core.config.condenser_config import (
@@ -9,6 +11,9 @@ from openhands.core.config.condenser_config import (
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
+
+USE_INTERACTION_PROMPT = os.getenv('USE_INTERACTION_PROMPT', 'false').lower() == 'true'
+USE_TOM_PROMPT = os.getenv('USE_TOM_PROMPT', 'false').lower() == 'true'
 
 
 class AgentConfig(BaseModel):
@@ -59,6 +64,15 @@ class AgentConfig(BaseModel):
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
+    # Tom agent integration settings (only used by TomCodeActAgent)
+    enable_tom_integration: bool = Field(default=True)
+    """Whether to enable Tom agent integration for personalized guidance"""
+    tom_enable_rag: bool = Field(default=False)
+    """Whether to enable RAG (Retrieval Augmented Generation) in Tom agent"""
+    tom_min_instruction_length: int = Field(default=5)
+    """Minimum instruction length to trigger Tom improvement"""
+    skip_memory_collection: bool = Field(default=False)
+    """If True, skip workflow and directly predict user mental states for faster responses"""
 
     model_config = ConfigDict(extra='forbid')
 
@@ -70,8 +84,10 @@ class AgentConfig(BaseModel):
         unless a custom system_prompt_filename was explicitly set (not the default).
         """
         if self.enable_plan_mode and self.system_prompt_filename == 'system_prompt.j2':
-            return 'system_prompt_long_horizon.j2'
-        return self.system_prompt_filename
+            return 'system_prompt_long_horizon_tom.j2'
+        if self.system_prompt_filename:
+            return self.system_prompt_filename
+        return 'system_prompt_tom.j2'
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
@@ -121,10 +137,11 @@ class AgentConfig(BaseModel):
             try:
                 # Merge base config with overrides
                 merged = {**base_config.model_dump(), **overrides}
+                # Import Agent class for both paths
+                from openhands.controller.agent import Agent
+
                 if merged.get('classpath'):
                     # if an explicit classpath is given, try to load it and look up its config model class
-                    from openhands.controller.agent import Agent
-
                     try:
                         agent_cls = get_impl(Agent, merged.get('classpath'))
                         custom_config = agent_cls.config_model.model_validate(merged)

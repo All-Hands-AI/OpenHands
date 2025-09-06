@@ -14,6 +14,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    ConsultTomAgentAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
@@ -29,6 +30,7 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    ConsultTomAgentObservation,
     FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
@@ -339,6 +341,13 @@ class ConversationMemory:
                     tool_calls=None,
                 )
             ]
+        elif isinstance(action, ConsultTomAgentAction):
+            return [
+                Message(
+                    role='assistant',
+                    content=[TextContent(text=action.content)],
+                )
+            ]
         return []
 
     def _process_observation(
@@ -524,6 +533,9 @@ class ConversationMemory:
         elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, ConsultTomAgentObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='assistant', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions
@@ -664,7 +676,6 @@ class ConversationMemory:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
-
         # Update the message as tool response properly
         if (tool_call_metadata := getattr(obs, 'tool_call_metadata', None)) is not None:
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(

@@ -6,10 +6,12 @@ from .ipython import IPythonTool
 from .llm_based_edit import LLMBasedFileEditTool
 from .str_replace_editor import create_str_replace_editor_tool
 from .think import ThinkTool
+from .tom_consult_agent import ConsultTomAgentTool
 
 __all__ = [
     'BrowserTool',
     'CondensationRequestTool',
+    'ConsultTomAgentTool',
     'create_cmd_run_tool',
     'FinishTool',
     'IPythonTool',

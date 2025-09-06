@@ -12,6 +12,7 @@ from litellm import (
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CondensationRequestTool,
+    ConsultTomAgentTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -33,6 +34,7 @@ from openhands.events.action import (
     AgentThinkAction,
     BrowseInteractiveAction,
     CmdRunAction,
+    ConsultTomAgentAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
@@ -293,6 +295,16 @@ def response_to_actions(
                 action = TaskTrackingAction(
                     command=arguments['command'],
                     task_list=normalized_task_list,
+                )
+
+            # ================================================
+            # ConsultTomAgentAction
+            # ================================================
+            elif tool_call.function.name == ConsultTomAgentTool['function']['name']:
+                action = ConsultTomAgentAction(
+                    content=arguments.get('reason', ''),
+                    use_user_message=arguments.get('use_user_message', True),
+                    custom_query=arguments.get('custom_query', None),
                 )
 
             # ================================================

@@ -123,7 +123,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             )
     else:
         # Fallback or error handling if mode is unexpected
-        logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
+        logger.warning(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
     logger.debug(f'Using instruction template file: {template_name}')

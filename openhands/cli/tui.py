@@ -7,10 +7,12 @@ import contextlib
 import datetime
 import html
 import json
+import logging
 import re
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from typing import Generator
 
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -85,6 +87,8 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
+    '/sleeptime': 'Run Tom sleeptime computation to process recent sessions',
+    '/tom_give_suggestions': 'Ask Tom agent to give suggestions to the SWE agent',
 }
 
 print_lock = threading.Lock()
@@ -171,6 +175,39 @@ def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
+
+    # Display anonymous user ID for transparency
+    try:
+        from openhands.utils.analytics import get_anonymous_user_id
+
+        anonymous_id = get_anonymous_user_id()
+        print_formatted_text(
+            HTML(f'<grey> Study User ID: {anonymous_id}</grey>'),
+            style=DEFAULT_STYLE,
+        )
+        print_formatted_text('')
+    except Exception:
+        # If we can't get the ID, don't show it
+        pass
+
+    # Display Tom agent tips for new sessions
+    print_formatted_text(
+        HTML('<ansiblue>💡 Pro tips:</ansiblue>'),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • Use <b>/sleeptime</b> in the beginning of the session to let ToM agent analyze your previous sessions</grey>'
+        ),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text(
+        HTML(
+            "<grey>  • Use <b>/tom_give_suggestions</b> to get ToM agent's suggestions for your next action</grey>"
+        ),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text('')
 
     if message:
         print_formatted_text(
@@ -646,6 +683,15 @@ def display_help() -> None:
         '• Specify the programming language or framework, if not obvious.\n'
     )
 
+    # Tom agent specific tips
+    print_formatted_text(
+        HTML(
+            '<ansiblue>Tom agent features:</ansiblue>\n'
+            '<grey>• Use <b>/sleeptime</b> to let Tom analyze recent sessions and improve performance</grey>\n'
+            "<grey>• Use <b>/tom_give_suggestions</b> to get Tom's suggestions for your next action</grey>\n"
+        )
+    )
+
     # Commands section
     print_formatted_text(HTML('Interactive commands:'))
     commands_html = ''
@@ -801,7 +847,10 @@ def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
 
 
 async def read_prompt_input(
-    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+    config: OpenHandsConfig,
+    agent_state: str,
+    multiline: bool = False,
+    prefill_text: str = '',
 ) -> str:
     try:
         prompt_session = create_prompt_session(config)
@@ -830,6 +879,7 @@ async def read_prompt_input(
                 print_formatted_text('')
                 message = await prompt_session.prompt_async(
                     HTML('<gold>> </gold>'),
+                    default=prefill_text,
                 )
         return message if message is not None else ''
     except (KeyboardInterrupt, EOFError):
@@ -1024,3 +1074,175 @@ class UserCancelledError(Exception):
     """Raised when the user cancels an operation via key binding."""
 
     pass
+
+
+# Tom-SWE thinking process display functionality
+CLI_DISPLAY_LEVEL = 25  # Between INFO (20) and WARNING (30)
+
+# Add the custom logging level
+logging.addLevelName(CLI_DISPLAY_LEVEL, 'CLI_DISPLAY')
+
+
+def display_tom_thinking_step(message: str) -> None:
+    """Display tom agent thinking step with proper CLI formatting."""
+    if not message or not message.strip():
+        return
+
+    message = message.strip()
+
+    # Determine color and styling based on emoji/content
+    if message.startswith('🎯'):
+        color = COLOR_GOLD
+        prefix = 'Tom Analysis'
+    elif message.startswith('⏱️') or 'time' in message.lower():
+        color = COLOR_GREY
+        prefix = 'Tom Performance'
+    elif message.startswith('🔍'):
+        color = '#32CD32'  # Lime green for search results
+        prefix = 'Action Parameters/Results'
+    elif message.startswith('🧠'):
+        color = '#9370DB'  # Medium purple for reasoning
+        prefix = 'Tom Reasoning'
+    elif message.startswith('⚡'):
+        color = '#FF6347'  # Tomato red for actions
+        prefix = 'Tom Action'
+    elif message.startswith('✅'):
+        color = '#00FF7F'  # Spring green for completion
+        prefix = 'Tom Complete'
+    elif message.startswith('🔄'):
+        color = COLOR_AGENT_BLUE
+        prefix = 'Tom Progress'
+    elif message.startswith('📁') or message.startswith('📊'):
+        color = COLOR_GREY
+        prefix = 'Tom Data'
+    else:
+        color = COLOR_AGENT_BLUE
+        prefix = 'Tom'
+
+    # Display with consistent formatting using FormattedText for better color support
+    # message maximum length is 100 characters
+    message = message[:100]
+    print_formatted_text(
+        FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
+    )
+
+
+class TomCliLogHandler(logging.Handler):
+    """Simple handler for tom CLI_DISPLAY level messages only."""
+
+    def emit(self, record):
+        """Emit a log record for CLI display."""
+        message = record.getMessage()
+        try:
+            if record.levelno == CLI_DISPLAY_LEVEL:
+                # Special styling for our custom display level
+                display_tom_thinking_step(message)
+        except Exception:
+            # Don't let display errors break tom functionality
+            pass
+
+
+class TomMessageFilter(logging.Filter):
+    """Filter to suppress Tom-related messages from regular OpenHands logger."""
+
+    def filter(self, record):
+        message = record.getMessage()
+        # Suppress messages that contain "Tom:" to avoid duplicates
+        return not ('Tom:' in message or record.levelno == CLI_DISPLAY_LEVEL)
+
+
+@contextmanager
+def capture_tom_thinking():
+    """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
+    handler = TomCliLogHandler()
+    TomMessageFilter()
+    tom_logger = logging.getLogger('tom_swe')
+    oh_logger = logging.getLogger('openhands')
+
+    try:
+        # Add Tom CLI handler for clean display
+        tom_logger.setLevel(logging.INFO)
+        oh_logger.setLevel(logging.INFO)
+        tom_logger.addHandler(handler)
+        oh_logger.addHandler(handler)
+        tom_logger.propagate = True
+        oh_logger.propagate = True
+
+        # # Add filter to OpenHands logger to suppress Tom messages
+        # oh_logger.addFilter(tom_filter)
+
+        yield
+    finally:
+        with contextlib.suppress(Exception):
+            tom_logger.removeHandler(handler)
+            # oh_logger.removeFilter(tom_filter)
+
+
+def display_instruction_improvement(
+    original_instruction: str, suggestions: str
+) -> dict:
+    from openhands.core.config import OpenHandsConfig
+
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🎯 ToM agent is here to help:</gold>'))
+    print_formatted_text('')
+
+    # Extract content after the ToM Agent Analysis marker
+    text = suggestions.strip()
+
+    # Look for the ToM Agent Analysis marker and extract content after it
+    marker = '*****************ToM Agent Analysis Start Here*****************'
+    if marker in text:
+        # Split on the marker and take everything after it
+        parts = text.split(marker, 1)
+        if len(parts) > 1:
+            text = parts[1].strip()
+
+    container = Frame(
+        TextArea(
+            text=text,
+            read_only=True,
+            wrap_lines=True,
+        ),
+        title="ToM agent's suggestion",
+        style='fg:ansiblue',
+    )
+    print_container(container)
+
+    print_formatted_text('')
+    print_formatted_text('')
+    print_formatted_text(HTML('<grey>Use ↑/↓ to select, then press Enter</grey>'))
+
+    # Get user choice
+    config = OpenHandsConfig()  # Create minimal config for cli_confirm
+    choice = cli_confirm(
+        config,
+        'How would you like to proceed with this improved instruction?',
+        ['Accept', 'Almost right, let me give some suggestions to modify it', 'Reject'],
+        initial_selection=0,
+    )
+
+    # Return structured response instead of boolean
+    if choice == 0:
+        return {'action': 'accept', 'value': 1, 'suggestions': suggestions}
+    elif choice == 1:
+        # Return enhanced instruction that tells LLM to ask for modification
+        enhanced_instruction = f"""Tom suggested this improvement to the SWE agent:
+
+{suggestions}
+
+However, user indicated this needs modification. So given [Modification Request], ask the user: 'How would you like to modify Tom's suggestion?'"""
+
+        return {
+            'action': 'modify',
+            'value': 0.5,
+            'suggestions': enhanced_instruction,
+            'skip_next_tom': True,
+        }
+    else:
+        original_instruction = original_instruction.replace(
+            '\tom_improve_instruction', 'Guess what I want to do next'
+        )
+        enhanced_instruction = "User rejected ToM agent's suggestion. Please proceed with user's original instruction (and not ask ToM agent for help this round)"
+
+        return {'action': 'reject', 'value': 0, 'suggestions': enhanced_instruction}

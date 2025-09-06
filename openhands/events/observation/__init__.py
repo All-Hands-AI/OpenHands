@@ -27,6 +27,7 @@ from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
 from openhands.events.observation.task_tracking import TaskTrackingObservation
+from openhands.events.observation.tom import ConsultTomAgentObservation
 
 __all__ = [
     'Observation',
@@ -50,4 +51,5 @@ __all__ = [
     'MCPObservation',
     'FileDownloadObservation',
     'TaskTrackingObservation',
+    'ConsultTomAgentObservation',
 ]

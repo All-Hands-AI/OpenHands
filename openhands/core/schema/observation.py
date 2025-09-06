@@ -58,3 +58,6 @@ class ObservationType(str, Enum):
 
     TASK_TRACKING = 'task_tracking'
     """Result of a task tracking operation"""
+
+    CONSULT_TOM_AGENT = 'consult_tom_agent'
+    """Result of Tom agent consultation process"""
