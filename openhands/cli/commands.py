@@ -157,8 +157,8 @@ async def handle_commands(
         )
         if close_repl:
             exit_reason = ExitReason.INTENTIONAL
-    elif command == '/settings':
-        await handle_settings_command(config, settings_store)
+    # elif command == '/settings':
+    #     await handle_settings_command(config, settings_store)
     elif command == '/resume':
         close_repl, new_session_requested = await handle_resume_command(
             event_stream, agent_state

@@ -361,7 +361,7 @@ def log_uncaught_exceptions(
 
 
 sys.excepthook = log_uncaught_exceptions
-openhands_logger = logging.getLogger('openhands')
+openhands_logger = logging.getLogger('snowcode')
 current_log_level = logging.INFO
 
 if LOG_LEVEL in logging.getLevelNamesMapping():

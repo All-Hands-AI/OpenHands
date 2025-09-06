@@ -82,7 +82,7 @@ COMMANDS = {
     '/init': 'Initialize a new repository',
     '/status': 'Display conversation details and usage metrics',
     '/new': 'Create a new conversation',
-    '/settings': 'Display and modify current settings',
+    # '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
 }
@@ -149,18 +149,20 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 def display_banner(session_id: str) -> None:
     print_formatted_text(
-        HTML(r"""<gold>
-     ___                    _   _                 _
-    /  _ \ _ __   ___ _ __ | | | | __ _ _ __   __| |___
-    | | | | '_ \ / _ \ '_ \| |_| |/ _` | '_ \ / _` / __|
-    | |_| | |_) |  __/ | | |  _  | (_| | | | | (_| \__ \
-    \___ /| .__/ \___|_| |_|_| |_|\__,_|_| |_|\__,_|___/
-          |_|
-    </gold>"""),
+        HTML(
+            r"""<gold>
+     ____                                   _
+    / ___| _ __   _____      _____ ___   __| | ___
+    \___ \| '_ \ / _ \ \ /\ / / __/ _ \ / _` |/ _ \
+     ___) | | | | (_) \ V  V / (_| (_) | (_| |  __/
+    |____/|_| |_|\___/ \_/\_/ \___\___/ \__,_|\___|
+
+    </gold>"""
+        ),
         style=DEFAULT_STYLE,
     )
 
-    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
+    print_formatted_text(HTML(f'<grey>Snowcode CLI v{__version__}</grey>'))
 
     print_formatted_text('')
     print_formatted_text(HTML(f'<grey>Initialized conversation {session_id}</grey>'))
@@ -621,8 +623,8 @@ def display_help() -> None:
     # Version header and introduction
     print_formatted_text(
         HTML(
-            f'\n<grey>OpenHands CLI v{__version__}</grey>\n'
-            '<gold>OpenHands CLI lets you interact with the OpenHands agent from the command line.</gold>\n'
+            f'\n<grey>Snowcode CLI v{__version__}</grey>\n'
+            '<gold>Snowcode CLI lets you interact with the Snowcode agent from the command line.</gold>\n'
         )
     )
 
@@ -638,7 +640,7 @@ def display_help() -> None:
 
     # Tips section
     print_formatted_text(
-        'Some tips to get the most out of OpenHands:\n'
+        'Some tips to get the most out of Snowcode:\n'
         '• Be as specific as possible about the desired outcome or the problem to be solved.\n'
         '• Provide context, including relevant file paths and line numbers if available.\n'
         '• Break large tasks into smaller, manageable prompts.\n'
