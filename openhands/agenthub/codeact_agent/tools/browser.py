@@ -64,7 +64,7 @@ scroll(delta_x: float, delta_y: float)
 
         scroll(-50.2, -100.5)
 
-fill(bid: str, value: str)
+fill(bid: str, value: str, enable_autocomplete_menu: bool = False)
     Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
     Examples:
         fill('237', 'example value')

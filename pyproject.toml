@@ -41,7 +41,7 @@ types-toml = "*"
 uvicorn = "*"
 numpy = "*"
 json-repair = "*"
-browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
+browsergym-core = "0.14.2"                         # integrate browsergym-core as the browsing interface
 html2text = "*"
 deprecated = "*"
 pexpect = "*"
@@ -156,10 +156,10 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
-browsergym = "0.13.3"
-browsergym-webarena = "0.13.3"
-browsergym-miniwob = "0.13.3"
-browsergym-visualwebarena = "0.13.3"
+browsergym = "0.14.2"
+browsergym-webarena = "0.14.2"
+browsergym-miniwob = "0.14.2"
+browsergym-visualwebarena = "0.14.2"
 boto3-stubs = { extras = [ "s3" ], version = "^1.37.19" }
 # transitive dependency, pinned here to avoid conflicts
 pyarrow = "21.0.0"

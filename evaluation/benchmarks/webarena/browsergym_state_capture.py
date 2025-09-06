@@ -28,7 +28,7 @@ class BrowserGymStateCapture:
     def __init__(self, output_dir: str = '/tmp/webarena_states'):
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
-        self.current_instance_id = None
+        self.current_instance_id: str | None = None
 
     def set_instance_id(self, instance_id: str) -> None:
         """Set the current WebArena instance ID for state saving."""
@@ -94,7 +94,7 @@ class BrowserGymStateCapture:
 
     def save_state(self, browsergym_env) -> str:
         """Save the current browser state to disk."""
-        if not self.current_instance_id:
+        if self.current_instance_id is None:
             raise RuntimeError('Instance ID not set. Call set_instance_id() first.')
 
         state = self.capture_final_state(browsergym_env)
