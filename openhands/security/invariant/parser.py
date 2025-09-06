@@ -53,7 +53,21 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
 
         function = Function(name=action.action, arguments=args)
         if thought is not None:
-            inv_trace.append(Message(role='assistant', content=thought))
+            # Thought can be a Thought dataclass (preferred), a dict (serialized), or a string (legacy)
+            thought_str = ''
+            # If it looks like a Thought-like object with a 'text' attribute, use it
+            if hasattr(thought, 'text'):
+                try:
+                    thought_str = str(getattr(thought, 'text'))
+                except Exception:
+                    thought_str = ''
+            elif isinstance(thought, dict):
+                thought_str = thought.get('text') or thought.get('thought') or ''
+            elif isinstance(thought, str):
+                thought_str = thought
+            else:
+                thought_str = str(thought)
+            inv_trace.append(Message(role='assistant', content=thought_str))
         inv_trace.append(ToolCall(id=next_id, type='function', function=function))
     else:
         logger.error(f'Unknown action type: {type(action)}')

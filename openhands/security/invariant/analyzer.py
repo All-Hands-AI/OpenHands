@@ -6,7 +6,9 @@ import docker
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
-from openhands.runtime.utils import find_available_tcp_port
+
+# Delay import to avoid circular import with openhands.runtime package
+# from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
 from openhands.security.invariant.parser import TraceElement, parse_element
@@ -53,6 +55,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 self.container = all_containers[0]
                 all_containers[0].start()
             else:
+                # Local import here to avoid circular import during module initialization
+                from openhands.runtime.utils import find_available_tcp_port
+
                 self.api_port = find_available_tcp_port()
                 self.container = self.docker_client.containers.run(
                     self.image_name,

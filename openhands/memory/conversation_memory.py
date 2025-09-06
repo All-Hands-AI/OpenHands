@@ -19,6 +19,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
+    Thought,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
@@ -282,26 +283,25 @@ class ConversationMemory:
                 )
                 content = assistant_msg.content or ''
 
-                # save content if any, to thought
-                if hasattr(action, 'thought') and action.thought is not None:
+                # Update the Thought text with assistant content when present
+                try:
                     cur_text = action.thought.text
-                    if cur_text != content:
-                        action.thought.text = (
-                            (cur_text + '\n' + content) if cur_text else content
-                        )
-                else:
-                    from openhands.events.action import Thought as _Thought
-
-                    action.thought = _Thought(text=content)
+                except AttributeError:
+                    # Backward compatibility: tolerate legacy str instance in tests
+                    action.thought = Thought(text=str(action.thought))
+                    cur_text = action.thought.text
+                if cur_text != content:
+                    action.thought.text = (
+                        (cur_text + '\n' + content) if cur_text else content
+                    )
 
                 # remove the tool call metadata
-                action.tool_call_metadata = None
+                if hasattr(action, '_tool_call_metadata'):
+                    delattr(action, '_tool_call_metadata')
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
             # Only send plain thought text to the LLM
-            thought_text = (
-                action.thought.text if hasattr(action.thought, 'text') else ''
-            )
+            thought_text = action.thought.text
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
