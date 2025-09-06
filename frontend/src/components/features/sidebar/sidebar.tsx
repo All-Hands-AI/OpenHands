@@ -33,6 +33,18 @@ export function Sidebar() {
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
 
+  // Close conversation panel when navigation state indicates it should be closed
+  React.useEffect(() => {
+    if (location.state?.closeConversationPanel) {
+      setConversationPanelIsOpen(false);
+      // Clean up the state to prevent it from persisting
+      window.history.replaceState(
+        { ...location.state, closeConversationPanel: undefined },
+        "",
+      );
+    }
+  }, [location.state]);
+
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings =
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";

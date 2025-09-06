@@ -25,6 +25,7 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onStop?: () => void;
+  onReset?: () => void;
   onChangeTitle?: (title: string) => void;
   showOptions?: boolean;
   isActive?: boolean;
@@ -37,6 +38,7 @@ interface ConversationCardProps {
   conversationId?: string; // Optional conversation ID for VS Code URL
   contextMenuOpen?: boolean;
   onContextMenuToggle?: (isOpen: boolean) => void;
+  replacedByConversationId?: string | null;
 }
 
 const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
@@ -45,6 +47,7 @@ export function ConversationCard({
   onClick,
   onDelete,
   onStop,
+  onReset,
   onChangeTitle,
   showOptions,
   isActive,
@@ -59,6 +62,7 @@ export function ConversationCard({
   conversationId,
   contextMenuOpen = false,
   onContextMenuToggle,
+  replacedByConversationId,
 }: ConversationCardProps) {
   const { t } = useTranslation();
   const { parsedEvents } = useWsClient();
@@ -118,6 +122,13 @@ export function ConversationCard({
     event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
+    onContextMenuToggle?.(false);
+  };
+
+  const handleReset = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onReset?.();
     onContextMenuToggle?.(false);
   };
 
@@ -209,7 +220,10 @@ export function ConversationCard({
             {titleMode === "view" && (
               <p
                 data-testid="conversation-card-title"
-                className="text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden"
+                className={cn(
+                  "text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden",
+                  replacedByConversationId && "line-through text-neutral-500",
+                )}
                 title={title}
               >
                 {title}
@@ -243,6 +257,7 @@ export function ConversationCard({
                       : undefined
                   }
                   onEdit={onChangeTitle && handleEdit}
+                  onReset={onReset && handleReset}
                   onDownloadViaVSCode={
                     conversationId && showOptions
                       ? handleDownloadViaVSCode
