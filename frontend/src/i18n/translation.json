@@ -14334,5 +14334,21 @@
     "tr": "Çalışma zamanını başlat",
     "de": "Runtime starten",
     "uk": "Запустити середовище виконання"
+  },
+  "COMMON$JUPYTER_EMPTY_MESSAGE": {
+    "en": "Your Jupyter notebook is empty. No cells to display.",
+    "ja": "Jupyterノートブックは空です。表示するセルがありません。",
+    "zh-CN": "您的 Jupyter 笔记本为空。没有可显示的单元格。",
+    "zh-TW": "您的 Jupyter 筆記本是空的。沒有可顯示的儲存格。",
+    "ko-KR": "Jupyter 노트북이 비어 있습니다. 표시할 셀이 없습니다.",
+    "no": "Jupyter-notatboken din er tom. Ingen celler å vise.",
+    "it": "Il tuo notebook Jupyter è vuoto. Nessuna cella da visualizzare.",
+    "pt": "Seu notebook Jupyter está vazio. Nenhuma célula para exibir.",
+    "es": "Tu cuaderno Jupyter está vacío. No hay celdas para mostrar.",
+    "ar": "دفتر Jupyter الخاص بك فارغ. لا توجد خلايا للعرض.",
+    "fr": "Votre notebook Jupyter est vide. Aucune cellule à afficher.",
+    "tr": "Jupyter defteriniz boş. Gösterilecek hücre yok.",
+    "de": "Ihr Jupyter-Notebook ist leer. Keine Zellen zum Anzeigen.",
+    "uk": "Ваш Jupyter-ноутбук порожній. Немає клітинок для відображення."
   }
 }

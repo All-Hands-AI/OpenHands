@@ -31,6 +31,14 @@ def import_from(qual_name: str):
 
 
 @lru_cache()
+def _get_impl(cls: type[T], impl_name: str | None) -> type[T]:
+    if impl_name is None:
+        return cls
+    impl_class = import_from(impl_name)
+    assert cls == impl_class or issubclass(impl_class, cls)
+    return impl_class
+
+
 def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
     """Import and validate a named implementation of a base class.
 
@@ -62,8 +70,4 @@ def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
 
     The implementation is cached to avoid repeated imports of the same class.
     """
-    if impl_name is None:
-        return cls
-    impl_class = import_from(impl_name)
-    assert cls == impl_class or issubclass(impl_class, cls)
-    return impl_class
+    return _get_impl(cls, impl_name)  # type: ignore

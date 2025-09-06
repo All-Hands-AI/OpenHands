@@ -42,7 +42,10 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   };
 
   return (
-    <section data-testid="task-suggestions" className="flex flex-col w-full">
+    <section
+      data-testid="task-suggestions"
+      className="flex flex-1 min-w-0 flex-col"
+    >
       <div
         className={cn(
           "flex items-center gap-2",

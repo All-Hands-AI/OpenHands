@@ -209,9 +209,7 @@ export default function MainApp() {
 
       <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
         {config.data?.MAINTENANCE && (
-          <div className="flex-shrink-0">
-            <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
-          </div>
+          <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}
         <div id="root-outlet" className="flex-1 relative overflow-auto">
           <EmailVerificationGuard>
