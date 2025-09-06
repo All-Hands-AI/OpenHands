@@ -120,7 +120,7 @@ class GitHubResolverMixin(GitHubMixinBase):
                 'first': 50,
             }
             if after_cursor:
-                threads_variables['after'] = after_cursor
+                threads_variables['after'] = after_cursor  # type: ignore[unreachable]
 
             threads_data = await self.execute_graphql_query(
                 get_review_threads_graphql_query, threads_variables
@@ -167,7 +167,7 @@ class GitHubResolverMixin(GitHubMixinBase):
             comments_variables['threadId'] = thread_id
             comments_variables['page'] = 50
             if after_cursor:
-                comments_variables['after'] = after_cursor
+                comments_variables['after'] = after_cursor  # type: ignore[unreachable]
 
             thread_comments_data = await self.execute_graphql_query(
                 get_thread_comments_graphql_query, comments_variables

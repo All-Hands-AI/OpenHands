@@ -276,12 +276,12 @@ class VerifyWebhookStatus:
                     webhook
                 )
 
-                gitlab_service = GitLabServiceImpl(external_auth_id=user_id)
+                gitlab_service_impl = GitLabServiceImpl(external_auth_id=user_id)
 
-                if not isinstance(gitlab_service, SaaSGitLabService):
+                if not isinstance(gitlab_service_impl, SaaSGitLabService):
                     raise Exception('Only SaaSGitLabService is supported')
                 # Cast needed when mypy can see OpenHands
-                gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
+                gitlab_service = cast(type[SaaSGitLabService], gitlab_service_impl)
 
                 await self.verify_conditions_are_met(
                     gitlab_service=gitlab_service,

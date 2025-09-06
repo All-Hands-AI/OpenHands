@@ -234,7 +234,7 @@ def _get_user_id(conversation_id: str) -> str:
         return conversation_metadata.user_id
 
 
-async def _get_session_api_key(user_id: str, conversation_id: str) -> str:
+async def _get_session_api_key(user_id: str, conversation_id: str) -> str | None:
     agent_loop_info = await conversation_manager.get_agent_loop_info(
         user_id, filter_to_sids={conversation_id}
     )

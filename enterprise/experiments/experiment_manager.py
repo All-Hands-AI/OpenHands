@@ -55,7 +55,7 @@ class SaaSExperimentManager(ExperimentManager):
 
     @staticmethod
     def run_config_variant_test(
-        user_id: str, conversation_id: str, config: OpenHandsConfig
+        user_id: str | None, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         """
         Run agent config variant test and potentially modify the OpenHands config
