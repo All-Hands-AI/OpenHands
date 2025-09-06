@@ -27,6 +27,7 @@ class FakeEventStream:
 class FakeRuntime:
     def __init__(self):
         self.event_stream = FakeEventStream()
+        self.workspace_root = '/workspace'
 
     async def connect(self):
         return None
