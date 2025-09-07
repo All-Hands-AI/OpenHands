@@ -295,7 +295,10 @@ class ConversationMemory:
                 raise ValueError(f'Invalid role: {role}')
 
             # Ensure assistant messages have non-empty content (required by some LLM providers like Mistral)
-            thought_text = action.thought or 'Task completed'
+            if role == 'assistant' and not (action.thought and action.thought.strip()):
+                thought_text = 'Task completed.'
+            else:
+                thought_text = action.thought or ''
 
             return [
                 Message(
