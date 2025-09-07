@@ -129,6 +129,7 @@ async def get_validated_input(
     *,
     default_value: str = '',
     enter_keeps_value: Optional[str] = None,
+    is_password: bool = False,
 ) -> str:
     """
     Get validated input from user.
@@ -142,6 +143,7 @@ async def get_validated_input(
         default_value: Value to show prefilled in the prompt (prompt placeholder)
         enter_keeps_value: If provided, pressing Enter on an empty input will
             return this value (useful for keeping existing sensitive values)
+        is_password: Whether to mask the input (e.g., for sensitive data)
 
     Returns:
         str: The validated input
@@ -151,7 +153,9 @@ async def get_validated_input(
     value = None
 
     while True:
-        value = await session.prompt_async(prompt_text, default=default_value)
+        value = await session.prompt_async(
+            prompt_text, default=default_value, is_password=is_password
+        )
 
         # If user submits empty input and a keep-value is provided, use it.
         if not value.strip() and enter_keeps_value is not None:
@@ -441,6 +445,7 @@ async def modify_llm_settings_basic(
             error_message='API Key cannot be empty',
             default_value='',
             enter_keeps_value=current_api_key,
+            is_password=True,
         )
 
     except (
@@ -525,6 +530,7 @@ async def modify_llm_settings_advanced(
             error_message='API Key cannot be empty',
             default_value='',
             enter_keeps_value=current_api_key,
+            is_password=True,
         )
 
         agent_list = Agent.list_agents()
@@ -658,6 +664,7 @@ async def modify_search_api_settings(
                 'Enter Tavily Search API Key. You can get it from https://www.tavily.com/ (starts with tvly-, CTRL-c to cancel): ',
                 validator=lambda x: x.startswith('tvly-') if x.strip() else False,
                 error_message='Search API Key must start with "tvly-"',
+                is_password=True,
             )
         elif modify_key == 1:  # Remove API Key
             search_api_key = ''  # Empty string to remove the key
