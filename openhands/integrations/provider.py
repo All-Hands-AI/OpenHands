@@ -639,8 +639,13 @@ class ProviderHandler:
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
+        # Initialize variables with defaults
+        provider = self._infer_provider_from_repo_name(repo_name)
+        # Keep the original repo_name as provided by default
+
         try:
             repository = await self.verify_repo_provider(repo_name)
+            # Update with verified information if successful
             provider = repository.git_provider
             repo_name = repository.full_name
         except AuthenticationError:
@@ -651,9 +656,7 @@ class ProviderHandler:
                 f'Repository verification failed (possibly offline): {e}. '
                 f'Using public HTTPS URL for repository: {repo_name}'
             )
-            # Try to infer provider from repo_name or use GitHub as default
-            provider = self._infer_provider_from_repo_name(repo_name)
-            # Keep the original repo_name as provided
+            # Use the inferred provider and original repo_name (already set above)
 
         domain = self.PROVIDER_DOMAINS[provider]
 
