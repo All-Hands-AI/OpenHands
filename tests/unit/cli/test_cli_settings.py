@@ -1294,7 +1294,7 @@ class TestGetValidatedInput:
 
         # Verify prompt was called with default parameter
         session_instance.prompt_async.assert_called_once_with(
-            'Enter value: ', default='existing-value'
+            'Enter value: ', default='existing-value', is_password=False
         )
         assert result == 'modified-value'
 
@@ -1317,7 +1317,7 @@ class TestGetValidatedInput:
 
         # Verify prompt was called with empty default
         session_instance.prompt_async.assert_called_once_with(
-            'Enter value: ', default=''
+            'Enter value: ', default='', is_password=False
         )
         # Empty input should return enter_keeps_value
         assert result == 'existing-value'
