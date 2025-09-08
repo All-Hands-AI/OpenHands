@@ -60,6 +60,28 @@ test = [
   "reportlab",
 ]
 
+[dependency-groups]
+dev = [
+  "ruff==0.8.3",
+  "mypy==1.13.0",
+  "pre-commit==4.1.0",
+  "build",
+  "types-requests>=2.32.4.20250611,<3",
+]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-asyncio",
+  "pytest-forked",
+  "pytest-xdist",
+  "flake8",
+  "openai",
+  "opencv-python",
+  "pandas",
+  "reportlab",
+]
+
+
 # [tool.uv]
 # default-extras = ["dev", "test"]
 

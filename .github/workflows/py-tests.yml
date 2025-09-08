@@ -85,13 +85,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hynek/setup-cached-uv@v2
         name: Setup uv
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Python dependencies using uv
+      - name: Initialize python venv
+        run: uv sync -p ${{ matrix.python-version }} --group dev --group test
         working-directory: ./enterprise
-        run: uv sync --group dev --group test
       - name: Run Unit Tests
         working-directory: ./enterprise
-        run: PYTHONPATH=".:$PYTHONPATH" uv run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit
+        run: uv run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit
