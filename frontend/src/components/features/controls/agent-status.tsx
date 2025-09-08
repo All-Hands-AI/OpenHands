@@ -18,12 +18,14 @@ export interface AgentStatusProps {
   className?: string;
   handleStop: () => void;
   handleResumeAgent: () => void;
+  disabled?: boolean;
 }
 
 export function AgentStatus({
   className = "",
   handleStop,
   handleResumeAgent,
+  disabled = false,
 }: AgentStatusProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -73,7 +75,10 @@ export function AgentStatus({
         {shouldShownAgentLoading && <AgentLoading />}
         {shouldShownAgentStop && <ChatStopButton handleStop={handleStop} />}
         {shouldShownAgentResume && (
-          <ChatResumeAgentButton onAgentResumed={handleResumeAgent} />
+          <ChatResumeAgentButton
+            onAgentResumed={handleResumeAgent}
+            disabled={disabled}
+          />
         )}
         {shouldShownAgentError && <CircleErrorIcon className="w-4 h-4" />}
         {!shouldShownAgentLoading &&
