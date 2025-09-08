@@ -1115,6 +1115,8 @@ def display_tom_thinking_step(message: str) -> None:
     elif message.startswith('📁') or message.startswith('📊'):
         color = COLOR_GREY
         prefix = 'Tom Data'
+    elif message.startswith('🚀'):
+        return
     else:
         color = COLOR_AGENT_BLUE
         prefix = 'Tom'
@@ -1156,27 +1158,27 @@ class TomMessageFilter(logging.Filter):
 def capture_tom_thinking():
     """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
     handler = TomCliLogHandler()
-    tom_filter = TomMessageFilter()
+    TomMessageFilter()
     tom_logger = logging.getLogger('tom_swe')
     oh_logger = logging.getLogger('openhands')
 
     try:
         # Add Tom CLI handler for clean display
-        tom_logger.setLevel(logging.INFO)
-        oh_logger.setLevel(logging.INFO)
+        tom_logger.setLevel(CLI_DISPLAY_LEVEL)
+        oh_logger.setLevel(CLI_DISPLAY_LEVEL)
         tom_logger.addHandler(handler)
         oh_logger.addHandler(handler)
         tom_logger.propagate = False
         oh_logger.propagate = False
 
         # # Add filter to OpenHands logger to suppress Tom messages
-        oh_logger.addFilter(tom_filter)
+        # oh_logger.addFilter(tom_filter)
 
         yield
     finally:
         with contextlib.suppress(Exception):
             tom_logger.removeHandler(handler)
-            oh_logger.removeFilter(tom_filter)
+            # oh_logger.removeFilter(tom_filter)
 
 
 def display_instruction_improvement(

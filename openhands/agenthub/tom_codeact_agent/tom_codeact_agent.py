@@ -290,10 +290,6 @@ class TomCodeActAgent(CodeActAgent):
         Returns:
             Tom agent's guidance if available, None otherwise
         """
-        logger.log(
-            CLI_DISPLAY_LEVEL,
-            f'🚀 Tom: Integration Point triggered - theory of minding about {"user query" if is_user_query else "agent query"}',
-        )
 
         try:
             user_id = state.user_id or ''
@@ -301,6 +297,10 @@ class TomCodeActAgent(CodeActAgent):
             # Capture tom thinking process in CLI if available
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
+                    logger.log(
+                        CLI_DISPLAY_LEVEL,
+                        '🚀 Tom: Theory of minding...',
+                    )
                     tom_suggestion = self.tom_agent.give_suggestions(
                         user_id=user_id,
                         query=query_text,
