@@ -1120,11 +1120,12 @@ def display_tom_thinking_step(message: str) -> None:
         prefix = 'Tom'
 
     # Display with consistent formatting using FormattedText for better color support
-    # message maximum length is 15 words
-    message = " ".join(message.split(' ')[:15] + ['...'])
+    # message maximum length is 40 words
+    message = ' '.join(message.split(' ')[:40] + ['...'])
     print_formatted_text(
         FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
     )
+    sys.stdout.flush()  # Force immediate display
 
 
 class TomCliLogHandler(logging.Handler):
@@ -1137,7 +1138,6 @@ class TomCliLogHandler(logging.Handler):
             if record.levelno == CLI_DISPLAY_LEVEL:
                 # Special styling for our custom display level
                 display_tom_thinking_step(message)
-                sys.stdout.flush()
         except Exception:
             # Don't let display errors break tom functionality
             pass
@@ -1156,27 +1156,34 @@ class TomMessageFilter(logging.Filter):
 def capture_tom_thinking():
     """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
     handler = TomCliLogHandler()
-    TomMessageFilter()
+    tom_filter = TomMessageFilter()
     tom_logger = logging.getLogger('tom_swe')
-    #oh_logger = logging.getLogger('openhands')
+    oh_logger = logging.getLogger('openhands')
 
     try:
+        # Show Tom thinking indicator
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<style fg="#9370DB">🧠 Theory of minding...</style>')
+        )
+        sys.stdout.flush()
+
         # Add Tom CLI handler for clean display
         tom_logger.setLevel(logging.INFO)
-        #oh_logger.setLevel(logging.INFO)
+        oh_logger.setLevel(logging.INFO)
         tom_logger.addHandler(handler)
-        #oh_logger.addHandler(handler)
+        oh_logger.addHandler(handler)
         tom_logger.propagate = False
-        #oh_logger.propagate = True
+        oh_logger.propagate = False
 
         # # Add filter to OpenHands logger to suppress Tom messages
-        # oh_logger.addFilter(tom_filter)
+        oh_logger.addFilter(tom_filter)
 
         yield
     finally:
         with contextlib.suppress(Exception):
             tom_logger.removeHandler(handler)
-            # oh_logger.removeFilter(tom_filter)
+            oh_logger.removeFilter(tom_filter)
 
 
 def display_instruction_improvement(

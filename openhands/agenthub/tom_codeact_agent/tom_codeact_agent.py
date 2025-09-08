@@ -132,11 +132,11 @@ class TomCodeActAgent(CodeActAgent):
                 self.sleeptime_compute(user_id=state.user_id or '')
                 return AgentFinishAction()
             elif (
-                latest_user_message.content.strip() == '/consult_tom_agent'
+                latest_user_message.content.strip() == '/tom_give_suggestions'
                 and self._is_new_user_message(latest_user_message)
             ):
                 action = ConsultTomAgentAction(
-                    content='Users message is /consult_tom_agent. I better consult ToM agent about what user wants to do next and get some user preferences.',
+                    content='Users message is /tom_give_suggestions. I better consult ToM agent about what user wants to do next and get some user preferences.',
                     use_user_message=False,
                     custom_query='what user wants to do next',
                 )
@@ -290,8 +290,9 @@ class TomCodeActAgent(CodeActAgent):
         Returns:
             Tom agent's guidance if available, None otherwise
         """
-        logger.info(
-            f'🚀 Tom: Integration Point triggered - consulting about {"user query" if is_user_query else "agent query"}'
+        logger.log(
+            CLI_DISPLAY_LEVEL,
+            f'🚀 Tom: Integration Point triggered - theory of minding about {"user query" if is_user_query else "agent query"}',
         )
 
         try:
