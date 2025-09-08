@@ -1120,8 +1120,8 @@ def display_tom_thinking_step(message: str) -> None:
         prefix = 'Tom'
 
     # Display with consistent formatting using FormattedText for better color support
-    # message maximum length is 100 characters
-    message = message[:100]
+    # message maximum length is 15 words
+    message = " ".join(message.split(' ')[:15] + ['...'])
     print_formatted_text(
         FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
     )
@@ -1137,6 +1137,7 @@ class TomCliLogHandler(logging.Handler):
             if record.levelno == CLI_DISPLAY_LEVEL:
                 # Special styling for our custom display level
                 display_tom_thinking_step(message)
+                sys.stdout.flush()
         except Exception:
             # Don't let display errors break tom functionality
             pass
@@ -1157,16 +1158,16 @@ def capture_tom_thinking():
     handler = TomCliLogHandler()
     TomMessageFilter()
     tom_logger = logging.getLogger('tom_swe')
-    oh_logger = logging.getLogger('openhands')
+    #oh_logger = logging.getLogger('openhands')
 
     try:
         # Add Tom CLI handler for clean display
         tom_logger.setLevel(logging.INFO)
-        oh_logger.setLevel(logging.INFO)
+        #oh_logger.setLevel(logging.INFO)
         tom_logger.addHandler(handler)
-        oh_logger.addHandler(handler)
-        tom_logger.propagate = True
-        oh_logger.propagate = True
+        #oh_logger.addHandler(handler)
+        tom_logger.propagate = False
+        #oh_logger.propagate = True
 
         # # Add filter to OpenHands logger to suppress Tom messages
         # oh_logger.addFilter(tom_filter)
