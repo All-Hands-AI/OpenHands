@@ -65,10 +65,10 @@ See the [uv installation guide](https://docs.astral.sh/uv/getting-started/instal
 
 ```bash
 # Launch the GUI server
-uvx --python 3.12 --from snowcode snow serve
+uvx --python 3.12 --from snowcode-ai snow serve
 
 # Or launch the CLI
-uvx --python 3.12 --from snowcode snow
+uvx --python 3.12 --from snowcode-ai snow
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (for GUI mode)!

@@ -5,7 +5,7 @@ requires = [
 ]
 
 [tool.poetry]
-name = "snowcode"
+name = "snowcode-ai"
 version = "0.55.0"
 description = "snowcode: Code Less, Make More"
 authors = [ "snowcode" ]

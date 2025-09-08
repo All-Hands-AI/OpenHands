@@ -76,7 +76,7 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 1. Install the package:
 
 ```bash
-pip install snowcode
+pip install snowcode-ai
 ```
 
 2. Create a GitHub, GitLab, or Bitbucket access token:
