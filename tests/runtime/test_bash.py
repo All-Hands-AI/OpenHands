@@ -318,11 +318,11 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         cmds = [
             'ls -l',
             'printf "%s\\n%s\\n" "hello" "world"',
-            """printf "%s\\n" "hello it's me"""",
+            'printf "%s\\n" "hello it\'s me',
             'printf "%s %s\\n" "hello" "world"',
             'printf "%s\\n%s\\n%s\\n%s\\n%s\\n" "hello" "world" "are" "you" "there?"',
             'printf "%s\\n%s\\n%s\\n%s\\n\\n%s\\n" "hello" "world" "are" "you" "there?"',
-            'printf "%s\\n%s\\n" "hello" "world \\\""',
+            'printf "%s\\n%s\\n" "hello" "world \\""',
         ]
     joined_cmds = '\n'.join(cmds)
 
@@ -379,7 +379,7 @@ def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
         cmds = [
             'echo "hello"',  # A command that will always work
             'printf "%s\\n%s\\n" "hello" "world"',
-            """printf "%s\\n" "hello it's me"""",
+            """printf "%s\\n" "hello it's me""",
         ]
         expected_outputs = [
             'hello',  # Simple string output
