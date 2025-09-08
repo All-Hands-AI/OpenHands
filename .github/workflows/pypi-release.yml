@@ -1,14 +1,14 @@
-# Publishes the OpenHands PyPi package
-name: Publish PyPi Package
+# Publishes the Snowcode PyPi package
+name: Publish Snowcode PyPi Package
 
 # Triggered manually
 on:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: true
-        default: ''
+        default: ""
 
 jobs:
   release:

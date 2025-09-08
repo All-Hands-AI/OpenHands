@@ -22,17 +22,20 @@ Follow these steps to use this workflow in your own repository:
 3. Copy `examples/openhands-resolver.yml` to your repository's `.github/workflows/` directory
 
 4. Configure repository permissions:
-    - Go to `Settings -> Actions -> General -> Workflow permissions`
-    - Select "Read and write permissions"
-    - Enable "Allow Github Actions to create and approve pull requests"
 
-    Note: If the "Read and write permissions" option is greyed out:
-    - First check if permissions need to be set at the organization level
-    - If still greyed out at the organization level, permissions need to be set in the [Enterprise policy settings](https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise#enforcing-a-policy-for-workflow-permissions-in-your-enterprise)
+   - Go to `Settings -> Actions -> General -> Workflow permissions`
+   - Select "Read and write permissions"
+   - Enable "Allow Github Actions to create and approve pull requests"
+
+   Note: If the "Read and write permissions" option is greyed out:
+
+   - First check if permissions need to be set at the organization level
+   - If still greyed out at the organization level, permissions need to be set in the [Enterprise policy settings](https://docs.github.com/en/enterprise-cloud@latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise#enforcing-a-policy-for-workflow-permissions-in-your-enterprise)
 
 5. Set up [GitHub secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions):
+
    - Required:
-    - `LLM_API_KEY`: Your LLM API key
+   - `LLM_API_KEY`: Your LLM API key
    - Optional:
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
@@ -46,21 +49,23 @@ Follow these steps to use this workflow in your own repository:
    There are two ways to trigger the OpenHands agent:
 
    a. Using the 'fix-me' label:
-      - Add the 'fix-me' label to any issue you want the AI to resolve
-      - The agent will consider all comments in the issue thread when resolving
-      - The workflow will:
-        1. Attempt to resolve the issue using OpenHands
-        2. Create a draft PR if successful, or push a branch if unsuccessful
-        3. Comment on the issue with the results
-        4. Remove the 'fix-me' label once processed
+
+   - Add the 'fix-me' label to any issue you want the AI to resolve
+   - The agent will consider all comments in the issue thread when resolving
+   - The workflow will:
+     1. Attempt to resolve the issue using OpenHands
+     2. Create a draft PR if successful, or push a branch if unsuccessful
+     3. Comment on the issue with the results
+     4. Remove the 'fix-me' label once processed
 
    b. Using `@openhands-agent` mention:
-      - Create a new comment containing `@openhands-agent` in any issue
-      - The agent will only consider the comment where it's mentioned
-      - The workflow will:
-        1. Attempt to resolve the issue based on the specific comment
-        2. Create a draft PR if successful, or push a branch if unsuccessful
-        3. Comment on the issue with the results
+
+   - Create a new comment containing `@openhands-agent` in any issue
+   - The agent will only consider the comment where it's mentioned
+   - The workflow will:
+     1. Attempt to resolve the issue based on the specific comment
+     2. Create a draft PR if successful, or push a branch if unsuccessful
+     3. Comment on the issue with the results
 
 Need help? Feel free to [open an issue](https://github.com/all-hands-ai/openhands/issues) or email us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
 
@@ -71,37 +76,40 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 1. Install the package:
 
 ```bash
-pip install openhands-ai
+pip install snowcode
 ```
 
 2. Create a GitHub, GitLab, or Bitbucket access token:
+
    - Create a GitHub access token
-      - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
-      - Create a fine-grained token with these scopes:
-      - "Content"
-      - "Pull requests"
-      - "Issues"
-      - "Workflows"
-      - If you don't have push access to the target repo, you can fork it first
+
+     - Visit [GitHub's token settings](https://github.com/settings/personal-access-tokens/new)
+     - Create a fine-grained token with these scopes:
+     - "Content"
+     - "Pull requests"
+     - "Issues"
+     - "Workflows"
+     - If you don't have push access to the target repo, you can fork it first
 
    - Create a GitLab access token
-      - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
-      - Create a fine-grained token with these scopes:
-      - 'api'
-      - 'read_api'
-      - 'read_user'
-      - 'read_repository'
-      - 'write_repository'
+
+     - Visit [GitLab's token settings](https://gitlab.com/-/user_settings/personal_access_tokens)
+     - Create a fine-grained token with these scopes:
+     - 'api'
+     - 'read_api'
+     - 'read_user'
+     - 'read_repository'
+     - 'write_repository'
 
    - Create a Bitbucket access token
-      - Visit [Bitbucket's app passwords settings](https://bitbucket.org/account/settings/app-passwords/)
-      - Create an app password with these scopes:
-      - 'Repositories: Read'
-      - 'Repositories: Write'
-      - 'Pull requests: Read'
-      - 'Pull requests: Write'
-      - 'Issues: Read'
-      - 'Issues: Write'
+     - Visit [Bitbucket's app passwords settings](https://bitbucket.org/account/settings/app-passwords/)
+     - Create an app password with these scopes:
+     - 'Repositories: Read'
+     - 'Repositories: Write'
+     - 'Pull requests: Read'
+     - 'Pull requests: Write'
+     - 'Issues: Read'
+     - 'Issues: Write'
 
 3. Set up environment variables:
 
