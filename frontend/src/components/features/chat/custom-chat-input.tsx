@@ -198,6 +198,10 @@ export function CustomChatInput({
 
   // Send button click handler
   const handleSubmit = () => {
+    if (disabled) {
+      return;
+    }
+
     const message = chatInputRef.current?.innerText || "";
 
     if (message.trim()) {
@@ -218,6 +222,10 @@ export function CustomChatInput({
 
   // Resume agent button click handler
   const handleResumeAgent = () => {
+    if (disabled) {
+      return;
+    }
+
     const message = chatInputRef.current?.innerText || "continue";
 
     onSubmit(message.trim());
@@ -407,11 +415,8 @@ export function CustomChatInput({
                 <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                   <div
                     ref={chatInputRef}
-                    className={cn(
-                      "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[400px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
-                      disabled && "cursor-not-allowed",
-                    )}
-                    contentEditable={!disabled}
+                    className="chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[400px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap"
+                    contentEditable
                     data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                     data-testid="chat-input"
                     onInput={handleInput}
