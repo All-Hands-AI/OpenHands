@@ -110,7 +110,6 @@ def get_windows_action_execution_server_startup_command(
     working_dir = app_config.workspace_mount_path_in_sandbox
     if working_dir.startswith('/'):
         working_dir = 'C:' + working_dir.replace('/', '\\')
-    
     base_cmd = [
         *WINDOWS_PYTHON_PREFIX,
         'python',
@@ -355,7 +354,6 @@ class WindowsDockerRuntime(ActionExecutionClient):
                         # Convert forward slashes to backslashes for Windows
                         if not host_path.startswith('\\\\'):
                             host_path = host_path.replace('/', '\\')
-                    
                     container_path = parts[1]
                     # Default mode is 'rw' if not specified
                     mount_mode = parts[2] if len(parts) > 2 else 'rw'
@@ -395,7 +393,7 @@ class WindowsDockerRuntime(ActionExecutionClient):
 
     def _process_overlay_mounts(self) -> list[Mount]:
         """Process overlay mounts for Windows containers.
-        
+
         Note: Overlay mounts are less common on Windows, but we provide basic support.
 
         Returns:

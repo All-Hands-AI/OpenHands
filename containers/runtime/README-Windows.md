@@ -102,7 +102,7 @@ Open your browser and navigate to: `http://localhost:3000`
 Windows runtime uses the following port ranges (compatible with OpenHands DockerRuntime):
 
 - **Execution Server Ports**: 30000-34999
-- **VSCode Ports**: 35000-39999  
+- **VSCode Ports**: 35000-39999
 - **Application Port Range 1**: 40000-44999
 - **Application Port Range 2**: 45000-49151
 

@@ -102,7 +102,7 @@ poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --relo
 Windows runtime使用以下端口范围（与OpenHands DockerRuntime兼容）：
 
 - **执行服务器端口**: 30000-34999
-- **VSCode端口**: 35000-39999  
+- **VSCode端口**: 35000-39999
 - **应用端口范围1**: 40000-44999
 - **应用端口范围2**: 45000-49151
 

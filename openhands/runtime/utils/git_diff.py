@@ -93,7 +93,6 @@ def get_git_diff(relative_file_path: str) -> dict[str, str]:
         # Try UTF-8 first, then common encodings, finally fall back to system default
         encodings_to_try = ['utf-8', 'gbk', 'gb2312', 'latin-1']
         modified = ''
-        
         for encoding in encodings_to_try:
             try:
                 with open(path, 'r', encoding=encoding) as f:
@@ -101,12 +100,10 @@ def get_git_diff(relative_file_path: str) -> dict[str, str]:
                 break  # Success, exit the loop
             except UnicodeDecodeError:
                 continue  # Try next encoding
-        
         # If all encodings failed, use system default with error replacement
         if not modified:
             with open(path, 'r', encoding=None, errors='replace') as f:
                 modified = '\n'.join(f.read().splitlines())
-                
     except FileNotFoundError:
         modified = ''
     return {

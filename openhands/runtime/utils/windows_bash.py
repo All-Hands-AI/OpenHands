@@ -1404,7 +1404,6 @@ class WindowsPowershellSession:
                 else:
                     # Fallback for PropertyObject
                     state = runspace_state_info
-                
                 if state == RunspaceState.Opened:
                     self.runspace.Close()
                 self.runspace.Dispose()
