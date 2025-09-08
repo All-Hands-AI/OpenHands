@@ -217,17 +217,17 @@ def test_multiline_commands(temp_dir, runtime_cls):
         else:
             # Original Linux bash version
             # single multiline command
-            obs = _run_cmd_action(runtime, 'printf \\\n "%s\\n" "foo"')
+            obs = _run_cmd_action(runtime, 'echo -e "foo"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'foo' in obs.content
 
             # test multiline echo
-            obs = _run_cmd_action(runtime, 'printf "%s\\n%s\\n" "hello" "world"')
+            obs = _run_cmd_action(runtime, 'echo -e "hello\\nworld"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'hello\nworld' in obs.content
 
             # test whitespace
-            obs = _run_cmd_action(runtime, 'printf "%s\\n\\n\\n%s\\n" "a" "z"')
+            obs = _run_cmd_action(runtime, 'echo -e "a\\n\\n\\nz"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert '\n\n\n' in obs.content
     finally:
@@ -258,7 +258,7 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
         if is_windows():
             obs = _run_cmd_action(runtime, 'Write-Output "hello`nworld"')
         else:
-            obs = _run_cmd_action(runtime, 'printf "%s\\n%s\\n" "hello" "world"')
+            obs = _run_cmd_action(runtime, 'echo -e "hello\\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
         assert 'hello\nworld' in obs.content
@@ -317,12 +317,12 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     else:
         cmds = [
             'ls -l',
-            'printf "%s\\n%s\\n" "hello" "world"',
-            'printf "%s\\n" "hello it\'s me',
-            'printf "%s %s\\n" "hello" "world"',
-            'printf "%s\\n%s\\n%s\\n%s\\n%s\\n" "hello" "world" "are" "you" "there?"',
-            'printf "%s\\n%s\\n%s\\n%s\\n\\n%s\\n" "hello" "world" "are" "you" "there?"',
-            'printf "%s\\n%s\\n" "hello" "world \\""',
+            'echo -e "hello\\nworld"',
+            'echo "hello it\'s me"',
+            'echo "hello world"',
+            'echo -e "hello\\nworld\\nare\\nyou\\nthere?"',
+            'echo -e "hello\\nworld\\nare\\nyou\\n\\nthere?"',
+            'echo -e "hello\\nworld \\""',
         ]
     joined_cmds = '\n'.join(cmds)
 
@@ -348,8 +348,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         else:
             assert 'total 0' in results[0]  # ls -l
         assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
-        assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
-        assert 'hello world' in results[3]  # echo -e 'hello' world
+        assert "hello it's me" in results[2]  # echo "hello it\'s me"
+        assert 'hello world' in results[3]  # echo "hello world"
         assert (
             'hello\nworld\nare\nyou\nthere?' in results[4]
         )  # echo -e 'hello\nworld\nare\nyou\nthere?'
@@ -378,8 +378,8 @@ def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
     else:
         cmds = [
             'echo "hello"',  # A command that will always work
-            'printf "%s\\n%s\\n" "hello" "world"',
-            """printf "%s\\n" "hello it's me""",
+            'echo -e "hello\\nworld"',
+            'echo "hello it'\''s me"',  # Properly escaped single quote
         ]
         expected_outputs = [
             'hello',  # Simple string output
