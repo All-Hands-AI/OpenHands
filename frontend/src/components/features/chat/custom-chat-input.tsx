@@ -198,10 +198,6 @@ export function CustomChatInput({
 
   // Send button click handler
   const handleSubmit = () => {
-    if (disabled) {
-      return;
-    }
-
     const message = chatInputRef.current?.innerText || "";
 
     if (message.trim()) {
@@ -222,10 +218,6 @@ export function CustomChatInput({
 
   // Resume agent button click handler
   const handleResumeAgent = () => {
-    if (disabled) {
-      return;
-    }
-
     const message = chatInputRef.current?.innerText || "continue";
 
     onSubmit(message.trim());
@@ -302,6 +294,9 @@ export function CustomChatInput({
 
   // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) {
+      return;
+    }
     // Send message on Enter (without Shift)
     // Shift+Enter adds a new line (default contenteditable behavior)
     if (e.key === "Enter" && !e.shiftKey) {
@@ -447,6 +442,7 @@ export function CustomChatInput({
             <AgentStatus
               handleStop={handleStop}
               handleResumeAgent={handleResumeAgent}
+              disabled={disabled}
             />
           </div>
         </div>
