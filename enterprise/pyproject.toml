@@ -1,68 +1,90 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = [
-  "poetry-core",
-]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
+[project]
 name = "enterprise_server"
 version = "0.0.1"
 description = "Deploy OpenHands"
-authors = [ "OpenHands" ]
-license = "POLYFORM"
+authors = [{ name = "OpenHands" }]
+requires-python = ">=3.12,<3.14"
 readme = "README.md"
-repository = "https://github.com/All-Hands-AI/OpenHands"
-packages = [
-  { include = "server" },
-  { include = "storage" },
-  { include = "sync" },
-  { include = "integrations" },
-  { include = "experiments" },
+license = "POLYFORM"
+dependencies = [
+    "openhands-ai",
+    "gspread>=6.1.4,<7",
+    "alembic>=1.14.1,<2",
+    "cloud-sql-python-connector>=1.16.0,<2",
+    "psycopg2-binary>=2.9.10,<3",
+    "pg8000>=1.31.2,<2",
+    "stripe>=11.5.0,<12",
+    "prometheus-fastapi-instrumentator>=7.0.2,<8",
+    "python-json-logger>=3.2.1,<4",
+    "python-keycloak>=5.3.1,<6",
+    "asyncpg>=0.30.0,<0.31",
+    "sqlalchemy[asyncio]>=2.0.40,<3",
+    "resend>=2.7.0,<3",
+    "tenacity>=9.1.2,<10",
+    "slack-sdk>=3.35.0,<4",
+    "ddtrace>=3.5.1,<4",
+    "posthog>=4.2.0,<5",
+    "limits>=5.2.0,<6",
+    "coredis>=4.22.0,<5",
+    "httpx",
+    "scikit-learn>=1.7.0,<2",
+    "shap>=0.48.0,<0.49",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.12,<3.14"
-openhands-ai = { path = "../", develop = true }
-gspread = "^6.1.4"
-alembic = "^1.14.1"
-cloud-sql-python-connector = "^1.16.0"
-psycopg2-binary = "^2.9.10"
-pg8000 = "^1.31.2"
-stripe = "^11.5.0"
-prometheus-fastapi-instrumentator = "^7.0.2"
-python-json-logger = "^3.2.1"
-python-keycloak = "^5.3.1"
-asyncpg = "^0.30.0"
-sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
-resend = "^2.7.0"
-tenacity = "^9.1.2"
-slack-sdk = "^3.35.0"
-ddtrace = "^3.5.1"
-posthog = "^4.2.0"
-limits = "^5.2.0"
-coredis = "^4.22.0"
-httpx = "*"
-scikit-learn = "^1.7.0"
-shap = "^0.48.0"
+[project.urls]
+Repository = "https://github.com/All-Hands-AI/OpenHands"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "0.8.3"
-mypy = "1.13.0"
-pre-commit = "4.1.0"
-build = "*"
-types-requests = "^2.32.4.20250611"
+[dependency-groups]
+dev = [
+    "ruff==0.8.3",
+    "mypy==1.13.0",
+    "pre-commit==4.1.0",
+    "build",
+    "types-requests>=2.32.4.20250611,<3",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-asyncio",
+    "pytest-forked",
+    "pytest-xdist",
+    "flake8",
+    "openai",
+    "opencv-python",
+    "pandas",
+    "reportlab",
+]
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-pytest-cov = "*"
-pytest-asyncio = "*"
-pytest-forked = "*"
-pytest-xdist = "*"
-flake8 = "*"
-openai = "*"
-opencv-python = "*"
-pandas = "*"
-reportlab = "*"
+[tool.uv]
+default-groups = [
+    "dev",
+    "test",
+]
+
+[tool.uv.sources]
+openhands-ai = { path = "../", editable = true }
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "server",
+    "storage",
+    "sync",
+    "integrations",
+    "experiments",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "server",
+    "storage",
+    "sync",
+    "integrations",
+    "experiments",
+]
 
 [tool.poetry-dynamic-versioning]
 enable = true

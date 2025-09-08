@@ -464,9 +464,9 @@ def temp_dir_with_agents_md_only():
 
 ## Setup commands
 
-- Install deps: `poetry install`
-- Start dev server: `poetry run python app.py`
-- Run tests: `poetry run pytest`
+- Install deps: `uv sync`
+- Start dev server: `uv run python app.py`
+- Run tests: `uv run pytest`
 
 ## Code style
 
@@ -495,7 +495,7 @@ def test_load_agents_md_without_microagents_dir(temp_dir_with_agents_md_only):
     agents_agent = repo_agents['agents']
     assert isinstance(agents_agent, RepoMicroagent)
     assert agents_agent.name == 'agents'
-    assert 'Install deps: `poetry install`' in agents_agent.content
+    assert 'Install deps: `uv sync`' in agents_agent.content
     assert agents_agent.type == MicroagentType.REPO_KNOWLEDGE
 
 
@@ -515,8 +515,8 @@ Follow PEP 8 style guidelines."""
 
 ## Setup commands
 
-- Install deps: `poetry install`
-- Run tests: `poetry run pytest`"""
+- Install deps: `uv sync`
+- Run tests: `uv run pytest`"""
         (root / 'AGENTS.md').write_text(agents_content)
 
         yield root
@@ -544,4 +544,4 @@ def test_load_both_cursorrules_and_agents_md(temp_dir_with_both_cursorrules_and_
 
     agents_agent = repo_agents['agents']
     assert isinstance(agents_agent, RepoMicroagent)
-    assert 'Install deps: `poetry install`' in agents_agent.content
+    assert 'Install deps: `uv sync`' in agents_agent.content
