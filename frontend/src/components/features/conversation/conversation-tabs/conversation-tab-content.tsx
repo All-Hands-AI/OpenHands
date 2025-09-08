@@ -1,9 +1,12 @@
-import { lazy } from "react";
+import { lazy, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
 import { ConversationLoading } from "../conversation-loading";
 import Terminal from "../../terminal/terminal";
+import { ConversationTabTitle } from "./conversation-tab-title";
+import { I18nKey } from "#/i18n/declaration";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -20,6 +23,8 @@ export function ConversationTabContent() {
     (state: RootState) => state.conversation,
   );
 
+  const { t } = useTranslation();
+
   // Determine which tab is active based on the current path
   const isEditorActive = selectedTab === "editor";
   const isBrowserActive = selectedTab === "browser";
@@ -27,6 +32,35 @@ export function ConversationTabContent() {
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
   const isTerminalActive = selectedTab === "terminal";
+
+  const conversationTabTitle = useMemo(() => {
+    if (isEditorActive) {
+      return t(I18nKey.COMMON$CHANGES);
+    }
+    if (isBrowserActive) {
+      return t(I18nKey.COMMON$BROWSER);
+    }
+    if (isJupyterActive) {
+      return t(I18nKey.COMMON$JUPYTER);
+    }
+    if (isServedActive) {
+      return t(I18nKey.COMMON$APP);
+    }
+    if (isVSCodeActive) {
+      return t(I18nKey.COMMON$CODE);
+    }
+    if (isTerminalActive) {
+      return t(I18nKey.COMMON$TERMINAL);
+    }
+    return "";
+  }, [
+    isEditorActive,
+    isBrowserActive,
+    isJupyterActive,
+    isServedActive,
+    isVSCodeActive,
+    isTerminalActive,
+  ]);
 
   if (shouldShownAgentLoading) {
     return <ConversationLoading />;
@@ -39,6 +73,8 @@ export function ConversationTabContent() {
         "h-full w-full",
       )}
     >
+      <ConversationTabTitle title={conversationTabTitle} />
+
       <div className="overflow-hidden flex-grow rounded-b-xl">
         <div className="h-full w-full">
           <div className="h-full w-full relative">
