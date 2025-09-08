@@ -201,7 +201,7 @@ RUN \
     # Install Playwright browsers in shared location accessible to all users
     export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers && \
     mkdir -p /opt/playwright-browsers && \
-    /openhands/micromamba/bin/micromamba run -n openhands uv run -p /openhands/uv/openhands/bin/python playwright install --with-deps chromium && \
+    /openhands/micromamba/bin/micromamba run -n openhands uv run playwright install --with-deps chromium && \
     # Set proper permissions for shared access
     chmod -R 755 /opt/playwright-browsers && \
     # Create cache directories and symlinks for both users
@@ -214,7 +214,7 @@ RUN \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment && \
     {% endif %}
     # Set environment variables (requires root)
-    /openhands/micromamba/bin/micromamba run -n openhands uv run -p /openhands/uv/openhands/bin/python python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+    /openhands/micromamba/bin/micromamba run -n openhands uv run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     # Set permissions for shared read-only access
     chmod -R 755 /openhands/uv && \
     chmod -R 755 /openhands/micromamba && \
@@ -246,7 +246,7 @@ USER openhands
 RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
     # Install project dependencies (only main and runtime groups) without installing the project itself
-    /openhands/micromamba/bin/micromamba run -n openhands uv sync --only-group runtime --no-install-project -p /openhands/uv/openhands/bin/python && \
+    /openhands/micromamba/bin/micromamba run -n openhands uv sync --only-group runtime --no-install-project && \
     # Clean up user caches
     /openhands/micromamba/bin/micromamba run -n openhands uv cache prune && \
     /openhands/micromamba/bin/micromamba clean --all
