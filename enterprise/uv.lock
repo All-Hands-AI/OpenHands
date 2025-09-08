@@ -1002,7 +1002,6 @@ wheels = [
 
 [[package]]
 name = "enterprise-server"
-version = "0.0.1"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },
@@ -1029,7 +1028,7 @@ dependencies = [
     { name = "tenacity" },
 ]
 
-[package.dev-dependencies]
+[package.optional-dependencies]
 dev = [
     { name = "build" },
     { name = "mypy" },
@@ -1054,48 +1053,43 @@ test = [
 requires-dist = [
     { name = "alembic", specifier = ">=1.14.1,<2" },
     { name = "asyncpg", specifier = ">=0.30.0,<0.31" },
+    { name = "build", marker = "extra == 'dev'" },
     { name = "cloud-sql-python-connector", specifier = ">=1.16.0,<2" },
     { name = "coredis", specifier = ">=4.22.0,<5" },
     { name = "ddtrace", specifier = ">=3.5.1,<4" },
+    { name = "flake8", marker = "extra == 'test'" },
     { name = "gspread", specifier = ">=6.1.4,<7" },
     { name = "httpx" },
     { name = "limits", specifier = ">=5.2.0,<6" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = "==1.13.0" },
+    { name = "openai", marker = "extra == 'test'" },
+    { name = "opencv-python", marker = "extra == 'test'" },
     { name = "openhands-ai", editable = "../" },
+    { name = "pandas", marker = "extra == 'test'" },
     { name = "pg8000", specifier = ">=1.31.2,<2" },
     { name = "posthog", specifier = ">=4.2.0,<5" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = "==4.1.0" },
     { name = "prometheus-fastapi-instrumentator", specifier = ">=7.0.2,<8" },
     { name = "psycopg2-binary", specifier = ">=2.9.10,<3" },
+    { name = "pytest", marker = "extra == 'test'" },
+    { name = "pytest-asyncio", marker = "extra == 'test'" },
+    { name = "pytest-cov", marker = "extra == 'test'" },
+    { name = "pytest-forked", marker = "extra == 'test'" },
+    { name = "pytest-xdist", marker = "extra == 'test'" },
     { name = "python-json-logger", specifier = ">=3.2.1,<4" },
     { name = "python-keycloak", specifier = ">=5.3.1,<6" },
+    { name = "reportlab", marker = "extra == 'test'" },
     { name = "resend", specifier = ">=2.7.0,<3" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.8.3" },
     { name = "scikit-learn", specifier = ">=1.7.0,<2" },
     { name = "shap", specifier = ">=0.48.0,<0.49" },
     { name = "slack-sdk", specifier = ">=3.35.0,<4" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.40,<3" },
     { name = "stripe", specifier = ">=11.5.0,<12" },
     { name = "tenacity", specifier = ">=9.1.2,<10" },
+    { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.4.20250611,<3" },
 ]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build" },
-    { name = "mypy", specifier = "==1.13.0" },
-    { name = "pre-commit", specifier = "==4.1.0" },
-    { name = "ruff", specifier = "==0.8.3" },
-    { name = "types-requests", specifier = ">=2.32.4.20250611,<3" },
-]
-test = [
-    { name = "flake8" },
-    { name = "openai" },
-    { name = "opencv-python" },
-    { name = "pandas" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "pytest-forked" },
-    { name = "pytest-xdist" },
-    { name = "reportlab" },
-]
+provides-extras = ["dev", "test"]
 
 [[package]]
 name = "envier"

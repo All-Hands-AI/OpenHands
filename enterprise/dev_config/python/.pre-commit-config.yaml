@@ -17,6 +17,7 @@ repos:
     hooks:
       - id: validate-pyproject
         types: [toml]
+        additional_dependencies: ["validate-pyproject-schema-store[all]"]
         files: ^enterprise/pyproject\.toml$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit

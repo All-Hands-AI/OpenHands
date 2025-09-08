@@ -1,105 +1,96 @@
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
+requires = ["hatchling>=1.13.0", "uv-dynamic-versioning>=0.6.0"]
 build-backend = "hatchling.build"
 
 [project]
 name = "enterprise_server"
-version = "0.0.1"
 description = "Deploy OpenHands"
 authors = [{ name = "OpenHands" }]
 requires-python = ">=3.12,<3.14"
+dynamic = ["version"]
 readme = "README.md"
-# license = "POLYFORM"
-license = "LicenseRef-PolyForm-Internal-Use-1.0.0"
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 dependencies = [
-    "openhands-ai",
-    "gspread>=6.1.4,<7",
-    "alembic>=1.14.1,<2",
-    "cloud-sql-python-connector>=1.16.0,<2",
-    "psycopg2-binary>=2.9.10,<3",
-    "pg8000>=1.31.2,<2",
-    "stripe>=11.5.0,<12",
-    "prometheus-fastapi-instrumentator>=7.0.2,<8",
-    "python-json-logger>=3.2.1,<4",
-    "python-keycloak>=5.3.1,<6",
-    "asyncpg>=0.30.0,<0.31",
-    "sqlalchemy[asyncio]>=2.0.40,<3",
-    "resend>=2.7.0,<3",
-    "tenacity>=9.1.2,<10",
-    "slack-sdk>=3.35.0,<4",
-    "ddtrace>=3.5.1,<4",
-    "posthog>=4.2.0,<5",
-    "limits>=5.2.0,<6",
-    "coredis>=4.22.0,<5",
-    "httpx",
-    "scikit-learn>=1.7.0,<2",
-    "shap>=0.48.0,<0.49",
+  "openhands-ai",
+  "gspread>=6.1.4,<7",
+  "alembic>=1.14.1,<2",
+  "cloud-sql-python-connector>=1.16.0,<2",
+  "psycopg2-binary>=2.9.10,<3",
+  "pg8000>=1.31.2,<2",
+  "stripe>=11.5.0,<12",
+  "prometheus-fastapi-instrumentator>=7.0.2,<8",
+  "python-json-logger>=3.2.1,<4",
+  "python-keycloak>=5.3.1,<6",
+  "asyncpg>=0.30.0,<0.31",
+  "sqlalchemy[asyncio]>=2.0.40,<3",
+  "resend>=2.7.0,<3",
+  "tenacity>=9.1.2,<10",
+  "slack-sdk>=3.35.0,<4",
+  "ddtrace>=3.5.1,<4",
+  "posthog>=4.2.0,<5",
+  "limits>=5.2.0,<6",
+  "coredis>=4.22.0,<5",
+  "httpx",
+  "scikit-learn>=1.7.0,<2",
+  "shap>=0.48.0,<0.49",
 ]
 
 [project.urls]
 Repository = "https://github.com/All-Hands-AI/OpenHands"
 
-[dependency-groups]
+# uv dependency groups for convenience
+[project.optional-dependencies]
 dev = [
-    "ruff==0.8.3",
-    "mypy==1.13.0",
-    "pre-commit==4.1.0",
-    "build",
-    "types-requests>=2.32.4.20250611,<3",
+  "ruff==0.8.3",
+  "mypy==1.13.0",
+  "pre-commit==4.1.0",
+  "build",
+  "types-requests>=2.32.4.20250611,<3",
 ]
 test = [
-    "pytest",
-    "pytest-cov",
-    "pytest-asyncio",
-    "pytest-forked",
-    "pytest-xdist",
-    "flake8",
-    "openai",
-    "opencv-python",
-    "pandas",
-    "reportlab",
+  "pytest",
+  "pytest-cov",
+  "pytest-asyncio",
+  "pytest-forked",
+  "pytest-xdist",
+  "flake8",
+  "openai",
+  "opencv-python",
+  "pandas",
+  "reportlab",
 ]
 
-[tool.uv]
-default-groups = [
-    "dev",
-    "test",
-]
+# [tool.uv]
+# default-extras = ["dev", "test"]
 
 [tool.uv.sources]
 openhands-ai = { path = "../", editable = true }
 
+# Configure uv-dynamic-versioning to supply only the version
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+read-from = "tag"
+
+# IMPORTANT: use the hatch version hook, not the metadata hook
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
 [tool.hatch.build.targets.sdist]
-include = [
-    "server",
-    "storage",
-    "sync",
-    "integrations",
-    "experiments",
-]
+include = ["server", "storage", "sync", "integrations", "experiments"]
 
 [tool.hatch.build.targets.wheel]
-include = [
-    "server",
-    "storage",
-    "sync",
-    "integrations",
-    "experiments",
-]
+include = ["server", "storage", "sync", "integrations", "experiments"]
 
 [tool.autopep8]
-# autopep8 fights with mypy on line length issue
-ignore = [ "E501" ]
+ignore = ["E501"]
 
 [tool.black]
-# prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
 
 [tool.ruff]
-lint.select = [ "D" ]
-# ignore warnings for missing docstrings
-lint.ignore = [ "D1" ]
+lint.select = ["D"]
+lint.ignore = ["D1"]
 lint.pydocstyle.convention = "google"
 
 [tool.pytest.ini_options]
