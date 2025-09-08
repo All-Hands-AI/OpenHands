@@ -4,6 +4,7 @@
 try:
     from openhands.runtime.mcp.proxy.manager import MCPProxyManager
 except Exception:  # noqa: BLE001 - broad to avoid hard crash on any import error
+
     class MCPProxyManager:  # type: ignore[no-redef]
         def __init__(self, *args, **kwargs):
             pass
@@ -13,5 +14,6 @@ except Exception:  # noqa: BLE001 - broad to avoid hard crash on any import erro
 
         async def mount_to_app(self, *args, **kwargs):
             pass
+
 
 __all__ = ['MCPProxyManager']

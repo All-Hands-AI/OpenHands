@@ -1,5 +1,4 @@
 import os
-import platform
 import typing
 from functools import lru_cache
 from typing import Callable
@@ -31,7 +30,6 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import (
     DEFAULT_MAIN_MODULE,
-    get_action_execution_server_startup_command,
 )
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.port_lock import PortLock, find_available_port_with_lock
@@ -165,6 +163,15 @@ class WindowsDockerRuntime(ActionExecutionClient):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
+        # Check if we're running in WSL - WindowsDockerRuntime should not be used in WSL
+        if (
+            os.path.exists('/proc/version')
+            and 'microsoft' in open('/proc/version').read().lower()
+        ):
+            raise RuntimeError(
+                'WindowsDockerRuntime cannot be used in WSL environment. '
+                'Please use DockerRuntime instead for Linux containers in WSL.'
+            )
         if not WindowsDockerRuntime._shutdown_listener_id:
             WindowsDockerRuntime._shutdown_listener_id = add_shutdown_listener(
                 lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
@@ -243,7 +250,8 @@ class WindowsDockerRuntime(ActionExecutionClient):
                 raise AgentRuntimeDisconnectedError from e
             self.maybe_build_runtime_container_image()
             self.log(
-                'info', f'Starting Windows runtime with image: {self.runtime_container_image}'
+                'info',
+                f'Starting Windows runtime with image: {self.runtime_container_image}',
             )
             await call_sync_from_async(self.init_container)
             self.log(
@@ -257,7 +265,10 @@ class WindowsDockerRuntime(ActionExecutionClient):
             self.log_streamer = None
 
         if not self.attach_to_existing:
-            self.log('info', f'Waiting for Windows client to become ready at {self.api_url}...')
+            self.log(
+                'info',
+                f'Waiting for Windows client to become ready at {self.api_url}...',
+            )
             self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
@@ -351,7 +362,9 @@ class WindowsDockerRuntime(ActionExecutionClient):
                     else:
                         # Convert Windows paths for Docker
                         host_path = os.path.abspath(raw_host_part)
-                        # Convert forward slashes to backslashes for Windows
+
+                        # For Windows Docker, ensure the path uses backslashes
+                        # WindowsDockerRuntime should only run on native Windows, not WSL
                         if not host_path.startswith('\\\\'):
                             host_path = host_path.replace('/', '\\')
                     container_path = parts[1]
@@ -376,17 +389,22 @@ class WindowsDockerRuntime(ActionExecutionClient):
         ):
             mount_mode = 'rw'  # Default mode
 
-            # Convert Windows paths
+            # Convert Windows paths for Docker
             host_path = os.path.abspath(self.config.workspace_mount_path)
+            logger.debug(f'Original host_path: {host_path}')
+
+            # For Windows Docker, ensure the path uses backslashes
+            # WindowsDockerRuntime should only run on native Windows, not WSL
             if not host_path.startswith('\\\\'):
                 host_path = host_path.replace('/', '\\')
+                logger.debug(f'Windows path: {host_path}')
 
             volumes[host_path] = {
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
             logger.debug(
-                f'Windows mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
+                f'Windows mount dir (legacy): {host_path} -> {self.config.workspace_mount_path_in_sandbox} with mode: {mount_mode}'
             )
 
         return volumes
@@ -570,8 +588,13 @@ class WindowsDockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.enable_gpu:
             # GPU support for Windows containers (limited)
-            self.log('warn', 'GPU support for Windows containers is limited and may not work as expected')
-            device_requests = None  # Windows containers don't support GPU passthrough the same way
+            self.log(
+                'warn',
+                'GPU support for Windows containers is limited and may not work as expected',
+            )
+            device_requests = (
+                None  # Windows containers don't support GPU passthrough the same way
+            )
         else:
             device_requests = None
 
@@ -689,7 +712,9 @@ class WindowsDockerRuntime(ActionExecutionClient):
         if self._vscode_port_lock:
             self._vscode_port_lock.release()
             self._vscode_port_lock = None
-            logger.debug(f'Released Windows VSCode port lock for port {self._vscode_port}')
+            logger.debug(
+                f'Released Windows VSCode port lock for port {self._vscode_port}'
+            )
 
         for i, lock in enumerate(self._app_port_locks):
             if lock:

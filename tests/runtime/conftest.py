@@ -2,6 +2,7 @@ import os
 import random
 import shutil
 import stat
+import sys
 import time
 
 import pytest
@@ -14,6 +15,7 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.docker.windows_docker_runtime import WindowsDockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -56,7 +58,8 @@ def _remove_folder(folder: str) -> bool:
 
 
 def _close_test_runtime(runtime: Runtime) -> None:
-    if isinstance(runtime, DockerRuntime):
+    # Check if it's a Docker-based runtime (Linux or Windows)
+    if isinstance(runtime, (DockerRuntime, WindowsDockerRuntime)):
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
@@ -124,7 +127,24 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
-        return [DockerRuntime]
+        # Check if we're in WSL - if so, use Linux DockerRuntime even on Windows
+        if (
+            os.path.exists('/proc/version')
+            and 'microsoft' in open('/proc/version').read().lower()
+        ):
+            return [DockerRuntime]
+        elif sys.platform == 'win32':
+            return [WindowsDockerRuntime]
+        else:
+            return [DockerRuntime]
+    elif runtime.lower() in [
+        'windows',
+        'windowsdocker',
+        'windows_docker',
+        'windowsruntime',
+        'windowsruntimedocker',
+    ]:
+        return [WindowsDockerRuntime]
     elif runtime.lower() == 'local':
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
@@ -240,6 +260,11 @@ def _load_runtime(
 
     # Mounting folder specific for this test inside the sandbox
     config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
+
+    # Use Windows-style container path for WindowsDockerRuntime mounts
+    if runtime_cls == WindowsDockerRuntime:
+        config.workspace_mount_path_in_sandbox = 'C:\\workspace'
+
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
@@ -256,6 +281,17 @@ def _load_runtime(
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
         config.sandbox.runtime_container_image = None
+
+    # For WindowsDockerRuntime, use pre-built Windows image instead of building
+    if runtime_cls == WindowsDockerRuntime:
+        prebuilt_image = os.environ.get(
+            'SANDBOX_RUNTIME_CONTAINER_IMAGE',
+            'shx815666/openhands-windows-runtime:latest',
+        )
+        config.sandbox.runtime_container_image = prebuilt_image
+        config.sandbox.base_container_image = (
+            None  # Now don't use base image for pre-built runtime
+        )
 
     if override_mcp_config is not None:
         config.mcp = override_mcp_config

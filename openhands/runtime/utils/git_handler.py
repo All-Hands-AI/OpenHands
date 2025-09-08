@@ -76,7 +76,7 @@ class GitHandler:
             else:
                 ps_fallback_cmd = (
                     'pwsh -NoProfile -Command '
-                    '"$base = \"C:\\Windows\\Temp\"; '
+                    '"$base = "C:\\Windows\\Temp"; '
                     'if (!(Test-Path $base)) { New-Item -ItemType Directory -Path $base | Out-Null }; '
                     '$name = [System.Guid]::NewGuid().ToString(); '
                     '$dir = Join-Path $base $name; '
