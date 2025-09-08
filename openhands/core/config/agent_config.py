@@ -7,6 +7,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
 )
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
 
@@ -57,6 +58,8 @@ class AgentConfig(BaseModel):
         # handled.
         default_factory=lambda: ConversationWindowCondenserConfig()
     )
+    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
+    """Model routing configuration settings."""
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
