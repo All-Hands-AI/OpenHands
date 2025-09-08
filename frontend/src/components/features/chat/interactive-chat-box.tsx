@@ -147,9 +147,13 @@ export function InteractiveChatBox({
     handleSubmit(suggestion);
   };
 
+  const isRuntimeStopped =
+    conversation?.status === "STOPPED" && !conversation.runtime_status;
+
   const isDisabled =
     curAgentState === AgentState.LOADING ||
-    curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
+    curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+    isRuntimeStopped;
 
   return (
     <div data-testid="interactive-chat-box">
