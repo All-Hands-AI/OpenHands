@@ -1,14 +1,12 @@
 """Unit tests for LocalRuntime's URL-related methods."""
 
 import os
-import tempfile
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 
 
@@ -245,66 +243,3 @@ class TestLocalRuntime:
 
         # Verify the result is an empty dictionary
         assert hosts == {}
-
-    def test_working_dir_bug_with_temp_workspace(self):
-        """Test that working_dir reflects the actual working directory, not /workspace."""
-        # Create a temporary directory to simulate the real working directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config = OpenHandsConfig()
-            config.runtime = 'local'
-            config.workspace_base = (
-                None  # This will cause local runtime to create a temp workspace
-            )
-
-            # Mock the LocalRuntime to avoid actually starting a server
-            with patch(
-                'openhands.runtime.impl.local.local_runtime.LocalRuntime.connect'
-            ):
-                # Create a LocalRuntime instance
-                event_stream = MagicMock(spec=EventStream)
-                llm_registry = MagicMock(spec=LLMRegistry)
-
-                runtime = LocalRuntime(
-                    config=config,
-                    event_stream=event_stream,
-                    llm_registry=llm_registry,
-                    sid='test_session',
-                )
-
-                # Simulate what connect() does - set the actual workspace path
-                runtime._temp_workspace = temp_dir
-                runtime.config.workspace_mount_path_in_sandbox = temp_dir
-
-                # Now check that the working_dir should be the temp_dir, not /workspace
-                assert runtime.config.workspace_mount_path_in_sandbox == temp_dir
-                assert runtime.config.workspace_mount_path_in_sandbox != '/workspace'
-
-    def test_working_dir_bug_with_workspace_base(self):
-        """Test that working_dir reflects the workspace_base when set."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            config = OpenHandsConfig()
-            config.runtime = 'local'
-            config.workspace_base = temp_dir  # Set explicit workspace base
-
-            # Mock the LocalRuntime to avoid actually starting a server
-            with patch(
-                'openhands.runtime.impl.local.local_runtime.LocalRuntime.connect'
-            ):
-                # Create a LocalRuntime instance
-                event_stream = MagicMock(spec=EventStream)
-                llm_registry = MagicMock(spec=LLMRegistry)
-
-                runtime = LocalRuntime(
-                    config=config,
-                    event_stream=event_stream,
-                    llm_registry=llm_registry,
-                    sid='test_session',
-                )
-
-                # Simulate what connect() does - set workspace_base as the workspace path
-                runtime._temp_workspace = None
-                runtime.config.workspace_mount_path_in_sandbox = config.workspace_base
-
-                # Now check that the working_dir should be the workspace_base, not /workspace
-                assert runtime.config.workspace_mount_path_in_sandbox == temp_dir
-                assert runtime.config.workspace_mount_path_in_sandbox != '/workspace'
