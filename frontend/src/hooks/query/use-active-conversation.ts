@@ -9,6 +9,8 @@ export const useActiveConversation = () => {
     if (query.state.data?.status === "STARTING") {
       return 3000; // 3 seconds
     }
+    // TODO: Return conversation title as a WS event to avoid polling
+    // This was changed from 5 minutes to 30 seconds to poll for updated conversation title after an auto update
     return 30000; // 30 seconds
   });
 
