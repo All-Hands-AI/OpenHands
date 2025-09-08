@@ -9,6 +9,7 @@ MODEL=${1:-"llm.gpt-5-2025-08-07"}
 
 CLI_AVAILABLE="false" \
 USE_HINT_TEXT="false" \
+TOM_AGENT_MODEL="litellm_proxy/claude-sonnet-4-20250514" \
 SYSTEM_PROMPT_FILENAME="system_prompt_tom_benchmark.j2" \
 ALLHANDS_API_KEY="ah-69ce5388-6069-4c76-9d8d-eae75dd553dc" \
 RUNTIME=remote \
@@ -20,7 +21,8 @@ nohup bash ./evaluation/benchmarks/swe_bench/scripts/run_infer_interact.sh \
   TomCodeActAgent \
   500 \
   100 \
-  32 \
+  16 \
+  cmu-lti/interactive-swe \
   test > swe_bench_interact_remote_32_${MODEL//llm./}_tom.log 2>&1 &
 
 echo "SWE-Interact evaluation started with remote runtime and 32 workers using model: $MODEL"

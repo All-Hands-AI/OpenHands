@@ -21,6 +21,7 @@ nohup bash ./evaluation/benchmarks/swe_bench/scripts/run_infer_interact.sh \
   500 \
   100 \
   32 \
+  cmu-lti/interactive-swe \
   test > swe_bench_interact_remote_32_${MODEL//llm./}.log 2>&1 &
 
 echo "SWE-Interact evaluation started with remote runtime and 32 workers using model: $MODEL"

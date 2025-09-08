@@ -193,6 +193,7 @@ class TomCodeActAgent(CodeActAgent):
                 query_description = action.custom_query or "the user's message"
                 return ConsultTomAgentAction(
                     content=action.content
+                    + "\n"
                     + f'I need to consult Tom agent about {query_description}'
                     + '\n\n[Starting consultation with Tom agent...]'
                     + consultation_result

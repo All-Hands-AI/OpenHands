@@ -114,7 +114,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         template_name = metadata.instruction_template_name
     elif mode.startswith('swt'):
         template_name = 'swt.j2'
-    elif mode == 'swe':
+    elif mode == 'swe' or mode == 'stateful' or mode == 'interact':
         if 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
@@ -123,7 +123,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
             )
     else:
         # Fallback or error handling if mode is unexpected
-        logger.warning(f'Unexpected evaluation mode: {mode}. Falling back to default.')
+        logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
     logger.debug(f'Using instruction template file: {template_name}')

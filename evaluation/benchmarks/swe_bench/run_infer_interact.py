@@ -1,6 +1,8 @@
 import asyncio
 import json
 import os
+import shutil
+import tempfile
 
 import pandas as pd
 from datasets import load_dataset
@@ -12,7 +14,7 @@ from evaluation.benchmarks.swe_bench.run_infer import (
     complete_runtime,
     filter_dataset,
     get_config,
-    initialize_runtime,
+    initialize_runtime as base_initialize_runtime,
 )
 from evaluation.benchmarks.swe_bench.run_infer import (
     get_instruction as base_get_instruction,
@@ -36,7 +38,7 @@ from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
+from openhands.events.action import MessageAction, CmdRunAction
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -80,7 +82,6 @@ class FakeUser:
             model=self.llm_config.model,
             messages=self.chat_history,
             api_key=self.llm_config.api_key.get_secret_value(),
-            temperature=self.llm_config.temperature,
             base_url=self.llm_config.base_url,
         )
 
@@ -92,6 +93,43 @@ class FakeUser:
 
 # Global variable for fake user
 fake_user = None
+
+
+def initialize_runtime(
+    runtime,
+    instance,
+    metadata,
+):
+    """Initialize runtime with support for stateful mode that copies user cache files."""
+    # First run the base initialization
+    base_initialize_runtime(runtime, instance, metadata)
+
+    # If in stateful mode, copy user-specific cache files
+    if metadata.details.get('mode') == 'stateful':
+        user_profile_id = instance.get('user_profile_id')
+        if user_profile_id:
+            logger.info(f'Running in stateful mode - copying user cache for profile: {user_profile_id}')
+
+            # Create usermodeling directory in container
+            action = CmdRunAction(command='mkdir -p ~/.openhands/usermodeling')
+            action.set_hard_timeout(600)
+            logger.info(action, extra={'msg_type': 'ACTION'})
+            obs = runtime.run_action(action)
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+            # Copy ./cache/users/{user_profile_id} from host to container ~/.openhands/usermodeling/
+            user_cache_path = f'./cache/users/{user_profile_id}'
+            if os.path.exists(user_cache_path):
+                logger.info(f'Copying {user_cache_path} to container ~/.openhands/usermodeling/')
+                # Copy each file individually
+                for item in os.listdir(user_cache_path):
+                    src = os.path.join(user_cache_path, item)
+                    if os.path.isfile(src):
+                        runtime.copy_to(src, '/root/.openhands/usermodeling/')
+            else:
+                logger.warning(f'User cache directory {user_cache_path} not found, skipping copy')
+        else:
+            logger.warning('Stateful mode enabled but no user_profile_id found in instance')
 
 
 def get_fake_user_response(state: State) -> str:
@@ -217,6 +255,13 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
+    parser.add_argument(
+        '--mode',
+        type=str,
+        default='interact',
+        choices=['interact', 'stateful'],
+        help="mode to run the evaluation, either 'interact' or 'stateful'",
+    )
 
     args, _ = parser.parse_known_args()
 
@@ -251,7 +296,7 @@ if __name__ == '__main__':
             'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
         )
 
-    details = {'mode': 'interact'}
+    details = {'mode': args.mode}
 
     dataset_descrption = (
         args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
