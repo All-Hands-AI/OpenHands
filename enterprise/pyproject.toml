@@ -1,119 +1,122 @@
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning>=0.6.0"]
 build-backend = "hatchling.build"
 
+requires = [ "hatchling", "uv-dynamic-versioning>=0.6" ]
+
 [project]
-name = "enterprise_server"
+name = "enterprise-server"
 description = "Deploy OpenHands"
-authors = [{ name = "OpenHands" }]
-requires-python = ">=3.12,<3.14"
-dynamic = ["version"]
 readme = "README.md"
 license = { file = "LICENSE" }
+authors = [ { name = "OpenHands" } ]
+requires-python = ">=3.12,<3.14"
+# uv dependency groups for convenience
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = [ "version" ]
 dependencies = [
-  "openhands-ai",
-  "gspread>=6.1.4,<7",
   "alembic>=1.14.1,<2",
-  "cloud-sql-python-connector>=1.16.0,<2",
-  "psycopg2-binary>=2.9.10,<3",
+  "asyncpg>=0.30,<0.31",
+  "cloud-sql-python-connector>=1.16,<2",
+  "coredis>=4.22,<5",
+  "ddtrace>=3.5.1,<4",
+  "gspread>=6.1.4,<7",
+  "httpx",
+  "limits>=5.2,<6",
+  "openhands-ai",
   "pg8000>=1.31.2,<2",
-  "stripe>=11.5.0,<12",
+  "posthog>=4.2,<5",
   "prometheus-fastapi-instrumentator>=7.0.2,<8",
+  "psycopg2-binary>=2.9.10,<3",
   "python-json-logger>=3.2.1,<4",
   "python-keycloak>=5.3.1,<6",
-  "asyncpg>=0.30.0,<0.31",
+  "resend>=2.7,<3",
+  "scikit-learn>=1.7,<2",
+  "shap>=0.48,<0.49",
+  "slack-sdk>=3.35,<4",
   "sqlalchemy[asyncio]>=2.0.40,<3",
-  "resend>=2.7.0,<3",
+  "stripe>=11.5,<12",
   "tenacity>=9.1.2,<10",
-  "slack-sdk>=3.35.0,<4",
-  "ddtrace>=3.5.1,<4",
-  "posthog>=4.2.0,<5",
-  "limits>=5.2.0,<6",
-  "coredis>=4.22.0,<5",
-  "httpx",
-  "scikit-learn>=1.7.0,<2",
-  "shap>=0.48.0,<0.49",
 ]
 
-[project.urls]
-Repository = "https://github.com/All-Hands-AI/OpenHands"
-
-# uv dependency groups for convenience
-[project.optional-dependencies]
-dev = [
-  "ruff==0.8.3",
-  "mypy==1.13.0",
-  "pre-commit==4.1.0",
+optional-dependencies.dev = [
   "build",
+  "mypy==1.13",
+  "pre-commit==4.1",
+  "ruff==0.8.3",
   "types-requests>=2.32.4.20250611,<3",
 ]
-test = [
-  "pytest",
-  "pytest-cov",
-  "pytest-asyncio",
-  "pytest-forked",
-  "pytest-xdist",
+optional-dependencies.test = [
   "flake8",
   "openai",
   "opencv-python",
   "pandas",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-forked",
+  "pytest-xdist",
   "reportlab",
 ]
+urls.Repository = "https://github.com/All-Hands-AI/OpenHands"
 
 [dependency-groups]
 dev = [
-  "ruff==0.8.3",
-  "mypy==1.13.0",
-  "pre-commit==4.1.0",
   "build",
+  "mypy==1.13",
+  "pre-commit==4.1",
+  "ruff==0.8.3",
   "types-requests>=2.32.4.20250611,<3",
 ]
+# [tool.uv]
+# default-extras = ["dev", "test"]
+
 test = [
-  "pytest",
-  "pytest-cov",
-  "pytest-asyncio",
-  "pytest-forked",
-  "pytest-xdist",
   "flake8",
   "openai",
   "opencv-python",
   "pandas",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-forked",
+  "pytest-xdist",
   "reportlab",
 ]
-
-
-# [tool.uv]
-# default-extras = ["dev", "test"]
-
-[tool.uv.sources]
-openhands-ai = { path = "../", editable = true }
-
-# Configure uv-dynamic-versioning to supply only the version
-[tool.uv-dynamic-versioning]
-vcs = "git"
-style = "pep440"
-read-from = "tag"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 
 [tool.hatch.build.targets.sdist]
-include = ["server", "storage", "sync", "integrations", "experiments"]
+include = [ "server", "storage", "sync", "integrations", "experiments" ]
 
 [tool.hatch.build.targets.wheel]
-include = ["server", "storage", "sync", "integrations", "experiments"]
+include = [ "server", "storage", "sync", "integrations", "experiments" ]
 
 [tool.autopep8]
-ignore = ["E501"]
+ignore = [ "E501" ]
 
 [tool.black]
 skip-string-normalization = true
 
 [tool.ruff]
-lint.select = ["D"]
-lint.ignore = ["D1"]
+lint.select = [ "D" ]
+lint.ignore = [ "D1" ]
 lint.pydocstyle.convention = "google"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.uv.sources]
+openhands-ai = { path = "../", editable = true }
+
+# Configure uv-dynamic-versioning to supply only the version
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+read-from = "tag"
