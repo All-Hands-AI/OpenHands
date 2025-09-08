@@ -37,3 +37,25 @@ export const DOCUMENTATION_URL = {
       "https://docs.all-hands.dev/usage/prompting/microagents-org",
   },
 };
+
+export const GIT_PROVIDER_OPTIONS = [
+  {
+    label: "GitHub",
+    value: "github",
+  },
+  {
+    label: "GitLab",
+    value: "gitlab",
+  },
+  {
+    label: "Bitbucket",
+    value: "bitbucket",
+  },
+];
+
+export const CONTEXT_MENU_ICON_TEXT_CLASSNAME = "h-[30px]";
+
+// Chat input constants
+export const CHAT_INPUT = {
+  HEIGHT_THRESHOLD: 100, // Height in pixels when suggestions should be hidden
+};
