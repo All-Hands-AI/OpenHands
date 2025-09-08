@@ -501,8 +501,6 @@ async def modify_llm_settings_advanced(
         print("❌ Not authenticated with Snowcode. Please login first.")
         return
 
-    user_token = auth_data['token']
-
     # Use the create_default_config method from snowcode_auth
     default_config = snowcode_auth.create_default_config()
 

@@ -314,3 +314,5 @@ def _attempt_marketplace_install(
             f'An unexpected error occurred trying to install from the Marketplace: {e}'
         )
         return False
+
+
