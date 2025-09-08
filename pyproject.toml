@@ -91,7 +91,6 @@ third_party_runtimes = [
   "daytona==0.24.2",
 ]
 
-
 [dependency-groups]
 dev = [
   "ruff==0.12.5",
@@ -173,18 +172,15 @@ include = [
 "uv.lock" = "openhands/uv.lock"
 
 [tool.autopep8]
-# autopep8 fights with mypy on line length issue
-ignore = [ "E501" ]
+ignore = ["E501"]
 
 [tool.black]
-# prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
 
 [tool.ruff]
-lint.select = [ "D" ]
-# ignore warnings for missing docstrings
-lint.ignore = [ "D1" ]
+lint.select = ["D"]
+lint.ignore = ["D1"]
 lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
-concurrency = [ "gevent" ]
+concurrency = ["gevent"]

@@ -10,11 +10,14 @@ from experiments.experiment_versions import (
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.experiments.experiment_manager import ExperimentManager
+from openhands.server.session.conversation_init_data import ConversationInitData
 
 
 class SaaSExperimentManager(ExperimentManager):
     @staticmethod
-    def run_conversation_variant_test(user_id, conversation_id, conversation_settings):
+    def run_conversation_variant_test(
+        user_id, conversation_id, conversation_settings
+    ) -> ConversationInitData:
         """
         Run conversation variant test and potentially modify the conversation settings
         based on the PostHog feature flags.
@@ -53,7 +56,7 @@ class SaaSExperimentManager(ExperimentManager):
     @staticmethod
     def run_config_variant_test(
         user_id: str, conversation_id: str, config: OpenHandsConfig
-    ):
+    ) -> OpenHandsConfig:
         """
         Run agent config variant test and potentially modify the OpenHands config
         based on the current experiment type and PostHog feature flags.
