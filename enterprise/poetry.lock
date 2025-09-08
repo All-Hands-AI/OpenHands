@@ -459,7 +459,7 @@ description = "LTS Port of Python audioop"
 optional = false
 python-versions = ">=3.13"
 groups = ["main"]
-markers = "python_version >= \"3.13.0\""
+markers = "python_version == \"3.13\""
 files = [
     {file = "audioop_lts-0.2.2-cp313-abi3-macosx_10_13_universal2.whl", hash = "sha256:fd3d4602dc64914d462924a08c1a9816435a2155d74f325853c1f1ac3b2d9800"},
     {file = "audioop_lts-0.2.2-cp313-abi3-macosx_10_13_x86_64.whl", hash = "sha256:550c114a8df0aafe9a05442a1162dfc8fec37e9af1d625ae6060fed6e756f303"},
@@ -4063,7 +4063,7 @@ description = "Fork of the standard library cgi and cgitb modules removed in Pyt
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
-markers = "python_version >= \"3.13.0\""
+markers = "python_version == \"3.13\""
 files = [
     {file = "legacy_cgi-2.6.3-py3-none-any.whl", hash = "sha256:6df2ea5ae14c71ef6f097f8b6372b44f6685283dc018535a75c924564183cdab"},
     {file = "legacy_cgi-2.6.3.tar.gz", hash = "sha256:4c119d6cb8e9d8b6ad7cc0ddad880552c62df4029622835d06dfd18f438a8154"},
@@ -5438,7 +5438,7 @@ whatthepatch = "^1.0.6"
 zope-interface = "7.2"
 
 [package.extras]
-third-party-runtimes = ["daytona (==0.24.2)", "e2b (>=1.0.5,<1.8.0)", "modal (>=0.66.26,<1.2.0)", "runloop-api-client (==0.50.0)"]
+third-party-runtimes = ["daytona (==0.24.2)", "e2b-code-interpreter (>=2.0.0,<3.0.0)", "modal (>=0.66.26,<1.2.0)", "runloop-api-client (==0.50.0)"]
 
 [package.source]
 type = "directory"
@@ -8677,7 +8677,7 @@ description = "Standard library aifc redistribution. \"dead battery\"."
 optional = false
 python-versions = "*"
 groups = ["main"]
-markers = "python_version >= \"3.13.0\""
+markers = "python_version == \"3.13\""
 files = [
     {file = "standard_aifc-3.13.0-py3-none-any.whl", hash = "sha256:f7ae09cc57de1224a0dd8e3eb8f73830be7c3d0bc485de4c1f82b4a7f645ac66"},
     {file = "standard_aifc-3.13.0.tar.gz", hash = "sha256:64e249c7cb4b3daf2fdba4e95721f811bde8bdfc43ad9f936589b7bb2fae2e43"},
@@ -8694,7 +8694,7 @@ description = "Standard library chunk redistribution. \"dead battery\"."
 optional = false
 python-versions = "*"
 groups = ["main"]
-markers = "python_version >= \"3.13.0\""
+markers = "python_version == \"3.13\""
 files = [
     {file = "standard_chunk-3.13.0-py3-none-any.whl", hash = "sha256:17880a26c285189c644bd5bd8f8ed2bdb795d216e3293e6dbe55bbd848e2982c"},
     {file = "standard_chunk-3.13.0.tar.gz", hash = "sha256:4ac345d37d7e686d2755e01836b8d98eda0d1a3ee90375e597ae43aaf064d654"},
