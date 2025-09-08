@@ -30,7 +30,7 @@ class GoogleCloudFileStore(FileStore):
     def read(self, path: str) -> str:
         blob: Blob = self.bucket.blob(path)
         try:
-            with open(blob.open('r'), 'r', encoding='utf-8') as f:
+            with blob.open('r') as f:
                 return str(f.read())
         except NotFound as err:
             raise FileNotFoundError(err)
