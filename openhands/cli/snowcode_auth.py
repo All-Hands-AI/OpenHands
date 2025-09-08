@@ -6,6 +6,8 @@ import sys
 import time
 from pathlib import Path
 from typing import Dict, Optional
+from openhands.cli.snowcode_config import get_llm_config
+
 
 import requests
 
@@ -14,7 +16,7 @@ class SnowcodeAuth:
     """Handles Snowcode authentication and token management."""
 
     def __init__(self):
-        self.api_endpoint = 'https://api-kratos.dev.snowcell.io/auth/validate'
+        self.api_endpoint = 'https://api.snowcell.io/auth/validate'
         self.auth_file_path = Path.home() / '.snowcode' / 'auth.json'
 
     def validate_token_with_api(self, token: str) -> bool:
@@ -61,7 +63,7 @@ class SnowcodeAuth:
 
             # Create auth data with timestamp and actual token
             auth_data = {
-                'token': token,  # Store actual token for future API calls
+                'token': token,
                 'token_hash': hashlib.sha256(token.encode()).hexdigest(),
                 'timestamp': time.time(),
                 'status': 'active',
@@ -87,12 +89,10 @@ class SnowcodeAuth:
             with open(self.auth_file_path, 'r') as f:
                 auth_data = json.load(f)
 
-            # Validate required fields
             required_fields = ['token', 'timestamp', 'status']
             if not all(key in auth_data for key in required_fields):
                 return None
 
-            # Check if token is still active
             if auth_data.get('status') != 'active':
                 return None
 
@@ -148,7 +148,6 @@ class SnowcodeAuth:
         if not self.is_authenticated():
             return False
 
-        # Additional setup logic can be added here
         return True
 
     async def ensure_default_config_exists(self) -> bool:
@@ -166,20 +165,17 @@ class SnowcodeAuth:
             from openhands.core.config import load_openhands_config
             from openhands.storage.settings.file_settings_store import FileSettingsStore
 
-            # Load OpenHands config
             config = load_openhands_config()
-
-            # Get settings store
             settings_store = await FileSettingsStore.get_instance(config, None)
-
-            # Check if settings already exist
             settings = await settings_store.load()
+
+            expected_llm_model, _ = get_llm_config()
 
             # If no settings exist, or if Snowcode model is not configured, set it up
             if (
                 not settings
                 or not settings.llm_model
-                or settings.llm_model != 'hosted_vllm/DeepSeek-Coder-V2-Lite-Instruct'
+                or settings.llm_model != expected_llm_model
             ):
 
                 return await self.setup_default_snowcode_config()
@@ -191,7 +187,7 @@ class SnowcodeAuth:
             return False
 
     async def setup_default_snowcode_config(self) -> bool:
-        """Automatically setup default Snowcode configuration in .openhands/settings.json
+        """Automatically setup default Snowcode configuration in .openhands/settings.json .
 
         This function creates the default configuration so users don't need to configure
         anything except login with their token.
@@ -205,33 +201,28 @@ class SnowcodeAuth:
             from openhands.storage.settings.file_settings_store import FileSettingsStore
             from pydantic import SecretStr
 
-            # Load current auth data
             auth_data = self.load_token()
             if not auth_data or not auth_data.get('token'):
                 return False
 
             user_token = auth_data['token']
 
-            # Load OpenHands config
+            llm_model, llm_base_url = get_llm_config()
+
             config = load_openhands_config()
-
-            # Get settings store
             settings_store = await FileSettingsStore.get_instance(config, None)
-
-            # Load existing settings or create new
             settings = await settings_store.load()
+
             if not settings:
                 settings = Settings()
 
-            # Set Snowcode default configuration
-            settings.llm_model = 'hosted_vllm/DeepSeek-Coder-V2-Lite-Instruct'
-            settings.llm_base_url = 'http://inference.dev.snowcell.io/v1'
+            settings.llm_model = llm_model
+            settings.llm_base_url = llm_base_url
             settings.llm_api_key = SecretStr(user_token)
             settings.agent = 'CodeActAgent'
             settings.confirmation_mode = True
             settings.enable_default_condenser = True
 
-            # Store the settings
             await settings_store.store(settings)
 
             return True
@@ -250,9 +241,11 @@ class SnowcodeAuth:
         if not auth_data:
             return {}
 
+        llm_model, llm_base_url = get_llm_config()
+
         return {
-            'model': 'hosted_vllm/DeepSeek-Coder-V2-Lite-Instruct',
-            'base_url': 'http://inference.dev.snowcell.io/v1',
+            'model': llm_model,
+            'base_url': llm_base_url,
             'api_key': auth_data['token'],
             'agent': 'CodeActAgent',
             'confirmation_mode': True,
@@ -267,7 +260,7 @@ snowcode_auth = SnowcodeAuth()
 # CLI handler functions for backward compatibility
 async def handle_snow_login(token: str) -> None:
     """Handle Snowcode login with token and setup default configuration."""
-    print('🔑 Authenticating with Snowcode...')
+    print('Authenticating with Snowcode...')
 
     if snowcode_auth.store_token(token):
         print('✅ Authentication successful!')
@@ -278,9 +271,6 @@ async def handle_snow_login(token: str) -> None:
 
         if config_success:
             print('✅ Default configuration applied!')
-            # print('🎯 Model: hosted_vllm/DeepSeek-Coder-V2-Lite-Instruct')
-            # print('🌐 Base URL: http://inference.dev.snowcell.io/v1')
-            # print('🤖 Agent: CodeActAgent')
         else:
             print('⚠️  Could not setup default configuration automatically')
             print('💡 You can configure manually using settings menu')
