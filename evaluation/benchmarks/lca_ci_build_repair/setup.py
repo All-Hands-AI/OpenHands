@@ -56,5 +56,6 @@ def setup():
     if result.returncode != 0:
         print(f'Warning during uv sync: {result.stderr}')
 
+
 if __name__ == '__main__':
     setup()
