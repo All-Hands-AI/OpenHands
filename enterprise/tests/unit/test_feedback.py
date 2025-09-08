@@ -38,9 +38,10 @@ async def test_submit_feedback():
     )
 
     # Mock session_maker and call_sync_from_async
-    with patch('server.routes.feedback.session_maker') as mock_session_maker, patch(
-        'server.routes.feedback.call_sync_from_async'
-    ) as mock_call_sync:
+    with (
+        patch('server.routes.feedback.session_maker') as mock_session_maker,
+        patch('server.routes.feedback.call_sync_from_async') as mock_call_sync,
+    ):
         mock_session_maker.return_value.__enter__.return_value = mock_session
         mock_session_maker.return_value.__exit__.return_value = None
 
@@ -96,9 +97,10 @@ async def test_invalid_rating():
         mock_validate.return_value = feedback_data
 
         # Mock session_maker and call_sync_from_async
-        with patch('server.routes.feedback.session_maker') as mock_session_maker, patch(
-            'server.routes.feedback.call_sync_from_async'
-        ) as mock_call_sync:
+        with (
+            patch('server.routes.feedback.session_maker') as mock_session_maker,
+            patch('server.routes.feedback.call_sync_from_async') as mock_call_sync,
+        ):
             mock_session_maker.return_value.__enter__.return_value = mock_session
             mock_session_maker.return_value.__exit__.return_value = None
             mock_call_sync.return_value = None
