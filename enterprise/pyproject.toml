@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "uv-dynamic-versioning"]
 build-backend = "hatchling.build"
 
 [project]
@@ -9,7 +9,9 @@ description = "Deploy OpenHands"
 authors = [{ name = "OpenHands" }]
 requires-python = ">=3.12,<3.14"
 readme = "README.md"
-license = "POLYFORM"
+# license = "POLYFORM"
+license = "LicenseRef-PolyForm-Internal-Use-1.0.0"
+license-files = ["LICENSE"]
 dependencies = [
     "openhands-ai",
     "gspread>=6.1.4,<7",
@@ -85,10 +87,6 @@ include = [
     "integrations",
     "experiments",
 ]
-
-[tool.poetry-dynamic-versioning]
-enable = true
-style = "semver"
 
 [tool.autopep8]
 # autopep8 fights with mypy on line length issue
