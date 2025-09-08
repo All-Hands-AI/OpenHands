@@ -1359,6 +1359,38 @@
     "de": "Repositories werden geladen...",
     "uk": "Завантаження репозиторіїв..."
   },
+  "HOME$SEARCHING_REPOSITORIES": {
+    "en": "Searching repositories...",
+    "ja": "リポジトリを検索中...",
+    "zh-CN": "搜索仓库中...",
+    "zh-TW": "搜尋儲存庫中...",
+    "ko-KR": "저장소 검색 중...",
+    "no": "Søker i repositories...",
+    "it": "Ricerca repository in corso...",
+    "pt": "Pesquisando repositórios...",
+    "es": "Buscando repositorios...",
+    "ar": "جار البحث في المستودعات...",
+    "fr": "Recherche de dépôts...",
+    "tr": "Depolar aranıyor...",
+    "de": "Repositories werden durchsucht...",
+    "uk": "Пошук репозиторіїв..."
+  },
+  "HOME$LOADING_MORE_REPOSITORIES": {
+    "en": "Loading more repositories...",
+    "ja": "さらに多くのリポジトリを読み込み中...",
+    "zh-CN": "加载更多仓库中...",
+    "zh-TW": "載入更多儲存庫中...",
+    "ko-KR": "더 많은 저장소 로딩 중...",
+    "no": "Laster flere repositories...",
+    "it": "Caricamento di altri repository...",
+    "pt": "Carregando mais repositórios...",
+    "es": "Cargando más repositorios...",
+    "ar": "جار تحميل المزيد من المستودعات...",
+    "fr": "Chargement de plus de dépôts...",
+    "tr": "Daha fazla depolar yükleniyor...",
+    "de": "Weitere Repositories werden geladen...",
+    "uk": "Завантаження більше репозиторіїв..."
+  },
   "HOME$FAILED_TO_LOAD_REPOSITORIES": {
     "en": "Failed to load repositories",
     "ja": "リポジトリの読み込みに失敗しました",
@@ -11952,20 +11984,20 @@
     "uk": "Бажаєте, щоб OpenHands розпочав нову розмову, щоб допомогти вам зрозуміти цей репозиторій?"
   },
   "MICROAGENT_MANAGEMENT$WHAT_YOU_WOULD_LIKE_TO_KNOW_ABOUT_THIS_REPO": {
-    "en": "What would you like to know about this repository?",
-    "ja": "このリポジトリについて何を知りたいですか？",
-    "zh-CN": "您想了解此存储库的哪些内容？",
-    "zh-TW": "您想了解此存儲庫的哪些內容？",
-    "ko-KR": "이 저장소에 대해 무엇을 알고 싶으신가요?",
-    "no": "Hva vil du vite om dette depotet?",
-    "it": "Cosa vorresti sapere su questo repository?",
-    "pt": "O que você gostaria de saber sobre este repositório?",
-    "es": "¿Qué te gustaría saber sobre este repositorio?",
-    "ar": "ماذا تريد أن تعرف عن هذا المستودع؟",
-    "fr": "Que souhaitez-vous savoir sur ce dépôt ?",
-    "tr": "Bu depo hakkında ne bilmek istersiniz?",
-    "de": "Was möchten Sie über dieses Repository wissen?",
-    "uk": "Що ви хотіли б дізнатися про цей репозиторій?"
+    "en": "What would you like to know about this repository? (optional)",
+    "ja": "このリポジトリについて知りたいことは何ですか？（任意）",
+    "zh-CN": "您想了解此存储库的哪些内容？（可选）",
+    "zh-TW": "您想了解此存儲庫的哪些內容？（選填）",
+    "ko-KR": "이 저장소에 대해 무엇을 알고 싶으신가요? (선택 사항)",
+    "no": "Hva vil du vite om dette depotet? (valgfritt)",
+    "it": "Cosa vorresti sapere su questo repository? (opzionale)",
+    "pt": "O que você gostaria de saber sobre este repositório? (opcional)",
+    "es": "¿Qué te gustaría saber sobre este repositorio? (opcional)",
+    "ar": "ماذا ترغب في معرفته عن هذا المستودع؟ (اختياري)",
+    "fr": "Que souhaitez-vous savoir sur ce dépôt ? (facultatif)",
+    "tr": "Bu depo hakkında ne bilmek istersiniz? (isteğe bağlı)",
+    "de": "Was möchten Sie über dieses Repository wissen? (optional)",
+    "uk": "Що ви хотіли б дізнатися про цей репозиторій? (необов'язково)"
   },
   "MICROAGENT_MANAGEMENT$DESCRIBE_WHAT_TO_KNOW_ABOUT_THIS_REPO": {
     "en": "Describe what you would like to know about this repository.",
@@ -13087,22 +13119,6 @@
     "de": "Vorhandene Mikroagenten",
     "uk": "Існуючі мікроагенти"
   },
-  "MICROAGENT_MANAGEMENT$OPEN_MICROAGENT_PULL_REQUESTS": {
-    "en": "Open Microagent Pull Requests",
-    "ja": "未解決のマイクロエージェントのプルリクエスト",
-    "zh-CN": "未合并的微代理拉取请求",
-    "zh-TW": "未合併的微代理拉取請求",
-    "ko-KR": "오픈된 마이크로에이전트 풀 리퀘스트",
-    "no": "Åpne mikroagent-pull requests",
-    "it": "Pull request di microagent aperte",
-    "pt": "Pull requests de microagentes abertas",
-    "es": "Pull requests de microagentes abiertas",
-    "ar": "طلبات السحب المفتوحة للوكلاء الدقيقين",
-    "fr": "Pull requests de microagents ouvertes",
-    "tr": "Açık Mikroajan Pull İstekleri",
-    "de": "Offene Microagent-Pull-Requests",
-    "uk": "Відкриті pull-запити мікроагентів"
-  },
   "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT": {
     "en": "LLM Analyzer (Default)",
     "ja": "LLMアナライザー（デフォルト）",
@@ -13198,5 +13214,21 @@
     "tr": "Mikroajan Hafızasına Ekle",
     "de": "Zur Microagent-Speicher hinzufügen",
     "uk": "Додати до пам'яті мікроагента"
+  },
+  "COMMON$IN_PROGRESS": {
+    "en": "In Progress",
+    "ja": "進行中",
+    "zh-CN": "进行中",
+    "zh-TW": "進行中",
+    "ko-KR": "진행 중",
+    "no": "Pågår",
+    "it": "In corso",
+    "pt": "Em andamento",
+    "es": "En progreso",
+    "ar": "قيد التنفيذ",
+    "fr": "En cours",
+    "tr": "Devam Ediyor",
+    "de": "In Bearbeitung",
+    "uk": "В процесі"
   }
 }
