@@ -245,10 +245,8 @@ WORKDIR /openhands/code
 USER openhands
 RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
-    # Create a dedicated virtual environment for the project using uv
-    /openhands/micromamba/bin/micromamba run -n openhands uv venv /openhands/uv/openhands -p python3.12 && \
     # Install project dependencies (only main and runtime groups) without installing the project itself
-    /openhands/micromamba/bin/micromamba run -n openhands uv sync --group main --group runtime --no-install-project -p /openhands/uv/openhands/bin/python && \
+    /openhands/micromamba/bin/micromamba run -n openhands uv sync --only-group runtime --no-install-project -p /openhands/uv/openhands/bin/python && \
     # Clean up user caches
     /openhands/micromamba/bin/micromamba run -n openhands uv cache prune && \
     /openhands/micromamba/bin/micromamba clean --all

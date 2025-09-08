@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling>=1.13.0", "uv-dynamic-versioning>=0.6.0"]
+requires = ["hatchling", "uv-dynamic-versioning>=0.6.0"]
 build-backend = "hatchling.build"
 
 [project]
@@ -94,7 +94,6 @@ vcs = "git"
 style = "pep440"
 read-from = "tag"
 
-# IMPORTANT: use the hatch version hook, not the metadata hook
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
 
