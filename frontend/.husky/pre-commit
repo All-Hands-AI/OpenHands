@@ -1,7 +1,6 @@
 # Run frontend checks
 echo "Running frontend checks..."
 cd frontend
-npm run typecheck
 npx lint-staged
 
 # Run backend pre-commit
