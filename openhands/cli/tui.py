@@ -1149,7 +1149,7 @@ class TomMessageFilter(logging.Filter):
     def filter(self, record):
         message = record.getMessage()
         # Suppress messages that contain "Tom:" to avoid duplicates
-        return not ('Tom:' in message or record.levelno == CLI_DISPLAY_LEVEL)
+        return not ('Tom:' in message or record.levelno <= CLI_DISPLAY_LEVEL)
 
 
 @contextmanager
@@ -1161,13 +1161,6 @@ def capture_tom_thinking():
     oh_logger = logging.getLogger('openhands')
 
     try:
-        # Show Tom thinking indicator
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<style fg="#9370DB">🧠 Theory of minding...</style>')
-        )
-        sys.stdout.flush()
-
         # Add Tom CLI handler for clean display
         tom_logger.setLevel(logging.INFO)
         oh_logger.setLevel(logging.INFO)
