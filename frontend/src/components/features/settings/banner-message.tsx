@@ -1,13 +1,12 @@
+import { cn } from "#/utils/utils";
+
 interface BannerMessageProps {
   message: string;
+  className?: string;
 }
 
-export function BannerMessage({ message }: BannerMessageProps) {
+export function BannerMessage({ message, className }: BannerMessageProps) {
   return (
-    <div className="flex flex-col font-medium justify-center leading-[0] not-italic overflow-ellipsis overflow-hidden relative shrink-0 text-[12px] text-black text-nowrap">
-      <p className="leading-[20px] overflow-ellipsis overflow-hidden whitespace-pre">
-        {message}
-      </p>
-    </div>
+    <p className={cn("text-xs font-medium text-black", className)}>{message}</p>
   );
 }

@@ -29,6 +29,7 @@ import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { UpgradeBanner } from "#/components/features/settings";
+import { cn } from "#/utils/utils";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -401,18 +402,22 @@ function LlmSettingsScreen() {
   const shouldDisableForm = config?.APP_MODE === "saas" && !subscriptionAccess;
 
   return (
-    <div data-testid="llm-settings-screen" className="h-full">
+    <div data-testid="llm-settings-screen" className="h-full relative">
       {shouldShowUpgradeBanner && (
         <UpgradeBanner
           message={t("SETTINGS$UPGRADE_BANNER_MESSAGE")}
           onUpgradeClick={() => {
             // TODO: Implement upgrade flow
           }}
+          className="sticky top-0 z-10"
         />
       )}
       <form
         action={formAction}
-        className="flex flex-col h-full justify-between"
+        className={cn(
+          "flex flex-col h-full justify-between",
+          shouldShowUpgradeBanner && "h-[calc(100%-theme(spacing.12))]",
+        )}
       >
         <div className="p-9 flex flex-col gap-6">
           <SettingsSwitch
