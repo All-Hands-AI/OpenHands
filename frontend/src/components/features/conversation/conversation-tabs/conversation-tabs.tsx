@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
@@ -15,6 +16,7 @@ import { VSCodeTooltipContent } from "./vscode-tooltip-content";
 import {
   setHasRightPanelToggled,
   setSelectedTab,
+  setIsRightPanelShown,
   type ConversationTab,
 } from "#/state/conversation-slice";
 import { RootState } from "#/store";
@@ -28,9 +30,29 @@ export function ConversationTabs() {
     (state: RootState) => state.conversation,
   );
 
+  // Persist selectedTab and isRightPanelShown in localStorage
+  const [persistedSelectedTab, setPersistedSelectedTab] =
+    useLocalStorage<ConversationTab | null>(
+      "conversation-selected-tab",
+      "editor",
+    );
+
+  const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
+    useLocalStorage<boolean>("conversation-right-panel-shown", true);
+
   const onTabChange = (value: ConversationTab | null) => {
     dispatch(setSelectedTab(value));
+    // Persist the selected tab to localStorage
+    setPersistedSelectedTab(value);
   };
+
+  // Initialize Redux state from localStorage on component mount
+  useEffect(() => {
+    // Initialize selectedTab from localStorage if available
+    dispatch(setSelectedTab(persistedSelectedTab));
+    dispatch(setIsRightPanelShown(persistedIsRightPanelShown));
+    dispatch(setHasRightPanelToggled(persistedIsRightPanelShown));
+  }, []);
 
   useEffect(() => {
     const handlePanelVisibilityChange = () => {
@@ -51,11 +73,13 @@ export function ConversationTabs() {
     if (selectedTab === tab && isRightPanelShown) {
       // If clicking the same active tab, close the drawer
       dispatch(setHasRightPanelToggled(false));
+      setPersistedIsRightPanelShown(false);
     } else {
       // If clicking a different tab or drawer is closed, open drawer and select tab
       onTabChange(tab);
       if (!isRightPanelShown) {
         dispatch(setHasRightPanelToggled(true));
+        setPersistedIsRightPanelShown(true);
       }
     }
   };
