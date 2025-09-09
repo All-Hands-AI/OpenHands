@@ -148,7 +148,7 @@ jobs:
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install Python dependencies using UV
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
         run: uv run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
@@ -205,24 +205,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: Cache Poetry dependencies
+      - name: Cache UV dependencies
         uses: useblacksmith/cache@v5
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
           lookup-only: true
           restore-keys: |
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-uv-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies using UV
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Get hash in App Image
         run: |
           echo "Hash from app image: ${{ needs.ghcr_build_app.outputs.hash_from_app_image }}"
@@ -231,7 +232,7 @@ jobs:
       - name: Get hash using code (development mode)
         run: |
           mkdir -p containers/runtime
-          poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild > output.txt 2>&1
+          uv run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild > output.txt 2>&1
           hash_from_code=$(cat output.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_code=$hash_from_code" >> $GITHUB_ENV
 
@@ -277,31 +278,32 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Cache Poetry dependencies
+      - name: Cache UV dependencies
         uses: useblacksmith/cache@v5
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
           lookup-only: true
           restore-keys: |
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-uv-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Install Python dependencies using Poetry
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies using UV
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Run docker runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          poetry run pip install pytest-xdist
+          uv pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
-          poetry run pip install pytest-rerunfailures
+          uv pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
@@ -313,7 +315,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -347,31 +349,32 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Cache Poetry dependencies
+      - name: Cache UV dependencies
         uses: useblacksmith/cache@v5
         with:
           path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+            ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
           lookup-only: true
           restore-keys: |
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-uv-
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
+      - name: Install UV
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+      - name: Install Python dependencies using UV
+        run: make install-python-dependencies UV_GROUP=test,runtime INSTALL_PLAYWRIGHT=0
       - name: Run runtime tests
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          poetry run pip install pytest-xdist
+          uv pip install pytest-xdist
 
           # Install to be able to retry on failures for flaky tests
-          poetry run pip install pytest-rerunfailures
+          uv pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
@@ -380,7 +383,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
