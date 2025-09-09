@@ -285,6 +285,8 @@ jobs:
           python-version: '3.12'
       - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - name: Install OpenHands
+        run: uv pip install -e .
       - name: Run docker runtime tests
         shell: bash
         run: |
@@ -346,6 +348,8 @@ jobs:
           python-version: '3.12'
       - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - name: Install OpenHands
+        run: uv pip install -e .
       - name: Run runtime tests
         shell: bash
         run: |
