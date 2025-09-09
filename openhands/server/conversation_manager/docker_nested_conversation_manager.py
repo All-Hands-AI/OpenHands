@@ -567,7 +567,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
         # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
-        env_vars['USER'] = 'root' if config.sandbox.user_id == 0 else 'openhands'
+        env_vars['USER'] = 'openhands' if config.run_as_openhands else 'root'
         env_vars['SANDBOX_USER_ID'] = str(config.sandbox.user_id)
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
