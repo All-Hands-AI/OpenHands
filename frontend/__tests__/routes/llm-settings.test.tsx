@@ -864,5 +864,57 @@ describe("SaaS mode", () => {
       // Should NOT call save settings API for unsubscribed users
       expect(saveSettingsSpy).not.toHaveBeenCalled();
     });
+
+    it("should show backdrop overlay for unsubscribed users", async () => {
+      // Mock SaaS mode without subscription
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return null (no subscription)
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Wait for subscription data to load
+      await waitFor(() => {
+        expect(getSubscriptionAccessSpy).toHaveBeenCalled();
+      });
+
+      // Should show upgrade banner
+      expect(screen.getByTestId("upgrade-banner")).toBeInTheDocument();
+
+      // Should show backdrop overlay
+      const backdrop = screen.getByTestId("settings-backdrop");
+      expect(backdrop).toBeInTheDocument();
+      
+      // Check backdrop styles
+      expect(backdrop).toHaveStyle({
+        opacity: "0.5",
+        background: "#26282D",
+      });
+    });
+
+    it("should not show backdrop overlay for subscribed users", async () => {
+      // Mock SaaS mode with subscription
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return active subscription
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Wait for subscription data to load
+      await waitFor(() => {
+        expect(getSubscriptionAccessSpy).toHaveBeenCalled();
+      });
+
+      // Should NOT show backdrop overlay
+      expect(screen.queryByTestId("settings-backdrop")).not.toBeInTheDocument();
+    });
   });
 });

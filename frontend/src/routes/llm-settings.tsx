@@ -28,7 +28,7 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
-import { UpgradeBanner } from "#/components/features/settings";
+import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrade-banner-with-backdrop";
 import { cn } from "#/utils/utils";
 
 function LlmSettingsScreen() {
@@ -407,12 +407,10 @@ function LlmSettingsScreen() {
   return (
     <div data-testid="llm-settings-screen" className="h-full relative">
       {shouldShowUpgradeBanner && (
-        <UpgradeBanner
-          message={t("SETTINGS$UPGRADE_BANNER_MESSAGE")}
+        <UpgradeBannerWithBackdrop
           onUpgradeClick={() => {
             // TODO: Implement upgrade flow
           }}
-          className="sticky top-0 z-10"
         />
       )}
       <form
