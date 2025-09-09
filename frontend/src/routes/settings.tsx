@@ -8,6 +8,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { ProPill } from "#/components/features/settings/pro-pill";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -17,10 +18,10 @@ const SAAS_ONLY_PATHS = [
 ];
 
 const SAAS_NAV_ITEMS = [
-  { to: "/settings", text: "SETTINGS$NAV_LLM" },
   { to: "/settings/user", text: "SETTINGS$NAV_USER" },
   { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
   { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
+  { to: "/settings", text: "SETTINGS$NAV_LLM" },
   { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
   { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
@@ -84,12 +85,13 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center relative",
                 isActive && "border-primary",
               )
             }
           >
             <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
+            {isSaas && to === "/settings" && <ProPill />}
           </NavLink>
         ))}
       </nav>

@@ -419,6 +419,7 @@ function LlmSettingsScreen() {
           "flex flex-col h-full justify-between",
           shouldShowUpgradeBanner && "h-[calc(100%-theme(spacing.12))]",
         )}
+        inert={shouldShowUpgradeBanner}
       >
         <div className="p-9 flex flex-col gap-6">
           <SettingsSwitch

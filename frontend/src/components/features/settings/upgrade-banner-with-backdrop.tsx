@@ -20,7 +20,7 @@ export function UpgradeBannerWithBackdrop({
       />
       <div
         data-testid="settings-backdrop"
-        className="absolute top-12 left-0 right-0 bottom-0 z-20 pointer-events-none"
+        className="absolute top-12 left-0 right-0 bottom-0 z-20"
         style={{
           opacity: 0.5,
           background: "#26282D",
