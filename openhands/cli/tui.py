@@ -1115,16 +1115,19 @@ def display_tom_thinking_step(message: str) -> None:
     elif message.startswith('📁') or message.startswith('📊'):
         color = COLOR_GREY
         prefix = 'Tom Data'
+    elif message.startswith('🚀'):
+        return
     else:
         color = COLOR_AGENT_BLUE
         prefix = 'Tom'
 
     # Display with consistent formatting using FormattedText for better color support
-    # message maximum length is 100 characters
-    message = message[:100]
+    # message maximum length is 40 words
+    message = ' '.join(message.split(' ')[:40] + ['...'])
     print_formatted_text(
         FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
     )
+    sys.stdout.flush()  # Force immediate display
 
 
 class TomCliLogHandler(logging.Handler):
@@ -1148,7 +1151,7 @@ class TomMessageFilter(logging.Filter):
     def filter(self, record):
         message = record.getMessage()
         # Suppress messages that contain "Tom:" to avoid duplicates
-        return not ('Tom:' in message or record.levelno == CLI_DISPLAY_LEVEL)
+        return not ('Tom:' in message or record.levelno <= CLI_DISPLAY_LEVEL)
 
 
 @contextmanager
@@ -1161,12 +1164,12 @@ def capture_tom_thinking():
 
     try:
         # Add Tom CLI handler for clean display
-        tom_logger.setLevel(logging.INFO)
-        oh_logger.setLevel(logging.INFO)
+        tom_logger.setLevel(CLI_DISPLAY_LEVEL)
+        oh_logger.setLevel(CLI_DISPLAY_LEVEL)
         tom_logger.addHandler(handler)
         oh_logger.addHandler(handler)
-        tom_logger.propagate = True
-        oh_logger.propagate = True
+        tom_logger.propagate = False
+        oh_logger.propagate = False
 
         # # Add filter to OpenHands logger to suppress Tom messages
         # oh_logger.addFilter(tom_filter)

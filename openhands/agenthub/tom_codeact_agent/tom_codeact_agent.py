@@ -133,11 +133,11 @@ class TomCodeActAgent(CodeActAgent):
                 self.sleeptime_compute(user_id=state.user_id or '')
                 return AgentFinishAction()
             elif (
-                latest_user_message.content.strip() == '/consult_tom_agent'
+                latest_user_message.content.strip() == '/tom_give_suggestions'
                 and self._is_new_user_message(latest_user_message)
             ):
                 action = ConsultTomAgentAction(
-                    content='Users message is /consult_tom_agent. I better consult ToM agent about what user wants to do next and get some user preferences.',
+                    content='Users message is /tom_give_suggestions. I better consult ToM agent about what user wants to do next and get some user preferences.',
                     use_user_message=False,
                     custom_query='what user wants to do next',
                 )
@@ -198,7 +198,7 @@ class TomCodeActAgent(CodeActAgent):
                 query_description = action.custom_query or "the user's message"
                 return ConsultTomAgentAction(
                     content=action.content
-                    + "\n"
+                    + '\n'
                     + f'I need to consult Tom agent about {query_description}'
                     + '\n\n[Starting consultation with Tom agent...]'
                     + consultation_result
@@ -297,9 +297,6 @@ class TomCodeActAgent(CodeActAgent):
         Returns:
             Tom agent's guidance if available, None otherwise
         """
-        logger.info(
-            f'🚀 Tom: Integration Point triggered - consulting about {"user query" if is_user_query else "agent query"}'
-        )
 
         try:
             user_id = state.user_id or ''
@@ -307,6 +304,10 @@ class TomCodeActAgent(CodeActAgent):
             # Capture tom thinking process in CLI if available
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
+                    logger.log(
+                        CLI_DISPLAY_LEVEL,
+                        '🚀 Tom: Theory of minding...',
+                    )
                     tom_suggestion = self.tom_agent.give_suggestions(
                         user_id=user_id,
                         query=query_text,
