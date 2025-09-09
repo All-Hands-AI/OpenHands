@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
@@ -24,6 +25,17 @@ import { AgentState } from "#/types/agent-state";
 import { getFirstPRUrl } from "#/utils/parse-pr-url";
 import MemoryIcon from "#/icons/memory_icon.svg?react";
 
+const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
+  typeof evt === "object" &&
+  evt !== null &&
+  "error" in evt &&
+  evt.error === true;
+
+const isAgentStatusError = (evt: unknown): boolean =>
+  isOpenHandsEvent(evt) &&
+  isAgentStateChangeObservation(evt) &&
+  evt.extras.agent_state === AgentState.ERROR;
+
 interface MessagesProps {
   messages: (OpenHandsAction | OpenHandsObservation)[];
   isAwaitingUserConfirmation: boolean;
@@ -31,8 +43,11 @@ interface MessagesProps {
 
 export const Messages: React.FC<MessagesProps> = React.memo(
   ({ messages, isAwaitingUserConfirmation }) => {
-    const { createConversationAndSubscribe, isPending } =
-      useCreateConversationAndSubscribeMultiple();
+    const {
+      createConversationAndSubscribe,
+      isPending,
+      unsubscribeFromConversation,
+    } = useCreateConversationAndSubscribeMultiple();
     const { getOptimisticUserMessage } = useOptimisticUserMessage();
     const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);
@@ -47,6 +62,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const [microagentStatuses, setMicroagentStatuses] = React.useState<
       EventMicroagentStatus[]
     >([]);
+
+    const { t } = useTranslation();
 
     const actionHasObservationPair = React.useCallback(
       (event: OpenHandsAction | OpenHandsObservation): boolean => {
@@ -93,20 +110,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     const handleMicroagentEvent = React.useCallback(
       (socketEvent: unknown, microagentConversationId: string) => {
-        // Handle error events
-        const isErrorEvent = (
-          evt: unknown,
-        ): evt is { error: true; message: string } =>
-          typeof evt === "object" &&
-          evt !== null &&
-          "error" in evt &&
-          evt.error === true;
-
-        const isAgentStatusError = (evt: unknown): boolean =>
-          isOpenHandsEvent(evt) &&
-          isAgentStateChangeObservation(evt) &&
-          evt.extras.agent_state === AgentState.ERROR;
-
         if (isErrorEvent(socketEvent) || isAgentStatusError(socketEvent)) {
           setMicroagentStatuses((prev) =>
             prev.map((statusEntry) =>
@@ -119,7 +122,11 @@ export const Messages: React.FC<MessagesProps> = React.memo(
           isOpenHandsEvent(socketEvent) &&
           isAgentStateChangeObservation(socketEvent)
         ) {
-          if (socketEvent.extras.agent_state === AgentState.FINISHED) {
+          // Handle completion states
+          if (
+            socketEvent.extras.agent_state === AgentState.FINISHED ||
+            socketEvent.extras.agent_state === AgentState.AWAITING_USER_INPUT
+          ) {
             setMicroagentStatuses((prev) =>
               prev.map((statusEntry) =>
                 statusEntry.conversationId === microagentConversationId
@@ -127,6 +134,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                   : statusEntry,
               ),
             );
+
+            unsubscribeFromConversation(microagentConversationId);
           }
         } else if (
           isOpenHandsEvent(socketEvent) &&
@@ -147,9 +156,27 @@ export const Messages: React.FC<MessagesProps> = React.memo(
               ),
             );
           }
+
+          unsubscribeFromConversation(microagentConversationId);
+        } else {
+          // For any other event, transition from WAITING to CREATING if still waiting
+          setMicroagentStatuses((prev) => {
+            const currentStatus = prev.find(
+              (entry) => entry.conversationId === microagentConversationId,
+            )?.status;
+
+            if (currentStatus === MicroagentStatus.WAITING) {
+              return prev.map((statusEntry) =>
+                statusEntry.conversationId === microagentConversationId
+                  ? { ...statusEntry, status: MicroagentStatus.CREATING }
+                  : statusEntry,
+              );
+            }
+            return prev; // No change needed
+          });
         }
       },
-      [setMicroagentStatuses],
+      [setMicroagentStatuses, unsubscribeFromConversation],
     );
 
     const handleLaunchMicroagent = (
@@ -178,13 +205,13 @@ export const Messages: React.FC<MessagesProps> = React.memo(
         },
         onSuccessCallback: (newConversationId: string) => {
           setShowLaunchMicroagentModal(false);
-          // Update status with conversation ID
+          // Update status with conversation ID - start with WAITING
           setMicroagentStatuses((prev) => [
             ...prev.filter((status) => status.eventId !== selectedEventId),
             {
               eventId: selectedEventId,
               conversationId: newConversationId,
-              status: MicroagentStatus.CREATING,
+              status: MicroagentStatus.WAITING,
             },
           ]);
         },
@@ -219,6 +246,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                         setSelectedEventId(message.id);
                         setShowLaunchMicroagentModal(true);
                       },
+                      tooltip: t("MICROAGENT$ADD_TO_MEMORY"),
                     },
                   ]
                 : undefined

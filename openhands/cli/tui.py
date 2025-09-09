@@ -522,7 +522,7 @@ def display_task_tracking_action(event: TaskTrackingAction) -> None:
     """Display a TaskTracking action in the CLI."""
     # Display thought first if present
     if hasattr(event, 'thought') and event.thought:
-        display_message(event.thought)
+        display_thought_if_new(event.thought)
 
     # Format the command and task list for display
     display_text = f'Command: {event.command}'
