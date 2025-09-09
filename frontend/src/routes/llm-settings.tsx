@@ -225,11 +225,6 @@ function LlmSettingsScreen() {
     );
   };
 
-  const formAction = (formData: FormData) => {
-    if (view === "basic") basicFormAction(formData);
-    else advancedFormAction(formData);
-  };
-
   const handleToggleAdvancedSettings = (isToggled: boolean) => {
     setView(isToggled ? "advanced" : "basic");
     setDirtyInputs({
@@ -400,6 +395,14 @@ function LlmSettingsScreen() {
 
   // Disable form only in SaaS mode when user doesn't have an active subscription
   const shouldDisableForm = config?.APP_MODE === "saas" && !subscriptionAccess;
+
+  const formAction = (formData: FormData) => {
+    // Prevent form submission for unsubscribed SaaS users
+    if (shouldDisableForm) return;
+
+    if (view === "basic") basicFormAction(formData);
+    else advancedFormAction(formData);
+  };
 
   return (
     <div data-testid="llm-settings-screen" className="h-full relative">

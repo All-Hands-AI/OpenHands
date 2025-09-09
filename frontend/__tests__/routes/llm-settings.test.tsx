@@ -737,7 +737,7 @@ describe("SaaS mode", () => {
   describe("SaaS subscription", () => {
     // Common mock configurations
     const MOCK_SAAS_CONFIG = {
-      APP_MODE: "saas",
+      APP_MODE: "saas" as const,
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
       FEATURE_FLAGS: {
@@ -750,7 +750,7 @@ describe("SaaS mode", () => {
     };
 
     const MOCK_ACTIVE_SUBSCRIPTION = {
-      status: "ACTIVE",
+      status: "ACTIVE" as const,
       start_at: "2024-01-01",
       end_at: "2024-12-31",
       created_at: "2024-01-01",
@@ -830,6 +830,39 @@ describe("SaaS mode", () => {
       // Form should NOT be disabled
       const form = screen.getByTestId("llm-settings-form-basic");
       expect(form).not.toHaveAttribute("aria-disabled", "true");
+    });
+
+    it("should not call save settings API when making changes in disabled form for unsubscribed users", async () => {
+      // Mock SaaS mode without subscription
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return null (no subscription)
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+
+      // Mock saveSettings to track calls
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Make a change to settings (toggle confirmation mode)
+      const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
+      expect(confirmationModeSwitch).not.toBeChecked();
+      
+      await userEvent.click(confirmationModeSwitch);
+      expect(confirmationModeSwitch).toBeChecked();
+
+      // Save button should not be disabled (this is the bug - it should be disabled)
+      const submitButton = screen.getByTestId("submit-button");
+      expect(submitButton).not.toBeDisabled();
+
+      // Try to submit the form
+      await userEvent.click(submitButton);
+
+      // Should NOT call save settings API for unsubscribed users
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
     });
   });
 });
