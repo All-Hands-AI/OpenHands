@@ -1,15 +1,24 @@
 #!/bin/bash
 
 # Simple batch analysis script for agent interactions
-# Usage: ./batch_analyze.sh [agent_filter] [model_filter]
+# Usage: ./analyze_interact.sh [agent_filter] [model_filter] [mode]
 
 ANALYZE_SCRIPT="/home/xuhuizhou/OpenHands/evaluation/benchmarks/swe_bench/analyze_interact.py"
-BASE_DIR="/home/xuhuizhou/OpenHands/evaluation/evaluation_outputs/outputs/cmu-lti__interactive-swe-test"
 
 AGENT_FILTER="$1"
 MODEL_FILTER="$2"
+MODE="$3"
+
+# Set base directory based on mode
+if [ "$MODE" == "stateful" ]; then
+    BASE_DIR="/home/xuhuizhou/OpenHands/evaluation/evaluation_outputs/outputs/cmu-lti__stateful-test"
+else
+    BASE_DIR="/home/xuhuizhou/OpenHands/evaluation/evaluation_outputs/outputs/cmu-lti__interactive-swe-test"
+fi
 
 echo "Searching for evaluation directories..."
+echo "Mode: ${MODE:-interact}"
+echo "Base directory: $BASE_DIR"
 echo "Agent filter: ${AGENT_FILTER:-*}"
 echo "Model filter: ${MODEL_FILTER:-*}"
 

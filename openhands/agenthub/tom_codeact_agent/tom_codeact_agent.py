@@ -164,7 +164,12 @@ class TomCodeActAgent(CodeActAgent):
             # Determine what to consult about
             if self._has_tom_consultation_happened(formatted_messages):
                 consultation_result: Optional[str] = (
-                    'Tom agent has already given suggestions for the SWE agent. No need to consult Tom agent again.'
+                    '[CRITICAL] Tom agent has already given suggestions for the SWE agent. No need to consult Tom agent again for this round. Use other actions instead.'
+                )
+                return ConsultTomAgentAction(
+                    content=consultation_result,
+                    use_user_message=False,
+                    custom_query=None,
                 )
 
             elif action.use_user_message and latest_user_message:

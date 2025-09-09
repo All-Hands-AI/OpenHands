@@ -48,24 +48,44 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'fal
 
 
 class FakeUser:
-    def __init__(self, issue, hints, files):
-        self.system_message = f"""
-        You are a GitHub user reporting an issue. Here are the details of your issue and environment:
+    def __init__(self, issue, hints, files, user_roleplay_prompt=None):
+        # Use custom roleplay prompt if provided, otherwise use default
+        if user_roleplay_prompt:
+            self.system_message = f"""
+            User Profile: {user_roleplay_prompt}
 
-        Issue: {issue}
+            Issue: {issue}
 
-        Hints: {hints}
+            Hints: {hints}
 
-        Files relative to your current directory: {files}
+            Files relative to your current directory: {files}
 
-        Your task is to respond to questions from a coder who is trying to solve your issue. The coder has a summarized version of the issue you have. Follow these rules:
-        1. If the coder asks a question that is directly related to the information in the issue you have, provide that information.
-        2. Always stay in character as a user reporting an issue, not as an AI assistant.
-        3. Keep your responses concise and to the point.
-        4. The coder has limited turns to solve the issue. Do not interact with the coder beyond 3 turns.
+            Your task is to interact with a coder who is trying to solve your issue. The coder has a summarized version of the issue you have. Follow these rules:
+            1. If the coder asks a question that is directly related to the information in the issue you have, provide that information. However, if the coder' message is not aligned with your profile's preferences, you could refuse to answer and request the coder to align with your profile's preferences.
+            2. Always stay in character as a user reporting an issue, not as an AI assistant.
+            3. Respond as how a user described by the user profile would respond.
+            4. Respond "STOP" if the coder is consistently violating your profile's preferences or when the coder is always asking for more information but not doing the coding task.
 
-        Respond with "I don't have that information" if the question is unrelated or you're unsure.
-        """
+            Respond with "I don't have that information" if the question is unrelated or you're unsure.
+            """
+        else:
+            self.system_message = f"""
+            You are a GitHub user reporting an issue. Here are the details of your issue and environment:
+
+            Issue: {issue}
+
+            Hints: {hints}
+
+            Files relative to your current directory: {files}
+
+            Your task is to respond to questions from a coder who is trying to solve your issue. The coder has a summarized version of the issue you have. Follow these rules:
+            1. If the coder asks a question that is directly related to the information in the issue you have, provide that information.
+            2. Always stay in character as a user reporting an issue, not as an AI assistant.
+            3. Keep your responses concise and to the point.
+            4. The coder has limited turns to solve the issue. Do not interact with the coder beyond 3 turns.
+
+            Respond with "I don't have that information" if the question is unrelated or you're unsure.
+            """
         self.chat_history = [{'role': 'system', 'content': self.system_message}]
         self.turns = 0
         # Get LLM config from config.toml
@@ -76,8 +96,7 @@ class FakeUser:
     def generate_reply(self, question):
         if self.turns > 3:
             return 'Please continue working on the task. Do NOT ask for more help.'
-        self.chat_history.append({'role': 'user', 'content': question.content})
-
+        self.chat_history.append({'role': 'user', 'content': "[SWE Agent]: " + question.content})
         response = litellm_completion(
             model=self.llm_config.model,
             messages=self.chat_history,
@@ -112,20 +131,24 @@ def initialize_runtime(
 
             # Create usermodeling directory in container
             action = CmdRunAction(command='mkdir -p ~/.openhands/usermodeling')
-            action.set_hard_timeout(600)
             logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
             # Copy ./cache/users/{user_profile_id} from host to container ~/.openhands/usermodeling/
-            user_cache_path = f'./cache/users/{user_profile_id}'
+            user_cache_path = f'./cache/users_tar/{user_profile_id}.tar.gz'
             if os.path.exists(user_cache_path):
                 logger.info(f'Copying {user_cache_path} to container ~/.openhands/usermodeling/')
                 # Copy each file individually
-                for item in os.listdir(user_cache_path):
-                    src = os.path.join(user_cache_path, item)
-                    if os.path.isfile(src):
-                        runtime.copy_to(src, '/root/.openhands/usermodeling/')
+                runtime.copy_to(user_cache_path, '/root/.openhands/usermodeling/')
+                action = CmdRunAction(command=f'tar -xzf /root/.openhands/usermodeling/{user_profile_id}.tar.gz -C /root/.openhands/usermodeling/')
+                logger.info(action, extra={'msg_type': 'ACTION'})
+                obs = runtime.run_action(action)
+                logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+                action = CmdRunAction(command=f'mv /root/.openhands/usermodeling/{user_profile_id}/* /root/.openhands/usermodeling/')
+                logger.info(action, extra={'msg_type': 'ACTION'})
+                obs = runtime.run_action(action)
+                logger.info(obs, extra={'msg_type': 'OBSERVATION'})
             else:
                 logger.warning(f'User cache directory {user_cache_path} not found, skipping copy')
         else:
@@ -164,7 +187,13 @@ def process_instance(
     global fake_user
     original_issue = instance.original_issue
     issue = str(original_issue)
-    fake_user = FakeUser(issue=issue, hints=instance.hints_text, files=instance.files)
+
+    # Check if we're in stateful mode and have user_roleplay_prompt
+    user_roleplay_prompt = None
+    if metadata.details.get('mode') == 'stateful' and hasattr(instance, 'user_roleplay_prompt'):
+        user_roleplay_prompt = instance.user_roleplay_prompt
+
+    fake_user = FakeUser(issue=issue, hints=instance.hints_text, files=instance.files, user_roleplay_prompt=user_roleplay_prompt)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
