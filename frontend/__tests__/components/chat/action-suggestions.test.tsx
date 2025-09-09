@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ActionSuggestions } from "#/components/features/chat/action-suggestions";
+import { SettingsService } from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
@@ -57,7 +58,7 @@ describe("ActionSuggestions", () => {
   // Setup mocks for each test
   beforeEach(() => {
     vi.clearAllMocks();
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -148,7 +149,7 @@ describe("ActionSuggestions", () => {
     });
 
     // Mock user having both GitHub and Bitbucket tokens
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -179,10 +180,10 @@ describe("ActionSuggestions", () => {
 
     // The suggestion should mention GitHub, not Bitbucket
     expect(onSuggestionsClick).toHaveBeenCalledWith(
-      expect.stringContaining("GitHub")
+      expect.stringContaining("GitHub"),
     );
     expect(onSuggestionsClick).not.toHaveBeenCalledWith(
-      expect.stringContaining("Bitbucket")
+      expect.stringContaining("Bitbucket"),
     );
   });
 
@@ -202,7 +203,7 @@ describe("ActionSuggestions", () => {
       session_api_key: null,
     });
 
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -230,10 +231,10 @@ describe("ActionSuggestions", () => {
 
     // Should mention GitLab and "merge request" instead of "pull request"
     expect(onSuggestionsClick).toHaveBeenCalledWith(
-      expect.stringContaining("GitLab")
+      expect.stringContaining("GitLab"),
     );
     expect(onSuggestionsClick).toHaveBeenCalledWith(
-      expect.stringContaining("merge request")
+      expect.stringContaining("merge request"),
     );
   });
 
@@ -253,7 +254,7 @@ describe("ActionSuggestions", () => {
       session_api_key: null,
     });
 
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -281,7 +282,7 @@ describe("ActionSuggestions", () => {
 
     // Should mention Bitbucket
     expect(onSuggestionsClick).toHaveBeenCalledWith(
-      expect.stringContaining("Bitbucket")
+      expect.stringContaining("Bitbucket"),
     );
   });
 });
