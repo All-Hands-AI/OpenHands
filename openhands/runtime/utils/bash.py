@@ -194,6 +194,10 @@ class BashSession:
 
     def initialize(self) -> None:
         self.server = libtmux.Server()
+        # enable logging
+        self.server.cmd('set-option', '-g', 'debug-file', '/tmp/tmux-debug.log')
+        self.server.cmd('set-option', '-g', 'debug', '9')
+
         _shell_command = '/bin/bash'
         if self.username in list(filter(None, [RUNTIME_USERNAME, 'root', 'openhands'])):
             # This starts a non-login (new) shell for the given user
@@ -208,7 +212,9 @@ class BashSession:
         # else:
         window_command = _shell_command
 
-        logger.debug(f'Initializing bash session with command: {window_command}')
+        logger.info(
+            f'Initializing bash session in {self.work_dir} with command: {window_command}'
+        )
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
@@ -217,6 +223,9 @@ class BashSession:
             x=1000,
             y=1000,
         )
+
+        options = self.session.show_options()
+        logger.info(f'tmux options {options}')
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
