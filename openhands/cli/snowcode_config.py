@@ -7,7 +7,7 @@ SNOWCODE_CURRENT_MODEL_URL = os.getenv(
     "https://api.snowcell.io/models/coding/current",
 )
 
-DEFAULT_LLM_MODEL = "hosted_vllm/DeepSeek-Coder-V2-Lite-Instruct"
+DEFAULT_LLM_MODEL = "hosted_vllm/Meta-Llama-3.1-70B-Instruct"
 DEFAULT_BASE_URL = "http://inference.snowcell.io/v1"
 DEFAULT_PROVIDER = "hosted_vllm"
 

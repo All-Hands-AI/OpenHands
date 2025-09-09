@@ -6,12 +6,12 @@ requires = [
 
 [tool.poetry]
 name = "snowcode"
-version = "0.55.0"
-description = "snowcode: Code Less, Make More"
+version = "0.1.0"
+description = "snowcode: Code Less, Build Better"
 authors = [ "snowcode" ]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/All-Hands-AI/OpenHands"
+repository = "https://github.com/snowcell-cloud/Snowcode"
 packages = [
   { include = "openhands/**/*" },
   { include = "third_party/**/*" },
