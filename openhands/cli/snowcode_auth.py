@@ -16,7 +16,7 @@ class SnowcodeAuth:
     """Handles Snowcode authentication and token management."""
 
     def __init__(self):
-        self.api_endpoint = 'https://api-kratos.dev.snowcell.io/auth/validate'
+        self.api_endpoint = 'https://api.snowcell.io/auth/validate'
         self.auth_file_path = Path.home() / '.snowcode' / 'auth.json'
 
     def validate_token_with_api(self, token: str) -> bool:
