@@ -104,3 +104,33 @@ jobs:
       - name: Run Unit Tests
         working-directory: ./enterprise
         run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit
+
+  # Run CLI unit tests
+  test-cli-python:
+    name: CLI Unit Tests
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: 3.12
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: ./openhands-cli
+        run: |
+          uv sync --extra dev
+
+      - name: Run CLI unit tests
+        working-directory: ./openhands-cli
+        run: |
+          uv run pytest -v
