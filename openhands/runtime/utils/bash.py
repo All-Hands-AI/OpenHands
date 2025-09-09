@@ -601,6 +601,7 @@ class BashSession:
             _start_time = time.time()
             logger.debug(f'GETTING PANE CONTENT at {_start_time}')
             cur_pane_output = self._get_pane_content()
+            logger.info(f'[DEBUG_INITIAL_DIR] Got pane content : {cur_pane_output}')
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
