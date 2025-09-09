@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+import importlib.metadata
 import os
 import shutil
 import string
@@ -12,10 +13,11 @@ from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
-from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
+
+oh_version = importlib.metadata.version('openhands')
 
 
 class BuildFromImageType(Enum):
