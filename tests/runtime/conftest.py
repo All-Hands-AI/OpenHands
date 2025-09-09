@@ -123,16 +123,24 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
-    runtime = TEST_RUNTIME
-    if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
+    runtime = TEST_RUNTIME.lower()
+    if runtime in ('docker', 'eventstream'):
         return [DockerRuntime]
-    elif runtime.lower() == 'windowsdockerruntime':
+    elif runtime == 'windowsdockerruntime':
+        try:
+            import docker  # type: ignore
+
+            info = docker.from_env().info()
+            if str(info.get('OSType', '')).lower() != 'windows':
+                return ['SKIP_WINDOWS_DOCKER']
+        except Exception:
+            return ['SKIP_WINDOWS_DOCKER']
         return [WindowsDockerRuntime]
-    elif runtime.lower() == 'local':
+    elif runtime == 'local':
         return [LocalRuntime]
-    elif runtime.lower() == 'remote':
+    elif runtime == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'cli':
+    elif runtime == 'cli':
         return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
@@ -167,6 +175,8 @@ def runtime_setup_session():
 # which cause errors (especially outside GitHub actions).
 @pytest.fixture(scope='module', params=get_runtime_classes())
 def runtime_cls(request):
+    if request.param == 'SKIP_WINDOWS_DOCKER':
+        pytest.skip('WindowsDockerRuntime is not supported in this environment')
     time.sleep(1)
     return request.param
 

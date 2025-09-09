@@ -6,6 +6,7 @@ from uuid import UUID
 
 import docker
 import httpx
+import requests
 import tenacity
 from docker.models.containers import Container
 from docker.types import DriverConfig, Mount
@@ -325,7 +326,8 @@ class WindowsDockerRuntime(ActionExecutionClient):
     @lru_cache(maxsize=1)
     def _init_docker_client() -> docker.DockerClient:
         try:
-            return docker.from_env()
+            client_timeout = int(os.environ.get('DOCKER_CLIENT_TIMEOUT', '300'))
+            return docker.from_env(timeout=client_timeout)
         except Exception as ex:
             logger.error(
                 'Launch Windows Docker client failed. Please make sure you have installed Docker Desktop and started Docker Desktop with Windows containers enabled.',
@@ -594,22 +596,39 @@ class WindowsDockerRuntime(ActionExecutionClient):
             runtime_kwargs: dict = dict(self.config.sandbox.docker_runtime_kwargs or {})
             runtime_kwargs.setdefault('isolation', 'hyperv')
 
-            self.container = self.docker_client.containers.run(
-                self.runtime_container_image,
-                command=command,
-                # Do not override entrypoint for Windows containers; honor image's default
-                network_mode=network_mode,
-                ports=port_mapping,
-                working_dir='C:\\openhands\\code',
-                name=self.container_name,
-                detach=True,
-                environment=environment,
-                volumes=volumes,  # type: ignore
-                mounts=overlay_mounts,  # type: ignore
-                device_requests=device_requests,
-                # Do not force platform; rely on Docker Desktop Windows container mode
-                **runtime_kwargs,
-            )
+            try:
+                self.container = self.docker_client.containers.run(
+                    self.runtime_container_image,
+                    command=command,
+                    # Do not override entrypoint for Windows containers; honor image's default
+                    network_mode=network_mode,
+                    ports=port_mapping,
+                    working_dir='C:\\openhands\\code',
+                    name=self.container_name,
+                    detach=True,
+                    environment=environment,
+                    volumes=volumes,  # type: ignore
+                    mounts=overlay_mounts,  # type: ignore
+                    device_requests=device_requests,
+                    # Do not force platform; rely on Docker Desktop Windows container mode
+                    **runtime_kwargs,
+                )
+            except requests.exceptions.ReadTimeout as rt_err:
+                # Start may have timed out; container might still be up. Try to attach.
+                self.log(
+                    'warn', f'Docker start timed out; trying to attach: {rt_err!r}'
+                )
+                try:
+                    self.container = self.docker_client.containers.get(
+                        self.container_name
+                    )
+                    self.log(
+                        'info',
+                        f'Attached to container after timeout: {self.container_name}',
+                    )
+                except docker.errors.NotFound:
+                    # Re-raise to be handled by upstream error logging
+                    raise
             self.log('debug', f'Windows container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except docker.errors.APIError as e:
