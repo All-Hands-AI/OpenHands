@@ -718,6 +718,15 @@ describe("SaaS mode", () => {
       APP_MODE: "saas",
     });
 
+    // Mock subscription access to return valid subscription (so advanced switch is enabled)
+    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    getSubscriptionAccessSpy.mockResolvedValue({
+      status: "ACTIVE",
+      start_at: "2024-01-01T00:00:00Z",
+      end_at: "2024-12-31T23:59:59Z",
+      created_at: "2024-01-01T00:00:00Z",
+    });
+
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
 
@@ -734,6 +743,15 @@ describe("SaaS mode", () => {
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
+    });
+
+    // Mock subscription access to return valid subscription (so advanced switch is enabled)
+    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    getSubscriptionAccessSpy.mockResolvedValue({
+      status: "ACTIVE",
+      start_at: "2024-01-01T00:00:00Z",
+      end_at: "2024-12-31T23:59:59Z",
+      created_at: "2024-01-01T00:00:00Z",
     });
 
     renderLlmSettingsScreen();
@@ -801,12 +819,18 @@ describe("SaaS mode", () => {
       const providerInput = screen.getByTestId("llm-provider-input");
       const modelInput = screen.getByTestId("llm-model-input");
       const apiKeyInput = screen.getByTestId("llm-api-key-input");
+      const searchApiKeyInput = screen.getByTestId("search-api-key-input");
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
       const submitButton = screen.getByTestId("submit-button");
 
       // Inputs should be disabled
       expect(providerInput).toBeDisabled();
       expect(modelInput).toBeDisabled();
       expect(apiKeyInput).toBeDisabled();
+      expect(searchApiKeyInput).toBeDisabled();
+      expect(advancedSwitch).toBeDisabled();
+      expect(confirmationModeSwitch).toBeDisabled();
       expect(submitButton).toBeDisabled();
 
       // Try to interact with inputs - they should not respond
@@ -885,18 +909,19 @@ describe("SaaS mode", () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
-      // Make a change to settings (toggle confirmation mode)
+      // Verify that form elements are disabled for unsubscribed users
       const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
-      expect(confirmationModeSwitch).not.toBeChecked();
-
-      await userEvent.click(confirmationModeSwitch);
-      expect(confirmationModeSwitch).toBeChecked();
-
-      // Save button should not be disabled (this is the bug - it should be disabled)
       const submitButton = screen.getByTestId("submit-button");
-      expect(submitButton).not.toBeDisabled();
+      
+      expect(confirmationModeSwitch).not.toBeChecked();
+      expect(confirmationModeSwitch).toBeDisabled();
+      expect(submitButton).toBeDisabled();
 
-      // Try to submit the form
+      // Try to click the disabled confirmation mode switch - it should not change state
+      await userEvent.click(confirmationModeSwitch);
+      expect(confirmationModeSwitch).not.toBeChecked(); // Should remain unchecked
+
+      // Try to submit the form - button should remain disabled
       await userEvent.click(submitButton);
 
       // Should NOT call save settings API for unsubscribed users

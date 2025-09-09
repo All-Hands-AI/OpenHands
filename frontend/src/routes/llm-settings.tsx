@@ -443,6 +443,7 @@ function LlmSettingsScreen() {
             defaultIsToggled={view === "advanced"}
             onToggle={handleToggleAdvancedSettings}
             isToggled={view === "advanced"}
+            isDisabled={shouldShowUpgradeBanner}
           >
             {t(I18nKey.SETTINGS$ADVANCED)}
           </SettingsSwitch>
@@ -506,6 +507,7 @@ function LlmSettingsScreen() {
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
+                isDisabled={shouldShowUpgradeBanner}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
@@ -589,6 +591,7 @@ function LlmSettingsScreen() {
                 defaultValue={settings.SEARCH_API_KEY || ""}
                 onChange={handleSearchApiKeyIsDirty}
                 placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
+                isDisabled={shouldShowUpgradeBanner}
                 startContent={
                   settings.SEARCH_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
@@ -676,6 +679,7 @@ function LlmSettingsScreen() {
               onToggle={handleConfirmationModeIsDirty}
               defaultIsToggled={settings.CONFIRMATION_MODE}
               isBeta
+              isDisabled={shouldShowUpgradeBanner}
             >
               {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
             </SettingsSwitch>

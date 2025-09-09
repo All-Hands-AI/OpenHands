@@ -10,6 +10,7 @@ interface SettingsSwitchProps {
   defaultIsToggled?: boolean;
   isToggled?: boolean;
   isBeta?: boolean;
+  isDisabled?: boolean;
 }
 
 export function SettingsSwitch({
@@ -20,17 +21,21 @@ export function SettingsSwitch({
   defaultIsToggled,
   isToggled: controlledIsToggled,
   isBeta,
+  isDisabled,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
   const { t } = useTranslation();
   const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
 
   const handleToggle = (value: boolean) => {
+    if (isDisabled) return;
     setIsToggled(value);
     onToggle?.(value);
   };
 
   return (
-    <label className="flex items-center gap-2 w-fit cursor-pointer">
+    <label
+      className={`flex items-center gap-2 w-fit ${isDisabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+    >
       <input
         hidden
         data-testid={testId}
@@ -38,6 +43,7 @@ export function SettingsSwitch({
         type="checkbox"
         onChange={(e) => handleToggle(e.target.checked)}
         checked={controlledIsToggled ?? isToggled}
+        disabled={isDisabled}
       />
 
       <StyledSwitchComponent isToggled={controlledIsToggled ?? isToggled} />
