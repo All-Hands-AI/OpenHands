@@ -47,6 +47,7 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isGripVisible, setIsGripVisible] = useState(false);
 
   const { messageToSend, submittedMessage, hasRightPanelToggled } = useSelector(
     (state: RootState) => state.conversation,
@@ -115,7 +116,15 @@ export function CustomChatInput({
       gripRef.current.classList.remove("opacity-100");
       gripRef.current.classList.add("opacity-0");
     }
+    // Reset the state
+    setIsGripVisible(false);
   }, []);
+
+  // Handle click on top edge area to toggle grip visibility
+  const handleTopEdgeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsGripVisible((prev) => !prev);
+  };
 
   // Callback to handle height changes and manage suggestions visibility
   const handleHeightChange = useCallback(
@@ -372,11 +381,19 @@ export function CustomChatInput({
       {/* Container with grip */}
       <div className="relative w-full">
         {/* Top edge hover area - invisible area that triggers grip visibility */}
-        <div className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group">
-          {/* Resize Grip - appears on hover of top edge area or when dragging */}
+        <div
+          className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group"
+          onClick={handleTopEdgeClick}
+        >
+          {/* Resize Grip - appears on hover of top edge area, when dragging, or when clicked */}
           <div
             ref={gripRef}
-            className="absolute top-[4px] left-0 w-full h-[3px] bg-white cursor-ns-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className={cn(
+              "absolute top-[4px] left-0 w-full h-[3px] bg-white cursor-ns-resize z-10 transition-opacity duration-200",
+              isGripVisible
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100",
+            )}
             onMouseDown={handleGripMouseDown}
             style={{ userSelect: "none" }}
           />
