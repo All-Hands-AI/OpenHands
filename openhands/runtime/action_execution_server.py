@@ -357,6 +357,9 @@ class ActionExecutor:
             no_pager_cmd = 'alias git="git --no-pager"'
 
         INIT_COMMANDS.append(no_pager_cmd)
+
+        # Hack: for some reason when you set the openhands user to anything but root, tmux changes out
+        # of the mount directory on the first invocation.
         if self.user_id != 0:
             INIT_COMMANDS.append(f'cd {self._initial_cwd}')
 
