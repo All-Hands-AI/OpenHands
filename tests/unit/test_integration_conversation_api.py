@@ -77,7 +77,7 @@ class TestIntegrationConversationAPI:
             # Use the new integration request format
             payload = {
                 'initial_user_msg': 'Hello, I need help with coding',
-                'research_mode': 'normal',
+                'research_mode': 'chat',
                 'space_id': 123,
                 'thread_follow_up': None,
                 'followup_discover_id': None,
@@ -126,7 +126,7 @@ class TestIntegrationConversationAPI:
                 status_code=400, detail='Missing required settings'
             )
 
-            payload = {'initial_user_msg': 'Hello', 'research_mode': 'normal'}
+            payload = {'initial_user_msg': 'Hello', 'research_mode': 'chat'}
 
             response = test_client.post(
                 '/api/v1/integration/conversations/',
@@ -576,7 +576,7 @@ class TestIntegrationConversationAPI:
 
             payload = {
                 'initial_user_msg': 'Hello, I need help with coding',
-                'research_mode': 'normal',
+                'research_mode': 'chat',
                 'space_id': space_id,
                 'space_section_id': space_section_id,
             }
@@ -642,7 +642,7 @@ class TestIntegrationConversationAPI:
 
             payload = {
                 'initial_user_msg': 'Hello, I need help with coding',
-                'research_mode': 'normal',
+                'research_mode': 'chat',
                 # No space_id or space_section_id
             }
 
@@ -685,7 +685,7 @@ class TestIntegrationConversationAPI:
 
             payload = {
                 'initial_user_msg': 'Hello, I need help with coding',
-                'research_mode': 'normal',
+                'research_mode': 'chat',
                 'space_id': 123,
                 # Missing space_section_id
             }

@@ -163,6 +163,10 @@ class Session:
                 config=routing_llm_config,
             )
 
+        # @ use simple llm for chatmode
+        if research_mode == ResearchMode.CHAT and routing_llms.get('simple'):
+            llm = routing_llms['simple']
+
         agent_config = self.config.get_agent_config(agent_cls)
         self.logger.info(f'Enabling default condenser: {agent_config.condenser}')
         if settings.enable_default_condenser and agent_config.condenser.type == 'noop':

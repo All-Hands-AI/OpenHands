@@ -98,11 +98,19 @@ MODELS_WITHOUT_STOP_WORDS = [
     'gpt-5',
     'gpt-4.1',
     'o3',
+    'gpt-5-mini',
 ]
 
 FORMATTED_MODELS = ['llama-4-maverick-17b-128e-instruct']
 
-MODELS_USING_MAX_COMPLETION_TOKENS = ['o4-mini', 'chatgpt-5', 'gpt-5', 'gpt-4.1', 'o3']
+MODELS_USING_MAX_COMPLETION_TOKENS = [
+    'o4-mini',
+    'chatgpt-5',
+    'gpt-5',
+    'gpt-4.1',
+    'o3',
+    'gpt-5-mini',
+]
 
 MODELS_WITH_TEMPERATURE_DEFAULT_AS_1 = [
     'o4-mini',
@@ -110,6 +118,7 @@ MODELS_WITH_TEMPERATURE_DEFAULT_AS_1 = [
     'gpt-5',
     'gpt-4.1',
     'o3',
+    'gpt-5-mini',
 ]
 
 

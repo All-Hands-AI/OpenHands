@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.action import ActionType
+from openhands.core.schema.research import ResearchMode
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.empty import NullAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
@@ -32,23 +33,35 @@ from openhands.server.shared import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 
 conversation_router = APIRouter(prefix='/conversations')
+chat_router = APIRouter(prefix='/chat_researchs')
+deep_research_router = APIRouter(prefix='/deep_researchs')
 
 
-class CreatNewConversationIntegrationRequest(BaseModel):
+class CreateNewConversationIntegrationRequest(BaseModel):
     initial_user_msg: str | None = None
-    research_mode: str | None = None
+    research_mode: ResearchMode | None = None
     space_id: int | None = None
     space_section_id: int | None = None
     thread_follow_up: int | None = None
     followup_discover_id: str | None = None
     mcp_disable: dict[str, bool] | None = None
     system_prompt: str | None = None
-    image_urls: list[str] | None = None
 
 
-@conversation_router.post('')
+class CreateChatConversationIntegrationRequest(BaseModel):
+    initial_user_msg: str | None = None
+    system_prompt: str | None = None
+
+
+class CreateDeepResearchConversationIntegrationRequest(BaseModel):
+    initial_user_msg: str | None = None
+    mcp_disable: dict[str, bool] | None = None
+    system_prompt: str | None = None
+
+
+@conversation_router.post('', description='Create new conversation.')
 async def integration_new_conversation(
-    request: Request, data: CreatNewConversationIntegrationRequest
+    request: Request, data: CreateNewConversationIntegrationRequest
 ):
     new_conversation_data = InitSessionRequest(**data.model_dump())
     new_conversation_result = await new_conversation(request, new_conversation_data)
@@ -67,6 +80,30 @@ async def integration_new_conversation(
             conversation_id=conversation_id,
         )
     return new_conversation_result
+
+
+@chat_router.post('', description='Create new conversation in chat mode.')
+async def integration_new_chat_conversation(
+    request: Request, data: CreateChatConversationIntegrationRequest
+):
+    new_conversation_data = InitSessionRequest(
+        **data.model_dump(),
+        research_mode=ResearchMode.CHAT.value,
+    )
+    return await new_conversation(request, new_conversation_data)
+
+
+@deep_research_router.post(
+    '', description='Create new conversation in deep research mode.'
+)
+async def integration_new_deep_research_conversation(
+    request: Request, data: CreateDeepResearchConversationIntegrationRequest
+):
+    new_conversation_data = InitSessionRequest(
+        **data.model_dump(),
+        research_mode=ResearchMode.DEEP_RESEARCH.value,
+    )
+    return await new_conversation(request, new_conversation_data)
 
 
 @conversation_router.get('/{conversation_id}')
