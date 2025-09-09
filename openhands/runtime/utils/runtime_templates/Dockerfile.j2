@@ -207,6 +207,9 @@ RUN export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers && \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment
 
 # Install Playwright browsers
+# Ensure README.md exists for hatchling metadata validation
+RUN [ -f /openhands/code/README.md ] || echo 'OpenHands runtime' > /openhands/code/README.md
+
 RUN export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers && \
     /openhands/micromamba/bin/micromamba run -n openhands uv run playwright install --with-deps chromium
 
@@ -305,6 +308,7 @@ RUN \
     git config --global user.email "openhands@all-hands.dev"
 
 COPY --chown=openhands:openhands ./code/pyproject.toml ./code/uv.lock /openhands/code/
+RUN if [ -f ./code/README.md ]; then cp ./code/README.md /openhands/code/; fi
 
 {{ install_dependencies_user() }}
 {{ install_dependencies_root() }}
@@ -340,6 +344,7 @@ RUN \
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY --chown=openhands:openhands ./code/pyproject.toml ./code/uv.lock /openhands/code/
+RUN if [ -f ./code/README.md ]; then cp ./code/README.md /openhands/code/; fi
 RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagents; fi
 COPY --chown=openhands:openhands ./code/microagents /openhands/code/microagents
 COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands

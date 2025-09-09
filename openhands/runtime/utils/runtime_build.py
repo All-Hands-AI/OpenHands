@@ -285,12 +285,13 @@ def prep_build_folder(
         Path(project_root, 'microagents'), Path(build_folder, 'code', 'microagents')
     )
 
-    # Copy pyproject.toml and uv.lock files
-    for file in ['pyproject.toml', 'uv.lock']:
+    # Copy pyproject.toml, uv.lock, and README.md files
+    for file in ['pyproject.toml', 'uv.lock', 'README.md']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
             src = Path(project_root, file)
-        shutil.copy2(src, Path(build_folder, 'code', file))
+        if src.exists():
+            shutil.copy2(src, Path(build_folder, 'code', file))
 
     # Create a Dockerfile and write it to build_folder
     dockerfile_content = _generate_dockerfile(
