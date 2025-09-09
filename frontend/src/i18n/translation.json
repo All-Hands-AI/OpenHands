@@ -13262,5 +13262,21 @@
     "tr": "Yükselt",
     "de": "Upgrade",
     "uk": "Оновити"
+  },
+  "SETTINGS$PRO_PILL": {
+    "en": "Pro",
+    "ja": "プロ",
+    "zh-CN": "专业版",
+    "zh-TW": "專業版",
+    "ko-KR": "프로",
+    "no": "Pro",
+    "it": "Pro",
+    "pt": "Pro",
+    "es": "Pro",
+    "ar": "برو",
+    "fr": "Pro",
+    "tr": "Pro",
+    "de": "Pro",
+    "uk": "Про"
   }
 }
