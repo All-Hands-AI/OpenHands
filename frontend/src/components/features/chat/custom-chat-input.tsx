@@ -6,7 +6,7 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
-import { cn } from "#/utils/utils";
+import { cn, isMobileDevice } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
@@ -137,7 +137,12 @@ export function CustomChatInput({
   );
 
   // Use the auto-resize hook with height change callback
-  const { smartResize, handleGripMouseDown } = useAutoResize(chatInputRef, {
+  const {
+    smartResize,
+    handleGripMouseDown,
+    handleGripTouchStart,
+    increaseHeightForEmptyContent,
+  } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 400,
     onHeightChange: handleHeightChange,
@@ -303,53 +308,29 @@ export function CustomChatInput({
 
   // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) {
+    if (e.key !== "Enter") {
       return;
     }
-    // Send message on Enter (without Shift)
-    // Shift+Enter adds a new line (default contenteditable behavior)
-    if (e.key === "Enter" && !e.shiftKey) {
+
+    const isMobile = isMobileDevice();
+    const isEmpty = isContentEmpty();
+    const isMobileEvent = isMobile && !e.shiftKey;
+    const isDesktopEvent = !isMobile && e.shiftKey;
+
+    // Check if we should increase height instead of submitting
+    const shouldIncreaseHeight = isEmpty && (isMobileEvent || isDesktopEvent);
+
+    if (shouldIncreaseHeight) {
+      e.preventDefault();
+      increaseHeightForEmptyContent();
+      return;
+    }
+
+    // Original submit logic - only for desktop without shift key
+    if (!isMobile && !e.shiftKey && !disabled) {
       e.preventDefault();
       handleSubmit();
-      return;
     }
-
-    // Auto-resize on key events that might change content
-    setTimeout(() => {
-      smartResize();
-      // Ensure cursor stays visible after key navigation
-      if (!chatInputRef.current) {
-        return;
-      }
-
-      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
-      if (!isArrowKey) {
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      if (
-        !range.getBoundingClientRect ||
-        !chatInputRef.current.getBoundingClientRect
-      ) {
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      const inputRect = chatInputRef.current.getBoundingClientRect();
-
-      // Scroll to keep cursor visible
-      if (rect.top < inputRect.top) {
-        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-      } else if (rect.bottom > inputRect.bottom) {
-        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
-      }
-    }, 0);
   };
 
   // Handle blur events to ensure placeholder shows when empty
@@ -395,6 +376,7 @@ export function CustomChatInput({
                 : "opacity-0 group-hover:opacity-100",
             )}
             onMouseDown={handleGripMouseDown}
+            onTouchStart={handleGripTouchStart}
             style={{ userSelect: "none" }}
           />
         </div>
