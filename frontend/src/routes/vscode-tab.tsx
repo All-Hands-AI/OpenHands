@@ -80,7 +80,7 @@ function VSCodeTab() {
         ref={iframeRef}
         title={t(I18nKey.VSCODE$TITLE)}
         src={data.url}
-        className="w-full h-full border-0 rounded-xl"
+        className="w-full h-full border-0"
         allow="clipboard-read; clipboard-write"
       />
     </div>
