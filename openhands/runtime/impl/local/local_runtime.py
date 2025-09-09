@@ -26,6 +26,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -135,6 +136,7 @@ class LocalRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -186,6 +188,7 @@ class LocalRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -198,8 +201,14 @@ class LocalRuntime(ActionExecutionClient):
 
         # If there is an API key in the environment we use this in requests to the runtime
         session_api_key = os.getenv('SESSION_API_KEY')
+        self._session_api_key: str | None = None
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
+            self._session_api_key = session_api_key
+
+    @property
+    def session_api_key(self) -> str | None:
+        return self._session_api_key
 
     @property
     def action_execution_server_url(self) -> str:
@@ -566,9 +575,8 @@ class LocalRuntime(ActionExecutionClient):
 
         # TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
         runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
-        hostname = os.getenv('HOSTNAME')
-        if runtime_url_pattern and hostname:
-            runtime_id = hostname.split('-')[1]
+        runtime_id = os.getenv('RUNTIME_ID')
+        if runtime_url_pattern and runtime_id:
             runtime_url = runtime_url_pattern.format(runtime_id=runtime_id)
             return runtime_url
 
@@ -577,12 +585,19 @@ class LocalRuntime(ActionExecutionClient):
 
     def _create_url(self, prefix: str, port: int) -> str:
         runtime_url = self.runtime_url
+        logger.debug(f'runtime_url is {runtime_url}')
         if 'localhost' in runtime_url:
             url = f'{self.runtime_url}:{self._vscode_port}'
         else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+            runtime_id = os.getenv('RUNTIME_ID')
+            parsed = urlparse(self.runtime_url)
+            scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
+            path_mode = path.startswith(f'/{runtime_id}') if runtime_id else False
+            if path_mode:
+                url = f'{scheme}://{netloc}/{runtime_id}/{prefix}'
+            else:
+                url = f'{scheme}://{prefix}-{netloc}'
+        logger.debug(f'_create_url url is {url}')
         return url
 
     @property
@@ -801,12 +816,6 @@ def _create_warm_server_in_background(
 
 def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     from openhands.controller.agent import Agent
-    from openhands.llm.llm import LLM
 
-    agent_config = config.get_agent_config(config.default_agent)
-    llm = LLM(
-        config=config.get_llm_config_from_agent(config.default_agent),
-    )
-    agent = Agent.get_cls(config.default_agent)(llm, agent_config)
-    plugins = agent.sandbox_plugins
+    plugins = Agent.get_cls(config.default_agent).sandbox_plugins
     return plugins

@@ -22,9 +22,12 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,
     PROVIDER_TOKENS_SET: apiSettings.provider_tokens_set,
     ENABLE_DEFAULT_CONDENSER: apiSettings.enable_default_condenser,
+    CONDENSER_MAX_SIZE:
+      apiSettings.condenser_max_size ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     ENABLE_PROACTIVE_CONVERSATION_STARTERS:
       apiSettings.enable_proactive_conversation_starters,
+    ENABLE_SOLVABILITY_ANALYSIS: apiSettings.enable_solvability_analysis,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     SEARCH_API_KEY: apiSettings.search_api_key || "",
     MAX_BUDGET_PER_TASK: apiSettings.max_budget_per_task,

@@ -49,13 +49,11 @@ export interface GetConfigResponse {
   APP_SLUG?: string;
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
-  STRIPE_PUBLISHABLE_KEY?: string;
   PROVIDERS_CONFIGURED?: Provider[];
   AUTH_URL?: string;
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
-    HIDE_MICROAGENT_MANAGEMENT?: boolean;
     ENABLE_JIRA: boolean;
     ENABLE_JIRA_DC: boolean;
     ENABLE_LINEAR: boolean;

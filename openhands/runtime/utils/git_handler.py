@@ -10,12 +10,12 @@ GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.p
 GIT_DIFF_CMD = (
     'python3 /openhands/code/openhands/runtime/utils/git_diff.py "{file_path}"'
 )
+GIT_BRANCH_CMD = 'git branch --show-current'
 
 
 @dataclass
 class CommandResult:
-    """
-    Represents the result of a shell command execution.
+    """Represents the result of a shell command execution.
 
     Attributes:
         content (str): The output content of the command.
@@ -27,9 +27,7 @@ class CommandResult:
 
 
 class GitHandler:
-    """
-    A handler for executing Git-related operations via shell commands.
-    """
+    """A handler for executing Git-related operations via shell commands."""
 
     def __init__(
         self,
@@ -41,10 +39,10 @@ class GitHandler:
         self.cwd: str | None = None
         self.git_changes_cmd = GIT_CHANGES_CMD
         self.git_diff_cmd = GIT_DIFF_CMD
+        self.git_branch_cmd = GIT_BRANCH_CMD
 
     def set_cwd(self, cwd: str) -> None:
-        """
-        Sets the current working directory for Git operations.
+        """Sets the current working directory for Git operations.
 
         Args:
             cwd (str): The directory path.
@@ -59,9 +57,30 @@ class GitHandler:
             result = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
 
-    def get_git_changes(self) -> list[dict[str, str]] | None:
+    def get_current_branch(self) -> str | None:
         """
-        Retrieves the list of changed files in Git repositories.
+        Retrieves the current branch name of the git repository.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        # If cwd is not set, return None
+        if not self.cwd:
+            return None
+
+        result = self.execute(self.git_branch_cmd, self.cwd)
+        if result.exit_code == 0:
+            branch = result.content.strip()
+            # git branch --show-current returns empty string if not on any branch (detached HEAD)
+            if branch:
+                return branch
+            return None
+
+        # If not a git repository or other error, return None
+        return None
+
+    def get_git_changes(self) -> list[dict[str, str]] | None:
+        """Retrieves the list of changed files in Git repositories.
         Examines each direct subdirectory of the workspace directory looking for git repositories
         and returns the changes for each of these directories.
         Optimized to use a single git command per repository for maximum performance.
@@ -100,8 +119,7 @@ class GitHandler:
         return self.get_git_changes()
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
-        """
-        Retrieves the original and modified content of a file in the repository.
+        """Retrieves the original and modified content of a file in the repository.
 
         Args:
             file_path (str): Path to the file.

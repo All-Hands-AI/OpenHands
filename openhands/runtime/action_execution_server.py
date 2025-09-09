@@ -1,5 +1,4 @@
-"""
-This is the main file for the runtime client.
+"""This is the main file for the runtime client.
 It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
@@ -177,15 +176,11 @@ class ActionExecutor:
         user_id: int,
         enable_browser: bool,
         browsergym_eval_env: str | None,
-        git_user_name: str = 'openhands',
-        git_user_email: str = 'openhands@all-hands.dev',
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self._initial_cwd = work_dir
         self.username = username
         self.user_id = user_id
-        self.git_user_name = git_user_name
-        self.git_user_email = git_user_email
         _updated_user_id = init_user_and_working_directory(
             username=username, user_id=self.user_id, initial_cwd=work_dir
         )
@@ -333,7 +328,12 @@ class ActionExecutor:
 
     async def _init_plugin(self, plugin: Plugin):
         assert self.bash_session is not None
-        await plugin.initialize(self.username)
+        # VSCode plugin needs runtime_id for path-based routing when using Gateway API
+        if isinstance(plugin, VSCodePlugin):
+            runtime_id = os.environ.get('RUNTIME_ID')
+            await plugin.initialize(self.username, runtime_id=runtime_id)
+        else:
+            await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
 
@@ -345,39 +345,10 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
+        # You can add any bash commands you want to run on startup here
+        # It is empty because: Git configuration is now handled by the runtime client after connection
         INIT_COMMANDS = []
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
-
-        # Determine git config commands based on platform and runtime mode
-        if is_local_runtime:
-            if is_windows:
-                # Windows, local - split into separate commands
-                INIT_COMMANDS.append(
-                    f'git config --file ./.git_config user.name "{self.git_user_name}"'
-                )
-                INIT_COMMANDS.append(
-                    f'git config --file ./.git_config user.email "{self.git_user_email}"'
-                )
-                INIT_COMMANDS.append(
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                )
-            else:
-                INIT_COMMANDS.append(
-                    f'git config --file ./.git_config user.name "{self.git_user_name}"'
-                )
-                INIT_COMMANDS.append(
-                    f'git config --file ./.git_config user.email "{self.git_user_email}"'
-                )
-                INIT_COMMANDS.append('export GIT_CONFIG=$(pwd)/.git_config')
-        else:
-            # Non-local (implies Linux/macOS)
-            INIT_COMMANDS.append(
-                f'git config --global user.name "{self.git_user_name}"'
-            )
-            INIT_COMMANDS.append(
-                f'git config --global user.email "{self.git_user_email}"'
-            )
 
         # Determine no-pager command
         if is_windows:
@@ -676,7 +647,6 @@ class ActionExecutor:
 
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -696,18 +666,6 @@ if __name__ == '__main__':
         type=str,
         help='BrowserGym environment used for browser evaluation',
         default=None,
-    )
-    parser.add_argument(
-        '--git-user-name',
-        type=str,
-        help='Git user name for commits',
-        default='openhands',
-    )
-    parser.add_argument(
-        '--git-user-email',
-        type=str,
-        help='Git user email for commits',
-        default='openhands@all-hands.dev',
     )
 
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
@@ -742,8 +700,6 @@ if __name__ == '__main__':
             user_id=args.user_id,
             enable_browser=args.enable_browser,
             browsergym_eval_env=args.browsergym_eval_env,
-            git_user_name=args.git_user_name,
-            git_user_email=args.git_user_email,
         )
         await client.ainit()
         logger.info('ActionExecutor initialized.')
@@ -924,7 +880,9 @@ if __name__ == '__main__':
 
     @app.post('/upload_file')
     async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
+        file: UploadFile,
+        destination: str = '/',
+        recursive: bool = False,
     ):
         assert client is not None
 

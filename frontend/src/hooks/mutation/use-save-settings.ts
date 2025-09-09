@@ -19,12 +19,15 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
         : settings.llm_api_key?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
+    condenser_max_size:
+      settings.CONDENSER_MAX_SIZE ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens_set: settings.PROVIDER_TOKENS_SET,
     mcp_config: settings.MCP_CONFIG,
     enable_proactive_conversation_starters:
       settings.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
+    enable_solvability_analysis: settings.ENABLE_SOLVABILITY_ANALYSIS,
     search_api_key: settings.SEARCH_API_KEY?.trim() || "",
     max_budget_per_task: settings.MAX_BUDGET_PER_TASK,
     git_user_name:
