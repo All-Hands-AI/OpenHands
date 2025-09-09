@@ -735,21 +735,31 @@ describe("SaaS mode", () => {
   });
 
   describe("SaaS subscription", () => {
-    it("should show upgrade banner and disable form for unsubscribed SaaS users", async () => {
+    // Common mock configurations
+    const MOCK_SAAS_CONFIG = {
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "fake-github-client-id",
+      POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: true,
+        HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
+      },
+    };
+
+    const MOCK_ACTIVE_SUBSCRIPTION = {
+      status: "ACTIVE",
+      start_at: "2024-01-01",
+      end_at: "2024-12-31",
+      created_at: "2024-01-01",
+    };
+
+    it("should show upgrade banner and prevent all interactions for unsubscribed SaaS users", async () => {
       // Mock SaaS mode without subscription
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "fake-github-client-id",
-        POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: true,
-          HIDE_LLM_SETTINGS: false,
-          ENABLE_JIRA: false,
-          ENABLE_JIRA_DC: false,
-          ENABLE_LINEAR: false,
-        },
-      });
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
@@ -764,112 +774,10 @@ describe("SaaS mode", () => {
       // Should show upgrade banner
       expect(screen.getByTestId("upgrade-banner")).toBeInTheDocument();
 
-      // Form should be disabled
-      const form = screen.getByTestId("llm-settings-form-basic");
-      expect(form).toHaveAttribute("aria-disabled", "true");
-
-      // Try to submit form - should not call API
-      const submitButton = screen.getByRole("button", { name: /save/i });
-      await userEvent.click(submitButton);
-      
-      expect(saveSettingsSpy).not.toHaveBeenCalled();
-    });
-
-    it("should not show upgrade banner and allow form interaction for subscribed SaaS users", async () => {
-      // Mock SaaS mode with subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "fake-github-client-id",
-        POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: true,
-          HIDE_LLM_SETTINGS: false,
-          ENABLE_JIRA: false,
-          ENABLE_JIRA_DC: false,
-          ENABLE_LINEAR: false,
-        },
-      });
-
-      // Mock subscription access to return active subscription
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
-      getSubscriptionAccessSpy.mockResolvedValue({
-        status: "ACTIVE",
-        start_at: "2024-01-01",
-        end_at: "2024-12-31",
-        created_at: "2024-01-01",
-      });
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      // Wait for subscription data to load
-      await waitFor(() => {
-        expect(getSubscriptionAccessSpy).toHaveBeenCalled();
-      });
-
-      // Should NOT show upgrade banner
-      expect(screen.queryByTestId("upgrade-banner")).not.toBeInTheDocument();
-
-      // Form should NOT be disabled
-      const form = screen.getByTestId("llm-settings-form-basic");
-      expect(form).not.toHaveAttribute("aria-disabled", "true");
-    });
-
-    it("should show upgrade banner with clickable upgrade button for unsubscribed SaaS users", async () => {
-      // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "fake-github-client-id",
-        POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: true,
-          HIDE_LLM_SETTINGS: false,
-          ENABLE_JIRA: false,
-          ENABLE_JIRA_DC: false,
-          ENABLE_LINEAR: false,
-        },
-      });
-
-      // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
-      getSubscriptionAccessSpy.mockResolvedValue(null);
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
-
-      // Should show upgrade banner
-      expect(screen.getByTestId("upgrade-banner")).toBeInTheDocument();
-
       // Should have a clickable upgrade button
       const upgradeButton = screen.getByRole("button", { name: /upgrade/i });
       expect(upgradeButton).toBeInTheDocument();
       expect(upgradeButton).not.toBeDisabled();
-    });
-
-    it("should prevent form interactions when user is unsubscribed in SaaS mode", async () => {
-      // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-      getConfigSpy.mockResolvedValue({
-        APP_MODE: "saas",
-        GITHUB_CLIENT_ID: "fake-github-client-id",
-        POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-        FEATURE_FLAGS: {
-          ENABLE_BILLING: true,
-          HIDE_LLM_SETTINGS: false,
-          ENABLE_JIRA: false,
-          ENABLE_JIRA_DC: false,
-          ENABLE_LINEAR: false,
-        },
-      });
-
-      // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
-      getSubscriptionAccessSpy.mockResolvedValue(null);
-
-      renderLlmSettingsScreen();
-      await screen.findByTestId("llm-settings-screen");
 
       // Form should be disabled
       const form = screen.getByTestId("llm-settings-form-basic");
@@ -893,6 +801,35 @@ describe("SaaS mode", () => {
       
       // Values should not change
       expect(apiKeyInput).toHaveValue("");
+
+      // Try to submit form - should not call API
+      await userEvent.click(submitButton);
+      expect(saveSettingsSpy).not.toHaveBeenCalled();
+    });
+
+    it("should not show upgrade banner and allow form interaction for subscribed SaaS users", async () => {
+      // Mock SaaS mode with subscription
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return active subscription
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Wait for subscription data to load
+      await waitFor(() => {
+        expect(getSubscriptionAccessSpy).toHaveBeenCalled();
+      });
+
+      // Should NOT show upgrade banner
+      expect(screen.queryByTestId("upgrade-banner")).not.toBeInTheDocument();
+
+      // Form should NOT be disabled
+      const form = screen.getByTestId("llm-settings-form-basic");
+      expect(form).not.toHaveAttribute("aria-disabled", "true");
     });
   });
 });
