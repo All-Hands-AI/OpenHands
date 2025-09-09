@@ -91,7 +91,9 @@ function SettingsScreen() {
             }
           >
             <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
-            {isSaas && to === "/settings" && <ProPill />}
+            {isSaas && to === "/settings" && (
+              <ProPill className="absolute top-0 -right-7" />
+            )}
           </NavLink>
         ))}
       </nav>
