@@ -12,6 +12,10 @@ import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { AgentState } from "#/types/agent-state";
+import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 
 import {
   Orientation,
@@ -42,6 +46,10 @@ function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Hooks for managing status indicators that need to be reset on conversation switch
+  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
+  const { removeErrorMessage } = useWSErrorMessage();
+
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
 
@@ -62,13 +70,39 @@ function AppContent() {
   }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
 
   React.useEffect(() => {
+    // Clear terminal and jupyter state
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-  }, [conversationId]);
+
+    // Reset agent state to LOADING to clear status indicators
+    // This ensures typing indicators, button states, and disabled states are reset
+    dispatch(setCurrentAgentState(AgentState.LOADING));
+
+    // Clear optimistic user messages from previous conversation
+    removeOptimisticUserMessage();
+
+    // Clear any error messages from previous conversation
+    removeErrorMessage();
+  }, [
+    conversationId,
+    dispatch,
+    removeOptimisticUserMessage,
+    removeErrorMessage,
+  ]);
 
   useEffectOnce(() => {
+    // Clear terminal and jupyter state on initial load
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+
+    // Reset agent state to LOADING on initial load
+    dispatch(setCurrentAgentState(AgentState.LOADING));
+
+    // Clear any cached optimistic user messages
+    removeOptimisticUserMessage();
+
+    // Clear any cached error messages
+    removeErrorMessage();
   });
 
   function handleResize() {

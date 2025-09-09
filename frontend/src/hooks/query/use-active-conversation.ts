@@ -8,10 +8,17 @@ const FIVE_MINUTES = 1000 * 60 * 5;
 export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
   const userConversation = useUserConversation(conversationId, (query) => {
-    if (query.state.data?.status === "STARTING") {
+    const { data } = query.state;
+
+    // Poll frequently if conversation is starting OR runtime is not ready
+    if (
+      data?.status === "STARTING" ||
+      data?.runtime_status !== "STATUS$READY"
+    ) {
       return 3000; // 3 seconds
     }
-    return FIVE_MINUTES;
+
+    return FIVE_MINUTES; // 5 minutes
   });
 
   useEffect(() => {
