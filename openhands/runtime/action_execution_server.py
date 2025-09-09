@@ -357,6 +357,8 @@ class ActionExecutor:
             no_pager_cmd = 'alias git="git --no-pager"'
 
         INIT_COMMANDS.append(no_pager_cmd)
+        if self.user_id != 0:
+            INIT_COMMANDS.append(f'cd {self._initial_cwd}')
 
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:

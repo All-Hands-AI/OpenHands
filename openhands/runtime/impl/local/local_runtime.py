@@ -1,6 +1,5 @@
 """This runtime runs the action_execution_server directly on the local machine without Docker."""
 
-import getpass
 import os
 import shutil
 import subprocess
@@ -164,8 +163,7 @@ class LocalRuntime(ActionExecutionClient):
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
             f'User ID: {self._user_id}. '
-            f'Username: {self._username}. '
-            f'Current Username: {getpass.getuser()}.'
+            f'Username: {self._username}.'
         )
 
         # Initialize these values to be set in connect()
