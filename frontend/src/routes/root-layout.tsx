@@ -202,7 +202,7 @@ export default function MainApp() {
       data-testid="root-layout"
       className={cn(
         "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base",
-        pathname === "/" ? "p-0" : "p-3 pl-0",
+        pathname === "/" ? "p-0" : "p-0 md:p-3 md:pl-0",
       )}
     >
       <Sidebar />
