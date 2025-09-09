@@ -32,6 +32,7 @@ dependencies = [
   "google-auth-httplib2",
   "google-auth-oauthlib",
   "google-cloud-aiplatform",
+  "google-genai",
   "google-generativeai",
   "html2text",
   "httpx-aiohttp>=0.1.8,<0.2",
@@ -152,13 +153,6 @@ testgeneval = [
 [tool.hatch.build.targets.sdist]
 include = [
   "openhands/**",
-  "third_party/**",
-  "microagents/**",
-  "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
-]
-
-[tool.hatch.build.targets.wheel]
-include = [
   "third_party/**",
   "microagents/**",
   "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
