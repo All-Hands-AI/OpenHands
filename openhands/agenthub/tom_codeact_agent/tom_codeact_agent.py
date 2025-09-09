@@ -48,6 +48,7 @@ from openhands.utils.analytics import track_tom_event
 from openhands.utils.prompt import PromptManager
 
 CLI_AVAILABLE = os.environ.get('CLI_AVAILABLE', 'True').lower() == 'true'
+TOM_AGENT_MODEL = os.environ.get('TOM_AGENT_MODEL', '')
 
 
 class TomCodeActAgent(CodeActAgent):
@@ -82,7 +83,7 @@ class TomCodeActAgent(CodeActAgent):
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
             enable_rag=config.tom_enable_rag,
-            llm_model=self.llm.config.model,
+            llm_model=TOM_AGENT_MODEL if TOM_AGENT_MODEL else self.llm.config.model,
             api_key=self.llm.config.api_key.get_secret_value()
             if self.llm.config.api_key
             else None,
@@ -192,6 +193,7 @@ class TomCodeActAgent(CodeActAgent):
                 query_description = action.custom_query or "the user's message"
                 return ConsultTomAgentAction(
                     content=action.content
+                    + '\n'
                     + f'I need to consult Tom agent about {query_description}'
                     + '\n\n[Starting consultation with Tom agent...]'
                     + consultation_result
@@ -395,10 +397,11 @@ class TomCodeActAgent(CodeActAgent):
                 )
             else:
                 overall_user_model = {'user_profile': 'unknown'}
-            track_tom_event(
-                event='tom_sleeptime_triggered',
-                properties=overall_user_model,
-            )
+            if CLI_AVAILABLE:
+                track_tom_event(
+                    event='tom_sleeptime_triggered',
+                    properties=overall_user_model,
+                )
         except Exception as e:
             logger.error(f'Failed to track sleeptime compute trigger: {e}')
 
