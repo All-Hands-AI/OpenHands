@@ -37,7 +37,28 @@ from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
-class Session:
+class WebSession:
+    """Web server-bound session wrapper.
+
+    This was previously named `Session`. We keep `Session` as a compatibility alias
+    (see openhands.server.session.__init__) so downstream imports/tests continue to
+    work. The class manages a single web client connection and orchestrates the
+    AgentSession lifecycle for that conversation.
+
+    Attributes:
+        sid: Stable conversation id across transports.
+        sio: Socket.IO server used to emit events to the web client.
+        last_active_ts: Unix timestamp of last successful send.
+        is_alive: Whether the web connection is still alive.
+        agent_session: Core agent session coordinating runtime/LLM.
+        loop: The asyncio loop associated with the session.
+        config: Effective OpenHands configuration for this conversation.
+        llm_registry: Registry responsible for LLM access and retry hooks.
+        file_store: File storage interface for this conversation.
+        user_id: Optional multi-tenant user identifier.
+        logger: Logger with session context.
+    """
+
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
@@ -203,12 +224,15 @@ class Session:
             # The order matters: with the browser output first, the summarizer
             # will only see the most recent browser output, which should keep
             # the summarization cost down.
+            max_events_for_condenser = settings.condenser_max_size or 120
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
                     ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm_config, keep_first=4, max_size=120
+                        llm_config=llm_config,
+                        keep_first=4,
+                        max_size=max_events_for_condenser,
                     ),
                 ]
             )
@@ -218,7 +242,7 @@ class Session:
                 f' browser_output_masking(attention_window=2), '
                 f' llm(model="{llm_config.model}", '
                 f' base_url="{llm_config.base_url}", '
-                f' keep_first=4, max_size=80)'
+                f' keep_first=4, max_size={max_events_for_condenser})'
             )
             agent_config.condenser = default_condenser_config
         agent = Agent.get_cls(agent_cls)(agent_config, self.llm_registry)
@@ -424,3 +448,8 @@ class Session:
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, runtime_status, message), self.loop
         )
+
+
+# Backward-compatible alias for external imports that still reference
+# openhands.server.session.session import Session
+Session = WebSession

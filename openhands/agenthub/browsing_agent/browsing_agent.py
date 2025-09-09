@@ -217,7 +217,7 @@ class BrowsingAgent(Agent):
         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
 
         response = self.llm.completion(
-            messages=self.llm.format_messages_for_llm(messages),
+            messages=messages,
             stop=[')```', ')\n```'],
         )
         return self.response_parser.parse(response)

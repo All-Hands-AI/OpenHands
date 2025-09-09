@@ -72,6 +72,9 @@ const getRecallObservationContent = (event: RecallObservation): string => {
     if (event.extras.repo_instructions) {
       content += `\n\n**Repository Instructions:**\n\n${event.extras.repo_instructions}`;
     }
+    if (event.extras.conversation_instructions) {
+      content += `\n\n**Conversation Instructions:**\n\n${event.extras.conversation_instructions}`;
+    }
     if (event.extras.additional_agent_instructions) {
       content += `\n\n**Additional Instructions:**\n\n${event.extras.additional_agent_instructions}`;
     }

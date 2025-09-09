@@ -139,7 +139,7 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
-            working_dir=config.workspace_mount_path_in_sandbox,
+            working_dir=str(runtime.workspace_root),
         )
 
     # Add MCP tools to the agent
