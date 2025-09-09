@@ -286,6 +286,8 @@ def test_prompt_cache_haiku_variants():
 def test_stop_words_grok_provider_prefixed():
     assert get_features('xai/grok-4-0709').supports_stop_words is False
     assert get_features('grok-4-0709').supports_stop_words is False
+    assert get_features('xai/grok-code-fast-1').supports_stop_words is False
+    assert get_features('grok-code-fast-1').supports_stop_words is False
 
 
 @pytest.mark.parametrize(
@@ -294,6 +296,7 @@ def test_stop_words_grok_provider_prefixed():
         'o1-mini',
         'o1-2024-12-17',
         'xai/grok-4-0709',
+        'xai/grok-code-fast-1',
         'deepseek/DeepSeek-R1-0528:671b-Q4_K_XL',
         'DeepSeek-R1-0528',
     ],

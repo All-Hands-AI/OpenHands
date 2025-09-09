@@ -69,9 +69,17 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
     (if getent group 1000 | grep -q pn; then groupdel pn; fi) && \
     (if getent group 1000 | grep -q ubuntu; then groupdel ubuntu; fi)
 
-# Create openhands group and user
-RUN groupadd -g 1000 openhands && \
-    useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
+# Create openhands group and user (with fallback IDs if 1000 is taken)
+RUN (if getent group 1000 >/dev/null 2>&1; then \
+        groupadd openhands; \
+    else \
+        groupadd -g 1000 openhands; \
+    fi) && \
+    (if getent passwd 1000 >/dev/null 2>&1; then \
+        useradd -g openhands -m -s /bin/bash openhands; \
+    else \
+        useradd -u 1000 -g openhands -m -s /bin/bash openhands; \
+    fi) && \
     usermod -aG sudo openhands && \
     echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
     # Set empty password for openhands user to allow passwordless su

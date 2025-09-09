@@ -169,7 +169,6 @@ export const handlers = [
       APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-      STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
