@@ -29,7 +29,7 @@ const renderLlmSettingsScreen = () =>
 beforeEach(() => {
   vi.resetAllMocks();
   resetTestHandlersMockSettings();
-  
+
   // Default mock for useSearchParams - returns empty params
   mockUseSearchParams.mockReturnValue([
     {
@@ -812,7 +812,7 @@ describe("SaaS mode", () => {
       // Try to interact with inputs - they should not respond
       await userEvent.click(providerInput);
       await userEvent.type(apiKeyInput, "test-key");
-      
+
       // Values should not change
       expect(apiKeyInput).toHaveValue("");
 
@@ -888,7 +888,7 @@ describe("SaaS mode", () => {
       // Make a change to settings (toggle confirmation mode)
       const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
       expect(confirmationModeSwitch).not.toBeChecked();
-      
+
       await userEvent.click(confirmationModeSwitch);
       expect(confirmationModeSwitch).toBeChecked();
 
@@ -926,7 +926,7 @@ describe("SaaS mode", () => {
       // Should show backdrop overlay
       const backdrop = screen.getByTestId("settings-backdrop");
       expect(backdrop).toBeInTheDocument();
-      
+
       // Check backdrop styles
       expect(backdrop).toHaveStyle({
         opacity: "0.5",
@@ -978,7 +978,7 @@ describe("SaaS mode", () => {
       // Render component with success parameter
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
-      
+
       // Verify success toast is displayed with correct message
       expect(displaySuccessToastSpy).toHaveBeenCalledWith(
         "SUBSCRIPTION$SUCCESS"
@@ -1008,7 +1008,7 @@ describe("SaaS mode", () => {
       // Render component with failure parameter
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
-      
+
       // Verify error toast is displayed with correct message
       expect(displayErrorToastSpy).toHaveBeenCalledWith(
         "SUBSCRIPTION$FAILURE"
