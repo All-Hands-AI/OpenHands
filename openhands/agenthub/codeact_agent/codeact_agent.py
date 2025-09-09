@@ -142,6 +142,8 @@ class CodeActAgent(Agent):
             else None
         )
         self.is_replay = False
+        self._tool_arg_buffer: dict[str, str] = {}  # Buffer for tool arguments
+        self._tool_state: Dict[str, Dict[str, Any]] = {}
 
     def set_replay_actions(self, replay_actions: list['Action']) -> None:
         super().set_replay_actions(replay_actions)
@@ -153,9 +155,6 @@ class CodeActAgent(Agent):
         #     self.llm = self.routing_llms['simple']
         #     if self.streaming_routing_llm:
         #         self.streaming_llm = self.streaming_routing_llm
-
-        self._tool_arg_buffer: dict[str, str] = {}  # Buffer for tool arguments
-        self._tool_state: Dict[str, Dict[str, Any]] = {}
 
     @override
     def set_system_prompt(self, system_prompt: str) -> None:
