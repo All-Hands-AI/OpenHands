@@ -304,7 +304,7 @@ RUN \
     git config --global user.name "openhands" && \
     git config --global user.email "openhands@all-hands.dev"
 
-COPY --chown=openhands:openhands ./code/README.md ./code/pyproject.toml ./code/uv.lock /openhands/code/
+COPY --chown=openhands:openhands ./code/pyproject.toml ./code/uv.lock /openhands/code/
 
 {{ install_dependencies_user() }}
 {{ install_dependencies_root() }}
@@ -339,7 +339,7 @@ RUN \
 # Copy Project source files
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
-COPY --chown=openhands:openhands ./code/README.md ./code/pyproject.toml ./code/uv.lock /openhands/code/
+COPY --chown=openhands:openhands ./code/pyproject.toml ./code/uv.lock /openhands/code/
 RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagents; fi
 COPY --chown=openhands:openhands ./code/microagents /openhands/code/microagents
 COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands
