@@ -807,6 +807,30 @@ describe("SaaS mode", () => {
       expect(saveSettingsSpy).not.toHaveBeenCalled();
     });
 
+    it("should call subscription checkout API when upgrade button is clicked", async () => {
+      // Mock SaaS mode without subscription
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return null (no subscription)
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+
+      // Mock the subscription checkout API call
+      const createSubscriptionCheckoutSessionSpy = vi.spyOn(OpenHands, "createSubscriptionCheckoutSession");
+      createSubscriptionCheckoutSessionSpy.mockResolvedValue({});
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Click the upgrade button
+      const upgradeButton = screen.getByRole("button", { name: /upgrade/i });
+      await userEvent.click(upgradeButton);
+
+      // Should call the subscription checkout API
+      expect(createSubscriptionCheckoutSessionSpy).toHaveBeenCalled();
+    });
+
     it("should not show upgrade banner and allow form interaction for subscribed SaaS users", async () => {
       // Mock SaaS mode with subscription
       const getConfigSpy = vi.spyOn(OpenHands, "getConfig");

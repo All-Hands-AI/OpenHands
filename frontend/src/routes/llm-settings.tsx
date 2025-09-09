@@ -29,6 +29,7 @@ import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrade-banner-with-backdrop";
+import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/use-create-subscription-checkout-session";
 import { cn } from "#/utils/utils";
 
 function LlmSettingsScreen() {
@@ -40,6 +41,8 @@ function LlmSettingsScreen() {
   const { data: settings, isLoading, isFetching } = useSettings();
   const { data: config } = useConfig();
   const { data: subscriptionAccess } = useSubscriptionAccess();
+  const { mutate: createSubscriptionCheckoutSession } =
+    useCreateSubscriptionCheckoutSession();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -409,7 +412,7 @@ function LlmSettingsScreen() {
       {shouldShowUpgradeBanner && (
         <UpgradeBannerWithBackdrop
           onUpgradeClick={() => {
-            // TODO: Implement upgrade flow
+            createSubscriptionCheckoutSession();
           }}
         />
       )}

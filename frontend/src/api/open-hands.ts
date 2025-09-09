@@ -441,6 +441,15 @@ class OpenHands {
     return data;
   }
 
+  static async createSubscriptionCheckoutSession(): Promise<{
+    redirect_url?: string;
+  }> {
+    const { data } = await openHands.post(
+      "/api/billing/subscription-checkout-session",
+    );
+    return data;
+  }
+
   static async getGitUser(): Promise<GitUser> {
     const response = await openHands.get<GitUser>("/api/user/info");
 
