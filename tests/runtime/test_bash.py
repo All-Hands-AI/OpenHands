@@ -379,7 +379,7 @@ def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
         cmds = [
             'echo "hello"',  # A command that will always work
             'echo -e "hello\\nworld"',
-            'echo "hello it'\''s me"',  # Properly escaped single quote
+            'echo "hello it\'s me"',
         ]
         expected_outputs = [
             'hello',  # Simple string output
