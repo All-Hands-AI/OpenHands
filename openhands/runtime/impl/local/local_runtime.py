@@ -1,5 +1,6 @@
 """This runtime runs the action_execution_server directly on the local machine without Docker."""
 
+import getpass
 import os
 import shutil
 import subprocess
@@ -163,7 +164,8 @@ class LocalRuntime(ActionExecutionClient):
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
             f'User ID: {self._user_id}. '
-            f'Username: {self._username}.'
+            f'Username: {self._username}. '
+            f'Current Username: {getpass.getuser()}.'
         )
 
         # Initialize these values to be set in connect()
@@ -657,6 +659,7 @@ def _create_server(
 
     # Get user info
     user_id, username = get_user_info()
+    logger.info(f'TRACE_LOCAL_RUNTIME:{user_id}:{username}')
 
     # Start the server process
     cmd = get_action_execution_server_startup_command(

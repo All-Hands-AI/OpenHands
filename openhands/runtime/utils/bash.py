@@ -208,6 +208,9 @@ class BashSession:
 
         logger.debug(f'Initializing bash session with command: {window_command}')
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
+        logger.info(
+            f'[DEBUG_INITIAL_DIR] starting new tmux server: {session_name}; {self.work_dir}'
+        )
         self.session = self.server.new_session(
             session_name=session_name,
             start_directory=self.work_dir,  # This parameter is supported by libtmux
@@ -331,6 +334,9 @@ class BashSession:
 
         # Update the current working directory if it has changed
         if metadata.working_dir != self._cwd and metadata.working_dir:
+            logger.info(
+                f'[DEBUG_INITIAL_DIR] change_dir: {self._cwd}; {metadata.working_dir}; {command}'
+            )
             self._cwd = metadata.working_dir
 
         logger.debug(f'COMMAND OUTPUT: {pane_content}')
