@@ -408,16 +408,13 @@ function LlmSettingsScreen() {
 
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
-  // Show upgrade banner only in SaaS mode when user doesn't have an active subscription
+  // Show upgrade banner and disable form in SaaS mode when user doesn't have an active subscription
   const shouldShowUpgradeBanner =
     config?.APP_MODE === "saas" && !subscriptionAccess;
 
-  // Disable form only in SaaS mode when user doesn't have an active subscription
-  const shouldDisableForm = config?.APP_MODE === "saas" && !subscriptionAccess;
-
   const formAction = (formData: FormData) => {
     // Prevent form submission for unsubscribed SaaS users
-    if (shouldDisableForm) return;
+    if (shouldShowUpgradeBanner) return;
 
     if (view === "basic") basicFormAction(formData);
     else advancedFormAction(formData);
@@ -454,7 +451,7 @@ function LlmSettingsScreen() {
             <div
               data-testid="llm-settings-form-basic"
               className="flex flex-col gap-6"
-              aria-disabled={shouldDisableForm ? "true" : undefined}
+              aria-disabled={shouldShowUpgradeBanner ? "true" : undefined}
             >
               {!isLoading && !isFetching && (
                 <>
@@ -462,7 +459,7 @@ function LlmSettingsScreen() {
                     models={modelsAndProviders}
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
-                    isDisabled={shouldDisableForm}
+                    isDisabled={shouldShowUpgradeBanner}
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
@@ -485,7 +482,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
-                isDisabled={shouldDisableForm}
+                isDisabled={shouldShowUpgradeBanner}
                 startContent={
                   settings.LLM_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />

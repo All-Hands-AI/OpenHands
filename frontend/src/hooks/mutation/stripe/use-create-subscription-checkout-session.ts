@@ -5,8 +5,11 @@ export const useCreateSubscriptionCheckoutSession = () =>
   useMutation({
     mutationFn: async () => {
       const response = await OpenHands.createSubscriptionCheckoutSession();
-      if (response.redirect_url) {
-        window.open(response.redirect_url, "_blank");
+      return response;
+    },
+    onSuccess: (data) => {
+      if (data.redirect_url) {
+        window.open(data.redirect_url, "_blank");
       }
     },
   });
