@@ -46,7 +46,7 @@ VSCODE_PORT_RANGE = (35000, 39999)
 APP_PORT_RANGE_1 = (40000, 44999)
 APP_PORT_RANGE_2 = (45000, 49151)
 
-# Windows-specific Python prefix for Poetry
+# Windows-specific Python prefix uses Poetry to ensure venv and deps
 WINDOWS_PYTHON_PREFIX = [
     'python',
     '-m',
@@ -513,33 +513,16 @@ class WindowsDockerRuntime(ActionExecutionClient):
             'host' if use_host_network else None
         )
 
-        # Initialize port mappings
-        port_mapping: dict[str, list[dict[str, str]]] | None = None
+        # Initialize port mappings (Windows engine: avoid HostIp; simple mapping works better)
+        port_mapping: dict[str, int] | None = None
         if not use_host_network:
-            port_mapping = {
-                f'{self._container_port}/tcp': [
-                    {
-                        'HostPort': str(self._host_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ],
-            }
+            port_mapping = {f'{self._container_port}/tcp': self._host_port}
 
             if self.vscode_enabled:
-                port_mapping[f'{self._vscode_port}/tcp'] = [
-                    {
-                        'HostPort': str(self._vscode_port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+                port_mapping[f'{self._vscode_port}/tcp'] = self._vscode_port
 
             for port in self._app_ports:
-                port_mapping[f'{port}/tcp'] = [
-                    {
-                        'HostPort': str(port),
-                        'HostIp': self.config.sandbox.runtime_binding_address,
-                    }
-                ]
+                port_mapping[f'{port}/tcp'] = port
         else:
             self.log(
                 'warn',
@@ -585,6 +568,9 @@ class WindowsDockerRuntime(ActionExecutionClient):
 
         command = self.get_action_execution_server_startup_command()
         self.log('info', f'Starting Windows server with command: {command}')
+        self.log('debug', f'Windows working_dir: {"C\\openhands\\code\\"}')
+        self.log('debug', f'Windows ports mapping: {port_mapping}')
+        self.log('debug', f'Windows volumes: {volumes}')
 
         if self.config.sandbox.enable_gpu:
             # GPU support for Windows containers (limited)
@@ -604,30 +590,52 @@ class WindowsDockerRuntime(ActionExecutionClient):
             # Process overlay mounts (read-only lower with per-container COW)
             overlay_mounts = self._process_overlay_mounts()
 
+            # Prepare runtime kwargs and prefer Hyper-V isolation by default (safer on mismatched host/container)
+            runtime_kwargs: dict = dict(self.config.sandbox.docker_runtime_kwargs or {})
+            runtime_kwargs.setdefault('isolation', 'hyperv')
+
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
-                # Override the default entrypoint for Windows containers
-                entrypoint=[],
+                # Do not override entrypoint for Windows containers; honor image's default
                 network_mode=network_mode,
                 ports=port_mapping,
-                working_dir='C:\\openhands\\code\\',  # Windows-specific working directory
+                working_dir='C:\\openhands\\code',
                 name=self.container_name,
                 detach=True,
                 environment=environment,
                 volumes=volumes,  # type: ignore
                 mounts=overlay_mounts,  # type: ignore
                 device_requests=device_requests,
-                platform='windows/amd64',  # Force Windows platform
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
+                # Do not force platform; rely on Docker Desktop Windows container mode
+                **runtime_kwargs,
             )
             self.log('debug', f'Windows container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
-        except Exception as e:
+        except docker.errors.APIError as e:
             self.log(
                 'error',
                 f'Error: Windows instance {self.container_name} FAILED to start container!\n',
             )
+            # Surface underlying docker error details to logs
+            try:
+                details = getattr(e, 'explanation', None)
+                self.log('error', f'Docker API error: {repr(e)}')
+                if details:
+                    self.log('error', f'Docker API explanation: {details}')
+            except Exception:
+                pass
+            self.close()
+            raise e
+        except Exception as e:
+            self.log(
+                'error',
+                f'Error: Windows instance {self.container_name} FAILED to start container (unexpected)!\n',
+            )
+            try:
+                self.log('error', f'Unexpected error: {repr(e)}')
+            except Exception:
+                pass
             self.close()
             raise e
 
@@ -679,7 +687,12 @@ class WindowsDockerRuntime(ActionExecutionClient):
                 f'Windows container {self.container_name} not found.'
             )
 
-        self.check_if_alive()
+        try:
+            self.check_if_alive()
+        except Exception as e:
+            # Broaden retry conditions: wrap any error during early startup as a transient network error
+            self.log('debug', f'Windows wait_until_alive transient error: {repr(e)}')
+            raise httpx.NetworkError(str(e)) from e
 
     def close(self, rm_all_containers: bool | None = None) -> None:
         """Closes the WindowsDockerRuntime and associated objects
