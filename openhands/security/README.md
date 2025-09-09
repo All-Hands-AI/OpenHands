@@ -102,23 +102,14 @@ Browsing Agent Safety:
 
 ### GraySwan
 
-The GraySwan Security Analyzer integrates with [GraySwan AI's Cygnal API](https://docs.grayswan.ai/monitor-requests/monitor) to provide advanced AI safety monitoring for OpenHands agents. It analyzes conversation history and actions using GraySwan's agentic monitoring capabilities.
-
-Features:
-
-* Real-time security analysis using GraySwan's AI safety models
-* Conversation context awareness - analyzes actions within full conversation history
-* Automatic conversion of OpenHands actions to OpenAI tool call format
-* Configurable risk thresholds for violation score mapping
-* Indirect Prompt Injection (IPI) detection with automatic risk escalation
-* Support for custom GraySwan policies
+The GraySwan Security Analyzer integrates with [GraySwan AI's Cygnal API](https://docs.grayswan.ai/monitor-requests/monitor) to provide advanced AI safety monitoring for OpenHands agents.
 
 Configuration:
 
 To use the GraySwan analyzer, set the following environment variables:
 
 * `GRAYSWAN_API_KEY`: Your GraySwan API key (required)
-* `GRAYSWAN_POLICY_ID`: Your GraySwan policy ID (required)
+* `GRAYSWAN_POLICY_ID`: Your GraySwan policy ID (optional)
 
 Then configure OpenHands to use the GraySwan analyzer:
 
@@ -126,9 +117,3 @@ Then configure OpenHands to use the GraySwan analyzer:
 [security]
 security_analyzer = "grayswan"
 ```
-
-The analyzer will automatically:
-* Include the last 20 conversation events as context
-* Convert all OpenHands actions to OpenAI-compatible tool calls
-* Map GraySwan violation scores to OpenHands risk levels (LOW/MEDIUM/HIGH)
-* Escalate risk when indirect prompt injection is detected
