@@ -6,6 +6,7 @@ import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
 import OpenHands from "#/api/open-hands";
+import UserService from "#/api/user-service/user-service.api";
 import { GitRepository } from "#/types/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -84,7 +85,7 @@ describe("RepoConnector", () => {
 
   it("should render the available repositories in the dropdown", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -93,7 +94,7 @@ describe("RepoConnector", () => {
     });
 
     // Mock the search function that's used by the dropdown
-    vi.spyOn(OpenHands, "searchGitRepositories").mockResolvedValue(
+    vi.spyOn(UserService, "searchGitRepositories").mockResolvedValue(
       MOCK_RESPOSITORIES,
     );
 
@@ -121,7 +122,7 @@ describe("RepoConnector", () => {
 
   it("should only enable the launch button if a repo is selected", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -135,10 +136,16 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeDisabled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(UserService, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -187,7 +194,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -234,7 +241,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -278,7 +285,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -321,7 +328,7 @@ describe("RepoConnector", () => {
       session_api_key: null,
     });
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -340,10 +347,16 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(UserService, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -388,7 +401,7 @@ describe("RepoConnector", () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
     createConversationSpy.mockImplementation(() => new Promise(() => {})); // Never resolves to keep loading state
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      UserService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -397,10 +410,16 @@ describe("RepoConnector", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(UserService, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     renderRepoConnector();
 
