@@ -120,7 +120,7 @@ jobs:
       - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
       - name: Install OpenHands
-        run: uv pip install .
+        run: uv pip install -e .
       - name: Create source distribution and Dockerfile
         run: uv run python openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
