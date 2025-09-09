@@ -8,6 +8,7 @@ import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { GitRepository } from "#/types/git";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
@@ -358,7 +359,7 @@ describe("Settings 404", () => {
     vi.resetAllMocks();
   });
 
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
   it("should open the settings modal if GET /settings fails with a 404", async () => {
@@ -418,7 +419,7 @@ describe("Settings 404", () => {
 });
 
 describe("Setup Payment modal", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
   const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
   it("should only render if SaaS mode and is new user", async () => {

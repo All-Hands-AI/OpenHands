@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
@@ -84,7 +85,9 @@ describe("Content", () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
-      const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+      const confirmation = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
 
       // Initially confirmation mode is false, so security analyzer should not be visible
       expect(confirmation).not.toBeChecked();
@@ -310,7 +313,9 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = screen.getByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -392,10 +397,14 @@ describe("Form submission", () => {
     const baseUrl = await screen.findByTestId("base-url-input");
     const apiKey = await screen.findByTestId("llm-api-key-input");
     const agent = await screen.findByTestId("agent-input");
-    const condensor = await screen.findByTestId("enable-memory-condenser-switch");
+    const condensor = await screen.findByTestId(
+      "enable-memory-condenser-switch",
+    );
 
     // Confirmation mode switch is now in basic settings, always visible
-    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
+    const confirmation = await screen.findByTestId(
+      "enable-confirmation-mode-switch",
+    );
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -468,9 +477,13 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
 
     // select security analyzer
-    const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
+    const securityAnalyzer = await screen.findByTestId(
+      "security-analyzer-input",
+    );
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
     expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
 
@@ -478,9 +491,13 @@ describe("Form submission", () => {
 
     // revert back to original value
     await userEvent.click(securityAnalyzer);
-    const originalSecurityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
+    const originalSecurityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
     await userEvent.click(originalSecurityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
+    expect(securityAnalyzer).toHaveValue(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
     expect(submitButton).toBeDisabled();
   });
 
@@ -680,7 +697,7 @@ describe("Status toasts", () => {
 
 describe("SaaS mode", () => {
   it("should not render the runtime settings input in oss mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
@@ -698,7 +715,7 @@ describe("SaaS mode", () => {
   });
 
   it("should render the runtime settings input in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -716,7 +733,7 @@ describe("SaaS mode", () => {
   });
 
   it("should always render the runtime settings input as disabled", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",

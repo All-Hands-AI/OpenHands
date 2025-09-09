@@ -7,6 +7,7 @@ import SecretsSettingsScreen from "#/routes/secrets-settings";
 import { SecretsService } from "#/api/secrets-service";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
@@ -53,7 +54,7 @@ const renderSecretsSettings = () =>
   });
 
 beforeEach(() => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
   // @ts-expect-error - only return the config we need
   getConfigSpy.mockResolvedValue({
     APP_MODE: "oss",
@@ -67,7 +68,7 @@ describe("Content", () => {
   });
 
   it("should NOT render a button to connect with git if they havent already in oss", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
@@ -87,7 +88,7 @@ describe("Content", () => {
   });
 
   it("should render a button to connect with git if they havent already in saas", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
@@ -483,7 +484,9 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
+    expect(
+      screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS"),
+    ).toBeInTheDocument();
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Custom_Secret");
@@ -567,7 +570,9 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
+    expect(
+      screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS"),
+    ).toBeInTheDocument();
 
     expect(nameInput).toHaveValue(MOCK_GET_SECRETS_RESPONSE[0].name);
     expect(valueInput).toHaveValue("my-custom-secret-value");
