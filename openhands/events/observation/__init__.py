@@ -7,6 +7,7 @@ from openhands.events.observation.a2a import (
 )
 from openhands.events.observation.agent import (
     AgentCondensationObservation,
+    AgentGetTimeObservation,
     AgentStateChangedObservation,
     AgentThinkObservation,
     RecallObservation,
@@ -62,4 +63,5 @@ __all__ = [
     'A2ASendTaskResponseObservation',
     'ReportVerificationObservation',
     'CreditErrorObservation',
+    'AgentGetTimeObservation',
 ]

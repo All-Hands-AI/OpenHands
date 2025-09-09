@@ -229,7 +229,7 @@ class Session:
             session_id=self.sid,
         )
 
-        runtime_max_workers = 1
+        runtime_max_workers = int(os.getenv('RUNTIME_MAX_WORKERS') or 5)
         if self.space_id and self.space_section_id:
             replay_actions = db_file_store.get_replay_actions(
                 self.space_id, self.space_section_id
@@ -237,9 +237,7 @@ class Session:
             if replay_actions and len(replay_actions) > 0:
                 agent.set_replay_actions(replay_actions)
                 agent.set_rerun_section(True)
-                runtime_max_workers = min(
-                    int(os.getenv('RUNTIME_MAX_WORKERS') or 5), len(replay_actions)
-                )
+                runtime_max_workers = min(runtime_max_workers, len(replay_actions))
 
         agent.set_mcp_tools(mcp_tools)
         agent.set_search_tools(search_tools)

@@ -1,5 +1,7 @@
 import json
 import os
+import random
+import string
 from collections import deque
 from copy import deepcopy
 from datetime import datetime
@@ -139,6 +141,18 @@ class CodeActAgent(Agent):
             and 'simple' in self.routing_llms
             else None
         )
+        self.is_replay = False
+
+    def set_replay_actions(self, replay_actions: list['Action']) -> None:
+        super().set_replay_actions(replay_actions)
+        self.is_replay = True
+        # if (
+        #     self.routing_llms
+        #     and self.routing_llms.get('simple')
+        # ):
+        #     self.llm = self.routing_llms['simple']
+        #     if self.streaming_routing_llm:
+        #         self.streaming_llm = self.streaming_routing_llm
 
         self._tool_arg_buffer: dict[str, str] = {}  # Buffer for tool arguments
         self._tool_state: Dict[str, Dict[str, Any]] = {}
@@ -669,7 +683,10 @@ class CodeActAgent(Agent):
             return actions
 
         if self.pending_actions:
-            return self.pending_actions.popleft()
+            # return self.pending_actions.popleft()
+            actions = list(self.pending_actions.copy())
+            self.pending_actions.clear()
+            return actions
 
         # if we're done, go back
         latest_user_message = state.get_last_user_message()
@@ -698,21 +715,20 @@ class CodeActAgent(Agent):
 
         messages = self._get_messages(condensed_history, research_mode=research_mode)
         formatted_messages = self.llm.format_messages_for_llm(messages)
+        try:
+            last_message = formatted_messages[-1]
+            add_cache_control = False
+            if last_message.get('cache_control'):
+                add_cache_control = True
+                last_message.pop('cache_control')
+        except Exception:
+            add_cache_control = False
         # NOTE: This is user's dynamic knowledge base. Do not cache this message, as it will be updated frequently.
         # NOTE: Only cache static large knowledge base that is uploaded by the user (changed rarely).
-
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        formatted_messages.append(
-            {
-                'role': 'assistant',
-                'content': [
-                    {
-                        'type': 'text',
-                        'text': f'Current date is {current_date}. Ignore anything that contradicts this.',
-                    },
-                ],
-            }
-        )
+        date_info = self._get_timeinfo_message(add_cache_control)
+        formatted_messages.extend(date_info)
+        if self.is_replay:
+            self.setup_replay_script(formatted_messages)
         params: dict = {
             'messages': formatted_messages,
         }
@@ -793,10 +809,16 @@ class CodeActAgent(Agent):
                 research_mode,
             )
             if self.pending_actions:
+                actions = list(self.pending_actions.copy())
                 logger.info(
                     f'Returning first of {len(self.pending_actions)} pending actions from streaming'
                 )
-                return self.pending_actions.popleft()
+                self.pending_actions.clear()
+                return actions
+                # logger.info(
+                #     f'Returning first of {len(self.pending_actions)} pending actions from streaming'
+                # )
+                # return self.pending_actions.popleft()
         else:
             actions = codeact_function_calling.response_to_actions(
                 response,
@@ -805,10 +827,24 @@ class CodeActAgent(Agent):
                 tools=params['tools'],
             )
             logger.debug(f'Actions after response_to_actions: {actions}')
-            for action in actions:
-                self.pending_actions.append(action)
-            return self.pending_actions.popleft()
+            return actions
+            # for action in actions:
+            #     self.pending_actions.append(action)
+            # return self.pending_actions.popleft()
         return None
+
+    def setup_replay_script(
+        self, formatted_messages: list[dict[Any, Any]]
+    ) -> list[dict[Any, Any]]:
+        if not self.is_replay:
+            return formatted_messages
+        self.is_replay = False
+        message = 'Use above data and do not think or use any other data or tools, give me the final result.'
+        user_message = self.llm.format_messages_for_llm(
+            [Message(role='user', content=[TextContent(text=message)])]
+        )
+        formatted_messages.extend(user_message)
+        return formatted_messages
 
     def _get_messages(
         self, events: list[Event], research_mode: str | None = None
@@ -941,6 +977,43 @@ class CodeActAgent(Agent):
             prev_role = msg.role
 
         return results
+
+    def _get_timeinfo_message(self, add_cache_control: bool = False) -> list[dict]:
+        def generate_random_id(length=24):
+            """Generate a random string of specified length using letters and numbers."""
+            characters = string.ascii_letters + string.digits
+            return ''.join(random.choice(characters) for _ in range(length))
+
+        current_date = datetime.now().strftime('%Y-%m-%d')
+        random_id = generate_random_id()
+        tool_id = f'call_{random_id}'
+        messages: list[dict[str, Any]] = [
+            {
+                'content': [],
+                'role': 'assistant',
+                'tool_calls': [
+                    {
+                        'id': tool_id,
+                        'type': 'function',
+                        'function': {'name': 'get_current_date', 'arguments': '{}'},
+                    }
+                ],
+            },
+            {
+                'content': [
+                    {
+                        'type': 'text',
+                        'text': f'Current date is {current_date}. Ignore anything that contradicts this.',
+                    }
+                ],
+                'role': 'tool',
+                'tool_call_id': tool_id,
+                'name': 'get_current_date',
+            },
+        ]
+        if add_cache_control:
+            messages[-1]['cache_control'] = {'type': 'ephemeral'}
+        return messages
 
     def _handle_format_output(self) -> str:
         if self.output_config:

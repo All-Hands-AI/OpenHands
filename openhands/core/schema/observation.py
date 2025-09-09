@@ -78,3 +78,6 @@ class ObservationType(str, Enum):
     """Result of the evaluation pipeline verifying the generated report. The response is a boolean."""
     CREDIT_ERROR = 'credit_error'
     """Result of a credit check."""
+
+    GET_CURRENT_DATE = 'get_current_date'
+    """Result of a get current date operation."""

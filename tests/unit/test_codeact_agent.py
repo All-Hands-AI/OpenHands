@@ -79,7 +79,8 @@ def test_step_with_pending_actions(agent: CodeActAgent):
 
     # Step should return the pending action
     result = agent.step(Mock())
-    assert result == pending_action
+    assert len(result) == 1
+    assert result[0] == pending_action
     assert len(agent.pending_actions) == 0
 
 
@@ -279,9 +280,9 @@ def test_step_with_no_pending_actions(mock_state: State):
     mock_state.latest_user_message_tool_call_metadata = None
 
     action = agent.step(mock_state)
-    assert action is None or (
-        isinstance(action, MessageAction) and action.content == 'Task completed'
-    )
+    assert len(action) == 1
+    assert isinstance(action[0], MessageAction)
+    assert action[0].content == 'Task completed'
 
 
 def test_correct_tool_description_loaded_based_on_model_name(mock_state: State):
@@ -528,12 +529,13 @@ def test_select_tools_based_on_mode_missing_pyodide_tools(agent: CodeActAgent):
     tools = agent._select_tools_based_on_mode(ResearchMode.CHAT)
 
     # Should not fall back to base tools since there are pyodide tools present
-    assert len(tools) == 4
+    assert len(tools) == 5
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'think' in tool_names
     assert 'finish' in tool_names
     assert 'search_tool' in tool_names
     assert 'str_replace_editor' in tool_names
+    assert 'get_current_date' in tool_names
 
 
 def test_select_tools_based_on_mode_duplicate_tools(agent: CodeActAgent):

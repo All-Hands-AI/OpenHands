@@ -1,3 +1,4 @@
+import datetime
 import os
 import tempfile
 import threading
@@ -18,6 +19,7 @@ from openhands.core.exceptions import (
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
+    AgentGetTimeAction,
     AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -31,6 +33,7 @@ from openhands.events.action.action import Action
 from openhands.events.action.files import FileEditSource
 from openhands.events.action.mcp import McpAction
 from openhands.events.observation import (
+    AgentGetTimeObservation,
     AgentThinkObservation,
     ErrorObservation,
     NullObservation,
@@ -274,6 +277,11 @@ class ActionExecutionClient(Runtime):
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
+            if isinstance(action, AgentGetTimeAction):
+                current_date = datetime.datetime.now().strftime('%Y-%m-%d')
+                return AgentGetTimeObservation(
+                    f'Current date is {current_date}. Ignore anything that contradicts this.'
+                )
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')

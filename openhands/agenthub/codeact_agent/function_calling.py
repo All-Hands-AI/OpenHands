@@ -12,6 +12,7 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    DateInfoTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -28,6 +29,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    AgentGetTimeAction,
     AgentThinkAction,
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -163,6 +165,10 @@ def _parse_builtin_tool(
     elif tool_name == ThinkTool['function']['name']:
         return AgentThinkAction(thought=arguments.get('thought', ''))
 
+    # DateInfoTool
+    elif tool_name == DateInfoTool['function']['name']:
+        return AgentGetTimeAction()
+
     # BrowserTool
     elif tool_name == BrowserTool['function']['name']:
         _validate_required_args(tool_name, arguments, ['code'])
@@ -188,6 +194,7 @@ built_in_tools = {
     ThinkTool['function']['name'],
     BrowserTool['function']['name'],
     WebReadTool['function']['name'],
+    DateInfoTool['function']['name'],
 }
 
 
@@ -360,11 +367,13 @@ def get_tools(
             create_cmd_run_tool(use_simplified_description=use_simplified_tool_desc),
             ThinkTool,
             FinishTool,
+            DateInfoTool,
         ]
     else:
         tools = [
             ThinkTool,
             FinishTool,
+            DateInfoTool,
         ]
     if codeact_enable_browsing:
         tools.append(WebReadTool)

@@ -1096,7 +1096,7 @@ async def test_run_controller_with_memory_error(test_event_stream):
             memory=memory,
         )
 
-    assert state.iteration == 0
+    assert state.iteration == 0  # Memory error prevents agent step execution
     assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'Error: RuntimeError'
 

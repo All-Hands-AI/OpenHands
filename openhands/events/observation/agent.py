@@ -45,6 +45,22 @@ class AgentThinkObservation(Observation):
 
 
 @dataclass
+class AgentGetTimeObservation(Observation):
+    """An action where the agent logs a thought.
+
+    Attributes:
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.THINK.
+    """
+
+    action: str = ObservationType.GET_CURRENT_DATE
+
+    @property
+    def message(self) -> str:
+        return 'Get current date.'
+
+
+@dataclass
 class MicroagentKnowledge:
     """
     Represents knowledge from a triggered microagent.

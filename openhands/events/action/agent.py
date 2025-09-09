@@ -70,6 +70,22 @@ class AgentThinkAction(Action):
 
 
 @dataclass
+class AgentGetTimeAction(Action):
+    """An action where the agent logs a thought.
+
+    Attributes:
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.THINK.
+    """
+
+    action: str = ActionType.GET_CURRENT_DATE
+
+    @property
+    def message(self) -> str:
+        return 'Get current date.'
+
+
+@dataclass
 class AgentRejectAction(Action):
     outputs: dict = field(default_factory=dict)
     thought: str = ''

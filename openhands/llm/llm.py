@@ -543,19 +543,25 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.max_output_tokens is None:
             # Safe default for any potentially viable model
             self.config.max_output_tokens = 4096
-            if self.model_info is not None:
-                # max_output_tokens has precedence over max_tokens, if either exists.
-                # litellm has models with both, one or none of these 2 parameters!
-                if 'max_output_tokens' in self.model_info and isinstance(
-                    self.model_info['max_output_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_output_tokens']
-                elif 'max_tokens' in self.model_info and isinstance(
-                    self.model_info['max_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_tokens']
-            if 'claude-3-7-sonnet' in self.config.model:
-                self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
+        if self.model_info is not None:
+            # max_output_tokens has precedence over max_tokens, if either exists.
+            # litellm has models with both, one or none of these 2 parameters!
+            if 'max_output_tokens' in self.model_info and isinstance(
+                self.model_info['max_output_tokens'], int
+            ):
+                self.config.max_output_tokens = min(
+                    self.model_info['max_output_tokens'], self.config.max_output_tokens
+                )
+            elif 'max_tokens' in self.model_info and isinstance(
+                self.model_info['max_tokens'], int
+            ):
+                self.config.max_output_tokens = min(
+                    self.model_info['max_tokens'], self.config.max_output_tokens
+                )
+        if 'claude-3-7-sonnet' in self.config.model:
+            self.config.max_output_tokens = (
+                64000  # litellm set max to 128k, but that requires a header to be set
+            )
 
         # Initialize function calling capability
         # Check if model name is in our supported list

@@ -1920,7 +1920,8 @@ class AgentController:
                 )
 
                 event = self.event_stream.add_event(action, EventSource.AGENT)
-                self._concurrent_pending_actions.add(event.id)
+                if self._action_waiting_for_observation(action):
+                    self._concurrent_pending_actions.add(event.id)
 
         self.log(
             'info',
@@ -1928,3 +1929,16 @@ class AgentController:
             f'Tracking {len(self._concurrent_pending_actions)} runnable actions: {list(self._concurrent_pending_actions)}',
             extra={'msg_type': 'CONCURRENT_EXECUTION_READY'},
         )
+
+    def _action_waiting_for_observation(self, action: Action) -> bool:
+        actions_without_observation = [
+            MessageAction,
+            StreamingMessageAction,
+            KnowledgeBaseAction,
+            AgentFinishAction,
+            AgentRejectAction,
+        ]
+        for action_type in actions_without_observation:
+            if isinstance(action, action_type):
+                return False
+        return True

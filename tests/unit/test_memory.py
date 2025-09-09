@@ -83,6 +83,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.streaming_llm = False  # Add missing attribute
     agent.a2a_manager = MagicMock(spec=A2AManager)
     agent.streaming_llm = False  # Add missing attribute
 
@@ -105,7 +106,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
         )
 
         # Verify that the controller's last error was set
-        assert state.iteration == 0
+        assert state.iteration == 0  # Memory error prevents _step from running
         assert state.agent_state == AgentState.ERROR
         assert state.last_error == 'Error: Exception'
 
@@ -121,6 +122,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
+    agent.streaming_llm = False  # Add missing attribute
     agent.a2a_manager = MagicMock(spec=A2AManager)
     agent.streaming_llm = False
     # Create a mock runtime
@@ -144,7 +146,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
         )
 
         # Verify that the controller's last error was set
-        assert state.iteration == 0
+        assert state.iteration == 0  # Memory error prevents _step from running
         assert state.agent_state == AgentState.ERROR
         assert state.last_error == 'Error: Exception'
 

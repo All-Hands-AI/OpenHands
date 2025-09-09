@@ -104,3 +104,6 @@ class ActionType(str, Enum):
 
     KNOWLEDGE_BASE = 'knowledge_base'
     """Retrieves content from a knowledge base."""
+
+    GET_CURRENT_DATE = 'get_current_date'
+    """Gets the current date."""

@@ -1,5 +1,6 @@
 from .bash import create_cmd_run_tool
 from .browser import BrowserTool
+from .date_info import DateInfoTool
 from .finish import FinishTool
 from .ipython import IPythonTool
 from .llm_based_edit import LLMBasedFileEditTool
@@ -16,4 +17,5 @@ __all__ = [
     'create_str_replace_editor_tool',
     'WebReadTool',
     'ThinkTool',
+    'DateInfoTool',
 ]
