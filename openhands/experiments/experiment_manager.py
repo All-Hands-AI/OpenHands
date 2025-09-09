@@ -31,13 +31,15 @@ def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
 class ExperimentManager:
     @staticmethod
     def run_conversation_variant_test(
-        user_id: str, conversation_id: str, conversation_settings: ConversationInitData
+        user_id: str | None,
+        conversation_id: str,
+        conversation_settings: ConversationInitData,
     ) -> ConversationInitData:
         return conversation_settings
 
     @staticmethod
     def run_config_variant_test(
-        user_id: str, conversation_id: str, config: OpenHandsConfig
+        user_id: str | None, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         exp_config = load_experiment_config(conversation_id)
         if exp_config and exp_config.config:
