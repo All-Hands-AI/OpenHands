@@ -657,7 +657,6 @@ def _create_server(
 
     # Get user info
     user_id, username = get_user_info()
-    logger.info(f'TRACE_LOCAL_RUNTIME:{user_id}:{username}')
 
     # Start the server process
     cmd = get_action_execution_server_startup_command(
