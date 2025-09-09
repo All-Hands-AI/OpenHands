@@ -1,10 +1,10 @@
-import os
-from pathlib import Path
-
 __package_name__ = 'openhands_ai'
 
 
 def get_version():
+    import os
+    from pathlib import Path
+
     # Try getting the version from pyproject.toml
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
