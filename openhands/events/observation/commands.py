@@ -75,6 +75,7 @@ class CmdOutputMetadata(BaseModel):
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
         metadata = json.loads(match.group(1))
+        logger.info(f'from_ps1_match metadata: {metadata}')
         # Create a copy of metadata to avoid modifying the original
         processed = metadata.copy()
         # Convert numeric fields
