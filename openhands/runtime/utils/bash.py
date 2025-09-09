@@ -241,6 +241,7 @@ class BashSession:
         _initial_window.kill()
 
         # Configure bash to use simple PS1 and disable PS2
+        logger.info(f'PS1: {self.PS1}')
         self.pane.send_keys(
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
         )
@@ -254,6 +255,7 @@ class BashSession:
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
+        logger.info(f'setting _cmd to {self.work_dir}')
         self._cwd = os.path.abspath(self.work_dir)
         self._initialized = True
 
