@@ -16,78 +16,60 @@ be automated.
 
 ### 1.2 Proposed Solution
 
-Add GitHub workflow in each repo (OpenHands, runtime-api, deploy) that can be
-manually triggered which takes feature branch name, builds images and pushes
-them to S3, producing presigned URLs and spitting them out into GitHub logs. The
-FDE would then make changes on the feature branch, run the special workflow and
-copy and paste the URL to share with the client.
+Two scenarios:
 
-### 1.3 Difference from Typical Workflow
+**Regular SaaS Release** - A new job is added to the release workflow so that for
+every SaaS release tarballs are pushed to S3. Presigned URLs need to be
+published in a changelog accessible by our customers.
 
-For clients who can directly pull images from our docker repository, this
-process is not required. Instead the existing build automatically creates images
-when a PR is opened and pushes them to GitHub Container Registry (GHCR). The
-typical workflow works as follows:
+**Special Troubleshooting Builds** - Add GitHub a workflow to the `deploy` repo
+which is manually triggered to build and push to S3 from a named feature branch.
+The FDE would then make changes on the feature branch, run the special workflow
+and copy and paste the URL from the GitHub action to share with the client.
 
-1. **Automatic Image Building**: When a PR is opened, the `ghcr-build.yml` workflow
-   automatically builds three types of images:
-   - **OpenHands app image** (`ghcr.io/all-hands-ai/openhands`) - the main application
-   - **Runtime image** (`ghcr.io/all-hands-ai/runtime`) - in both Nikolaik and Ubuntu flavors
-   - **Enterprise image** (`ghcr.io/all-hands-ai/enterprise-server`) - for enterprise features
+## 2. Additional Context
 
-2. **Image Tagging**: Images are tagged with:
-   - The PR number (e.g., `pr-123`)
-   - The commit SHA (e.g., `abc1234`)
-   - Branch name for main branch pushes
-   - Semantic version tags for releases
-
-3. **PR Description Updates**: The workflow automatically updates PR descriptions
-   with Docker commands that customers can use to test the changes:
-
-   ```bash
-   docker run -it --rm \
-     -p 3000:3000 \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     --add-host host.docker.internal:host-gateway \
-     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:${SHORT_SHA}-nikolaik \
-     --name openhands-app-${SHORT_SHA} \
-     docker.all-hands.dev/all-hands-ai/openhands:${SHORT_SHA}
-   ```
-
-4. **Enterprise Preview Deployments**: For PRs labeled with "deploy", the workflow
-   triggers a preview deployment to a feature environment using the enterprise image.
-
-5. **Customer Access**: Customers can then update their Helm values file to point
-   to these new image versions directly from GHCR, or use the provided Docker
-   commands to test changes locally.
-
-## 2. Developer Experience
-
-### 2.1 The Workflow will Exist in Two Repos
+### 2.1 Images
 
 Three images are required for self-hosted, in early V1 from two repos:
 
-   1. OpenHands open source ([All-Hands-AI/OpenHands](http://github.com/All-Hands-AI/OpenHands/))
-   2. enterprise ([All-Hands-AI/OpenHands](http://github.com/All-Hands-AI/OpenHands/))
-   3. runtime-api ([All-Hands-AI/runtime-api](https://github.com/All-Hands-AI/runtime-api))
+   1. `enterprise-server` built from ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
+   2. `runtime:{version}-nikolaik` built from ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
+   3. `runtime-api` built from ([All-Hands-AI/runtime-api](https://github.com/All-Hands-AI/runtime-api))
 
 We expect that eventually the runtime microservice will be deprecated but for
 now it means that we will have workflows in these two repos for building the
 complete image set.
 
-### 2.2 Triggered on Demand
+### 2.2 Current Process
 
-The workflow will be triggered only on demand. Engineers will go to the Github
-Workflow to manually trigger and enter the branch name to kick-off the build.
+- In the `OpenHands` repository images are built for feature branches that have
+  an associated PR. Images are tagged with feature branch name or or number:
+  e.g. `pr-123`.
+- In the `runtime-api` repository images are built on any feature branch.
+- Production SaaS releases are kicked off when a tag using semver format is
+  pushed to the OpenHands repo. Deployment of SaaS is delegated to workflows in
+  the `deploy` repo.
+- When a release includes changes to the `runtime-api` image, the `runtime-api`
+  repo needs to be tagged with the release version as well.
 
-### 2.3 OpenHands Repo Workflow Builds Selected Images
+## 3. Developer Experience
 
-The manual trigger for building workflows also prompts user with checklist of
-images to build.
+### 3.1 Future State Process - Typical Releases
 
-## 3. Solution Design
+S3 is now automatically updated when the image repos are on tagging of the
+release. No process change for the release engineer or developer.
 
-### 3.1 S3 Bucket Structure
+### 3.2 Future State Process - Troubleshooting Releases
+
+Engineers will go to a new Github Workflow in `OpenHands` and/or `runtime-api`
+to manually trigger a build supplying the target branch name. The image(s) are
+built and published to S3. An S3 link in the build log may be shared with the
+customer.
+
+## 4. Solution Design
+
+### 4.1 S3 Bucket Structure
 
 Images in the S3 bucket will be namespaced by branch name and commit SHA. If
 engineers use the same branch name across repos, images for a particular issue
@@ -126,27 +108,22 @@ s3://prerelease-bucket/
         └── enterprise:hotfix-security.tar
 ```
 
-## 4. Open Questions
+## 5. Open Questions
 
-### 4.1 Do we want to require PR mirroring the current process
+### 5.1 Where does the push to S3 live?
 
-An alternative to the proposed manual trigger is that we always require PR for
-feature branch image builds like we do today and when the PR is tagged with S3
-every build is automatically released to S3 as well. Additionally an automated
-comment to the S3 bucket could provide the S3 bucket image links.
+- Delegate to `deploy` repo GitHub action or do S3 push directly from OpenHands repo?
 
-### 4.2 Secrets
+### 5.2 Secrets
 
-- We will need secrets for the S3 bucket where images are published. While we
-  might otherwise store these in GitHub secrets, this would allow maintainers
-  who are not All Hands employees write access to S3 storage which given our
-  highly regulated clients, is probably not acceptable.
+- How do we secure AWS S3 secret? In OpenHands repo GitHub Actions Secrets or
+  via another mechanism?
 
-### 4.3 White List
+### 5.3 White List
 
-- We will need secure who can trigger these builds.
+- How do we secure who can trigger these builds?
 
-### 4.4 Change Log
+### 5.4 Change Log
 
 Ideally this process should be self-documenting and leave a clear trail of what
 was released to the customer and why. The `CHANGELOG.md` file serves multiple purposes:
