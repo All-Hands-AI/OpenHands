@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -9,7 +8,6 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -19,6 +17,7 @@ const SAAS_ONLY_PATHS = [
 ];
 
 const SAAS_NAV_ITEMS = [
+  { to: "/settings", text: "SETTINGS$NAV_LLM" },
   { to: "/settings/user", text: "SETTINGS$NAV_USER" },
   { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
   { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
@@ -48,11 +47,6 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  if (isSaas && pathname === "/settings") {
-    // no llm settings in saas mode, so redirect to user settings
-    return redirect("/settings/user");
-  }
-
   if (!isSaas && SAAS_ONLY_PATHS.includes(pathname)) {
     // if in OSS mode, do not allow access to saas-only paths
     return redirect("/settings");
@@ -64,22 +58,10 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { data: subscriptionAccess } = useSubscriptionAccess();
 
   const isSaas = config?.APP_MODE === "saas";
-  // this is used to determine which settings are available in the UI
-  const navItems = useMemo(() => {
-    const items = [];
-    if (isSaas) {
-      if (subscriptionAccess) {
-        items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
-      }
-      items.push(...SAAS_NAV_ITEMS);
-    } else {
-      items.push(...OSS_NAV_ITEMS);
-    }
-    return items;
-  }, [isSaas, !!subscriptionAccess]);
+
+  const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
   return (
     <main

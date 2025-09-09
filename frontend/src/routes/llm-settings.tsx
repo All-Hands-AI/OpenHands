@@ -27,6 +27,8 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
+import { UpgradeBanner } from "#/components/features/settings";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -36,6 +38,7 @@ function LlmSettingsScreen() {
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
   const { data: config } = useConfig();
+  const { data: subscriptionAccess } = useSubscriptionAccess();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -390,8 +393,23 @@ function LlmSettingsScreen() {
 
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
+  // Show upgrade banner only in SaaS mode when user doesn't have an active subscription
+  const shouldShowUpgradeBanner =
+    config?.APP_MODE === "saas" && !subscriptionAccess;
+
+  // Disable form only in SaaS mode when user doesn't have an active subscription
+  const shouldDisableForm = config?.APP_MODE === "saas" && !subscriptionAccess;
+
   return (
     <div data-testid="llm-settings-screen" className="h-full">
+      {shouldShowUpgradeBanner && (
+        <UpgradeBanner
+          message={t("SETTINGS$UPGRADE_BANNER_MESSAGE")}
+          onUpgradeClick={() => {
+            // TODO: Implement upgrade flow
+          }}
+        />
+      )}
       <form
         action={formAction}
         className="flex flex-col h-full justify-between"
@@ -410,6 +428,7 @@ function LlmSettingsScreen() {
             <div
               data-testid="llm-settings-form-basic"
               className="flex flex-col gap-6"
+              aria-disabled={shouldDisableForm ? "true" : undefined}
             >
               {!isLoading && !isFetching && (
                 <>
@@ -417,6 +436,7 @@ function LlmSettingsScreen() {
                     models={modelsAndProviders}
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
+                    isDisabled={shouldDisableForm}
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
@@ -439,6 +459,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
+                isDisabled={shouldDisableForm}
                 startContent={
                   settings.LLM_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />

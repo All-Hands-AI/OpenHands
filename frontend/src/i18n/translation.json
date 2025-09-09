@@ -13230,5 +13230,37 @@
     "tr": "Devam Ediyor",
     "de": "In Bearbeitung",
     "uk": "В процесі"
+  },
+  "SETTINGS$UPGRADE_BANNER_MESSAGE": {
+    "en": "Access LLM settings when you upgrade your plan",
+    "ja": "プランをアップグレードするとLLM設定にアクセスできます",
+    "zh-CN": "升级计划后即可访问LLM设置",
+    "zh-TW": "升級計劃後即可訪問LLM設置",
+    "ko-KR": "플랜을 업그레이드하면 LLM 설정에 액세스할 수 있습니다",
+    "no": "Få tilgang til LLM-innstillinger når du oppgraderer planen din",
+    "it": "Accedi alle impostazioni LLM quando aggiorni il tuo piano",
+    "pt": "Acesse as configurações do LLM ao atualizar seu plano",
+    "es": "Accede a la configuración de LLM cuando actualices tu plan",
+    "ar": "الوصول إلى إعدادات LLM عند ترقية خطتك",
+    "fr": "Accédez aux paramètres LLM lorsque vous mettez à niveau votre plan",
+    "tr": "Planınızı yükselttiğinizde LLM ayarlarına erişin",
+    "de": "Zugriff auf LLM-Einstellungen beim Upgrade Ihres Plans",
+    "uk": "Отримайте доступ до налаштувань LLM, коли оновите свій план"
+  },
+  "SETTINGS$UPGRADE_BUTTON": {
+    "en": "Upgrade",
+    "ja": "アップグレード",
+    "zh-CN": "升级",
+    "zh-TW": "升級",
+    "ko-KR": "업그레이드",
+    "no": "Oppgrader",
+    "it": "Aggiorna",
+    "pt": "Atualizar",
+    "es": "Actualizar",
+    "ar": "ترقية",
+    "fr": "Mettre à niveau",
+    "tr": "Yükselt",
+    "de": "Upgrade",
+    "uk": "Оновити"
   }
 }
