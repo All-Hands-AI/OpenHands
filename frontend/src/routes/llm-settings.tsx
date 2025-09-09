@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
+import { useSearchParams } from "react-router";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -34,6 +35,7 @@ import { cn } from "#/utils/utils";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
 
@@ -120,6 +122,20 @@ function LlmSettingsScreen() {
       setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
     }
   }, [settings?.SECURITY_ANALYZER]);
+
+  // Handle URL parameters for SaaS subscription redirects
+  React.useEffect(() => {
+    const success = searchParams.get("success");
+    const failure = searchParams.get("failure");
+
+    if (success) {
+      displaySuccessToast(t(I18nKey.SUBSCRIPTION$SUCCESS));
+      setSearchParams({});
+    } else if (failure) {
+      displayErrorToast(t(I18nKey.SUBSCRIPTION$FAILURE));
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, t]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));

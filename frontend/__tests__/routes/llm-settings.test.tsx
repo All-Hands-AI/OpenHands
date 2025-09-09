@@ -11,6 +11,12 @@ import {
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
+// Mock react-router hooks
+const mockUseSearchParams = vi.fn();
+vi.mock("react-router", () => ({
+  useSearchParams: () => mockUseSearchParams(),
+}));
+
 const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
     wrapper: ({ children }) => (
@@ -23,6 +29,14 @@ const renderLlmSettingsScreen = () =>
 beforeEach(() => {
   vi.resetAllMocks();
   resetTestHandlersMockSettings();
+  
+  // Default mock for useSearchParams - returns empty params
+  mockUseSearchParams.mockReturnValue([
+    {
+      get: () => null,
+    },
+    vi.fn(),
+  ]);
 });
 
 describe("Content", () => {
@@ -939,6 +953,66 @@ describe("SaaS mode", () => {
 
       // Should NOT show backdrop overlay
       expect(screen.queryByTestId("settings-backdrop")).not.toBeInTheDocument();
+    });
+
+    it("should display success toast when redirected back with ?success parameter", async () => {
+      // Mock SaaS mode
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
+
+      // Mock toast handler
+      const displaySuccessToastSpy = vi.spyOn(ToastHandlers, "displaySuccessToast");
+
+      // Mock URL search params with ?success
+      mockUseSearchParams.mockReturnValue([
+        {
+          get: (param: string) => param === "success" ? "true" : null,
+        },
+        vi.fn(),
+      ]);
+
+      // Render component with success parameter
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+      
+      // Verify success toast is displayed with correct message
+      expect(displaySuccessToastSpy).toHaveBeenCalledWith(
+        "SUBSCRIPTION$SUCCESS"
+      );
+    });
+
+    it("should display error toast when redirected back with ?failure parameter", async () => {
+      // Mock SaaS mode
+      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access
+      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
+
+      // Mock toast handler
+      const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
+
+      // Mock URL search params with ?failure
+      mockUseSearchParams.mockReturnValue([
+        {
+          get: (param: string) => param === "failure" ? "true" : null,
+        },
+        vi.fn(),
+      ]);
+
+      // Render component with failure parameter
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+      
+      // Verify error toast is displayed with correct message
+      expect(displayErrorToastSpy).toHaveBeenCalledWith(
+        "SUBSCRIPTION$FAILURE"
+      );
     });
   });
 });
