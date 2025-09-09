@@ -6,10 +6,10 @@ Tests for pause listener in OpenHands CLI.
 import time
 from unittest.mock import MagicMock
 
-from openhands.sdk import Conversation
+from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from prompt_toolkit.input.defaults import create_pipe_input
 
-from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
+from openhands.sdk import Conversation
 
 
 class TestPauseListener:
@@ -44,7 +44,7 @@ class TestPauseListener:
                 # Listener should be started (daemon thread)
                 assert listener.is_alive()
                 assert not listener.is_paused()
-                pipe.send_text("\x10")  # Ctrl-P
+                pipe.send_text('\x10')  # Ctrl-P
                 time.sleep(0.1)
                 assert listener.is_paused()
 

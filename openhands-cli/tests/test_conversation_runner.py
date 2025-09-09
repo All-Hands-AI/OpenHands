@@ -2,7 +2,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
 
@@ -23,7 +22,7 @@ class TestConversationRunner:
         )
         return convo
 
-    @pytest.mark.parametrize("paused", [False, True])
+    @pytest.mark.parametrize('paused', [False, True])
     def test_non_confirmation_mode_runs_once(self, paused: bool) -> None:
         """
         1. Confirmation mode is not on
@@ -37,13 +36,13 @@ class TestConversationRunner:
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(False)
 
-        with patch.object(convo, "run") as run_mock:
+        with patch.object(convo, 'run') as run_mock:
             cr.process_message(message=None)
 
         run_mock.assert_called_once()
 
     @pytest.mark.parametrize(
-        "confirmation, agent_paused, agent_finished, expected_run_calls",
+        'confirmation, agent_paused, agent_finished, expected_run_calls',
         [
             # Case 1: Agent paused & waiting; user DEFERS -> early return, no run()
             (UserConfirmation.DEFER, True, False, 0),
@@ -75,8 +74,8 @@ class TestConversationRunner:
         cr.set_confirmation_mode(True)
 
         with (
-            patch.object(cr, "_handle_confirmation_request", return_value=confirmation),
-            patch.object(convo, "run") as run_mock,
+            patch.object(cr, '_handle_confirmation_request', return_value=confirmation),
+            patch.object(convo, 'run') as run_mock,
         ):
             cr.process_message(message=None)
 
@@ -97,8 +96,8 @@ class TestConversationRunner:
         cr.set_confirmation_mode(True)
 
         with (
-            patch.object(cr, "_handle_confirmation_request") as _mock_h,
-            patch.object(convo, "run") as run_mock,
+            patch.object(cr, '_handle_confirmation_request') as _mock_h,
+            patch.object(convo, 'run') as run_mock,
         ):
             cr.process_message(message=None)
 

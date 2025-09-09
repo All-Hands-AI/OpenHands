@@ -1,5 +1,8 @@
 import os
 
+from prompt_toolkit import HTML, print_formatted_text
+from pydantic import SecretStr
+
 from openhands.sdk import (
     LLM,
     Agent,
@@ -12,8 +15,6 @@ from openhands.tools import (
     execute_bash_tool,
     str_replace_editor_tool,
 )
-from prompt_toolkit import HTML, print_formatted_text
-from pydantic import SecretStr
 
 
 def setup_agent() -> Conversation:
@@ -21,18 +22,18 @@ def setup_agent() -> Conversation:
     Setup the agent with environment variables.
     """
     # Get API configuration from environment
-    api_key = os.getenv("LITELLM_API_KEY") or os.getenv("OPENAI_API_KEY")
-    model = os.getenv("LITELLM_MODEL", "gpt-4o-mini")
-    base_url = os.getenv("LITELLM_BASE_URL")
+    api_key = os.getenv('LITELLM_API_KEY') or os.getenv('OPENAI_API_KEY')
+    model = os.getenv('LITELLM_MODEL', 'gpt-4o-mini')
+    base_url = os.getenv('LITELLM_BASE_URL')
 
     if not api_key:
         print_formatted_text(
             HTML(
-                "<red>Error: No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.</red>"
+                '<red>Error: No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.</red>'
             )
         )
         raise Exception(
-            "No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable."
+            'No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.'
         )
 
     llm = LLM(
@@ -56,6 +57,6 @@ def setup_agent() -> Conversation:
     conversation = Conversation(agent=agent)
 
     print_formatted_text(
-        HTML(f"<green>✓ Agent initialized with model: {model}</green>")
+        HTML(f'<green>✓ Agent initialized with model: {model}</green>')
     )
     return conversation

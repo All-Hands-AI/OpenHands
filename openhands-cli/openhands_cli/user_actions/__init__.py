@@ -4,4 +4,4 @@ from openhands_cli.user_actions.exit_session import (
 )
 from openhands_cli.user_actions.types import UserConfirmation
 
-__all__ = ["ask_user_confirmation", "exit_session_confirmation", "UserConfirmation"]
+__all__ = ['ask_user_confirmation', 'exit_session_confirmation', 'UserConfirmation']
