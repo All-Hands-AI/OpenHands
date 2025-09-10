@@ -50,10 +50,10 @@ def init_user_and_working_directory(
         return None
 
     # Skip root since it is already created
+    existing_user_id = -1
     if username != 'root':
         # Check if the username already exists
         logger.debug(f'Attempting to create user `{username}` with UID {user_id}.')
-        existing_user_id = -1
         setup_user = True
         try:
             result = subprocess.run(
