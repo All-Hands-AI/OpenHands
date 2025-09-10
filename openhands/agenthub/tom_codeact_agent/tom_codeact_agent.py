@@ -497,7 +497,7 @@ class TomCodeActAgent(CodeActAgent):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_sleeptime_compute)
             try:
-                future.result()  # Wait for completion and get any exception
+                future.result(timeout=420)  # 7 minutes timeout
 
                 # Only update processing history on success
                 current_timestamp = datetime.now().isoformat()
@@ -513,6 +513,12 @@ class TomCodeActAgent(CodeActAgent):
                 )
                 logger.info('✅ Tom: Sleeptime compute completed successfully')
 
+            except concurrent.futures.TimeoutError:
+                logger.error('❌ Tom: Sleeptime compute timed out after 7 minutes')
+                logger.info('⚠️ Tom: Processing history not updated due to timeout')
+                # Cancel the future to clean up resources
+                future.cancel()
+                return
             except Exception as e:
                 logger.error(f'❌ Tom: Sleeptime compute failed: {e}')
                 logger.info('⚠️ Tom: Processing history not updated due to failure')
