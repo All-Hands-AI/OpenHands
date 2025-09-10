@@ -90,9 +90,9 @@ def test_prep_build_folder(temp_dir):
             extra_deps=None,
         )
 
-    # make sure that the code (openhands/) and microagents folder were copied
+    # make sure that the code (openhands/), readme and microagents folder were copied
     assert shutil_mock.copytree.call_count == 2
-    assert shutil_mock.copy2.call_count == 2
+    assert shutil_mock.copy2.call_count == 3
 
     # Now check dockerfile is in the folder
     dockerfile_path = os.path.join(temp_dir, 'Dockerfile')
