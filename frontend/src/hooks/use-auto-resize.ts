@@ -1,5 +1,6 @@
 import { useCallback, useEffect, RefObject } from "react";
 import { IMessageToSend } from "#/state/conversation-slice";
+import { isMobileDevice } from "#/utils/utils";
 
 interface UseAutoResizeOptions {
   minHeight?: number;
@@ -134,8 +135,10 @@ export const useAutoResize = (
 
   // Core drag logic shared between mouse and touch events
   const createDragHandlers = useCallback(
-    (startY: number, startHeight: number) => {
+    (startY: number, startHeight: number, isMobile: boolean) => {
       const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+        moveEvent.preventDefault();
+
         const deltaY = getClientY(moveEvent) - startY;
         // Invert deltaY so moving up increases height and moving down decreases height
         const newHeight = Math.max(
@@ -164,11 +167,21 @@ export const useAutoResize = (
         // Call optional drag end callback
         onGripDragEnd?.();
 
-        // Remove both mouse and touch event listeners
-        document.removeEventListener("mousemove", handleMove);
-        document.removeEventListener("mouseup", handleEnd);
-        document.removeEventListener("touchmove", handleMove);
-        document.removeEventListener("touchend", handleEnd);
+        if (isMobile) {
+          const resizeGrip = document.getElementById("resize-grip");
+          if (!resizeGrip) return;
+
+          // Remove both mouse and touch event listeners
+          resizeGrip.removeEventListener("mousemove", handleMove);
+          resizeGrip.removeEventListener("mouseup", handleEnd);
+          resizeGrip.removeEventListener("touchmove", handleMove);
+          resizeGrip.removeEventListener("touchend", handleEnd);
+        } else {
+          document.removeEventListener("mousemove", handleMove);
+          document.removeEventListener("mouseup", handleEnd);
+          document.removeEventListener("touchmove", handleMove);
+          document.removeEventListener("touchend", handleEnd);
+        }
       };
 
       return { handleMove, handleEnd };
@@ -185,18 +198,33 @@ export const useAutoResize = (
 
   // Common drag start logic shared between mouse and touch events
   const startDrag = useCallback(
-    (startY: number, isTouch: boolean) => {
-      if (!enableManualResize) return;
+    (startY: number) => {
+      if (!enableManualResize) {
+        return;
+      }
 
       // Call optional drag start callback
       onGripDragStart?.();
 
-      const startHeight = elementRef.current?.offsetHeight || minHeight;
-      const { handleMove, handleEnd } = createDragHandlers(startY, startHeight);
+      const isMobile = isMobileDevice();
 
-      if (isTouch) {
-        document.addEventListener("touchmove", handleMove, { passive: false });
-        document.addEventListener("touchend", handleEnd);
+      const startHeight = elementRef.current?.offsetHeight || minHeight;
+      const { handleMove, handleEnd } = createDragHandlers(
+        startY,
+        startHeight,
+        isMobile,
+      );
+
+      if (isMobile) {
+        const resizeGrip = document.getElementById("resize-grip");
+        if (!resizeGrip) {
+          return;
+        }
+        resizeGrip.addEventListener("touchmove", handleMove, {
+          passive: false,
+          capture: true,
+        });
+        resizeGrip.addEventListener("touchend", handleEnd, { capture: true });
       } else {
         document.addEventListener("mousemove", handleMove);
         document.addEventListener("mouseup", handleEnd);
@@ -215,7 +243,7 @@ export const useAutoResize = (
   const handleGripMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      startDrag(e.clientY, false);
+      startDrag(e.clientY);
     },
     [startDrag],
   );
@@ -224,7 +252,7 @@ export const useAutoResize = (
   const handleGripTouchStart = useCallback(
     (e: React.TouchEvent) => {
       e.preventDefault();
-      startDrag(e.touches[0].clientY, true);
+      startDrag(e.touches[0].clientY);
     },
     [startDrag],
   );

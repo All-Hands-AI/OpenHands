@@ -312,22 +312,14 @@ export function CustomChatInput({
       return;
     }
 
-    const isMobile = isMobileDevice();
-    const isEmpty = isContentEmpty();
-    const isMobileEvent = isMobile && !e.shiftKey;
-    const isDesktopEvent = !isMobile && e.shiftKey;
-
-    // Check if we should increase height instead of submitting
-    const shouldIncreaseHeight = isEmpty && (isMobileEvent || isDesktopEvent);
-
-    if (shouldIncreaseHeight) {
+    if (isContentEmpty()) {
       e.preventDefault();
       increaseHeightForEmptyContent();
       return;
     }
 
     // Original submit logic - only for desktop without shift key
-    if (!isMobile && !e.shiftKey && !disabled) {
+    if (!isMobileDevice() && !e.shiftKey && !disabled) {
       e.preventDefault();
       handleSubmit();
     }
@@ -363,7 +355,8 @@ export function CustomChatInput({
       <div className="relative w-full">
         {/* Top edge hover area - invisible area that triggers grip visibility */}
         <div
-          className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group"
+          className="absolute -top-[12px] left-0 w-full h-6 lg:h-3 z-20 group"
+          id="resize-grip"
           onClick={handleTopEdgeClick}
         >
           {/* Resize Grip - appears on hover of top edge area, when dragging, or when clicked */}
