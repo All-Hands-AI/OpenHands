@@ -239,6 +239,8 @@ class BashSession:
         self.pane = self.window.active_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill()
+        cwd = self.pane.get('pane_current_path')
+        logger.info(f'cwd1: {cwd}')
 
         # Configure bash to use simple PS1 and disable PS2
         logger.info(f'PS1: {self.PS1}')
@@ -246,7 +248,11 @@ class BashSession:
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
         )
         time.sleep(0.1)  # Wait for command to take effect
+        cwd = self.pane.get('pane_current_path')
+        logger.info(f'cwd2: {cwd}')
         self._clear_screen()
+        cwd = self.pane.get('pane_current_path')
+        logger.info(f'cwd3: {cwd}')
 
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
