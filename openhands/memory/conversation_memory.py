@@ -78,7 +78,6 @@ class ConversationMemory:
         max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
-        print(f'DEBUG: process_events called with {len(condensed_history)} events')
         """Process state history into a list of messages for the LLM.
 
         Ensures that tool call actions are processed correctly in function calling mode.
@@ -96,10 +95,6 @@ class ConversationMemory:
         self._ensure_system_message(events)
         self._ensure_initial_user_message(events, initial_user_action)
 
-        print('DEBUG: After ensuring messages, events list:')
-        for i, event in enumerate(events):
-            print(f'  {i}: {type(event)} - {event}')
-
         # log visual browsing status
         logger.debug(f'Visual browsing: {self.agent_config.enable_som_visual_browsing}')
 
@@ -111,10 +106,8 @@ class ConversationMemory:
         tool_call_id_to_message: dict[str, Message] = {}
 
         for i, event in enumerate(events):
-            print(f'DEBUG: Processing event {i}: {type(event)} - {event}')
             # create a regular message from an event
             if isinstance(event, Action):
-                print(f'DEBUG: Processing Action: {type(event)}')
                 messages_to_add = self._process_action(
                     action=event,
                     pending_tool_call_action_messages=pending_tool_call_action_messages,
@@ -193,7 +186,6 @@ class ConversationMemory:
         pending_tool_call_action_messages: dict[str, Message],
         vision_is_active: bool = False,
     ) -> list[Message]:
-        print(f'DEBUG: _process_action called with action type: {type(action)}')
         """Converts an action into a message format that can be sent to the LLM.
 
         This method handles different types of actions and formats them appropriately:
@@ -278,15 +270,11 @@ class ConversationMemory:
             return []
         elif isinstance(action, AgentFinishAction):
             role = 'user' if action.source == 'user' else 'assistant'
-            print(
-                f"DEBUG: AgentFinishAction - role={role}, initial_thought='{action.thought}', source={action.source}"
-            )
 
             # when agent finishes, it has tool_metadata
             # which has already been executed, and it doesn't have a response
             # when the user finishes (/exit), we don't have tool_metadata
             tool_metadata = action.tool_call_metadata
-            print(f'DEBUG: tool_metadata is None: {tool_metadata is None}')
             if tool_metadata is not None:
                 # take the response message from the tool call
                 assistant_msg = getattr(
@@ -301,27 +289,17 @@ class ConversationMemory:
                         action.thought += '\n' + content
                 else:
                     action.thought = content
-                print(
-                    f"DEBUG: after tool_metadata processing, action.thought='{action.thought}'"
-                )
 
                 # remove the tool call metadata
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
 
-            print(
-                f"DEBUG: before fix check - action.thought='{action.thought}', role='{role}'"
-            )
             # Ensure assistant messages have non-empty content (required by some LLM providers like Mistral)
             if role == 'assistant' and not (action.thought and action.thought.strip()):
                 thought_text = 'Task completed.'
-                print("DEBUG: Applied fix - setting thought_text to 'Task completed.'")
             else:
                 thought_text = action.thought or ''
-                print(f"DEBUG: Using original thought - thought_text='{thought_text}'")
-
-            print(f"DEBUG: Final thought_text='{thought_text}'")
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
