@@ -116,8 +116,6 @@ export function CustomChatInput({
       gripRef.current.classList.remove("opacity-100");
       gripRef.current.classList.add("opacity-0");
     }
-    // Reset the state
-    setIsGripVisible(false);
   }, []);
 
   // Handle click on top edge area to toggle grip visibility
