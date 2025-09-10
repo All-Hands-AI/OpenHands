@@ -4,7 +4,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread

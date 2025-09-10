@@ -10,7 +10,7 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 
 
 class TestUserSecrets:

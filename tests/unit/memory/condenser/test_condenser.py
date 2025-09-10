@@ -16,7 +16,7 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
     StructuredSummaryCondenserConfig,
 )
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType

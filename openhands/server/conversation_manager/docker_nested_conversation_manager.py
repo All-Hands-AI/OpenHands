@@ -15,7 +15,7 @@ from docker.models.containers import Container
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore

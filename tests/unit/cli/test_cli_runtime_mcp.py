@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,

@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.llm.llm import LLM
 
 

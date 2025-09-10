@@ -5,7 +5,7 @@ import pytest
 
 # Import the module, not the functions directly to avoid circular imports
 import openhands.mcp.utils
-from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
+from openhands_configuration import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 
@@ -232,7 +232,7 @@ async def test_create_mcp_clients_stdio_connection_failure(mock_mcp_client):
 @patch('openhands.mcp.utils.create_mcp_clients')
 async def test_fetch_mcp_tools_from_config_with_stdio(mock_create_clients):
     """Test fetching MCP tools with stdio servers enabled."""
-    from openhands.core.config.mcp_config import MCPConfig
+    from openhands_configuration import MCPConfig
 
     # Setup mock clients
     mock_client = MagicMock()

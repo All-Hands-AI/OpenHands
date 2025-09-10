@@ -12,11 +12,11 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
+from openhands_configuration import LLMConfig, SandboxConfig
 from pydantic import BaseModel
 from tqdm import tqdm
 
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig, SandboxConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import (
     CondenserConfig,

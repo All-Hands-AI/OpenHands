@@ -5,7 +5,7 @@ import pytest
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType

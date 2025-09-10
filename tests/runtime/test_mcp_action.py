@@ -10,10 +10,9 @@ import pytest
 from conftest import (
     _load_runtime,
 )
+from openhands_configuration import MCPConfig, MCPSSEServerConfig, MCPStdioServerConfig
 
 import openhands
-from openhands.core.config import MCPConfig
-from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction, MCPAction
 from openhands.events.observation import CmdOutputObservation, MCPObservation

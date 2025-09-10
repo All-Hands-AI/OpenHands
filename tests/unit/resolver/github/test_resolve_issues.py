@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import (
     CmdOutputMetadata,

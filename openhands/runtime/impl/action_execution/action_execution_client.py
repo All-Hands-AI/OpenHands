@@ -10,7 +10,7 @@ import httpx
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,

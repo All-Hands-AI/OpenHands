@@ -3,8 +3,8 @@ import pickle
 from unittest.mock import patch
 
 import pytest
+from openhands_configuration import LLMConfig, OpenHandsConfig
 
-from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry, RegistryEvent
 from openhands.llm.metrics import Metrics

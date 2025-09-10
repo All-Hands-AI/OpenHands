@@ -25,7 +25,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 
 
 class GitlabManager(Manager):

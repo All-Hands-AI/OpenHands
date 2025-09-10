@@ -239,7 +239,7 @@ class TestHandleHelpCommand:
 class TestDisplayMcpServers:
     @patch('openhands.cli.commands.print_formatted_text')
     def test_display_mcp_servers_no_servers(self, mock_print):
-        from openhands.core.config.mcp_config import MCPConfig
+        from openhands_configuration import MCPConfig
 
         config = MagicMock(spec=OpenHandsConfig)
         config.mcp = MCPConfig()  # Empty config with no servers
@@ -256,7 +256,7 @@ class TestDisplayMcpServers:
 
     @patch('openhands.cli.commands.print_formatted_text')
     def test_display_mcp_servers_with_servers(self, mock_print):
-        from openhands.core.config.mcp_config import (
+        from openhands_configuration import (
             MCPConfig,
             MCPSHTTPServerConfig,
             MCPSSEServerConfig,

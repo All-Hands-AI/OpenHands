@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.storage import get_file_store
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.utils.async_utils import call_sync_from_async

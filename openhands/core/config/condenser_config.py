@@ -5,7 +5,7 @@ from typing import Literal, cast
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core import logger
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 
 
 class NoOpCondenserConfig(BaseModel):

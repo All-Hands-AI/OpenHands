@@ -1,4 +1,5 @@
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
+
 from openhands.integrations.provider import ProviderType
 from openhands.resolver.interfaces.bitbucket import (
     BitbucketIssueHandler,

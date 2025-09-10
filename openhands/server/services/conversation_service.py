@@ -2,7 +2,7 @@ import uuid
 from types import MappingProxyType
 from typing import Any
 
-from openhands.core.config.mcp_config import MCPConfig
+from openhands_configuration import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
@@ -27,7 +27,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 from pydantic import SecretStr
 
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig

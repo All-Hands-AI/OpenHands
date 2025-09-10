@@ -14,7 +14,7 @@ from openhands.controller.state.control_flags import (
 from openhands.controller.state.state import State
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (

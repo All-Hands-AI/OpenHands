@@ -83,6 +83,7 @@ python-pptx = "*"
 pylatexenc = "*"
 python-docx = "*"
 bashlex = "^0.18"
+openhands-configuration = { git = "https://github.com/All-Hands-AI/OpenHands.git", rev = "24dd17016d40b1edb933b9acf61a45301b0b1d99", subdirectory = "configuration" }
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"

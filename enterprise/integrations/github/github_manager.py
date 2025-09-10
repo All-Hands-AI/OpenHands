@@ -31,7 +31,7 @@ from server.utils.conversation_callback_utils import register_callback_processor
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 from openhands.utils.async_utils import call_sync_from_async
 
 

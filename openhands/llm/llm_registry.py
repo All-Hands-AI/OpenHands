@@ -2,10 +2,10 @@ import copy
 from typing import Any, Callable
 from uuid import uuid4
 
+from openhands_configuration import LLMConfig
 from pydantic import BaseModel, ConfigDict
 
 from openhands.core.config.agent_config import AgentConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM

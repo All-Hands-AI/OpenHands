@@ -22,7 +22,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 async def test_get_microagents():
     """Test the get_microagents function directly."""
     # Create mock microagents
-    from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
+    from openhands_configuration import MCPConfig, MCPStdioServerConfig
 
     repo_microagent = RepoMicroagent(
         name='test_repo',

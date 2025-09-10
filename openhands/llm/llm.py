@@ -6,8 +6,8 @@ from functools import partial
 from typing import Any, Callable, cast
 
 import httpx
+from openhands_configuration import LLMConfig
 
-from openhands.core.config import LLMConfig
 from openhands.llm.metrics import Metrics
 from openhands.llm.model_features import get_features
 

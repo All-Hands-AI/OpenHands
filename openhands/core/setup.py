@@ -3,6 +3,7 @@ import os
 import uuid
 from typing import Callable
 
+from openhands_configuration import UserSecrets
 from pydantic import SecretStr
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
@@ -28,7 +29,6 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
-from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 

@@ -8,13 +8,13 @@ from fastmcp.client.transports import (
 )
 from mcp import McpError
 from mcp.types import CallToolResult
-from pydantic import BaseModel, ConfigDict, Field
-
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+from pydantic import BaseModel, ConfigDict, Field
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.mcp.error_collector import mcp_error_collector
 from openhands.mcp.tool import MCPClientTool

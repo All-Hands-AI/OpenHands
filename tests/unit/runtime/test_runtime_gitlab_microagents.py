@@ -137,7 +137,7 @@ class MockRuntime(Runtime):
         return []
 
     def get_mcp_config(self, extra_stdio_servers=None):
-        from openhands.core.config.mcp_config import MCPConfig
+        from openhands_configuration import MCPConfig
 
         return MCPConfig()
 

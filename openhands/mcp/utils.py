@@ -8,13 +8,13 @@ if TYPE_CHECKING:
 
 
 from mcp import McpError
-
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation

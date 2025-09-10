@@ -5,9 +5,9 @@ import shutil
 import subprocess
 
 import jinja2
+from openhands_configuration import LLMConfig
 from pydantic import SecretStr
 
-from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM

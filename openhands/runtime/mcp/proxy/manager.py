@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 
-from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands_configuration import MCPStdioServerConfig
 
 logger = logging.getLogger(__name__)
 fastmcp_logger = fastmcp_get_logger('fastmcp')

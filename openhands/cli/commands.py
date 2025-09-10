@@ -5,6 +5,11 @@ from pathlib import Path
 from typing import Any
 
 import tomlkit
+from openhands_configuration import (
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
@@ -36,11 +41,6 @@ from openhands.cli.utils import (
 )
 from openhands.core.config import (
     OpenHandsConfig,
-)
-from openhands.core.config.mcp_config import (
-    MCPSHTTPServerConfig,
-    MCPSSEServerConfig,
-    MCPStdioServerConfig,
 )
 from openhands.core.schema import AgentState
 from openhands.core.schema.exit_reason import ExitReason

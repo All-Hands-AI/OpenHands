@@ -1,7 +1,8 @@
 import copy
 from typing import TYPE_CHECKING
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
+
 from openhands.core.logger import openhands_logger as logger
 
 if TYPE_CHECKING:

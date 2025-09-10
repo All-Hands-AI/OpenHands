@@ -2,7 +2,8 @@
 
 from typing import Optional
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource

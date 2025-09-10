@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 
 
 class SecretsStore(ABC):

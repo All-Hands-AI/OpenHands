@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
+from openhands_configuration import MCPConfig, MCPSSEServerConfig
 from openhands.mcp import MCPClient, create_mcp_clients, fetch_mcp_tools_from_config
 
 

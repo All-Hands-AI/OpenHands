@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig, load_from_env
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,

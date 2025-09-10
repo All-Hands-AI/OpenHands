@@ -1,11 +1,10 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
-
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPConfig,
 )
+from pydantic import BaseModel, Field
 
 
 class MicroagentType(str, Enum):

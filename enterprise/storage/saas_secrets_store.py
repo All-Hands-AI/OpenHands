@@ -11,7 +11,7 @@ from storage.stored_user_secrets import StoredUserSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 
 

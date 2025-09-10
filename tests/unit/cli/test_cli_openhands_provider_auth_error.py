@@ -7,7 +7,7 @@ from litellm.exceptions import AuthenticationError
 from pydantic import SecretStr
 
 from openhands.cli import main as cli
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 

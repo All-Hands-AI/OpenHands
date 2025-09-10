@@ -6,7 +6,7 @@ import pytest_asyncio
 
 from openhands.cli import main as cli
 from openhands.controller.state.state import State
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 

@@ -5,7 +5,7 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus

@@ -30,7 +30,7 @@ from openhands.integrations.provider import (
 )
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import AuthType, UserAuth
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 token_manager = TokenManager()

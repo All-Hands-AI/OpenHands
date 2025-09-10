@@ -3,7 +3,8 @@ from __future__ import annotations
 import unittest
 from unittest.mock import MagicMock, patch
 
-from openhands.core.config.llm_config import LLMConfig
+from openhands_configuration import LLMConfig
+
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.llm.llm_registry import LLMRegistry, RegistryEvent
 

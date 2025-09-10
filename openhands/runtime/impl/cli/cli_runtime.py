@@ -23,7 +23,7 @@ from openhands_aci.utils.diff import get_diff
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
+from openhands_configuration import MCPConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (

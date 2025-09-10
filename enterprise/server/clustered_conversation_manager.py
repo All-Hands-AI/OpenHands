@@ -11,7 +11,7 @@ from storage.database import session_maker
 from storage.saas_settings_store import SaasSettingsStore
 from storage.stored_conversation_metadata import StoredConversationMetadata
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.utils import load_openhands_config
 from openhands.core.schema.agent import AgentState

@@ -5,7 +5,7 @@ from urllib.parse import quote
 
 import pytest
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread

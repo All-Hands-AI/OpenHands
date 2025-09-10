@@ -5,6 +5,9 @@ import logging
 import os
 import sys
 
+from openhands_configuration import (
+    OpenHandsMCPConfigImpl,
+)
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
@@ -49,9 +52,6 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import (
-    OpenHandsMCPConfigImpl,
-)
 from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done

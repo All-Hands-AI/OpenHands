@@ -22,7 +22,7 @@ from sklearn.exceptions import NotFittedError
 from sklearn.inspection import permutation_importance
 from sklearn.utils.validation import check_is_fitted
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 
 
 class SolvabilityClassifier(BaseModel):

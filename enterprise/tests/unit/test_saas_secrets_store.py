@@ -9,7 +9,7 @@ from storage.stored_user_secrets import StoredUserSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.integrations.provider import CustomSecret
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands_configuration import UserSecrets
 
 
 @pytest.fixture

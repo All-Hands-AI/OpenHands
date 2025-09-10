@@ -9,7 +9,7 @@ from litellm.exceptions import (
     RateLimitError,
 )
 
-from openhands.core.config import LLMConfig
+from openhands_configuration import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
 from openhands.llm.async_llm import AsyncLLM

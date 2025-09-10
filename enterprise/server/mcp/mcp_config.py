@@ -5,7 +5,7 @@ from storage.api_key_store import ApiKeyStore
 if TYPE_CHECKING:
     from openhands.core.config.openhands_config import OpenHandsConfig
 
-from openhands.core.config.mcp_config import (
+from openhands_configuration import (
     MCPSHTTPServerConfig,
     MCPStdioServerConfig,
     OpenHandsMCPConfig,

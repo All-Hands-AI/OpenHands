@@ -4,6 +4,8 @@ import os
 from pathlib import Path
 from typing import Callable, Protocol
 
+from openhands_configuration import OpenHandsMCPConfigImpl
+
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.replay import ReplayManager
@@ -13,7 +15,6 @@ from openhands.core.config import (
     parse_arguments,
     setup_config_from_args,
 )
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState

@@ -7,7 +7,7 @@ import socketio
 from server.clustered_conversation_manager import ClusteredConversationManager
 from server.saas_nested_conversation_manager import SaasNestedConversationManager
 
-from openhands.core.config import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig, OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (

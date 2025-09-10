@@ -14,9 +14,9 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
+from openhands_configuration import MCPConfig, MCPStdioServerConfig
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
 )
