@@ -13,6 +13,7 @@ from openhands.events.observation import Observation
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
 
+
 class ConversationWindowCondenser(RollingCondenser):
     def __init__(self) -> None:
         super().__init__()
