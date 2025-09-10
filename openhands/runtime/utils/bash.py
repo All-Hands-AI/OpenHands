@@ -237,6 +237,8 @@ class BashSession:
             start_directory=self.work_dir,  # This parameter is supported by libtmux
         )
         self.pane = self.window.active_pane
+        cwd = self.pane.get('pane_current_path')
+        logger.info(f'cwd0: {cwd}')
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill()
         cwd = self.pane.get('pane_current_path')
