@@ -30,6 +30,7 @@ class OpenHandsConfig(BaseModel):
             The default configuration is stored under the 'agent' key.
         default_agent: Name of the default agent to use.
         sandbox: Sandbox configuration settings.
+        security: Security configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
@@ -157,12 +158,15 @@ class OpenHandsConfig(BaseModel):
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
-        agent_config: AgentConfig = self.get_agent_config(name)
+    def get_llm_config_from_agent_config(self, agent_config: AgentConfig):
         llm_config_name = (
             agent_config.llm_config if agent_config.llm_config is not None else 'llm'
         )
         return self.get_llm_config(llm_config_name)
+
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        return self.get_llm_config_from_agent_config(agent_config)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents
