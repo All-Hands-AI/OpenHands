@@ -151,7 +151,8 @@ class AgentSession:
                 await provider_handler.set_event_stream_secrets(self.event_stream)
 
             if custom_secrets:
-                custom_secrets_handler.set_event_stream_secrets(self.event_stream)
+                secrets = custom_secrets_handler.get_env_vars()
+                self.event_stream.set_secrets(secrets)
 
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
