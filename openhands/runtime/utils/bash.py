@@ -239,6 +239,8 @@ class BashSession:
         self.pane = self.window.active_pane
         self.pane.send_keys(f'cd {self.work_dir}', enter=True)
         time.sleep(0.1)  # Wait for command to take effect
+        recent_output = self.pane.capture_pane(start=-20, end=-1, join=True)
+        logger.info(f'cd output: {recent_output}')
         cwd = self.pane.get('pane_current_path')
         logger.info(f'cwd0: {cwd}')
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
