@@ -1,0 +1,83 @@
+# Workflow that builds and tests the CLI binary executable
+name: CLI - Build and Test Binary
+
+# Run on pushes to main branch and all pull requests, but only when CLI files change
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'openhands-cli/**'
+  pull_request:
+    paths:
+      - 'openhands-cli/**'
+
+# Cancel previous runs if a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test-binary:
+    name: Build and test binary executable
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        working-directory: openhands-cli
+        run: |
+          uv sync --dev
+
+      - name: Build binary executable
+        working-directory: openhands-cli
+        run: |
+          ./build.sh --install-pyinstaller --no-test
+
+      - name: Test binary startup and /help command
+        working-directory: openhands-cli
+        env:
+          LITELLM_API_KEY: dummy-ci-key
+          LITELLM_MODEL: dummy-ci-model
+        run: |
+          # Test that binary starts and responds to /help command
+          echo "Testing binary startup and /help command..."
+
+          # Send /help command and then exit
+          echo -e "/help\n/exit" | timeout 30s ./dist/openhands-cli 2>&1 | tee output.log || true
+
+          # Check that the application started successfully
+          if grep -q "OpenHands CLI Help" output.log; then
+            echo "✅ Application started and /help command works correctly"
+          else
+            echo "❌ /help command output not found"
+            echo "Full output:"
+            cat output.log
+            exit 1
+          fi
+
+          # Check for expected help content
+          if grep -q "Available commands:" output.log && grep -q "/exit - Exit the application" output.log; then
+            echo "✅ Help content is correct"
+          else
+            echo "❌ Expected help content not found"
+            echo "Full output:"
+            cat output.log
+            exit 1
+          fi
+
+          echo "✅ Binary test completed successfully"
