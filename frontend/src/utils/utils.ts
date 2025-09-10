@@ -1,10 +1,23 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
+import { SuggestedTaskGroup } from "#/utils/types";
+import { ConversationStatus } from "#/types/conversation-status";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Detect if the user is on a mobile device
+ * @returns True if the user is on a mobile device, false otherwise
+ */
+export const isMobileDevice = (): boolean =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  ) ||
+  "ontouchstart" in window ||
+  navigator.maxTouchPoints > 0;
 
 interface EventActionHistory {
   args?: {
@@ -83,6 +96,21 @@ export const removeApiKey = (
 export const getExtension = (code: string) => {
   if (code.includes(".")) return code.split(".").pop() || "";
   return "";
+};
+
+/**
+ * Get file extension from file name in uppercase format
+ * @param fileName The file name to extract extension from
+ * @returns The file extension in uppercase, or "FILE" if no extension found
+ *
+ * @example
+ * getFileExtension("document.pdf") // "PDF"
+ * getFileExtension("image.jpeg") // "JPEG"
+ * getFileExtension("noextension") // "FILE"
+ */
+export const getFileExtension = (fileName: string): string => {
+  const extension = fileName.split(".").pop()?.toUpperCase();
+  return extension || "FILE";
 };
 
 /**
@@ -246,6 +274,156 @@ export const extractRepositoryInfo = (
 };
 
 /**
+ * Construct the repository URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @returns The repository URL
+ *
+ * @example
+ * constructRepositoryUrl("github", "owner/repo") // "https://github.com/owner/repo"
+ * constructRepositoryUrl("gitlab", "owner/repo") // "https://gitlab.com/owner/repo"
+ * constructRepositoryUrl("bitbucket", "owner/repo") // "https://bitbucket.org/owner/repo"
+ */
+export const constructRepositoryUrl = (
+  provider: Provider,
+  repositoryName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+  return `${baseUrl}/${repositoryName}`;
+};
+
+/**
+ * Construct the branch URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @param branchName The branch name
+ * @returns The branch URL
+ *
+ * @example
+ * constructBranchUrl("github", "owner/repo", "main") // "https://github.com/owner/repo/tree/main"
+ * constructBranchUrl("gitlab", "owner/repo", "develop") // "https://gitlab.com/owner/repo/-/tree/develop"
+ * constructBranchUrl("bitbucket", "owner/repo", "feature") // "https://bitbucket.org/owner/repo/src/feature"
+ */
+export const constructBranchUrl = (
+  provider: Provider,
+  repositoryName: string,
+  branchName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+
+  switch (provider) {
+    case "github":
+      return `${baseUrl}/${repositoryName}/tree/${branchName}`;
+    case "gitlab":
+      return `${baseUrl}/${repositoryName}/-/tree/${branchName}`;
+    case "bitbucket":
+      return `${baseUrl}/${repositoryName}/src/${branchName}`;
+    default:
+      return "";
+  }
+};
+
+// Git Action Prompts
+
+/**
+ * Generate a git pull prompt
+ * @returns The git pull prompt
+ */
+export const getGitPullPrompt = (): string =>
+  "Please pull the latest code from the repository.";
+
+/**
+ * Generate a git push prompt
+ * @param gitProvider The git provider
+ * @returns The git push prompt
+ */
+export const getGitPushPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the changes to a remote branch on ${providerName}, but do NOT create a ${pr}. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`;
+};
+
+/**
+ * Generate a create pull request prompt
+ * @param gitProvider The git provider
+ * @returns The create PR prompt
+ */
+export const getCreatePRPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+  const prShort = getPRShort(gitProvider === "gitlab");
+
+  return `Please push the changes to ${providerName} and open a ${pr}. If you're on a default branch (e.g., main, master, deploy), create a new branch with a descriptive name otherwise use the current branch. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
+
+/**
+ * Generate a push to existing PR prompt
+ * @param gitProvider The git provider
+ * @returns The push to PR prompt
+ */
+export const getPushToPRPrompt = (gitProvider: Provider): string => {
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the latest changes to the existing ${pr}.`;
+};
+
+/**
+ * Generate a create new branch prompt
+ * @returns The create new branch prompt
+ */
+export const getCreateNewBranchPrompt = (): string =>
+  "Please create a new branch with a descriptive name related to the work you plan to do.";
+
+// Helper functions
+export function getTotalTaskCount(
+  suggestedTasks: SuggestedTaskGroup[] | undefined,
+): number {
+  if (!suggestedTasks) return 0;
+  return suggestedTasks.flatMap((group) => group.tasks).length;
+}
+
+export function getLimitedTaskGroups(
+  suggestedTasks: SuggestedTaskGroup[],
+  maxTasks: number,
+): SuggestedTaskGroup[] {
+  const limitedGroups: SuggestedTaskGroup[] = [];
+  let taskCount = 0;
+
+  for (const group of suggestedTasks) {
+    if (taskCount >= maxTasks) break;
+
+    const remainingTasksNeeded = maxTasks - taskCount;
+    const tasksToShow = group.tasks.slice(0, remainingTasksNeeded);
+
+    if (tasksToShow.length > 0) {
+      limitedGroups.push({
+        ...group,
+        tasks: tasksToShow,
+      });
+      taskCount += tasksToShow.length;
+    }
+  }
+
+  return limitedGroups;
+}
+
+export function getDisplayedTaskGroups(
+  suggestedTasks: SuggestedTaskGroup[] | undefined,
+  isExpanded: boolean,
+): SuggestedTaskGroup[] {
+  if (!suggestedTasks || suggestedTasks.length === 0) {
+    return [];
+  }
+
+  if (isExpanded) {
+    return suggestedTasks;
+  }
+
+  return getLimitedTaskGroups(suggestedTasks, 3);
+}
+
+/**
  * Get the repository markdown creation prompt with additional PR creation instructions
  * @param gitProvider The git provider to use for generating provider-specific text
  * @param query Optional custom query to use instead of the default prompt
@@ -271,4 +449,28 @@ export const getRepoMdCreatePrompt = (
             }
 
 Please push the changes to your branch on ${providerName} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
+
+/**
+ * Get the label for a conversation status
+ * @param status The conversation status
+ * @returns The localized label for the status
+ */
+export const getConversationStatusLabel = (
+  status: ConversationStatus,
+): string => {
+  switch (status) {
+    case "STOPPED":
+      return "COMMON$STOPPED";
+    case "RUNNING":
+      return "COMMON$RUNNING";
+    case "STARTING":
+      return "COMMON$STARTING";
+    case "ERROR":
+      return "COMMON$ERROR";
+    case "ARCHIVED":
+      return "COMMON$ARCHIVED"; // Use STOPPED for archived conversations
+    default:
+      return "COMMON$UNKNOWN";
+  }
 };

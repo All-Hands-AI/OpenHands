@@ -2,7 +2,6 @@ import React from "react";
 import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { ConversationCard } from "./conversation-card";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
@@ -15,6 +14,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { ConversationCard } from "./conversation-card/conversation-card";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -106,16 +106,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation(
-        { conversationId: selectedConversationId },
-        {
-          onSuccess: () => {
-            if (selectedConversationId === currentConversationId) {
-              navigate("/");
-            }
-          },
-        },
-      );
+      stopConversation({ conversationId: selectedConversationId });
     }
   };
 
@@ -128,7 +119,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           scrollContainerRef.current = node;
       }}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
+      className="w-full md:w-[400px] h-full border border-[#525252] bg-[#25272D] rounded-lg overflow-y-auto absolute custom-scrollbar-always"
     >
       {isFetching && conversations.length === 0 && (
         <div className="w-full h-full absolute flex justify-center items-center">
@@ -140,7 +131,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           <p className="text-danger">{error.message}</p>
         </div>
       )}
-      {conversations?.length === 0 && (
+      {!isFetching && conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-neutral-400">
             {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
@@ -153,30 +144,27 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           to={`/conversations/${project.conversation_id}`}
           onClick={onClose}
         >
-          {({ isActive }) => (
-            <ConversationCard
-              isActive={isActive}
-              onDelete={() => handleDeleteProject(project.conversation_id)}
-              onStop={() => handleStopConversation(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleConversationTitleChange(project.conversation_id, title)
-              }
-              title={project.title}
-              selectedRepository={{
-                selected_repository: project.selected_repository,
-                selected_branch: project.selected_branch,
-                git_provider: project.git_provider as Provider,
-              }}
-              lastUpdatedAt={project.last_updated_at}
-              createdAt={project.created_at}
-              conversationStatus={project.status}
-              conversationId={project.conversation_id}
-              contextMenuOpen={openContextMenuId === project.conversation_id}
-              onContextMenuToggle={(isOpen) =>
-                setOpenContextMenuId(isOpen ? project.conversation_id : null)
-              }
-            />
-          )}
+          <ConversationCard
+            onDelete={() => handleDeleteProject(project.conversation_id)}
+            onStop={() => handleStopConversation(project.conversation_id)}
+            onChangeTitle={(title) =>
+              handleConversationTitleChange(project.conversation_id, title)
+            }
+            title={project.title}
+            selectedRepository={{
+              selected_repository: project.selected_repository,
+              selected_branch: project.selected_branch,
+              git_provider: project.git_provider as Provider,
+            }}
+            lastUpdatedAt={project.last_updated_at}
+            createdAt={project.created_at}
+            conversationStatus={project.status}
+            conversationId={project.conversation_id}
+            contextMenuOpen={openContextMenuId === project.conversation_id}
+            onContextMenuToggle={(isOpen) =>
+              setOpenContextMenuId(isOpen ? project.conversation_id : null)
+            }
+          />
         </NavLink>
       ))}
 

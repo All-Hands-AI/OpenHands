@@ -60,8 +60,13 @@ export const useTerminal = ({
     new Terminal({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
+      scrollback: 1000,
+      scrollSensitivity: 1,
+      fastScrollModifier: "alt",
+      fastScrollSensitivity: 5,
+      allowTransparency: true,
       theme: {
-        background: "#24272E",
+        background: "transparent",
       },
     });
 

@@ -3,9 +3,7 @@ import { useLocation } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
-import { DocsButton } from "#/components/shared/buttons/docs-button";
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
-import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -15,6 +13,7 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
+import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const location = useLocation();
@@ -32,6 +31,8 @@ export function Sidebar() {
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
+
+  const { pathname } = useLocation();
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings =
@@ -64,13 +65,20 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+      <aside
+        className={cn(
+          "h-[54px] p-3 md:p-0 md:h-[40px] md:h-auto flex flex-row md:flex-col gap-1 bg-base md:w-[75px] md:min-w-[75px] sm:pt-0 sm:px-2 md:pt-[14px] md:px-0",
+          pathname === "/" && "md:pt-6.5 md:pb-3",
+        )}
+      >
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
           <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">
               <AllHandsLogoButton />
             </div>
-            <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
+            <div>
+              <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
+            </div>
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
               onClick={() =>
@@ -85,9 +93,7 @@ export function Sidebar() {
             />
           </div>
 
-          <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
-            <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
-            <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
+          <div className="flex flex-row md:flex-col md:items-center gap-[26px]">
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined

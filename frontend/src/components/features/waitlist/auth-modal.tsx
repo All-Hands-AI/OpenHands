@@ -117,7 +117,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleGitHubAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<GitHubLogo width={20} height={20} />}
                 >
                   {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
@@ -129,7 +129,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleGitLabAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<GitLabLogo width={20} height={20} />}
                 >
                   {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
@@ -141,7 +141,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleBitbucketAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<BitbucketLogo width={20} height={20} />}
                 >
                   {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
@@ -153,7 +153,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleEnterpriseSsoAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                 >
                   {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
                 </BrandButton>
