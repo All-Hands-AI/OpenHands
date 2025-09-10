@@ -11,7 +11,9 @@ from openhands.events.event import EventSource
 from openhands.events.observation import Observation
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
-
+from openhands.core.exceptions import (
+    CondenserValidationException,
+)
 
 class ConversationWindowCondenser(RollingCondenser):
     def __init__(self) -> None:
@@ -170,6 +172,8 @@ class ConversationWindowCondenser(RollingCondenser):
                 action = CondensationAction(forgotten_event_ids=forgotten_event_ids)
         else:
             action = CondensationAction(forgotten_event_ids=[])
+            if self.should_condense(view):
+                raise CondenserValidationException()
 
         return Condensation(action=action)
 
