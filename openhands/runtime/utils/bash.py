@@ -237,6 +237,8 @@ class BashSession:
             start_directory=self.work_dir,  # This parameter is supported by libtmux
         )
         self.pane = self.window.active_pane
+        self.pane.send_keys(f'cd {self.work_dir}', enter=True)
+        time.sleep(0.1)  # Wait for command to take effect
         cwd = self.pane.get('pane_current_path')
         logger.info(f'cwd0: {cwd}')
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
