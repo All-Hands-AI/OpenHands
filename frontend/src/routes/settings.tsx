@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -8,6 +9,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -62,10 +64,22 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
+  const { data: subscriptionAccess } = useSubscriptionAccess();
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
-  const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
+  const navItems = useMemo(() => {
+    const items = [];
+    if (isSaas) {
+      if (subscriptionAccess) {
+        items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
+      }
+      items.push(...SAAS_NAV_ITEMS);
+    } else {
+      items.push(...OSS_NAV_ITEMS);
+    }
+    return items;
+  }, [isSaas, !!subscriptionAccess]);
 
   return (
     <main
@@ -79,7 +93,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
+        className="flex items-end gap-6 px-3 md:px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink

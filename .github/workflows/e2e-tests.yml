@@ -187,6 +187,7 @@ jobs:
             test_settings.py::test_github_token_configuration \
             test_conversation.py::test_conversation_start \
             test_browsing_catchphrase.py::test_browsing_catchphrase \
+            test_multi_conversation_resume.py::test_multi_conversation_resume \
             -v --no-header --capture=no --timeout=900
 
       - name: Upload test results

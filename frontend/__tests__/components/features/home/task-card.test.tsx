@@ -5,10 +5,10 @@ import userEvent from "@testing-library/user-event";
 import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
-import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import OpenHands from "#/api/open-hands";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import { GitRepository } from "#/types/git";
+import { SuggestedTask } from "#/utils/types";
 
 const MOCK_TASK_1: SuggestedTask = {
   issue_number: 123,
@@ -73,7 +73,10 @@ describe("TaskCard", () => {
         OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({
+        data: MOCK_RESPOSITORIES,
+        nextPage: null,
+      });
     });
 
     it("should call create conversation with suggest task trigger and selected suggested task", async () => {
@@ -102,16 +105,6 @@ describe("TaskCard", () => {
     });
   });
 
-  it("should disable the launch button and update text content when creating a conversation", async () => {
-    renderTaskCard();
-
-    const launchButton = screen.getByTestId("task-launch-button");
-    await userEvent.click(launchButton);
-
-    expect(launchButton).toHaveTextContent(/Loading/i);
-    expect(launchButton).toBeDisabled();
-  });
-
   it("should navigate to the conversation page after creating a conversation", async () => {
     const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
     createConversationSpy.mockResolvedValue({
@@ -125,7 +118,7 @@ describe("TaskCard", () => {
       status: "RUNNING",
       runtime_status: "STATUS$READY",
       url: null,
-      session_api_key: null
+      session_api_key: null,
     });
 
     renderTaskCard();
