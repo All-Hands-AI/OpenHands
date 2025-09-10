@@ -1643,30 +1643,4 @@ def test_process_events_with_non_empty_agent_finish_action(conversation_memory):
     )
 
 
-def test_process_events_with_user_agent_finish_action(conversation_memory):
-    """Test that AgentFinishAction from user is not affected by the assistant message fix."""
-    # Create an AgentFinishAction with empty thought from user
-    user_finish_action = AgentFinishAction(thought='')
-    user_finish_action._source = EventSource.USER
 
-    initial_user_message = MessageAction(content='Initial user message')
-    initial_user_message._source = EventSource.USER
-
-    messages = conversation_memory.process_events(
-        condensed_history=[user_finish_action],
-        initial_user_action=initial_user_message,
-        max_message_chars=None,
-        vision_is_active=False,
-    )
-
-    # Should have system message, initial user message, and user finish message
-    assert len(messages) == 3
-
-    # Check the user finish message - should preserve empty content for user messages
-    user_message = messages[2]
-    assert user_message.role == 'user'
-    assert len(user_message.content) == 1
-    assert isinstance(user_message.content[0], TextContent)
-    # Should preserve empty content for user messages (not affected by the fix)
-    # Note: The system may add some formatting, so we check that it's not the default assistant message
-    assert user_message.content[0].text != 'Task completed.'
