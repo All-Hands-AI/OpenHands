@@ -197,9 +197,9 @@ class BashSession:
         self.server.cmd('set-option', '-g', 'debug', '9')
 
         _shell_command = '/bin/bash'
-        # if self.username in ['root', 'openhands']:
-        #     # This starts a non-login (new) shell for the given user
-        #     _shell_command = f'su {self.username} -'
+        if self.username in ['root', 'openhands']:
+            # This starts a non-login (new) shell for the given user
+            _shell_command = f'su {self.username} -'
 
         # FIXME: we will introduce memory limit using sysbox-runc in coming PR
         # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
