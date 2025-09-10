@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import ConversationWindowCondenserConfig
+from openhands.core.exceptions import CondenserValidationException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import (
     CondensationAction,
@@ -11,9 +12,6 @@ from openhands.events.event import EventSource
 from openhands.events.observation import Observation
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, RollingCondenser, View
-from openhands.core.exceptions import (
-    CondenserValidationException,
-)
 
 class ConversationWindowCondenser(RollingCondenser):
     def __init__(self) -> None:
