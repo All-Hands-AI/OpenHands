@@ -193,8 +193,8 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         # enable logging
-        self.server.cmd('set-option', '-g', 'debug-file', '/tmp/tmux-debug.log')
-        self.server.cmd('set-option', '-g', 'debug', '9')
+        self.server.cmd('set-option', '-s', 'debug-file', '/tmp/tmux-debug.log')
+        self.server.cmd('set-option', '-s', 'debug', '9')
 
         _shell_command = '/bin/bash'
         if self.username in ['root', 'openhands']:
@@ -240,8 +240,8 @@ class BashSession:
         time.sleep(0.1)  # Wait for command to take effect
         self.pane.send_keys(f'cd {self.work_dir} && pwd', enter=True)
         time.sleep(1)  # Wait for command to take effect
-        recent_output = '\n'.join(self.pane.capture_pane(start=-20, end=-1))
-        logger.info(f'cd output: {recent_output}')
+        cur_pane_output = self._get_pane_content()
+        logger.info(f'cd output: {cur_pane_output}')
         cwd = self.pane.get('pane_current_path')
         logger.info(f'cwd0: {cwd}')
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
