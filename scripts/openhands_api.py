@@ -5,10 +5,8 @@ Default base_url is https://app.all-hands.dev.
 
 from __future__ import annotations
 
-import argparse
 import os
 import time
-from pathlib import Path
 from typing import Any
 
 import requests
@@ -71,25 +69,6 @@ class OpenHandsAPI:
         response.raise_for_status()
         return response.json()
 
-    def create_conversation_from_files(
-        self,
-        main_prompt_path: str,
-        repository: str | None = None,
-        append_common_tail: bool = True,
-        common_tail_path: str = 'scripts/prompts/common_tail.j2',
-    ) -> dict[str, Any]:
-        """Create a conversation by reading a prompt file and optional common tail."""
-        main_text = Path(main_prompt_path).read_text()
-        if append_common_tail and Path(common_tail_path).exists():
-            tail = Path(common_tail_path).read_text()
-            initial_user_msg = f'{main_text}\n\n{tail}'
-        else:
-            initial_user_msg = main_text
-        return self.create_conversation(
-            initial_user_msg=initial_user_msg,
-            repository=repository,
-        )
-
     def get_conversation(self, conversation_id: str) -> dict[str, Any]:
         """Get conversation status and details."""
         response = self.session.get(
@@ -137,42 +116,5 @@ class OpenHandsAPI:
         response.raise_for_status()
 
 
-def cli_create_convo_from_prompt():
-    parser = argparse.ArgumentParser(
-        description='Create an OpenHands conversation from a prompt file'
-    )
-    parser.add_argument(
-        '--prompt',
-        required=True,
-        help='Path to the main prompt file (e.g., scripts/prompts/architecture_refresh.j2)',
-    )
-    parser.add_argument(
-        '--repo', required=False, help='owner/repo to associate in conversation'
-    )
-    parser.add_argument(
-        '--append-common-tail',
-        action='store_true',
-        help='Append common_tail.j2 if present',
-    )
-    parser.add_argument(
-        '--common-tail',
-        default='scripts/prompts/common_tail.j2',
-        help='Path to common tail file',
-    )
-    parser.add_argument(
-        '--base-url', default='https://app.all-hands.dev', help='OpenHands API base URL'
-    )
-    args = parser.parse_args()
-
-    client = OpenHandsAPI(base_url=args.base_url)
-    resp = client.create_conversation_from_files(
-        main_prompt_path=args.prompt,
-        repository=args.repo,
-        append_common_tail=args.append_common_tail,
-        common_tail_path=args.common_tail,
-    )
-    print(resp.get('conversation_id') or resp)
-
-
 if __name__ == '__main__':
-    cli_create_convo_from_prompt()
+    print('OpenHands API helper - import this module to use the OpenHandsAPI class')
