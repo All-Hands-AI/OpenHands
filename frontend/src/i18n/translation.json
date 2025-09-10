@@ -1807,21 +1807,21 @@
     "de": "Anwendung",
     "uk": "Додаток"
   },
-  "SETTINGS$NAV_CREDITS": {
-    "en": "Credits",
-    "ja": "クレジット",
-    "zh-CN": "积分",
-    "zh-TW": "點數",
-    "ko-KR": "크레딧",
-    "no": "Kreditter",
-    "it": "Crediti",
-    "pt": "Créditos",
-    "es": "Créditos",
-    "ar": "الرصيد",
-    "fr": "Crédits",
-    "tr": "Krediler",
-    "de": "Guthaben",
-    "uk": "Кредити"
+  "SETTINGS$NAV_BILLING": {
+    "en": "Billing",
+    "ja": "請求",
+    "zh-CN": "账单",
+    "zh-TW": "帳單",
+    "ko-KR": "결제",
+    "no": "Fakturering",
+    "it": "Fatturazione",
+    "pt": "Faturamento",
+    "es": "Facturación",
+    "ar": "الفواتير",
+    "fr": "Facturation",
+    "tr": "Faturalama",
+    "de": "Abrechnung",
+    "uk": "Виставлення рахунків"
   },
   "SETTINGS$NAV_SECRETS": {
     "en": "Secrets",

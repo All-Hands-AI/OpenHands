@@ -22,7 +22,7 @@ const SAAS_NAV_ITEMS = [
   { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
   { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
   { to: "/settings", text: "SETTINGS$NAV_LLM" },
-  { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
+  { to: "/settings/billing", text: "SETTINGS$NAV_BILLING" },
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
   { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
   { to: "/settings/mcp", text: "SETTINGS$NAV_MCP" },
