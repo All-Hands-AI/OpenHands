@@ -1606,6 +1606,11 @@ def test_process_events_with_empty_agent_finish_action(conversation_memory):
 
     # Check the assistant finish message
     assistant_message = messages[2]
+    print(f'DEBUG: assistant_message.role = {assistant_message.role}')
+    print(f'DEBUG: assistant_message.content = {assistant_message.content}')
+    print(
+        f"DEBUG: assistant_message.content[0].text = '{assistant_message.content[0].text}'"
+    )
     assert assistant_message.role == 'assistant'
     assert len(assistant_message.content) == 1
     assert isinstance(assistant_message.content[0], TextContent)
