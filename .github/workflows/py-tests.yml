@@ -58,10 +58,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: hynek/setup-cached-uv@v2
         name: Setup uv
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Install Python dependencies using uv
         run: uv sync --group dev --group test --group runtime --python ${{ matrix.python-version }}
       - name: Run Windows unit tests
