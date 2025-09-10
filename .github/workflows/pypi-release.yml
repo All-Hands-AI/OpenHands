@@ -14,7 +14,7 @@ jobs:
   release:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
