@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Spinner } from "@heroui/react";
+import { Spinner } from "#/components/shared/spinner";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
@@ -193,7 +193,7 @@ export function MicroagentManagementSidebar({
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">
-          <Spinner size="sm" />
+          <Spinner size="small" />
           <span className="text-sm text-white">
             {t("HOME$LOADING_REPOSITORIES")}
           </span>
