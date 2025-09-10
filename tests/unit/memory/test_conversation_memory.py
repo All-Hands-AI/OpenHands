@@ -1641,6 +1641,3 @@ def test_process_events_with_non_empty_agent_finish_action(conversation_memory):
     assert (
         assistant_message.content[0].text == 'I have completed the task successfully.'
     )
-
-
-
