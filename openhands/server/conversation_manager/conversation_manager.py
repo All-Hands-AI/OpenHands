@@ -3,9 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 import socketio
+from openhands_configuration import LLMConfig
 
 from openhands.core.config import OpenHandsConfig
-from openhands_configuration import LLMConfig
 from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo

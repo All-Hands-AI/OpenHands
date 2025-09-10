@@ -1,3 +1,5 @@
+from openhands_configuration import LLMConfig, MCPConfig, Settings
+
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.arg_utils import (
     get_cli_parser,
@@ -11,9 +13,6 @@ from openhands.core.config.config_utils import (
     get_field_info,
 )
 from openhands.core.config.extended_config import ExtendedConfig
-from openhands_configuration import LLMConfig
-from openhands_configuration import MCPConfig
-from openhands_configuration import Settings
 from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig

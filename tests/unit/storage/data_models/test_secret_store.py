@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import MappingProxyType
 from typing import Any
 
+from openhands_configuration import UserSecrets
 from pydantic import SecretStr
 
 from openhands.integrations.provider import (
@@ -10,7 +11,6 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands_configuration import UserSecrets
 
 
 class TestUserSecrets:

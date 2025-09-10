@@ -5,6 +5,8 @@ from logging import LoggerAdapter
 from types import MappingProxyType
 from typing import Callable, cast
 
+from openhands_configuration import UserSecrets
+
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
@@ -30,7 +32,6 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands_configuration import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue

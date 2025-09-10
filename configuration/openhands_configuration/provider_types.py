@@ -1,6 +1,6 @@
 from enum import Enum
 from types import MappingProxyType
-from typing import Annotated, Any
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, WithJsonSchema
 
@@ -23,7 +23,9 @@ class ProviderToken(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, token_value: 'ProviderToken | dict[str, str]') -> 'ProviderToken':
+    def from_value(
+        cls, token_value: 'ProviderToken | dict[str, str]'
+    ) -> 'ProviderToken':
         """Factory method to create a ProviderToken from various input types"""
         if isinstance(token_value, ProviderToken):
             return token_value
@@ -50,7 +52,9 @@ class CustomSecret(BaseModel):
     )
 
     @classmethod
-    def from_value(cls, secret_value: 'CustomSecret | dict[str, str]') -> 'CustomSecret':
+    def from_value(
+        cls, secret_value: 'CustomSecret | dict[str, str]'
+    ) -> 'CustomSecret':
         """Factory method to create a CustomSecret from various input types"""
         if isinstance(secret_value, CustomSecret):
             return secret_value

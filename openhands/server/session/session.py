@@ -3,6 +3,7 @@ import time
 from logging import LoggerAdapter
 
 import socketio
+from openhands_configuration import OpenHandsMCPConfigImpl
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -12,7 +13,6 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands_configuration import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState

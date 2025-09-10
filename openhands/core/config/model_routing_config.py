@@ -1,6 +1,5 @@
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
 from openhands_configuration import LLMConfig
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class ModelRoutingConfig(BaseModel):

@@ -81,7 +81,9 @@ class LLMConfig(BaseModel):
     disable_stop_word: bool | None = Field(default=False)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
-    log_completions_folder: str = Field(default=os.path.join(os.getcwd(), 'logs', 'completions'))
+    log_completions_folder: str = Field(
+        default=os.path.join(os.getcwd(), 'logs', 'completions')
+    )
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default=None)

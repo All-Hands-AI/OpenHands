@@ -2,10 +2,10 @@ from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openhands_configuration import MCPConfig, MCPStdioServerConfig
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
-from openhands_configuration import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation

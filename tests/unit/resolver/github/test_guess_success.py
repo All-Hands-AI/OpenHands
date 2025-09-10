@@ -2,6 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 from openhands_configuration import LLMConfig
+
 from openhands.events.action.message import MessageAction
 from openhands.llm import LLM
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler

@@ -3,17 +3,17 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from openhands_configuration import (
+    MCPConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 
 from openhands.cli.commands import (
     display_mcp_servers,
     remove_mcp_server,
 )
 from openhands.core.config import OpenHandsConfig
-from openhands_configuration import (
-    MCPConfig,
-    MCPSSEServerConfig,
-    MCPStdioServerConfig,
-)
 
 
 class TestMCPServerManagement:

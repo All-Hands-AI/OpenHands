@@ -3,10 +3,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import pytest_asyncio
+from openhands_configuration import LLMConfig
 
 from openhands.cli import main as cli
 from openhands.controller.state.state import State
-from openhands_configuration import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 

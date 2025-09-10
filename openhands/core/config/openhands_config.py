@@ -1,6 +1,7 @@
 import os
 from typing import Any, ClassVar
 
+from openhands_configuration import LLMConfig, MCPConfig
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from openhands.core import logger
@@ -14,8 +15,6 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
-from openhands_configuration import LLMConfig
-from openhands_configuration import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 

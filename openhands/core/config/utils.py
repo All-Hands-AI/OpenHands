@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
+from openhands_configuration import LLMConfig, MCPConfig
 from pydantic import BaseModel, SecretStr, ValidationError
 
 from openhands import __version__
@@ -23,8 +24,6 @@ from openhands.core.config.condenser_config import (
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
-from openhands_configuration import LLMConfig
-from openhands_configuration import MCPConfig
 from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig

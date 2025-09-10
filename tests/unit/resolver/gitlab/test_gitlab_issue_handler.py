@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 from openhands_configuration import LLMConfig
+
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.interfaces.issue_definitions import (

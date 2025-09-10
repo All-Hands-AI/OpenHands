@@ -3,12 +3,12 @@
 from unittest.mock import patch
 
 import pytest
-
 from openhands_configuration import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+
 from openhands.storage.data_models.settings import Settings
 
 

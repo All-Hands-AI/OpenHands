@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
+from openhands_configuration import UserSecrets
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
@@ -18,7 +19,6 @@ from openhands.server.user_auth import (
     get_user_secrets,
 )
 from openhands.storage.data_models.settings import Settings
-from openhands_configuration import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 

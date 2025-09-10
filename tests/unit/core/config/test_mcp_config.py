@@ -2,16 +2,16 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
-
-from openhands.controller.agent import Agent
-from openhands.core.config import OpenHandsConfig, load_from_env
 from openhands_configuration import (
     MCPConfig,
     MCPSHTTPServerConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+from pydantic import ValidationError
+
+from openhands.controller.agent import Agent
+from openhands.core.config import OpenHandsConfig, load_from_env
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.conversation_init_data import ConversationInitData

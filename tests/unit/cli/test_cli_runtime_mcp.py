@@ -3,13 +3,13 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-from openhands.core.config import OpenHandsConfig
 from openhands_configuration import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+
+from openhands.core.config import OpenHandsConfig
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation

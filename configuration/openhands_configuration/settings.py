@@ -12,7 +12,6 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from .llm_config import LLMConfig
 from .mcp_config import MCPConfig
 from .user_secrets import UserSecrets
 
@@ -90,15 +89,13 @@ class Settings(BaseModel):
         secret_store = UserSecrets(provider_tokens={}, custom_secrets={})
 
         if isinstance(tokens, dict):
-            secret_store = secret_store.model_copy(
-                update={'provider_tokens': tokens}
-            )
+            secret_store = secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': custom_secrets}
             )
-        
+
         data['secrets_store'] = secret_store
         return data
 
@@ -122,7 +119,7 @@ class Settings(BaseModel):
 
         Config.toml takes priority for MCP settings, but they are merged rather than replaced.
         This method can be used by both server mode and CLI mode.
-        
+
         Note: This simplified version doesn't load from config files.
         """
         return self

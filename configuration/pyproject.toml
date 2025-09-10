@@ -17,8 +17,8 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "pydantic>=2.0.0",
-  "pyyaml>=6.0",
+  "pydantic>=2",
+  "pyyaml>=6",
   "toml>=0.10.2",
 ]
 

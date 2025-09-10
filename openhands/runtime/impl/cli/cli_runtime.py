@@ -20,10 +20,10 @@ from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
+from openhands_configuration import MCPConfig, MCPStdioServerConfig
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
-from openhands_configuration import MCPConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (

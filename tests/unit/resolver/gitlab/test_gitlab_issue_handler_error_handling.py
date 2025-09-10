@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, patch
 import httpx
 import pytest
 from litellm.exceptions import RateLimitError
-
 from openhands_configuration import LLMConfig
+
 from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler

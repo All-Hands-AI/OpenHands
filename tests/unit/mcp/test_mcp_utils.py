@@ -2,10 +2,10 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openhands_configuration import MCPSSEServerConfig, MCPStdioServerConfig
 
 # Import the module, not the functions directly to avoid circular imports
 import openhands.mcp.utils
-from openhands_configuration import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 

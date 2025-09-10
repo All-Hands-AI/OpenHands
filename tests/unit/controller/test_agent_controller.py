@@ -9,6 +9,7 @@ from litellm import (
     ContentPolicyViolationError,
     ContextWindowExceededError,
 )
+from openhands_configuration import LLMConfig
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
@@ -18,7 +19,6 @@ from openhands.controller.state.control_flags import (
 from openhands.controller.state.state import State
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
-from openhands_configuration import LLMConfig
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber

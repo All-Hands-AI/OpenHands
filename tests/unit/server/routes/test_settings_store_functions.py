@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from openhands_configuration import UserSecrets
 from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderToken
@@ -15,7 +16,6 @@ from openhands.server.routes.settings import store_llm_settings
 from openhands.server.settings import POSTProviderModel
 from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
-from openhands_configuration import UserSecrets
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
