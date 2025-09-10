@@ -52,10 +52,23 @@ export function getIndicatorColor(
   ) {
     return IndicatorColor.RED;
   }
+
+  // Prioritize agent state when it indicates readiness, even if runtime status is stale
+  const agentIsReady =
+    agentState &&
+    [
+      AgentState.AWAITING_USER_INPUT,
+      AgentState.RUNNING,
+      AgentState.FINISHED,
+      AgentState.AWAITING_USER_CONFIRMATION,
+      AgentState.USER_CONFIRMED,
+      AgentState.USER_REJECTED,
+    ].includes(agentState);
+
   // Display a yellow working icon while the runtime is starting
   if (
     conversationStatus === "STARTING" ||
-    !["STATUS$READY", null].includes(runtimeStatus) ||
+    (!["STATUS$READY", null].includes(runtimeStatus) && !agentIsReady) ||
     (agentState != null &&
       [
         AgentState.LOADING,
