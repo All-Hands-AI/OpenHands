@@ -6,7 +6,7 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
-import { cn } from "#/utils/utils";
+import { cn, isMobileDevice } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
@@ -116,8 +116,6 @@ export function CustomChatInput({
       gripRef.current.classList.remove("opacity-100");
       gripRef.current.classList.add("opacity-0");
     }
-    // Reset the state
-    setIsGripVisible(false);
   }, []);
 
   // Handle click on top edge area to toggle grip visibility
@@ -137,7 +135,12 @@ export function CustomChatInput({
   );
 
   // Use the auto-resize hook with height change callback
-  const { smartResize, handleGripMouseDown } = useAutoResize(chatInputRef, {
+  const {
+    smartResize,
+    handleGripMouseDown,
+    handleGripTouchStart,
+    increaseHeightForEmptyContent,
+  } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 400,
     onHeightChange: handleHeightChange,
@@ -303,53 +306,21 @@ export function CustomChatInput({
 
   // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) {
+    if (e.key !== "Enter") {
       return;
     }
-    // Send message on Enter (without Shift)
-    // Shift+Enter adds a new line (default contenteditable behavior)
-    if (e.key === "Enter" && !e.shiftKey) {
+
+    if (isContentEmpty()) {
+      e.preventDefault();
+      increaseHeightForEmptyContent();
+      return;
+    }
+
+    // Original submit logic - only for desktop without shift key
+    if (!isMobileDevice() && !e.shiftKey && !disabled) {
       e.preventDefault();
       handleSubmit();
-      return;
     }
-
-    // Auto-resize on key events that might change content
-    setTimeout(() => {
-      smartResize();
-      // Ensure cursor stays visible after key navigation
-      if (!chatInputRef.current) {
-        return;
-      }
-
-      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
-      if (!isArrowKey) {
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      if (
-        !range.getBoundingClientRect ||
-        !chatInputRef.current.getBoundingClientRect
-      ) {
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      const inputRect = chatInputRef.current.getBoundingClientRect();
-
-      // Scroll to keep cursor visible
-      if (rect.top < inputRect.top) {
-        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-      } else if (rect.bottom > inputRect.bottom) {
-        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
-      }
-    }, 0);
   };
 
   // Handle blur events to ensure placeholder shows when empty
@@ -382,7 +353,8 @@ export function CustomChatInput({
       <div className="relative w-full">
         {/* Top edge hover area - invisible area that triggers grip visibility */}
         <div
-          className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group"
+          className="absolute -top-[12px] left-0 w-full h-6 lg:h-3 z-20 group"
+          id="resize-grip"
           onClick={handleTopEdgeClick}
         >
           {/* Resize Grip - appears on hover of top edge area, when dragging, or when clicked */}
@@ -395,6 +367,7 @@ export function CustomChatInput({
                 : "opacity-0 group-hover:opacity-100",
             )}
             onMouseDown={handleGripMouseDown}
+            onTouchStart={handleGripTouchStart}
             style={{ userSelect: "none" }}
           />
         </div>
