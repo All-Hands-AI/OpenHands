@@ -20,8 +20,8 @@ export function ClearButton({
       }}
       disabled={disabled}
       className={cn(
-        "p-1 text-[#B7BDC2] hover:text-[#ECEDEE]",
-        "disabled:cursor-not-allowed disabled:opacity-60",
+        "p-1 text-[#fff]",
+        "cursor-pointer disabled:cursor-not-allowed disabled:opacity-60",
       )}
       type="button"
       aria-label="Clear selection"
