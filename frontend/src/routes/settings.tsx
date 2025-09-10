@@ -93,7 +93,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
+        className="flex items-end gap-6 px-3 md:px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink
