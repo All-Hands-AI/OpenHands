@@ -163,11 +163,8 @@ class TomCodeActAgent(CodeActAgent):
 
             # Determine what to consult about
             if self._has_tom_consultation_happened(formatted_messages):
-                consultation_result: Optional[str] = (
-                    '[CRITICAL] Tom agent has already given suggestions for the SWE agent. No need to consult Tom agent again for this round. Use other actions instead.'
-                )
                 return ConsultTomAgentAction(
-                    content=consultation_result,
+                    content='[CRITICAL] Tom agent cannot provide consultation for this user message. Do not consult ToM agent again for this message and use other actions instead.',
                     use_user_message=False,
                     custom_query=None,
                 )
@@ -208,6 +205,11 @@ class TomCodeActAgent(CodeActAgent):
                 )
             else:
                 logger.warning('⚠️ Tom: No consultation result received')
+                return ConsultTomAgentAction(
+                    content='[CRITICAL] Tom agent cannot provide consultation for this user message. Do not consult ToM agent again for this message and use other actions instead.',
+                    use_user_message=False,
+                    custom_query=None,
+                )
 
         # If finishing and Tom enabled, run sleeptime compute
         if (

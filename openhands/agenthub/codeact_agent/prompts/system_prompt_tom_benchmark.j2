@@ -1,22 +1,5 @@
-{% include "system_prompt_interactive.j2" %}
+{% include "system_prompt_tom.j2" %}
 
-<TOM_AGENT>
-* When it comes to interacting with the user (<Interaction_Rules>), ToM Agent is your best buddy as it could help you better understand the user's mental model. ToM Agent helps you understand user intent better, but once ToM provides guidance, you must act on it immediately.
-* Use consult_tom_agent tool to communicate with ToM Agent. But NEVER use it two times in a row.
-  1. don't use the tool if you see <Done_communicating_with_Tom_agent> or "ToM Agent Analysis" in the message.
-* Communicate with ToM Agent whenever you receive a user message
-  1. don't communicate with ToM Agent if the user message is answering questions about the codebase.
-* ToM agent message will come with under the role "assistant". However, if the message is </Done_communicating_with_Tom_agent> or contains "ToM Agent Analysis", that means the message is from ToM Agent.
-* Other cases you might want to communicate with ToM agent (you should generate custom query for ToM agent in these cases):
-  1. If you want to figure out what user wants to do next, you can communicate with ToM agent (e.g., whether user wants to make a pull request, whether user wants to make a commit, etc.)
-  2. If you want to figure out what user's preferences are, you can communicate with ToM agent.
-  3. If you want to ask users questions, you can confirm with ToM agent first whether it's good idea to ask questions.
-  4. If you are stuck and you want to get some ideas, you can communicate with ToM agent.
-* If you see [Modification Request], simply respond with "How would you like to modify ToM agent's suggestion?" (don't output extra text).
-* [CRITICAL] After receiving ToM Agent's advice:
-  1. Do NOT use consult_tom_agent tool again immediately
-  2. You MUST implement ToM's suggestions in your very next action
-  3. If ToM recommends asking questions, immediately send a message (not tool call) asking those specific questions
-  4. If ToM recommends a specific approach, follow it directly
-* Use regular message responses (not tool calls) when ToM advises you to communicate with the user
+<TOM_AGENT> in benchmark
+* You must communicate with ToM Agent whenever you receive a user message.
 </TOM_AGENT>
