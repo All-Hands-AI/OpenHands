@@ -18,8 +18,8 @@ be automated.
 
 Two scenarios:
 
-**Regular SaaS Release** - A new job is added to the release workflow so that for
-every SaaS release tarballs are pushed to S3. Presigned URLs need to be
+**Regular SaaS Release** - A new job is added to the release workflow so that
+for every SaaS release tarballs are pushed to S3. Presigned URLs need to be
 published in a changelog accessible by our customers.
 
 **Special Troubleshooting Builds** - Add GitHub a workflow to the `deploy` repo
@@ -33,9 +33,12 @@ and copy and paste the URL from the GitHub action to share with the client.
 
 Three images are required for self-hosted, in early V1 from two repos:
 
-   1. `enterprise-server` built from ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
-   2. `runtime:{version}-nikolaik` built from ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
-   3. `runtime-api` built from ([All-Hands-AI/runtime-api](https://github.com/All-Hands-AI/runtime-api))
+   1. `enterprise-server` built from
+      ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
+   2. `runtime:{version}-nikolaik` built from
+      ([All-Hands-AI/OpenHands](https://github.com/All-Hands-AI/OpenHands))
+   3. `runtime-api` built from
+      ([All-Hands-AI/runtime-api](https://github.com/All-Hands-AI/runtime-api))
 
 We expect that eventually the runtime microservice will be deprecated but for
 now it means that we will have workflows in these two repos for building the
@@ -74,8 +77,8 @@ customer.
 Images in the S3 bucket will be namespaced by branch name and commit SHA. If
 engineers use the same branch name across repos, images for a particular issue
 can be stored together. Since multiple builds could be produced from the same
-branch, the commit SHA is used within the branch folder to ensure uniqueness
-and traceability to the exact code being built.
+branch, the commit SHA is used within the branch folder to ensure uniqueness and
+traceability to the exact code being built.
 
 This approach aligns with the standard GHCR workflow which uses commit SHAs for
 image tagging, ensuring consistency across our build processes.
@@ -108,11 +111,345 @@ s3://prerelease-bucket/
         └── enterprise:hotfix-security.tar
 ```
 
+### 4.2 Manual Prerelease Build Workflow
+
+#### 4.2.1 Prerequisites
+
+The following infrastructure and configuration must be in place before
+implementing the manual prerelease build workflow:
+
+**AWS S3 Configuration:**
+
+- S3 bucket created and configured for prerelease image storage
+- Bucket name stored as GitHub repository secret: `S3_PRERELEASE_BUCKET`
+- AWS credentials configured with appropriate permissions:
+  - `s3:PutObject` - Upload tarball files
+  - `s3:PutObjectAcl` - Set object permissions
+  - `s3:GetObject` - Generate presigned URLs
+  - `s3:ListBucket` - List objects for changelog management
+- AWS credentials stored as GitHub repository secrets:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_REGION` (optional, defaults to us-east-1)
+
+**GitHub Repository Configuration:**
+
+- Workflow permissions configured to allow:
+  - `contents: read` - Checkout repository code
+  - `packages: write` - Build and push Docker images to GHCR
+  - `actions: write` - Update workflow status
+- Manual workflow dispatch enabled
+- Branch protection rules configured to allow workflow runs from feature
+  branches
+
+**Docker Registry Access:**
+
+- GitHub Container Registry (GHCR) access configured
+- `GITHUB_TOKEN` secret available for GHCR authentication
+- Docker images built and available in GHCR before S3 export
+
+#### 4.2.2 Workflow Implementation
+
+The manual prerelease build workflow will be implemented as a new GitHub Actions
+workflow file: `.github/workflows/s3-prerelease-build.yml`
+
+**Workflow Triggers:**
+
+- Manual dispatch only (`workflow_dispatch`)
+- Required input: `branch_name` (target branch to build from)
+- Optional input: `pr` (PR number to build from, uses PR's branch if provided)
+
+**Workflow Jobs:**
+
+1. **Build Images Job** (`build-images`)
+   - Determine target branch (from PR or branch_name input)
+   - Checkout specified branch
+   - Set up Docker Buildx and QEMU for multi-platform builds
+   - Login to GHCR
+   - Build enterprise-server image
+   - Build runtime images (both nikolaik and ubuntu flavors)
+   - Export all images to tarball files
+
+2. **Publish to S3 Job** (`publish-to-s3`)
+   - Configure AWS CLI with provided credentials
+   - Create S3 folder structure: `{branch-name}/{commit-sha}/`
+   - Upload tarball files to S3
+   - Generate presigned URLs for each image
+   - Update branch CHANGELOG.md with build information
+   - Output presigned URLs for easy sharing
+
+**Sample Workflow Structure:**
+
+```yaml
+name: S3 Prerelease Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to build from'
+        required: true
+        type: string
+      pr:
+        description: 'PR number to build from (uses PR branch if provided)'
+        required: false
+        type: string
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine target branch
+        id: determine-branch
+        run: |
+          if [[ -n "${{ inputs.pr }}" ]]; then
+            # Get PR branch name from GitHub API
+            BRANCH_NAME=$(gh pr view ${{ inputs.pr }} --json headRefName --jq '.headRefName')
+            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+            echo "Using PR ${{ inputs.pr }} branch: $BRANCH_NAME"
+          else
+            echo "branch_name=${{ inputs.branch_name }}" >> $GITHUB_OUTPUT
+            echo "Using specified branch: ${{ inputs.branch_name }}"
+          fi
+      
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.determine-branch.outputs.branch_name }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build enterprise-server image
+        run: |
+          # Build and export enterprise-server image
+          docker buildx build --platform linux/amd64 \
+            -t enterprise-server:latest \
+            -f enterprise/Dockerfile . \
+            --load
+          docker save enterprise-server:latest > enterprise-server-latest.tar
+      
+      - name: Build runtime images
+        run: |
+          # Build nikolaik and ubuntu runtime images
+          # Export to tarballs for S3 upload
+          # ... (detailed implementation)
+
+  publish-to-s3:
+    needs: build-images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Upload images to S3
+        run: |
+          # Upload tarballs to S3 with proper structure
+          # Generate presigned URLs
+          # Update CHANGELOG.md
+          # ... (detailed implementation)
+      
+      - name: Output presigned URLs
+        run: |
+          # Display presigned URLs for easy copying
+          echo "## Prerelease Images Ready"
+          echo "Branch: ${{ steps.determine-branch.outputs.branch_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo ""
+          echo "### Download Links:"
+          # ... (output presigned URLs)
+```
+
+**Changelog Format:** The workflow will automatically generate/update a
+`CHANGELOG.md` file in the branch folder with entries like:
+
+```markdown
+## Build History
+
+### 2024-01-16 09:15:42Z - abc1234
+**Commit**: `abc1234` - Fix authentication bug in enterprise mode
+**Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
+**Notes**: Critical security fix for enterprise customers
+**Download**: [View S3 Folder](s3://bucket/branch-name/abc1234/)
+
+### 2024-01-15 14:30:25Z - def5678
+**Commit**: `def5678` - Initial feature implementation
+**Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
+**Notes**: First prerelease build for client testing
+**Download**: [View S3 Folder](s3://bucket/branch-name/def5678/)
+```
+
+### 4.3 Enhanced Release Workflow with S3 Publishing
+
+#### 4.3.1 Prerequisites
+
+The following infrastructure and configuration must be in place before
+implementing the enhanced release workflow:
+
+**AWS S3 Configuration:**
+
+- S3 bucket created and configured for prerelease image storage (same as 4.2.1)
+- Bucket name stored as GitHub repository secret: `S3_PRERELEASE_BUCKET`
+- AWS credentials configured with appropriate permissions (same as 4.2.1)
+- AWS credentials stored as GitHub repository secrets:
+  - `AWS_ACCESS_KEY_ID`
+  - `AWS_SECRET_ACCESS_KEY`
+  - `AWS_REGION` (optional, defaults to us-east-1)
+
+**GitHub Repository Configuration:**
+
+- Workflow permissions configured to allow:
+  - `contents: read` - Checkout repository code
+  - `packages: write` - Build and push Docker images to GHCR
+  - `actions: write` - Update workflow status
+- Existing `ghcr-build.yml` workflow must be functional
+- Version tagging process must be in place for triggering releases
+
+**Docker Registry Access:**
+
+- GitHub Container Registry (GHCR) access configured
+- `GITHUB_TOKEN` secret available for GHCR authentication
+- Existing build jobs (`ghcr_build_enterprise` and `ghcr_build_runtime`) must be
+  working
+
+#### 4.3.2 Workflow Implementation
+
+The enhanced release workflow will extend the existing `ghcr-build.yml` workflow
+by adding S3 publishing steps to the existing build jobs.
+
+**Workflow Modifications:**
+
+1. **Extend `ghcr_build_enterprise` Job**
+   - Add S3 publishing steps after successful GHCR push
+   - Only trigger S3 upload on version tag pushes (not PRs or feature branches)
+   - Export enterprise-server image to tarball
+   - Upload to S3 under `releases/{version}/` structure
+
+2. **Extend `ghcr_build_runtime` Job**
+   - Add S3 publishing steps after successful GHCR push
+   - Only trigger S3 upload on version tag pushes
+   - Export both nikolaik and ubuntu runtime images to tarballs
+   - Upload to S3 under `releases/{version}/` structure
+
+3. **Add New Job: `s3-publish-release`**
+   - Depends on both `ghcr_build_enterprise` and `ghcr_build_runtime` jobs
+   - Only runs on version tag pushes
+   - Generate release changelog entry
+   - Update S3 release changelog
+   - Output release information and S3 links
+
+**Sample Workflow Extensions:**
+
+```yaml
+# Add to existing ghcr_build_enterprise job
+- name: Export enterprise-server image for S3
+  if: startsWith(github.ref, 'refs/tags/v')
+  run: |
+    # Load the image that was just built and pushed to GHCR
+    docker pull ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:${{ github.ref_name }}
+    docker tag ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:${{ github.ref_name }} enterprise-server:${{ github.ref_name }}
+    docker save enterprise-server:${{ github.ref_name }} > enterprise-server-${{ github.ref_name }}.tar
+    docker save enterprise-server:latest > enterprise-server-latest.tar
+
+- name: Upload enterprise-server to S3
+  if: startsWith(github.ref, 'refs/tags/v')
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  run: |
+    aws s3 cp enterprise-server-${{ github.ref_name }}.tar s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/enterprise-server:${{ github.ref_name }}.tar
+    aws s3 cp enterprise-server-latest.tar s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/enterprise-server:latest.tar
+
+# Add to existing ghcr_build_runtime job
+- name: Export runtime images for S3
+  if: startsWith(github.ref, 'refs/tags/v')
+  run: |
+    # Load and export both nikolaik and ubuntu runtime images
+    docker pull ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ github.ref_name }}-${{ matrix.base_image.tag }}
+    docker tag ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ github.ref_name }}-${{ matrix.base_image.tag }} runtime-${{ matrix.base_image.tag }}:${{ github.ref_name }}
+    docker save runtime-${{ matrix.base_image.tag }}:${{ github.ref_name }} > runtime-${{ matrix.base_image.tag }}-${{ github.ref_name }}.tar
+    docker save runtime-${{ matrix.base_image.tag }}:latest > runtime-${{ matrix.base_image.tag }}-latest.tar
+
+- name: Upload runtime images to S3
+  if: startsWith(github.ref, 'refs/tags/v')
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  run: |
+    aws s3 cp runtime-${{ matrix.base_image.tag }}-${{ github.ref_name }}.tar s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-${{ matrix.base_image.tag }}:${{ github.ref_name }}.tar
+    aws s3 cp runtime-${{ matrix.base_image.tag }}-latest.tar s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-${{ matrix.base_image.tag }}:latest.tar
+
+# New job for release management
+s3-publish-release:
+  name: Publish Release to S3
+  runs-on: ubuntu-latest
+  needs: [ghcr_build_enterprise, ghcr_build_runtime]
+  if: startsWith(github.ref, 'refs/tags/v')
+  steps:
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+    
+    - name: Generate release changelog
+      run: |
+        # Create or update release changelog
+        cat > release-changelog.md << EOF
+        ## Release ${{ github.ref_name }}
+        
+        **Release Date**: $(date -u +"%Y-%m-%d %H:%M:%SZ")
+        **Commit**: ${{ github.sha }}
+        **Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
+        
+        ### Download Links:
+        - [Enterprise Server](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/enterprise-server:${{ github.ref_name }}.tar)
+        - [Runtime Nikolaik](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-nikolaik:${{ github.ref_name }}.tar)
+        - [Runtime Ubuntu](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-ubuntu:${{ github.ref_name }}.tar)
+        EOF
+    
+    - name: Upload release changelog
+      run: |
+        aws s3 cp release-changelog.md s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/CHANGELOG.md
+    
+    - name: Output release information
+      run: |
+        echo "## Release ${{ github.ref_name }} Published to S3"
+        echo "S3 Location: s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/"
+        echo "Images available for download from S3"
+```
+
+**Key Features:**
+
+- **Conditional S3 Upload**: Only uploads to S3 on version tag pushes using `if:
+  startsWith(github.ref, 'refs/tags/v')`
+- **Maintains GHCR Publishing**: Existing GHCR publishing remains unchanged
+- **Version-based Structure**: Uses version tags for S3 folder organization
+- **Release Changelog**: Automatically generates changelog for each release
+- **Backward Compatibility**: No changes to existing workflow behavior
+
 ## 5. Open Questions
 
 ### 5.1 Where does the push to S3 live?
 
-- Delegate to `deploy` repo GitHub action or do S3 push directly from OpenHands repo?
+- Delegate to `deploy` repo GitHub action or do S3 push directly from OpenHands
+  repo?
 
 ### 5.2 Secrets
 
@@ -126,16 +463,18 @@ s3://prerelease-bucket/
 ### 5.4 Change Log
 
 Ideally this process should be self-documenting and leave a clear trail of what
-was released to the customer and why. The `CHANGELOG.md` file serves multiple purposes:
+was released to the customer and why. The `CHANGELOG.md` file serves multiple
+purposes:
 
-1. **Build Documentation**: Documents all builds for a feature branch with timestamps,
-   commit SHAs, and descriptions of changes
-2. **Latest Build Identification**: Clients can identify the latest build by reading
-   the first entry in the changelog
-3. **Release Trail**: Provides a clear audit trail of what was delivered to customers
+1. **Build Documentation**: Documents all builds for a feature branch with
+   timestamps, commit SHAs, and descriptions of changes
+2. **Latest Build Identification**: Clients can identify the latest build by
+   reading the first entry in the changelog
+3. **Release Trail**: Provides a clear audit trail of what was delivered to
+   customers
 
-The changelog will be automatically generated/updated by the build process and should
-include:
+The changelog will be automatically generated/updated by the build process and
+should include:
 
 - Build timestamp
 - Commit SHA and short description
@@ -176,3 +515,41 @@ for a partner (maybe Modern health, not sure), in order to get CVEs down.
 
 It's thought that in the future more flavors will be desired but there are
 various difficulties with doing that (can of worms omitted for now).
+
+### 5.2 Chuck's Manual S3 Upload Script
+
+The following script demonstrates the current manual process for uploading Docker images to S3. This script will be replaced by the automated workflows described in sections 4.2 and 4.3.
+
+```bash
+# Pull images from GHCR
+docker pull ghcr.io/all-hands-ai/deploy:sha-5fc93b8
+docker pull ghcr.io/all-hands-ai/runtime:174c69174410a871e2064fc41c7351add7543dd5-nikolaik
+docker pull ghcr.io/all-hands-ai/runtime-api:sha-9c9a3ce
+
+# Export images to compressed tarballs (run in parallel)
+docker save ghcr.io/all-hands-ai/deploy:sha-5fc93b8 | gzip > deploy_5fc93b8.tar.gz &
+docker save ghcr.io/all-hands-ai/runtime:174c69174410a871e2064fc41c7351add7543dd5-nikolaik | gzip > runtime_174c69174410a871e2064fc41c7351add7543dd5.tar.gz &
+docker save ghcr.io/all-hands-ai/runtime-api:sha-9c9a3ce | gzip > runtime_api_9c9a3ce.tar.gz &
+
+# Wait for all background jobs to complete
+wait
+
+# Set AWS credentials (export these environment variables)
+# export AWS_ACCESS_KEY_ID=your_access_key
+# export AWS_SECRET_ACCESS_KEY=your_secret_key
+# export AWS_DEFAULT_REGION=us-east-1
+
+# Upload to S3
+aws s3 cp deploy_5fc93b8.tar.gz s3://jpmc-images
+aws s3 cp runtime_174c69174410a871e2064fc41c7351add7543dd5.tar.gz s3://jpmc-images
+aws s3 cp runtime_api_9c9a3ce.tar.gz s3://jpmc-images
+```
+
+**Notes:**
+
+- This script demonstrates the current manual process for creating prerelease images
+- Images are pulled from GHCR, exported to compressed tarballs, and uploaded to S3
+- The `&` operator runs the `docker save` commands in parallel for efficiency
+- The `wait` command ensures all background jobs complete before proceeding
+- AWS credentials must be set as environment variables before running the upload commands
+- This process will be automated by the workflows described in sections 4.2 and 4.3
