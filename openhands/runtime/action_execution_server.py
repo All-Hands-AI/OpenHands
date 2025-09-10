@@ -303,6 +303,7 @@ class ActionExecutor:
             timeout=int(os.environ.get('INIT_PLUGIN_TIMEOUT', '120')),
         )
         logger.debug('All plugins initialized')
+        logger.info(f'Work dir after plugins init: {self.bash_session.work_dir}')
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
@@ -315,9 +316,11 @@ class ActionExecutor:
                 )
             )
             logger.debug(f'AgentSkills initialized: {obs}')
+        logger.info(f'Work dir after agent_skills init: {self.bash_session.work_dir}')
 
         logger.debug('Initializing bash commands')
         await self._init_bash_commands()
+        logger.info(f'Work dir after _init_bash_commands: {self.bash_session.work_dir}')
 
         logger.debug('Runtime client initialized.')
         self._initialized = True
