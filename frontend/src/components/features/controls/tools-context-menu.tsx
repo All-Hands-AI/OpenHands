@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -36,13 +36,27 @@ export function ToolsContextMenu({
   onShowAgentTools,
 }: ToolsContextMenuProps) {
   const { t } = useTranslation();
-  const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { data: conversation } = useActiveConversation();
   const { providers } = useUserProviders();
+
+  const [activeSubmenu, setActiveSubmenu] = useState<"git" | "macros" | null>(
+    null,
+  );
 
   const hasRepository = !!conversation?.selected_repository;
   const providersAreSet = providers.length > 0;
   const showGitTools = hasRepository && providersAreSet;
+
+  const handleSubmenuClick = (submenu: "git" | "macros") => {
+    setActiveSubmenu(activeSubmenu === submenu ? null : submenu);
+  };
+
+  const handleClose = () => {
+    setActiveSubmenu(null);
+    onClose();
+  };
+
+  const ref = useClickOutsideElement<HTMLUListElement>(handleClose);
 
   return (
     <ContextMenu
@@ -57,7 +71,7 @@ export function ToolsContextMenu({
         <div className="relative group/git">
           <ContextMenuListItem
             testId="git-tools-button"
-            onClick={() => {}}
+            onClick={() => handleSubmenuClick("git")}
             className={contextMenuListItemClassName}
           >
             <ToolsContextMenuIconText
@@ -67,8 +81,16 @@ export function ToolsContextMenu({
               className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
             />
           </ContextMenuListItem>
-          <div className="absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
-            <GitToolsSubmenu onClose={onClose} />
+          <div
+            className={cn(
+              "absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none transition-all duration-200 ml-[1px]",
+              "group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto",
+              "hover:opacity-100 hover:visible hover:pointer-events-auto",
+              activeSubmenu === "git" &&
+                "opacity-100 visible pointer-events-auto",
+            )}
+          >
+            <GitToolsSubmenu onClose={handleClose} />
           </div>
         </div>
       )}
@@ -77,7 +99,7 @@ export function ToolsContextMenu({
       <div className="relative group/macros">
         <ContextMenuListItem
           testId="macros-button"
-          onClick={() => {}}
+          onClick={() => handleSubmenuClick("macros")}
           className={contextMenuListItemClassName}
         >
           <ToolsContextMenuIconText
@@ -87,8 +109,16 @@ export function ToolsContextMenu({
             className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
-        <div className="absolute left-full top-[-4px] z-60 opacity-0 invisible pointer-events-none group-hover/macros:opacity-100 group-hover/macros:visible group-hover/macros:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
-          <MacrosSubmenu onClose={onClose} />
+        <div
+          className={cn(
+            "absolute left-full top-[-4px] z-60 opacity-0 invisible pointer-events-none transition-all duration-200 ml-[1px]",
+            "group-hover/macros:opacity-100 group-hover/macros:visible group-hover/macros:pointer-events-auto",
+            "hover:opacity-100 hover:visible hover:pointer-events-auto",
+            activeSubmenu === "macros" &&
+              "opacity-100 visible pointer-events-auto",
+          )}
+        >
+          <MacrosSubmenu onClose={handleClose} />
         </div>
       </div>
 
