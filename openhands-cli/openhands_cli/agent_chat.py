@@ -33,8 +33,18 @@ def run_cli_entry() -> None:
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
-    # Setup agent - let exceptions bubble up
-    conversation = setup_agent()
+    # Try to setup agent, but allow CLI to start even without API key
+    conversation = None
+    try:
+        conversation = setup_agent()
+    except Exception as e:
+        if "No API key found" in str(e):
+            print_formatted_text(HTML(f'<red>Warning: {e}</red>'))
+            print_formatted_text(HTML('<yellow>Starting CLI in configuration mode. Use /settings to configure API key.</yellow>'))
+            print_formatted_text('')
+        else:
+            # For other errors, still fail
+            raise
 
     # Generate session ID
     import uuid
@@ -46,8 +56,8 @@ def run_cli_entry() -> None:
     # Create prompt session with command completer
     session = PromptSession(completer=CommandCompleter())
 
-    # Create conversation runner to handle state machine logic
-    runner = ConversationRunner(conversation)
+    # Create conversation runner to handle state machine logic (only if we have a conversation)
+    runner = ConversationRunner(conversation) if conversation else None
 
     # Main chat loop
     while True:
@@ -82,15 +92,21 @@ def run_cli_entry() -> None:
                 continue
             elif command == '/status':
                 print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
-                print_formatted_text(HTML('<grey>Status: Active</grey>'))
-                confirmation_status = (
-                    'enabled' if conversation.state.confirmation_mode else 'disabled'
-                )
-                print_formatted_text(
-                    HTML(f'<grey>Confirmation mode: {confirmation_status}</grey>')
-                )
+                if conversation:
+                    print_formatted_text(HTML('<grey>Status: Active</grey>'))
+                    confirmation_status = (
+                        'enabled' if conversation.state.confirmation_mode else 'disabled'
+                    )
+                    print_formatted_text(
+                        HTML(f'<grey>Confirmation mode: {confirmation_status}</grey>')
+                    )
+                else:
+                    print_formatted_text(HTML('<grey>Status: Configuration mode (no API key)</grey>'))
                 continue
             elif command == '/confirm':
+                if not runner:
+                    print_formatted_text(HTML('<red>Agent not available. Please configure API key using /settings first.</red>'))
+                    continue
                 current_mode = runner.confirmation_mode
                 runner.set_confirmation_mode(not current_mode)
                 new_status = 'enabled' if not current_mode else 'disabled'
@@ -106,6 +122,9 @@ def run_cli_entry() -> None:
                 display_welcome(session_id)
                 continue
             elif command == '/resume':
+                if not conversation:
+                    print_formatted_text(HTML('<red>Agent not available. Please configure API key using /settings first.</red>'))
+                    continue
                 if not conversation.state.agent_paused:
                     print_formatted_text(
                         HTML('<red>No paused conversation to resume...</red>')
@@ -115,6 +134,25 @@ def run_cli_entry() -> None:
 
                 # Resume without new message
                 message = None
+            elif command == '/settings':
+                from openhands_cli.tui.settings_ui import run_settings_configuration
+                run_settings_configuration()
+                
+                # Try to reinitialize agent if settings were updated
+                if not conversation:
+                    try:
+                        conversation = setup_agent()
+                        runner = ConversationRunner(conversation)
+                        print_formatted_text(HTML('<green>Agent initialized successfully!</green>'))
+                    except Exception as e:
+                        if "No API key found" not in str(e):
+                            print_formatted_text(HTML(f'<red>Failed to initialize agent: {e}</red>'))
+                continue
+
+            # Handle regular messages
+            if not runner:
+                print_formatted_text(HTML('<red>Agent not available. Please configure API key using /settings first.</red>'))
+                continue
 
             runner.process_message(message)
 

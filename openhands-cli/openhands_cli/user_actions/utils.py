@@ -9,7 +9,7 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
 
-from openhands_cli.tui import DEFAULT_STYLE
+from openhands_cli.tui.tui import DEFAULT_STYLE
 
 
 def build_keybindings(

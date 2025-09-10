@@ -15,25 +15,30 @@ from openhands.tools import (
     execute_bash_tool,
     str_replace_editor_tool,
 )
+from openhands_cli.settings import SettingsManager
 
 
 def setup_agent() -> Conversation:
     """
-    Setup the agent with environment variables.
+    Setup the agent with persistent settings and environment variable overrides.
     """
-    # Get API configuration from environment
-    api_key = os.getenv('LITELLM_API_KEY') or os.getenv('OPENAI_API_KEY')
-    model = os.getenv('LITELLM_MODEL', 'gpt-4o-mini')
-    base_url = os.getenv('LITELLM_BASE_URL')
+    # Load settings from persistent storage with environment variable overrides
+    settings_manager = SettingsManager()
+    settings = settings_manager.get_effective_settings()
+    
+    # Extract configuration
+    api_key = settings.api_key.get_secret_value() if settings.api_key else None
+    model = settings.model
+    base_url = settings.base_url
 
     if not api_key:
         print_formatted_text(
             HTML(
-                '<red>Error: No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.</red>'
+                '<red>Error: No API key found. Please configure it using /settings command or set LITELLM_API_KEY/OPENAI_API_KEY environment variable.</red>'
             )
         )
         raise Exception(
-            'No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.'
+            'No API key found. Please configure it using /settings command or set LITELLM_API_KEY/OPENAI_API_KEY environment variable.'
         )
 
     llm = LLM(
