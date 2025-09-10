@@ -15,9 +15,7 @@ describe("getStatusCode", () => {
     );
 
     // Should return agent state message, not runtime status
-    expect(result).toBe(
-      I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE,
-    );
+    expect(result).toBe(I18nKey.AGENT_STATUS$WAITING_FOR_TASK);
   });
 
   it("should show runtime status when agent is not ready", () => {
@@ -45,7 +43,7 @@ describe("getStatusCode", () => {
     );
 
     // Should return agent state message, not runtime status
-    expect(result).toBe(I18nKey.CHAT_INTERFACE$AGENT_RUNNING_MESSAGE);
+    expect(result).toBe(I18nKey.AGENT_STATUS$RUNNING_TASK);
   });
 
   it("should handle agent finished state with stale runtime status", () => {
@@ -59,7 +57,7 @@ describe("getStatusCode", () => {
     );
 
     // Should return agent state message, not runtime status
-    expect(result).toBe(I18nKey.CHAT_INTERFACE$AGENT_FINISHED_MESSAGE);
+    expect(result).toBe(I18nKey.AGENT_STATUS$WAITING_FOR_TASK);
   });
 
   it("should still respect stopped states", () => {
