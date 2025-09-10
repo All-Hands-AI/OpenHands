@@ -291,11 +291,8 @@ jobs:
         shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          uv pip install pytest-xdist
-
-          # Install to be able to retry on failures for flaky tests
-          uv pip install pytest-rerunfailures
-
+          uv pip install pytest-xdist pytest-rerunfailures
+          uv pip install -e .
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           # Setting RUN_AS_OPENHANDS to false means use root.
