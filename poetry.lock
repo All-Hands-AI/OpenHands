@@ -6567,7 +6567,7 @@ optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 pydantic = ">=2"
@@ -6578,8 +6578,11 @@ toml = ">=0.10.2"
 dev = ["black (>=23)", "flake8 (>=6)", "isort (>=5)", "mypy (>=1)", "pre-commit (>=3.7)", "pytest (>=7)", "ruff (>=0.11.8)"]
 
 [package.source]
-type = "directory"
-url = "configuration"
+type = "git"
+url = "https://github.com/All-Hands-AI/OpenHands.git"
+reference = "1ad9b0673c2b891f587fd623ec73989964f3e52f"
+resolved_reference = "1ad9b0673c2b891f587fd623ec73989964f3e52f"
+subdirectory = "configuration"
 
 [[package]]
 name = "openpyxl"
@@ -11845,4 +11848,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "fdf6c874d60dcd1f183f914c5dbcd4367f4a3a8fe58af39ec9e941ea210ae95e"
+content-hash = "402e0d325f991a5b21a976f6c74faabbcc83d29bec0935018a9842cd4cf2c1b9"
