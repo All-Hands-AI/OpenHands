@@ -8,6 +8,7 @@ import { SecretsService } from "#/api/secrets-service";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
@@ -54,7 +55,7 @@ const renderSecretsSettings = () =>
   });
 
 beforeEach(() => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
   // @ts-expect-error - only return the config we need
   getConfigSpy.mockResolvedValue({
     APP_MODE: "oss",
@@ -68,7 +69,7 @@ describe("Content", () => {
   });
 
   it("should NOT render a button to connect with git if they havent already in oss", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
@@ -88,8 +89,7 @@ describe("Content", () => {
   });
 
   it("should render add secret button in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
     getConfigSpy.mockResolvedValue({

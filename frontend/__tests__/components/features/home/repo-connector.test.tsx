@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
 import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { GitRepository } from "#/types/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -177,7 +178,7 @@ describe("RepoConnector", () => {
   });
 
   it("should render the 'add github repos' link in dropdown if saas mode and github provider is set", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -224,7 +225,7 @@ describe("RepoConnector", () => {
   });
 
   it("should not render the 'add github repos' link if github provider is not set", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -269,7 +270,7 @@ describe("RepoConnector", () => {
   });
 
   it("should not render the 'add github repos' link in dropdown if oss mode", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
       APP_MODE: "oss",

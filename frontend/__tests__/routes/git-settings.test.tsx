@@ -8,9 +8,10 @@ import { I18nextProvider } from "react-i18next";
 import GitSettingsScreen from "#/routes/git-settings";
 import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import AuthService from "#/api/auth-service/auth-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 import { SecretsService } from "#/api/secrets-service";
 
@@ -110,7 +111,7 @@ describe("Content", () => {
   });
 
   it("should render the inputs if OSS mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     const { rerender } = renderGitSettingsScreen();
@@ -153,7 +154,7 @@ describe("Content", () => {
   });
 
   it("should set '<hidden>' placeholder and indicator if the GitHub token is set", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
@@ -228,7 +229,7 @@ describe("Content", () => {
   });
 
   it("should render the 'Configure GitHub Repositories' button if SaaS mode and app slug exists", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     const { rerender } = renderGitSettingsScreen();
@@ -272,7 +273,7 @@ describe("Form submission", () => {
   it("should save the GitHub token", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();
@@ -293,7 +294,7 @@ describe("Form submission", () => {
   it("should save GitLab tokens", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();
@@ -314,7 +315,7 @@ describe("Form submission", () => {
   it("should save the Bitbucket token", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();
@@ -333,7 +334,7 @@ describe("Form submission", () => {
   });
 
   it("should disable the button if there is no input", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();
@@ -359,7 +360,7 @@ describe("Form submission", () => {
   });
 
   it("should enable a disconnect tokens button if there is at least one token set", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
@@ -393,7 +394,7 @@ describe("Form submission", () => {
   });
 
   it("should call logout when pressing the disconnect tokens button", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const logoutSpy = vi.spyOn(AuthService, "logout");
     const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
@@ -420,7 +421,7 @@ describe("Form submission", () => {
   // flaky test
   it.skip("should disable the button when submitting changes", async () => {
     const saveSettingsSpy = vi.spyOn(SecretsService, "addGitProvider");
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();
@@ -444,7 +445,7 @@ describe("Form submission", () => {
 
   it("should disable the button after submitting changes", async () => {
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
     renderGitSettingsScreen();

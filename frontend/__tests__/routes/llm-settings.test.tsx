@@ -5,6 +5,7 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
@@ -697,7 +698,7 @@ describe("Status toasts", () => {
 
 describe("SaaS mode", () => {
   it("should not render the runtime settings input in oss mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
@@ -715,7 +716,7 @@ describe("SaaS mode", () => {
   });
 
   it("should render the runtime settings input in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -733,7 +734,7 @@ describe("SaaS mode", () => {
   });
 
   it("should always render the runtime settings input as disabled", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",

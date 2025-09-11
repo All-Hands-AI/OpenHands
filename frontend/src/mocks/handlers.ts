@@ -1,9 +1,6 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  Conversation,
-  ResultSet,
-  GetConfigResponse,
-} from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
+import { Conversation, ResultSet } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { Provider } from "#/types/settings";

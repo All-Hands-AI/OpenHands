@@ -1,6 +1,6 @@
 import { openHands } from "../open-hands-axios";
 import { AuthenticateResponse, GitHubAccessTokenResponse } from "./auth.types";
-import { GetConfigResponse } from "../open-hands.types";
+import { GetConfigResponse } from "../option-service/option.types";
 
 /**
  * Authentication service for handling all authentication-related API calls

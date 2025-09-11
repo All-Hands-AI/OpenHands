@@ -13,7 +13,7 @@ import posthog from "posthog-js";
 import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
-import OpenHands from "./api/open-hands";
+import OptionService from "./api/option-service/option-service.api";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 import { queryClient } from "./query-client-config";
 
@@ -25,7 +25,7 @@ function PosthogInit() {
   React.useEffect(() => {
     (async () => {
       try {
-        const config = await OpenHands.getConfig();
+        const config = await OptionService.getConfig();
         setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
       } catch (error) {
         displayErrorToast("Error fetching PostHog client key");
