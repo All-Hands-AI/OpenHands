@@ -3,12 +3,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from openhands_configuration import LLMConfig
 
-from openhands.core.config.openhands_config import OpenHandsConfig
-
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events import EventStream, EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm_registry import LLMRegistry
