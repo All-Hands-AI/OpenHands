@@ -288,7 +288,7 @@ async def test_success_callback_success():
         assert response.status_code == 302
         assert (
             response.headers['location']
-            == 'http://test.com/settings/billing?checkout=success'
+            == 'http://test.com/settings?checkout=success'
         )
 
         # Verify LiteLLM API calls
@@ -362,7 +362,7 @@ async def test_cancel_callback_session_not_found():
         assert response.status_code == 302
         assert (
             response.headers['location']
-            == 'http://test.com/settings/billing?checkout=cancel'
+            == 'http://test.com/settings?checkout=cancel'
         )
 
         # Verify no database updates occurred
@@ -389,7 +389,7 @@ async def test_cancel_callback_success():
         assert response.status_code == 302
         assert (
             response.headers['location']
-            == 'http://test.com/settings/billing?checkout=cancel'
+            == 'http://test.com/settings?checkout=cancel'
         )
 
         # Verify database updates
