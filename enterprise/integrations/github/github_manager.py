@@ -23,15 +23,14 @@ from integrations.utils import (
     OPENHANDS_RESOLVER_TEMPLATES_DIR,
 )
 from jinja2 import Environment, FileSystemLoader
+from openhands_configuration import ProviderToken, ProviderType, UserSecrets
 from pydantic import SecretStr
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
 from server.auth.token_manager import TokenManager
 from server.utils.conversation_callback_utils import register_callback_processor
 
 from openhands.core.logger import openhands_logger as logger
-from openhands_configuration import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands_configuration import UserSecrets
 from openhands.utils.async_utils import call_sync_from_async
 
 

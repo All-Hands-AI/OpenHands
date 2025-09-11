@@ -4,10 +4,9 @@ import time
 from dataclasses import dataclass, field
 
 import socketio
+from openhands_configuration import LLMConfig, Settings
 from server.clustered_conversation_manager import ClusteredConversationManager
 from server.saas_nested_conversation_manager import SaasNestedConversationManager
-
-from openhands_configuration import LLMConfig
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
@@ -18,7 +17,6 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
 

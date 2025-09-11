@@ -17,15 +17,14 @@ from integrations.utils import (
     OPENHANDS_RESOLVER_TEMPLATES_DIR,
 )
 from jinja2 import Environment, FileSystemLoader
+from openhands_configuration import ProviderToken, ProviderType, UserSecrets
 from pydantic import SecretStr
 from server.auth.token_manager import TokenManager
 from server.utils.conversation_callback_utils import register_callback_processor
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
-from openhands_configuration import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands_configuration import UserSecrets
 
 
 class GitlabManager(Manager):

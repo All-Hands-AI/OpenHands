@@ -17,6 +17,7 @@ from integrations.utils import (
     has_exact_mention,
 )
 from jinja2 import Environment
+from openhands_configuration import PROVIDER_TOKEN_TYPE, ProviderType
 from pydantic.dataclasses import dataclass
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
 from server.auth.token_manager import TokenManager, get_config
@@ -27,7 +28,6 @@ from storage.user_settings import UserSettings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands_configuration import PROVIDER_TOKEN_TYPE, ProviderType
 from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import (
     initialize_conversation,

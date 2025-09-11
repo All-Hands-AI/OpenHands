@@ -5,13 +5,13 @@ from base64 import b64decode, b64encode
 from dataclasses import dataclass
 
 from cryptography.fernet import Fernet
+from openhands_configuration import UserSecrets
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
 from storage.stored_user_secrets import StoredUserSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands_configuration import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 
 

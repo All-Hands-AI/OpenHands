@@ -5,6 +5,12 @@ from types import MappingProxyType
 import jwt
 from fastapi import Request
 from keycloak.exceptions import KeycloakError
+from openhands_configuration import (
+    PROVIDER_TOKEN_TYPE,
+    ProviderToken,
+    ProviderType,
+    UserSecrets,
+)
 from pydantic import SecretStr
 from server.auth.auth_error import (
     AuthError,
@@ -23,14 +29,8 @@ from storage.saas_secrets_store import SaasSecretsStore
 from storage.saas_settings_store import SaasSettingsStore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from openhands.integrations.provider import (
-    PROVIDER_TOKEN_TYPE,
-    ProviderToken,
-    ProviderType,
-)
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import AuthType, UserAuth
-from openhands_configuration import UserSecrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 token_manager = TokenManager()

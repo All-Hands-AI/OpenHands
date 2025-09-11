@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import jwt
 import pytest
 from fastapi import Request
+from openhands_configuration import ProviderToken, ProviderType
 from pydantic import SecretStr
 from server.auth.auth_error import BearerTokenError, CookieError, NoCredentialsError
 from server.auth.saas_user_auth import (
@@ -13,8 +14,6 @@ from server.auth.saas_user_auth import (
     saas_user_auth_from_cookie,
     saas_user_auth_from_signed_token,
 )
-
-from openhands_configuration import ProviderToken, ProviderType
 
 
 @pytest.fixture

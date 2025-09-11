@@ -10,6 +10,7 @@ import shap
 from integrations.solvability.models.featurizer import Feature, Featurizer
 from integrations.solvability.models.importance_strategy import ImportanceStrategy
 from integrations.solvability.models.report import SolvabilityReport
+from openhands_configuration import LLMConfig
 from pydantic import (
     BaseModel,
     PrivateAttr,
@@ -21,8 +22,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.exceptions import NotFittedError
 from sklearn.inspection import permutation_importance
 from sklearn.utils.validation import check_is_fitted
-
-from openhands_configuration import LLMConfig
 
 
 class SolvabilityClassifier(BaseModel):

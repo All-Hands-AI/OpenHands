@@ -3,13 +3,12 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
+from openhands_configuration import CustomSecret, UserSecrets
 from pydantic import SecretStr
 from storage.saas_secrets_store import SaasSecretsStore
 from storage.stored_user_secrets import StoredUserSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands_configuration import CustomSecret
-from openhands_configuration import UserSecrets
 
 
 @pytest.fixture

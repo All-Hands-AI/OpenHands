@@ -3,9 +3,9 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
+from openhands_configuration import LLMConfig
 from pydantic import BaseModel
 
-from openhands_configuration import LLMConfig
 from openhands.llm.llm import LLM
 
 

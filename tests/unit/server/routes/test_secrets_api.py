@@ -7,14 +7,14 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from openhands_configuration import UserSecrets
-from pydantic import SecretStr
-
-from openhands.integrations.provider import (
+from openhands_configuration import (
     CustomSecret,
     ProviderToken,
     ProviderType,
+    UserSecrets,
 )
+from pydantic import SecretStr
+
 from openhands.server.routes.secrets import app as secrets_app
 from openhands.storage import get_file_store
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore

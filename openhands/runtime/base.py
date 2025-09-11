@@ -14,7 +14,12 @@ from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
-from openhands_configuration import MCPConfig, MCPStdioServerConfig
+from openhands_configuration import (
+    PROVIDER_TOKEN_TYPE,
+    MCPConfig,
+    MCPStdioServerConfig,
+    ProviderType,
+)
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.exceptions import (
@@ -48,11 +53,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.integrations.provider import (
-    PROVIDER_TOKEN_TYPE,
-    ProviderHandler,
-    ProviderType,
-)
+from openhands.integrations.provider import ProviderHandler
 from openhands.integrations.service_types import AuthenticationError
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent import (

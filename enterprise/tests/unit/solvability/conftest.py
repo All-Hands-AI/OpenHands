@@ -13,9 +13,8 @@ from integrations.solvability.models.featurizer import (
     FeatureEmbedding,
     Featurizer,
 )
-from sklearn.ensemble import RandomForestClassifier
-
 from openhands_configuration import LLMConfig
+from sklearn.ensemble import RandomForestClassifier
 
 
 @pytest.fixture
