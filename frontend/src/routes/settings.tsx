@@ -6,9 +6,9 @@ import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
 import { Route } from "./+types/settings";
-import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
@@ -42,7 +42,7 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   let config = queryClient.getQueryData<GetConfigResponse>(["config"]);
   if (!config) {
-    config = await OpenHands.getConfig();
+    config = await OptionService.getConfig();
     queryClient.setQueryData<GetConfigResponse>(["config"], config);
   }
 
@@ -93,7 +93,7 @@ function SettingsScreen() {
 
       <nav
         data-testid="settings-navbar"
-        className="flex items-end gap-6 px-9 border-b border-tertiary"
+        className="flex items-end gap-6 px-3 md:px-9 border-b border-tertiary"
       >
         {navItems.map(({ to, text }) => (
           <NavLink

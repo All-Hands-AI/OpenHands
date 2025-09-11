@@ -17,24 +17,29 @@ export enum IndicatorColor {
 export const AGENT_STATUS_MAP: {
   [k: string]: string;
 } = {
-  [AgentState.INIT]: I18nKey.CHAT_INTERFACE$AGENT_INIT_MESSAGE,
-  [AgentState.RUNNING]: I18nKey.CHAT_INTERFACE$AGENT_RUNNING_MESSAGE,
-  [AgentState.AWAITING_USER_INPUT]:
-    I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_INPUT_MESSAGE,
-  [AgentState.PAUSED]: I18nKey.CHAT_INTERFACE$AGENT_PAUSED_MESSAGE,
-  [AgentState.LOADING]:
-    I18nKey.CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE,
-  [AgentState.STOPPED]: I18nKey.CHAT_INTERFACE$AGENT_STOPPED_MESSAGE,
-  [AgentState.FINISHED]: I18nKey.CHAT_INTERFACE$AGENT_FINISHED_MESSAGE,
-  [AgentState.REJECTED]: I18nKey.CHAT_INTERFACE$AGENT_REJECTED_MESSAGE,
-  [AgentState.ERROR]: I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE,
+  // Initializing states
+  [AgentState.LOADING]: I18nKey.AGENT_STATUS$INITIALIZING,
+  [AgentState.INIT]: I18nKey.AGENT_STATUS$INITIALIZING,
+
+  // Ready/Idle/Waiting for user input states
+  [AgentState.AWAITING_USER_INPUT]: I18nKey.AGENT_STATUS$WAITING_FOR_TASK,
   [AgentState.AWAITING_USER_CONFIRMATION]:
-    I18nKey.CHAT_INTERFACE$AGENT_AWAITING_USER_CONFIRMATION_MESSAGE,
-  [AgentState.USER_CONFIRMED]:
-    I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE,
-  [AgentState.USER_REJECTED]:
-    I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE,
-  [AgentState.RATE_LIMITED]: I18nKey.CHAT_INTERFACE$AGENT_RATE_LIMITED_MESSAGE,
+    I18nKey.AGENT_STATUS$WAITING_FOR_TASK,
+  [AgentState.USER_CONFIRMED]: I18nKey.AGENT_STATUS$WAITING_FOR_TASK,
+  [AgentState.USER_REJECTED]: I18nKey.AGENT_STATUS$WAITING_FOR_TASK,
+  [AgentState.FINISHED]: I18nKey.AGENT_STATUS$WAITING_FOR_TASK,
+
+  // Actively working states
+  [AgentState.RUNNING]: I18nKey.AGENT_STATUS$RUNNING_TASK,
+
+  // Agent stopped/paused states
+  [AgentState.PAUSED]: I18nKey.AGENT_STATUS$AGENT_STOPPED,
+  [AgentState.STOPPED]: I18nKey.AGENT_STATUS$AGENT_STOPPED,
+  [AgentState.REJECTED]: I18nKey.AGENT_STATUS$AGENT_STOPPED,
+
+  // Agent error states
+  [AgentState.ERROR]: I18nKey.AGENT_STATUS$ERROR_OCCURRED,
+  [AgentState.RATE_LIMITED]: I18nKey.AGENT_STATUS$ERROR_OCCURRED,
 };
 
 export function getIndicatorColor(
@@ -52,10 +57,23 @@ export function getIndicatorColor(
   ) {
     return IndicatorColor.RED;
   }
+
+  // Prioritize agent state when it indicates readiness, even if runtime status is stale
+  const agentIsReady =
+    agentState &&
+    [
+      AgentState.AWAITING_USER_INPUT,
+      AgentState.RUNNING,
+      AgentState.FINISHED,
+      AgentState.AWAITING_USER_CONFIRMATION,
+      AgentState.USER_CONFIRMED,
+      AgentState.USER_REJECTED,
+    ].includes(agentState);
+
   // Display a yellow working icon while the runtime is starting
   if (
     conversationStatus === "STARTING" ||
-    !["STATUS$READY", null].includes(runtimeStatus) ||
+    (!["STATUS$READY", null].includes(runtimeStatus) && !agentIsReady) ||
     (agentState != null &&
       [
         AgentState.LOADING,
@@ -86,12 +104,28 @@ export function getStatusCode(
   runtimeStatus: RuntimeStatus | null,
   agentState: AgentState | null,
 ) {
+  // Handle conversation and runtime stopped states
   if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
+
+  // Prioritize agent state when it indicates readiness, even if runtime status is stale
+  const agentIsReady =
+    agentState &&
+    [
+      AgentState.AWAITING_USER_INPUT,
+      AgentState.RUNNING,
+      AgentState.FINISHED,
+      AgentState.PAUSED,
+      AgentState.AWAITING_USER_CONFIRMATION,
+      AgentState.USER_CONFIRMED,
+      AgentState.USER_REJECTED,
+    ].includes(agentState);
+
   if (
     runtimeStatus &&
-    !["STATUS$READY", "STATUS$RUNTIME_STARTED"].includes(runtimeStatus)
+    !["STATUS$READY", "STATUS$RUNTIME_STARTED"].includes(runtimeStatus) &&
+    !agentIsReady // Skip runtime status check if agent is ready
   ) {
     const result = (I18nKey as { [key: string]: string })[runtimeStatus];
     if (result) {
@@ -99,6 +133,8 @@ export function getStatusCode(
     }
     return runtimeStatus;
   }
+
+  // Handle WebSocket connection states
   if (webSocketStatus === "DISCONNECTED") {
     return I18nKey.CHAT_INTERFACE$DISCONNECTED;
   }
@@ -106,18 +142,12 @@ export function getStatusCode(
     return I18nKey.CHAT_INTERFACE$CONNECTING;
   }
 
-  if (
-    agentState === AgentState.LOADING &&
-    statusMessage?.id &&
-    statusMessage.id !== "STATUS$READY"
-  ) {
-    return statusMessage.id;
-  }
-
+  // Handle agent states with simplified status messages
   if (agentState) {
     return AGENT_STATUS_MAP[agentState];
   }
 
+  // Handle runtime status when no agent state
   if (runtimeStatus && runtimeStatus !== "STATUS$READY" && !agentState) {
     return runtimeStatus;
   }

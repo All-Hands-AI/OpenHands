@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.55.0",
+  "version": "0.56.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -25,6 +25,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
     "axios": "^1.11.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "downshift": "^9.0.10",
@@ -46,14 +47,15 @@
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
     "react-redux": "^9.2.0",
+    "react-resizable-panels": "^3.0.5",
     "react-router": "^7.8.2",
     "react-syntax-highlighter": "^15.6.6",
-    "react-textarea-autosize": "^8.5.9",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "sirv-cli": "^3.0.1",
     "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
+    "tailwind-scrollbar": "^4.0.2",
     "vite": "^7.1.4",
     "web-vitals": "^5.1.0",
     "ws": "^8.18.2"
