@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING
 
+from openhands.core.config.mcp_config import OpenHandsMCPConfig
 from storage.api_key_store import ApiKeyStore
 
 if TYPE_CHECKING:
@@ -8,7 +9,6 @@ if TYPE_CHECKING:
 from openhands_configuration import (
     MCPSHTTPServerConfig,
     MCPStdioServerConfig,
-    OpenHandsMCPConfig,
 )
 from openhands.core.logger import openhands_logger as logger
 
