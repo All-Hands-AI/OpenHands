@@ -50,11 +50,6 @@ export interface GetTrajectoryResponse {
   error?: string;
 }
 
-export interface AuthenticateResponse {
-  message?: string;
-  error?: string;
-}
-
 export interface RepositorySelection {
   selected_repository: string | null;
   selected_branch: string | null;
