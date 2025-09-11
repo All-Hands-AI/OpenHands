@@ -144,6 +144,11 @@ export interface GetMicroagentPromptResponse {
   prompt: string;
 }
 
+export interface IOption<T> {
+  label: string;
+  value: T;
+}
+
 export interface CreateMicroagent {
   repo: string;
   git_provider?: Provider;

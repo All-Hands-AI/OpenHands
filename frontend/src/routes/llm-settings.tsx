@@ -13,7 +13,7 @@ import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import QuestionCircleIcon from "#/icons/question-circle.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
-import { HelpLink } from "#/components/features/settings/help-link";
+import { HelpLink } from "#/ui/help-link";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import {
   displayErrorToast,
@@ -461,6 +461,7 @@ function LlmSettingsScreen() {
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
                     isDisabled={shouldShowUpgradeBanner}
+                    wrapperClassName="!flex-col !gap-6"
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
@@ -469,7 +470,7 @@ function LlmSettingsScreen() {
                       text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
                       linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                       href="https://app.all-hands.dev/settings/api-keys"
-                      suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
                     />
                   )}
                 </>
@@ -546,7 +547,7 @@ function LlmSettingsScreen() {
                   text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
                   linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
                   href="https://app.all-hands.dev/settings/api-keys"
-                  suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                  suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
                 />
               )}
 

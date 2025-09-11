@@ -1,0 +1,138 @@
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
+import JupyterIcon from "#/icons/jupyter.svg?react";
+import TerminalIcon from "#/icons/terminal.svg?react";
+import GlobeIcon from "#/icons/globe.svg?react";
+import ServerIcon from "#/icons/server.svg?react";
+import GitChanges from "#/icons/git_changes.svg?react";
+import VSCodeIcon from "#/icons/vscode.svg?react";
+import { cn } from "#/utils/utils";
+import { ConversationTabNav } from "./conversation-tab-nav";
+import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
+import { I18nKey } from "#/i18n/declaration";
+import { VSCodeTooltipContent } from "./vscode-tooltip-content";
+import {
+  setHasRightPanelToggled,
+  setSelectedTab,
+  type ConversationTab,
+} from "#/state/conversation-slice";
+import { RootState } from "#/store";
+
+export function ConversationTabs() {
+  const dispatch = useDispatch();
+  const selectedTab = useSelector(
+    (state: RootState) => state.conversation.selectedTab,
+  );
+  const { isRightPanelShown } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
+  const onTabChange = (value: ConversationTab | null) => {
+    dispatch(setSelectedTab(value));
+  };
+
+  useEffect(() => {
+    const handlePanelVisibilityChange = () => {
+      if (isRightPanelShown) {
+        // If no tab is selected, default to editor tab
+        if (!selectedTab) {
+          onTabChange("editor");
+        }
+      }
+    };
+
+    handlePanelVisibilityChange();
+  }, [isRightPanelShown, selectedTab, onTabChange]);
+
+  const { t } = useTranslation();
+
+  const onTabSelected = (tab: ConversationTab) => {
+    if (selectedTab === tab && isRightPanelShown) {
+      // If clicking the same active tab, close the drawer
+      dispatch(setHasRightPanelToggled(false));
+    } else {
+      // If clicking a different tab or drawer is closed, open drawer and select tab
+      onTabChange(tab);
+      if (!isRightPanelShown) {
+        dispatch(setHasRightPanelToggled(true));
+      }
+    }
+  };
+
+  const isTabActive = (tab: ConversationTab) =>
+    isRightPanelShown && selectedTab === tab;
+
+  const tabs = [
+    {
+      isActive: isTabActive("editor"),
+      icon: GitChanges,
+      onClick: () => onTabSelected("editor"),
+      tooltipContent: t(I18nKey.COMMON$CHANGES),
+      tooltipAriaLabel: t(I18nKey.COMMON$CHANGES),
+    },
+    {
+      isActive: isTabActive("vscode"),
+      icon: VSCodeIcon,
+      onClick: () => onTabSelected("vscode"),
+      tooltipContent: <VSCodeTooltipContent />,
+      tooltipAriaLabel: t(I18nKey.COMMON$CODE),
+    },
+    {
+      isActive: isTabActive("terminal"),
+      icon: TerminalIcon,
+      onClick: () => onTabSelected("terminal"),
+      tooltipContent: t(I18nKey.COMMON$TERMINAL),
+      tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
+    },
+    {
+      isActive: isTabActive("jupyter"),
+      icon: JupyterIcon,
+      onClick: () => onTabSelected("jupyter"),
+      tooltipContent: t(I18nKey.COMMON$JUPYTER),
+      tooltipAriaLabel: t(I18nKey.COMMON$JUPYTER),
+    },
+    {
+      isActive: isTabActive("served"),
+      icon: ServerIcon,
+      onClick: () => onTabSelected("served"),
+      tooltipContent: t(I18nKey.COMMON$APP),
+      tooltipAriaLabel: t(I18nKey.COMMON$APP),
+    },
+    {
+      isActive: isTabActive("browser"),
+      icon: GlobeIcon,
+      onClick: () => onTabSelected("browser"),
+      tooltipContent: t(I18nKey.COMMON$BROWSER),
+      tooltipAriaLabel: t(I18nKey.COMMON$BROWSER),
+    },
+  ];
+
+  return (
+    <div
+      className={cn(
+        "relative w-full",
+        "flex flex-row justify-start lg:justify-end items-center gap-4.5",
+      )}
+    >
+      {tabs.map(
+        (
+          { icon, onClick, isActive, tooltipContent, tooltipAriaLabel },
+          index,
+        ) => (
+          <ChatActionTooltip
+            key={index}
+            tooltip={tooltipContent}
+            ariaLabel={tooltipAriaLabel}
+          >
+            <ConversationTabNav
+              icon={icon}
+              onClick={onClick}
+              isActive={isActive}
+            />
+          </ChatActionTooltip>
+        ),
+      )}
+    </div>
+  );
+}
