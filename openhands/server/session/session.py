@@ -3,7 +3,7 @@ import time
 from logging import LoggerAdapter
 
 import socketio
-from openhands_configuration import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
