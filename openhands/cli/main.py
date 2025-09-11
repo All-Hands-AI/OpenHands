@@ -75,6 +75,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
 )
+from openhands.events.stream import EventStreamABC
 from openhands.io import read_task
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.mcp.error_collector import mcp_error_collector
@@ -91,17 +92,13 @@ from openhands.utils.utils import create_registry_and_conversation_stats
 async def cleanup_session(
     loop: asyncio.AbstractEventLoop,
     agent: Agent,
+    event_stream: EventStreamABC,
     runtime: Runtime,
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
-    event_stream = runtime.event_stream
     end_state = controller.get_state()
-    end_state.save_to_session(
-        event_stream.sid,
-        event_stream.file_store,
-        event_stream.user_id,
-    )
+    end_state.save_to_session(event_stream)
 
     try:
         current_task = asyncio.current_task(loop)
@@ -433,7 +430,7 @@ async def run_session(
         controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
     )
 
-    await cleanup_session(loop, agent, runtime, controller)
+    await cleanup_session(loop, agent, event_stream, runtime, controller)
 
     if exit_reason == ExitReason.INTENTIONAL:
         print_formatted_text('✅ Session terminated successfully.\n')

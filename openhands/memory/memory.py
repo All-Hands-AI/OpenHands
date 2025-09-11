@@ -15,7 +15,7 @@ from openhands.events.observation.agent import (
     RecallObservation,
 )
 from openhands.events.observation.empty import NullObservation
-from openhands.events.stream import EventStream, EventStreamSubscriber
+from openhands.events.stream import EventStreamABC, EventStreamSubscriber
 from openhands.microagent import (
     BaseMicroagent,
     KnowledgeMicroagent,
@@ -44,7 +44,7 @@ class Memory:
     """
 
     sid: str
-    event_stream: EventStream
+    event_stream: EventStreamABC
     status_callback: Callable | None
     loop: asyncio.AbstractEventLoop | None
     repo_microagents: dict[str, RepoMicroagent]
@@ -52,7 +52,7 @@ class Memory:
 
     def __init__(
         self,
-        event_stream: EventStream,
+        event_stream: EventStreamABC,
         sid: str,
         status_callback: Callable | None = None,
     ):

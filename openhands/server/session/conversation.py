@@ -1,10 +1,11 @@
 import asyncio
 
 from openhands.core.config import OpenHandsConfig
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStreamABC
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.server.session.conversation_event_stream import ConversationEventStream
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -12,7 +13,7 @@ from openhands.utils.async_utils import call_sync_from_async
 class ServerConversation:
     sid: str
     file_store: FileStore
-    event_stream: EventStream
+    event_stream: EventStreamABC
     runtime: Runtime
     user_id: str | None
     _attach_to_existing: bool = False
@@ -23,7 +24,7 @@ class ServerConversation:
         file_store: FileStore,
         config: OpenHandsConfig,
         user_id: str | None,
-        event_stream: EventStream | None = None,
+        event_stream: EventStreamABC | None = None,
         runtime: Runtime | None = None,
     ):
         self.sid = sid
@@ -32,7 +33,8 @@ class ServerConversation:
         self.user_id = user_id
 
         if event_stream is None:
-            event_stream = EventStream(sid, file_store, user_id)
+            event_stream = ConversationEventStream()
+            # event_stream = EventStream(sid, file_store, user_id)
         self.event_stream = event_stream
 
         if runtime:

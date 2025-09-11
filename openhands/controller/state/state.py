@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import os
 import pickle
 from dataclasses import dataclass, field
@@ -19,11 +18,10 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
+from openhands.events.stream import EventStreamABC
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_agent_state_filename
 
 RESUMABLE_STATES = [
     AgentState.RUNNING,
@@ -119,27 +117,14 @@ class State:
 
     metrics: Metrics = field(default_factory=Metrics)
 
-    def save_to_session(
-        self, sid: str, file_store: FileStore, user_id: str | None
-    ) -> None:
+    def save_to_session(self, event_stream: EventStreamABC) -> None:
         conversation_stats = self.conversation_stats
         self.conversation_stats = None  # Don't save conversation stats, handles itself
 
         pickled = pickle.dumps(self)
-        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
-        encoded = base64.b64encode(pickled).decode('utf-8')
+        logger.debug(f'Saving state to session {event_stream.sid}:{self.agent_state}')
         try:
-            file_store.write(
-                get_conversation_agent_state_filename(sid, user_id), encoded
-            )
-
-            # see if state is in the old directory on saas/remote use cases and delete it.
-            if user_id:
-                filename = get_conversation_agent_state_filename(sid)
-                try:
-                    file_store.delete(filename)
-                except Exception:
-                    pass
+            event_stream.save_state(pickled)
         except Exception as e:
             logger.error(f'Failed to save state to session: {e}')
             raise e
@@ -147,29 +132,11 @@ class State:
         self.conversation_stats = conversation_stats  # restore reference
 
     @staticmethod
-    def restore_from_session(
-        sid: str, file_store: FileStore, user_id: str | None = None
-    ) -> 'State':
+    def restore_from_session(event_stream: EventStreamABC) -> 'State':
         """Restores the state from the previously saved session."""
         state: State
         try:
-            encoded = file_store.read(
-                get_conversation_agent_state_filename(sid, user_id)
-            )
-            pickled = base64.b64decode(encoded)
-            state = pickle.loads(pickled)
-        except FileNotFoundError:
-            # if user_id is provided, we are in a saas/remote use case
-            # and we need to check if the state is in the old directory.
-            if user_id:
-                filename = get_conversation_agent_state_filename(sid)
-                encoded = file_store.read(filename)
-                pickled = base64.b64decode(encoded)
-                state = pickle.loads(pickled)
-            else:
-                raise FileNotFoundError(
-                    f'Could not restore state from session file for sid: {sid}'
-                )
+            state = pickle.loads(event_stream.load_state())
         except Exception as e:
             logger.debug(f'Could not restore state from session: {e}')
             raise e

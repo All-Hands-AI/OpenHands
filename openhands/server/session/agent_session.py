@@ -14,7 +14,6 @@ from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     PROVIDER_TOKEN_TYPE,
@@ -30,6 +29,7 @@ from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.conversation_controller import ConversationController
+from openhands.server.session.conversation_event_stream import ConversationEventStream
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
@@ -48,7 +48,7 @@ class AgentSession:
 
     sid: str
     user_id: str | None
-    event_stream: EventStream
+    event_stream: ConversationEventStream
     llm_registry: LLMRegistry
     file_store: FileStore
     controller: ConversationController | None = None
@@ -77,7 +77,9 @@ class AgentSession:
         - file_store: Instance of the FileStore
         """
         self.sid = sid
-        self.event_stream = EventStream(sid, file_store, user_id)
+        # Using new AgentSDK
+        self.event_stream = ConversationEventStream()
+        # self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
@@ -424,8 +426,6 @@ class AgentSession:
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
-        # TODO: Replace this with the new "Conversation" construct.
-        # Maybe have a ConversationController
         controller = ConversationController()
         """
         controller = AgentController(
@@ -502,9 +502,7 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(
-                self.sid, self.file_store, self.user_id
-            )
+            restored_state = State.restore_from_session(self.event_stream)
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:

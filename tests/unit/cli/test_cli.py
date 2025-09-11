@@ -708,9 +708,7 @@ async def test_run_session_with_name_attempts_state_restore(
 
     # State.restore_from_session is called from within core.setup.create_controller,
     # which receives the runtime object (and thus its event_stream with sid and file_store).
-    mock_restore_from_session.assert_called_once_with(
-        expected_sid, mock_runtime.event_stream.file_store
-    )
+    mock_restore_from_session.assert_called_once_with(mock_runtime.event_stream)
 
     # Check that AgentController was initialized with the loaded state
     mock_agent_controller_init.assert_called_once()

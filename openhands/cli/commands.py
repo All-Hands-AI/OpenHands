@@ -49,7 +49,7 @@ from openhands.events.action import (
     ChangeAgentStateAction,
     MessageAction,
 )
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStreamABC
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -121,7 +121,7 @@ async def prompt_for_restart(config: OpenHandsConfig) -> bool:
 
 async def handle_commands(
     command: str,
-    event_stream: EventStream,
+    event_stream: EventStreamABC,
     usage_metrics: UsageMetrics,
     sid: str,
     config: OpenHandsConfig,
@@ -175,7 +175,7 @@ async def handle_commands(
 
 def handle_exit_command(
     config: OpenHandsConfig,
-    event_stream: EventStream,
+    event_stream: EventStreamABC,
     usage_metrics: UsageMetrics,
     sid: str,
 ) -> bool:
@@ -202,7 +202,7 @@ def handle_help_command() -> None:
 
 
 async def handle_init_command(
-    config: OpenHandsConfig, event_stream: EventStream, current_dir: str
+    config: OpenHandsConfig, event_stream: EventStreamABC, current_dir: str
 ) -> tuple[bool, bool]:
     REPO_MD_CREATE_PROMPT = """
         Please explore this repository. Create the file .openhands/microagents/repo.md with:
@@ -238,7 +238,7 @@ def handle_status_command(usage_metrics: UsageMetrics, sid: str) -> None:
 
 def handle_new_command(
     config: OpenHandsConfig,
-    event_stream: EventStream,
+    event_stream: EventStreamABC,
     usage_metrics: UsageMetrics,
     sid: str,
 ) -> tuple[bool, bool]:
@@ -294,7 +294,7 @@ async def handle_settings_command(
 # Setting the agent state to RUNNING will currently freeze the agent without continuing with the rest of the task.
 # This is a workaround to handle the resume command for the time being. Replace user message with the state change event once the issue is fixed.
 async def handle_resume_command(
-    event_stream: EventStream,
+    event_stream: EventStreamABC,
     agent_state: str,
 ) -> tuple[bool, bool]:
     close_repl = True

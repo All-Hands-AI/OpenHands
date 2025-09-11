@@ -21,7 +21,7 @@ from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.events import EventSource, EventStream, EventStreamSubscriber
+from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
@@ -48,6 +48,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.events.stream import EventStreamABC
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -68,7 +69,6 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.security import SecurityAnalyzer, options
-from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -128,7 +128,7 @@ class Runtime(FileEditRuntimeMixin):
     def __init__(
         self,
         config: OpenHandsConfig,
-        event_stream: EventStream,
+        event_stream: EventStreamABC,
         llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
@@ -897,11 +897,6 @@ fi
                 return AgentThinkObservation('Your thought has been logged.')
             elif isinstance(action, TaskTrackingAction):
                 # Get the session-specific task file path
-                conversation_dir = get_conversation_dir(
-                    self.sid, self.event_stream.user_id
-                )
-                task_file_path = f'{conversation_dir}TASKS.md'
-
                 if action.command == 'plan':
                     # Write the serialized task list to the session directory
                     content = '# Task List\n\n'
@@ -914,21 +909,21 @@ fi
                         content += f'{i}. {status_icon} {task.get("title", "")}\n{task.get("notes", "")}\n'
 
                     try:
-                        self.event_stream.file_store.write(task_file_path, content)
+                        self.event_stream.add_task_list(content)
                         return TaskTrackingObservation(
-                            content=f'Task list has been updated with {len(action.task_list)} items. Stored in session directory: {task_file_path}',
+                            content=f'Task list has been updated with {len(action.task_list)} items.',
                             command=action.command,
                             task_list=action.task_list,
                         )
                     except Exception as e:
                         return ErrorObservation(
-                            f'Failed to write task list to session directory {task_file_path}: {str(e)}'
+                            f'Failed to write task list to session directory: {str(e)}'
                         )
 
                 elif action.command == 'view':
                     # Read the TASKS.md file from the session directory
                     try:
-                        content = self.event_stream.file_store.read(task_file_path)
+                        content = self.event_stream.read_task_list()
                         return TaskTrackingObservation(
                             content=content,
                             command=action.command,
@@ -944,7 +939,7 @@ fi
                         return TaskTrackingObservation(
                             command=action.command,
                             task_list=[],
-                            content=f'Failed to read the task list from session directory {task_file_path}. Error: {str(e)}',
+                            content=f'Failed to read the task list from session directory. Error: {str(e)}',
                         )
 
             return NullObservation('')

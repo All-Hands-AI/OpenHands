@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import queue
 import threading
+from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
@@ -10,10 +12,12 @@ from typing import Any, Callable
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
 from openhands.events.event_store import EventStore
+from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.io import json
 from openhands.storage import FileStore
 from openhands.storage.locations import (
+    get_conversation_agent_state_filename,
     get_conversation_dir,
 )
 from openhands.utils.async_utils import call_sync_from_async
@@ -40,7 +44,56 @@ async def session_exists(
         return False
 
 
-class EventStream(EventStore):
+class EventStreamABC(EventStoreABC, ABC):
+    @abstractmethod
+    def close(self) -> None:
+        pass
+
+    @abstractmethod
+    def subscribe(
+        self,
+        subscriber_id: EventStreamSubscriber,
+        callback: Callable[[Event], None],
+        callback_id: str,
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def unsubscribe(
+        self, subscriber_id: EventStreamSubscriber, callback_id: str
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def add_event(self, event: Event, source: EventSource) -> None:
+        pass
+
+    @abstractmethod
+    def set_secrets(self, secrets: dict[str, str]) -> None:
+        pass
+
+    @abstractmethod
+    def update_secrets(self, secrets: dict[str, str]) -> None:
+        pass
+
+    @abstractmethod
+    def add_task_list(self, task_list: str) -> None:
+        pass
+
+    @abstractmethod
+    def read_task_list(self) -> str:
+        pass
+
+    @abstractmethod
+    def save_state(self, state: bytes) -> None:
+        pass
+
+    @abstractmethod
+    def load_state(self) -> bytes:
+        pass
+
+
+class EventStream(EventStore, EventStreamABC):
     secrets: dict[str, str]
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
@@ -289,3 +342,52 @@ class EventStream(EventStore):
                 raise e
 
         return _handle_callback_error
+
+    def add_task_list(self, task_list: str) -> None:
+        conversation_dir = get_conversation_dir(self.sid, self.user_id)
+        task_file_path = f'{conversation_dir}TASKS.md'
+        self.file_store.write(task_file_path, task_list)
+
+    def read_task_list(self) -> str:
+        conversation_dir = get_conversation_dir(self.sid, self.user_id)
+        task_file_path = f'{conversation_dir}TASKS.md'
+        return self.file_store.read(task_file_path)
+
+    def save_state(self, state: bytes) -> None:
+        agent_state_file_path = get_conversation_agent_state_filename(
+            self.sid, self.user_id
+        )
+        encoded = base64.b64encode(state).decode()
+        self.file_store.write(agent_state_file_path, encoded)
+
+        # see if state is in the old directory on saas/remote use cases and delete it.
+        if self.user_id:
+            filename = get_conversation_agent_state_filename(self.sid)
+            try:
+                self.file_store.delete(filename)
+            except Exception:
+                pass
+
+    def load_state(self) -> bytes:
+        try:
+            agent_state_file_path = get_conversation_agent_state_filename(
+                self.sid, self.user_id
+            )
+            encoded = self.file_store.read(agent_state_file_path)
+            decoded = base64.b64decode(encoded)
+            return decoded
+        except FileNotFoundError:
+            # if user_id is provided, we are in a saas/remote use case
+            # and we need to check if the state is in the old directory.
+            if self.user_id:
+                filename = get_conversation_agent_state_filename(self.sid)
+                encoded = self.file_store.read(filename)
+                pickled = base64.b64decode(encoded)
+                return pickled
+            else:
+                raise FileNotFoundError(
+                    f'Could not restore state from session file for sid: {self.sid}'
+                )
+        except Exception as e:
+            logger.debug(f'Could not restore state from session: {e}')
+            raise e
