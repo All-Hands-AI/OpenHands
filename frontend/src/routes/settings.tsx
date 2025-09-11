@@ -7,10 +7,8 @@ import { I18nKey } from "#/i18n/declaration";
 import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
-import { GetConfigResponse } from "#/api/open-hands.types";
 import { ProPill } from "#/components/features/settings/pro-pill";
 import { GetConfigResponse } from "#/api/option-service/option.types";
-import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",

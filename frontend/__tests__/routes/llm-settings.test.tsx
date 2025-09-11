@@ -811,7 +811,7 @@ describe("SaaS mode", () => {
 
     it("should show upgrade banner and prevent all interactions for unsubscribed SaaS users", async () => {
       // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
@@ -822,7 +822,7 @@ describe("SaaS mode", () => {
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to ensure it's not called
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
@@ -873,7 +873,7 @@ describe("SaaS mode", () => {
 
     it("should call subscription checkout API when upgrade button is clicked", async () => {
       // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
@@ -903,7 +903,7 @@ describe("SaaS mode", () => {
 
     it("should not show upgrade banner and allow form interaction for subscribed SaaS users", async () => {
       // Mock SaaS mode with subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return active subscription
@@ -931,7 +931,7 @@ describe("SaaS mode", () => {
 
     it("should not call save settings API when making changes in disabled form for unsubscribed users", async () => {
       // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
@@ -942,7 +942,7 @@ describe("SaaS mode", () => {
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to track calls
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
@@ -970,7 +970,7 @@ describe("SaaS mode", () => {
 
     it("should show backdrop overlay for unsubscribed users", async () => {
       // Mock SaaS mode without subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
@@ -1004,7 +1004,7 @@ describe("SaaS mode", () => {
 
     it("should not show backdrop overlay for subscribed users", async () => {
       // Mock SaaS mode with subscription
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return active subscription
@@ -1028,7 +1028,7 @@ describe("SaaS mode", () => {
 
     it("should display success toast when redirected back with ?success parameter", async () => {
       // Mock SaaS mode
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access
@@ -1064,7 +1064,7 @@ describe("SaaS mode", () => {
 
     it("should display error toast when redirected back with ?failure parameter", async () => {
       // Mock SaaS mode
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access
