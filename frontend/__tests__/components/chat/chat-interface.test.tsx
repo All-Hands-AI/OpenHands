@@ -94,35 +94,6 @@ vi.mock("react-redux", async () => {
   };
 });
 
-// Mock React Router hooks at the top level
-vi.mock("react-router", async () => {
-  const actual = await vi.importActual("react-router");
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-    useParams: () => ({ conversationId: "test-conversation-id" }),
-    useRouteLoaderData: vi.fn(() => ({})),
-  };
-});
-
-// Mock other hooks that might be used by the component
-vi.mock("#/hooks/use-user-providers", () => ({
-  useUserProviders: () => ({
-    providers: [],
-  }),
-}));
-
-vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
-  useConversationNameContextMenu: () => ({
-    isOpen: false,
-    contextMenuRef: { current: null },
-    handleContextMenu: vi.fn(),
-    handleClose: vi.fn(),
-    handleRename: vi.fn(),
-    handleDelete: vi.fn(),
-  }),
-}));
-
 // Helper function to render with Router context
 const renderChatInterfaceWithRouter = () =>
   renderWithProviders(
