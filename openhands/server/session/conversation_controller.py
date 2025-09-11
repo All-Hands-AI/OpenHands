@@ -1,6 +1,7 @@
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.schema.agent import AgentState
+from openhands.server.session.conversation_event_stream import ConversationEventStream
 
 
 class ConversationController:
@@ -23,4 +24,8 @@ class ConversationController:
 
     @property
     def state(self) -> State:
+        raise NotImplementedError()
+
+    @property
+    def event_stream(self) -> ConversationEventStream:
         raise NotImplementedError()
