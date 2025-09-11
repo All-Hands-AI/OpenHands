@@ -820,7 +820,7 @@ describe("SaaS mode", () => {
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to ensure it's not called
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings" as any);
 
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
@@ -940,7 +940,7 @@ describe("SaaS mode", () => {
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to track calls
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings" as any);
 
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
