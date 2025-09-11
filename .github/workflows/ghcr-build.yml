@@ -115,6 +115,9 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - uses: hynek/setup-cached-uv@v2
         name: Setup uv
       - name: Install Python dependencies using uv
@@ -281,6 +284,9 @@ jobs:
         name: Setup uv
       - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
       - name: Install OpenHands
         run: uv pip install -e .
       - name: Run docker runtime tests
