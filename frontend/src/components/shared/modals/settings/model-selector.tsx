@@ -13,12 +13,17 @@ import {
   VERIFIED_OPENHANDS_MODELS,
 } from "#/utils/verified-models";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
+import { cn } from "#/utils/utils";
+import { HelpLink } from "#/ui/help-link";
+import { PRODUCT_URL } from "#/utils/constants";
 
 interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   currentModel?: string;
   onChange?: (model: string | null) => void;
+  wrapperClassName?: string;
+  labelClassName?: string;
 }
 
 export function ModelSelector({
@@ -26,6 +31,8 @@ export function ModelSelector({
   models,
   currentModel,
   onChange,
+  wrapperClassName,
+  labelClassName,
 }: ModelSelectorProps) {
   const [, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
@@ -80,9 +87,16 @@ export function ModelSelector({
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col md:flex-row w-[full] max-w-[680px] justify-between gap-4 md:gap-[46px]">
+    <div
+      className={cn(
+        "flex flex-col md:flex-row w-[full] max-w-[680px] justify-between gap-4 md:gap-[46px]",
+        wrapperClassName,
+      )}
+    >
       <fieldset className="flex flex-col gap-2.5 w-full">
-        <label className="text-sm">{t(I18nKey.LLM$PROVIDER)}</label>
+        <label className={cn("text-sm", labelClassName)}>
+          {t(I18nKey.LLM$PROVIDER)}
+        </label>
         <Autocomplete
           data-testid="llm-provider-input"
           isRequired
@@ -136,8 +150,21 @@ export function ModelSelector({
         </Autocomplete>
       </fieldset>
 
+      {selectedProvider === "openhands" && (
+        <HelpLink
+          testId="openhands-account-help"
+          text={t(I18nKey.SETTINGS$NEED_OPENHANDS_ACCOUNT)}
+          linkText={t(I18nKey.SETTINGS$CLICK_HERE)}
+          href={PRODUCT_URL.PRODUCTION}
+          size="settings"
+          linkColor="white"
+        />
+      )}
+
       <fieldset className="flex flex-col gap-2.5 w-full">
-        <label className="text-sm">{t(I18nKey.LLM$MODEL)}</label>
+        <label className={cn("text-sm", labelClassName)}>
+          {t(I18nKey.LLM$MODEL)}
+        </label>
         <Autocomplete
           data-testid="llm-model-input"
           isRequired

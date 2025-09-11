@@ -37,7 +37,7 @@ export function ConversationMain() {
       <div className="flex flex-col gap-3 overflow-auto w-full">
         <div
           className={cn(
-            "overflow-hidden w-full bg-base min-h-[494px]",
+            "overflow-hidden w-full bg-base min-h-[600px]",
             !isRightPanelShown && "h-full",
           )}
         >
