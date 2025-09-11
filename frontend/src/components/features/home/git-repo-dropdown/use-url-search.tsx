@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Provider } from "#/types/settings";
 import { GitRepository } from "#/types/git";
-import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 
 export function useUrlSearch(inputValue: string, provider: Provider) {
   const [urlSearchResults, setUrlSearchResults] = useState<GitRepository[]>([]);
@@ -16,7 +16,7 @@ export function useUrlSearch(inputValue: string, provider: Provider) {
 
           setIsUrlSearchLoading(true);
           try {
-            const repositories = await UserService.searchGitRepositories(
+            const repositories = await GitService.searchGitRepositories(
               repoName,
               3,
               provider,

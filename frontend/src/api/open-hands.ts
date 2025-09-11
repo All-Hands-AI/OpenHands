@@ -2,10 +2,8 @@ import { AxiosHeaders } from "axios";
 import {
   Feedback,
   FeedbackResponse,
-  GitHubAccessTokenResponse,
   GetConfigResponse,
   GetVSCodeUrlResponse,
-  AuthenticateResponse,
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
@@ -202,20 +200,6 @@ class OpenHands {
   }
 
   /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
-   */
-  static async authenticate(
-    appMode: GetConfigResponse["APP_MODE"],
-  ): Promise<boolean> {
-    if (appMode === "oss") return true;
-
-    // Just make the request, if it succeeds (no exception thrown), return true
-    await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return true;
-  }
-
-  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
@@ -238,22 +222,6 @@ class OpenHands {
       headers: this.getConversationHeaders(),
     });
     return Object.keys(response.data.hosts);
-  }
-
-  /**
-   * @param code Code provided by GitHub
-   * @returns GitHub access token
-   */
-  static async getGitHubAccessToken(
-    code: string,
-  ): Promise<GitHubAccessTokenResponse> {
-    const { data } = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/keycloak/callback",
-      {
-        code,
-      },
-    );
-    return data;
   }
 
   /**
@@ -442,12 +410,6 @@ class OpenHands {
     return data;
   }
 
-  static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
-    const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
-    await openHands.post(endpoint);
-  }
-
   static async getGitChanges(conversationId: string): Promise<GitChange[]> {
     const url = `${this.getConversationUrl(conversationId)}/git/changes`;
     const { data } = await openHands.get<GitChange[]>(url, {
@@ -588,33 +550,6 @@ class OpenHands {
       },
     );
     return response.data;
-  }
-
-  /**
-   * Get the user installation IDs
-   * @param provider The provider to get installation IDs for (github, bitbucket, etc.)
-   * @returns List of installation IDs
-   */
-
-  static async getMicroagentManagementConversations(
-    selectedRepository: string,
-    pageId?: string,
-    limit: number = 100,
-  ): Promise<Conversation[]> {
-    const params: Record<string, string | number> = {
-      limit,
-      selected_repository: selectedRepository,
-    };
-
-    if (pageId) {
-      params.page_id = pageId;
-    }
-
-    const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/microagent-management/conversations",
-      { params },
-    );
-    return data.results;
   }
 }
 

@@ -13,7 +13,7 @@ export const useGitUser = () => {
 
   const user = useQuery({
     queryKey: ["user"],
-    queryFn: UserService.getGitUser,
+    queryFn: UserService.getUser,
     enabled: shouldFetchUser,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes

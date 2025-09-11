@@ -1,5 +1,5 @@
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { Branch, PaginatedBranchesResponse } from "#/types/git";
 
 export const useRepositoryBranches = (repository: string | null) =>
@@ -7,7 +7,7 @@ export const useRepositoryBranches = (repository: string | null) =>
     queryKey: ["repository", repository, "branches"],
     queryFn: async () => {
       if (!repository) return [];
-      const response = await UserService.getRepositoryBranches(repository);
+      const response = await GitService.getRepositoryBranches(repository);
       // Ensure we return an array even if the response is malformed
       return Array.isArray(response.branches) ? response.branches : [];
     },
@@ -31,7 +31,7 @@ export const useRepositoryBranchesPaginated = (
           total_count: 0,
         };
       }
-      return UserService.getRepositoryBranches(
+      return GitService.getRepositoryBranches(
         repository,
         pageParam as number,
         perPage,

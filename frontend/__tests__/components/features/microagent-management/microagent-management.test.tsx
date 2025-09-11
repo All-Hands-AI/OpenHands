@@ -8,7 +8,7 @@ import { renderWithProviders } from "test-utils";
 import MicroagentManagement from "#/routes/microagent-management";
 import { MicroagentManagementMain } from "#/components/features/microagent-management/microagent-management-main";
 import OpenHands from "#/api/open-hands";
-import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { GitRepository } from "#/types/git";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { Conversation } from "#/api/open-hands.types";
@@ -232,12 +232,12 @@ describe("MicroagentManagement", () => {
     });
 
     // Setup default mock for retrieveUserGitRepositories
-    vi.spyOn(UserService, "retrieveUserGitRepositories").mockResolvedValue({
+    vi.spyOn(GitService, "retrieveUserGitRepositories").mockResolvedValue({
       data: [...mockRepositories],
       nextPage: null,
     });
     // Setup default mock for getRepositoryMicroagents
-    vi.spyOn(UserService, "getRepositoryMicroagents").mockResolvedValue([
+    vi.spyOn(GitService, "getRepositoryMicroagents").mockResolvedValue([
       ...mockMicroagents,
     ]);
     // Setup default mock for searchConversations
@@ -245,7 +245,7 @@ describe("MicroagentManagement", () => {
       ...mockConversations,
     ]);
     // Setup default mock for getRepositoryMicroagentContent
-    vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
       content: "Original microagent content for testing updates",
       path: ".openhands/microagents/update-test-microagent",
       git_provider: "github",
@@ -1291,7 +1291,7 @@ describe("MicroagentManagement", () => {
   // Add microagent integration tests
   describe("Add microagent functionality", () => {
     beforeEach(() => {
-      vi.spyOn(UserService, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [{ name: "main", commit_sha: "abc123", protected: false }],
         has_next_page: false,
         current_page: 1,
@@ -1984,7 +1984,7 @@ describe("MicroagentManagement", () => {
     };
 
     beforeEach(() => {
-      vi.spyOn(UserService, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [{ name: "main", commit_sha: "abc123", protected: false }],
         has_next_page: false,
         current_page: 1,
@@ -2315,14 +2315,12 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return empty content for this test
-      vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue(
-        {
-          content: "",
-          path: ".openhands/microagents/update-test-microagent",
-          git_provider: "github",
-          triggers: [],
-        },
-      );
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
 
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
@@ -2366,14 +2364,12 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return content without triggers for this test
-      vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue(
-        {
-          content: "Original microagent content for testing updates",
-          path: ".openhands/microagents/update-test-microagent",
-          git_provider: "github",
-          triggers: [],
-        },
-      );
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Original microagent content for testing updates",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
 
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
@@ -2652,14 +2648,12 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return the expected content for this test
-      vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue(
-        {
-          content: "Test microagent content for learn functionality",
-          path: ".openhands/microagents/learn-test-microagent",
-          git_provider: "github",
-          triggers: ["learn", "test"],
-        },
-      );
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: ["learn", "test"],
+      });
 
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
@@ -2714,14 +2708,12 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return empty content for this test
-      vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue(
-        {
-          content: "",
-          path: ".openhands/microagents/learn-test-microagent",
-          git_provider: "github",
-          triggers: [],
-        },
-      );
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
 
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
@@ -2774,14 +2766,12 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return content without triggers for this test
-      vi.spyOn(UserService, "getRepositoryMicroagentContent").mockResolvedValue(
-        {
-          content: "Test microagent content for learn functionality",
-          path: ".openhands/microagents/learn-test-microagent",
-          git_provider: "github",
-          triggers: [],
-        },
-      );
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
 
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
