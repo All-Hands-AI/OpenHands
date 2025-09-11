@@ -2,7 +2,8 @@ import os
 import subprocess
 import tempfile
 
-from openhands.integrations.service_types import ProviderType
+from openhands_configuration import ProviderType
+
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.send_pull_request import make_commit
 

@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 from datetime import datetime
 
+from openhands_configuration import ProviderType
 from sqlalchemy import and_, desc
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
 from storage.openhands_pr import OpenhandsPR
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 
 
 @dataclass

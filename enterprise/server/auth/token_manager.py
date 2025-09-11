@@ -14,6 +14,7 @@ from keycloak.exceptions import (
     KeycloakConnectionError,
     KeycloakError,
 )
+from openhands_configuration import ProviderType
 from server.auth.constants import (
     BITBUCKET_APP_CLIENT_ID,
     BITBUCKET_APP_CLIENT_SECRET,
@@ -36,7 +37,6 @@ from storage.offline_token_store import OfflineTokenStore
 from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
 from openhands.core.config import load_openhands_config
-from openhands.integrations.service_types import ProviderType
 
 # Create a function to get config to avoid circular imports
 _config = None

@@ -5,11 +5,10 @@ import shutil
 import subprocess
 
 import jinja2
-from openhands_configuration import LLMConfig
+from openhands_configuration import LLMConfig, ProviderType
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler

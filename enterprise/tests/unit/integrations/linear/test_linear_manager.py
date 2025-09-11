@@ -16,8 +16,8 @@ from integrations.linear.linear_view import (
     LinearNewConversationView,
 )
 from integrations.models import Message, SourceType
+from openhands_configuration import ProviderType, Repository
 
-from openhands.integrations.service_types import ProviderType, Repository
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 
 

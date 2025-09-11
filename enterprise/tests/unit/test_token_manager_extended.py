@@ -1,9 +1,8 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+from openhands_configuration import ProviderType
 from server.auth.token_manager import TokenManager, create_encryption_utility
-
-from openhands.integrations.service_types import ProviderType
 
 
 @pytest.fixture

@@ -89,9 +89,19 @@ class Settings(BaseModel):
         secret_store = UserSecrets(provider_tokens={}, custom_secrets={})
 
         if isinstance(tokens, dict):
+            converted_store = UserSecrets(provider_tokens=tokens)
+            secret_store = secret_store.model_copy(
+                update={'provider_tokens': converted_store.provider_tokens}
+            )
+        else:
             secret_store = secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
+            converted_store = UserSecrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
+            secret_store = secret_store.model_copy(
+                update={'custom_secrets': converted_store.custom_secrets}
+            )
+        else:
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': custom_secrets}
             )
@@ -113,13 +123,3 @@ class Settings(BaseModel):
         """Custom serializer for secrets store."""
         """Force invalidate secret store"""
         return {'provider_tokens': {}}
-
-    def merge_with_config_settings(self) -> 'Settings':
-        """Merge config.toml settings with stored settings.
-
-        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
-        This method can be used by both server mode and CLI mode.
-
-        Note: This simplified version doesn't load from config files.
-        """
-        return self

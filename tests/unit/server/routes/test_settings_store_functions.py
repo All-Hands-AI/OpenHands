@@ -3,10 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from openhands_configuration import ProviderToken, Settings, UserSecrets
+from openhands_configuration import ProviderToken, ProviderType, Settings, UserSecrets
 from pydantic import SecretStr
 
-from openhands.integrations.service_types import ProviderType
 from openhands.server.routes.secrets import (
     app,
     check_provider_tokens,

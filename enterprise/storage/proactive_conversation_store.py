@@ -9,13 +9,13 @@ from integrations.github.github_types import (
     WorkflowRunGroup,
     WorkflowRunStatus,
 )
+from openhands_configuration import ProviderType
 from sqlalchemy import and_, delete, select, update
 from sqlalchemy.orm import sessionmaker
 from storage.database import a_session_maker
 from storage.proactive_convos import ProactiveConversation
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 
 
 @dataclass

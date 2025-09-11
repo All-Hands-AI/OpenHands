@@ -15,6 +15,7 @@ from integrations.slack.slack_manager import SlackManager
 from integrations.utils import (
     HOST_URL,
 )
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
@@ -36,7 +37,6 @@ from storage.database import session_maker
 from storage.slack_team_store import SlackTeamStore
 from storage.slack_user import SlackUser
 
-from openhands.integrations.service_types import ProviderType
 from openhands.server.shared import config, sio
 
 signature_verifier = SignatureVerifier(signing_secret=SLACK_SIGNING_SECRET)

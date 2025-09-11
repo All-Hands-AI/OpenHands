@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from openhands_configuration import (
     PROVIDER_TOKEN_TYPE,
+    ProviderType,
 )
 from pydantic import SecretStr
 from server.auth.token_manager import TokenManager
@@ -11,7 +12,6 @@ from server.auth.token_manager import TokenManager
 from openhands.integrations.service_types import (
     Branch,
     PaginatedBranchesResponse,
-    ProviderType,
     Repository,
     SuggestedTask,
     User,

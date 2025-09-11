@@ -7,13 +7,13 @@ from openhands_configuration import (
     PROVIDER_TOKEN_TYPE,
     MCPConfig,
     ProviderToken,
+    ProviderType,
     UserSecrets,
 )
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
-from openhands.integrations.service_types import ProviderType
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (

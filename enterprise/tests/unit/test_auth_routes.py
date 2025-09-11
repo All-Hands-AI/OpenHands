@@ -4,6 +4,7 @@ import jwt
 import pytest
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 from server.auth.auth_error import AuthError
 from server.auth.saas_user_auth import SaasUserAuth
@@ -14,8 +15,6 @@ from server.routes.auth import (
     logout,
     set_response_cookie,
 )
-
-from openhands.integrations.service_types import ProviderType
 
 
 @pytest.fixture

@@ -1,7 +1,10 @@
-from openhands_configuration import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE, Settings
+from openhands_configuration import (
+    CUSTOM_SECRETS_TYPE,
+    PROVIDER_TOKEN_TYPE,
+    ProviderType,
+    Settings,
+)
 from pydantic import ConfigDict, Field
-
-from openhands.integrations.service_types import ProviderType
 
 
 class ConversationInitData(Settings):

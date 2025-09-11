@@ -5,11 +5,11 @@ from unittest.mock import patch
 from conftest import (
     _load_runtime,
 )
+from openhands_configuration import ProviderType, Repository
 
 from openhands.core.setup import initialize_repository_for_runtime
 from openhands.events.action import FileReadAction, FileWriteAction
 from openhands.events.observation import FileReadObservation, FileWriteObservation
-from openhands.integrations.service_types import ProviderType, Repository
 
 
 def test_initialize_repository_for_runtime(temp_dir, runtime_cls, run_as_openhands):

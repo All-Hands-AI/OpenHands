@@ -16,8 +16,9 @@ from integrations.jira.jira_view import (
     JiraNewConversationView,
 )
 from integrations.models import Message, SourceType
+from openhands_configuration import ProviderType
 
-from openhands.integrations.service_types import ProviderType, Repository
+from openhands.integrations.service_types import Repository
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 
 

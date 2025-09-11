@@ -6,11 +6,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from openhands_configuration import ProviderToken, ProviderType
+from openhands_configuration import ProviderType as ServiceProviderType
 from pydantic import SecretStr
 
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.service_types import OwnerType, Repository
-from openhands.integrations.service_types import ProviderType as ServiceProviderType
 from openhands.integrations.utils import validate_provider_token
 from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.issue import Issue

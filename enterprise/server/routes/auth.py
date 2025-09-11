@@ -6,6 +6,7 @@ from urllib.parse import quote
 import posthog
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 from server.auth.auth_utils import user_verifier
 from server.auth.constants import (
@@ -24,7 +25,7 @@ from storage.user_settings import UserSettings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
-from openhands.integrations.service_types import ProviderType, TokenResponse
+from openhands.integrations.service_types import TokenResponse
 from openhands.server.services.conversation_service import create_provider_tokens_object
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token

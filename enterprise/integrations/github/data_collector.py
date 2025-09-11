@@ -14,6 +14,7 @@ from integrations.github.queries import PR_QUERY_BY_NODE_ID
 from integrations.models import Message
 from integrations.types import PRStatus, ResolverViewInterface
 from integrations.utils import HOST
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
 from storage.openhands_pr import OpenhandsPR
@@ -22,7 +23,6 @@ from storage.openhands_pr_store import OpenhandsPRStore
 from openhands.core.config import load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.service_types import ProviderType
 from openhands.storage import get_file_store
 from openhands.storage.locations import get_conversation_dir
 

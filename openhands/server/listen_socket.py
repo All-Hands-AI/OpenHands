@@ -3,6 +3,7 @@ import os
 from typing import Any
 from urllib.parse import parse_qs
 
+from openhands_configuration import ProviderType
 from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
@@ -19,7 +20,6 @@ from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
 from openhands.events.serialization import event_to_dict
-from openhands.integrations.service_types import ProviderType
 from openhands.server.services.conversation_service import (
     setup_init_conversation_settings,
 )

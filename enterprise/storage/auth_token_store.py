@@ -4,13 +4,13 @@ import time
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Dict
 
+from openhands_configuration import ProviderType
 from sqlalchemy import select, update
 from sqlalchemy.orm import sessionmaker
 from storage.auth_tokens import AuthTokens
 from storage.database import a_session_maker
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
 
 
 @dataclass

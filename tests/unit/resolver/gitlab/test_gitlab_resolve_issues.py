@@ -3,7 +3,7 @@ import tempfile
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from openhands_configuration import LLMConfig
+from openhands_configuration import LLMConfig, ProviderType
 
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import (
@@ -11,7 +11,6 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
-from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue import Issue, ReviewThread

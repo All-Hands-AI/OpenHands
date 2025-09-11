@@ -1,8 +1,10 @@
 from datetime import datetime
 
+from openhands_configuration import ProviderType
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.service.base import GitHubMixinBase
-from openhands.integrations.service_types import OwnerType, ProviderType, Repository
+from openhands.integrations.service_types import OwnerType, Repository
 from openhands.server.types import AppMode
 
 

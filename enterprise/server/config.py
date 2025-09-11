@@ -7,6 +7,7 @@ import typing
 import jwt
 import requests  # type: ignore
 from fastapi import HTTPException
+from openhands_configuration import ProviderType
 from server.auth.constants import (
     BITBUCKET_APP_CLIENT_ID,
     ENABLE_ENTERPRISE_SSO,
@@ -19,7 +20,6 @@ from server.auth.constants import (
     GITLAB_APP_CLIENT_ID,
 )
 
-from openhands.integrations.service_types import ProviderType
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.types import AppMode
 
