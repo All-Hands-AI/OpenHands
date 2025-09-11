@@ -6,6 +6,7 @@ from types import MappingProxyType
 from typing import Callable, cast
 
 from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
@@ -14,6 +15,7 @@ from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     PROVIDER_TOKEN_TYPE,
@@ -28,8 +30,6 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.server.session.conversation_controller import ConversationController
-from openhands.server.session.conversation_event_stream import ConversationEventStream
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
@@ -48,10 +48,11 @@ class AgentSession:
 
     sid: str
     user_id: str | None
-    event_stream: ConversationEventStream
+    event_stream: EventStream
     llm_registry: LLMRegistry
     file_store: FileStore
-    controller: ConversationController | None = None
+    # controller: AgentSdkController | None = None
+    controller: AgentController | None = None
     runtime: Runtime | None = None
 
     memory: Memory | None = None
@@ -78,8 +79,8 @@ class AgentSession:
         """
         self.sid = sid
         # Using new AgentSDK
-        self.event_stream = ConversationEventStream()
-        # self.event_stream = EventStream(sid, file_store, user_id)
+        # self.event_stream = ConversationEventStream()
+        self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
         self.user_id = user_id
@@ -394,7 +395,8 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
-    ) -> tuple[ConversationController, bool]:
+        # ) -> tuple[AgentSdkController, bool]:
+    ) -> tuple[AgentController, bool]:
         """Creates an AgentController instance
 
         Parameters:
@@ -426,8 +428,7 @@ class AgentSession:
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
-        controller = ConversationController()
-        """
+        # controller = AgentSdkController()
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -446,7 +447,6 @@ class AgentSession:
             replay_events=replay_events,
             security_analyzer=self.runtime.security_analyzer if self.runtime else None,
         )
-        """
 
         return (controller, initial_state is not None)
 

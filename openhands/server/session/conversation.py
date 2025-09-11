@@ -1,11 +1,10 @@
 import asyncio
 
 from openhands.core.config import OpenHandsConfig
-from openhands.events.stream import EventStreamABC
+from openhands.events.stream import EventStream, EventStreamABC
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.server.session.conversation_event_stream import ConversationEventStream
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -33,8 +32,8 @@ class ServerConversation:
         self.user_id = user_id
 
         if event_stream is None:
-            event_stream = ConversationEventStream()
-            # event_stream = EventStream(sid, file_store, user_id)
+            # event_stream = ConversationEventStream()
+            event_stream = EventStream(sid, file_store, user_id)
         self.event_stream = event_stream
 
         if runtime:

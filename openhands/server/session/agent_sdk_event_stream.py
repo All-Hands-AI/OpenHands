@@ -1,7 +1,7 @@
 from openhands.events.stream import EventStreamABC
 
 
-class ConversationEventStream(EventStreamABC):
+class AgentSdkEventStream(EventStreamABC):
     """
     Interface providing forward compatibility between the old EventStream and the new AgentSDK Conversation API.
 

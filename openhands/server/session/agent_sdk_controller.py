@@ -1,10 +1,10 @@
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.schema.agent import AgentState
-from openhands.server.session.conversation_event_stream import ConversationEventStream
+from openhands.server.session.agent_sdk_event_stream import AgentSdkEventStream
 
 
-class ConversationController:
+class AgentSdkController:
     """
     Interface providing forward compatibility between the old AgentController and the new AgentSDK Conversation API.
     """
@@ -27,5 +27,5 @@ class ConversationController:
         raise NotImplementedError()
 
     @property
-    def event_stream(self) -> ConversationEventStream:
+    def event_stream(self) -> AgentSdkEventStream:
         raise NotImplementedError()
