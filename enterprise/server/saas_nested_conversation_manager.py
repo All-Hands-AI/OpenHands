@@ -178,8 +178,10 @@ class SaasNestedConversationManager(ConversationManager):
         redis = self._get_redis_client()
         key = self._get_redis_conversation_key(user_id, sid)
         starting = await redis.get(key)
+        logger.debug(f'maybe_start_agent_loop starting from redis: {starting}')
 
         runtime = await self._get_runtime(sid)
+        logger.debug(f'maybe_start_agent_loop runtime: {runtime}')
 
         nested_url = None
         session_api_key = None
@@ -187,15 +189,20 @@ class SaasNestedConversationManager(ConversationManager):
         event_store = EventStore(sid, self.file_store, user_id)
         if runtime:
             nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
+            logger.debug(f'maybe_start_agent_loop nested_url: {nested_url}')
             session_api_key = runtime.get('session_api_key')
+            logger.debug(f'maybe_start_agent_loop session_api_key: {session_api_key}')
             status_str = (runtime.get('status') or 'stopped').upper()
+            logger.debug(f'maybe_start_agent_loop status_str: {status_str}')
             if status_str in ConversationStatus:
                 status = ConversationStatus[status_str]
         if status is ConversationStatus.STOPPED and starting:
+            logger.debug('maybe_start_agent_loop setting status to starting...')
             status = ConversationStatus.STARTING
 
         if status is ConversationStatus.STOPPED:
             # Mark the agentloop as starting in redis
+            logger.debug('maybe_start_agent_loop starting agent...')
             await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
 
             # Start the agent loop in the background

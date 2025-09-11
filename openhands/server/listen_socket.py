@@ -103,12 +103,16 @@ async def connect(connection_id: str, environ: dict) -> None:
             ):
                 continue
             elif isinstance(event, AgentStateChangedObservation):
+                logger.debug(
+                    f'oh_event: AgentStateChangedObservation {event.agent_state}'
+                )
                 agent_state_changed = event
             else:
                 await sio.emit('oh_event', event_to_dict(event), to=connection_id)
 
         # Send the agent state changed event last if we have one
         if agent_state_changed:
+            logger.debug(f'sending AgentStateChangedObservation {event.agent_state}')
             await sio.emit(
                 'oh_event', event_to_dict(agent_state_changed), to=connection_id
             )
@@ -121,6 +125,9 @@ async def connect(connection_id: str, environ: dict) -> None:
             user_id, conversation_id, providers_set
         )
 
+        logger.debug(
+            f'conversation manager type {conversation_manager.__class__.__name__}'
+        )
         agent_loop_info = await conversation_manager.join_conversation(
             conversation_id,
             connection_id,
