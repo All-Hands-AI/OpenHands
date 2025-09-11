@@ -15,7 +15,7 @@ from openhands.server.routes.secrets import (
 from openhands.server.routes.settings import store_llm_settings
 from openhands.server.settings import POSTProviderModel
 from openhands.storage import get_file_store
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 

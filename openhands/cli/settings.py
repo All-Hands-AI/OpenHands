@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
+from openhands_configuration import Settings
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -33,7 +34,6 @@ from openhands.core.config.config_utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
-from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.llm import get_supported_llm_models
 

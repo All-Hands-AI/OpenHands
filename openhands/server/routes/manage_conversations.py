@@ -67,7 +67,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationTrigger,
 )
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all

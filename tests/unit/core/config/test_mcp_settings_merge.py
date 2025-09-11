@@ -9,7 +9,7 @@ from openhands_configuration import (
     MCPStdioServerConfig,
 )
 
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 
 
 @pytest.mark.asyncio

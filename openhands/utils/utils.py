@@ -1,10 +1,11 @@
 from copy import deepcopy
 
+from openhands_configuration import Settings
+
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
-from openhands.storage.data_models.settings import Settings
 
 
 def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsConfig:

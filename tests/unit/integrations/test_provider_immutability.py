@@ -10,7 +10,7 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 
 
 def test_provider_token_immutability():

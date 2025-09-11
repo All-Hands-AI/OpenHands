@@ -2,7 +2,7 @@ from pydantic import ConfigDict, Field
 
 from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 
 
 class ConversationInitData(Settings):

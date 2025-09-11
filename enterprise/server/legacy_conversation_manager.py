@@ -18,7 +18,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
 

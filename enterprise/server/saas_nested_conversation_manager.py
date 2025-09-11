@@ -47,7 +47,7 @@ from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.locations import (
     get_conversation_event_filename,

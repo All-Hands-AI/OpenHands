@@ -33,7 +33,7 @@ from openhands.server.constants import ROOM_KEY
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 
 

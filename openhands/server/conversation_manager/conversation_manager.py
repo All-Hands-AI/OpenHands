@@ -13,7 +13,7 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 
 

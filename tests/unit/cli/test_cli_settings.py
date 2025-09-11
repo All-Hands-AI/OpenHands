@@ -13,7 +13,7 @@ from openhands.cli.settings import (
 )
 from openhands.cli.tui import UserCancelledError
 from openhands.core.config import OpenHandsConfig
-from openhands.storage.data_models.settings import Settings
+from openhands_configuration import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
