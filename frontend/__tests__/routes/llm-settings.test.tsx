@@ -3,7 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
@@ -70,7 +72,7 @@ describe("Content", () => {
     });
 
     it("should render the existing settings values", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_model: "openai/gpt-4o",
@@ -201,7 +203,7 @@ describe("Content", () => {
     });
 
     it("should render existing advanced settings correctly", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_model: "openai/gpt-4o",
@@ -246,7 +248,7 @@ describe("Content", () => {
 
 describe("Form submission", () => {
   it("should submit the basic form with the correct values", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -282,7 +284,7 @@ describe("Form submission", () => {
   });
 
   it("should submit the advanced form with the correct values", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -347,7 +349,7 @@ describe("Form submission", () => {
   });
 
   it("should disable the button if there are no changes in the basic form", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -390,7 +392,7 @@ describe("Form submission", () => {
   });
 
   it("should disable the button if there are no changes in the advanced form", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -542,7 +544,7 @@ describe("Form submission", () => {
 
   // flaky test
   it.skip("should disable the button when submitting changes", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -569,7 +571,7 @@ describe("Form submission", () => {
   });
 
   it("should clear advanced settings when saving basic settings", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -577,7 +579,7 @@ describe("Form submission", () => {
       llm_api_key_set: true,
       confirmation_mode: true,
     });
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
     renderLlmSettingsScreen();
 
     await screen.findByTestId("llm-settings-screen");
@@ -613,7 +615,7 @@ describe("Form submission", () => {
 describe("Status toasts", () => {
   describe("Basic form", () => {
     it("should call displaySuccessToast when the settings are saved", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displaySuccessToastSpy = vi.spyOn(
         ToastHandlers,
@@ -634,7 +636,7 @@ describe("Status toasts", () => {
     });
 
     it("should call displayErrorToast when the settings fail to save", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
@@ -656,7 +658,7 @@ describe("Status toasts", () => {
 
   describe("Advanced form", () => {
     it("should call displaySuccessToast when the settings are saved", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displaySuccessToastSpy = vi.spyOn(
         ToastHandlers,
@@ -682,7 +684,7 @@ describe("Status toasts", () => {
     });
 
     it("should call displayErrorToast when the settings fail to save", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
@@ -710,7 +712,7 @@ describe("Status toasts", () => {
 
 describe("SaaS mode", () => {
   it("should not render the runtime settings input in oss mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
@@ -728,7 +730,7 @@ describe("SaaS mode", () => {
   });
 
   it("should render the runtime settings input in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -757,7 +759,7 @@ describe("SaaS mode", () => {
   });
 
   it("should always render the runtime settings input as disabled", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
