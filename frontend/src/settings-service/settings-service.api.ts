@@ -4,7 +4,7 @@ import { ApiSettings, PostApiSettings } from "./settings.types";
 /**
  * Settings service for managing application settings
  */
-export class SettingsService {
+class SettingsService {
   /**
    * Get the settings from the server or use the default settings if not found
    */
@@ -24,3 +24,5 @@ export class SettingsService {
     return data.status === 200;
   }
 }
+
+export default SettingsService;

@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/root-layout";
 import i18n from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
-import { SettingsService } from "#/settings-service/settings-service.api";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 

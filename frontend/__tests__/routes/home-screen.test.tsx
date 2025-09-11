@@ -7,7 +7,7 @@ import { Provider } from "react-redux";
 import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { GitRepository } from "#/types/git";
-import { SettingsService } from "#/settings-service/settings-service.api";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
