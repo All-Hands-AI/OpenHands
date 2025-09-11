@@ -2,6 +2,7 @@ import asyncio
 
 from integrations.types import GitLabResourceType
 from integrations.utils import store_repositories_in_db
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 from server.auth.token_manager import TokenManager
 from storage.gitlab_webhook import GitlabWebhook, WebhookStatus
@@ -10,7 +11,6 @@ from storage.gitlab_webhook_store import GitlabWebhookStore
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.service_types import (
-    ProviderType,
     RateLimitError,
     Repository,
     RequestMethod,

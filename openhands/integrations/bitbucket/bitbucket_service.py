@@ -1,5 +1,6 @@
 import os
 
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 
 from openhands.integrations.bitbucket.service import (
@@ -11,7 +12,6 @@ from openhands.integrations.bitbucket.service import (
 from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
-    ProviderType,
 )
 from openhands.utils.import_utils import get_impl
 

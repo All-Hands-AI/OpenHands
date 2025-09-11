@@ -1,7 +1,8 @@
+from openhands_configuration import ProviderType
+
 from openhands.integrations.gitlab.service.base import GitLabMixinBase
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
-    ProviderType,
     RequestMethod,
     SuggestedTask,
     TaskType,

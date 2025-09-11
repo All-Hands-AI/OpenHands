@@ -2,13 +2,13 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
 import pytest
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.service_types import (
     AuthenticationError,
     OwnerType,
-    ProviderType,
     Repository,
     User,
 )
