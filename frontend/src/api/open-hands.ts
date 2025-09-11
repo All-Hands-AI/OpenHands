@@ -2,7 +2,6 @@ import { AxiosHeaders } from "axios";
 import {
   Feedback,
   FeedbackResponse,
-  GetConfigResponse,
   GetVSCodeUrlResponse,
   Conversation,
   ResultSet,
@@ -17,7 +16,7 @@ import {
   GetFileResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
 import { SuggestedTask } from "#/utils/types";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 import { SubscriptionAccess } from "#/types/billing";
@@ -53,42 +52,6 @@ class OpenHands {
       }
     }
     return `/api/conversations/${conversationId}`;
-  }
-
-  /**
-   * Retrieve the list of models available
-   * @returns List of models available
-   */
-  static async getModels(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/models");
-    return data;
-  }
-
-  /**
-   * Retrieve the list of agents available
-   * @returns List of agents available
-   */
-  static async getAgents(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/agents");
-    return data;
-  }
-
-  /**
-   * Retrieve the list of security analyzers available
-   * @returns List of security analyzers available
-   */
-  static async getSecurityAnalyzers(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>(
-      "/api/options/security-analyzers",
-    );
-    return data;
-  }
-
-  static async getConfig(): Promise<GetConfigResponse> {
-    const { data } = await openHands.get<GetConfigResponse>(
-      "/api/options/config",
-    );
-    return data;
   }
 
   static getConversationHeaders(): AxiosHeaders {
@@ -348,25 +311,6 @@ class OpenHands {
     );
 
     return data;
-  }
-
-  /**
-   * Get the settings from the server or use the default settings if not found
-   */
-  static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings");
-    return data;
-  }
-
-  /**
-   * Save the settings to the server. Only valid settings are saved.
-   * @param settings - the settings to save
-   */
-  static async saveSettings(
-    settings: Partial<PostApiSettings>,
-  ): Promise<boolean> {
-    const data = await openHands.post("/api/settings", settings);
-    return data.status === 200;
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {
