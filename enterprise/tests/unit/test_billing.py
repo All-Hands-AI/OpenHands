@@ -560,7 +560,7 @@ async def test_cancel_subscription_stripe_error():
 
     with (
         patch('server.routes.billing.session_maker') as mock_session_maker,
-        patch('stripe.Subscription.modify_async', AsyncMock(side_effect=stripe.StripeError("API Error"))) as mock_stripe_modify,
+        patch('stripe.Subscription.modify_async', AsyncMock(side_effect=stripe.StripeError("API Error"))),
     ):
         # Setup mock session
         mock_session = MagicMock()

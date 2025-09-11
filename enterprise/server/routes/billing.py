@@ -151,7 +151,7 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
 
         try:
             # Cancel the subscription in Stripe at period end
-            stripe_subscription = await stripe.Subscription.modify_async(
+            await stripe.Subscription.modify_async(
                 subscription_access.stripe_subscription_id,
                 cancel_at_period_end=True
             )
