@@ -479,11 +479,10 @@ async def modify_llm_settings_basic(
         settings = Settings()
 
     settings.llm_model = f'{provider}{organized_models[provider]["separator"]}{model}'
-    settings.llm_api_key = SecretStr(api_key)
+    settings.llm_api_key = SecretStr(api_key) if api_key and api_key.strip() else None
     settings.llm_base_url = None
     settings.agent = OH_DEFAULT_AGENT
     settings.enable_default_condenser = True
-
     await settings_store.store(settings)
 
 
@@ -608,12 +607,11 @@ async def modify_llm_settings_advanced(
         settings = Settings()
 
     settings.llm_model = custom_model
-    settings.llm_api_key = SecretStr(api_key)
+    settings.llm_api_key = SecretStr(api_key) if api_key and api_key.strip() else None
     settings.llm_base_url = base_url
     settings.agent = agent
     settings.confirmation_mode = enable_confirmation_mode
     settings.enable_default_condenser = enable_memory_condensation
-
     await settings_store.store(settings)
 
 
@@ -685,5 +683,4 @@ async def modify_search_api_settings(
         settings = Settings()
 
     settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
-
     await settings_store.store(settings)

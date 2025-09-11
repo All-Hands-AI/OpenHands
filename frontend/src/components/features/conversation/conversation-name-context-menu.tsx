@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useWindowSize } from "@uidotdev/usehooks";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { ContextMenu } from "#/ui/context-menu";
@@ -47,6 +48,8 @@ export function ConversationNameContextMenu({
   onDownloadViaVSCode,
   position = "bottom",
 }: ConversationNameContextMenuProps) {
+  const { width } = useWindowSize();
+
   const { t } = useTranslation();
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
 
@@ -56,12 +59,15 @@ export function ConversationNameContextMenu({
   const hasInfo = Boolean(onDisplayCost);
   const hasControl = Boolean(onStop || onDelete);
 
+  const isMobile = width && width <= 1024;
+
   return (
     <ContextMenu
       ref={ref}
       testId="conversation-name-context-menu"
       position={position}
       alignment="left"
+      className={isMobile ? "right-0 translate-x-[34%] left-auto" : ""}
     >
       {onRename && (
         <ContextMenuListItem
