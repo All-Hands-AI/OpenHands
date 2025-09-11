@@ -7,6 +7,7 @@ import { Provider } from "react-redux";
 import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { GitRepository } from "#/types/git";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
 import MainApp from "#/routes/root-layout";
@@ -92,7 +93,7 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
 
 describe("HomeScreen", () => {
   beforeEach(() => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -360,7 +361,7 @@ describe("Settings 404", () => {
   });
 
   const getConfigSpy = vi.spyOn(OptionService, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
   it("should open the settings modal if GET /settings fails with a 404", async () => {
     const error = createAxiosNotFoundErrorObject();
@@ -419,7 +420,7 @@ describe("Settings 404", () => {
 
 describe("Setup Payment modal", () => {
   const getConfigSpy = vi.spyOn(OptionService, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
   it("should only render if SaaS mode and is new user", async () => {
     // @ts-expect-error - we only need the APP_MODE for this test
