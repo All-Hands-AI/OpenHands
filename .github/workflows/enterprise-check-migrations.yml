@@ -12,7 +12,9 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+
 
       - name: Fetch base branch
         run: git fetch origin ${{ github.event.pull_request.base.ref }}
@@ -21,11 +23,13 @@ jobs:
         id: check_up_to_date
         shell: bash
         run: |
-          if git merge-base --is-ancestor origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }}; then
-            echo "We're up to date with base ${{ github.event.pull_request.base.ref }}"
+          BASE="origin/${{ github.event.pull_request.base.ref }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          if git merge-base --is-ancestor "$BASE" "$HEAD"; then
+            echo "We're up to date with base $BASE"
             exit 0
           else
-            echo "NOT up to date with base ${{ github.event.pull_request.base.ref }}"
+            echo "NOT up to date with base $BASE"
             exit 1
           fi
 
