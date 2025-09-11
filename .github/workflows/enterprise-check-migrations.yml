@@ -1,0 +1,37 @@
+name: Enterprise Check Migrations
+
+on:
+  pull_request:
+    paths:
+      - 'enterprise/migrations/**'
+
+jobs:
+  check-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+
+      - name: Check if base branch is ancestor of PR
+        id: check_up_to_date
+        shell: bash
+        run: |
+          if git merge-base --is-ancestor origin/${{ github.event.pull_request.base.ref }} ${{ github.sha }}; then
+            echo "We're up to date with base ${{ github.event.pull_request.base.ref }}"
+            exit 0
+          else
+            echo "NOT up to date with base ${{ github.event.pull_request.base.ref }}"
+            exit 1
+          fi
+
+      - name: Comment warning on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ⚠️ This PR contains **migrations**. Please synchronize before merging to prevent conflicts.
