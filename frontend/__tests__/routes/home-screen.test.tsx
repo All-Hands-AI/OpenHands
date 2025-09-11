@@ -371,11 +371,10 @@ describe("Settings 404", () => {
     expect(settingsModal).toBeInTheDocument();
   });
 
-  it("should navigate to the settings screen when clicking the advanced settings button", async () => {
+  it("should have the correct advanced settings link that opens in a new window", async () => {
     const error = createAxiosNotFoundErrorObject();
     getSettingsSpy.mockRejectedValue(error);
 
-    const user = userEvent.setup();
     renderHomeScreen();
 
     const settingsScreen = screen.queryByTestId("settings-screen");
@@ -384,16 +383,16 @@ describe("Settings 404", () => {
     const settingsModal = await screen.findByTestId("ai-config-modal");
     expect(settingsModal).toBeInTheDocument();
 
-    const advancedSettingsButton = await screen.findByTestId(
+    const advancedSettingsLink = await screen.findByTestId(
       "advanced-settings-link",
     );
-    await user.click(advancedSettingsButton);
 
-    const settingsScreenAfter = await screen.findByTestId("settings-screen");
-    expect(settingsScreenAfter).toBeInTheDocument();
-
-    const settingsModalAfter = screen.queryByTestId("ai-config-modal");
-    expect(settingsModalAfter).not.toBeInTheDocument();
+    // The advanced settings link should be an anchor tag that opens in a new window
+    const linkElement = advancedSettingsLink.querySelector("a");
+    expect(linkElement).toBeInTheDocument();
+    expect(linkElement).toHaveAttribute("href", "/settings");
+    expect(linkElement).toHaveAttribute("target", "_blank");
+    expect(linkElement).toHaveAttribute("rel", "noreferrer noopener");
   });
 
   it("should not open the settings modal if GET /settings fails but is SaaS mode", async () => {

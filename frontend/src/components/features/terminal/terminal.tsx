@@ -5,7 +5,6 @@ import { useTerminal } from "#/hooks/use-terminal";
 import "@xterm/xterm/css/xterm.css";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { cn } from "#/utils/utils";
-import { I18nKey } from "#/i18n/declaration";
 
 function Terminal() {
   const { commands } = useSelector((state: RootState) => state.cmd);
@@ -21,12 +20,6 @@ function Terminal() {
 
   return (
     <div className="h-full flex flex-col rounded-xl">
-      <div className="flex flex-row items-center justify-between border-b border-[#474A54] py-2 px-3">
-        <span className="text-xs font-medium text-white">
-          {t(I18nKey.COMMON$TERMINAL)}
-        </span>
-      </div>
-
       {isRuntimeInactive && (
         <div className="w-full flex items-center text-center justify-center text-2xl text-tertiary-light pt-16">
           {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
