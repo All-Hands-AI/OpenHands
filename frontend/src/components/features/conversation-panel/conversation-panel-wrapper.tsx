@@ -21,7 +21,7 @@ export function ConversationPanelWrapper({
     <div
       className={cn(
         "absolute h-full w-full left-0 top-0 z-20 bg-black/80 rounded-xl",
-        pathname === "/" && "top-3 bottom-3 h-auto",
+        pathname === "/" && "bottom-0 top-0 md:top-3 md:bottom-3 h-auto",
       )}
     >
       {children}

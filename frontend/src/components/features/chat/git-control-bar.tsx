@@ -40,8 +40,7 @@ export function GitControlBar({
 
   return (
     <div className="flex flex-row items-center">
-      {/* Scrollable Container */}
-      <div className="flex flex-row gap-2.5 items-center overflow-x-auto flex-nowrap relative scrollbar-hide">
+      <div className="flex flex-row gap-2.5 items-center overflow-x-auto flex-wrap md:flex-nowrap relative scrollbar-hide">
         <GitControlBarTooltipWrapper
           tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
           testId="git-control-bar-repo-button-tooltip"

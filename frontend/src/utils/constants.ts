@@ -38,6 +38,14 @@ export const DOCUMENTATION_URL = {
   },
 };
 
+export const PRODUCT_URL = {
+  PRODUCTION: "https://app.all-hands.dev",
+};
+
+export const SETTINGS_FORM = {
+  LABEL_CLASSNAME: "text-[11px] font-medium leading-4 tracking-[0.11px]",
+};
+
 export const GIT_PROVIDER_OPTIONS = [
   {
     label: "GitHub",
