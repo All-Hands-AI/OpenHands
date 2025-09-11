@@ -109,7 +109,6 @@ export function getStatusCode(
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
 
-  // Handle runtime status messages
   // Prioritize agent state when it indicates readiness, even if runtime status is stale
   const agentIsReady =
     agentState &&
