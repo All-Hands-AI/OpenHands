@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Tuple, Union
 from prompt_toolkit.shortcuts import prompt
 from pydantic import SecretStr
 
-from ...user_actions.utils import cli_confirm
+from ....user_actions.utils import cli_confirm
 
 
 class InputHandler:

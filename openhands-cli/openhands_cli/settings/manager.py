@@ -8,6 +8,8 @@ from typing import Optional
 from openhands.core.config.llm_config import LLMConfig
 from openhands.storage.local import LocalFileStore
 
+from .constants import DEFAULT_MODEL
+
 
 class CLISettings:
     """CLI settings manager."""
@@ -39,8 +41,18 @@ class CLISettings:
 
     @property
     def llm(self) -> LLMConfig:
-        """Get LLM settings."""
+        """Get LLM settings with defaults."""
         llm_data = self.settings.get('llm', {})
+        if not llm_data:
+            # Return default settings
+            return LLMConfig(
+                model=DEFAULT_MODEL,
+                api_key=None,
+                base_url=None,
+                temperature=0.7,
+                top_p=1.0,
+                max_output_tokens=None
+            )
         return LLMConfig.model_validate(llm_data)
 
     def update_llm(self, config: LLMConfig) -> None:
@@ -54,3 +66,7 @@ class CLISettings:
         """Reset all settings to defaults."""
         self._settings = {}
         self._save({})
+
+    def has_api_key(self) -> bool:
+        """Check if API key is configured."""
+        return bool(self.llm.api_key)

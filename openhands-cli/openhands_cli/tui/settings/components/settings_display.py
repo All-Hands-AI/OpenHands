@@ -5,7 +5,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 from pydantic import SecretStr
 
-from ...settings.constants import HIDDEN_VALUE_DISPLAY, NOT_SET_DISPLAY
+from ....settings.constants import HIDDEN_VALUE_DISPLAY, NOT_SET_DISPLAY
 
 
 class SettingsDisplay:

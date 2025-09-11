@@ -18,9 +18,10 @@ from openhands.tools import (
 from openhands_cli.settings import SettingsManager
 
 
-def setup_agent() -> Conversation:
+def setup_agent() -> Optional[Conversation]:
     """
     Setup the agent with persistent settings and environment variable overrides.
+    Returns None if API key is not configured.
     """
     # Load settings from persistent storage with environment variable overrides
     settings_manager = SettingsManager()
@@ -32,14 +33,7 @@ def setup_agent() -> Conversation:
     base_url = settings.base_url
 
     if not api_key:
-        print_formatted_text(
-            HTML(
-                '<red>Error: No API key found. Please configure it using /settings command or set LITELLM_API_KEY/OPENAI_API_KEY environment variable.</red>'
-            )
-        )
-        raise Exception(
-            'No API key found. Please configure it using /settings command or set LITELLM_API_KEY/OPENAI_API_KEY environment variable.'
-        )
+        return None
 
     llm = LLM(
         model=model,

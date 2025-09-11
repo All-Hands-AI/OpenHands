@@ -18,9 +18,18 @@ def main() -> None:
         Exception: On other error conditions
     """
     try:
-        # Start agent chat directly by default
-        from openhands_cli.agent_chat import run_cli_entry
+        # Check if settings exist
+        from openhands_cli.settings import CLISettings
+        from openhands_cli.tui.settings_ui import SettingsUI
 
+        settings = CLISettings()
+        if not settings.has_api_key():
+            # First time setup
+            ui = SettingsUI()
+            ui.run(first_time=True)
+
+        # Start agent chat
+        from openhands_cli.agent_chat import run_cli_entry
         run_cli_entry()
 
     except ImportError as e:
