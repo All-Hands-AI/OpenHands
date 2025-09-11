@@ -33,9 +33,20 @@ jobs:
             exit 1
           fi
 
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: |
+            ⚠️ This PR contains **migrations**
+
       - name: Comment warning on PR
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          edit-mode: replace
           body: |
             ⚠️ This PR contains **migrations**. Please synchronize before merging to prevent conflicts.
