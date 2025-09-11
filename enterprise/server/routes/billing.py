@@ -354,7 +354,7 @@ async def success_callback(session_id: str, request: Request):
             != BillingSessionType.DIRECT_PAYMENT.value
         ):
             return RedirectResponse(
-                f'{request.base_url}settings/billing?checkout=success', status_code=302
+                f'{request.base_url}settings?checkout=success', status_code=302
             )
 
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -397,7 +397,7 @@ async def success_callback(session_id: str, request: Request):
             session.commit()
 
     return RedirectResponse(
-        f'{request.base_url}settings/billing?checkout=success', status_code=302
+        f'{request.base_url}settings?checkout=success', status_code=302
     )
 
 
@@ -425,7 +425,7 @@ async def cancel_callback(session_id: str, request: Request):
             session.commit()
 
     return RedirectResponse(
-        f'{request.base_url}settings/billing?checkout=cancel', status_code=302
+        f'{request.base_url}settings?checkout=cancel', status_code=302
     )
 
 
