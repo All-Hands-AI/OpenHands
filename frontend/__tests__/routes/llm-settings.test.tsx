@@ -98,7 +98,9 @@ describe("Content", () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
-      const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+      const confirmation = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
 
       // Initially confirmation mode is false, so security analyzer should not be visible
       expect(confirmation).not.toBeChecked();
@@ -324,7 +326,9 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = screen.getByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -406,10 +410,14 @@ describe("Form submission", () => {
     const baseUrl = await screen.findByTestId("base-url-input");
     const apiKey = await screen.findByTestId("llm-api-key-input");
     const agent = await screen.findByTestId("agent-input");
-    const condensor = await screen.findByTestId("enable-memory-condenser-switch");
+    const condensor = await screen.findByTestId(
+      "enable-memory-condenser-switch",
+    );
 
     // Confirmation mode switch is now in basic settings, always visible
-    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
+    const confirmation = await screen.findByTestId(
+      "enable-confirmation-mode-switch",
+    );
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -482,9 +490,13 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
 
     // select security analyzer
-    const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
+    const securityAnalyzer = await screen.findByTestId(
+      "security-analyzer-input",
+    );
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
     expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
 
@@ -492,9 +504,13 @@ describe("Form submission", () => {
 
     // revert back to original value
     await userEvent.click(securityAnalyzer);
-    const originalSecurityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
+    const originalSecurityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
     await userEvent.click(originalSecurityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
+    expect(securityAnalyzer).toHaveValue(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
     expect(submitButton).toBeDisabled();
   });
 
@@ -719,9 +735,11 @@ describe("SaaS mode", () => {
     });
 
     // Mock subscription access to return valid subscription (so advanced switch is enabled)
-    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    const getSubscriptionAccessSpy = vi.spyOn(
+      OpenHands,
+      "getSubscriptionAccess",
+    );
     getSubscriptionAccessSpy.mockResolvedValue({
-      status: "ACTIVE",
       start_at: "2024-01-01T00:00:00Z",
       end_at: "2024-12-31T23:59:59Z",
       created_at: "2024-01-01T00:00:00Z",
@@ -746,9 +764,11 @@ describe("SaaS mode", () => {
     });
 
     // Mock subscription access to return valid subscription (so advanced switch is enabled)
-    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    const getSubscriptionAccessSpy = vi.spyOn(
+      OpenHands,
+      "getSubscriptionAccess",
+    );
     getSubscriptionAccessSpy.mockResolvedValue({
-      status: "ACTIVE",
       start_at: "2024-01-01T00:00:00Z",
       end_at: "2024-12-31T23:59:59Z",
       created_at: "2024-01-01T00:00:00Z",
@@ -782,7 +802,6 @@ describe("SaaS mode", () => {
     };
 
     const MOCK_ACTIVE_SUBSCRIPTION = {
-      status: "ACTIVE" as const,
       start_at: "2024-01-01",
       end_at: "2024-12-31",
       created_at: "2024-01-01",
@@ -794,7 +813,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to ensure it's not called
@@ -821,7 +843,9 @@ describe("SaaS mode", () => {
       const apiKeyInput = screen.getByTestId("llm-api-key-input");
       const searchApiKeyInput = screen.getByTestId("search-api-key-input");
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-      const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
+      const confirmationModeSwitch = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
       const submitButton = screen.getByTestId("submit-button");
 
       // Inputs should be disabled
@@ -851,11 +875,17 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock the subscription checkout API call
-      const createSubscriptionCheckoutSessionSpy = vi.spyOn(OpenHands, "createSubscriptionCheckoutSession");
+      const createSubscriptionCheckoutSessionSpy = vi.spyOn(
+        OpenHands,
+        "createSubscriptionCheckoutSession",
+      );
       createSubscriptionCheckoutSessionSpy.mockResolvedValue({});
 
       renderLlmSettingsScreen();
@@ -875,7 +905,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return active subscription
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
 
       renderLlmSettingsScreen();
@@ -900,7 +933,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock saveSettings to track calls
@@ -910,9 +946,11 @@ describe("SaaS mode", () => {
       await screen.findByTestId("llm-settings-screen");
 
       // Verify that form elements are disabled for unsubscribed users
-      const confirmationModeSwitch = screen.getByTestId("enable-confirmation-mode-switch");
+      const confirmationModeSwitch = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
       const submitButton = screen.getByTestId("submit-button");
-      
+
       expect(confirmationModeSwitch).not.toBeChecked();
       expect(confirmationModeSwitch).toBeDisabled();
       expect(submitButton).toBeDisabled();
@@ -934,7 +972,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return null (no subscription)
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       renderLlmSettingsScreen();
@@ -965,7 +1006,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access to return active subscription
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
 
       renderLlmSettingsScreen();
@@ -986,16 +1030,22 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
 
       // Mock toast handler
-      const displaySuccessToastSpy = vi.spyOn(ToastHandlers, "displaySuccessToast");
+      const displaySuccessToastSpy = vi.spyOn(
+        ToastHandlers,
+        "displaySuccessToast",
+      );
 
       // Mock URL search params with ?success
       mockUseSearchParams.mockReturnValue([
         {
-          get: (param: string) => param === "success" ? "true" : null,
+          get: (param: string) => (param === "success" ? "true" : null),
         },
         vi.fn(),
       ]);
@@ -1006,7 +1056,7 @@ describe("SaaS mode", () => {
 
       // Verify success toast is displayed with correct message
       expect(displaySuccessToastSpy).toHaveBeenCalledWith(
-        "SUBSCRIPTION$SUCCESS"
+        "SUBSCRIPTION$SUCCESS",
       );
     });
 
@@ -1016,7 +1066,10 @@ describe("SaaS mode", () => {
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
 
       // Mock subscription access
-      const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
 
       // Mock toast handler
@@ -1025,7 +1078,7 @@ describe("SaaS mode", () => {
       // Mock URL search params with ?failure
       mockUseSearchParams.mockReturnValue([
         {
-          get: (param: string) => param === "failure" ? "true" : null,
+          get: (param: string) => (param === "failure" ? "true" : null),
         },
         vi.fn(),
       ]);
@@ -1035,9 +1088,7 @@ describe("SaaS mode", () => {
       await screen.findByTestId("llm-settings-screen");
 
       // Verify error toast is displayed with correct message
-      expect(displayErrorToastSpy).toHaveBeenCalledWith(
-        "SUBSCRIPTION$FAILURE"
-      );
+      expect(displayErrorToastSpy).toHaveBeenCalledWith("SUBSCRIPTION$FAILURE");
     });
   });
 });

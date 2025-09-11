@@ -19,4 +19,12 @@ export const STRIPE_BILLING_HANDLERS = [
       redirect_url: "https://stripe.com/some-customer-setup",
     });
   }),
+
+  http.post("/api/billing/cancel-subscription", async () => {
+    await delay();
+    return HttpResponse.json({
+      status: "success",
+      message: "Subscription cancelled successfully",
+    });
+  }),
 ];

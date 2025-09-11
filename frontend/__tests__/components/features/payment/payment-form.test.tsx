@@ -182,13 +182,15 @@ describe("PaymentForm", () => {
   });
 
   describe("Cancel Subscription", () => {
-    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    const getSubscriptionAccessSpy = vi.spyOn(
+      OpenHands,
+      "getSubscriptionAccess",
+    );
     const cancelSubscriptionSpy = vi.spyOn(OpenHands, "cancelSubscription");
 
     beforeEach(() => {
       // Mock active subscription
       getSubscriptionAccessSpy.mockResolvedValue({
-        status: "ACTIVE",
         start_at: "2024-01-01T00:00:00Z",
         end_at: "2024-12-31T23:59:59Z",
         created_at: "2024-01-01T00:00:00Z",
@@ -219,13 +221,21 @@ describe("PaymentForm", () => {
       const user = userEvent.setup();
       renderPaymentForm();
 
-      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
       await user.click(cancelButton);
 
       // Should show confirmation modal
-      expect(screen.getByTestId("cancel-subscription-modal")).toBeInTheDocument();
-      expect(screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_TITLE")).toBeInTheDocument();
-      expect(screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("cancel-subscription-modal"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_TITLE"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE"),
+      ).toBeInTheDocument();
       expect(screen.getByTestId("confirm-cancel-button")).toBeInTheDocument();
       expect(screen.getByTestId("modal-cancel-button")).toBeInTheDocument();
     });
@@ -234,25 +244,33 @@ describe("PaymentForm", () => {
       const user = userEvent.setup();
       renderPaymentForm();
 
-      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
       await user.click(cancelButton);
 
       // Modal should be visible
-      expect(screen.getByTestId("cancel-subscription-modal")).toBeInTheDocument();
+      expect(
+        screen.getByTestId("cancel-subscription-modal"),
+      ).toBeInTheDocument();
 
       // Click cancel in modal
       const modalCancelButton = screen.getByTestId("modal-cancel-button");
       await user.click(modalCancelButton);
 
       // Modal should be closed
-      expect(screen.queryByTestId("cancel-subscription-modal")).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId("cancel-subscription-modal"),
+      ).not.toBeInTheDocument();
     });
 
     it("should call cancel subscription API when confirm button is clicked", async () => {
       const user = userEvent.setup();
       renderPaymentForm();
 
-      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
       await user.click(cancelButton);
 
       // Click confirm in modal
@@ -265,10 +283,15 @@ describe("PaymentForm", () => {
 
     it("should close modal after successful cancellation", async () => {
       const user = userEvent.setup();
-      cancelSubscriptionSpy.mockResolvedValue(undefined);
+      cancelSubscriptionSpy.mockResolvedValue({
+        status: "success",
+        message: "Subscription cancelled successfully",
+      });
       renderPaymentForm();
 
-      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
       await user.click(cancelButton);
 
       const confirmButton = screen.getByTestId("confirm-cancel-button");
@@ -276,7 +299,9 @@ describe("PaymentForm", () => {
 
       // Wait for API call to complete and modal to close
       await waitFor(() => {
-        expect(screen.queryByTestId("cancel-subscription-modal")).not.toBeInTheDocument();
+        expect(
+          screen.queryByTestId("cancel-subscription-modal"),
+        ).not.toBeInTheDocument();
       });
     });
   });

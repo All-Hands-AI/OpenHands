@@ -88,7 +88,7 @@ export function PaymentForm() {
         </div>
 
         {/* Cancel Subscription Button - only show if user has active subscription */}
-        {subscriptionAccess?.status === "ACTIVE" && (
+        {subscriptionAccess && (
           <div className="flex items-center w-[680px] gap-2 mt-4">
             <BrandButton
               testId="cancel-subscription-button"

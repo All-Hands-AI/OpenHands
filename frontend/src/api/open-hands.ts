@@ -18,6 +18,7 @@ import {
   FileUploadSuccessResponse,
   GetFilesResponse,
   GetFileResponse,
+  CancelSubscriptionResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -450,8 +451,11 @@ class OpenHands {
     return data;
   }
 
-  static async cancelSubscription(): Promise<void> {
-    await openHands.post("/api/billing/cancel-subscription");
+  static async cancelSubscription(): Promise<CancelSubscriptionResponse> {
+    const { data } = await openHands.post<CancelSubscriptionResponse>(
+      "/api/billing/cancel-subscription",
+    );
+    return data;
   }
 
   static async getGitUser(): Promise<GitUser> {
