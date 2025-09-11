@@ -231,6 +231,10 @@ class BashSession:
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill()
 
+        # wait until the pane is ready before sending keys
+        while not self._get_pane_content():
+            time.sleep(0.1)
+        
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
