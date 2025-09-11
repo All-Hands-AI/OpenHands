@@ -115,7 +115,7 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
     """Cancel user's active subscription at the end of the current billing period"""
     if not user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
-    
+
     with session_maker() as session:
         # Find the user's active subscription
         now = datetime.now(UTC)
@@ -128,31 +128,31 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
             .filter(SubscriptionAccess.cancelled_at.is_(None))  # Not already cancelled
             .first()
         )
-        
+
         if not subscription_access:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="No active subscription found"
             )
-        
+
         if not subscription_access.stripe_subscription_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Cannot cancel subscription: missing Stripe subscription ID"
             )
-        
+
         try:
             # Cancel the subscription in Stripe at period end
             stripe_subscription = await stripe.Subscription.modify_async(
                 subscription_access.stripe_subscription_id,
                 cancel_at_period_end=True
             )
-            
+
             # Update local database
             subscription_access.cancelled_at = datetime.now(UTC)
             session.merge(subscription_access)
             session.commit()
-            
+
             logger.info(
                 'subscription_cancelled',
                 extra={
@@ -162,9 +162,9 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
                     'end_at': subscription_access.end_at,
                 }
             )
-            
+
             return JSONResponse({'status': 'success', 'message': 'Subscription cancelled successfully'})
-            
+
         except stripe.StripeError as e:
             logger.error(
                 'stripe_cancellation_failed',
@@ -178,6 +178,78 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to cancel subscription: {str(e)}"
             )
+
+
+# Endpoint to create a new setup intent in stripe
+@billing_router.post('/create-customer-setup-session')
+async def create_customer_setup_session(
+    request: Request, user_id: str = Depends(get_user_id)
+) -> CreateBillingSessionResponse:
+    customer_id = await stripe_service.find_or_create_customer(user_id)
+    checkout_session = await stripe.checkout.Session.create_async(
+        customer=customer_id,
+        mode='setup',
+        payment_method_types=['card'],
+        success_url=f'{request.base_url}?free_credits=success',
+        cancel_url=f'{request.base_url}',
+    )
+    return CreateBillingSessionResponse(redirect_url=checkout_session.url) # type: ignore[arg-type]
+
+
+# Endpoint to create a new Stripe checkout session for credit purchase
+@billing_router.post('/create-checkout-session')
+async def create_checkout_session(
+    body: CreateCheckoutSessionRequest,
+    request: Request,
+    user_id: str = Depends(get_user_id),
+) -> CreateBillingSessionResponse:
+    customer_id = await stripe_service.find_or_create_customer(user_id)
+    checkout_session = await stripe.checkout.Session.create_async(
+        customer=customer_id,
+        line_items=[
+            {
+                'price_data': {
+                    'unit_amount': body.amount * 100,
+                    'currency': 'usd',
+                    'product_data': {
+                        'name': 'OpenHands Credits',
+                        'tax_code': 'txcd_10000000',
+                    },
+                    'tax_behavior': 'exclusive',
+                },
+                'quantity': 1,
+            }
+        ],
+        mode='payment',
+        payment_method_types=['card'],
+        saved_payment_method_options={
+            'payment_method_save': 'enabled',
+        },
+        success_url=f'{request.base_url}api/billing/success?session_id={{CHECKOUT_SESSION_ID}}',
+        cancel_url=f'{request.base_url}api/billing/cancel?session_id={{CHECKOUT_SESSION_ID}}',
+    )
+    logger.info(
+        'created_stripe_checkout_session',
+        extra={
+            'stripe_customer_id': customer_id,
+            'user_id': user_id,
+            'amount': body.amount,
+            'checkout_session_id': checkout_session.id,
+        },
+    )
+    with session_maker() as session:
+        billing_session = BillingSession(
+            id=checkout_session.id,
+            user_id=user_id,
+            price=body.amount,
+            price_code='NA',
+            billing_session_type=BillingSessionType.DIRECT_PAYMENT.value,
+        )
+        session.add(billing_session)
+        session.commit()
+
+    return CreateBillingSessionResponse(redirect_url=checkout_session.url) # type: ignore[arg-type]
+
 
 
 @billing_router.post('/subscription-checkout-session')
@@ -400,7 +472,7 @@ async def stripe_webhook(request: Request) -> JSONResponse:
     elif event_type == 'customer.subscription.updated':
         subscription = event['data']['object']
         subscription_id = subscription['id']
-        
+
         # Handle subscription cancellation
         if subscription.get('cancel_at_period_end') is True:
             with session_maker() as session:
@@ -410,12 +482,12 @@ async def stripe_webhook(request: Request) -> JSONResponse:
                     .filter(SubscriptionAccess.status == 'ACTIVE')
                     .first()
                 )
-                
+
                 if subscription_access and not subscription_access.cancelled_at:
                     subscription_access.cancelled_at = datetime.now(UTC)
                     session.merge(subscription_access)
                     session.commit()
-                    
+
                     logger.info(
                         'subscription_cancelled_via_webhook',
                         extra={
