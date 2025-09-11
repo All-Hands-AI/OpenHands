@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { QueryClientProvider } from "@tanstack/react-query";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
@@ -93,7 +94,7 @@ describe("Settings Screen", () => {
   it("should render the navbar", async () => {
     const sectionsToInclude = ["llm", "integrations", "application", "secrets"];
     const sectionsToExclude = ["api keys", "credits", "billing"];
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return app mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",
@@ -156,7 +157,7 @@ describe("Settings Screen", () => {
   });
 
   it("should not be able to access saas-only routes in oss mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return app mode
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",

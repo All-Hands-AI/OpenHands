@@ -2,10 +2,7 @@ import { AxiosHeaders } from "axios";
 import {
   Feedback,
   FeedbackResponse,
-  GitHubAccessTokenResponse,
-  GetConfigResponse,
   GetVSCodeUrlResponse,
-  AuthenticateResponse,
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
@@ -20,7 +17,7 @@ import {
   GetFileResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
 import { SuggestedTask } from "#/utils/types";
 import {
   GitUser,
@@ -64,42 +61,6 @@ class OpenHands {
       }
     }
     return `/api/conversations/${conversationId}`;
-  }
-
-  /**
-   * Retrieve the list of models available
-   * @returns List of models available
-   */
-  static async getModels(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/models");
-    return data;
-  }
-
-  /**
-   * Retrieve the list of agents available
-   * @returns List of agents available
-   */
-  static async getAgents(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/options/agents");
-    return data;
-  }
-
-  /**
-   * Retrieve the list of security analyzers available
-   * @returns List of security analyzers available
-   */
-  static async getSecurityAnalyzers(): Promise<string[]> {
-    const { data } = await openHands.get<string[]>(
-      "/api/options/security-analyzers",
-    );
-    return data;
-  }
-
-  static async getConfig(): Promise<GetConfigResponse> {
-    const { data } = await openHands.get<GetConfigResponse>(
-      "/api/options/config",
-    );
-    return data;
   }
 
   static getConversationHeaders(): AxiosHeaders {
@@ -211,20 +172,6 @@ class OpenHands {
   }
 
   /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
-   */
-  static async authenticate(
-    appMode: GetConfigResponse["APP_MODE"],
-  ): Promise<boolean> {
-    if (appMode === "oss") return true;
-
-    // Just make the request, if it succeeds (no exception thrown), return true
-    await openHands.post<AuthenticateResponse>("/api/authenticate");
-    return true;
-  }
-
-  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
@@ -247,22 +194,6 @@ class OpenHands {
       headers: this.getConversationHeaders(),
     });
     return Object.keys(response.data.hosts);
-  }
-
-  /**
-   * @param code Code provided by GitHub
-   * @returns GitHub access token
-   */
-  static async getGitHubAccessToken(
-    code: string,
-  ): Promise<GitHubAccessTokenResponse> {
-    const { data } = await openHands.post<GitHubAccessTokenResponse>(
-      "/api/keycloak/callback",
-      {
-        code,
-      },
-    );
-    return data;
   }
 
   /**
@@ -391,25 +322,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Get the settings from the server or use the default settings if not found
-   */
-  static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings");
-    return data;
-  }
-
-  /**
-   * Save the settings to the server. Only valid settings are saved.
-   * @param settings - the settings to save
-   */
-  static async saveSettings(
-    settings: Partial<PostApiSettings>,
-  ): Promise<boolean> {
-    const data = await openHands.post("/api/settings", settings);
-    return data.status === 200;
-  }
-
   static async createCheckoutSession(amount: number): Promise<string> {
     const { data } = await openHands.post(
       "/api/billing/create-checkout-session",
@@ -485,12 +397,6 @@ class OpenHands {
       headers: this.getConversationHeaders(),
     });
     return data;
-  }
-
-  static async logout(appMode: GetConfigResponse["APP_MODE"]): Promise<void> {
-    const endpoint =
-      appMode === "saas" ? "/api/logout" : "/api/unset-provider-tokens";
-    await openHands.post(endpoint);
   }
 
   static async getGitChanges(conversationId: string): Promise<GitChange[]> {
@@ -762,27 +668,6 @@ class OpenHands {
       `/api/user/installations?provider=${provider}`,
     );
     return data;
-  }
-
-  static async getMicroagentManagementConversations(
-    selectedRepository: string,
-    pageId?: string,
-    limit: number = 100,
-  ): Promise<Conversation[]> {
-    const params: Record<string, string | number> = {
-      limit,
-      selected_repository: selectedRepository,
-    };
-
-    if (pageId) {
-      params.page_id = pageId;
-    }
-
-    const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/microagent-management/conversations",
-      { params },
-    );
-    return data.results;
   }
 }
 

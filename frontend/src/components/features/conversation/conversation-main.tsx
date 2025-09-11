@@ -57,18 +57,13 @@ export function ConversationMain() {
       <PanelGroup
         direction="horizontal"
         className="grow h-full min-h-0 min-w-0"
+        autoSaveId="react-resizable-panels:layout"
       >
-        <Panel
-          defaultSize={50}
-          minSize={30}
-          maxSize={80}
-          className="overflow-hidden bg-base"
-        >
+        <Panel minSize={30} maxSize={80} className="overflow-hidden bg-base">
           <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
         </Panel>
         <PanelResizeHandle className="cursor-ew-resize" />
         <Panel
-          defaultSize={50}
           minSize={20}
           maxSize={70}
           className="flex flex-col overflow-hidden"
