@@ -1,7 +1,7 @@
 import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { TooltipButton } from "./tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 import PlusIcon from "#/icons/u-plus.svg?react";
 
 interface NewProjectButtonProps {
@@ -16,18 +16,24 @@ export function NewProjectButton({ disabled = false }: NewProjectButtonProps) {
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
 
   return (
-    <TooltipButton
-      tooltip={startNewProject}
+    <UnifiedButton
+      as="NavLink"
+      to="/"
+      withTooltip
+      tooltipContent={startNewProject}
       ariaLabel={startNewProject}
-      navLinkTo="/"
       testId="new-project-button"
       disabled={disabled}
+      tooltipProps={{
+        placement: "right",
+      }}
+      className="bg-transparent hover:bg-transparent"
     >
       <PlusIcon
         width={24}
         height={24}
         color={pathname === "/" ? "#ffffff" : "#B1B9D3"}
       />
-    </TooltipButton>
+    </UnifiedButton>
   );
 }

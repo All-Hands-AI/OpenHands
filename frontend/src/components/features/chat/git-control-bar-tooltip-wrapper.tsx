@@ -1,4 +1,4 @@
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 
 interface GitControlBarTooltipWrapperProps {
   tooltipMessage: string;
@@ -18,16 +18,19 @@ export function GitControlBarTooltipWrapper({
   }
 
   return (
-    <TooltipButton
-      tooltip={tooltipMessage}
+    <UnifiedButton
+      withTooltip
+      tooltipContent={tooltipMessage}
       ariaLabel={tooltipMessage}
       testId={testId}
-      placement="top"
-      className="hover:opacity-100"
-      tooltipClassName="bg-white text-black"
-      showArrow
+      tooltipProps={{
+        placement: "top",
+        className: "bg-white text-black",
+        showArrow: true,
+      }}
+      className="bg-transparent hover:bg-transparent hover:opacity-100"
     >
       {children}
-    </TooltipButton>
+    </UnifiedButton>
   );
 }
