@@ -5,10 +5,11 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from openhands_configuration import ProviderType, Repository
+from openhands_configuration import ProviderType
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.events import EventStream
+from openhands.integrations.service_types import Repository
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent.microagent import (
     RepoMicroagent,

@@ -12,11 +12,12 @@ from integrations.linear.linear_view import (
 )
 from integrations.models import JobContext
 from jinja2 import DictLoader, Environment
-from openhands_configuration import ProviderType, Repository
+from openhands_configuration import ProviderType
 from storage.linear_conversation import LinearConversation
 from storage.linear_user import LinearUser
 from storage.linear_workspace import LinearWorkspace
 
+from openhands.integrations.service_types import Repository
 from openhands.server.user_auth.user_auth import UserAuth
 
 

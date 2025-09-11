@@ -12,11 +12,12 @@ from integrations.jira_dc.jira_dc_view import (
 )
 from integrations.models import JobContext
 from jinja2 import DictLoader, Environment
-from openhands_configuration import ProviderType, Repository
+from openhands_configuration import ProviderType
 from storage.jira_dc_conversation import JiraDcConversation
 from storage.jira_dc_user import JiraDcUser
 from storage.jira_dc_workspace import JiraDcWorkspace
 
+from openhands.integrations.service_types import Repository
 from openhands.server.user_auth.user_auth import UserAuth
 
 
