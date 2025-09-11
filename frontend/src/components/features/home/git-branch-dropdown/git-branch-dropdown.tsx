@@ -11,11 +11,12 @@ import { Provider } from "#/types/settings";
 import { useDebounce } from "#/hooks/use-debounce";
 import { cn } from "#/utils/utils";
 import { useBranchData } from "#/hooks/query/use-branch-data";
-import { LoadingSpinner } from "../shared/loading-spinner";
+
 import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
 import { ErrorMessage } from "../shared/error-message";
 import { BranchDropdownMenu } from "./branch-dropdown-menu";
+import BranchIcon from "#/icons/u-code-branch.svg?react";
 
 export interface GitBranchDropdownProps {
   repository: string | null;
@@ -187,23 +188,30 @@ export function GitBranchDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
+          {isLoadingState ? (
+            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+          ) : (
+            <BranchIcon width={16} height={16} />
+          )}
+        </div>
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
             disabled: disabled || !repository,
             placeholder,
             className: cn(
-              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
-              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
-              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "w-full px-3 py-2 border border-[#727987] rounded-sm shadow-none h-[42px] min-h-[42px] max-h-[42px]",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
+              "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10", // Space for toggle button
+              "pl-7 pr-16 text-sm font-normal leading-5", // Space for clear and toggle buttons
             ),
           })}
           data-testid="git-branch-dropdown-input"
         />
 
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center">
           {selectedBranch && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
@@ -212,10 +220,9 @@ export function GitBranchDropdown({
             isOpen={isOpen}
             disabled={disabled || !repository}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName="w-10 h-10"
           />
         </div>
-
-        {isLoadingState && <LoadingSpinner hasSelection={!!selectedBranch} />}
       </div>
 
       <BranchDropdownMenu
