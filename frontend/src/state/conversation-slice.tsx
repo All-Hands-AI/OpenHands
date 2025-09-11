@@ -117,8 +117,6 @@ export const conversationSlice = createSlice({
     },
     // Reset conversation state (useful for cleanup)
     resetConversationState: (state) => {
-      state.selectedTab = "editor";
-      state.isRightPanelShown = true;
       state.shouldHideSuggestions = false;
     },
     setHasRightPanelToggled: (state, action) => {
