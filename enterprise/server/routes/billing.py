@@ -109,6 +109,14 @@ async def get_subscription_access(
         )
 
 
+
+@billing_router.post('/has-payment-method')
+async def has_payment_method(user_id: str = Depends(get_user_id)) -> bool:
+    if not user_id:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+    return await stripe_service.has_payment_method(user_id)
+
+
 # Endpoint to cancel user's subscription
 @billing_router.post('/cancel-subscription')
 async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONResponse:
@@ -193,7 +201,7 @@ async def create_customer_setup_session(
         success_url=f'{request.base_url}?free_credits=success',
         cancel_url=f'{request.base_url}',
     )
-    return CreateBillingSessionResponse(redirect_url=checkout_session.url) # type: ignore[arg-type]
+    return CreateBillingSessionResponse(redirect_url=checkout_session.url)  # type: ignore[arg-type]
 
 
 # Endpoint to create a new Stripe checkout session for credit purchase
@@ -248,8 +256,7 @@ async def create_checkout_session(
         session.add(billing_session)
         session.commit()
 
-    return CreateBillingSessionResponse(redirect_url=checkout_session.url) # type: ignore[arg-type]
-
+    return CreateBillingSessionResponse(redirect_url=checkout_session.url)  # type: ignore[arg-type]
 
 
 @billing_router.post('/subscription-checkout-session')
