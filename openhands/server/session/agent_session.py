@@ -5,7 +5,6 @@ from logging import LoggerAdapter
 from types import MappingProxyType
 from typing import Callable, cast
 
-from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
@@ -30,6 +29,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
+from openhands.server.session.conversation_controller import ConversationController
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
@@ -51,7 +51,7 @@ class AgentSession:
     event_stream: EventStream
     llm_registry: LLMRegistry
     file_store: FileStore
-    controller: AgentController | None = None
+    controller: ConversationController | None = None
     runtime: Runtime | None = None
 
     memory: Memory | None = None
@@ -392,7 +392,7 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
-    ) -> tuple[AgentController, bool]:
+    ) -> tuple[ConversationController, bool]:
         """Creates an AgentController instance
 
         Parameters:
@@ -424,6 +424,10 @@ class AgentSession:
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
+        # TODO: Replace this with the new "Conversation" construct.
+        # Maybe have a ConversationController
+        controller = ConversationController()
+        """
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -442,6 +446,7 @@ class AgentSession:
             replay_events=replay_events,
             security_analyzer=self.runtime.security_analyzer if self.runtime else None,
         )
+        """
 
         return (controller, initial_state is not None)
 
