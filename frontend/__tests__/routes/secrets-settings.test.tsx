@@ -87,7 +87,7 @@ describe("Content", () => {
     expect(screen.queryByTestId("connect-git-button")).not.toBeInTheDocument();
   });
 
-  it("should render a button to connect with git if they havent already in saas", async () => {
+  it("should render add secret button in saas mode", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
     const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
@@ -95,20 +95,14 @@ describe("Content", () => {
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
-    getSettingsSpy.mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {},
-    });
 
     renderSecretsSettings();
 
-    // In SAAS mode, getSecrets is still called because the user is authenticated
+    // In SAAS mode, getSecrets is called and add secret button should be available
     await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
-    );
-    const button = await screen.findByTestId("connect-git-button");
-    expect(button).toHaveAttribute("href", "/settings/integrations");
+    const button = await screen.findByTestId("add-secret-button");
+    expect(button).toBeInTheDocument();
+    expect(screen.queryByTestId("connect-git-button")).not.toBeInTheDocument();
   });
 
   it("should render an empty table when there are no existing secrets", async () => {

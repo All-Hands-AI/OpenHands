@@ -57,10 +57,23 @@ export function getIndicatorColor(
   ) {
     return IndicatorColor.RED;
   }
+
+  // Prioritize agent state when it indicates readiness, even if runtime status is stale
+  const agentIsReady =
+    agentState &&
+    [
+      AgentState.AWAITING_USER_INPUT,
+      AgentState.RUNNING,
+      AgentState.FINISHED,
+      AgentState.AWAITING_USER_CONFIRMATION,
+      AgentState.USER_CONFIRMED,
+      AgentState.USER_REJECTED,
+    ].includes(agentState);
+
   // Display a yellow working icon while the runtime is starting
   if (
     conversationStatus === "STARTING" ||
-    !["STATUS$READY", null].includes(runtimeStatus) ||
+    (!["STATUS$READY", null].includes(runtimeStatus) && !agentIsReady) ||
     (agentState != null &&
       [
         AgentState.LOADING,
@@ -96,10 +109,23 @@ export function getStatusCode(
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
 
-  // Handle runtime status messages
+  // Prioritize agent state when it indicates readiness, even if runtime status is stale
+  const agentIsReady =
+    agentState &&
+    [
+      AgentState.AWAITING_USER_INPUT,
+      AgentState.RUNNING,
+      AgentState.FINISHED,
+      AgentState.PAUSED,
+      AgentState.AWAITING_USER_CONFIRMATION,
+      AgentState.USER_CONFIRMED,
+      AgentState.USER_REJECTED,
+    ].includes(agentState);
+
   if (
     runtimeStatus &&
-    !["STATUS$READY", "STATUS$RUNTIME_STARTED"].includes(runtimeStatus)
+    !["STATUS$READY", "STATUS$RUNTIME_STARTED"].includes(runtimeStatus) &&
+    !agentIsReady // Skip runtime status check if agent is ready
   ) {
     const result = (I18nKey as { [key: string]: string })[runtimeStatus];
     if (result) {
