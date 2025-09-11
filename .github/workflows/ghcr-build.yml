@@ -286,9 +286,6 @@ jobs:
       - name: Run docker runtime tests
         shell: bash
         run: |
-          # We install pytest-xdist in order to run tests across CPUs
-          uv pip install pytest-xdist pytest-rerunfailures
-
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           # Setting RUN_AS_OPENHANDS to false means use root.
@@ -300,7 +297,7 @@ jobs:
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
           PYTHONPATH=".:$PYTHONPATH" \
-          uv run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run --group test pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -344,20 +341,15 @@ jobs:
         shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          export PYTHONPATH=".:$PYTHONPATH"
-          uv run pip install pytest-xdist
-
-          # Install to be able to retry on failures for flaky tests
-          uv run pip install pytest-rerunfailures
-
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           TEST_RUNTIME=docker \
+          PYTHONPATH=".:$PYTHONPATH" \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          uv run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          uv run  --group test pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 

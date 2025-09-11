@@ -110,6 +110,7 @@ test = [
   "pytest-cov",
   "pytest-forked",
   "pytest-playwright>=0.7,<0.8",
+  "pytest-rerunfailures>=16.0.1",
   "pytest-timeout>=2.4,<3",
   "pytest-xdist",
   "reportlab",
