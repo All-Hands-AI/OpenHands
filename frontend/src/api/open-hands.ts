@@ -450,6 +450,10 @@ class OpenHands {
     return data;
   }
 
+  static async cancelSubscription(): Promise<void> {
+    await openHands.post("/api/billing/cancel-subscription");
+  }
+
   static async getGitUser(): Promise<GitUser> {
     const response = await openHands.get<GitUser>("/api/user/info");
 

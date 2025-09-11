@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { cn } from "#/utils/utils";
 import MoneyIcon from "#/icons/money.svg?react";
 import { SettingsInput } from "../settings/settings-input";
@@ -10,13 +11,16 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { amountIsValid } from "#/utils/amount-is-valid";
 import { I18nKey } from "#/i18n/declaration";
 import { PoweredByStripeTag } from "./powered-by-stripe-tag";
+import { CancelSubscriptionModal } from "./cancel-subscription-modal";
 
 export function PaymentForm() {
   const { t } = useTranslation();
   const { data: balance, isLoading } = useBalance();
+  const { data: subscriptionAccess } = useSubscriptionAccess();
   const { mutate: addBalance, isPending } = useCreateStripeCheckoutSession();
 
   const [buttonIsDisabled, setButtonIsDisabled] = React.useState(true);
+  const [showCancelModal, setShowCancelModal] = React.useState(false);
 
   const billingFormAction = async (formData: FormData) => {
     const amount = formData.get("top-up-input")?.toString();
@@ -82,7 +86,27 @@ export function PaymentForm() {
           {isPending && <LoadingSpinner size="small" />}
           <PoweredByStripeTag />
         </div>
+
+        {/* Cancel Subscription Button - only show if user has active subscription */}
+        {subscriptionAccess?.status === "ACTIVE" && (
+          <div className="flex items-center w-[680px] gap-2 mt-4">
+            <BrandButton
+              testId="cancel-subscription-button"
+              variant="danger"
+              type="button"
+              onClick={() => setShowCancelModal(true)}
+            >
+              {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)}
+            </BrandButton>
+          </div>
+        )}
       </div>
+
+      {/* Cancel Subscription Modal */}
+      <CancelSubscriptionModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+      />
     </form>
   );
 }

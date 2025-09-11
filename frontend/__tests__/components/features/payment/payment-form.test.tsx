@@ -180,4 +180,104 @@ describe("PaymentForm", () => {
       expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
     });
   });
+
+  describe("Cancel Subscription", () => {
+    const getSubscriptionAccessSpy = vi.spyOn(OpenHands, "getSubscriptionAccess");
+    const cancelSubscriptionSpy = vi.spyOn(OpenHands, "cancelSubscription");
+
+    beforeEach(() => {
+      // Mock active subscription
+      getSubscriptionAccessSpy.mockResolvedValue({
+        status: "ACTIVE",
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2024-12-31T23:59:59Z",
+        created_at: "2024-01-01T00:00:00Z",
+      });
+    });
+
+    it("should render cancel subscription button when user has active subscription", async () => {
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const cancelButton = screen.getByTestId("cancel-subscription-button");
+        expect(cancelButton).toBeInTheDocument();
+        expect(cancelButton).toHaveTextContent("PAYMENT$CANCEL_SUBSCRIPTION");
+      });
+    });
+
+    it("should not render cancel subscription button when user has no subscription", async () => {
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const cancelButton = screen.queryByTestId("cancel-subscription-button");
+        expect(cancelButton).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show confirmation modal when cancel subscription button is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      await user.click(cancelButton);
+
+      // Should show confirmation modal
+      expect(screen.getByTestId("cancel-subscription-modal")).toBeInTheDocument();
+      expect(screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_TITLE")).toBeInTheDocument();
+      expect(screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE")).toBeInTheDocument();
+      expect(screen.getByTestId("confirm-cancel-button")).toBeInTheDocument();
+      expect(screen.getByTestId("modal-cancel-button")).toBeInTheDocument();
+    });
+
+    it("should close modal when cancel button in modal is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      await user.click(cancelButton);
+
+      // Modal should be visible
+      expect(screen.getByTestId("cancel-subscription-modal")).toBeInTheDocument();
+
+      // Click cancel in modal
+      const modalCancelButton = screen.getByTestId("modal-cancel-button");
+      await user.click(modalCancelButton);
+
+      // Modal should be closed
+      expect(screen.queryByTestId("cancel-subscription-modal")).not.toBeInTheDocument();
+    });
+
+    it("should call cancel subscription API when confirm button is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      await user.click(cancelButton);
+
+      // Click confirm in modal
+      const confirmButton = screen.getByTestId("confirm-cancel-button");
+      await user.click(confirmButton);
+
+      // Should call the cancel subscription API
+      expect(cancelSubscriptionSpy).toHaveBeenCalled();
+    });
+
+    it("should close modal after successful cancellation", async () => {
+      const user = userEvent.setup();
+      cancelSubscriptionSpy.mockResolvedValue(undefined);
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId("cancel-subscription-button");
+      await user.click(cancelButton);
+
+      const confirmButton = screen.getByTestId("confirm-cancel-button");
+      await user.click(confirmButton);
+
+      // Wait for API call to complete and modal to close
+      await waitFor(() => {
+        expect(screen.queryByTestId("cancel-subscription-modal")).not.toBeInTheDocument();
+      });
+    });
+  });
 });
