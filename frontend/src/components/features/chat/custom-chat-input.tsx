@@ -6,7 +6,7 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
-import { cn } from "#/utils/utils";
+import { cn, isMobileDevice } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
@@ -47,6 +47,7 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const [isGripVisible, setIsGripVisible] = useState(false);
 
   const { messageToSend, submittedMessage, hasRightPanelToggled } = useSelector(
     (state: RootState) => state.conversation,
@@ -117,6 +118,12 @@ export function CustomChatInput({
     }
   }, []);
 
+  // Handle click on top edge area to toggle grip visibility
+  const handleTopEdgeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsGripVisible((prev) => !prev);
+  };
+
   // Callback to handle height changes and manage suggestions visibility
   const handleHeightChange = useCallback(
     (height: number) => {
@@ -128,7 +135,12 @@ export function CustomChatInput({
   );
 
   // Use the auto-resize hook with height change callback
-  const { smartResize, handleGripMouseDown } = useAutoResize(chatInputRef, {
+  const {
+    smartResize,
+    handleGripMouseDown,
+    handleGripTouchStart,
+    increaseHeightForEmptyContent,
+  } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 400,
     onHeightChange: handleHeightChange,
@@ -294,50 +306,21 @@ export function CustomChatInput({
 
   // Handle key events
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Send message on Enter (without Shift)
-    // Shift+Enter adds a new line (default contenteditable behavior)
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit();
+    if (e.key !== "Enter") {
       return;
     }
 
-    // Auto-resize on key events that might change content
-    setTimeout(() => {
-      smartResize();
-      // Ensure cursor stays visible after key navigation
-      if (!chatInputRef.current) {
-        return;
-      }
+    if (isContentEmpty()) {
+      e.preventDefault();
+      increaseHeightForEmptyContent();
+      return;
+    }
 
-      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
-      if (!isArrowKey) {
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      if (
-        !range.getBoundingClientRect ||
-        !chatInputRef.current.getBoundingClientRect
-      ) {
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      const inputRect = chatInputRef.current.getBoundingClientRect();
-
-      // Scroll to keep cursor visible
-      if (rect.top < inputRect.top) {
-        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-      } else if (rect.bottom > inputRect.bottom) {
-        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
-      }
-    }, 0);
+    // Original submit logic - only for desktop without shift key
+    if (!isMobileDevice() && !e.shiftKey && !disabled) {
+      e.preventDefault();
+      handleSubmit();
+    }
   };
 
   // Handle blur events to ensure placeholder shows when empty
@@ -369,12 +352,22 @@ export function CustomChatInput({
       {/* Container with grip */}
       <div className="relative w-full">
         {/* Top edge hover area - invisible area that triggers grip visibility */}
-        <div className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group">
-          {/* Resize Grip - appears on hover of top edge area or when dragging */}
+        <div
+          className="absolute -top-[12px] left-0 w-full h-6 lg:h-3 z-20 group"
+          id="resize-grip"
+          onClick={handleTopEdgeClick}
+        >
+          {/* Resize Grip - appears on hover of top edge area, when dragging, or when clicked */}
           <div
             ref={gripRef}
-            className="absolute top-[4px] left-0 w-full h-[3px] bg-white cursor-ns-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className={cn(
+              "absolute top-[4px] left-0 w-full h-[3px] bg-white cursor-ns-resize z-10 transition-opacity duration-200",
+              isGripVisible
+                ? "opacity-100"
+                : "opacity-0 group-hover:opacity-100",
+            )}
             onMouseDown={handleGripMouseDown}
+            onTouchStart={handleGripTouchStart}
             style={{ userSelect: "none" }}
           />
         </div>
@@ -382,7 +375,7 @@ export function CustomChatInput({
         {/* Chat Input Component */}
         <div
           ref={chatContainerRef}
-          className="bg-[#1E1E1E] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
+          className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -407,11 +400,8 @@ export function CustomChatInput({
                 <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                   <div
                     ref={chatInputRef}
-                    className={cn(
-                      "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[400px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
-                      disabled && "cursor-not-allowed",
-                    )}
-                    contentEditable={!disabled}
+                    className="chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[400px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap"
+                    contentEditable
                     data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                     data-testid="chat-input"
                     onInput={handleInput}
@@ -442,6 +432,7 @@ export function CustomChatInput({
             <AgentStatus
               handleStop={handleStop}
               handleResumeAgent={handleResumeAgent}
+              disabled={disabled}
             />
           </div>
         </div>

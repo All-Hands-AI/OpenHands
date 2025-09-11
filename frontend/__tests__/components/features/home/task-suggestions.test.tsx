@@ -22,10 +22,24 @@ vi.mock("react-i18next", async () => {
   };
 });
 
-// Mock the useIsAuthed hook to return authenticated
+// Mock the dependencies for useShouldShowUserFeatures
 vi.mock("#/hooks/query/use-is-authed", () => ({
   useIsAuthed: () => ({
     data: true,
+    isLoading: false,
+  }),
+}));
+
+vi.mock("#/hooks/query/use-config", () => ({
+  useConfig: () => ({
+    data: { APP_MODE: "saas" },
+    isLoading: false,
+  }),
+}));
+
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [{ id: "github", name: "GitHub" }],
     isLoading: false,
   }),
 }));

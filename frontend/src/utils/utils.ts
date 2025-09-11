@@ -8,6 +8,17 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Detect if the user is on a mobile device
+ * @returns True if the user is on a mobile device, false otherwise
+ */
+export const isMobileDevice = (): boolean =>
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent,
+  ) ||
+  "ontouchstart" in window ||
+  navigator.maxTouchPoints > 0;
+
 interface EventActionHistory {
   args?: {
     LLM_API_KEY?: string;
