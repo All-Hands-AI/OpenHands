@@ -26,10 +26,6 @@ export interface FeedbackResponse {
   body: FeedbackBodyResponse;
 }
 
-export interface GitHubAccessTokenResponse {
-  access_token: string;
-}
-
 export interface AuthenticationResponse {
   message: string;
   login?: string; // Only present when allow list is enabled
@@ -42,6 +38,16 @@ export interface Feedback {
   polarity: "positive" | "negative";
   permissions: "public" | "private";
   trajectory: unknown[];
+}
+
+export interface GetVSCodeUrlResponse {
+  vscode_url: string | null;
+  error?: string;
+}
+
+export interface GetTrajectoryResponse {
+  trajectory: unknown[] | null;
+  error?: string;
 }
 
 export interface GetConfigResponse {
@@ -61,21 +67,6 @@ export interface GetConfigResponse {
   MAINTENANCE?: {
     startTime: string;
   };
-}
-
-export interface GetVSCodeUrlResponse {
-  vscode_url: string | null;
-  error?: string;
-}
-
-export interface GetTrajectoryResponse {
-  trajectory: unknown[] | null;
-  error?: string;
-}
-
-export interface AuthenticateResponse {
-  message?: string;
-  error?: string;
 }
 
 export interface RepositorySelection {
