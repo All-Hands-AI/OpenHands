@@ -6580,8 +6580,8 @@ dev = ["black (>=23)", "flake8 (>=6)", "isort (>=5)", "mypy (>=1)", "pre-commit 
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/OpenHands.git"
-reference = "1ad9b0673c2b891f587fd623ec73989964f3e52f"
-resolved_reference = "1ad9b0673c2b891f587fd623ec73989964f3e52f"
+reference = "6f51b94f0f2599fb1412daf5c9472062a1ef63db"
+resolved_reference = "6f51b94f0f2599fb1412daf5c9472062a1ef63db"
 subdirectory = "configuration"
 
 [[package]]
@@ -11848,4 +11848,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "402e0d325f991a5b21a976f6c74faabbcc83d29bec0935018a9842cd4cf2c1b9"
+content-hash = "230290572d6e370c4468155d1ebdf461f58cc21b04215bb0c04ddc3d2a6fd299"
