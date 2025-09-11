@@ -8,6 +8,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { I18nKey } from "#/i18n/declaration";
 import JupyterLargeIcon from "#/icons/jupyter-large.svg?react";
+import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
 
 interface JupyterEditorProps {
   maxWidth: number;
@@ -28,11 +29,7 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
 
   return (
     <>
-      {isRuntimeInactive && (
-        <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-        </div>
-      )}
+      {isRuntimeInactive && <WaitingForRuntimeMessage />}
       {!isRuntimeInactive && cells.length > 0 && (
         <div className="flex-1 h-full flex flex-col" style={{ maxWidth }}>
           <div
