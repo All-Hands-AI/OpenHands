@@ -140,20 +140,19 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
         if not subscription_access:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No active subscription found"
+                detail='No active subscription found',
             )
 
         if not subscription_access.stripe_subscription_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot cancel subscription: missing Stripe subscription ID"
+                detail='Cannot cancel subscription: missing Stripe subscription ID',
             )
 
         try:
             # Cancel the subscription in Stripe at period end
             await stripe.Subscription.modify_async(
-                subscription_access.stripe_subscription_id,
-                cancel_at_period_end=True
+                subscription_access.stripe_subscription_id, cancel_at_period_end=True
             )
 
             # Update local database
@@ -168,10 +167,12 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
                     'stripe_subscription_id': subscription_access.stripe_subscription_id,
                     'subscription_access_id': subscription_access.id,
                     'end_at': subscription_access.end_at,
-                }
+                },
             )
 
-            return JSONResponse({'status': 'success', 'message': 'Subscription cancelled successfully'})
+            return JSONResponse(
+                {'status': 'success', 'message': 'Subscription cancelled successfully'}
+            )
 
         except stripe.StripeError as e:
             logger.error(
@@ -180,11 +181,11 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
                     'user_id': user_id,
                     'stripe_subscription_id': subscription_access.stripe_subscription_id,
                     'error': str(e),
-                }
+                },
             )
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to cancel subscription: {str(e)}"
+                detail=f'Failed to cancel subscription: {str(e)}',
             )
 
 
@@ -485,7 +486,9 @@ async def stripe_webhook(request: Request) -> JSONResponse:
             with session_maker() as session:
                 subscription_access = (
                     session.query(SubscriptionAccess)
-                    .filter(SubscriptionAccess.stripe_subscription_id == subscription_id)
+                    .filter(
+                        SubscriptionAccess.stripe_subscription_id == subscription_id
+                    )
                     .filter(SubscriptionAccess.status == 'ACTIVE')
                     .first()
                 )
@@ -501,7 +504,7 @@ async def stripe_webhook(request: Request) -> JSONResponse:
                             'stripe_subscription_id': subscription_id,
                             'user_id': subscription_access.user_id,
                             'subscription_access_id': subscription_access.id,
-                        }
+                        },
                     )
     else:
         logger.info('stripe_webhook_unhandled_event_type', extra={'type': event_type})

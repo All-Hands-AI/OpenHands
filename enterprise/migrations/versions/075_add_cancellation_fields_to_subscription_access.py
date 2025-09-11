@@ -22,27 +22,29 @@ def upgrade() -> None:
     # Add cancelled_at field to track cancellation timestamp
     op.add_column(
         'subscription_access',
-        sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True)
+        sa.Column('cancelled_at', sa.DateTime(timezone=True), nullable=True),
     )
-    
+
     # Add stripe_subscription_id field to enable cancellation via Stripe API
     op.add_column(
         'subscription_access',
-        sa.Column('stripe_subscription_id', sa.String(), nullable=True)
+        sa.Column('stripe_subscription_id', sa.String(), nullable=True),
     )
-    
+
     # Create index on stripe_subscription_id for efficient lookups
     op.create_index(
         'ix_subscription_access_stripe_subscription_id',
         'subscription_access',
-        ['stripe_subscription_id']
+        ['stripe_subscription_id'],
     )
 
 
 def downgrade() -> None:
     # Drop index
-    op.drop_index('ix_subscription_access_stripe_subscription_id', 'subscription_access')
-    
+    op.drop_index(
+        'ix_subscription_access_stripe_subscription_id', 'subscription_access'
+    )
+
     # Drop columns
     op.drop_column('subscription_access', 'stripe_subscription_id')
     op.drop_column('subscription_access', 'cancelled_at')
