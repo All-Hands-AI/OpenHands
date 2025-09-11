@@ -33,32 +33,27 @@ export function GitControlBarRepoButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group flex flex-row items-center justify-between gap-2 pl-2.5 pr-2.5 py-1 rounded-[100px] w-fit flex-shrink-0 max-w-[170px] truncate relative",
+        "group flex flex-row items-center justify-between gap-2 pl-2.5 pr-2.5 py-1 rounded-[100px] flex-1 truncate relative",
         hasRepository
           ? "border border-[#525252] bg-transparent hover:border-[#454545] cursor-pointer"
           : "border border-[rgba(71,74,84,0.50)] bg-transparent cursor-not-allowed min-w-[170px]",
       )}
     >
-      <div className="flex flex-row gap-2 items-center justify-start">
-        <div className="w-3 h-3 flex items-center justify-center">
-          {hasRepository ? (
-            <GitProviderIcon
-              gitProvider={gitProvider as Provider}
-              className="w-3 h-3 inline-flex"
-            />
-          ) : (
-            <RepoForkedIcon width={12} height={12} color="white" />
-          )}
-        </div>
-        <div
-          className={cn(
-            "font-normal text-white text-sm leading-5 truncate",
-            hasRepository && "max-w-[100px]",
-          )}
-          title={buttonText}
-        >
-          {buttonText}
-        </div>
+      <div className="w-3 h-3 flex items-center justify-center flex-shrink-0">
+        {hasRepository ? (
+          <GitProviderIcon
+            gitProvider={gitProvider as Provider}
+            className="w-3 h-3 inline-flex"
+          />
+        ) : (
+          <RepoForkedIcon width={12} height={12} color="white" />
+        )}
+      </div>
+      <div
+        className="font-normal text-white text-sm leading-5 truncate flex-1 min-w-0"
+        title={buttonText}
+      >
+        {buttonText}
       </div>
       {hasRepository && <GitExternalLinkIcon />}
     </a>
