@@ -51,7 +51,7 @@ class OpenHandsMCPConfig:
 
 openhands_mcp_config_cls = os.environ.get(
     'OPENHANDS_MCP_CONFIG_CLS',
-    'opehands_configuration.OpenHandsMCPConfig',
+    'openhands.core.config.mcp_config.OpenHandsMCPConfig',
 )
 
 OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)
