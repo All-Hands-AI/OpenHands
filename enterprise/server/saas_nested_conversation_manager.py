@@ -23,7 +23,9 @@ from storage.database import session_maker
 from storage.stored_conversation_metadata import StoredConversationMetadata
 
 from openhands.controller.agent import Agent
-from openhands_configuration import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig
+
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands_configuration import MCPConfig, MCPSHTTPServerConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction

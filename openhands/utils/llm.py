@@ -6,8 +6,9 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from openhands_configuration import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig
 
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 

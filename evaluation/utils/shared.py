@@ -12,7 +12,7 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
-from openhands_configuration import LLMConfig, SandboxConfig
+from openhands_configuration import LLMConfig
 from pydantic import BaseModel
 from tqdm import tqdm
 
@@ -22,6 +22,7 @@ from openhands.core.config.condenser_config import (
     CondenserConfig,
     NoOpCondenserConfig,
 )
+from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.exceptions import (
     AgentRuntimeBuildError,
     AgentRuntimeDisconnectedError,

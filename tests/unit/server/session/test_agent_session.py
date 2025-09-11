@@ -1,7 +1,9 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from openhands_configuration import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig
+
+from openhands.core.config.openhands_config import OpenHandsConfig
 
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController

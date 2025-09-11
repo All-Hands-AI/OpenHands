@@ -4,7 +4,9 @@ from io import StringIO
 from unittest.mock import patch
 
 import pytest
-from openhands_configuration import LLMConfig, OpenHandsConfig
+from openhands_configuration import LLMConfig
+
+from openhands.core.config.openhands_config import OpenHandsConfig
 
 from openhands.core.logger import (
     LOG_JSON_LEVEL_KEY,
