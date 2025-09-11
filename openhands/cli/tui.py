@@ -38,6 +38,7 @@ from openhands.cli.pt_style import (
     COLOR_AGENT_BLUE,
     COLOR_GOLD,
     COLOR_GREY,
+    COLOR_ORANGE,
     get_cli_style,
 )
 from openhands.core.config import OpenHandsConfig
@@ -393,8 +394,10 @@ def _render_basic_markdown(text: str | None) -> str | None:
         return ''
 
     safe = html.escape(text)
-    # Bold: greedy within a line, non-overlapping
+    # Bold first so **text** isn't captured by italic rule
     safe = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe)
+    # Italic: single * not part of ** on either side
+    safe = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', safe)
     # Underline: double underscore
     safe = re.sub(r'__(.+?)__', r'<u>\1</u>', safe)
     return safe
@@ -1192,23 +1195,26 @@ def display_instruction_improvement(
 
     # Extract content after the ToM Agent Analysis marker
     text = suggestions.strip()
+    # Tolerant ToM marker handling: strip based on either marker if present
+    marker_start = '*****************ToM Agent Analysis Start Here*****************'
+    marker_end = '*****************ToM Agent Analysis End Here******************'
+    if marker_start in text:
+        text = text.split(marker_start, 1)[1]
+    if marker_end in text:
+        text = text.split(marker_end, 1)[0]
+    text = text.strip()
 
-    # Look for the ToM Agent Analysis marker and extract content after it
-    marker = '*****************ToM Agent Analysis Start Here*****************'
-    if marker in text:
-        # Split on the marker and take everything after it
-        parts = text.split(marker, 1)
-        if len(parts) > 1:
-            text = parts[1].strip()
-
+    # Use the existing markdown rendering function and fix HTML entities
+    rendered_html = _render_basic_markdown(text)
     container = Frame(
-        TextArea(
-            text=text,
-            read_only=True,
+        Window(
+            FormattedTextControl(
+                HTML(rendered_html) if rendered_html else text,
+            ),
             wrap_lines=True,
         ),
         title="ToM agent's suggestion",
-        style='fg:ansiblue',
+        style=f'fg:{COLOR_ORANGE}',
     )
     print_container(container)
 

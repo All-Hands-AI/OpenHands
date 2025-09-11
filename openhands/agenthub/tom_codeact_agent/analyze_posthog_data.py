@@ -49,11 +49,11 @@ def analyze_tom_metrics():
 
     print(f'✅ Using project ID: {project_id}')
 
-    # Use PostHog Query API with HogQL to get only Tom agent events
+    # Use PostHog Query API with HogQL to get Tom agent events
     query_payload = {
         'query': {
             'kind': 'HogQLQuery',
-            'query': "SELECT event, properties, timestamp, distinct_id FROM events WHERE properties.component = 'tom_agent' AND timestamp >= now() - INTERVAL 7 DAY ORDER BY timestamp DESC",
+            'query': "SELECT event, properties, timestamp, distinct_id FROM events WHERE properties.component = 'tom_agent' AND timestamp >= now() - INTERVAL 30 DAY ORDER BY timestamp DESC LIMIT 1000",
         }
     }
 
@@ -224,7 +224,7 @@ def analyze_tom_metrics():
         )
 
     print('\n💾 Saved detailed metrics to tom_metrics.json')
-    print('📅 Analysis period: Last 7 days')
+    print('📅 Analysis period: Last 30 days')
 
 
 if __name__ == '__main__':

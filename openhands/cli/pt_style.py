@@ -6,6 +6,7 @@ from prompt_toolkit.styles.defaults import default_ui_style
 # fuzzy-match visibility across different terminal themes (e.g., Ubuntu).
 
 COLOR_GOLD = '#FFD700'
+COLOR_ORANGE = '#deb756'
 COLOR_GREY = '#808080'
 COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - readable on light/dark backgrounds
 
