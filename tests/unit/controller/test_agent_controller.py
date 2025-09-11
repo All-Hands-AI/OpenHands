@@ -117,7 +117,9 @@ def mock_agent_with_stats():
 def mock_event_stream():
     mock = MagicMock(
         spec=EventStream,
-        event_stream=EventStream(sid='test', file_store=InMemoryFileStore({})),
+        sid='test',
+        file_store=InMemoryFileStore({}),
+        user_id=None,
     )
     mock.get_latest_event_id.return_value = 0
     return mock

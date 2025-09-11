@@ -95,6 +95,8 @@ class EventStreamABC(EventStoreABC, ABC):
 
 class EventStream(EventStore, EventStreamABC):
     secrets: dict[str, str]
+    sid: str
+    user_id: str | None
     # For each subscriber ID, there is a map of callback functions - useful
     # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]]
