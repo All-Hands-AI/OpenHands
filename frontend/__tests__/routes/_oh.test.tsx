@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/root-layout";
 import i18n from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
@@ -63,7 +64,7 @@ describe("frontend/routes/_oh", () => {
   it.skip("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",
@@ -185,7 +186,7 @@ describe("frontend/routes/_oh", () => {
 
   it("should render a you're in toast if it is a new user and in saas mode", async () => {
     const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const displaySuccessToastSpy = vi.spyOn(
       ToastHandlers,
       "displaySuccessToast",

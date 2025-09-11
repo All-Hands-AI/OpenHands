@@ -18,7 +18,7 @@ import {
   GetFileResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
 import { SuggestedTask } from "#/utils/types";
 import {
   GitUser,
@@ -357,25 +357,6 @@ class OpenHands {
     );
 
     return data;
-  }
-
-  /**
-   * Get the settings from the server or use the default settings if not found
-   */
-  static async getSettings(): Promise<ApiSettings> {
-    const { data } = await openHands.get<ApiSettings>("/api/settings");
-    return data;
-  }
-
-  /**
-   * Save the settings to the server. Only valid settings are saved.
-   * @param settings - the settings to save
-   */
-  static async saveSettings(
-    settings: Partial<PostApiSettings>,
-  ): Promise<boolean> {
-    const data = await openHands.post("/api/settings", settings);
-    return data.status === 200;
   }
 
   static async createCheckoutSession(amount: number): Promise<string> {
