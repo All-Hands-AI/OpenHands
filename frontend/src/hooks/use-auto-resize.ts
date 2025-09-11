@@ -1,5 +1,6 @@
 import { useCallback, useEffect, RefObject } from "react";
 import { IMessageToSend } from "#/state/conversation-slice";
+import { isMobileDevice } from "#/utils/utils";
 
 interface UseAutoResizeOptions {
   minHeight?: number;
@@ -15,6 +16,8 @@ interface UseAutoResizeReturn {
   autoResize: () => void;
   smartResize: () => void;
   handleGripMouseDown: (e: React.MouseEvent) => void;
+  handleGripTouchStart: (e: React.TouchEvent) => void;
+  increaseHeightForEmptyContent: () => void;
 }
 
 export const useAutoResize = (
@@ -122,21 +125,21 @@ export const useAutoResize = (
     }
   }, [elementRef, minHeight, maxHeight, onHeightChange]);
 
-  // Handle mouse down on grip for manual resizing
-  const handleGripMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!enableManualResize) return;
+  // Helper function to extract Y coordinate from mouse or touch events
+  const getClientY = useCallback((event: MouseEvent | TouchEvent): number => {
+    if ("touches" in event && event.touches.length > 0) {
+      return event.touches[0].clientY;
+    }
+    return (event as MouseEvent).clientY;
+  }, []);
 
-      e.preventDefault();
+  // Core drag logic shared between mouse and touch events
+  const createDragHandlers = useCallback(
+    (startY: number, startHeight: number, isMobile: boolean) => {
+      const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+        moveEvent.preventDefault();
 
-      // Call optional drag start callback
-      onGripDragStart?.();
-
-      const startY = e.clientY;
-      const startHeight = elementRef.current?.offsetHeight || minHeight;
-
-      const handleMouseMove = (moveEvent: MouseEvent) => {
-        const deltaY = moveEvent.clientY - startY;
+        const deltaY = getClientY(moveEvent) - startY;
         // Invert deltaY so moving up increases height and moving down decreases height
         const newHeight = Math.max(
           minHeight,
@@ -160,26 +163,98 @@ export const useAutoResize = (
         }
       };
 
-      const handleMouseUp = () => {
+      const handleEnd = () => {
         // Call optional drag end callback
         onGripDragEnd?.();
 
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
+        if (isMobile) {
+          const resizeGrip = document.getElementById("resize-grip");
+          if (!resizeGrip) return;
+
+          // Remove both mouse and touch event listeners
+          resizeGrip.removeEventListener("mousemove", handleMove);
+          resizeGrip.removeEventListener("mouseup", handleEnd);
+          resizeGrip.removeEventListener("touchmove", handleMove);
+          resizeGrip.removeEventListener("touchend", handleEnd);
+        } else {
+          document.removeEventListener("mousemove", handleMove);
+          document.removeEventListener("mouseup", handleEnd);
+          document.removeEventListener("touchmove", handleMove);
+          document.removeEventListener("touchend", handleEnd);
+        }
       };
 
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+      return { handleMove, handleEnd };
     },
     [
       elementRef,
       minHeight,
       maxHeight,
-      enableManualResize,
-      onGripDragStart,
       onGripDragEnd,
       onHeightChange,
+      getClientY,
     ],
+  );
+
+  // Common drag start logic shared between mouse and touch events
+  const startDrag = useCallback(
+    (startY: number) => {
+      if (!enableManualResize) {
+        return;
+      }
+
+      // Call optional drag start callback
+      onGripDragStart?.();
+
+      const isMobile = isMobileDevice();
+
+      const startHeight = elementRef.current?.offsetHeight || minHeight;
+      const { handleMove, handleEnd } = createDragHandlers(
+        startY,
+        startHeight,
+        isMobile,
+      );
+
+      if (isMobile) {
+        const resizeGrip = document.getElementById("resize-grip");
+        if (!resizeGrip) {
+          return;
+        }
+        resizeGrip.addEventListener("touchmove", handleMove, {
+          passive: false,
+          capture: true,
+        });
+        resizeGrip.addEventListener("touchend", handleEnd, { capture: true });
+      } else {
+        document.addEventListener("mousemove", handleMove);
+        document.addEventListener("mouseup", handleEnd);
+      }
+    },
+    [
+      elementRef,
+      minHeight,
+      enableManualResize,
+      onGripDragStart,
+      createDragHandlers,
+    ],
+  );
+
+  // Handle mouse down on grip for manual resizing
+  const handleGripMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      startDrag(e.clientY);
+    },
+    [startDrag],
+  );
+
+  // Handle touch start on grip for manual resizing
+  const handleGripTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      e.preventDefault();
+      startDrag(e.touches[0].clientY);
+    },
+    [startDrag],
   );
 
   // Update content and resize when value prop changes
@@ -191,10 +266,38 @@ export const useAutoResize = (
     }
   }, [value, smartResize]);
 
+  // Function to increase height by 20px when content is empty
+  const increaseHeightForEmptyContent = useCallback(() => {
+    const element = elementRef.current;
+    if (!element) return;
+
+    const currentHeight = element.offsetHeight;
+    const newHeight = Math.min(currentHeight + 20, maxHeight);
+
+    if (newHeight > currentHeight) {
+      element.style.setProperty("height", `${newHeight}px`);
+      element.style.setProperty(
+        "overflow-y",
+        newHeight >= maxHeight ? "auto" : "hidden",
+      );
+
+      // Call the height change callback if provided
+      if (onHeightChange) {
+        onHeightChange(newHeight);
+      }
+    }
+  }, [elementRef, maxHeight, onHeightChange]);
+
   // Initialize auto-resize on mount
   useEffect(() => {
     smartResize();
   }, [smartResize]);
 
-  return { autoResize, smartResize, handleGripMouseDown };
+  return {
+    autoResize,
+    smartResize,
+    handleGripMouseDown,
+    handleGripTouchStart,
+    increaseHeightForEmptyContent,
+  };
 };
