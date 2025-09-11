@@ -26,10 +26,6 @@ export interface FeedbackResponse {
   body: FeedbackBodyResponse;
 }
 
-export interface GitHubAccessTokenResponse {
-  access_token: string;
-}
-
 export interface AuthenticationResponse {
   message: string;
   login?: string; // Only present when allow list is enabled

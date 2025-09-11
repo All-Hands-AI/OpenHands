@@ -8,6 +8,7 @@ import { I18nextProvider } from "react-i18next";
 import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
+import AuthService from "#/api/auth-service/auth-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 import { GetConfigResponse } from "#/api/option-service/option.types";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
@@ -393,7 +394,7 @@ describe("Form submission", () => {
 
   it("should call logout when pressing the disconnect tokens button", async () => {
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
-    const logoutSpy = vi.spyOn(OpenHands, "logout");
+    const logoutSpy = vi.spyOn(AuthService, "logout");
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
 
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
