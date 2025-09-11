@@ -1,3 +1,5 @@
+from typing import Any
+
 import uvicorn
 from fastapi import FastAPI, WebSocket
 
@@ -14,14 +16,14 @@ async def websocket_endpoint(websocket: WebSocket) -> None:
     try:
         while should_continue():
             # receive message
-            data = await websocket.receive_json()
+            data: Any = await websocket.receive_json()
             logger.debug(f'Received message: {data}')
 
             # send mock response to client
-            response = {'message': f'receive {data}'}
+            response: dict[str, Any] = {'message': f'receive {data}'}
             await websocket.send_json(response)
             logger.debug(f'Sent message: {response}')
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - intentional broad catch for mock server
         logger.debug(f'WebSocket Error: {e}')
 
 
