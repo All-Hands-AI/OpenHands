@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Any, Optional
+from typing import Any
 
 import aiohttp
 from fastapi import Request
@@ -10,6 +10,7 @@ from fastapi import Request
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.event_store_abc import EventStoreABC
+from openhands.memory.view import View
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.grayswan.utils import convert_events_to_openai_messages
 
@@ -22,7 +23,10 @@ class GraySwanAnalyzer(SecurityAnalyzer):
         history_limit: int = 20,
         max_message_chars: int = 30000,
         timeout: int = 30,
-        session: Optional[aiohttp.ClientSession] = None,
+        low_threshold: float = 0.3,
+        medium_threshold: float = 0.7,
+        high_threshold: float = 1.0,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         """Initialize GraySwan analyzer.
 
@@ -30,14 +34,14 @@ class GraySwanAnalyzer(SecurityAnalyzer):
             history_limit: Number of recent events to include as context
             max_message_chars: Max characters for conversation processing
             timeout: Request timeout in seconds
+            low_threshold: Risk threshold for LOW classification (default: 0.3)
+            medium_threshold: Risk threshold for MEDIUM classification (default: 0.7)
+            high_threshold: Risk threshold for HIGH classification (default: 1.0)
             session: Optional pre-configured session (mainly for testing)
 
         Environment Variables:
             GRAYSWAN_API_KEY: Required API key for GraySwan authentication
-            GRAYSWAN_POLICY_ID: Required policy ID for GraySwan policies
-            GRAYSWAN_LOW_THRESHOLD: Risk threshold for LOW classification (default: 0.7)
-            GRAYSWAN_MEDIUM_THRESHOLD: Risk threshold for MEDIUM classification (default: 0.9)
-            GRAYSWAN_HIGH_THRESHOLD: Risk threshold for HIGH classification (default: 1.0)
+            GRAYSWAN_POLICY_ID: Optional policy ID for custom GraySwan policy
         """
         super().__init__()
 
@@ -57,19 +61,19 @@ class GraySwanAnalyzer(SecurityAnalyzer):
         else:
             logger.info(f'Using GraySwan policy ID from environment: {self.policy_id}')
 
-        self.event_stream: Optional[EventStoreABC] = None
+        self.event_stream: EventStoreABC | None = None
         self.history_limit = history_limit
         self.max_message_chars = max_message_chars
         self.timeout = timeout
 
         self.violation_thresholds = {
-            'low': float(os.getenv('GRAYSWAN_LOW_THRESHOLD', '0.7')),
-            'medium': float(os.getenv('GRAYSWAN_MEDIUM_THRESHOLD', '0.9')),
-            'high': float(os.getenv('GRAYSWAN_HIGH_THRESHOLD', '1.0')),
+            'low': low_threshold,
+            'medium': medium_threshold,
+            'high': high_threshold,
         }
 
         self.api_url = 'https://api.grayswan.ai/cygnal/monitor'
-        self.session: Optional[aiohttp.ClientSession] = session
+        self.session: aiohttp.ClientSession | None = session
 
         logger.info(
             f'GraySwanAnalyzer initialized with history_limit={history_limit}, timeout={timeout}s'
@@ -123,6 +127,7 @@ class GraySwanAnalyzer(SecurityAnalyzer):
             logger.info(
                 f'Sending request to GraySwan API with {len(messages)} messages and policy_id: {self.policy_id}'
             )
+            logger.info(f'Payload: {payload}')
 
             response = await session.post(self.api_url, json=payload)
 
@@ -168,11 +173,13 @@ class GraySwanAnalyzer(SecurityAnalyzer):
             return ActionSecurityRisk.UNKNOWN
 
         try:
-            all_events = list(self.event_stream.get_events())
+            # Use View to get closer to what the agent's LLM actually sees
+            # This applies context management (trimming, summaries, masking)
+            view = View.from_events(list(self.event_stream.get_events()))
             recent_events = (
-                all_events[-self.history_limit :]
-                if len(all_events) > self.history_limit
-                else all_events
+                list(view)[-self.history_limit :]
+                if len(view) > self.history_limit
+                else list(view)
             )
 
             events_to_process = recent_events + [action]

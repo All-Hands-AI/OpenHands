@@ -100,11 +100,19 @@ Browsing Agent Safety:
 
 * To enable this feature: In the InvariantAnalyzer object, set the check_browsing_alignment attribute to True and initialize the guardrail_llm attribute with an LLM object.
 
-### GraySwan
+### Gray Swan
 
-The GraySwan Security Analyzer integrates with [GraySwan AI's Cygnal API](https://docs.grayswan.ai/monitor-requests/monitor) to provide advanced AI safety monitoring for OpenHands agents.
+The Gray Swan Security Analyzer integrates with [Gray Swan AI's Cygnal API](https://docs.grayswan.ai/monitor-requests/monitor) to provide advanced AI safety monitoring for OpenHands agents.
 
-Configuration:
+#### Getting Started
+To get started with the Gray Swan security analyzer (powered by Cygnal):
+
+1. Navigate to [the Gray Swan platform](https://platform.grayswan.ai) and create an account if you don't already have one
+2. Create a Gray Swan API key.
+3. If you just want to use Cygnal's default protections, you can move to the next section.
+4. If you want **even more** custom protection, you can create your own policy [here](https://platform.grayswan.ai/policies). Policies are composed of rules, which require a short title, e.g. "Git Operations", and then the rule itself, e.g. "The agent should never push code directly to the main branch".
+
+#### OpenHands Configuration:
 
 To use the GraySwan analyzer, set the following environment variables:
 
@@ -117,3 +125,5 @@ Then configure OpenHands to use the GraySwan analyzer:
 [security]
 security_analyzer = "grayswan"
 ```
+
+or select "grayswan" from the dropdown in settings!
