@@ -20,12 +20,8 @@ def file_settings_store(mock_file_store):
 
 @pytest.mark.asyncio
 async def test_load_nonexistent_data(file_settings_store):
-    with patch(
-        'openhands.storage.data_models.settings.load_openhands_config',
-        MagicMock(return_value=OpenHandsConfig()),
-    ):
-        file_settings_store.file_store.read.side_effect = FileNotFoundError()
-        assert await file_settings_store.load() is None
+    file_settings_store.file_store.read.side_effect = FileNotFoundError()
+    assert await file_settings_store.load() is None
 
 
 @pytest.mark.asyncio

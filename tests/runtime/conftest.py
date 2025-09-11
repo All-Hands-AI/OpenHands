@@ -5,9 +5,10 @@ import stat
 import time
 
 import pytest
-from openhands_configuration import MCPConfig, load_openhands_config
+from openhands_configuration import MCPConfig
 from pytest import TempPathFactory
 
+from openhands.core.config import load_openhands_config
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
