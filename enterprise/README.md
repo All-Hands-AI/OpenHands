@@ -54,7 +54,3 @@ NOTE: in the future we will simply replace the `GithubTokenManager` with keycloa
 - On Enterprise, the entire APP resolves around the Github User ID. This is because the cookie sets it, so `openhands/server` AND `enterprise/server` depend on it and completly ignore `request.state.github_token` (token is fetched from `GithubTokenManager` instead)
 
 Note that introducing Github User ID on OSS, for instance, will cause large breakages.
-
-## Migration conflicts
-
-OpenHands PRs can fall out of sync with `main` quickly. When adding a migration, it's safest to sync the PR with main before merging to ensure you are caught up to any others that have been added.
