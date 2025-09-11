@@ -3,279 +3,195 @@
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import prompt
-from pydantic import SecretStr
 
-from openhands_cli.settings import CLISettings, SettingsManager
-from openhands_cli.user_actions.utils import cli_confirm, prompt_user
-
-
-def display_current_settings(settings: CLISettings) -> None:
-    """Display current settings to the user."""
-    print_formatted_text(HTML('<gold>📋 Current Settings</gold>'))
-    print_formatted_text('')
-    
-    # LLM Configuration
-    print_formatted_text(HTML('<white>LLM Configuration:</white>'))
-    print_formatted_text(f'  Model: {settings.model}')
-    api_key_display = '***' if settings.api_key else 'Not set'
-    print_formatted_text(f'  API Key: {api_key_display}')
-    base_url_display = settings.base_url or 'Not set'
-    print_formatted_text(f'  Base URL: {base_url_display}')
-    print_formatted_text('')
-    
-    # Agent Configuration
-    print_formatted_text(HTML('<white>Agent Configuration:</white>'))
-    print_formatted_text(f'  Agent Type: {settings.agent_type}')
-    confirmation_status = 'Enabled' if settings.confirmation_mode else 'Disabled'
-    print_formatted_text(f'  Confirmation Mode: {confirmation_status}')
-    print_formatted_text('')
-    
-    # Optional Features
-    print_formatted_text(HTML('<white>Optional Features:</white>'))
-    search_key_display = '***' if settings.search_api_key else 'Not set'
-    print_formatted_text(f'  Search API Key: {search_key_display}')
-    print_formatted_text('')
+from openhands.core.config.llm_config import LLMConfig
+from ..settings.manager import CLISettings
+from .components.menu import SettingsMenu
+from .components.settings_display import SettingsDisplay
+from .components.input_handlers import InputHandler
 
 
-def configure_llm_settings(settings_manager: SettingsManager) -> None:
-    """Configure LLM settings interactively."""
-    current_settings = settings_manager.load_settings()
-    
-    print_formatted_text(HTML('<gold>🤖 Configure LLM Settings</gold>'))
-    print_formatted_text('')
-    
-    # Model selection
-    print_formatted_text(HTML('<white>Select LLM Model:</white>'))
-    model_choices = [
-        'gpt-4o-mini',
-        'gpt-4o', 
-        'gpt-4-turbo',
-        'claude-3-5-sonnet-20241022',
-        'claude-3-5-haiku-20241022',
-        'Other (specify)'
-    ]
-    
-    current_model_idx = 0
-    try:
-        current_model_idx = model_choices.index(current_settings.model)
-    except ValueError:
-        current_model_idx = len(model_choices) - 1  # "Other"
-    
-    selected_idx = cli_confirm(
-        'Choose a model:',
-        choices=model_choices,
-        initial_selection=current_model_idx,
-        escapable=True
-    )
-    
-    if selected_idx == len(model_choices) - 1:  # "Other" selected
-        custom_model = prompt('Enter custom model name: ').strip()
-        if custom_model:
-            model = custom_model
-        else:
-            model = current_settings.model
-    else:
-        model = model_choices[selected_idx]
-    
-    # API Key
-    print_formatted_text('')
-    current_key_display = '***' if current_settings.api_key else 'Not set'
-    print_formatted_text(f'Current API Key: {current_key_display}')
-    
-    update_key = cli_confirm(
-        'Update API Key?',
-        choices=['Keep current', 'Enter new key'],
-        initial_selection=0,
-        escapable=True
-    )
-    
-    api_key = None
-    if update_key == 1:  # Enter new key
-        new_key = prompt('Enter API Key (hidden): ', is_password=True).strip()
-        if new_key:
-            api_key = new_key
-        else:
-            api_key = current_settings.api_key.get_secret_value() if current_settings.api_key else None
-    else:
-        api_key = current_settings.api_key.get_secret_value() if current_settings.api_key else None
-    
-    # Base URL
-    print_formatted_text('')
-    current_base_url = current_settings.base_url or 'Not set'
-    print_formatted_text(f'Current Base URL: {current_base_url}')
-    
-    update_base_url = cli_confirm(
-        'Update Base URL?',
-        choices=['Keep current', 'Enter new URL', 'Clear URL'],
-        initial_selection=0,
-        escapable=True
-    )
-    
-    base_url = current_settings.base_url
-    if update_base_url == 1:  # Enter new URL
-        new_url = prompt('Enter Base URL: ').strip()
-        base_url = new_url if new_url else None
-    elif update_base_url == 2:  # Clear URL
-        base_url = None
-    
-    # Save settings
-    settings_manager.update_settings(
-        model=model,
-        api_key=api_key,
-        base_url=base_url
-    )
-    
-    print_formatted_text(HTML('<green>✓ LLM settings updated successfully!</green>'))
+class SettingsUI:
+    """Main settings UI coordinator."""
 
+    def __init__(self):
+        """Initialize settings UI."""
+        self.menu = SettingsMenu()
+        self.display = SettingsDisplay()
+        self.input = InputHandler()
+        self.settings = CLISettings()
 
-def configure_agent_settings(settings_manager: SettingsManager) -> None:
-    """Configure agent settings interactively."""
-    current_settings = settings_manager.load_settings()
-    
-    print_formatted_text(HTML('<gold>🤖 Configure Agent Settings</gold>'))
-    print_formatted_text('')
-    
-    # Agent Type
-    print_formatted_text(HTML('<white>Select Agent Type:</white>'))
-    agent_choices = [
-        'CodeActAgent',
-        'PlannerAgent',
-        'Other (specify)'
-    ]
-    
-    current_agent_idx = 0
-    try:
-        current_agent_idx = agent_choices.index(current_settings.agent_type)
-    except ValueError:
-        current_agent_idx = len(agent_choices) - 1  # "Other"
-    
-    selected_idx = cli_confirm(
-        'Choose agent type:',
-        choices=agent_choices,
-        initial_selection=current_agent_idx,
-        escapable=True
-    )
-    
-    if selected_idx == len(agent_choices) - 1:  # "Other" selected
-        custom_agent = prompt('Enter custom agent type: ').strip()
-        if custom_agent:
-            agent_type = custom_agent
-        else:
-            agent_type = current_settings.agent_type
-    else:
-        agent_type = agent_choices[selected_idx]
-    
-    # Confirmation Mode
-    print_formatted_text('')
-    confirmation_choices = ['Disabled', 'Enabled']
-    current_confirmation_idx = 1 if current_settings.confirmation_mode else 0
-    
-    confirmation_idx = cli_confirm(
-        'Confirmation Mode:',
-        choices=confirmation_choices,
-        initial_selection=current_confirmation_idx,
-        escapable=True
-    )
-    
-    confirmation_mode = confirmation_idx == 1
-    
-    # Save settings
-    settings_manager.update_settings(
-        agent_type=agent_type,
-        confirmation_mode=confirmation_mode
-    )
-    
-    print_formatted_text(HTML('<green>✓ Agent settings updated successfully!</green>'))
+    def display_current_settings(self, settings: LLMConfig) -> None:
+        """Display all current settings."""
+        self.display.settings_group('LLM Configuration', {
+            'Model': settings.model,
+            'API Key': '********' if settings.api_key else None,
+            'Base URL': settings.base_url,
+            'Temperature': settings.temperature,
+            'Top P': settings.top_p,
+            'Max Output Tokens': settings.max_output_tokens
+        })
 
+    def configure_model(self, current: str) -> str:
+        """Configure LLM model selection."""
+        self.display.subsection_header('Select LLM Model')
+        
+        choices = [
+            'gpt-4-turbo-preview',
+            'gpt-4',
+            'gpt-3.5-turbo',
+            'claude-3-opus-20240229',
+            'claude-3-sonnet-20240229',
+            'claude-3-haiku-20240307',
+            'Other (specify)'
+        ]
+        selected_idx = self.input.get_choice(
+            'Choose a model:',
+            choices=choices,
+            current=current
+        )
+        
+        if selected_idx == len(choices) - 1:  # "Other" selected
+            return self.input.get_custom_value(
+                'Enter custom model name: ',
+                current=current
+            ) or current
+        
+        return choices[selected_idx]
 
-def configure_optional_settings(settings_manager: SettingsManager) -> None:
-    """Configure optional settings interactively."""
-    current_settings = settings_manager.load_settings()
-    
-    print_formatted_text(HTML('<gold>⚙️ Configure Optional Settings</gold>'))
-    print_formatted_text('')
-    
-    # Search API Key
-    current_search_key_display = '***' if current_settings.search_api_key else 'Not set'
-    print_formatted_text(f'Current Search API Key: {current_search_key_display}')
-    
-    update_search_key = cli_confirm(
-        'Update Search API Key?',
-        choices=['Keep current', 'Enter new key', 'Clear key'],
-        initial_selection=0,
-        escapable=True
-    )
-    
-    search_api_key = None
-    if update_search_key == 1:  # Enter new key
-        new_key = prompt('Enter Search API Key (hidden): ', is_password=True).strip()
-        if new_key:
-            search_api_key = new_key
-        else:
-            search_api_key = current_settings.search_api_key.get_secret_value() if current_settings.search_api_key else None
-    elif update_search_key == 2:  # Clear key
-        search_api_key = None
-    else:
-        search_api_key = current_settings.search_api_key.get_secret_value() if current_settings.search_api_key else None
-    
-    # Save settings
-    settings_manager.update_settings(search_api_key=search_api_key)
-    
-    print_formatted_text(HTML('<green>✓ Optional settings updated successfully!</green>'))
+    def configure_api_key(self, current: str | None) -> str | None:
+        """Configure LLM API key."""
+        self.display.subsection_header('API Key Configuration')
+        
+        value, changed = self.input.get_secret_value(
+            'Update API Key?',
+            current=current
+        )
+        
+        return value if changed else current
 
+    def configure_base_url(self, current: str | None) -> str | None:
+        """Configure LLM base URL."""
+        self.display.subsection_header('Base URL Configuration')
+        
+        choices = ['Keep current', 'Enter new URL', 'Clear URL']
+        action = self.input.get_choice(
+            'Update Base URL?',
+            choices=choices
+        )
+        
+        if action == 1:  # Enter new URL
+            return self.input.get_custom_value(
+                'Enter Base URL: ',
+                current=current
+            )
+        elif action == 2:  # Clear URL
+            return None
+        
+        return current
 
-def run_settings_configuration() -> None:
-    """Run the interactive settings configuration."""
-    settings_manager = SettingsManager()
-    
-    while True:
-        print_formatted_text('')
-        print_formatted_text(HTML('<gold>⚙️ OpenHands CLI Settings</gold>'))
-        print_formatted_text('')
+    def configure_temperature(self, current: float) -> float:
+        """Configure temperature."""
+        self.display.subsection_header('Temperature Configuration')
+        
+        return float(self.input.get_custom_value(
+            'Enter temperature (0.0 - 1.0): ',
+            current=str(current),
+            validator=lambda x: 0.0 <= float(x) <= 1.0
+        ))
+
+    def configure_top_p(self, current: float) -> float:
+        """Configure top p."""
+        self.display.subsection_header('Top P Configuration')
+        
+        return float(self.input.get_custom_value(
+            'Enter top p (0.0 - 1.0): ',
+            current=str(current),
+            validator=lambda x: 0.0 <= float(x) <= 1.0
+        ))
+
+    def configure_max_output_tokens(self, current: int | None) -> int | None:
+        """Configure max output tokens."""
+        self.display.subsection_header('Max Output Tokens Configuration')
+        
+        value = self.input.get_custom_value(
+            'Enter max output tokens (leave empty for no limit): ',
+            current=str(current) if current else '',
+            validator=lambda x: not x or int(x) > 0
+        )
+        
+        return int(value) if value else None
+
+    def configure_llm_settings(self) -> None:
+        """Configure LLM settings."""
+        current = self.settings.llm
+        
+        self.display.section_header('Configure LLM Settings', '🤖')
         
         # Display current settings
-        current_settings = settings_manager.load_settings()
-        display_current_settings(current_settings)
+        self.display_current_settings(current)
+        print_formatted_text('')
         
-        # Main menu
-        menu_choices = [
-            'Configure LLM Settings',
-            'Configure Agent Settings', 
-            'Configure Optional Settings',
-            'Reset to Defaults',
-            'Exit Settings'
-        ]
+        # Configure each setting
+        model = self.configure_model(current.model)
+        print_formatted_text('')
         
-        try:
-            choice = cli_confirm(
-                'What would you like to configure?',
-                choices=menu_choices,
-                initial_selection=0,
-                escapable=True
+        api_key = self.configure_api_key(
+            current.api_key.get_secret_value() if current.api_key else None
+        )
+        print_formatted_text('')
+        
+        base_url = self.configure_base_url(current.base_url)
+        print_formatted_text('')
+        
+        temperature = self.configure_temperature(current.temperature)
+        print_formatted_text('')
+        
+        top_p = self.configure_top_p(current.top_p)
+        print_formatted_text('')
+        
+        max_output_tokens = self.configure_max_output_tokens(current.max_output_tokens)
+        
+        # Create new settings
+        new_settings = LLMConfig(
+            model=model,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=temperature,
+            top_p=top_p,
+            max_output_tokens=max_output_tokens
+        )
+        
+        # Save settings
+        self.settings.update_llm(new_settings)
+        self.display.success_message('LLM settings updated successfully!')
+
+    def reset_settings(self) -> None:
+        """Reset settings to defaults."""
+        if self.input.confirm_action(
+            'Are you sure you want to reset all settings to defaults?'
+        ):
+            self.settings.reset()
+            self.display.success_message('Settings reset to defaults!')
+
+    def run(self) -> None:
+        """Run the settings configuration UI."""
+        while True:
+            print_formatted_text('')
+            
+            # Display current settings
+            self.menu.display_current_settings(
+                lambda: self.display_current_settings(self.settings.llm)
             )
             
-            if choice == 0:  # Configure LLM Settings
-                configure_llm_settings(settings_manager)
-            elif choice == 1:  # Configure Agent Settings
-                configure_agent_settings(settings_manager)
-            elif choice == 2:  # Configure Optional Settings
-                configure_optional_settings(settings_manager)
-            elif choice == 3:  # Reset to Defaults
-                confirm_reset = cli_confirm(
-                    'Are you sure you want to reset all settings to defaults?',
-                    choices=['No', 'Yes'],
-                    initial_selection=0,
-                    escapable=True
-                )
-                if confirm_reset == 1:
-                    settings_manager.save_settings(CLISettings())
-                    print_formatted_text(HTML('<green>✓ Settings reset to defaults!</green>'))
-            elif choice == 4:  # Exit Settings
+            # Add menu choices
+            self.menu.choices.clear()
+            self.menu.add_choice('Configure LLM Settings', self.configure_llm_settings)
+            self.menu.add_choice('Reset to Defaults', self.reset_settings)
+            
+            # Run menu
+            if not self.menu.run():
                 break
-                
-        except KeyboardInterrupt:
-            # User pressed Ctrl+C or Escape
-            break
-    
-    print_formatted_text('')
-    print_formatted_text(HTML('<yellow>Settings configuration complete.</yellow>'))
+        
+        print_formatted_text('')
+        self.display.warning_message('Settings configuration complete.')
