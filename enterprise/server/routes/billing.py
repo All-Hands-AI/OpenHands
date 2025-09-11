@@ -109,7 +109,7 @@ async def get_subscription_access(
         )
 
 
-
+# Endpoint to check if a user has entered a payment method into stripe
 @billing_router.post('/has-payment-method')
 async def has_payment_method(user_id: str = Depends(get_user_id)) -> bool:
     if not user_id:
