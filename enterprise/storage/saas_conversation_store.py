@@ -10,7 +10,7 @@ from storage.database import session_maker
 from storage.stored_conversation_metadata import StoredConversationMetadata
 
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.integrations.provider import ProviderType
+from openhands_configuration import ProviderType
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,

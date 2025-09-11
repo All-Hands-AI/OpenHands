@@ -1,7 +1,7 @@
 from types import MappingProxyType
 
 import pytest
-from openhands_configuration import UserSecrets
+from openhands_configuration import Settings, UserSecrets
 from pydantic import SecretStr, ValidationError
 
 from openhands.events.action.commands import CmdRunAction
@@ -10,7 +10,6 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands_configuration import Settings
 
 
 def test_provider_token_immutability():

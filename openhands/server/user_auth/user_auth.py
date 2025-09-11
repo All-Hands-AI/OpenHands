@@ -4,10 +4,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 from fastapi import Request
-from openhands_configuration import UserSecrets
+from openhands_configuration import PROVIDER_TOKEN_TYPE, UserSecrets
 from pydantic import SecretStr
 
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.shared import server_config
 from openhands.storage.secrets.secrets_store import SecretsStore

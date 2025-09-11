@@ -2,7 +2,12 @@ from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from openhands_configuration import MCPConfig, MCPStdioServerConfig
+from openhands_configuration import (
+    MCPConfig,
+    MCPStdioServerConfig,
+    ProviderToken,
+    ProviderType,
+)
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
@@ -10,7 +15,7 @@ from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.observation import NullObservation, Observation
 from openhands.events.stream import EventStream
-from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
+from openhands.integrations.provider import ProviderHandler
 from openhands.integrations.service_types import AuthenticationError, Repository
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Any, Callable, Iterable
 
 import socketio
-from openhands_configuration import LLMConfig
+from openhands_configuration import LLMConfig, Settings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -27,7 +27,6 @@ from openhands.server.session.session import WebSession as Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,

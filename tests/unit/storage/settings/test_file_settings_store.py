@@ -1,9 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from openhands_configuration import Settings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 

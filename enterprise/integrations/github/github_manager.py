@@ -29,7 +29,7 @@ from server.auth.token_manager import TokenManager
 from server.utils.conversation_callback_utils import register_callback_processor
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.provider import ProviderToken, ProviderType
+from openhands_configuration import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands_configuration import UserSecrets
 from openhands.utils.async_utils import call_sync_from_async

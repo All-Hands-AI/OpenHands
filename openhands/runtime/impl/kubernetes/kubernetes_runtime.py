@@ -33,6 +33,7 @@ from kubernetes.client.models import (
     V1Volume,
     V1VolumeMount,
 )
+from openhands_configuration import PROVIDER_TOKEN_TYPE
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
@@ -42,7 +43,6 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,

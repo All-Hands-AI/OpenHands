@@ -12,7 +12,7 @@ import docker
 import httpx
 import socketio
 from docker.models.containers import Container
-from openhands_configuration import LLMConfig
+from openhands_configuration import PROVIDER_TOKEN_TYPE, LLMConfig, Settings
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -21,7 +21,7 @@ from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
+from openhands.integrations.provider import ProviderHandler
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
@@ -38,7 +38,6 @@ from openhands.server.session.session import WebSession as Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async

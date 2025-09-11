@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 import socketio
-from openhands_configuration import LLMConfig
+from openhands_configuration import LLMConfig, Settings
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.action import MessageAction
@@ -13,7 +13,6 @@ from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 
 

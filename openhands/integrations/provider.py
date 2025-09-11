@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import os
 from types import MappingProxyType
-from typing import Annotated, Any, Coroutine, Literal, cast, overload
+from typing import Any, Coroutine, Literal, cast, overload
 
 import httpx
+from openhands_configuration import PROVIDER_TOKEN_TYPE, ProviderType
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     SecretStr,
-    WithJsonSchema,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -27,7 +27,6 @@ from openhands.integrations.service_types import (
     InstallationsService,
     MicroagentParseError,
     PaginatedBranchesResponse,
-    ProviderType,
     Repository,
     ResourceNotFoundError,
     SuggestedTask,
@@ -36,35 +35,6 @@ from openhands.integrations.service_types import (
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
-
-
-class ProviderToken(BaseModel):
-    token: SecretStr | None = Field(default=None)
-    user_id: str | None = Field(default=None)
-    host: str | None = Field(default=None)
-
-    model_config = ConfigDict(
-        frozen=True,  # Makes the entire model immutable
-        validate_assignment=True,
-    )
-
-    @classmethod
-    def from_value(cls, token_value: ProviderToken | dict[str, str]) -> ProviderToken:
-        """Factory method to create a ProviderToken from various input types"""
-        if isinstance(token_value, cls):
-            return token_value
-        elif isinstance(token_value, dict):
-            token_str = token_value.get('token', '')
-            # Override with emtpy string if it was set to None
-            # Cannot pass None to SecretStr
-            if token_str is None:
-                token_str = ''  # type: ignore[unreachable]
-            user_id = token_value.get('user_id')
-            host = token_value.get('host')
-            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
-
-        else:
-            raise ValueError('Unsupported Provider token type')
 
 
 class CustomSecret(BaseModel):
@@ -88,18 +58,6 @@ class CustomSecret(BaseModel):
 
         else:
             raise ValueError('Unsupport Provider token type')
-
-
-PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
-PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
-    PROVIDER_TOKEN_TYPE,
-    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
-]
-CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
-    CUSTOM_SECRETS_TYPE,
-    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
-]
 
 
 class ProviderHandler:

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 
-from openhands.integrations.service_types import ProviderType
+from openhands_configuration import ProviderType
 
 
 class ConversationTrigger(Enum):

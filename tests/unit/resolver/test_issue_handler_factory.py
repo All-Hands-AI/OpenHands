@@ -1,8 +1,7 @@
 import pytest
-from openhands_configuration import LLMConfig
+from openhands_configuration import LLMConfig, ProviderType
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue_definitions import (

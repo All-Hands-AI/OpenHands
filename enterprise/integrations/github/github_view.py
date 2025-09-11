@@ -27,7 +27,7 @@ from storage.user_settings import UserSettings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands_configuration import PROVIDER_TOKEN_TYPE, ProviderType
 from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import (
     initialize_conversation,

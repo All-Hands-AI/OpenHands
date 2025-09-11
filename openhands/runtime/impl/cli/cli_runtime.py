@@ -20,7 +20,7 @@ from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
-from openhands_configuration import MCPConfig, MCPStdioServerConfig
+from openhands_configuration import PROVIDER_TOKEN_TYPE, MCPConfig, MCPStdioServerConfig
 from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
@@ -45,7 +45,6 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement

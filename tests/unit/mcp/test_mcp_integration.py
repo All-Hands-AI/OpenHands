@@ -3,10 +3,9 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from openhands_configuration import MCPConfig, MCPSSEServerConfig
+from openhands_configuration import MCPConfig, MCPSSEServerConfig, Settings
 
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
-from openhands_configuration import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 

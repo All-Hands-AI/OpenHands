@@ -10,7 +10,7 @@ import tenacity
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands_configuration import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )

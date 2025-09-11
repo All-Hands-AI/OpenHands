@@ -7,9 +7,8 @@ from openhands_configuration import (
     MCPConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
+    Settings,
 )
-
-from openhands_configuration import Settings
 
 
 @pytest.mark.asyncio

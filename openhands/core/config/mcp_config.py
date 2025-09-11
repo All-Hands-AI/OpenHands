@@ -2,10 +2,10 @@ import os
 
 from openhands_configuration import MCPSHTTPServerConfig, MCPStdioServerConfig
 
-
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.utils.import_utils import get_impl
 from openhands.core.logger import openhands_logger as logger
+from openhands.utils.import_utils import get_impl
+
 
 class OpenHandsMCPConfig:
     @staticmethod

@@ -2,16 +2,17 @@ import uuid
 from types import MappingProxyType
 from typing import Any
 
-from openhands_configuration import MCPConfig, UserSecrets
+from openhands_configuration import (
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
+    PROVIDER_TOKEN_TYPE,
+    MCPConfig,
+    ProviderToken,
+    UserSecrets,
+)
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
-from openhands.integrations.provider import (
-    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
-    PROVIDER_TOKEN_TYPE,
-    ProviderToken,
-)
 from openhands.integrations.service_types import ProviderType
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.session.conversation_init_data import ConversationInitData

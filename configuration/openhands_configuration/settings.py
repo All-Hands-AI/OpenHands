@@ -12,8 +12,8 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from .mcp_config import MCPConfig
-from .user_secrets import UserSecrets
+from openhands_configuration.mcp_config import MCPConfig
+from openhands_configuration.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):

@@ -2,6 +2,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openhands_configuration import Settings
 from prompt_toolkit.formatted_text import HTML
 from pydantic import SecretStr
 
@@ -13,7 +14,6 @@ from openhands.cli.settings import (
 )
 from openhands.cli.tui import UserCancelledError
 from openhands.core.config import OpenHandsConfig
-from openhands_configuration import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 

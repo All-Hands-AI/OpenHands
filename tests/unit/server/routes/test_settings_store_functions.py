@@ -3,10 +3,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
-from openhands_configuration import UserSecrets
+from openhands_configuration import ProviderToken, Settings, UserSecrets
 from pydantic import SecretStr
 
-from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.routes.secrets import (
     app,
@@ -15,7 +14,6 @@ from openhands.server.routes.secrets import (
 from openhands.server.routes.settings import store_llm_settings
 from openhands.server.settings import POSTProviderModel
 from openhands.storage import get_file_store
-from openhands_configuration import Settings
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
 
 
@@ -228,6 +226,7 @@ async def test_store_provider_tokens_new_tokens(test_client, file_secrets_store)
     assert response.status_code == 200
 
     user_secrets = await file_secrets_store.load()
+    print(user_secrets)
 
     assert (
         user_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()

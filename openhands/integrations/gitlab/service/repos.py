@@ -1,5 +1,7 @@
+from openhands_configuration import ProviderType
+
 from openhands.integrations.gitlab.service.base import GitLabMixinBase
-from openhands.integrations.service_types import OwnerType, ProviderType, Repository
+from openhands.integrations.service_types import OwnerType, Repository
 from openhands.server.types import AppMode
 
 

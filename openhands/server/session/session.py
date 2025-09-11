@@ -3,7 +3,7 @@ import time
 from logging import LoggerAdapter
 
 import socketio
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands_configuration import Settings
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -13,6 +13,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -33,7 +34,6 @@ from openhands.server.constants import ROOM_KEY
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands_configuration import Settings
 from openhands.storage.files import FileStore
 
 

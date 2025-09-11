@@ -11,7 +11,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from .provider_types import (
+from openhands_configuration.provider_types import (
     CUSTOM_SECRETS_TYPE,
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,

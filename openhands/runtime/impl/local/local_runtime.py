@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 import httpx
 import tenacity
+from openhands_configuration import PROVIDER_TOKEN_TYPE
 
 import openhands
 from openhands.core.config import OpenHandsConfig
@@ -25,7 +26,6 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,

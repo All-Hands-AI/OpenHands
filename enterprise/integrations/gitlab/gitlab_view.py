@@ -10,7 +10,7 @@ from storage.saas_secrets_store import SaasSecretsStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands_configuration import PROVIDER_TOKEN_TYPE, ProviderType
 from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import create_new_conversation
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger

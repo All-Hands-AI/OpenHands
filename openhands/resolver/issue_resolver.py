@@ -11,6 +11,7 @@ from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
+from openhands_configuration import ProviderType
 from termcolor import colored
 
 import openhands
@@ -27,7 +28,6 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStreamSubscriber
-from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (

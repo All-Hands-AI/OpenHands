@@ -1,10 +1,10 @@
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
-from openhands.integrations.provider import ProviderType
 
 
 async def validate_provider_token(

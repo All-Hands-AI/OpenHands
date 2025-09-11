@@ -2,13 +2,13 @@ import base64
 from typing import Any
 
 import httpx
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 
 from openhands.integrations.protocols.http_client import HTTPClient
 from openhands.integrations.service_types import (
     BaseGitService,
     OwnerType,
-    ProviderType,
     Repository,
     RequestMethod,
     ResourceNotFoundError,

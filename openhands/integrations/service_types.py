@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from jinja2 import Environment, FileSystemLoader
+from openhands_configuration import ProviderType
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -15,13 +16,6 @@ from openhands.server.types import AppMode
 
 class TokenResponse(BaseModel):
     token: str
-
-
-class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
-    BITBUCKET = 'bitbucket'
-    ENTERPRISE_SSO = 'enterprise_sso'
 
 
 class TaskType(str, Enum):

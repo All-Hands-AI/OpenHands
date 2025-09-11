@@ -3,6 +3,7 @@ from typing import cast
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
+from openhands_configuration import ProviderType
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -14,7 +15,6 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     PaginatedBranchesResponse,
-    ProviderType,
     Repository,
     SuggestedTask,
     UnknownException,

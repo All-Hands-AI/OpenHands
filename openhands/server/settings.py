@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from openhands_configuration import MCPConfig, Settings
+from openhands_configuration import CustomSecret, MCPConfig, ProviderToken, Settings
 from pydantic import (
     BaseModel,
     ConfigDict,
     SecretStr,
 )
 
-from openhands.integrations.provider import CustomSecret, ProviderToken
 from openhands.integrations.service_types import ProviderType
 
 

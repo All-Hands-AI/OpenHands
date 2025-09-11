@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 
 import httpx
 import tenacity
+from openhands_configuration import PROVIDER_TOKEN_TYPE
 from tenacity import RetryCallState
 
 from openhands.core.config import OpenHandsConfig
@@ -18,7 +19,6 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (

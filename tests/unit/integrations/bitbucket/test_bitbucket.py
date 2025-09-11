@@ -5,10 +5,10 @@ import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openhands_configuration import ProviderToken, ProviderType
 from pydantic import SecretStr
 
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
-from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.service_types import OwnerType, Repository
 from openhands.integrations.service_types import ProviderType as ServiceProviderType
 from openhands.integrations.utils import validate_provider_token
@@ -718,8 +718,9 @@ def test_initialize_repository_for_runtime_with_bitbucket_token(
     mock_event_stream, mock_get_file_store, mock_call_async_from_sync
 ):
     """Test that initialize_repository_for_runtime properly handles BITBUCKET_TOKEN."""
+    from openhands_configuration import ProviderType
+
     from openhands.core.setup import initialize_repository_for_runtime
-    from openhands.integrations.provider import ProviderType
 
     # Mock runtime
     mock_runtime = MagicMock()
@@ -767,8 +768,9 @@ def test_initialize_repository_for_runtime_with_multiple_tokens(
     mock_event_stream, mock_get_file_store, mock_call_async_from_sync
 ):
     """Test that initialize_repository_for_runtime handles multiple provider tokens including Bitbucket."""
+    from openhands_configuration import ProviderType
+
     from openhands.core.setup import initialize_repository_for_runtime
-    from openhands.integrations.provider import ProviderType
 
     # Mock runtime
     mock_runtime = MagicMock()
@@ -830,8 +832,9 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
     mock_event_stream, mock_get_file_store, mock_call_async_from_sync
 ):
     """Test that initialize_repository_for_runtime works without BITBUCKET_TOKEN."""
+    from openhands_configuration import ProviderType
+
     from openhands.core.setup import initialize_repository_for_runtime
-    from openhands.integrations.provider import ProviderType
 
     # Mock runtime
     mock_runtime = MagicMock()

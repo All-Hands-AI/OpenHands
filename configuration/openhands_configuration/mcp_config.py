@@ -302,4 +302,3 @@ class MCPConfig(BaseModel):
             stdio_servers=self.stdio_servers + other.stdio_servers,
             shttp_servers=self.shttp_servers + other.shttp_servers,
         )
-

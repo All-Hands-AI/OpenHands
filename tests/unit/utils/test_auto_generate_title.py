@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from openhands_configuration import Settings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
@@ -14,7 +15,6 @@ from openhands.server.conversation_manager.standalone_conversation_manager impor
     StandaloneConversationManager,
 )
 from openhands.server.monitoring import MonitoringListener
-from openhands_configuration import Settings
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.conversation_summary import auto_generate_title
 
