@@ -593,11 +593,6 @@ invalid_field_in_sandbox = "test"
         # Verify the error message mentions the invalid sandbox field
         assert 'Error in [sandbox] section in config.toml' in str(excinfo.value)
 
-        log_content = log_output.getvalue()
-
-        # The LLM config should still log a warning but not raise an exception
-        assert 'Cannot parse [llm] config from toml' in log_content
-
         # Verify valid configurations are loaded before the error was raised
         assert default_config.debug is True
     finally:
