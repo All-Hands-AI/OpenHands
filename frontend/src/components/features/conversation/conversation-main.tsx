@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import { useWindowSize } from "@uidotdev/usehooks";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { ChatInterface } from "../chat/chat-interface";
-import { ConversationTabContent } from "./conversation-tabs/conversation-tab-content";
+import { ConversationTabContent } from "./conversation-tabs/conversation-tab-content/conversation-tab-content";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
 
