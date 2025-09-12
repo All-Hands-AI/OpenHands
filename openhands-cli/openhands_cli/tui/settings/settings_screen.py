@@ -2,6 +2,7 @@ from openhands.sdk import Conversation
 from openhands_cli.user_actions import settings_type_confirmation
 from openhands_cli.user_actions.settings_action import SettingsType
 from openhands_cli.user_actions.types import UserConfirmation
+from openhands.sdk import LLM, Agent, Conversation
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
