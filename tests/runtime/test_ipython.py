@@ -274,7 +274,7 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     assert "ModuleNotFoundError: No module named 'pymsgbox'" in obs.content
 
     # Install pymsgbox in Jupyter
-    action = IPythonRunCellAction(code='%pip install pymsgbox==1.0.9')
+    action = IPythonRunCellAction(code='%uv pip install pymsgbox==1.0.9')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
