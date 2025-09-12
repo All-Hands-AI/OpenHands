@@ -1026,7 +1026,7 @@ describe("SaaS mode", () => {
       expect(screen.queryByTestId("settings-backdrop")).not.toBeInTheDocument();
     });
 
-    it("should display success toast when redirected back with ?success parameter", async () => {
+    it("should display success toast when redirected back with ?checkout=success parameter", async () => {
       // Mock SaaS mode
       const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
@@ -1044,15 +1044,15 @@ describe("SaaS mode", () => {
         "displaySuccessToast",
       );
 
-      // Mock URL search params with ?success
+      // Mock URL search params with ?checkout=success
       mockUseSearchParams.mockReturnValue([
         {
-          get: (param: string) => (param === "success" ? "true" : null),
+          get: (param: string) => (param === "checkout" ? "success" : null),
         },
         vi.fn(),
       ]);
 
-      // Render component with success parameter
+      // Render component with checkout=success parameter
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
@@ -1062,7 +1062,7 @@ describe("SaaS mode", () => {
       );
     });
 
-    it("should display error toast when redirected back with ?failure parameter", async () => {
+    it("should display error toast when redirected back with ?checkout=cancel parameter", async () => {
       // Mock SaaS mode
       const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
@@ -1077,15 +1077,15 @@ describe("SaaS mode", () => {
       // Mock toast handler
       const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
-      // Mock URL search params with ?failure
+      // Mock URL search params with ?checkout=cancel
       mockUseSearchParams.mockReturnValue([
         {
-          get: (param: string) => (param === "failure" ? "true" : null),
+          get: (param: string) => (param === "checkout" ? "cancel" : null),
         },
         vi.fn(),
       ]);
 
-      // Render component with failure parameter
+      // Render component with checkout=cancel parameter
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 

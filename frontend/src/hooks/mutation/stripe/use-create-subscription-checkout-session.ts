@@ -9,7 +9,7 @@ export const useCreateSubscriptionCheckoutSession = () =>
     },
     onSuccess: (data) => {
       if (data.redirect_url) {
-        window.open(data.redirect_url, "_blank");
+        window.location.href = data.redirect_url;
       }
     },
   });

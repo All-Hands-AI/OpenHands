@@ -125,13 +125,12 @@ function LlmSettingsScreen() {
 
   // Handle URL parameters for SaaS subscription redirects
   React.useEffect(() => {
-    const success = searchParams.get("success");
-    const failure = searchParams.get("failure");
+    const checkout = searchParams.get("checkout");
 
-    if (success) {
+    if (checkout === "success") {
       displaySuccessToast(t(I18nKey.SUBSCRIPTION$SUCCESS));
       setSearchParams({});
-    } else if (failure) {
+    } else if (checkout === "cancel") {
       displayErrorToast(t(I18nKey.SUBSCRIPTION$FAILURE));
       setSearchParams({});
     }
