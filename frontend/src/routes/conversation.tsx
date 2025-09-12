@@ -28,6 +28,7 @@ import { ConversationMain } from "#/components/features/conversation/conversatio
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
+import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 
 function AppContent() {
   useConversationConfig();
@@ -39,6 +40,7 @@ function AppContent() {
   const startConversation = useStartConversation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { removeErrorMessage } = useWSErrorMessage();
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
@@ -54,10 +56,15 @@ function AppContent() {
       navigate("/");
     } else if (conversation?.status === "STOPPED") {
       // start the conversation if the state is stopped on initial load
-      startConversation.mutate({
-        conversationId: conversation.conversation_id,
-        providers,
-      });
+      startConversation.mutate(
+        {
+          conversationId: conversation.conversation_id,
+          providers,
+        },
+        {
+          onSuccess: removeErrorMessage,
+        },
+      );
     }
   }, [
     conversation?.conversation_id,
