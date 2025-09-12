@@ -1,8 +1,8 @@
 from openhands.sdk import Conversation
 from openhands_cli.user_actions import settings_type_confirmation
-from openhands_cli.user_actions.settings_action import SettingsType, choose_settings_provider
+from openhands_cli.user_actions.settings_action import SettingsType, choose_llm_provider, save_settings_confirmation, specify_api_key
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands.sdk import LLM, Agent, Conversation
+from openhands.sdk import Conversation
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
@@ -83,8 +83,21 @@ class SettingsScreen:
 
 
     def handle_basic_settings(self):
-        provider = choose_settings_provider()
+        provider = choose_llm_provider()
+        api_key = specify_api_key(self.conversation.agent.llm.api_key)
 
+        if not api_key:
+            return
+
+        confirmation = save_settings_confirmation()
+        if confirmation == UserConfirmation.REJECT:
+            return
+
+        self.reconfigure_conversation_settings()
+
+
+    def reconfigure_conversation_settings(self):
+        pass
 
 
 
