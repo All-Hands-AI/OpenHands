@@ -199,6 +199,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.config.security.security_analyzer, SecurityAnalyzer
             )
             self.security_analyzer = analyzer_cls()
+            self.security_analyzer.set_event_stream(self.event_stream)
             logger.debug(
                 f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
             )
