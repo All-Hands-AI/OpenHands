@@ -329,7 +329,7 @@ async def run_session(
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
-        working_dir=os.getcwd(),
+        working_dir=str(runtime.workspace_root),
     )
 
     # Add MCP tools to the agent
