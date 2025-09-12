@@ -585,45 +585,49 @@ function LlmSettingsScreen() {
                 href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
-              <SettingsInput
-                testId="search-api-key-input"
-                name="search-api-key-input"
-                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-                type="password"
-                className="w-full max-w-[680px]"
-                defaultValue={settings.SEARCH_API_KEY || ""}
-                onChange={handleSearchApiKeyIsDirty}
-                placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
-                isDisabled={shouldShowUpgradeBanner}
-                startContent={
-                  settings.SEARCH_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
-                  )
-                }
-              />
+              {config?.APP_MODE !== "saas" && (
+                <>
+                  <SettingsInput
+                    testId="search-api-key-input"
+                    name="search-api-key-input"
+                    label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                    type="password"
+                    className="w-full max-w-[680px]"
+                    defaultValue={settings.SEARCH_API_KEY || ""}
+                    onChange={handleSearchApiKeyIsDirty}
+                    placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
+                    isDisabled={shouldShowUpgradeBanner}
+                    startContent={
+                      settings.SEARCH_API_KEY_SET && (
+                        <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                      )
+                    }
+                  />
 
-              <HelpLink
-                testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
-                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
-                href="https://tavily.com/"
-              />
+                  <HelpLink
+                    testId="search-api-key-help-anchor"
+                    text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                    linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
+                    href="https://tavily.com/"
+                  />
 
-              <SettingsDropdownInput
-                testId="agent-input"
-                name="agent-input"
-                label={t(I18nKey.SETTINGS$AGENT)}
-                items={
-                  resources?.agents.map((agent) => ({
-                    key: agent,
-                    label: agent, // TODO: Add i18n support for agent names
-                  })) || []
-                }
-                defaultSelectedKey={settings.AGENT}
-                isClearable={false}
-                onInputChange={handleAgentIsDirty}
-                wrapperClassName="w-full max-w-[680px]"
-              />
+                  <SettingsDropdownInput
+                    testId="agent-input"
+                    name="agent-input"
+                    label={t(I18nKey.SETTINGS$AGENT)}
+                    items={
+                      resources?.agents.map((agent) => ({
+                        key: agent,
+                        label: agent, // TODO: Add i18n support for agent names
+                      })) || []
+                    }
+                    defaultSelectedKey={settings.AGENT}
+                    isClearable={false}
+                    onInputChange={handleAgentIsDirty}
+                    wrapperClassName="w-full max-w-[680px]"
+                  />
+                </>
+              )}
 
               {config?.APP_MODE === "saas" && (
                 <SettingsDropdownInput
@@ -632,7 +636,10 @@ function LlmSettingsScreen() {
                   label={
                     <>
                       {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
-                      <a href="mailto:contact@all-hands.dev">
+                      <a
+                        href="mailto:contact@all-hands.dev"
+                        className="text-blue-500 hover:text-blue-400 underline"
+                      >
                         {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
                     </>
