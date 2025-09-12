@@ -4,10 +4,12 @@ import { UpgradeBanner } from "#/components/features/settings";
 
 interface UpgradeBannerWithBackdropProps {
   onUpgradeClick: () => void;
+  isDisabled?: boolean;
 }
 
 export function UpgradeBannerWithBackdrop({
   onUpgradeClick,
+  isDisabled,
 }: UpgradeBannerWithBackdropProps) {
   const { t } = useTranslation();
 
@@ -17,6 +19,7 @@ export function UpgradeBannerWithBackdrop({
         message={t("SETTINGS$UPGRADE_BANNER_MESSAGE")}
         onUpgradeClick={onUpgradeClick}
         className="sticky top-0 z-10"
+        isDisabled={isDisabled}
       />
       <div
         data-testid="settings-backdrop"

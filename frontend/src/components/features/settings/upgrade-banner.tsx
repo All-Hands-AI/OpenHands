@@ -6,12 +6,14 @@ interface UpgradeBannerProps {
   message: string;
   onUpgradeClick?: () => void;
   className?: string;
+  isDisabled?: boolean;
 }
 
 export function UpgradeBanner({
   message,
   onUpgradeClick,
   className,
+  isDisabled,
 }: UpgradeBannerProps) {
   return (
     <div
@@ -22,7 +24,7 @@ export function UpgradeBanner({
       data-testid="upgrade-banner"
     >
       <BannerMessage message={message} />
-      <UpgradeButton onClick={onUpgradeClick} />
+      <UpgradeButton onClick={onUpgradeClick} isDisabled={isDisabled} />
     </div>
   );
 }
