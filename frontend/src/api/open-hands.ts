@@ -373,11 +373,15 @@ class OpenHands {
     conversationId: string,
     providers?: Provider[],
   ): Promise<Conversation | null> {
+    const err = new Error("Call stack:");
+    console.log("startConversation...");
+    console.log(err.stack);
     const { data } = await openHands.post<Conversation | null>(
       `/api/conversations/${conversationId}/start`,
       providers ? { providers_set: providers } : {},
     );
 
+    console.log(data);
     return data;
   }
 
