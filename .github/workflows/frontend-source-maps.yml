@@ -1,0 +1,76 @@
+# Workflow that builds frontend and uploads source maps as artifacts
+name: Build Frontend Source Maps
+
+# Run on main branch pushes, releases, and manual triggers
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-source-maps.yml"
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-source-maps:
+    name: Build Frontend and Upload Source Maps
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    strategy:
+      matrix:
+        node-version: [22]
+      fail-fast: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Build frontend with source maps
+        working-directory: ./frontend
+        run: npm run build
+      
+      - name: Upload source maps as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-source-maps-${{ github.sha }}
+          path: frontend/build/**/*.map
+          retention-days: 90
+          if-no-files-found: error
+      
+      - name: Upload complete build artifacts (for debugging)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build-${{ github.sha }}
+          path: |
+            frontend/build/**/*
+            !frontend/build/**/*.map
+          retention-days: 30
+          if-no-files-found: error
+      
+      - name: Create source maps summary
+        run: |
+          echo "## Source Maps Generated 🗺️" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Source maps have been generated and uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Statistics:" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total source map files:** $(find frontend/build -name "*.map" | wc -l)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total size:** $(du -sh frontend/build/**/*.map 2>/dev/null | tail -1 | cut -f1 || echo 'N/A')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Download:" >> $GITHUB_STEP_SUMMARY
+          echo "Source maps are available as workflow artifacts and can be downloaded from the Actions tab." >> $GITHUB_STEP_SUMMARY

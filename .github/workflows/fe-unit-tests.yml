@@ -42,3 +42,10 @@ jobs:
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
+      - name: Upload source maps as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-source-maps-${{ github.sha }}
+          path: frontend/build/**/*.map
+          retention-days: 30
+          if-no-files-found: warn
