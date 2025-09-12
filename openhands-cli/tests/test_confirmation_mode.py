@@ -31,9 +31,8 @@ class TestConfirmationMode:
 
     def test_setup_agent_creates_conversation(self) -> None:
         """Test that setup_agent creates a conversation successfully."""
-        with patch.dict(os.environ, {'LITELLM_API_KEY': 'test-key'}):
+        with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
             with (
-                patch('openhands_cli.setup.LLM'),
                 patch('openhands_cli.setup.Agent'),
                 patch('openhands_cli.setup.Conversation') as mock_conversation,
                 patch('openhands_cli.setup.BashExecutor'),
@@ -72,15 +71,6 @@ class TestConfirmationMode:
 
         # Verify initial state
         assert runner.confirmation_mode is False
-
-    def test_setup_agent_without_api_key(self) -> None:
-        """Test that setup_agent raises exception when API key is missing."""
-        with patch.dict(os.environ, {}, clear=True):
-            with (
-                patch('openhands_cli.setup.print_formatted_text'),
-                pytest.raises(Exception, match='No API key found'),
-            ):
-                setup_agent()
 
     def test_ask_user_confirmation_empty_actions(self) -> None:
         """Test that ask_user_confirmation returns ACCEPT for empty actions list."""
