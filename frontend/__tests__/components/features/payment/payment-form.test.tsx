@@ -3,12 +3,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { PaymentForm } from "#/components/features/payment/payment-form";
 
 describe("PaymentForm", () => {
   const getBalanceSpy = vi.spyOn(OpenHands, "getBalance");
   const createCheckoutSessionSpy = vi.spyOn(OpenHands, "createCheckoutSession");
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
 
   const renderPaymentForm = () =>
     render(<PaymentForm />, {

@@ -6,6 +6,8 @@ import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import OpenHands from "#/api/open-hands";
+import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import { GitRepository } from "#/types/git";
 import { SuggestedTask } from "#/utils/types";
@@ -70,7 +72,7 @@ describe("TaskCard", () => {
   describe("creating suggested task conversation", () => {
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        OpenHands,
+        GitService,
         "retrieveUserGitRepositories",
       );
       retrieveUserGitRepositoriesSpy.mockResolvedValue({

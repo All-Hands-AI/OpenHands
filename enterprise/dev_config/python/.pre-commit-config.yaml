@@ -46,7 +46,8 @@ repos:
           - types-toml
           - types-redis
           - lxml
-          # TODO: Add OpenHands in parent
+          # OpenHands package in repo root
+          - ./
           - stripe==11.5.0
           - pygithub==2.6.1
         # To see gaps add `--html-report mypy-report/`

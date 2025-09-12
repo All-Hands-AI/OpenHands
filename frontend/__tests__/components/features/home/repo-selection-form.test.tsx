@@ -3,6 +3,8 @@ import { describe, expect, vi, beforeEach, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RepositorySelectionForm } from "../../../../src/components/features/home/repo-selection-form";
 import OpenHands from "#/api/open-hands";
+import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { GitRepository } from "#/types/git";
 
 // Create mock functions
@@ -204,7 +206,7 @@ describe("RepositorySelectionForm", () => {
     ];
 
     // Create a spy on the API call
-    const searchGitReposSpy = vi.spyOn(OpenHands, "searchGitRepositories");
+    const searchGitReposSpy = vi.spyOn(GitService, "searchGitRepositories");
     searchGitReposSpy.mockResolvedValue(MOCK_SEARCH_REPOS);
 
     mockUseGitRepositories.mockReturnValue({
