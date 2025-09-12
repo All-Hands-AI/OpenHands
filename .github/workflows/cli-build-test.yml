@@ -51,8 +51,8 @@ jobs:
       - name: Test binary startup and /help command
         working-directory: openhands-cli
         env:
-          LITELLM_API_KEY: dummy-ci-key
-          LITELLM_MODEL: dummy-ci-model
+          LLM_API_KEY: dummy-ci-key
+          LLM_MODEL: dummy-ci-model
         run: |
           # Test that binary starts and responds to /help command
           echo "Testing binary startup and /help command..."
