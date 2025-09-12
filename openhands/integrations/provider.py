@@ -16,7 +16,7 @@ from pydantic import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStreamABC
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
@@ -337,7 +337,7 @@ class ProviderHandler:
 
     async def set_event_stream_secrets(
         self,
-        event_stream: EventStream,
+        event_stream: EventStreamABC,
         env_vars: dict[ProviderType, SecretStr] | None = None,
     ) -> None:
         """This ensures that the latest provider tokens are masked from the event stream

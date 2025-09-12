@@ -18,11 +18,16 @@ def mock_agent():
     return agent
 
 
+@pytest.fixture
+def mock_event_stream():
+    return MagicMock()
+
+
 @pytest_asyncio.fixture
-def mock_runtime():
+def mock_runtime(mock_event_stream):
     runtime = AsyncMock()
     runtime.close = MagicMock()
-    runtime.event_stream = MagicMock()
+    runtime.event_stream = mock_event_stream
     return runtime
 
 
@@ -44,7 +49,9 @@ async def test_cleanup_session_closes_resources(
 ):
     """Test that cleanup_session calls close methods on agent, runtime, and controller."""
     loop = asyncio.get_running_loop()
-    await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
+    await cli.cleanup_session(
+        loop, mock_agent, mock_event_stream, mock_runtime, mock_controller
+    )
 
     mock_agent.reset.assert_called_once()
     mock_runtime.close.assert_called_once()
@@ -53,7 +60,7 @@ async def test_cleanup_session_closes_resources(
 
 @pytest.mark.asyncio
 async def test_cleanup_session_cancels_pending_tasks(
-    mock_agent, mock_runtime, mock_controller
+    mock_agent, mock_event_stream, mock_runtime, mock_controller
 ):
     """Test that cleanup_session cancels other pending tasks."""
     loop = asyncio.get_running_loop()
@@ -76,7 +83,9 @@ async def test_cleanup_session_cancels_pending_tasks(
     assert other_task_ran is True
 
     # Run cleanup session directly from the test task
-    await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
+    await cli.cleanup_session(
+        loop, mock_agent, mock_event_stream, mock_runtime, mock_controller
+    )
     await asyncio.sleep(0)
 
     # Check that the other task was indeed cancelled
@@ -96,13 +105,15 @@ async def test_cleanup_session_cancels_pending_tasks(
 
 @pytest.mark.asyncio
 async def test_cleanup_session_handles_exceptions(
-    mock_agent, mock_runtime, mock_controller
+    mock_agent, mock_event_stream, mock_runtime, mock_controller
 ):
     """Test that cleanup_session handles exceptions during cleanup gracefully."""
     loop = asyncio.get_running_loop()
     mock_controller.close.side_effect = Exception('Test cleanup error')
     with patch('openhands.cli.main.logger.error') as mock_log_error:
-        await cli.cleanup_session(loop, mock_agent, mock_runtime, mock_controller)
+        await cli.cleanup_session(
+            loop, mock_agent, mock_event_stream, mock_runtime, mock_controller
+        )
 
         # Check that cleanup continued despite the error
         mock_agent.reset.assert_called_once()
@@ -708,9 +719,7 @@ async def test_run_session_with_name_attempts_state_restore(
 
     # State.restore_from_session is called from within core.setup.create_controller,
     # which receives the runtime object (and thus its event_stream with sid and file_store).
-    mock_restore_from_session.assert_called_once_with(
-        expected_sid, mock_runtime.event_stream.file_store
-    )
+    mock_restore_from_session.assert_called_once_with(mock_runtime.event_stream)
 
     # Check that AgentController was initialized with the loaded state
     mock_agent_controller_init.assert_called_once()

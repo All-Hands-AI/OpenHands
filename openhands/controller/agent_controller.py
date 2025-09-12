@@ -7,6 +7,8 @@ import time
 import traceback
 from typing import TYPE_CHECKING, Callable
 
+from openhands.events.stream import EventStreamABC
+
 if TYPE_CHECKING:
     from openhands.security.analyzer import SecurityAnalyzer
 
@@ -45,7 +47,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import (
     EventSource,
-    EventStream,
     EventStreamSubscriber,
     RecallType,
 )
@@ -101,7 +102,7 @@ class AgentController:
     id: str
     agent: Agent
     max_iterations: int
-    event_stream: EventStream
+    event_stream: EventStreamABC
     state: State
     confirmation_mode: bool
     agent_to_llm_config: dict[str, LLMConfig]
@@ -115,7 +116,7 @@ class AgentController:
     def __init__(
         self,
         agent: Agent,
-        event_stream: EventStream,
+        event_stream: EventStreamABC,
         conversation_stats: ConversationStats,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
@@ -168,7 +169,7 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
             )
 
-        self.state_tracker = StateTracker(sid, file_store, user_id)
+        self.state_tracker = StateTracker(self.event_stream)
 
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
@@ -275,7 +276,7 @@ class AgentController:
         if set_stop_state:
             await self.set_agent_state_to(AgentState.STOPPED)
 
-        self.state_tracker.close(self.event_stream)
+        self.state_tracker.close()
 
         # unsubscribe from the event stream
         # only the root parent controller subscribes to the event stream
@@ -1055,9 +1056,7 @@ class AgentController:
             confirmation_mode,
         )
         # Always load from the event stream to avoid losing history
-        self.state_tracker._init_history(
-            self.event_stream,
-        )
+        self.state_tracker._init_history(self.event_stream)
 
     def get_trajectory(self, include_screenshots: bool = False) -> list[dict]:
         # state history could be partially hidden/truncated before controller is closed
