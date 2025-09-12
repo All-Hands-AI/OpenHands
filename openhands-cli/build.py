@@ -122,8 +122,8 @@ def test_executable() -> bool:
             input='/help\n/exit\n',  # Send /help command then exit
             env={
                 **os.environ,
-                'LITELLM_API_KEY': 'dummy-test-key',
-                'LITELLM_MODEL': 'dummy-model',
+                'LLM_API_KEY': 'dummy-test-key',
+                'LLM_MODEL': 'dummy-model',
             },
         )
 
