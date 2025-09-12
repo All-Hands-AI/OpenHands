@@ -42,6 +42,8 @@ class SubscriptionAccessResponse(BaseModel):
     start_at: datetime
     end_at: datetime
     created_at: datetime
+    cancelled_at: datetime | None = None
+    stripe_subscription_id: str | None = None
 
 
 class CreateCheckoutSessionRequest(BaseModel):
@@ -102,6 +104,8 @@ async def get_subscription_access(
             start_at=subscription_access.start_at,
             end_at=subscription_access.end_at,
             created_at=subscription_access.created_at,
+            cancelled_at=subscription_access.cancelled_at,
+            stripe_subscription_id=subscription_access.stripe_subscription_id,
         )
 
 
@@ -111,6 +115,78 @@ async def has_payment_method(user_id: str = Depends(get_user_id)) -> bool:
     if not user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     return await stripe_service.has_payment_method(user_id)
+
+
+# Endpoint to cancel user's subscription
+@billing_router.post('/cancel-subscription')
+async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONResponse:
+    """Cancel user's active subscription at the end of the current billing period"""
+    if not user_id:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+    with session_maker() as session:
+        # Find the user's active subscription
+        now = datetime.now(UTC)
+        subscription_access = (
+            session.query(SubscriptionAccess)
+            .filter(SubscriptionAccess.status == 'ACTIVE')
+            .filter(SubscriptionAccess.user_id == user_id)
+            .filter(SubscriptionAccess.start_at <= now)
+            .filter(SubscriptionAccess.end_at >= now)
+            .filter(SubscriptionAccess.cancelled_at.is_(None))  # Not already cancelled
+            .first()
+        )
+
+        if not subscription_access:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='No active subscription found',
+            )
+
+        if not subscription_access.stripe_subscription_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Cannot cancel subscription: missing Stripe subscription ID',
+            )
+
+        try:
+            # Cancel the subscription in Stripe at period end
+            await stripe.Subscription.modify_async(
+                subscription_access.stripe_subscription_id, cancel_at_period_end=True
+            )
+
+            # Update local database
+            subscription_access.cancelled_at = datetime.now(UTC)
+            session.merge(subscription_access)
+            session.commit()
+
+            logger.info(
+                'subscription_cancelled',
+                extra={
+                    'user_id': user_id,
+                    'stripe_subscription_id': subscription_access.stripe_subscription_id,
+                    'subscription_access_id': subscription_access.id,
+                    'end_at': subscription_access.end_at,
+                },
+            )
+
+            return JSONResponse(
+                {'status': 'success', 'message': 'Subscription cancelled successfully'}
+            )
+
+        except stripe.StripeError as e:
+            logger.error(
+                'stripe_cancellation_failed',
+                extra={
+                    'user_id': user_id,
+                    'stripe_subscription_id': subscription_access.stripe_subscription_id,
+                    'error': str(e),
+                },
+            )
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f'Failed to cancel subscription: {str(e)}',
+            )
 
 
 # Endpoint to create a new setup intent in stripe
@@ -278,7 +354,7 @@ async def success_callback(session_id: str, request: Request):
             != BillingSessionType.DIRECT_PAYMENT.value
         ):
             return RedirectResponse(
-                f'{request.base_url}settings/billing?checkout=success', status_code=302
+                f'{request.base_url}settings?checkout=success', status_code=302
             )
 
         stripe_session = stripe.checkout.Session.retrieve(session_id)
@@ -321,7 +397,7 @@ async def success_callback(session_id: str, request: Request):
             session.commit()
 
     return RedirectResponse(
-        f'{request.base_url}settings/billing?checkout=success', status_code=302
+        f'{request.base_url}settings?checkout=success', status_code=302
     )
 
 
@@ -349,7 +425,7 @@ async def cancel_callback(session_id: str, request: Request):
             session.commit()
 
     return RedirectResponse(
-        f'{request.base_url}settings/billing?checkout=cancel', status_code=302
+        f'{request.base_url}settings?checkout=cancel', status_code=302
     )
 
 
@@ -397,9 +473,39 @@ async def stripe_webhook(request: Request) -> JSONResponse:
                 end_at=end_at,
                 amount_paid=amount_paid,
                 stripe_invoice_payment_id=invoice.payment_intent,
+                stripe_subscription_id=invoice.subscription,  # Store Stripe subscription ID
             )
             session.add(subscription_access)
             session.commit()
+    elif event_type == 'customer.subscription.updated':
+        subscription = event['data']['object']
+        subscription_id = subscription['id']
+
+        # Handle subscription cancellation
+        if subscription.get('cancel_at_period_end') is True:
+            with session_maker() as session:
+                subscription_access = (
+                    session.query(SubscriptionAccess)
+                    .filter(
+                        SubscriptionAccess.stripe_subscription_id == subscription_id
+                    )
+                    .filter(SubscriptionAccess.status == 'ACTIVE')
+                    .first()
+                )
+
+                if subscription_access and not subscription_access.cancelled_at:
+                    subscription_access.cancelled_at = datetime.now(UTC)
+                    session.merge(subscription_access)
+                    session.commit()
+
+                    logger.info(
+                        'subscription_cancelled_via_webhook',
+                        extra={
+                            'stripe_subscription_id': subscription_id,
+                            'user_id': subscription_access.user_id,
+                            'subscription_access_id': subscription_access.id,
+                        },
+                    )
     else:
         logger.info('stripe_webhook_unhandled_event_type', extra={'type': event_type})
 

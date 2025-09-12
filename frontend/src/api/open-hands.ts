@@ -14,6 +14,7 @@ import {
   FileUploadSuccessResponse,
   GetFilesResponse,
   GetFileResponse,
+  CancelSubscriptionResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { Provider } from "#/types/settings";
@@ -340,6 +341,22 @@ class OpenHands {
   static async getSubscriptionAccess(): Promise<SubscriptionAccess | null> {
     const { data } = await openHands.get<SubscriptionAccess | null>(
       "/api/billing/subscription-access",
+    );
+    return data;
+  }
+
+  static async createSubscriptionCheckoutSession(): Promise<{
+    redirect_url?: string;
+  }> {
+    const { data } = await openHands.post(
+      "/api/billing/subscription-checkout-session",
+    );
+    return data;
+  }
+
+  static async cancelSubscription(): Promise<CancelSubscriptionResponse> {
+    const { data } = await openHands.post<CancelSubscriptionResponse>(
+      "/api/billing/cancel-subscription",
     );
     return data;
   }

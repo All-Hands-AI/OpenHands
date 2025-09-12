@@ -7,7 +7,7 @@ from storage.base import Base
 class SubscriptionAccess(Base):  # type: ignore
     """
     Represents a user's subscription access record.
-    Tracks subscription status, duration, and payment information.
+    Tracks subscription status, duration, payment information, and cancellation status.
     """
 
     __tablename__ = 'subscription_access'
@@ -27,6 +27,8 @@ class SubscriptionAccess(Base):  # type: ignore
     end_at = Column(DateTime(timezone=True), nullable=True)
     amount_paid = Column(DECIMAL(19, 4), nullable=True)
     stripe_invoice_payment_id = Column(String, nullable=False)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    stripe_subscription_id = Column(String, nullable=True, index=True)
     created_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),  # type: ignore[attr-defined]

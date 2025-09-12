@@ -139,3 +139,8 @@ export type GetFilesResponse = string[];
 export interface GetFileResponse {
   code: string;
 }
+
+export interface CancelSubscriptionResponse {
+  status: string;
+  message: string;
+}
