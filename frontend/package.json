@@ -77,12 +77,19 @@
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "prepare": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc",
+    "typecheck:staged": "react-router typegen && npx tsc --noEmit --skipLibCheck",
     "check-translation-completeness": "node scripts/check-translation-completeness.cjs"
   },
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
       "eslint --fix",
       "prettier --write"
+    ],
+    "src/**/*.{ts,tsx}": [
+      "bash -c 'npm run typecheck:staged'"
+    ],
+    "src/**/*": [
+      "npm run check-translation-completeness"
     ]
   },
   "devDependencies": {

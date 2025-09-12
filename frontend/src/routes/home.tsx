@@ -4,7 +4,7 @@ import { HomeHeader } from "#/components/features/home/home-header/home-header";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
 import { GitRepository } from "#/types/git";
-import { NewConversation } from "#/components/features/home/new-conversation";
+import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
 import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
