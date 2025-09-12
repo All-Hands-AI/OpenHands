@@ -65,7 +65,6 @@ function AppContent() {
     isFetched,
     isAuthed,
     providers,
-    startConversation,
   ]);
 
   React.useEffect(() => {
