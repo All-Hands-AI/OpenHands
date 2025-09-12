@@ -1,5 +1,6 @@
 import os
 
+from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from prompt_toolkit import HTML, print_formatted_text
 from pydantic import SecretStr
 
@@ -21,26 +22,10 @@ def setup_agent() -> Conversation:
     """
     Setup the agent with environment variables.
     """
-    # Get API configuration from environment
-    api_key = os.getenv('LITELLM_API_KEY') or os.getenv('OPENAI_API_KEY')
-    model = os.getenv('LITELLM_MODEL', 'gpt-4o-mini')
-    base_url = os.getenv('LITELLM_BASE_URL')
 
-    if not api_key:
-        print_formatted_text(
-            HTML(
-                '<red>Error: No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.</red>'
-            )
-        )
-        raise Exception(
-            'No API key found. Please set LITELLM_API_KEY or OPENAI_API_KEY environment variable.'
-        )
+    llm = LLM.load_from_env()
 
-    llm = LLM(
-        model=model,
-        api_key=SecretStr(api_key) if api_key else None,
-        base_url=base_url,
-    )
+
 
     # Setup tools
     cwd = os.getcwd()
@@ -53,10 +38,10 @@ def setup_agent() -> Conversation:
 
     # Create agent
     agent = Agent(llm=llm, tools=tools)
-
     conversation = Conversation(agent=agent)
 
+    print(llm.model)
     print_formatted_text(
-        HTML(f'<green>✓ Agent initialized with model: {model}</green>')
+        HTML(f'<green>✓ Agent initialized with model: {llm.model}</green>')
     )
     return conversation

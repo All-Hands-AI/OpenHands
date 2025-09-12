@@ -99,6 +99,9 @@ def test_executable() -> bool:
     """Test the built executable with simplified checks."""
     print('🧪 Testing the built executable...')
 
+    os.environ['LLM_API_KEY'] = 'dummy-test-key'
+    os.environ['LLM_MODEL'] = 'dummy-model'
+
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
         # Try with .exe extension for Windows
@@ -121,9 +124,7 @@ def test_executable() -> bool:
             timeout=15,
             input='/help\n/exit\n',  # Send /help command then exit
             env={
-                **os.environ,
-                'LITELLM_API_KEY': 'dummy-test-key',
-                'LITELLM_MODEL': 'dummy-model',
+                **os.environ
             },
         )
 

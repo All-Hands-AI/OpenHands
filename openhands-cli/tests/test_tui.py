@@ -1,6 +1,6 @@
 """Tests for TUI functionality."""
 
-from openhands_cli.tui import COMMANDS, CommandCompleter
+from openhands_cli.tui.tui import COMMANDS, CommandCompleter
 from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
 
@@ -81,6 +81,7 @@ def test_commands_dict() -> None:
         '/confirm',
         '/new',
         '/resume',
+        '/settings'
     }
     assert set(COMMANDS.keys()) == expected_commands
 

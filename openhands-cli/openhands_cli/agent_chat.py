@@ -6,6 +6,7 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 
 import logging
 
+from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
@@ -15,12 +16,13 @@ from openhands.sdk import (
 )
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_agent
-from openhands_cli.tui import (
+from openhands_cli.tui.tui import (
     CommandCompleter,
     display_help,
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +39,6 @@ def run_cli_entry() -> None:
     conversation = setup_agent()
 
     # Generate session ID
-    import uuid
-
     session_id = str(uuid.uuid4())[:8]
 
     display_welcome(session_id)
@@ -74,6 +74,12 @@ def run_cli_entry() -> None:
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
                     break
+
+            elif command == '/settings':
+                settings_screen = SettingsScreen(conversation)
+                settings_screen.display_settings()
+                continue
+
             elif command == '/clear':
                 display_welcome(session_id)
                 continue
