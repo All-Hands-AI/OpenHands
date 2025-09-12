@@ -272,12 +272,17 @@ class AgentController:
 
     def _add_git_info(self):
         """Add git branch information to the event stream at startup."""
+        import os
         import subprocess
 
         from openhands.events.action.message import MessageAction
 
         # Default workspace directory
         workspace_dir = '/workspace'
+
+        # Check if the workspace directory exists (skip in tests)
+        if not os.path.exists(workspace_dir):
+            return
 
         try:
             # Get current branch
