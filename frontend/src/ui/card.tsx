@@ -36,11 +36,11 @@ export function Card({
   minHeight,
 }: CardProps) {
   return (
-    <section
+    <div
       data-testid={testId}
       className={cn(cardVariants({ gap, minHeight }), className)}
     >
       {children}
-    </section>
+    </div>
   );
 }
