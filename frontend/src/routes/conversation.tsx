@@ -19,8 +19,8 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
-import OpenHands from "#/api/open-hands";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
@@ -33,9 +33,10 @@ function AppContent() {
   useConversationConfig();
 
   const { conversationId } = useConversationId();
-  const { data: conversation, isFetched, refetch } = useActiveConversation();
+  const { data: conversation, isFetched } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const startConversation = useStartConversation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -53,11 +54,18 @@ function AppContent() {
       navigate("/");
     } else if (conversation?.status === "STOPPED") {
       // start the conversation if the state is stopped on initial load
-      OpenHands.startConversation(conversation.conversation_id, providers).then(
-        () => refetch(),
-      );
+      startConversation.mutate({
+        conversationId: conversation.conversation_id,
+        providers,
+      });
     }
-  }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
+  }, [
+    conversation?.conversation_id,
+    isFetched,
+    isAuthed,
+    providers,
+    startConversation,
+  ]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
