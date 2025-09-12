@@ -3,49 +3,47 @@ import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { Controls } from "#/components/features/controls/controls";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
+import { resetConversationState } from "#/state/conversation-slice";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { AgentState } from "#/types/agent-state";
+
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
-import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
-import {
-  Orientation,
-  ResizablePanel,
-} from "#/components/layout/resizable-panel";
-
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useSettings } from "#/hooks/query/use-settings";
+
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import OpenHands from "#/api/open-hands";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
+
+import { ConversationMain } from "#/components/features/conversation/conversation-main";
+import { ConversationName } from "#/components/features/conversation/conversation-name";
+
+import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 
 function AppContent() {
   useConversationConfig();
-  const { data: settings } = useSettings();
+
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
-
-  const [width, setWidth] = React.useState(window.innerWidth);
 
   React.useEffect(() => {
     if (isFetched && !conversation && isAuthed) {
@@ -64,58 +62,33 @@ function AppContent() {
   React.useEffect(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(resetConversationState());
+    dispatch(setCurrentAgentState(AgentState.LOADING));
   }, [conversationId]);
 
   useEffectOnce(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(resetConversationState());
+    dispatch(setCurrentAgentState(AgentState.LOADING));
   });
-
-  function handleResize() {
-    setWidth(window.innerWidth);
-  }
-
-  React.useEffect(() => {
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
-  function renderMain() {
-    if (width <= 1024) {
-      return (
-        <div className="flex flex-col gap-3 overflow-auto w-full">
-          <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]">
-            <ChatInterface />
-          </div>
-          <div className="h-full w-full min-h-[494px]">
-            <ConversationTabs />
-          </div>
-        </div>
-      );
-    }
-    return (
-      <ResizablePanel
-        orientation={Orientation.HORIZONTAL}
-        className="grow h-full min-h-0 min-w-0"
-        initialSize={564}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
-        secondClassName="flex flex-col overflow-hidden"
-        firstChild={<ChatInterface />}
-        secondChild={<ConversationTabs />}
-      />
-    );
-  }
 
   return (
     <WsClientProvider conversationId={conversationId}>
       <ConversationSubscriptionsProvider>
         <EventHandler>
-          <div data-testid="app-route" className="flex flex-col h-full gap-3">
-            <div className="flex h-full overflow-auto">{renderMain()}</div>
+          <div
+            data-testid="app-route"
+            className="p-3 md:p-0 flex flex-col h-full gap-3"
+          >
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4.5 pt-2 lg:pt-0">
+              <ConversationName />
+              <ConversationTabs />
+            </div>
 
-            <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
+            <div className="flex h-full overflow-auto">
+              <ConversationMain />
+            </div>
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

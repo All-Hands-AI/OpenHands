@@ -5,7 +5,9 @@ import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
+import SettingsService from "#/settings-service/settings-service.api";
 import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 import { GitRepository } from "#/types/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -66,7 +68,7 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
 ];
 
 beforeEach(() => {
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
   getSettingsSpy.mockResolvedValue({
     ...MOCK_DEFAULT_USER_SETTINGS,
     provider_tokens_set: {
@@ -135,10 +137,16 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeDisabled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -169,14 +177,15 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeEnabled();
   });
 
-  it("should render the 'add github repos' link if saas mode and github provider is set", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return the APP_MODE
+  it("should render the 'add github repos' link in dropdown if saas mode and github provider is set", async () => {
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
+    // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
+      APP_SLUG: "openhands",
     });
 
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -185,19 +194,45 @@ describe("RepoConnector", () => {
       },
     });
 
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
-    await screen.findByText("HOME$ADD_GITHUB_REPOS");
+    // First select the GitHub provider
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitHub"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should be in the dropdown
+    await waitFor(() => {
+      expect(screen.getByText("HOME$ADD_GITHUB_REPOS")).toBeInTheDocument();
+    });
   });
 
   it("should not render the 'add github repos' link if github provider is not set", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return the APP_MODE
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
+    // @ts-expect-error - only return the APP_MODE and APP_SLUG
     getConfiSpy.mockResolvedValue({
       APP_MODE: "saas",
+      APP_SLUG: "openhands",
     });
 
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -206,22 +241,76 @@ describe("RepoConnector", () => {
       },
     });
 
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
+    // First select the GitLab provider (not GitHub)
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitLab"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should NOT be in the dropdown for GitLab
     expect(screen.queryByText("HOME$ADD_GITHUB_REPOS")).not.toBeInTheDocument();
   });
 
-  it("should not render the 'add git(hub|lab) repos' links if oss mode", async () => {
-    const getConfiSpy = vi.spyOn(OpenHands, "getConfig");
+  it("should not render the 'add github repos' link in dropdown if oss mode", async () => {
+    const getConfiSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return the APP_MODE
     getConfiSpy.mockResolvedValue({
       APP_MODE: "oss",
     });
 
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {
+        github: "some-token",
+        gitlab: null,
+      },
+    });
+
+    const retrieveUserGitRepositoriesSpy = vi.spyOn(
+      OpenHands,
+      "retrieveUserGitRepositories",
+    );
+    retrieveUserGitRepositoriesSpy.mockResolvedValue({
+      data: MOCK_RESPOSITORIES,
+      nextPage: null,
+    });
+
     renderRepoConnector();
 
-    expect(screen.queryByText("Add GitHub repos")).not.toBeInTheDocument();
-    expect(screen.queryByText("Add GitLab repos")).not.toBeInTheDocument();
+    // First select the GitHub provider
+    const providerDropdown = await waitFor(() =>
+      screen.getByTestId("git-provider-dropdown"),
+    );
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("GitHub"));
+
+    // Then open the repository dropdown
+    const repoInput = await waitFor(() =>
+      screen.getByTestId("git-repo-dropdown"),
+    );
+    await userEvent.click(repoInput);
+
+    // The "Add GitHub repos" link should NOT be in the dropdown for OSS mode
+    expect(screen.queryByText("HOME$ADD_GITHUB_REPOS")).not.toBeInTheDocument();
   });
 
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
@@ -259,10 +348,16 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -316,10 +411,16 @@ describe("RepoConnector", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
-      { name: "main", commit_sha: "123", protected: false },
-      { name: "develop", commit_sha: "456", protected: false },
-    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      branches: [
+        { name: "main", commit_sha: "123", protected: false },
+        { name: "develop", commit_sha: "456", protected: false },
+      ],
+      has_next_page: false,
+      current_page: 1,
+      per_page: 30,
+      total_count: 2,
+    });
 
     renderRepoConnector();
 
@@ -367,7 +468,7 @@ describe("RepoConnector", () => {
   });
 
   it("should display a button to settings if the user needs to sign in with their git provider", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {},

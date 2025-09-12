@@ -176,8 +176,10 @@ jobs:
     # Do not build enterprise in forks
     if: github.event.pull_request.head.repo.fork != true
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Set up Docker Buildx for better performance
       - name: Set up Docker Buildx

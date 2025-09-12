@@ -124,7 +124,7 @@ This tagging approach allows OpenHands to efficiently manage both development an
 OpenHands supports both bind mounts and Docker named volumes in SandboxConfig.volumes:
 
 - Bind mount: "/abs/host/path:/container/path[:mode]"
-- Named volume: "volume:<name>:/container/path[:mode]" or any non-absolute host spec treated as a named volume
+- Named volume: "volume:`<name>`:/container/path[:mode]" or any non-absolute host spec treated as a named volume
 
 Overlay mode (copy-on-write layer) is supported for bind mounts by appending ":overlay" to the mode (e.g., ":ro,overlay").
 To enable overlay COW, set SANDBOX_VOLUME_OVERLAYS to a writable host directory; per-container upper/work dirs are created under it. If SANDBOX_VOLUME_OVERLAYS is unset, overlay mounts are skipped.

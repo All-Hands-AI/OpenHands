@@ -50,10 +50,11 @@ def init_user_and_working_directory(
         return None
 
     # Skip root since it is already created
+    existing_user_id = -1
     if username != 'root':
         # Check if the username already exists
         logger.debug(f'Attempting to create user `{username}` with UID {user_id}.')
-        existing_user_id = -1
+        setup_user = True
         try:
             result = subprocess.run(
                 f'id -u {username}', shell=True, check=True, capture_output=True
@@ -69,8 +70,7 @@ def init_user_and_working_directory(
                 logger.warning(
                     f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
                 )
-                return existing_user_id
-            return None
+            setup_user = False
         except subprocess.CalledProcessError as e:
             # Returncode 1 indicates, that the user does not exist yet
             if e.returncode == 1:
@@ -83,26 +83,29 @@ def init_user_and_working_directory(
                 )
                 raise
 
-        # Add sudoer
-        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
-        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
-        if output.returncode != 0:
-            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
-        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
-
-        command = (
-            f'useradd -rm -d /home/{username} -s /bin/bash '
-            f'-g root -G sudo -u {user_id} {username}'
-        )
-        output = subprocess.run(command, shell=True, capture_output=True)
-        if output.returncode == 0:
+        if setup_user:
+            # Add sudoer
+            sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+            output = subprocess.run(sudoer_line, shell=True, capture_output=True)
+            if output.returncode != 0:
+                raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
             logger.debug(
-                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
+                f'Added sudoer successfully. Output: [{output.stdout.decode()}]'
             )
-        else:
-            raise RuntimeError(
-                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+
+            command = (
+                f'useradd -rm -d /home/{username} -s /bin/bash '
+                f'-g root -G sudo -u {user_id} {username}'
             )
+            output = subprocess.run(command, shell=True, capture_output=True)
+            if output.returncode == 0:
+                logger.debug(
+                    f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
+                )
+            else:
+                raise RuntimeError(
+                    f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+                )
 
     # First create the working directory, independent of the user
     logger.debug(f'Client working directory: {initial_cwd}')
@@ -119,4 +122,4 @@ def init_user_and_working_directory(
     out_str += output.stdout.decode()
     logger.debug(f'Created working directory. Output: [{out_str}]')
 
-    return None
+    return None if existing_user_id == -1 else existing_user_id
