@@ -61,6 +61,7 @@ function AppContent() {
     }
   }, [
     conversation?.conversation_id,
+    conversation?.status,
     isFetched,
     isAuthed,
     providers,
