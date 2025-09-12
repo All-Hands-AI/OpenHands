@@ -570,7 +570,7 @@ async def stop_conversation(
             status='ok',
             conversation_id=conversation_id,
             message='Conversation stopped successfully',
-            conversation_status=conversation_status,
+            conversation_status=ConversationStatus.STOPPED,
         )
     except Exception as e:
         logger.error(
