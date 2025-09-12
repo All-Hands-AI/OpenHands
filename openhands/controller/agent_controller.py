@@ -201,6 +201,9 @@ class AgentController:
         # Add the system message to the event stream
         self._add_system_message()
 
+        # Add git repository information to the event stream
+        self._add_git_info()
+
     async def _handle_security_analyzer(self, action: Action) -> None:
         """Handle security risk analysis for an action.
 
@@ -266,6 +269,33 @@ class AgentController:
             )
             logger.debug(f'System message: {preview}')
             self.event_stream.add_event(system_message, EventSource.AGENT)
+
+    def _add_git_info(self):
+        """Add git branch information to the event stream at startup."""
+        import subprocess
+
+        from openhands.events.action.message import MessageAction
+
+        # Default workspace directory
+        workspace_dir = '/workspace'
+
+        try:
+            # Get current branch
+            result = subprocess.run(
+                ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
+                cwd=workspace_dir,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                branch = result.stdout.strip()
+                git_message = MessageAction(content=f'Working in git branch: {branch}')
+                logger.debug(f'Git branch: {branch}')
+                self.event_stream.add_event(git_message, EventSource.AGENT)
+
+        except Exception as e:
+            logger.debug(f'Failed to get git branch: {e}')
 
     async def close(self, set_stop_state: bool = True) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
