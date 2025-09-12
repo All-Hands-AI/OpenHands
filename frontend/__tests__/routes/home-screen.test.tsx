@@ -8,7 +8,7 @@ import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { GitRepository } from "#/types/git";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
+import GitService from "#/api/git-service/git-service.api";
 import OptionService from "#/api/option-service/option-service.api";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -141,7 +141,7 @@ describe("HomeScreen", () => {
 
   it("should filter the suggested tasks based on the selected repository", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -150,7 +150,7 @@ describe("HomeScreen", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -185,7 +185,7 @@ describe("HomeScreen", () => {
 
   it("should filter tasks when different repositories are selected", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -194,7 +194,7 @@ describe("HomeScreen", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -248,7 +248,7 @@ describe("HomeScreen", () => {
         await screen.findAllByTestId("task-launch-button");
 
       // Mock the repository branches API call
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [
           { name: "main", commit_sha: "123", protected: false },
           { name: "develop", commit_sha: "456", protected: false },
@@ -284,7 +284,7 @@ describe("HomeScreen", () => {
 
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        OpenHands,
+        GitService,
         "retrieveUserGitRepositories",
       );
       retrieveUserGitRepositoriesSpy.mockResolvedValue({
