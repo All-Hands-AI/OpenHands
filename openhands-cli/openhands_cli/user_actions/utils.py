@@ -99,7 +99,7 @@ def cli_confirm(
     return int(app.run(in_thread=True))
 
 
-def prompt_user(question: str) -> tuple[str, bool]:
+def prompt_user(question: str, escapable: bool = True) -> tuple[str, bool]:
     """Prompt user to enter a reason for rejecting actions.
 
     Returns:
@@ -110,13 +110,14 @@ def prompt_user(question: str) -> tuple[str, bool]:
 
     kb = KeyBindings()
 
-    @kb.add('c-c')
-    def _(event: KeyPressEvent) -> None:
-        raise KeyboardInterrupt()
+    if escapable:
+        @kb.add('c-c')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
 
-    @kb.add('c-p')
-    def _(event: KeyPressEvent) -> None:
-        raise KeyboardInterrupt()
+        @kb.add('c-p')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
 
     try:
         reason = str(

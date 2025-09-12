@@ -40,7 +40,6 @@ def setup_agent() -> Conversation:
     agent = Agent(llm=llm, tools=tools)
     conversation = Conversation(agent=agent)
 
-    print(llm.model)
     print_formatted_text(
         HTML(f'<green>✓ Agent initialized with model: {llm.model}</green>')
     )

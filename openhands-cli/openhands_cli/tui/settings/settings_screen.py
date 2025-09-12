@@ -1,6 +1,6 @@
 from openhands.sdk import Conversation
 from openhands_cli.user_actions import settings_type_confirmation
-from openhands_cli.user_actions.settings_action import SettingsType
+from openhands_cli.user_actions.settings_action import SettingsType, choose_settings_provider
 from openhands_cli.user_actions.types import UserConfirmation
 from openhands.sdk import LLM, Agent, Conversation
 from prompt_toolkit.widgets import Frame, TextArea
@@ -79,10 +79,11 @@ class SettingsScreen:
 
 
         if settings_type == SettingsType.BASIC:
-            print('handle')
+            self.handle_basic_settings()
 
-        if settings_type == SettingsType.ADVANCED:
-            print('handle')
+
+    def handle_basic_settings(self):
+        provider = choose_settings_provider()
 
 
 
