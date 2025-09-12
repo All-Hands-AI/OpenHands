@@ -5,11 +5,18 @@ import { ObservationMessage } from "#/types/message";
 import { appendOutput } from "#/state/command-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
+import { isTerminalStreamingInitialized } from "#/services/terminal-stream-service";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
+
+      // Skip RUN observations when terminal streaming is initialized to prevent duplicates
+      if (isTerminalStreamingInitialized()) {
+        break;
+      }
+
       let { content } = message;
 
       if (content.length > 5000) {
@@ -19,7 +26,7 @@ export function handleObservationMessage(message: ObservationMessage) {
         content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...\r\n\n${tail}`;
       }
 
-      store.dispatch(appendOutput(content));
+      store.dispatch(appendOutput({ content, isPartial: false }));
       break;
     }
     case ObservationType.RUN_IPYTHON:
