@@ -5,8 +5,8 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { NewConversation } from "#/components/features/home/new-conversation";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
 
 // Mock the translation function
 vi.mock("react-i18next", async () => {
