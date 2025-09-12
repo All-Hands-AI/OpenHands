@@ -1,4 +1,7 @@
-from openhands.sdk import LLM, Agent, Conversation
+from openhands.sdk import Conversation
+from openhands_cli.user_actions import settings_type_confirmation
+from openhands_cli.user_actions.settings_action import SettingsType
+from openhands_cli.user_actions.types import UserConfirmation
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
@@ -64,4 +67,22 @@ class SettingsScreen:
         )
 
         print_container(container)
+
+        self.configure_settings()
+
+
+    def configure_settings(self):
+        confirmation, settings_type = settings_type_confirmation()
+        if confirmation == UserConfirmation.REJECT:
+            return
+
+
+        if settings_type == SettingsType.BASIC:
+            print('handle')
+
+        if settings_type == SettingsType.ADVANCED:
+            print('handle')
+
+
+
 
