@@ -33,7 +33,20 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj && !!obj.thought;
+): obj is {
+  thought?: { text?: string; reasoning_content?: string | null };
+} => {
+  const { thought } = obj;
+  if (!thought || typeof thought !== "object") return false;
+  const { text = "", reasoning_content: rc } = thought as {
+    text?: string;
+    reasoning_content?: string | null;
+  };
+  return (
+    (typeof text === "string" && text.length > 0) ||
+    (typeof rc === "string" && rc.length > 0)
+  );
+};
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -121,11 +134,20 @@ export function EventMessage({
     if (hasThoughtProperty(event.args) && event.action !== "think") {
       return (
         <div>
-          <ChatMessage
-            type="agent"
-            message={event.args.thought}
-            actions={actions}
-          />
+          {event.args.thought?.reasoning_content && (
+            <GenericEventMessage
+              title={t("ACTION_MESSAGE$REASONING")}
+              details={event.args.thought.reasoning_content}
+              initiallyExpanded={false}
+            />
+          )}
+          {(event.args.thought?.text || "") !== "" && (
+            <ChatMessage
+              type="agent"
+              message={event.args.thought?.text || ""}
+              actions={actions}
+            />
+          )}
           {microagentStatus && actions && (
             <MicroagentStatusIndicator
               status={microagentStatus}
@@ -148,6 +170,13 @@ export function EventMessage({
   if (isFinishAction(event)) {
     return (
       <>
+        {event.args.thought?.reasoning_content && (
+          <GenericEventMessage
+            title="Reasoning"
+            details={event.args.thought.reasoning_content}
+            initiallyExpanded={false}
+          />
+        )}
         <ChatMessage
           type="agent"
           message={getEventContent(event).details}
@@ -247,7 +276,21 @@ export function EventMessage({
       {isOpenHandsAction(event) &&
         hasThoughtProperty(event.args) &&
         event.action !== "think" && (
-          <ChatMessage type="agent" message={event.args.thought} />
+          <>
+            {event.args.thought?.reasoning_content && (
+              <GenericEventMessage
+                title={t("ACTION_MESSAGE$REASONING")}
+                details={event.args.thought.reasoning_content}
+                initiallyExpanded={false}
+              />
+            )}
+            {(event.args.thought?.text || "") !== "" && (
+              <ChatMessage
+                type="agent"
+                message={event.args.thought?.text || ""}
+              />
+            )}
+          </>
         )}
 
       <GenericEventMessage

@@ -67,16 +67,14 @@ const getMcpActionContent = (event: MCPAction): string => {
   const name = event.args.name || "";
   const args = event.args.arguments || {};
   let details = `**MCP Tool Call:** ${name}\n\n`;
-  // Include thought if available
-  if (event.args.thought) {
-    details += `\n\n**Thought:**\n${event.args.thought}`;
-  }
-  details += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
+  details += `**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
   return details;
 };
 
-const getThinkActionContent = (event: ThinkAction): string =>
-  event.args.thought;
+const getThinkActionContent = (event: ThinkAction): string => {
+  const t = event.args.thought;
+  return t.reasoning_content ? `${t.reasoning_content}\n\n${t.text}` : t.text;
+};
 
 const getFinishActionContent = (event: FinishAction): string =>
   event.args.final_thought.trim();
