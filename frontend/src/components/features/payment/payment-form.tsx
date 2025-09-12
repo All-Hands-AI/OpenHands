@@ -87,17 +87,27 @@ export function PaymentForm() {
           <PoweredByStripeTag />
         </div>
 
-        {/* Cancel Subscription Button - only show if user has active subscription */}
+        {/* Cancel Subscription Button or Cancellation Message */}
         {subscriptionAccess && (
           <div className="flex items-center w-[680px] gap-2 mt-4">
-            <BrandButton
-              testId="cancel-subscription-button"
-              variant="danger"
-              type="button"
-              onClick={() => setShowCancelModal(true)}
-            >
-              {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)}
-            </BrandButton>
+            {subscriptionAccess.cancelled_at ? (
+              <div className="text-red-800 text-sm">
+                {t(I18nKey.PAYMENT$SUBSCRIPTION_CANCELLED_EXPIRES, {
+                  date: new Date(
+                    subscriptionAccess.end_at,
+                  ).toLocaleDateString(),
+                })}
+              </div>
+            ) : (
+              <BrandButton
+                testId="cancel-subscription-button"
+                variant="ghost-danger"
+                type="button"
+                onClick={() => setShowCancelModal(true)}
+              >
+                {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)}
+              </BrandButton>
+            )}
           </div>
         )}
       </div>
