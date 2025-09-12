@@ -1,6 +1,12 @@
 import { useCallback, useEffect, RefObject } from "react";
 import { IMessageToSend } from "#/state/conversation-slice";
-import { isMobileDevice } from "#/utils/utils";
+import { useDragResize } from "./use-drag-resize";
+
+// Constants
+const DEFAULT_MIN_HEIGHT = 20;
+const DEFAULT_MAX_HEIGHT = 120;
+const HEIGHT_INCREMENT = 20;
+const MANUAL_OVERSIZE_THRESHOLD = 50;
 
 interface UseAutoResizeOptions {
   minHeight?: number;
@@ -20,13 +26,161 @@ interface UseAutoResizeReturn {
   increaseHeightForEmptyContent: () => void;
 }
 
+// Height management utilities
+interface HeightConstraints {
+  minHeight: number;
+  maxHeight: number;
+}
+
+interface HeightMeasurements {
+  currentHeight: number;
+  currentStyleHeight: number;
+  contentHeight: number;
+}
+
+interface ResizeStrategy {
+  finalHeight: number;
+  overflowY: "hidden" | "auto";
+}
+
+const applyHeightToElement = (
+  element: HTMLElement,
+  height: number,
+  constraints: HeightConstraints,
+): number => {
+  const { minHeight, maxHeight } = constraints;
+  const finalHeight = Math.max(minHeight, Math.min(height, maxHeight));
+
+  element.style.setProperty("height", `${finalHeight}px`);
+  element.style.setProperty(
+    "overflow-y",
+    finalHeight >= maxHeight ? "auto" : "hidden",
+  );
+
+  return finalHeight;
+};
+
+const calculateOptimalHeight = (
+  element: HTMLElement,
+  constraints: HeightConstraints,
+): number => {
+  const { minHeight, maxHeight, scrollHeight } = {
+    ...constraints,
+    scrollHeight: element.scrollHeight,
+  };
+
+  if (scrollHeight <= maxHeight) {
+    return Math.max(scrollHeight, minHeight);
+  }
+  return maxHeight;
+};
+
+const getCurrentElementHeight = (
+  element: HTMLElement,
+  minHeight: number,
+): number =>
+  element.offsetHeight || parseInt(element.style.height || `${minHeight}`, 10);
+
+const isManuallyOversized = (
+  currentHeight: number,
+  contentHeight: number,
+  threshold = MANUAL_OVERSIZE_THRESHOLD,
+): boolean => currentHeight > contentHeight + threshold;
+
+const measureElementHeights = (
+  element: HTMLElement,
+  minHeight: number,
+): HeightMeasurements => {
+  const currentHeight = getCurrentElementHeight(element, minHeight);
+  const currentStyleHeight = parseInt(
+    element.style.height || `${minHeight}`,
+    10,
+  );
+
+  // Temporarily reset to measure content
+  element.style.setProperty("height", "auto");
+  const contentHeight = element.scrollHeight;
+
+  // Restore height
+  element.style.setProperty("height", `${currentStyleHeight}px`);
+
+  return {
+    currentHeight,
+    currentStyleHeight,
+    contentHeight,
+  };
+};
+
+const determineResizeStrategy = (
+  measurements: HeightMeasurements,
+  minHeight: number,
+  maxHeight: number,
+): ResizeStrategy => {
+  const { currentHeight, contentHeight } = measurements;
+
+  // If content fits in current height, just manage overflow
+  if (contentHeight <= currentHeight) {
+    return {
+      finalHeight: currentHeight,
+      overflowY: "hidden",
+    };
+  }
+
+  // If content exceeds current height but is within normal auto-resize range
+  if (contentHeight <= maxHeight) {
+    // Only grow if the current height is close to the content height (not manually resized much larger)
+    if (!isManuallyOversized(currentHeight, contentHeight)) {
+      return {
+        finalHeight: Math.max(contentHeight, minHeight),
+        overflowY: "hidden",
+      };
+    }
+    // Keep manual height but show scrollbar since content exceeds visible area
+    return {
+      finalHeight: currentHeight,
+      overflowY: "auto",
+    };
+  }
+
+  // Content exceeds max height
+  return {
+    finalHeight: maxHeight,
+    overflowY: "auto",
+  };
+};
+
+const applyResizeStrategy = (
+  element: HTMLElement,
+  strategy: ResizeStrategy,
+): void => {
+  const { finalHeight, overflowY } = strategy;
+  const elementRef = element;
+  elementRef.style.height = `${finalHeight}px`;
+  elementRef.style.overflowY = overflowY;
+};
+
+const executeHeightCallback = (
+  height: number,
+  onHeightChange?: (height: number) => void,
+): void => {
+  if (onHeightChange) {
+    onHeightChange(height);
+  }
+};
+
+// DOM manipulation utilities
+const resetElementHeight = (element: HTMLElement): void => {
+  element.style.setProperty("height", "auto");
+  element.style.setProperty("overflow-y", "hidden");
+};
+
 export const useAutoResize = (
   elementRef: RefObject<HTMLElement | null>,
   options: UseAutoResizeOptions = {},
 ): UseAutoResizeReturn => {
   const {
-    minHeight = 20,
-    maxHeight = 120,
+    minHeight = DEFAULT_MIN_HEIGHT,
+    maxHeight = DEFAULT_MAX_HEIGHT,
     enableManualResize = false,
     value,
     onGripDragStart,
@@ -34,228 +188,75 @@ export const useAutoResize = (
     onHeightChange,
   } = options;
 
-  // Helper function to calculate final height and apply styles
-  const calculateAndApplyHeight = useCallback(
-    (element: HTMLElement, scrollHeight: number) => {
-      let finalHeight: number;
+  const constraints: HeightConstraints = { minHeight, maxHeight };
 
-      if (scrollHeight <= maxHeight) {
-        finalHeight = Math.max(scrollHeight, minHeight);
-        element.style.setProperty("height", `${finalHeight}px`);
-        element.style.setProperty("overflow-y", "hidden");
-      } else {
-        finalHeight = maxHeight;
-        element.style.setProperty("height", `${maxHeight}px`);
-        element.style.setProperty("overflow-y", "auto");
-      }
-
-      return finalHeight;
-    },
-    [minHeight, maxHeight],
-  );
+  // Use the drag resize hook for manual resizing functionality
+  const { handleGripMouseDown, handleGripTouchStart } = useDragResize({
+    elementRef,
+    minHeight,
+    maxHeight,
+    onGripDragStart: enableManualResize ? onGripDragStart : undefined,
+    onGripDragEnd: enableManualResize ? onGripDragEnd : undefined,
+    onHeightChange,
+  });
 
   // Auto-resize functionality for contenteditable div
-  const autoResize = useCallback(() => {
+  const autoResize = () => {
     const element = elementRef.current;
     if (!element) return;
 
     // Reset height to auto to get the actual content height
-    element.style.setProperty("height", "auto");
-    element.style.setProperty("overflow-y", "hidden");
+    resetElementHeight(element);
 
-    // Set the height based on scroll height, with min and max constraints
-    const { scrollHeight } = element;
-    const finalHeight = calculateAndApplyHeight(element, scrollHeight);
+    // Calculate and apply optimal height
+    const optimalHeight = calculateOptimalHeight(element, constraints);
+    const finalHeight = applyHeightToElement(
+      element,
+      optimalHeight,
+      constraints,
+    );
 
-    // Call the height change callback if provided
-    if (onHeightChange) {
-      onHeightChange(finalHeight);
-    }
-  }, [elementRef, calculateAndApplyHeight, onHeightChange]);
+    // Execute height change callback
+    executeHeightCallback(finalHeight, onHeightChange);
+  };
 
   // Smart resize that respects manual height
   const smartResize = useCallback(() => {
     const element = elementRef.current;
     if (!element) return;
 
-    const currentHeight = element.offsetHeight;
-    const currentStyleHeight = parseInt(
-      element.style.height || `${minHeight}`,
-      10,
-    );
+    // Measure element heights
+    const measurements = measureElementHeights(element, minHeight);
 
-    // Temporarily reset to measure content
-    element.style.height = "auto";
-    const contentHeight = element.scrollHeight;
-
-    // Restore height and determine what to do
-    element.style.height = `${currentStyleHeight}px`;
-
-    let finalHeight = currentHeight;
-
-    // If content fits in current height, just manage overflow
-    if (contentHeight <= currentHeight) {
-      element.style.overflowY = "hidden";
-      finalHeight = currentHeight;
-    }
-    // If content exceeds current height but is within normal auto-resize range
-    else if (contentHeight <= maxHeight) {
-      // Only grow if the current height is close to the content height (not manually resized much larger)
-      const isManuallyOversized = currentHeight > contentHeight + 50; // 50px threshold
-      if (!isManuallyOversized) {
-        finalHeight = Math.max(contentHeight, minHeight);
-        element.style.height = `${finalHeight}px`;
-        element.style.overflowY = "hidden";
-      } else {
-        // Keep manual height but show scrollbar since content exceeds visible area
-        element.style.overflowY = "auto";
-        finalHeight = currentHeight;
-      }
-    }
-    // Content exceeds max height
-    else {
-      finalHeight = maxHeight;
-      element.style.height = `${maxHeight}px`;
-      element.style.overflowY = "auto";
-    }
-
-    // Call the height change callback if provided
-    if (onHeightChange) {
-      onHeightChange(finalHeight);
-    }
-  }, [elementRef, minHeight, maxHeight, onHeightChange]);
-
-  // Helper function to extract Y coordinate from mouse or touch events
-  const getClientY = useCallback((event: MouseEvent | TouchEvent): number => {
-    if ("touches" in event && event.touches.length > 0) {
-      return event.touches[0].clientY;
-    }
-    return (event as MouseEvent).clientY;
-  }, []);
-
-  // Core drag logic shared between mouse and touch events
-  const createDragHandlers = useCallback(
-    (startY: number, startHeight: number, isMobile: boolean) => {
-      const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
-        moveEvent.preventDefault();
-
-        const deltaY = getClientY(moveEvent) - startY;
-        // Invert deltaY so moving up increases height and moving down decreases height
-        const newHeight = Math.max(
-          minHeight,
-          Math.min(maxHeight, startHeight - deltaY),
-        );
-
-        const element = elementRef.current;
-        if (element) {
-          element.style.height = `${newHeight}px`;
-
-          // Check if content exceeds the new height to determine scrollbar visibility
-          const contentHeight = element.scrollHeight;
-          const shouldShowScrollbar =
-            contentHeight > newHeight || newHeight >= maxHeight;
-          element.style.overflowY = shouldShowScrollbar ? "auto" : "hidden";
-
-          // Call the height change callback if provided
-          if (onHeightChange) {
-            onHeightChange(newHeight);
-          }
-        }
-      };
-
-      const handleEnd = () => {
-        // Call optional drag end callback
-        onGripDragEnd?.();
-
-        if (isMobile) {
-          const resizeGrip = document.getElementById("resize-grip");
-          if (!resizeGrip) return;
-
-          // Remove both mouse and touch event listeners
-          resizeGrip.removeEventListener("mousemove", handleMove);
-          resizeGrip.removeEventListener("mouseup", handleEnd);
-          resizeGrip.removeEventListener("touchmove", handleMove);
-          resizeGrip.removeEventListener("touchend", handleEnd);
-        } else {
-          document.removeEventListener("mousemove", handleMove);
-          document.removeEventListener("mouseup", handleEnd);
-          document.removeEventListener("touchmove", handleMove);
-          document.removeEventListener("touchend", handleEnd);
-        }
-      };
-
-      return { handleMove, handleEnd };
-    },
-    [
-      elementRef,
+    // Determine the best resize strategy
+    const strategy = determineResizeStrategy(
+      measurements,
       minHeight,
       maxHeight,
-      onGripDragEnd,
-      onHeightChange,
-      getClientY,
-    ],
-  );
+    );
 
-  // Common drag start logic shared between mouse and touch events
-  const startDrag = useCallback(
-    (startY: number) => {
-      if (!enableManualResize) {
-        return;
-      }
+    // Apply the resize strategy
+    applyResizeStrategy(element, strategy);
 
-      // Call optional drag start callback
-      onGripDragStart?.();
+    // Execute height change callback
+    executeHeightCallback(strategy.finalHeight, onHeightChange);
+  }, [elementRef, minHeight, maxHeight, onHeightChange]);
 
-      const isMobile = isMobileDevice();
+  // Function to increase height when content is empty
+  const increaseHeightForEmptyContent = () => {
+    const element = elementRef.current;
+    if (!element) return;
 
-      const startHeight = elementRef.current?.offsetHeight || minHeight;
-      const { handleMove, handleEnd } = createDragHandlers(
-        startY,
-        startHeight,
-        isMobile,
-      );
+    const currentHeight = element.offsetHeight;
+    const newHeight = Math.min(currentHeight + HEIGHT_INCREMENT, maxHeight);
 
-      if (isMobile) {
-        const resizeGrip = document.getElementById("resize-grip");
-        if (!resizeGrip) {
-          return;
-        }
-        resizeGrip.addEventListener("touchmove", handleMove, {
-          passive: false,
-          capture: true,
-        });
-        resizeGrip.addEventListener("touchend", handleEnd, { capture: true });
-      } else {
-        document.addEventListener("mousemove", handleMove);
-        document.addEventListener("mouseup", handleEnd);
-      }
-    },
-    [
-      elementRef,
-      minHeight,
-      enableManualResize,
-      onGripDragStart,
-      createDragHandlers,
-    ],
-  );
+    if (newHeight > currentHeight) {
+      const finalHeight = applyHeightToElement(element, newHeight, constraints);
 
-  // Handle mouse down on grip for manual resizing
-  const handleGripMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      startDrag(e.clientY);
-    },
-    [startDrag],
-  );
-
-  // Handle touch start on grip for manual resizing
-  const handleGripTouchStart = useCallback(
-    (e: React.TouchEvent) => {
-      e.preventDefault();
-      startDrag(e.touches[0].clientY);
-    },
-    [startDrag],
-  );
+      // Execute height change callback
+      executeHeightCallback(finalHeight, onHeightChange);
+    }
+  };
 
   // Update content and resize when value prop changes
   useEffect(() => {
@@ -265,28 +266,6 @@ export const useAutoResize = (
       smartResize();
     }
   }, [value, smartResize]);
-
-  // Function to increase height by 20px when content is empty
-  const increaseHeightForEmptyContent = useCallback(() => {
-    const element = elementRef.current;
-    if (!element) return;
-
-    const currentHeight = element.offsetHeight;
-    const newHeight = Math.min(currentHeight + 20, maxHeight);
-
-    if (newHeight > currentHeight) {
-      element.style.setProperty("height", `${newHeight}px`);
-      element.style.setProperty(
-        "overflow-y",
-        newHeight >= maxHeight ? "auto" : "hidden",
-      );
-
-      // Call the height change callback if provided
-      if (onHeightChange) {
-        onHeightChange(newHeight);
-      }
-    }
-  }, [elementRef, maxHeight, onHeightChange]);
 
   // Initialize auto-resize on mount
   useEffect(() => {
