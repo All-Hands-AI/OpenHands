@@ -1880,7 +1880,9 @@ def test_git_branch_added_to_event_stream(mock_agent_with_stats, test_event_stre
     assert events[1].source == EventSource.AGENT
 
 
-def test_git_branch_not_added_when_not_git_repo(mock_agent_with_stats, test_event_stream):
+def test_git_branch_not_added_when_not_git_repo(
+    mock_agent_with_stats, test_event_stream
+):
     """Test that git branch is not added when not in a git repository."""
     mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
