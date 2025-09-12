@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useConfig } from "./use-config";
-import OpenHands from "#/api/open-hands";
+import BillingService from "#/api/billing-service/billing-service.api";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
 export const useSubscriptionAccess = () => {
@@ -9,7 +9,7 @@ export const useSubscriptionAccess = () => {
 
   return useQuery({
     queryKey: ["user", "subscription_access"],
-    queryFn: OpenHands.getSubscriptionAccess,
+    queryFn: BillingService.getSubscriptionAccess,
     enabled:
       !isOnTosPage &&
       config?.APP_MODE === "saas" &&
