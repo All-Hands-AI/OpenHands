@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from openhands.core.config.condenser_config import ConversationWindowCondenserConfig
+from openhands.core.exceptions import CondenserValidationException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import (
     CondensationAction,
@@ -170,6 +171,8 @@ class ConversationWindowCondenser(RollingCondenser):
                 action = CondensationAction(forgotten_event_ids=forgotten_event_ids)
         else:
             action = CondensationAction(forgotten_event_ids=[])
+            if self.should_condense(view):
+                raise CondenserValidationException()
 
         return Condensation(action=action)
 

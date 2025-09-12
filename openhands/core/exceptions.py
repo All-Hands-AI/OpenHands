@@ -233,3 +233,16 @@ class MicroagentValidationError(MicroagentError):
 
     def __init__(self, message: str = 'Microagent validation failed') -> None:
         super().__init__(message)
+
+
+# ============================================
+# Memory Exceptions
+# ============================================
+
+
+class CondenserValidationException(RuntimeError):
+    def __init__(
+        self,
+        message: str = 'The conversation history only contains content that needs to be retained and cannot be further considered.',
+    ) -> None:
+        super().__init__(message)
