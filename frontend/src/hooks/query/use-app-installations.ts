@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useConfig } from "./use-config";
 import { useIsAuthed } from "./use-is-authed";
-import OpenHands from "#/api/open-hands";
+import GitService from "#/api/git-service/git-service.api";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
 import { shouldUseInstallationRepos } from "#/utils/utils";
@@ -13,7 +13,7 @@ export const useAppInstallations = (selectedProvider: Provider | null) => {
 
   return useQuery({
     queryKey: ["installations", providers || [], selectedProvider],
-    queryFn: () => OpenHands.getUserInstallationIds(selectedProvider!),
+    queryFn: () => GitService.getUserInstallationIds(selectedProvider!),
     enabled:
       userIsAuthenticated &&
       !!selectedProvider &&
