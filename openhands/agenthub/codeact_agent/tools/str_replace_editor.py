@@ -68,11 +68,12 @@ def _get_workspace_mount_path_from_env() -> str:
     # Split by commas to handle multiple mounts
     mounts = sandbox_volumes.split(',')
 
-    # Check if any mount explicitly targets /workspace or another path
+    # Check if any mount explicitly targets /workspace
     for mount in mounts:
         parts = mount.split(':')
-        if parts:
-            return parts[0]
+        if len(parts) >= 2 and parts[1] == '/workspace':
+            host_path = os.path.abspath(parts[0])
+            return host_path
 
     return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 
