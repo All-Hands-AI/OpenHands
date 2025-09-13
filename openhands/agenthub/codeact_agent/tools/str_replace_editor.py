@@ -55,39 +55,20 @@ Notes for using the `str_replace` command:
 """
 
 
-def _is_running_in_container() -> bool:
-    """Check if we're running inside a container.
-
-    Returns:
-        True if running in a container, False otherwise.
-    """
-    # Check for Docker container indicator
-    if os.path.exists('/.dockerenv'):
-        return True
-
-    # Check cgroup for container indicators
-    try:
-        with open('/proc/1/cgroup', 'r') as f:
-            cgroup_content = f.read()
-            if 'docker' in cgroup_content or 'containerd' in cgroup_content:
-                return True
-    except (FileNotFoundError, PermissionError):
-        pass
-
-    return False
-
-
-def _get_workspace_mount_path_from_env() -> str:
+def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
     """Get the workspace mount path from SANDBOX_VOLUMES environment variable.
 
-    For LocalRuntime and CLIRuntime (running on host), returns the host path.
-    For DockerRuntime (running in container), returns the default container path.
+    For LocalRuntime and CLIRuntime, returns the host path from SANDBOX_VOLUMES.
+    For DockerRuntime, returns the default container path (/workspace).
+
+    Args:
+        runtime_type: The runtime type ('local', 'cli', 'docker', etc.)
 
     Returns:
         The workspace mount path in sandbox, defaults to '/workspace' if not found.
     """
-    # If we're running inside a container (DockerRuntime), use default container path
-    if _is_running_in_container():
+    # For DockerRuntime, always use default container path
+    if runtime_type == 'docker':
         return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 
     # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
@@ -111,10 +92,13 @@ def _get_workspace_mount_path_from_env() -> str:
 def create_str_replace_editor_tool(
     use_short_description: bool = False,
     workspace_mount_path_in_sandbox: str | None = None,
+    runtime_type: str | None = None,
 ) -> ChatCompletionToolParam:
     # If no workspace path is provided, try to get it from environment
     if workspace_mount_path_in_sandbox is None:
-        workspace_mount_path_in_sandbox = _get_workspace_mount_path_from_env()
+        workspace_mount_path_in_sandbox = _get_workspace_mount_path_from_env(
+            runtime_type
+        )
 
     description = (
         _SHORT_STR_REPLACE_EDITOR_DESCRIPTION
