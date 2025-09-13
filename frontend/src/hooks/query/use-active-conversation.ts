@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserConversation } from "./use-user-conversation";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useActiveConversation = () => {
   const { conversationId } = useConversationId();
@@ -16,7 +16,7 @@ export const useActiveConversation = () => {
 
   useEffect(() => {
     const conversation = userConversation.data;
-    OpenHands.setCurrentConversation(conversation || null);
+    ConversationService.setCurrentConversation(conversation || null);
   }, [
     conversationId,
     userConversation.isFetched,

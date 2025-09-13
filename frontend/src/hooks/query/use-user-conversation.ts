@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Query, useQuery } from "@tanstack/react-query";
 import { AxiosError } from "axios";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
 
 const FIVE_MINUTES = 1000 * 60 * 5;
@@ -22,7 +22,7 @@ export const useUserConversation = (
   useQuery({
     queryKey: ["user", "conversation", cid],
     queryFn: async () => {
-      const conversation = await OpenHands.getConversation(cid!);
+      const conversation = await ConversationService.getConversation(cid!);
       return conversation;
     },
     enabled: !!cid,

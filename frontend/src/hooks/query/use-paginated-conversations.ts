@@ -1,5 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useIsAuthed } from "./use-is-authed";
 
 export const usePaginatedConversations = (limit: number = 20) => {
@@ -8,7 +8,7 @@ export const usePaginatedConversations = (limit: number = 20) => {
   return useInfiniteQuery({
     queryKey: ["user", "conversations", "paginated", limit],
     queryFn: ({ pageParam }) =>
-      OpenHands.getUserConversations(limit, pageParam),
+      ConversationService.getUserConversations(limit, pageParam),
     enabled: !!userIsAuthenticated,
     getNextPageParam: (lastPage) => lastPage.next_page_id,
     initialPageParam: undefined as string | undefined,

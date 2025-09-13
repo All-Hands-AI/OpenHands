@@ -5,8 +5,8 @@ import { createRoutesStub } from "react-router";
 import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
-import OpenHands from "#/api/open-hands";
 
 // Mock the translation function
 vi.mock("react-i18next", async () => {
@@ -54,7 +54,10 @@ const renderNewConversation = () => {
 
 describe("NewConversation", () => {
   it("should create an empty conversation and redirect when pressing the launch from scratch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
 
     renderNewConversation();
 

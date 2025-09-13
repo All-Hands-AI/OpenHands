@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import posthog from "posthog-js";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { SuggestedTask } from "#/utils/types";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent } from "#/api/open-hands.types";
@@ -31,7 +31,7 @@ export const useCreateConversation = () => {
         createMicroagent,
       } = variables;
 
-      return OpenHands.createConversation(
+      return ConversationService.createConversation(
         repository?.name,
         repository?.gitProvider,
         query,

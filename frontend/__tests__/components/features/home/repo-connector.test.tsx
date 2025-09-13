@@ -6,7 +6,7 @@ import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import GitService from "#/api/git-service/git-service.api";
 import OptionService from "#/api/option-service/option-service.api";
 import { GitRepository } from "#/types/git";
@@ -315,7 +315,10 @@ describe("RepoConnector", () => {
   });
 
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
     createConversationSpy.mockResolvedValue({
       conversation_id: "mock-conversation-id",
       title: "Test Conversation",
@@ -400,7 +403,10 @@ describe("RepoConnector", () => {
   });
 
   it("should change the launch button text to 'Loading...' when creating a conversation", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
     createConversationSpy.mockImplementation(() => new Promise(() => {})); // Never resolves to keep loading state
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
       GitService,

@@ -8,7 +8,7 @@ import {
   UserMessageAction,
 } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
 
 vi.mock("react-router", () => ({
@@ -80,7 +80,7 @@ describe("Messages", () => {
   });
 
   it("should render a launch to microagent action button on chat messages only if it is a user message", () => {
-    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
+    const getConversationSpy = vi.spyOn(ConversationService, "getConversation");
     const mockConversation: Conversation = {
       conversation_id: "123",
       title: "Test Conversation",

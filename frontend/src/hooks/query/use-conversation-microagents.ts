@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "../use-conversation-id";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
@@ -15,7 +15,7 @@ export const useConversationMicroagents = () => {
       if (!conversationId) {
         throw new Error("No conversation ID provided");
       }
-      const data = await OpenHands.getMicroagents(conversationId);
+      const data = await ConversationService.getMicroagents(conversationId);
       return data.microagents;
     },
     enabled:

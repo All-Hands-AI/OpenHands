@@ -7,7 +7,7 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import MicroagentManagement from "#/routes/microagent-management";
 import { MicroagentManagementMain } from "#/components/features/microagent-management/microagent-management-main";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import GitService from "#/api/git-service/git-service.api";
 import { GitRepository } from "#/types/git";
 import { RepositoryMicroagent } from "#/types/microagent-management";
@@ -241,7 +241,7 @@ describe("MicroagentManagement", () => {
       ...mockMicroagents,
     ]);
     // Setup default mock for searchConversations
-    vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
+    vi.spyOn(ConversationService, "searchConversations").mockResolvedValue([
       ...mockConversations,
     ]);
     // Setup default mock for getRepositoryMicroagentContent

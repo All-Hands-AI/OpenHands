@@ -19,7 +19,7 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
@@ -53,9 +53,10 @@ function AppContent() {
       navigate("/");
     } else if (conversation?.status === "STOPPED") {
       // start the conversation if the state is stopped on initial load
-      OpenHands.startConversation(conversation.conversation_id, providers).then(
-        () => refetch(),
-      );
+      ConversationService.startConversation(
+        conversation.conversation_id,
+        providers,
+      ).then(() => refetch());
     }
   }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
 
