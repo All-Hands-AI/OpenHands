@@ -71,10 +71,8 @@ def _get_workspace_mount_path_from_env() -> str:
     # Check if any mount explicitly targets /workspace or another path
     for mount in mounts:
         parts = mount.split(':')
-        if len(parts) >= 2:
-            container_path = parts[1]
-            # Return the first container path found, which is likely the workspace
-            return container_path
+        if parts:
+            return parts[0]
 
     return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 
