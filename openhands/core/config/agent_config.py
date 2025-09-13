@@ -62,6 +62,8 @@ class AgentConfig(BaseModel):
     """Model routing configuration settings."""
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
+    runtime: str | None = Field(default=None)
+    """Runtime type (e.g., 'docker', 'local', 'cli') used for runtime-specific tool behavior."""
 
     model_config = ConfigDict(extra='forbid')
 

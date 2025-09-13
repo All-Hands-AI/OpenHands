@@ -212,6 +212,8 @@ class WebSession:
 
         # TODO: override other LLM config & agent config groups (#2075)
         agent_config = self.config.get_agent_config(agent_cls)
+        # Pass runtime information to agent config for runtime-specific tool behavior
+        agent_config.runtime = self.config.runtime
         agent_name = agent_cls if agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
         if settings.enable_default_condenser:
