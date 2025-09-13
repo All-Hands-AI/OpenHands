@@ -55,12 +55,42 @@ Notes for using the `str_replace` command:
 """
 
 
+def _is_running_in_container() -> bool:
+    """Check if we're running inside a container.
+
+    Returns:
+        True if running in a container, False otherwise.
+    """
+    # Check for Docker container indicator
+    if os.path.exists('/.dockerenv'):
+        return True
+
+    # Check cgroup for container indicators
+    try:
+        with open('/proc/1/cgroup', 'r') as f:
+            cgroup_content = f.read()
+            if 'docker' in cgroup_content or 'containerd' in cgroup_content:
+                return True
+    except (FileNotFoundError, PermissionError):
+        pass
+
+    return False
+
+
 def _get_workspace_mount_path_from_env() -> str:
     """Get the workspace mount path from SANDBOX_VOLUMES environment variable.
+
+    For LocalRuntime and CLIRuntime (running on host), returns the host path.
+    For DockerRuntime (running in container), returns the default container path.
 
     Returns:
         The workspace mount path in sandbox, defaults to '/workspace' if not found.
     """
+    # If we're running inside a container (DockerRuntime), use default container path
+    if _is_running_in_container():
+        return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
+    # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
     sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
     if not sandbox_volumes:
         return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
