@@ -72,22 +72,22 @@ class TestWorkspacePathDetection:
             assert result == '/home/user/project'
 
     def test_local_runtime_no_workspace_mount(self):
-        """Test LocalRuntime with no /workspace mount falls back to default."""
+        """Test LocalRuntime with no /workspace mount falls back to current directory."""
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/tmp:/tmp:rw,/var:/var:rw'}):
             result = _get_workspace_mount_path_from_env(runtime_type='local')
-            assert result == '/workspace'
+            assert result == os.getcwd()
 
     def test_local_runtime_no_sandbox_volumes(self):
-        """Test LocalRuntime with no SANDBOX_VOLUMES falls back to default."""
+        """Test LocalRuntime with no SANDBOX_VOLUMES falls back to current directory."""
         with patch.dict(os.environ, {}, clear=True):
             result = _get_workspace_mount_path_from_env(runtime_type='local')
-            assert result == '/workspace'
+            assert result == os.getcwd()
 
     def test_local_runtime_empty_sandbox_volumes(self):
-        """Test LocalRuntime with empty SANDBOX_VOLUMES falls back to default."""
+        """Test LocalRuntime with empty SANDBOX_VOLUMES falls back to current directory."""
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': ''}):
             result = _get_workspace_mount_path_from_env(runtime_type='local')
-            assert result == '/workspace'
+            assert result == os.getcwd()
 
     def test_relative_path_conversion(self):
         """Test that relative paths in SANDBOX_VOLUMES are converted to absolute."""

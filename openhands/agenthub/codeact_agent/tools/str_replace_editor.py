@@ -70,20 +70,20 @@ def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
     # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
     if runtime_type in ('local', 'cli'):
         sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
-        if not sandbox_volumes:
-            return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+        if sandbox_volumes:
+            # Split by commas to handle multiple mounts
+            mounts = sandbox_volumes.split(',')
 
-        # Split by commas to handle multiple mounts
-        mounts = sandbox_volumes.split(',')
+            # Check if any mount explicitly targets /workspace
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2 and parts[1] == '/workspace':
+                    host_path = os.path.abspath(parts[0])
+                    return host_path
 
-        # Check if any mount explicitly targets /workspace
-        for mount in mounts:
-            parts = mount.split(':')
-            if len(parts) >= 2 and parts[1] == '/workspace':
-                host_path = os.path.abspath(parts[0])
-                return host_path
-
-        return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+        # Fallback for local/CLI runtimes when SANDBOX_VOLUMES is not set:
+        # Use current working directory as it's likely the workspace root
+        return os.getcwd()
 
     # For all other runtimes (docker, remote, etc.), use default container path
     return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
