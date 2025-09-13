@@ -1,9 +1,12 @@
+import os
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.agenthub.codeact_agent.tools.security_utils import (
     RISK_LEVELS,
     SECURITY_RISK_DESC,
 )
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
 _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
@@ -52,9 +55,38 @@ Notes for using the `str_replace` command:
 """
 
 
+def _get_workspace_mount_path_from_env() -> str:
+    """Get the workspace mount path from SANDBOX_VOLUMES environment variable.
+
+    Returns:
+        The workspace mount path in sandbox, defaults to '/workspace' if not found.
+    """
+    sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
+    if not sandbox_volumes:
+        return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
+    # Split by commas to handle multiple mounts
+    mounts = sandbox_volumes.split(',')
+
+    # Check if any mount explicitly targets /workspace or another path
+    for mount in mounts:
+        parts = mount.split(':')
+        if len(parts) >= 2:
+            container_path = parts[1]
+            # Return the first container path found, which is likely the workspace
+            return container_path
+
+    return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
+
 def create_str_replace_editor_tool(
     use_short_description: bool = False,
+    workspace_mount_path_in_sandbox: str | None = None,
 ) -> ChatCompletionToolParam:
+    # If no workspace path is provided, try to get it from environment
+    if workspace_mount_path_in_sandbox is None:
+        workspace_mount_path_in_sandbox = _get_workspace_mount_path_from_env()
+
     description = (
         _SHORT_STR_REPLACE_EDITOR_DESCRIPTION
         if use_short_description
@@ -80,7 +112,7 @@ def create_str_replace_editor_tool(
                         'type': 'string',
                     },
                     'path': {
-                        'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                        'description': f'Absolute path to file or directory, e.g. `{workspace_mount_path_in_sandbox}/file.py` or `{workspace_mount_path_in_sandbox}`.',
                         'type': 'string',
                     },
                     'file_text': {
