@@ -3,6 +3,7 @@
 name: Publish to S3
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       tag:
