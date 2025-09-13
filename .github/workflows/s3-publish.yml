@@ -3,7 +3,6 @@
 name: Publish to S3
 
 on:
-  pull_request:
   workflow_dispatch:
     inputs:
       tag:
@@ -19,6 +18,8 @@ concurrency:
 env:
   TAG: ${{ inputs.tag }}
   TAG_FOLDER: releases/${{ inputs.tag }}
+  DOCKER_REGISTRY: all-hands-ai
+  IMAGE_URI: ghcr.io/all-hands-ai/enterprise-server
 
 jobs:
   publish-to-s3:
@@ -44,10 +45,10 @@ jobs:
           echo "Pulling enterprise-server image for tag: ${{ env.TAG }}"
           
           # Pull the image from GHCR
-          docker pull ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.TAG }}
+          docker pull ${{ env.IMAGE_URI }}:${{ env.TAG }}
           
           # Export to tarball
-          docker save ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.TAG }} | gzip > enterprise-server-${{ env.TAG }}.tar.gz
+          docker save ${{ env.IMAGE_URI }}:${{ env.TAG }} | gzip > enterprise-server-${{ env.TAG }}.tar.gz
           
           echo "✅ Enterprise-server image exported"
       
