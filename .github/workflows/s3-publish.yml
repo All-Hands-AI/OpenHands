@@ -52,24 +52,19 @@ jobs:
           
           echo "✅ Enterprise-server image exported"
       
-      - name: Create S3 folder structure
+      - name: Prepare S3 upload
         run: |
-          # Create folder structure: releases/{tag}/
-          echo "S3 folder structure:"
+          # S3 will automatically create the path structure when we upload the file
+          echo "S3 upload path:"
           echo "  Tag folder: ${{ env.TAG_FOLDER }}"
-          
-          # Create the tag folder
-          aws s3api put-object \
-            --bucket ${{ secrets.AWS_RELEASE_BUCKET }} \
-            --key "${{ env.TAG_FOLDER }}/" \
-            --content-type "application/x-directory"
+          echo "  File: enterprise-server-${{ env.TAG }}.tar.gz"
       
       - name: Upload image to S3
         run: |
           echo "Uploading enterprise-server image to S3..."
           
           # Upload the tarball
-          aws s3 cp enterprise-server-${{ env.TAG }}.tar.gz "s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz"
+          aws s3 cp enterprise-server-${{ env.TAG }}.tar.gz "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz"
           
           echo "✅ Image uploaded to S3"
       
@@ -78,7 +73,7 @@ jobs:
         run: |
           echo "Generating presigned URL (valid for 30 days)..."
           
-          presigned_url=$(aws s3 presign "s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 2592000)
+          presigned_url=$(aws s3 presign "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 2592000)
           echo "PRESIGNED_URL=$presigned_url" >> $GITHUB_OUTPUT
           echo "Generated presigned URL"
             
@@ -88,7 +83,7 @@ jobs:
           echo "## 🎉 Publish to S3 Complete!"
           echo ""
           echo "**Tag**: \`${{ env.TAG }}\`"
-          echo "**S3 Location**: \`s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/\`"
+          echo "**S3 Location**: \`s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/\`"
           echo ""
           echo "### 📦 Available Image:"
           echo "- \`enterprise-server-${{ env.TAG }}.tar.gz\`"
