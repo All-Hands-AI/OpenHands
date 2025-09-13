@@ -200,15 +200,15 @@ class TestEdgeCases:
 
     def test_malformed_sandbox_volumes(self):
         """Test handling of malformed SANDBOX_VOLUMES."""
-        # Missing colon separator
+        # Missing colon separator - falls back to current directory for local/CLI
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app/workspace'}):
             result = _get_workspace_mount_path_from_env(runtime_type='local')
-            assert result == '/workspace'
+            assert result == os.getcwd()
 
-        # Only one part
+        # Only one part - falls back to current directory for local/CLI
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:'}):
             result = _get_workspace_mount_path_from_env(runtime_type='local')
-            assert result == '/workspace'
+            assert result == os.getcwd()
 
     def test_workspace_mount_with_different_permissions(self):
         """Test /workspace mount with different permission strings."""
