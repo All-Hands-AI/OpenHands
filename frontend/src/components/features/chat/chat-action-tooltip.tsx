@@ -1,4 +1,4 @@
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 
 interface ChatActionTooltipProps {
   children: React.ReactNode;
@@ -12,14 +12,18 @@ export function ChatActionTooltip({
   ariaLabel,
 }: ChatActionTooltipProps) {
   return (
-    <TooltipButton
-      tooltip={tooltip}
+    <UnifiedButton
+      withTooltip
+      tooltipContent={tooltip}
       ariaLabel={ariaLabel}
       disabled={false}
-      placement="bottom"
-      tooltipClassName="bg-white text-black text-xs font-medium leading-5"
+      tooltipProps={{
+        placement: "bottom",
+        className: "bg-white text-black text-xs font-medium leading-5",
+      }}
+      className="bg-transparent hover:bg-transparent"
     >
       {children}
-    </TooltipButton>
+    </UnifiedButton>
   );
 }
