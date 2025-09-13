@@ -1,0 +1,96 @@
+# Manual workflow for testing tagged and feature branch releases before merging
+# This workflow allows testing connectivity and keys for prerelease builds
+name: Publish to S3
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build from (e.g., 1.0.0)'
+        required: true
+        type: string
+        default: '1.0.0'
+
+concurrency:
+  group: s3-release-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag }}
+  TAG_FOLDER: releases/${{ inputs.tag }}
+
+jobs:
+  publish-to-s3:
+    name: Publish to S3
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Pull and export enterprise-server image
+        run: |
+          echo "Pulling enterprise-server image for tag: ${{ env.TAG }}"
+          
+          # Pull the image from GHCR
+          docker pull ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.TAG }}
+          
+          # Export to tarball
+          docker save ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.TAG }} | gzip > enterprise-server-${{ env.TAG }}.tar.gz
+          
+          echo "✅ Enterprise-server image exported"
+      
+      - name: Create S3 folder structure
+        run: |
+          # Create folder structure: releases/{tag}/
+          echo "S3 folder structure:"
+          echo "  Tag folder: ${{ env.TAG_FOLDER }}"
+          
+          # Create the tag folder
+          aws s3api put-object \
+            --bucket ${{ secrets.AWS_RELEASE_BUCKET }} \
+            --key "${{ env.TAG_FOLDER }}/" \
+            --content-type "application/x-directory"
+      
+      - name: Upload image to S3
+        run: |
+          echo "Uploading enterprise-server image to S3..."
+          
+          # Upload the tarball
+          aws s3 cp enterprise-server-${{ env.TAG }}.tar.gz "s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz"
+          
+          echo "✅ Image uploaded to S3"
+      
+      - name: Generate presigned URL
+        id: presigned-url
+        run: |
+          echo "Generating presigned URL (valid for 30 days)..."
+          
+          presigned_url=$(aws s3 presign "s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 2592000)
+          echo "PRESIGNED_URL=$presigned_url" >> $GITHUB_OUTPUT
+          echo "Generated presigned URL"
+            
+      - name: Output build information
+        run: |
+          echo ""
+          echo "## 🎉 Publish to S3 Complete!"
+          echo ""
+          echo "**Tag**: \`${{ env.TAG }}\`"
+          echo "**S3 Location**: \`s3://${{ secrets.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/\`"
+          echo ""
+          echo "### 📦 Available Image:"
+          echo "- \`enterprise-server-${{ env.TAG }}.tar.gz\`"
+          echo ""
+          echo "### 🔗 Download Link (valid for 30 days):"
+          echo "- [enterprise-server-${{ env.TAG }}.tar.gz](${{ steps.presigned-url.outputs.PRESIGNED_URL }})"
+          echo ""
