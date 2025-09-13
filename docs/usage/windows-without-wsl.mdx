@@ -62,18 +62,14 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
      npm --version
      ```
 
-6. **Install Poetry**
+6. **Install uv**
    - Open PowerShell as Administrator and run:
      ```powershell
-     (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
-     ```
-   - Add Poetry to your PATH:
-     ```powershell
-     $env:Path += ";$env:APPDATA\Python\Scripts"
+     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
      ```
    - Verify installation:
      ```powershell
-     poetry --version
+     uv --version
      ```
 
 ## Step 2: Clone and Set Up OpenHands
@@ -86,7 +82,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
 
 2. **Install Dependencies**
    ```powershell
-   poetry install
+   uv sync
    ```
 
    This will install all required dependencies, including:
@@ -109,7 +105,7 @@ This guide provides step-by-step instructions for running OpenHands on a Windows
    ```powershell
    # Make sure to use PowerShell 7 (pwsh) instead of Windows PowerShell
    pwsh
-   $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   $env:RUNTIME="local"; uv run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
    This will start the OpenHands app using the local runtime with PowerShell integration, available at `localhost:3000`.
@@ -230,7 +226,7 @@ To resolve this issue:
    ```powershell
    pwsh
    cd path\to\openhands
-   $env:RUNTIME="local"; poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
+   $env:RUNTIME="local"; uv run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
    ```
 
    > **Note**: Make sure you're explicitly using `pwsh` (PowerShell 7) and not `powershell` (Windows PowerShell). The command prompt or terminal title should say "PowerShell 7" rather than just "Windows PowerShell".

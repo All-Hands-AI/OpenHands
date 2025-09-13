@@ -316,7 +316,7 @@ async def create_jira_dc_workspace(
                 'response_type': 'code',
             }
 
-            auth_url = f"{JIRA_DC_AUTH_URL}?{'&'.join([f'{k}={v}' for k, v in auth_params.items()])}"
+            auth_url = f'{JIRA_DC_AUTH_URL}?{"&".join([f"{k}={v}" for k, v in auth_params.items()])}'
 
             return JSONResponse(
                 content={
@@ -436,7 +436,7 @@ async def create_workspace_link(request: Request, link_data: JiraDcLinkCreate):
                 'state': state,
                 'response_type': 'code',
             }
-            auth_url = f"{JIRA_DC_AUTH_URL}?{'&'.join([f'{k}={v}' for k, v in auth_params.items()])}"
+            auth_url = f'{JIRA_DC_AUTH_URL}?{"&".join([f"{k}={v}" for k, v in auth_params.items()])}'
 
             return JSONResponse(
                 content={

@@ -60,7 +60,7 @@ Here's an example of how to start OpenHands with the Local Runtime in Headless M
 export RUNTIME=local
 export SANDBOX_VOLUMES=/my_folder/myproject:/workspace:rw
 
-poetry run python -m openhands.core.main -t "write a bash script that prints hi"
+uv run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
 ## Use Cases

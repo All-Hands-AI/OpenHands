@@ -25,7 +25,7 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 
 export PYTHONPATH=$(pwd)
 
-COMMAND="poetry run python ./evaluation/mint/run_infer.py \
+COMMAND="uv run python ./evaluation/mint/run_infer.py \
     --llm-config $MODEL_CONFIG \
     --max-iterations 5 \
     --max-propose-solution 2 \
