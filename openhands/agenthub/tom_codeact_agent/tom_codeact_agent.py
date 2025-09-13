@@ -358,7 +358,7 @@ class TomCodeActAgent(CodeActAgent):
                             )
                         else:
                             self.file_store.write(str(record_file), new_line)
-                        logger.log(CLI_DISPLAY_LEVEL, '🔍 Tom: Recorded interaction')
+                        logger.info('🔍 Tom: Recorded interaction')
 
                         return user_response['suggestions']
 

@@ -8,13 +8,13 @@ import datetime
 import html
 import json
 import logging
-import re
 import sys
 import threading
 import time
 from contextlib import contextmanager
 from typing import Generator
 
+import markdown2
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -198,13 +198,13 @@ def display_welcome_message(message: str = '') -> None:
     )
     print_formatted_text(
         HTML(
-            '<grey>  • Use <b>/sleeptime</b> in the beginning of the session to let ToM agent analyze your previous sessions</grey>'
+            '<gold>  • Use <b>/sleeptime</b> in the beginning of the session to let ToM agent analyze your previous sessions</gold>'
         ),
         style=DEFAULT_STYLE,
     )
     print_formatted_text(
         HTML(
-            "<grey>  • Use <b>/tom_give_suggestions</b> to get ToM agent's suggestions for your next action</grey>"
+            "<gold>  • Use <b>/tom_give_suggestions</b> to get ToM agent's suggestions for your next action</gold>"
         ),
         style=DEFAULT_STYLE,
     )
@@ -379,28 +379,17 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
 
 
 def _render_basic_markdown(text: str | None) -> str | None:
-    """Render a very small subset of markdown directly to prompt_toolkit HTML.
-
-    Supported:
-    - Bold: **text** -> <b>text</b>
-    - Underline: __text__ -> <u>text</u>
-
-    Any existing HTML in input is escaped to avoid injection into the renderer.
-    If input is None, return None.
-    """
+    """Render markdown to HTML using markdown2 library."""
     if text is None:
         return None
     if text == '':
         return ''
 
-    safe = html.escape(text)
-    # Bold first so **text** isn't captured by italic rule
-    safe = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe)
-    # Italic: single * not part of ** on either side
-    safe = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<i>\1</i>', safe)
-    # Underline: double underscore
-    safe = re.sub(r'__(.+?)__', r'<u>\1</u>', safe)
-    return safe
+    try:
+        return markdown2.markdown(text)
+    except Exception:
+        # Fallback to plain text if markdown2 fails
+        return html.escape(text)
 
 
 def display_error(error: str) -> None:
@@ -1197,7 +1186,7 @@ def display_instruction_improvement(
     text = suggestions.strip()
     # Tolerant ToM marker handling: strip based on either marker if present
     marker_start = '*****************ToM Agent Analysis Start Here*****************'
-    marker_end = '*****************ToM Agent Analysis End Here******************'
+    marker_end = '*****************ToM Agent Analysis End Here*****************'
     if marker_start in text:
         text = text.split(marker_start, 1)[1]
     if marker_end in text:
@@ -1205,18 +1194,30 @@ def display_instruction_improvement(
     text = text.strip()
 
     # Use the existing markdown rendering function and fix HTML entities
-    rendered_html = _render_basic_markdown(text)
-    container = Frame(
-        Window(
-            FormattedTextControl(
-                HTML(rendered_html) if rendered_html else text,
+    try:
+        rendered_html = _render_basic_markdown(text)
+        container = Frame(
+            Window(
+                FormattedTextControl(
+                    HTML(rendered_html) if rendered_html else text,
+                ),
+                wrap_lines=True,
             ),
-            wrap_lines=True,
-        ),
-        title="ToM agent's suggestion",
-        style=f'fg:{COLOR_ORANGE}',
-    )
-    print_container(container)
+            title="ToM agent's suggestion",
+            style=f'fg:{COLOR_ORANGE}',
+        )
+        print_container(container)
+    except Exception:
+        container = Frame(
+            TextArea(
+                text=text,
+                read_only=True,
+                wrap_lines=True,
+            ),
+            title="ToM agent's suggestion",
+            style=f'fg:{COLOR_ORANGE}',
+        )
+        print_container(container)
 
     print_formatted_text('')
     print_formatted_text('')
