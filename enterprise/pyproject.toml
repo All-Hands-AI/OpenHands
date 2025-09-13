@@ -1,7 +1,6 @@
 [build-system]
 build-backend = "hatchling.build"
-
-requires = [ "hatchling", "uv-dynamic-versioning>=0.6" ]
+requires = [ "hatch-vcs", "hatchling" ]
 
 [project]
 name = "enterprise-server"
@@ -67,7 +66,10 @@ test = [
 ]
 
 [tool.hatch.version]
-source = "uv-dynamic-versioning"
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = ".."
 
 [tool.hatch.build.targets.sdist]
 include = [ "server", "storage", "sync", "integrations", "experiments" ]
@@ -95,7 +97,7 @@ openhands-ai = { path = "../", editable = true }
 
 # Configure uv-dynamic-versioning to supply only the version
 
-[tool.uv-dynamic-versioning]
-vcs = "git"
-style = "pep440"
-read-from = "tag"
+# [tool.uv-dynamic-versioning]
+# vcs = "git"
+# style = "pep440"
+# read-from = "tag"

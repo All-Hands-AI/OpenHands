@@ -105,6 +105,7 @@ dev = [
 test = [
   "gevent>=24.2.1,<26",
   "pandas",
+  "pip>=25.2",
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
