@@ -71,9 +71,9 @@ jobs:
       - name: Generate presigned URL
         id: presigned-url
         run: |
-          echo "Generating presigned URL (valid for 30 days)..."
+          echo "Generating presigned URL (valid for 7 days)..."
           
-          presigned_url=$(aws s3 presign "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 2592000)
+          presigned_url=$(aws s3 presign "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 604800)
           echo "PRESIGNED_URL=$presigned_url" >> $GITHUB_OUTPUT
           echo "Generated presigned URL"
             
