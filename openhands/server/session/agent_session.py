@@ -159,7 +159,9 @@ class AgentSession:
                 selected_branch=selected_branch,
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
-                working_dir=config.workspace_mount_path_in_sandbox,
+                working_dir=str(self.runtime.workspace_root)
+                if self.runtime
+                else config.workspace_mount_path_in_sandbox,
             )
 
             # NOTE: this needs to happen before controller is created
