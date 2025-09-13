@@ -31,6 +31,18 @@ class TestWorkspacePathDetection:
             result = _get_workspace_mount_path_from_env(runtime_type='docker')
             assert result == '/workspace'
 
+    def test_remote_runtime_ignores_sandbox_volumes(self):
+        """Test that RemoteRuntime ignores SANDBOX_VOLUMES and uses /workspace."""
+        with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
+            result = _get_workspace_mount_path_from_env(runtime_type='remote')
+            assert result == '/workspace'
+
+    def test_e2b_runtime_ignores_sandbox_volumes(self):
+        """Test that E2BRuntime ignores SANDBOX_VOLUMES and uses /workspace."""
+        with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
+            result = _get_workspace_mount_path_from_env(runtime_type='e2b')
+            assert result == '/workspace'
+
     def test_local_runtime_uses_sandbox_volumes(self):
         """Test that LocalRuntime uses host path from SANDBOX_VOLUMES."""
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
@@ -88,16 +100,16 @@ class TestWorkspacePathDetection:
             assert result.endswith('relative/path')
 
     def test_unknown_runtime_type(self):
-        """Test that unknown runtime types fall back to default behavior."""
+        """Test that unknown runtime types use default container path."""
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
             result = _get_workspace_mount_path_from_env(runtime_type='unknown')
-            assert result == '/host/app'
+            assert result == '/workspace'
 
     def test_none_runtime_type(self):
-        """Test that None runtime type falls back to default behavior."""
+        """Test that None runtime type uses default container path."""
         with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
             result = _get_workspace_mount_path_from_env(runtime_type=None)
-            assert result == '/host/app'
+            assert result == '/workspace'
 
 
 class TestToolCreation:
@@ -134,6 +146,30 @@ class TestToolCreation:
             ]
             assert '/host/app/file.py' in path_description
             assert '/host/app`.' in path_description
+
+    def test_tool_creation_remote_runtime(self):
+        """Test tool creation in RemoteRuntime shows /workspace in description."""
+        with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
+            tool = create_str_replace_editor_tool(runtime_type='remote')
+            path_description = tool['function']['parameters']['properties']['path'][
+                'description'
+            ]
+            assert '/workspace/file.py' in path_description
+            assert '/workspace`.' in path_description
+            # Should not contain host paths
+            assert '/host/app' not in path_description
+
+    def test_tool_creation_e2b_runtime(self):
+        """Test tool creation in E2BRuntime shows /workspace in description."""
+        with patch.dict(os.environ, {'SANDBOX_VOLUMES': '/host/app:/workspace:rw'}):
+            tool = create_str_replace_editor_tool(runtime_type='e2b')
+            path_description = tool['function']['parameters']['properties']['path'][
+                'description'
+            ]
+            assert '/workspace/file.py' in path_description
+            assert '/workspace`.' in path_description
+            # Should not contain host paths
+            assert '/host/app' not in path_description
 
     def test_tool_creation_explicit_workspace_path(self):
         """Test tool creation with explicitly provided workspace path."""

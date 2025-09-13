@@ -59,7 +59,7 @@ def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
     """Get the workspace mount path from SANDBOX_VOLUMES environment variable.
 
     For LocalRuntime and CLIRuntime, returns the host path from SANDBOX_VOLUMES.
-    For DockerRuntime, returns the default container path (/workspace).
+    For other runtimes, returns the default container path (/workspace).
 
     Args:
         runtime_type: The runtime type ('local', 'cli', 'docker', etc.)
@@ -67,25 +67,25 @@ def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
     Returns:
         The workspace mount path in sandbox, defaults to '/workspace' if not found.
     """
-    # For DockerRuntime, always use default container path
-    if runtime_type == 'docker':
-        return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
-
     # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
-    sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
-    if not sandbox_volumes:
+    if runtime_type in ('local', 'cli'):
+        sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
+        if not sandbox_volumes:
+            return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
+        # Split by commas to handle multiple mounts
+        mounts = sandbox_volumes.split(',')
+
+        # Check if any mount explicitly targets /workspace
+        for mount in mounts:
+            parts = mount.split(':')
+            if len(parts) >= 2 and parts[1] == '/workspace':
+                host_path = os.path.abspath(parts[0])
+                return host_path
+
         return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 
-    # Split by commas to handle multiple mounts
-    mounts = sandbox_volumes.split(',')
-
-    # Check if any mount explicitly targets /workspace
-    for mount in mounts:
-        parts = mount.split(':')
-        if len(parts) >= 2 and parts[1] == '/workspace':
-            host_path = os.path.abspath(parts[0])
-            return host_path
-
+    # For all other runtimes (docker, remote, etc.), use default container path
     return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 
 
