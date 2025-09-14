@@ -8,6 +8,7 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.completion import FuzzyWordCompleter
 
 from openhands_cli.tui import DEFAULT_STYLE
 
@@ -130,3 +131,57 @@ def prompt_user(question: str, escapable: bool = True) -> tuple[str, bool]:
         return reason.strip(), False
     except KeyboardInterrupt:
         return '', True
+
+
+def prompt_with_completer(question: str, choices: list[str], escapable: bool = True) -> tuple[str, bool]:
+    """Prompt the user with a fuzzy completer over choices.
+
+    Returns (response, deferred)
+    """
+    completer = FuzzyWordCompleter(choices, WORD=True)
+    kb = KeyBindings()
+
+    if escapable:
+        @kb.add('c-c')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
+
+        @kb.add('c-p')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
+
+    try:
+        response = str(
+            prompt(question, style=DEFAULT_STYLE, key_bindings=kb, completer=completer)
+        )
+        return response.strip(), False
+    except KeyboardInterrupt:
+        return '', True
+
+
+
+def prompt_with_completer(question: str, choices: list[str], escapable: bool = True) -> tuple[str, bool]:
+    """Prompt the user with a fuzzy completer over choices.
+
+    Returns (response, deferred)
+    """
+    completer = FuzzyWordCompleter(choices, WORD=True)
+    kb = KeyBindings()
+
+    if escapable:
+        @kb.add('c-c')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
+
+        @kb.add('c-p')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
+
+    try:
+        response = str(
+            prompt(question, style=DEFAULT_STYLE, key_bindings=kb, completer=completer)
+        )
+        return response.strip(), False
+    except KeyboardInterrupt:
+        return '', True
+

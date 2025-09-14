@@ -1,7 +1,7 @@
 from openhands.sdk import Conversation
 from openhands_cli.tui.settings.utils import get_supported_llm_models, organize_models_and_providers
 from openhands_cli.user_actions import settings_type_confirmation
-from openhands_cli.user_actions.settings_action import SettingsType, choose_llm_provider, save_settings_confirmation, specify_api_key
+from openhands_cli.user_actions.settings_action import SettingsType, choose_llm_model, choose_llm_provider, save_settings_confirmation, specify_api_key
 from openhands_cli.user_actions.types import UserConfirmation
 from openhands.sdk import Conversation
 from prompt_toolkit.widgets import Frame, TextArea
@@ -23,7 +23,7 @@ class SettingsScreen:
         labels_and_values = []
         if not advanced_llm_settings:
             # Attempt to determine provider, fallback if not directly available
-            provider = llm.model.split('/')[0] if '/' in llm.model else 'Unknown',
+            provider = llm.model.split('/')[0] if '/' in llm.model else 'Unknown'
 
             labels_and_values.extend(
                 [
@@ -85,8 +85,9 @@ class SettingsScreen:
 
     def handle_basic_settings(self):
         provider = choose_llm_provider()
-        model_list = get_supported_llm_models()
-        organized_models = organize_models_and_providers(model_list)
+        # model_list = get_supported_llm_models()
+        llm_model = choose_llm_model(provider)
+        # organized_models = organize_models_and_providers(model_list)
         api_key = specify_api_key(self.conversation.agent.llm.api_key)
 
         if not api_key:

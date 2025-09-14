@@ -8,7 +8,7 @@ def split_is_actually_version(split: list[str]) -> bool:
         len(split) > 1
         and bool(split[1])
         and bool(split[1][0])
-        and split[1][0].is_digit()
+        and split[1][0].isdigit()
     )
 
 class ModelInfo(BaseModel):
