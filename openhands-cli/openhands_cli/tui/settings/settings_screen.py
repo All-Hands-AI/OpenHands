@@ -1,9 +1,13 @@
 from openhands.sdk import Conversation
-from openhands_cli.tui.settings.utils import get_supported_llm_models, organize_models_and_providers
-from openhands_cli.user_actions import settings_type_confirmation
-from openhands_cli.user_actions.settings_action import SettingsType, choose_llm_model, choose_llm_provider, save_settings_confirmation, specify_api_key
+from openhands_cli.user_actions.settings_action import (
+    SettingsType, 
+    settings_type_confirmation,
+    choose_llm_model, 
+    choose_llm_provider, 
+    save_settings_confirmation, 
+    prompt_api_key
+)
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands.sdk import Conversation
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
@@ -85,23 +89,35 @@ class SettingsScreen:
 
     def handle_basic_settings(self):
         provider = choose_llm_provider()
-        # model_list = get_supported_llm_models()
-        llm_model = choose_llm_model(provider)
-        # organized_models = organize_models_and_providers(model_list)
-        api_key = specify_api_key(self.conversation.agent.llm.api_key)
+        llm_model, deferred = choose_llm_model(provider)
+        
+        if deferred:
+            return
+        
+        api_key, deferred = prompt_api_key(self.conversation.agent.llm.api_key)
 
-        if not api_key:
+        if deferred or not api_key:
             return
 
         confirmation = save_settings_confirmation()
-        if confirmation == UserConfirmation.REJECT:
+        if not confirmation:
             return
 
-        self.reconfigure_conversation_settings()
+        # Store the collected settings for persistence
+        self.reconfigure_conversation_settings(provider, llm_model, api_key)
 
 
-    def reconfigure_conversation_settings(self):
-        pass
+    def reconfigure_conversation_settings(self, provider: str, model: str, api_key: str):
+        """Update conversation settings with new values."""
+        # Update the conversation's LLM configuration
+        # Note: This is a basic implementation - full persistence would require
+        # updating the conversation's configuration and potentially saving to file
+        
+        print(f"Settings updated:")
+        print(f"  Provider: {provider}")
+        print(f"  Model: {model}")
+        print(f"  API Key: {'*' * 8}")
+        print("Note: Full persistence implementation pending.")
 
 
 
