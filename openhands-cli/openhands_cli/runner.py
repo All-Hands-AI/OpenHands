@@ -1,6 +1,7 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Conversation, Message
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.event.utils import get_unmatched_actions
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
@@ -24,7 +25,7 @@ class ConversationRunner:
 
     def _print_run_status(self) -> None:
         print_formatted_text('')
-        if self.conversation.state.agent_paused:
+        if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
             print_formatted_text(
                 HTML(
                     '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
@@ -63,7 +64,7 @@ class ConversationRunner:
 
     def _run_with_confirmation(self) -> None:
         # If agent was paused, resume with confirmation request
-        if self.conversation.state.agent_waiting_for_confirmation:
+        if self.conversation.state.agent_status == AgentExecutionStatus.WAITING_FOR_CONFIRMATION:
             user_confirmation = self._handle_confirmation_request()
             if user_confirmation == UserConfirmation.DEFER:
                 return
@@ -76,10 +77,10 @@ class ConversationRunner:
                     break
 
             # In confirmation mode, agent either finishes or waits for user confirmation
-            if self.conversation.state.agent_finished:
+            if self.conversation.state.agent_status == AgentExecutionStatus.FINISHED:
                 break
 
-            elif self.conversation.state.agent_waiting_for_confirmation:
+            elif self.conversation.state.agent_status == AgentExecutionStatus.WAITING_FOR_CONFIRMATION:
                 user_confirmation = self._handle_confirmation_request()
                 if user_confirmation == UserConfirmation.DEFER:
                     return

@@ -22,6 +22,7 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands.sdk.conversation.state import AgentExecutionStatus
 import uuid
 
 logger = logging.getLogger(__name__)
@@ -112,7 +113,10 @@ def run_cli_entry() -> None:
                 display_welcome(session_id)
                 continue
             elif command == '/resume':
-                if not conversation.state.agent_paused:
+                if not (
+                    conversation.state.agent_status == AgentExecutionStatus.PAUSED or
+                    conversation.state.agent_status == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                ):
                     print_formatted_text(
                         HTML('<red>No paused conversation to resume...</red>')
                     )
