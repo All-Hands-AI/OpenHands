@@ -48,9 +48,10 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Make template script executable
-      shell: bash
-      run: chmod +x .github/scripts/process-template.sh
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
       
     - name: Create S3 publish report
       id: create
@@ -64,8 +65,8 @@ runs:
         echo "  Repository: ${{ inputs.repository }}"
         echo ""
         
-        # Run the template processing script
-        ./.github/scripts/process-template.sh \
+        # Run the Python template processing script
+        python .github/scripts/process-template.py \
           "${{ inputs.template-path }}" \
           "${{ inputs.output-path }}" \
           "${{ inputs.tag }}" \
@@ -77,12 +78,7 @@ runs:
           "${{ inputs.url-length }}" \
           "${{ inputs.expires-at }}"
         
-        # Verify the output file exists and get its size
-        if [ ! -f "${{ inputs.output-path }}" ]; then
-          echo "❌ Error: Output file was not created"
-          exit 1
-        fi
-        
+        # Get the output file size
         REPORT_SIZE=$(wc -c < "${{ inputs.output-path }}")
         echo "report-path=${{ inputs.output-path }}" >> $GITHUB_OUTPUT
         echo "report-size=$REPORT_SIZE" >> $GITHUB_OUTPUT

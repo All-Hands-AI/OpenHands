@@ -61,7 +61,8 @@ echo "  Run ID: $RUN_ID"
 echo ""
 
 # Process template with sed substitutions
-# Note: We need to escape special characters in the values to prevent sed issues
+# Note: We use | as delimiter to avoid conflicts with forward slashes in paths
+# We need to escape special characters in the values to prevent sed issues
 TAG_ESCAPED=$(printf '%s\n' "$TAG" | sed 's/[[\.*^$()+?{|]/\\&/g')
 BUCKET_ESCAPED=$(printf '%s\n' "$BUCKET" | sed 's/[[\.*^$()+?{|]/\\&/g')
 TAG_FOLDER_ESCAPED=$(printf '%s\n' "$TAG_FOLDER" | sed 's/[[\.*^$()+?{|]/\\&/g')
@@ -71,16 +72,16 @@ RUN_ID_ESCAPED=$(printf '%s\n' "$RUN_ID" | sed 's/[[\.*^$()+?{|]/\\&/g')
 URL_LENGTH_ESCAPED=$(printf '%s\n' "$URL_LENGTH" | sed 's/[[\.*^$()+?{|]/\\&/g')
 EXPIRES_AT_ESCAPED=$(printf '%s\n' "$EXPIRES_AT" | sed 's/[[\.*^$()+?{|]/\\&/g')
 
-# Perform substitutions
-sed -e "s/{{TAG}}/$TAG_ESCAPED/g" \
-    -e "s/{{BUCKET}}/$BUCKET_ESCAPED/g" \
-    -e "s/{{TAG_FOLDER}}/$TAG_FOLDER_ESCAPED/g" \
-    -e "s/{{DOWNLOAD_URL}}/$DOWNLOAD_URL_ESCAPED/g" \
-    -e "s/{{REPOSITORY}}/$REPOSITORY_ESCAPED/g" \
-    -e "s/{{RUN_ID}}/$RUN_ID_ESCAPED/g" \
-    -e "s/{{TIMESTAMP}}/$TIMESTAMP/g" \
-    -e "s/{{URL_LENGTH}}/$URL_LENGTH_ESCAPED/g" \
-    -e "s/{{EXPIRES_AT}}/$EXPIRES_AT_ESCAPED/g" \
+# Perform substitutions using | as delimiter to avoid conflicts with forward slashes
+sed -e "s|{{TAG}}|$TAG_ESCAPED|g" \
+    -e "s|{{BUCKET}}|$BUCKET_ESCAPED|g" \
+    -e "s|{{TAG_FOLDER}}|$TAG_FOLDER_ESCAPED|g" \
+    -e "s|{{DOWNLOAD_URL}}|$DOWNLOAD_URL_ESCAPED|g" \
+    -e "s|{{REPOSITORY}}|$REPOSITORY_ESCAPED|g" \
+    -e "s|{{RUN_ID}}|$RUN_ID_ESCAPED|g" \
+    -e "s|{{TIMESTAMP}}|$TIMESTAMP|g" \
+    -e "s|{{URL_LENGTH}}|$URL_LENGTH_ESCAPED|g" \
+    -e "s|{{EXPIRES_AT}}|$EXPIRES_AT_ESCAPED|g" \
     "$TEMPLATE_FILE" > "$OUTPUT_FILE"
 
 # Verify the output file was created and has content
