@@ -39,7 +39,7 @@ const SAAS_NAV_ITEMS = [
   {
     icon: <CircuitIcon width={16} height={16} />,
     to: "/settings",
-    text: "SETTINGS$NAV_LLM",
+    text: "COMMON$LANGUAGE_MODEL_LLM",
   },
   {
     icon: <CreditCardIcon width={16} height={16} />,

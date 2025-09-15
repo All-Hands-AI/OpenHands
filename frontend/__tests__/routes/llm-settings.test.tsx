@@ -1151,5 +1151,47 @@ describe("SaaS mode", () => {
       // Verify error toast is displayed with correct message
       expect(displayErrorToastSpy).toHaveBeenCalledWith("SUBSCRIPTION$FAILURE");
     });
+
+    it("should show upgrade banner when subscription is expired or disabled", async () => {
+      // Mock SaaS mode
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+      getConfigSpy.mockResolvedValue(MOCK_SAAS_CONFIG);
+
+      // Mock subscription access to return null (expired/disabled subscriptions return null from backend)
+      // The backend only returns active subscriptions within their validity period
+      const getSubscriptionAccessSpy = vi.spyOn(
+        OpenHands,
+        "getSubscriptionAccess",
+      );
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Wait for subscription data to load
+      await waitFor(() => {
+        expect(getSubscriptionAccessSpy).toHaveBeenCalled();
+      });
+
+      // Should show upgrade banner for expired/disabled subscriptions (when API returns null)
+      expect(screen.getByTestId("upgrade-banner")).toBeInTheDocument();
+
+      // Form should be disabled
+      const form = screen.getByTestId("llm-settings-form-basic");
+      expect(form).toHaveAttribute("aria-disabled", "true");
+
+      // All form inputs should be disabled
+      const providerInput = screen.getByTestId("llm-provider-input");
+      const modelInput = screen.getByTestId("llm-model-input");
+      const apiKeyInput = screen.getByTestId("llm-api-key-input");
+      const confirmationModeSwitch = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
+
+      expect(providerInput).toBeDisabled();
+      expect(modelInput).toBeDisabled();
+      expect(apiKeyInput).toBeDisabled();
+      expect(confirmationModeSwitch).toBeDisabled();
+    });
   });
 });
