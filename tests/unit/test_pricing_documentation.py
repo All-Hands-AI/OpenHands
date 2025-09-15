@@ -24,22 +24,41 @@ class TestPricingDocumentation:
     @pytest.fixture
     def openhands_models(self) -> list[str]:
         """Get the list of OpenHands models from the codebase."""
-        # Directly return the models from the source code to avoid complex imports
-        # This matches the list in openhands/utils/llm.py
-        return [
-            'claude-sonnet-4-20250514',
-            'gpt-5-2025-08-07',
-            'gpt-5-mini-2025-08-07',
-            'claude-opus-4-20250514',
-            'gemini-2.5-pro',
-            'o3',
-            'o4-mini',
-            'devstral-small-2505',
-            'devstral-small-2507',
-            'devstral-medium-2507',
-            'kimi-k2-0711-preview',
-            'qwen3-coder-480b',
-        ]
+        # Read the models directly from the source code file
+        llm_utils_path = (
+            Path(__file__).parent.parent.parent / 'openhands' / 'utils' / 'llm.py'
+        )
+        content = llm_utils_path.read_text()
+
+        # Extract the openhands_models list from the file
+        import ast
+
+        # Parse the Python file
+        tree = ast.parse(content)
+
+        # Find the openhands_models assignment
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Assign)
+                and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Name)
+                and node.targets[0].id == 'openhands_models'
+            ):
+                # Extract the list values
+                if isinstance(node.value, ast.List):
+                    models = []
+                    for elt in node.value.elts:
+                        if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                            # Remove 'openhands/' prefix and filter out secret models
+                            model = elt.value
+                            if model.startswith('openhands/'):
+                                model = model[10:]  # Remove 'openhands/' prefix
+                            if not model.startswith('<secret'):
+                                models.append(model)
+                    return models
+
+        # Fallback if parsing fails
+        raise ValueError('Could not extract openhands_models from llm.py')
 
     @pytest.fixture
     def documentation_content(self) -> str:
@@ -175,6 +194,29 @@ class TestPricingDocumentation:
         assert coverage_ratio >= 0.8, (
             f'Only {documented_count}/{total_count} models documented in pricing table'
         )
+
+    def test_model_list_consistency(
+        self, openhands_models: list[str], documentation_content: str
+    ):
+        """Test that the model list in documentation is consistent with the code."""
+        docs_pricing = self.extract_pricing_from_docs(documentation_content)
+        documented_models = set(docs_pricing.keys())
+        code_models = set(openhands_models)
+
+        # Find models that are in code but not in docs
+        missing_from_docs = code_models - documented_models
+        # Find models that are in docs but not in code
+        extra_in_docs = documented_models - code_models
+
+        # Allow some models to be missing from docs (e.g., if they don't have pricing)
+        # but no extra models should be in docs that aren't in code
+        assert not extra_in_docs, (
+            f'Models in documentation but not in code: {extra_in_docs}'
+        )
+
+        # Report missing models for visibility (but don't fail the test)
+        if missing_from_docs:
+            print(f'Models in code but not documented: {missing_from_docs}')
 
     def test_pricing_format_consistency(self, documentation_content: str):
         """Test that pricing format is consistent in the documentation."""
