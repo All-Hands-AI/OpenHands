@@ -5,25 +5,25 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import logging
-
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
-from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.formatted_text import HTML
+import uuid
 
 from openhands.sdk import (
     Message,
     TextContent,
 )
+from openhands.sdk.conversation.state import AgentExecutionStatus
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.formatted_text import HTML
+
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_agent
+from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.tui import (
     CommandCompleter,
     display_help,
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-from openhands.sdk.conversation.state import AgentExecutionStatus
-import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def run_cli_entry() -> None:
         try:
             # Get user input
             user_input = session.prompt(
-                HTML('<gold>> </gold>'),
+                HTML("<gold>> </gold>"),
                 multiline=False,
             )
 
@@ -66,59 +66,60 @@ def run_cli_entry() -> None:
             command = user_input.strip().lower()
 
             message = Message(
-                role='user',
+                role="user",
                 content=[TextContent(text=user_input)],
             )
 
-            if command == '/exit':
+            if command == "/exit":
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
-                    print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+                    print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
                     break
 
-            elif command == '/settings':
+            elif command == "/settings":
                 settings_screen = SettingsScreen(conversation)
                 settings_screen.display_settings()
                 continue
 
-            elif command == '/clear':
+            elif command == "/clear":
                 display_welcome(session_id)
                 continue
-            elif command == '/help':
+            elif command == "/help":
                 display_help()
                 continue
-            elif command == '/status':
-                print_formatted_text(HTML(f'<grey>Session ID: {session_id}</grey>'))
-                print_formatted_text(HTML('<grey>Status: Active</grey>'))
+            elif command == "/status":
+                print_formatted_text(HTML(f"<grey>Session ID: {session_id}</grey>"))
+                print_formatted_text(HTML("<grey>Status: Active</grey>"))
                 confirmation_status = (
-                    'enabled' if conversation.state.confirmation_mode else 'disabled'
+                    "enabled" if conversation.state.confirmation_mode else "disabled"
                 )
                 print_formatted_text(
-                    HTML(f'<grey>Confirmation mode: {confirmation_status}</grey>')
+                    HTML(f"<grey>Confirmation mode: {confirmation_status}</grey>")
                 )
                 continue
-            elif command == '/confirm':
+            elif command == "/confirm":
                 current_mode = runner.confirmation_mode
                 runner.set_confirmation_mode(not current_mode)
-                new_status = 'enabled' if not current_mode else 'disabled'
+                new_status = "enabled" if not current_mode else "disabled"
                 print_formatted_text(
-                    HTML(f'<yellow>Confirmation mode {new_status}</yellow>')
+                    HTML(f"<yellow>Confirmation mode {new_status}</yellow>")
                 )
                 continue
-            elif command == '/new':
+            elif command == "/new":
                 print_formatted_text(
-                    HTML('<yellow>Starting new conversation...</yellow>')
+                    HTML("<yellow>Starting new conversation...</yellow>")
                 )
                 session_id = str(uuid.uuid4())[:8]
                 display_welcome(session_id)
                 continue
-            elif command == '/resume':
+            elif command == "/resume":
                 if not (
-                    conversation.state.agent_status == AgentExecutionStatus.PAUSED or
-                    conversation.state.agent_status == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                    conversation.state.agent_status == AgentExecutionStatus.PAUSED
+                    or conversation.state.agent_status
+                    == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
                 ):
                     print_formatted_text(
-                        HTML('<red>No paused conversation to resume...</red>')
+                        HTML("<red>No paused conversation to resume...</red>")
                     )
 
                     continue
@@ -133,6 +134,6 @@ def run_cli_entry() -> None:
         except KeyboardInterrupt:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
-                print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+                print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
                 break
             continue

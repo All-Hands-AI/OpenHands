@@ -1,9 +1,5 @@
 import os
 
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
-from prompt_toolkit import HTML, print_formatted_text
-from pydantic import SecretStr
-
 from openhands.sdk import (
     LLM,
     Agent,
@@ -16,6 +12,7 @@ from openhands.tools import (
     execute_bash_tool,
     str_replace_editor_tool,
 )
+from prompt_toolkit import HTML, print_formatted_text
 
 
 def setup_agent() -> Conversation:
@@ -24,8 +21,6 @@ def setup_agent() -> Conversation:
     """
 
     llm = LLM.load_from_env()
-
-
 
     # Setup tools
     cwd = os.getcwd()
@@ -42,6 +37,6 @@ def setup_agent() -> Conversation:
 
     print(llm.model)
     print_formatted_text(
-        HTML(f'<green>✓ Agent initialized with model: {llm.model}</green>')
+        HTML(f"<green>✓ Agent initialized with model: {llm.model}</green>")
     )
     return conversation
