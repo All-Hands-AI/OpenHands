@@ -11,7 +11,6 @@ import i18n from "#/i18n";
 import OptionService from "#/api/option-service/option-service.api";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
 describe("frontend/routes/_oh", () => {
