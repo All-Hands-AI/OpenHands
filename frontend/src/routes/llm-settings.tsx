@@ -422,7 +422,13 @@ function LlmSettingsScreen() {
   };
 
   return (
-    <div data-testid="llm-settings-screen" className={cn("h-full relative", shouldShowUpgradeBanner && "overflow-hidden")}>
+    <div
+      data-testid="llm-settings-screen"
+      className={cn(
+        "h-full relative",
+        shouldShowUpgradeBanner && "overflow-hidden",
+      )}
+    >
       {shouldShowUpgradeBanner && (
         <UpgradeBannerWithBackdrop
           onUpgradeClick={() => {
