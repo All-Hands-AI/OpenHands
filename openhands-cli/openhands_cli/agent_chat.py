@@ -36,8 +36,13 @@ def run_cli_entry() -> None:
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
-    # Setup agent - let exceptions bubble up
+
     conversation = setup_agent()
+    settings_screen = SettingsScreen()
+
+    while not conversation:
+        settings_screen.handle_basic_settings(escapable=False)
+        conversation = setup_agent()
 
     # Generate session ID
     session_id = str(uuid.uuid4())[:8]
@@ -136,4 +141,3 @@ def run_cli_entry() -> None:
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
                 break
-            continue

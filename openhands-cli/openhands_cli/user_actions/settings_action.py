@@ -34,14 +34,14 @@ def settings_type_confirmation() -> SettingsType:
     return options_map.get(index)
 
 
-def choose_llm_provider() -> str:
+def choose_llm_provider(escapable=True) -> str:
     question = 'Step (1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): '
     options = list(VERIFIED_MODELS.keys()).copy() + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
     alternate_option = 'Select another provider'
 
     display_options = options[:4] + [alternate_option]
 
-    index = cli_confirm(question, display_options, escapable=True)
+    index = cli_confirm(question, display_options, escapable=escapable)
     chosen_option = display_options[index]
     if display_options[index] != alternate_option:
         return chosen_option
@@ -52,14 +52,14 @@ def choose_llm_provider() -> str:
     )
 
 
-def choose_llm_model(provider: str) -> str:
+def choose_llm_model(provider: str, escapable=True) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
 
     models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
     question = '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): '
     alternate_option = 'Select another model'
     display_options = models[:4] + [alternate_option]
-    index = cli_confirm(question, display_options, escapable=True)
+    index = cli_confirm(question, display_options, escapable=escapable)
     chosen_option = display_options[index]
 
     if chosen_option != alternate_option:
@@ -73,7 +73,7 @@ def choose_llm_model(provider: str) -> str:
 
 
 def prompt_api_key(
-    existing_api_key: SecretStr | None = None,
+    existing_api_key: SecretStr | None = None, escapable=True
 ) -> tuple[str | None, bool]:
     if existing_api_key:
         masked_key = existing_api_key.get_secret_value()[:3] + '***'
@@ -82,7 +82,7 @@ def prompt_api_key(
         question = 'Enter API Key (CTRL-c to cancel): '
 
     question = '(Step 3/3) ' + question
-    return cli_text_input(question, escapable=True)
+    return cli_text_input(question, escapable=escapable)
 
 
 def save_settings_confirmation() -> bool:

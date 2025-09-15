@@ -1,3 +1,5 @@
+import os
+from openhands_cli.locations import LLM_SETTINGS_PATH
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
     choose_llm_model,
@@ -16,11 +18,13 @@ from openhands_cli.pt_style import COLOR_GREY
 
 
 class SettingsScreen:
-    def __init__(self, conversation: Conversation):
+    def __init__(self, conversation: Conversation | None = None):
         self.conversation = conversation
-        self.llm_settings_path = '~/.openhands/llm_settings.json'
 
     def display_settings(self) -> None:
+        if not self.conversation:
+            return
+
         llm = self.conversation.agent.llm
         advanced_llm_settings = True if llm.base_url else False
 
@@ -88,14 +92,14 @@ class SettingsScreen:
         if settings_type == SettingsType.BASIC:
             self.handle_basic_settings()
 
-    def handle_basic_settings(self):
+    def handle_basic_settings(self, escapable=True):
         try:
-            provider = choose_llm_provider()
-            llm_model = choose_llm_model(provider)
-            api_key = prompt_api_key(self.conversation.agent.llm.api_key)
+            provider = choose_llm_provider(escapable=escapable)
+            llm_model = choose_llm_model(provider, escapable=escapable)
+            api_key = prompt_api_key(self.conversation.agent.llm.api_key if self.conversation else None, escapable=escapable)
             save_settings_confirmation()
         except KeyboardInterrupt:
-            print_formatted_text(HTML('\n<red>Keyboard interrupt... cancelling settings change.</red>'))
+            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
             return
 
 
@@ -107,14 +111,5 @@ class SettingsScreen:
         self, provider: str, model: str, api_key: str
     ):
         """Update conversation settings with new values."""
-        # Update the conversation's LLM configuration
-        # Note: This is a basic implementation - full persistence would require
-        # updating the conversation's configuration and potentially saving to file
-
-        llm = LLM(model=f"{provider}/model", api_key=SecretStr(api_key))
-        llm.store_to_json(self.llm_settings_path)
-        print('Settings updated:')
-        print(f'  Provider: {provider}')
-        print(f'  Model: {model}')
-        print(f'  API Key: {"*" * 8}')
-        print('Note: Full persistence implementation pending.')
+        llm = LLM(model=f"{provider}/{model}", api_key=SecretStr(api_key))
+        llm.store_to_json(LLM_SETTINGS_PATH)
