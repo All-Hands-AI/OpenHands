@@ -37,7 +37,7 @@ export function BrandButton({
         variant === "secondary" && "border border-primary text-primary",
         variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
         variant === "ghost-danger" &&
-          "bg-transparent text-red-800 underline hover:text-red-900 hover:no-underline",
+          "bg-transparent text-red-600 underline hover:text-red-700 hover:no-underline font-medium",
         startContent && "flex items-center justify-center gap-2",
         className,
       )}

@@ -501,22 +501,24 @@ function LlmSettingsScreen() {
                 href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
-              <SettingsInput
-                testId="search-api-key-input"
-                name="search-api-key-input"
-                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-                type="password"
-                className="w-full max-w-[680px]"
-                defaultValue={settings.SEARCH_API_KEY || ""}
-                onChange={handleSearchApiKeyIsDirty}
-                placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
-                isDisabled={shouldShowUpgradeBanner}
-                startContent={
-                  settings.SEARCH_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
-                  )
-                }
-              />
+              {config?.APP_MODE !== "saas" && (
+                <SettingsInput
+                  testId="search-api-key-input"
+                  name="search-api-key-input"
+                  label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                  type="password"
+                  className="w-full max-w-[680px]"
+                  defaultValue={settings.SEARCH_API_KEY || ""}
+                  onChange={handleSearchApiKeyIsDirty}
+                  placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
+                  isDisabled={shouldShowUpgradeBanner}
+                  startContent={
+                    settings.SEARCH_API_KEY_SET && (
+                      <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                    )
+                  }
+                />
+              )}
 
               <HelpLink
                 testId="search-api-key-help-anchor"

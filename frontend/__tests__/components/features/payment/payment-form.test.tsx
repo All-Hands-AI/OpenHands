@@ -305,5 +305,42 @@ describe("PaymentForm", () => {
         ).not.toBeInTheDocument();
       });
     });
+
+    it("should show next billing date for active subscription", async () => {
+      // Mock active subscription with end_at as next billing date
+      getSubscriptionAccessSpy.mockResolvedValue({
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2025-01-01T00:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        cancelled_at: null,
+        stripe_subscription_id: "sub_123",
+      });
+
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const nextBillingInfo = screen.getByTestId("next-billing-date");
+        expect(nextBillingInfo).toBeInTheDocument();
+        expect(nextBillingInfo).toHaveTextContent("January 1, 2025");
+      });
+    });
+
+    it("should not show next billing date when subscription is cancelled", async () => {
+      // Mock cancelled subscription
+      getSubscriptionAccessSpy.mockResolvedValue({
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2025-01-01T00:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        cancelled_at: "2024-06-15T10:30:00Z",
+        stripe_subscription_id: "sub_123",
+      });
+
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const nextBillingInfo = screen.queryByTestId("next-billing-date");
+        expect(nextBillingInfo).not.toBeInTheDocument();
+      });
+    });
   });
 });

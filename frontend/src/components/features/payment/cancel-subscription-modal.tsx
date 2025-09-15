@@ -1,8 +1,7 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { useCancelSubscription } from "#/hooks/mutation/use-cancel-subscription";
 import {
@@ -13,11 +12,13 @@ import {
 interface CancelSubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  endDate?: string;
 }
 
 export function CancelSubscriptionModal({
   isOpen,
   onClose,
+  endDate,
 }: CancelSubscriptionModalProps) {
   const { t } = useTranslation();
   const cancelSubscriptionMutation = useCancelSubscription();
@@ -45,22 +46,26 @@ export function CancelSubscriptionModal({
           {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION_TITLE)}
         </h3>
         <p className="text-sm">
-          {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE)}
+          {endDate ? (
+            <Trans
+              i18nKey={I18nKey.PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE_WITH_DATE}
+              values={{ date: endDate }}
+              components={{ date: <span className="underline" /> }}
+            />
+          ) : (
+            t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION_MESSAGE)
+          )}
         </p>
         <div className="w-full flex gap-2 mt-2">
           <BrandButton
             testId="confirm-cancel-button"
             type="button"
-            variant="danger"
+            variant="primary"
             className="grow"
             onClick={handleCancelSubscription}
             isDisabled={cancelSubscriptionMutation.isPending}
           >
-            {cancelSubscriptionMutation.isPending ? (
-              <LoadingSpinner size="small" />
-            ) : (
-              t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)
-            )}
+            {t(I18nKey.BUTTON$CONFIRM)}
           </BrandButton>
           <BrandButton
             testId="modal-cancel-button"

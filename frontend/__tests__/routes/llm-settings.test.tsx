@@ -852,7 +852,6 @@ describe("SaaS mode", () => {
       const providerInput = screen.getByTestId("llm-provider-input");
       const modelInput = screen.getByTestId("llm-model-input");
       const apiKeyInput = screen.getByTestId("llm-api-key-input");
-      const searchApiKeyInput = screen.getByTestId("search-api-key-input");
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
       const confirmationModeSwitch = screen.getByTestId(
         "enable-confirmation-mode-switch",
@@ -863,7 +862,6 @@ describe("SaaS mode", () => {
       expect(providerInput).toBeDisabled();
       expect(modelInput).toBeDisabled();
       expect(apiKeyInput).toBeDisabled();
-      expect(searchApiKeyInput).toBeDisabled();
       expect(advancedSwitch).toBeDisabled();
       expect(confirmationModeSwitch).toBeDisabled();
       expect(submitButton).toBeDisabled();
@@ -937,7 +935,7 @@ describe("SaaS mode", () => {
       getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
 
       renderLlmSettingsScreen();
-      
+
       // Wait for either the settings screen or skeleton to appear
       await waitFor(() => {
         const settingsScreen = screen.queryByTestId("llm-settings-screen");

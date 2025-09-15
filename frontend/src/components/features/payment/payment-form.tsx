@@ -1,5 +1,5 @@
 import React from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { useCreateStripeCheckoutSession } from "#/hooks/mutation/stripe/use-create-stripe-checkout-session";
 import { useBalance } from "#/hooks/query/use-balance";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
@@ -21,6 +21,14 @@ export function PaymentForm() {
 
   const [buttonIsDisabled, setButtonIsDisabled] = React.useState(true);
   const [showCancelModal, setShowCancelModal] = React.useState(false);
+
+  const subscriptionExpiredDate =
+    subscriptionAccess?.end_at &&
+    new Date(subscriptionAccess.end_at).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
 
   const billingFormAction = async (formData: FormData) => {
     const amount = formData.get("top-up-input")?.toString();
@@ -89,24 +97,36 @@ export function PaymentForm() {
 
         {/* Cancel Subscription Button or Cancellation Message */}
         {subscriptionAccess && (
-          <div className="flex items-center w-[680px] gap-2 mt-4">
+          <div className="flex flex-col w-[680px] gap-2 mt-4">
             {subscriptionAccess.cancelled_at ? (
-              <div className="text-red-800 text-sm">
-                {t(I18nKey.PAYMENT$SUBSCRIPTION_CANCELLED_EXPIRES, {
-                  date: new Date(
-                    subscriptionAccess.end_at,
-                  ).toLocaleDateString(),
-                })}
+              <div className="text-red-500 text-sm">
+                <Trans
+                  i18nKey={I18nKey.PAYMENT$SUBSCRIPTION_CANCELLED_EXPIRES}
+                  values={{ date: subscriptionExpiredDate }}
+                  components={{ date: <span className="underline" /> }}
+                />
               </div>
             ) : (
-              <BrandButton
-                testId="cancel-subscription-button"
-                variant="ghost-danger"
-                type="button"
-                onClick={() => setShowCancelModal(true)}
-              >
-                {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)}
-              </BrandButton>
+              <div className="flex items-center gap-4">
+                <BrandButton
+                  testId="cancel-subscription-button"
+                  variant="ghost-danger"
+                  type="button"
+                  onClick={() => setShowCancelModal(true)}
+                >
+                  {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION)}
+                </BrandButton>
+                <div
+                  className="text-sm text-gray-300"
+                  data-testid="next-billing-date"
+                >
+                  <Trans
+                    i18nKey={I18nKey.PAYMENT$NEXT_BILLING_DATE}
+                    values={{ date: subscriptionExpiredDate }}
+                    components={{ date: <span className="underline" /> }}
+                  />
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -116,6 +136,7 @@ export function PaymentForm() {
       <CancelSubscriptionModal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
+        endDate={subscriptionExpiredDate}
       />
     </form>
   );

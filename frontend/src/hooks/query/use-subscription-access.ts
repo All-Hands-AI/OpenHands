@@ -10,9 +10,6 @@ export const useSubscriptionAccess = () => {
   return useQuery({
     queryKey: ["user", "subscription_access"],
     queryFn: OpenHands.getSubscriptionAccess,
-    enabled:
-      !isOnTosPage &&
-      config?.APP_MODE === "saas" &&
-      config?.FEATURE_FLAGS?.ENABLE_BILLING,
+    enabled: !isOnTosPage && config?.APP_MODE === "saas",
   });
 };
