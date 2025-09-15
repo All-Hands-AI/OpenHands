@@ -1,0 +1,92 @@
+name: 'S3 Publish Report'
+description: 'Create HTML release report from template for S3 published releases'
+inputs:
+  tag:
+    description: 'Release tag (e.g., 1.0.0)'
+    required: true
+  bucket:
+    description: 'S3 bucket name'
+    required: true
+  tag-folder:
+    description: 'S3 tag folder (e.g., releases/1.0.0)'
+    required: true
+  download-url:
+    description: 'Presigned download URL'
+    required: true
+  repository:
+    description: 'GitHub repository (e.g., owner/repo)'
+    required: true
+  run-id:
+    description: 'GitHub workflow run ID'
+    required: true
+  url-length:
+    description: 'Length of the download URL'
+    required: false
+    default: 'unknown'
+  expires-at:
+    description: 'When the URL expires in ISO 8601 format'
+    required: false
+    default: 'unknown'
+  template-path:
+    description: 'Path to the HTML template file'
+    required: false
+    default: '.github/templates/release-report.html'
+  output-path:
+    description: 'Path where the processed HTML will be written'
+    required: false
+    default: 'release-report.html'
+outputs:
+  report-path:
+    description: 'Path to the generated HTML report'
+    value: ${{ steps.create.outputs.report-path }}
+  report-size:
+    description: 'Size of the generated report in bytes'
+    value: ${{ steps.create.outputs.report-size }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Make template script executable
+      shell: bash
+      run: chmod +x .github/scripts/process-template.sh
+      
+    - name: Create S3 publish report
+      id: create
+      shell: bash
+      run: |
+        echo "📄 Creating S3 publish report from template..."
+        echo "  Template: ${{ inputs.template-path }}"
+        echo "  Output: ${{ inputs.output-path }}"
+        echo "  Tag: ${{ inputs.tag }}"
+        echo "  Bucket: ${{ inputs.bucket }}"
+        echo "  Repository: ${{ inputs.repository }}"
+        echo ""
+        
+        # Run the template processing script
+        ./.github/scripts/process-template.sh \
+          "${{ inputs.template-path }}" \
+          "${{ inputs.output-path }}" \
+          "${{ inputs.tag }}" \
+          "${{ inputs.bucket }}" \
+          "${{ inputs.tag-folder }}" \
+          "${{ inputs.download-url }}" \
+          "${{ inputs.repository }}" \
+          "${{ inputs.run-id }}" \
+          "${{ inputs.url-length }}" \
+          "${{ inputs.expires-at }}"
+        
+        # Verify the output file exists and get its size
+        if [ ! -f "${{ inputs.output-path }}" ]; then
+          echo "❌ Error: Output file was not created"
+          exit 1
+        fi
+        
+        REPORT_SIZE=$(wc -c < "${{ inputs.output-path }}")
+        echo "report-path=${{ inputs.output-path }}" >> $GITHUB_OUTPUT
+        echo "report-size=$REPORT_SIZE" >> $GITHUB_OUTPUT
+        
+        echo "✅ S3 publish report created successfully"
+        echo "  File: ${{ inputs.output-path }}"
+        echo "  Size: $REPORT_SIZE bytes"
