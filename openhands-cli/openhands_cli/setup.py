@@ -13,7 +13,6 @@ from openhands.tools import (
     str_replace_editor_tool,
 )
 from openhands_cli.locations import LLM_SETTINGS_PATH
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from prompt_toolkit import HTML, print_formatted_text
 
 

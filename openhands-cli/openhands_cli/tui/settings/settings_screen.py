@@ -1,4 +1,3 @@
-import os
 from openhands_cli.locations import LLM_SETTINGS_PATH
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
