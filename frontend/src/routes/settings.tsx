@@ -82,11 +82,8 @@ function SettingsScreen() {
       className="bg-base-secondary rounded-xl h-full flex flex-col px-[14px] pt-8"
     >
       <div className="flex flex-1 overflow-hidden">
-        <nav
-          data-testid="settings-navbar"
-          className="flex flex-col w-64 gap-6 px-5"
-        >
-          <div className="flex items-center gap-2">
+        <nav data-testid="settings-navbar" className="flex flex-col w-64 gap-6">
+          <div className="flex items-center gap-2 ml-1.5">
             <SettingsIcon width={16} height={16} />
             <Typography.H2>{t(I18nKey.SETTINGS$TITLE)}</Typography.H2>
           </div>
@@ -98,12 +95,12 @@ function SettingsScreen() {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    "p-1 flex items-center gap-1 rounded-md",
+                    "p-1 flex items-center gap-3 rounded-md",
                     isActive && "bg-[#454545]",
                   )
                 }
               >
-                <div className="py-1">{icon}</div>
+                {icon}
                 <Typography.Text className="text-[#A3A3A3]">
                   {t(text)}
                 </Typography.Text>
