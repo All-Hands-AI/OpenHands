@@ -2,6 +2,8 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from openhands.sdk.conversation.state import AgentExecutionStatus
+
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
 
@@ -9,30 +11,22 @@ from openhands_cli.user_actions.types import UserConfirmation
 class TestConversationRunner:
     def _setup_conversation_mock(
         self,
-        agent_paused: bool = False,
-        agent_waiting_for_confirmation: bool = False,
-        agent_finished: bool = False,
+        agent_status: AgentExecutionStatus = AgentExecutionStatus.RUNNING,
     ) -> MagicMock:
         convo = MagicMock()
         convo.state = SimpleNamespace(
-            agent_paused=agent_paused,
-            agent_waiting_for_confirmation=agent_waiting_for_confirmation,
-            agent_finished=agent_finished,
+            agent_status=agent_status,
             events=[],
         )
         return convo
 
-    @pytest.mark.parametrize('paused', [False, True])
-    def test_non_confirmation_mode_runs_once(self, paused: bool) -> None:
+    @pytest.mark.parametrize('agent_status', [AgentExecutionStatus.RUNNING, AgentExecutionStatus.PAUSED])
+    def test_non_confirmation_mode_runs_once(self, agent_status: AgentExecutionStatus) -> None:
         """
         1. Confirmation mode is not on
         2. Process message resumes paused conversation or continues running conversation
         """
-        convo = self._setup_conversation_mock(
-            agent_paused=paused,
-            agent_waiting_for_confirmation=False,
-            agent_finished=False,
-        )
+        convo = self._setup_conversation_mock(agent_status=agent_status)
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(False)
 
@@ -42,19 +36,18 @@ class TestConversationRunner:
         run_mock.assert_called_once()
 
     @pytest.mark.parametrize(
-        'confirmation, agent_paused, agent_finished, expected_run_calls',
+        'confirmation, initial_status, expected_run_calls',
         [
-            # Case 1: Agent paused & waiting; user DEFERS -> early return, no run()
-            (UserConfirmation.DEFER, True, False, 0),
-            # Case 2: Agent waiting; user ACCEPTS -> run() once, break (finished=True)
-            (UserConfirmation.ACCEPT, False, True, 1),
+            # Case 1: Agent waiting for confirmation; user DEFERS -> early return, no run()
+            (UserConfirmation.DEFER, AgentExecutionStatus.WAITING_FOR_CONFIRMATION, 0),
+            # Case 2: Agent waiting for confirmation; user ACCEPTS -> run() once, break (finished=True)
+            (UserConfirmation.ACCEPT, AgentExecutionStatus.WAITING_FOR_CONFIRMATION, 1),
         ],
     )
     def test_confirmation_mode_waiting_and_user_decision_controls_run(
         self,
         confirmation: UserConfirmation,
-        agent_paused: bool,
-        agent_finished: bool,
+        initial_status: AgentExecutionStatus,
         expected_run_calls: int,
     ) -> None:
         """
@@ -65,17 +58,17 @@ class TestConversationRunner:
         5. If accepted, run call to agent should be made
 
         """
-        convo = self._setup_conversation_mock(
-            agent_paused=agent_paused,
-            agent_waiting_for_confirmation=True,
-            agent_finished=agent_finished,
-        )
+        convo = self._setup_conversation_mock(agent_status=initial_status)
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(True)
 
+        def mock_run():
+            # Simulate agent finishing after run
+            convo.state.agent_status = AgentExecutionStatus.FINISHED
+
         with (
             patch.object(cr, '_handle_confirmation_request', return_value=confirmation),
-            patch.object(convo, 'run') as run_mock,
+            patch.object(convo, 'run', side_effect=mock_run) as run_mock,
         ):
             cr.process_message(message=None)
 
@@ -87,11 +80,7 @@ class TestConversationRunner:
         2. Agent finished without any actions
         3. Conversation should finished without asking user for instructions
         """
-        convo = self._setup_conversation_mock(
-            agent_paused=True,
-            agent_waiting_for_confirmation=False,
-            agent_finished=True,
-        )
+        convo = self._setup_conversation_mock(agent_status=AgentExecutionStatus.FINISHED)
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(True)
 

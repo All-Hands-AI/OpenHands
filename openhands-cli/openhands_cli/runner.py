@@ -1,7 +1,8 @@
+from openhands.sdk import Conversation, Message
+from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.event.utils import get_unmatched_actions
 from prompt_toolkit import HTML, print_formatted_text
 
-from openhands.sdk import Conversation, Message
-from openhands.sdk.event.utils import get_unmatched_actions
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
 from openhands_cli.user_actions.types import UserConfirmation
@@ -23,21 +24,21 @@ class ConversationRunner:
         self.listener.start()
 
     def _print_run_status(self) -> None:
-        print_formatted_text('')
-        if self.conversation.state.agent_paused:
+        print_formatted_text("")
+        if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
             print_formatted_text(
                 HTML(
-                    '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
+                    "<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>"
                 )
             )
 
         else:
             print_formatted_text(
                 HTML(
-                    '<yellow>Agent running...</yellow><grey> (Press Ctrl-P to pause)</grey>'
+                    "<yellow>Agent running...</yellow><grey> (Press Ctrl-P to pause)</grey>"
                 )
             )
-        print_formatted_text('')
+        print_formatted_text("")
 
     def process_message(self, message: Message | None) -> None:
         """Process a user message through the conversation.
@@ -63,7 +64,10 @@ class ConversationRunner:
 
     def _run_with_confirmation(self) -> None:
         # If agent was paused, resume with confirmation request
-        if self.conversation.state.agent_waiting_for_confirmation:
+        if (
+            self.conversation.state.agent_status
+            == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+        ):
             user_confirmation = self._handle_confirmation_request()
             if user_confirmation == UserConfirmation.DEFER:
                 return
@@ -76,16 +80,19 @@ class ConversationRunner:
                     break
 
             # In confirmation mode, agent either finishes or waits for user confirmation
-            if self.conversation.state.agent_finished:
+            if self.conversation.state.agent_status == AgentExecutionStatus.FINISHED:
                 break
 
-            elif self.conversation.state.agent_waiting_for_confirmation:
+            elif (
+                self.conversation.state.agent_status
+                == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+            ):
                 user_confirmation = self._handle_confirmation_request()
                 if user_confirmation == UserConfirmation.DEFER:
                     return
 
             else:
-                raise Exception('Infinite loop')
+                raise Exception("Infinite loop")
 
     def _handle_confirmation_request(self) -> UserConfirmation:
         """Handle confirmation request from user.
@@ -99,7 +106,7 @@ class ConversationRunner:
             user_confirmation, reason = ask_user_confirmation(pending_actions)
             if user_confirmation == UserConfirmation.REJECT:
                 self.conversation.reject_pending_actions(
-                    reason or 'User rejected the actions'
+                    reason or "User rejected the actions"
                 )
             elif user_confirmation == UserConfirmation.DEFER:
                 self.conversation.pause()
@@ -107,7 +114,7 @@ class ConversationRunner:
                 # Disable confirmation mode when user selects "Always proceed"
                 print_formatted_text(
                     HTML(
-                        '<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>'
+                        "<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>"
                     )
                 )
                 self.set_confirmation_mode(False)

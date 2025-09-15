@@ -1,5 +1,3 @@
-import json
-from openhands_cli.pt_style import COLOR_GREY
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
     choose_llm_model,
@@ -9,18 +7,18 @@ from openhands_cli.user_actions.settings_action import (
     settings_type_confirmation,
 )
 from prompt_toolkit import HTML, print_formatted_text
+from openhands.sdk import Conversation, LLM
+from pydantic import SecretStr
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.sdk import Conversation, LLM
-from pydantic import SecretStr
+from openhands_cli.pt_style import COLOR_GREY
 
 
 class SettingsScreen:
     def __init__(self, conversation: Conversation):
         self.conversation = conversation
         self.llm_settings_path = '~/.openhands/llm_settings.json'
-
 
     def display_settings(self) -> None:
         llm = self.conversation.agent.llm
@@ -34,17 +32,17 @@ class SettingsScreen:
 
             labels_and_values.extend(
                 [
-                    ('   LLM Provider', str(provider)),
-                    ('   LLM Model', str(llm.model)),
-                    ('   API Key', '********' if llm.api_key else 'Not Set'),
+                    ("   LLM Provider", str(provider)),
+                    ("   LLM Model", str(llm.model)),
+                    ("   API Key", "********" if llm.api_key else "Not Set"),
                 ]
             )
         else:
             labels_and_values.extend(
                 [
-                    ('   Custom Model', str(llm.model)),
-                    ('   Base URL', str(llm.base_url)),
-                    ('   API Key', '********' if llm.api_key else 'Not Set'),
+                    ("   Custom Model", str(llm.model)),
+                    ("   Base URL", str(llm.base_url)),
+                    ("   API Key", "********" if llm.api_key else "Not Set"),
                 ]
             )
 
@@ -61,10 +59,10 @@ class SettingsScreen:
 
         # Construct the summary text with aligned columns
         settings_lines = [
-            f'{label + ":":<{max_label_width + 1}} {value:<}'  # Changed value alignment to left (<)
+            f"{label + ':':<{max_label_width + 1}} {value:<}"  # Changed value alignment to left (<)
             for label, value in str_labels_and_values
         ]
-        settings_text = '\n'.join(settings_lines)
+        settings_text = "\n".join(settings_lines)
 
         container = Frame(
             TextArea(
@@ -73,8 +71,8 @@ class SettingsScreen:
                 style=COLOR_GREY,
                 wrap_lines=True,
             ),
-            title='Settings',
-            style=f'fg:{COLOR_GREY}',
+            title="Settings",
+            style=f"fg:{COLOR_GREY}",
         )
 
         print_container(container)
