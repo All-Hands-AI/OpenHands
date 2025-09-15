@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
 import {
   MOCK_DEFAULT_USER_SETTINGS,

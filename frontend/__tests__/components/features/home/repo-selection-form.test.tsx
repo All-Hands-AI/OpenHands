@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, vi, beforeEach, it } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RepositorySelectionForm } from "../../../../src/components/features/home/repo-selection-form";
-import OpenHands from "#/api/open-hands";
 import UserService from "#/api/user-service/user-service.api";
 import GitService from "#/api/git-service/git-service.api";
 import { GitRepository } from "#/types/git";

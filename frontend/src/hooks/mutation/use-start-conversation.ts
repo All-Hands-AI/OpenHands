@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Provider } from "#/types/settings";
 
 export const useStartConversation = () => {
@@ -10,7 +10,7 @@ export const useStartConversation = () => {
       conversationId: string;
       providers?: Provider[];
     }) =>
-      OpenHands.startConversation(
+      ConversationService.startConversation(
         variables.conversationId,
         variables.providers,
       ),

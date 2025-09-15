@@ -6,21 +6,19 @@ import {
   Conversation,
   ResultSet,
   GetTrajectoryResponse,
-  GitChangeDiff,
-  GitChange,
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
   CreateMicroagent,
   FileUploadSuccessResponse,
   GetFilesResponse,
   GetFileResponse,
-} from "./open-hands.types";
-import { openHands } from "./open-hands-axios";
+} from "../open-hands.types";
+import { openHands } from "../open-hands-axios";
 import { Provider } from "#/types/settings";
 import { SuggestedTask } from "#/utils/types";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
-class OpenHands {
+class ConversationService {
   private static currentConversation: Conversation | null = null;
 
   /**
@@ -322,30 +320,6 @@ class OpenHands {
     return data;
   }
 
-  static async getGitChanges(conversationId: string): Promise<GitChange[]> {
-    const url = `${this.getConversationUrl(conversationId)}/git/changes`;
-    const { data } = await openHands.get<GitChange[]>(url, {
-      headers: this.getConversationHeaders(),
-    });
-    return data;
-  }
-
-  static async getGitChangeDiff(
-    conversationId: string,
-    path: string,
-  ): Promise<GitChangeDiff> {
-    const url = `${this.getConversationUrl(conversationId)}/git/diff`;
-    const { data } = await openHands.get<GitChangeDiff>(url, {
-      params: { path },
-      headers: this.getConversationHeaders(),
-    });
-    return data;
-  }
-
-  /**
-   * @returns A list of repositories
-   */
-
   /**
    * Get the available microagents associated with a conversation
    * @param conversationId The ID of the conversation
@@ -360,21 +334,6 @@ class OpenHands {
     });
     return data;
   }
-
-  /**
-   * Get the available microagents for a repository
-   * @param owner The repository owner
-   * @param repo The repository name
-   * @returns The available microagents for the repository
-   */
-
-  /**
-   * Get the content of a specific microagent from a repository
-   * @param owner The repository owner
-   * @param repo The repository name
-   * @param filePath The path to the microagent file within the repository
-   * @returns The microagent content and metadata
-   */
 
   static async getMicroagentPrompt(
     conversationId: string,
@@ -465,4 +424,4 @@ class OpenHands {
   }
 }
 
-export default OpenHands;
+export default ConversationService;
