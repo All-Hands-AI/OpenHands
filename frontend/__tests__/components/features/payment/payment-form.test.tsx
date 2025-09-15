@@ -1,7 +1,7 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
-import OpenHands from "#/api/open-hands";
+import BillingService from "#/api/billing-service/billing-service.api";
 import OptionService from "#/api/option-service/option-service.api";
 import { PaymentForm } from "#/components/features/payment/payment-form";
 import { renderWithProviders } from "../../../../test-utils";
@@ -17,8 +17,11 @@ vi.mock("#/hooks/mutation/stripe/use-create-stripe-checkout-session", () => ({
 }));
 
 describe("PaymentForm", () => {
-  const getBalanceSpy = vi.spyOn(OpenHands, "getBalance");
-  const createCheckoutSessionSpy = vi.spyOn(OpenHands, "createCheckoutSession");
+  const getBalanceSpy = vi.spyOn(BillingService, "getBalance");
+  const createCheckoutSessionSpy = vi.spyOn(
+    BillingService,
+    "createCheckoutSession",
+  );
   const getConfigSpy = vi.spyOn(OptionService, "getConfig");
 
   const renderPaymentForm = () => renderWithProviders(<PaymentForm />);
@@ -188,10 +191,13 @@ describe("PaymentForm", () => {
 
   describe("Cancel Subscription", () => {
     const getSubscriptionAccessSpy = vi.spyOn(
-      OpenHands,
+      BillingService,
       "getSubscriptionAccess",
     );
-    const cancelSubscriptionSpy = vi.spyOn(OpenHands, "cancelSubscription");
+    const cancelSubscriptionSpy = vi.spyOn(
+      BillingService,
+      "cancelSubscription",
+    );
 
     beforeEach(() => {
       // Mock active subscription
@@ -326,7 +332,9 @@ describe("PaymentForm", () => {
         const nextBillingInfo = screen.getByTestId("next-billing-date");
         expect(nextBillingInfo).toBeInTheDocument();
         // Check that it contains some date-related content (translation key or actual date)
-        expect(nextBillingInfo).toHaveTextContent(/2025|PAYMENT.*BILLING.*DATE/);
+        expect(nextBillingInfo).toHaveTextContent(
+          /2025|PAYMENT.*BILLING.*DATE/,
+        );
       });
     });
 

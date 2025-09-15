@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import BillingService from "#/api/billing-service/billing-service.api";
 
 export const useCancelSubscription = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: OpenHands.cancelSubscription,
+    mutationFn: BillingService.cancelSubscription,
     onSuccess: () => {
       // Invalidate subscription access query to refresh the UI
       queryClient.invalidateQueries({

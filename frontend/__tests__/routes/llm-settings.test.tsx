@@ -12,6 +12,7 @@ import {
 } from "#/mocks/handlers";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
+import BillingService from "#/api/billing-service/billing-service.api";
 
 // Mock react-router hooks
 const mockUseSearchParams = vi.fn();
@@ -747,7 +748,7 @@ describe("SaaS mode", () => {
 
     // Mock subscription access to return valid subscription (so advanced switch is enabled)
     const getSubscriptionAccessSpy = vi.spyOn(
-      OpenHands,
+      BillingService,
       "getSubscriptionAccess",
     );
     getSubscriptionAccessSpy.mockResolvedValue({
@@ -776,7 +777,7 @@ describe("SaaS mode", () => {
 
     // Mock subscription access to return valid subscription (so advanced switch is enabled)
     const getSubscriptionAccessSpy = vi.spyOn(
-      OpenHands,
+      BillingService,
       "getSubscriptionAccess",
     );
     getSubscriptionAccessSpy.mockResolvedValue({
@@ -825,7 +826,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
@@ -885,14 +886,14 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock the subscription checkout API call
       const createSubscriptionCheckoutSessionSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "createSubscriptionCheckoutSession",
       );
       createSubscriptionCheckoutSessionSpy.mockResolvedValue({});
@@ -915,14 +916,14 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
 
       // Mock subscription checkout API
       const createSubscriptionCheckoutSessionSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "createSubscriptionCheckoutSession",
       );
 
@@ -973,7 +974,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return active subscription
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
@@ -1001,7 +1002,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
@@ -1040,7 +1041,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return null (no subscription)
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
@@ -1068,7 +1069,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access to return active subscription
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
@@ -1092,7 +1093,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
@@ -1128,7 +1129,7 @@ describe("SaaS mode", () => {
 
       // Mock subscription access
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(MOCK_ACTIVE_SUBSCRIPTION);
@@ -1160,7 +1161,7 @@ describe("SaaS mode", () => {
       // Mock subscription access to return null (expired/disabled subscriptions return null from backend)
       // The backend only returns active subscriptions within their validity period
       const getSubscriptionAccessSpy = vi.spyOn(
-        OpenHands,
+        BillingService,
         "getSubscriptionAccess",
       );
       getSubscriptionAccessSpy.mockResolvedValue(null);
