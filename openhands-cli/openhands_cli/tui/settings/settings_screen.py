@@ -1,3 +1,4 @@
+import json
 from openhands_cli.pt_style import COLOR_GREY
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
@@ -11,12 +12,15 @@ from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands.sdk import Conversation
+from openhands.sdk import Conversation, LLM
+from pydantic import SecretStr
 
 
 class SettingsScreen:
     def __init__(self, conversation: Conversation):
         self.conversation = conversation
+        self.llm_settings_path = '~/.openhands/llm_settings.json'
+
 
     def display_settings(self) -> None:
         llm = self.conversation.agent.llm
@@ -109,6 +113,8 @@ class SettingsScreen:
         # Note: This is a basic implementation - full persistence would require
         # updating the conversation's configuration and potentially saving to file
 
+        llm = LLM(model=f"{provider}/model", api_key=SecretStr(api_key))
+        llm.store_to_json(self.llm_settings_path)
         print('Settings updated:')
         print(f'  Provider: {provider}')
         print(f'  Model: {model}')
