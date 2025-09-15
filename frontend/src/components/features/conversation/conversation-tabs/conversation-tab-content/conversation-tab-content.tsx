@@ -1,12 +1,14 @@
 import { lazy, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { ConversationLoading } from "../conversation-loading";
-import Terminal from "../../terminal/terminal";
-import { ConversationTabTitle } from "./conversation-tab-title";
+import { ConversationLoading } from "../../conversation-loading";
 import { I18nKey } from "#/i18n/declaration";
+import { TabWrapper } from "./tab-wrapper";
+import { TabContainer } from "./tab-container";
+import { TabContentArea } from "./tab-content-area";
+import { ConversationTabTitle } from "../conversation-tab-title";
+import Terminal from "#/components/features/terminal/terminal";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -32,6 +34,28 @@ export function ConversationTabContent() {
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
   const isTerminalActive = selectedTab === "terminal";
+
+  // Define tab configurations
+  const tabs = [
+    { key: "editor", component: EditorTab, isActive: isEditorActive },
+    {
+      key: "browser",
+      component: BrowserTab,
+      isActive: isBrowserActive,
+    },
+    {
+      key: "jupyter",
+      component: JupyterTab,
+      isActive: isJupyterActive,
+    },
+    { key: "served", component: ServedTab, isActive: isServedActive },
+    { key: "vscode", component: VSCodeTab, isActive: isVSCodeActive },
+    {
+      key: "terminal",
+      component: Terminal,
+      isActive: isTerminalActive,
+    },
+  ];
 
   const conversationTabTitle = useMemo(() => {
     if (isEditorActive) {
@@ -67,69 +91,15 @@ export function ConversationTabContent() {
   }
 
   return (
-    <div
-      className={cn(
-        "bg-[#25272D] border border-[#525252] rounded-xl flex flex-col h-full w-full",
-        "h-full w-full",
-      )}
-    >
+    <TabContainer>
       <ConversationTabTitle title={conversationTabTitle} />
-
-      <div className="overflow-hidden flex-grow rounded-b-xl">
-        <div className="h-full w-full">
-          <div className="h-full w-full relative">
-            {/* Each tab content is always loaded but only visible when active */}
-            <div
-              className={cn(
-                "absolute inset-0",
-                isEditorActive ? "block" : "hidden",
-              )}
-            >
-              <EditorTab />
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0",
-                isBrowserActive ? "block" : "hidden",
-              )}
-            >
-              <BrowserTab />
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0",
-                isJupyterActive ? "block" : "hidden",
-              )}
-            >
-              <JupyterTab />
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0",
-                isServedActive ? "block" : "hidden",
-              )}
-            >
-              <ServedTab />
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0",
-                isVSCodeActive ? "block" : "hidden",
-              )}
-            >
-              <VSCodeTab />
-            </div>
-            <div
-              className={cn(
-                "absolute inset-0",
-                isTerminalActive ? "block" : "hidden",
-              )}
-            >
-              <Terminal />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      <TabContentArea>
+        {tabs.map(({ key, component: Component, isActive }) => (
+          <TabWrapper key={key} isActive={isActive}>
+            <Component />
+          </TabWrapper>
+        ))}
+      </TabContentArea>
+    </TabContainer>
   );
 }
