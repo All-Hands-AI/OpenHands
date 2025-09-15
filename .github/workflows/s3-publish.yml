@@ -72,10 +72,27 @@ jobs:
         id: presigned-url
         run: |
           echo "Generating presigned URL (valid for 7 days)..."
+          echo "Using read-only role to minimize credential exposure in pre-signed URLs"
           
+          # Step 1: Assume read-only role for pre-signed URL generation
+          echo "Assuming read-only role for pre-signed URL generation..."
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ROLE_CREDS=$(aws sts assume-role \
+            --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/S3PresignedURLRole" \
+            --role-session-name "presigned-url-session" \
+            --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' \
+            --output text)
+          
+          # Step 2: Extract credentials for the read-only role
+          IFS=$'\t' read -r AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN <<< "$ROLE_CREDS"
+          export AWS_ACCESS_KEY_ID
+          export AWS_SECRET_ACCESS_KEY
+          export AWS_SESSION_TOKEN
+          
+          # Step 3: Generate pre-signed URL with temporary read-only credentials
           presigned_url=$(aws s3 presign "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz" --expires-in 604800)
           echo "PRESIGNED_URL=$presigned_url" >> $GITHUB_OUTPUT
-          echo "Generated presigned URL"
+          echo "Generated presigned URL with read-only credentials"
             
       - name: Output build information
         run: |
