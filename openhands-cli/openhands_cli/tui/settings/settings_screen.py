@@ -7,6 +7,7 @@ from openhands_cli.user_actions.settings_action import (
     save_settings_confirmation,
     settings_type_confirmation,
 )
+from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -92,7 +93,10 @@ class SettingsScreen:
             api_key = prompt_api_key(self.conversation.agent.llm.api_key)
             save_settings_confirmation()
         except KeyboardInterrupt:
+            print_formatted_text(HTML('\n<red>Keyboard interrupt... cancelling settings change.</red>'))
             return
+
+
 
         # Store the collected settings for persistence
         self.reconfigure_conversation_settings(provider, llm_model, api_key)
