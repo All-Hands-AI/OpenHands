@@ -17,11 +17,14 @@ from server.constants import (
     STRIPE_API_KEY,
     STRIPE_WEBHOOK_SECRET,
     SUBSCRIPTION_PRICE_DATA,
+    USER_SETTINGS_VERSION_TO_MODEL,
+    get_default_litellm_model,
 )
 from server.logger import logger
 from storage.billing_session import BillingSession
 from storage.database import session_maker
 from storage.subscription_access import SubscriptionAccess
+from storage.user_settings import UserSettings
 
 from openhands.server.user_auth import get_user_id
 
@@ -506,10 +509,76 @@ async def stripe_webhook(request: Request) -> JSONResponse:
                             'subscription_access_id': subscription_access.id,
                         },
                     )
+    elif event_type == 'customer.subscription.deleted':
+        subscription = event['data']['object']
+        subscription_id = subscription['id']
+
+        with session_maker() as session:
+            subscription_access = (
+                session.query(SubscriptionAccess)
+                .filter(SubscriptionAccess.stripe_subscription_id == subscription_id)
+                .filter(SubscriptionAccess.status == 'ACTIVE')
+                .first()
+            )
+
+            if subscription_access:
+                subscription_access.status = 'DISABLED'
+                subscription_access.updated_at = datetime.now(UTC)
+                session.merge(subscription_access)
+                session.commit()
+
+                # Reset user settings to free tier defaults
+                reset_user_to_free_tier_settings(subscription_access.user_id)
+
+                logger.info(
+                    'subscription_expired_reset_to_free_tier',
+                    extra={
+                        'stripe_subscription_id': subscription_id,
+                        'user_id': subscription_access.user_id,
+                        'subscription_access_id': subscription_access.id,
+                    },
+                )
     else:
         logger.info('stripe_webhook_unhandled_event_type', extra={'type': event_type})
 
     return JSONResponse({'status': 'success'})
+
+
+def reset_user_to_free_tier_settings(user_id: str) -> None:
+    """Reset user settings to free tier defaults when subscription ends."""
+    with session_maker() as session:
+        user_settings = (
+            session.query(UserSettings)
+            .filter(UserSettings.keycloak_user_id == user_id)
+            .first()
+        )
+
+        if user_settings:
+            user_settings.llm_model = get_default_litellm_model()
+            user_settings.llm_api_key = None
+            user_settings.llm_api_key_for_byor = None
+            user_settings.llm_base_url = LITE_LLM_API_URL
+            user_settings.max_budget_per_task = None
+            user_settings.confirmation_mode = False
+            user_settings.enable_solvability_analysis = False
+            user_settings.security_analyzer = 'llm'
+            user_settings.agent = 'CodeActAgent'
+            user_settings.language = 'en'
+            user_settings.enable_default_condenser = True
+            user_settings.enable_sound_notifications = False
+            user_settings.enable_proactive_conversation_starters = True
+            user_settings.user_consents_to_analytics = False
+
+            session.merge(user_settings)
+            session.commit()
+
+            logger.info(
+                'user_settings_reset_to_free_tier',
+                extra={
+                    'user_id': user_id,
+                    'reset_timestamp': datetime.now(UTC).isoformat(),
+                },
+            )
 
 
 async def _get_litellm_user(client: httpx.AsyncClient, user_id: str) -> dict:
