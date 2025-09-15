@@ -12,7 +12,7 @@ import { SystemMessageModal } from "../conversation-panel/system-message-modal";
 import { MicroagentsModal } from "../conversation-panel/microagents-modal";
 import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
-import { MetricsModal } from "./metrics-modal";
+import { MetricsModal } from "./metrics-modal/metrics-modal";
 
 export function ConversationName() {
   const { t } = useTranslation();
