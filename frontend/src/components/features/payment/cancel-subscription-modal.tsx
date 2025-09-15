@@ -39,8 +39,7 @@ export function CancelSubscriptionModal({
     <ModalBackdrop>
       <div
         data-testid="cancel-subscription-modal"
-        className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary"
-        style={{ width: "500px" }}
+        className="bg-base-secondary p-6 rounded-xl flex flex-col gap-4 border border-tertiary w-[500px]"
       >
         <h3 className="text-xl font-bold">
           {t(I18nKey.PAYMENT$CANCEL_SUBSCRIPTION_TITLE)}
