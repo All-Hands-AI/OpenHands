@@ -31,6 +31,9 @@ export default defineConfig(({ mode }) => {
       svgr(),
       tailwindcss(),
     ],
+    build: {
+      sourcemap: true,
+    },
     optimizeDeps: {
       include: [
         // Pre-bundle ALL dependencies to prevent runtime optimization and page reloads
