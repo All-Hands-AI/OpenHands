@@ -3,14 +3,12 @@ from enum import Enum
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
-from openhands_cli.tui.settings.models import (
-    VERIFIED_OPENHANDS_MODELS,
-    VERIFIED_PROVIDERS,
+
+from openhands.sdk.llm import (
+    VERIFIED_MODELS,
+    UNVERIFIED_MODELS_EXCLUDING_BEDROCK
 )
-from openhands_cli.tui.settings.utils import (
-    get_supported_llm_models,
-    organize_models_and_providers,
-)
+
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
@@ -38,27 +36,26 @@ def settings_type_confirmation() -> SettingsType:
 
 def choose_llm_provider() -> str:
     question = 'Step (1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): '
-    options = list(VERIFIED_PROVIDERS.keys()).copy()
+    options = list(VERIFIED_MODELS.keys()).copy() + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
+    alternate_option = 'Select another provider'
 
-    index = cli_confirm(question, options, escapable=True)
-    return options[index]
+    display_options = options[:4] + [alternate_option]
+
+    index = cli_confirm(question, display_options, escapable=True)
+    chosen_option = display_options[index]
+    if display_options[index] != alternate_option:
+        return chosen_option
+
+    question = '(Step 1/3) Type LLM Provider (TAB to complete, CTRL-c to cancel): '
+    return cli_text_input(
+        question, escapable=True, completer=FuzzyWordCompleter(options, WORD=True)
+    )
 
 
 def choose_llm_model(provider: str) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
 
-    # Build models list
-    supported = organize_models_and_providers(get_supported_llm_models())
-
-    if provider == 'openhands':
-        models = VERIFIED_OPENHANDS_MODELS
-    else:
-        pi = supported.get(provider)
-        if not pi:
-            models = []
-        else:
-            models = pi.models
-
+    models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
     question = '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): '
     alternate_option = 'Select another model'
     display_options = models[:4] + [alternate_option]
