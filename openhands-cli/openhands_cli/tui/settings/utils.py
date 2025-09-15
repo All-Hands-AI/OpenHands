@@ -1,5 +1,5 @@
 import litellm
-from openhands_cli.tui.settings.constants import (
+from openhands_cli.tui.settings.models import (
     VERIFIED_ANTHROPIC_MODELS,
     VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
@@ -141,6 +141,5 @@ def get_supported_llm_models() -> list[str]:
 
     models_without_prefix = VERIFIED_PROVIDERS['openhands']
     openhands_models = ['openhands/' + model for model in models_without_prefix]
-    print(openhands_models)
     model_list = openhands_models + model_list
     return list(sorted(set(model_list)))

@@ -3,7 +3,7 @@ from enum import Enum
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
-from openhands_cli.tui.settings.constants import (
+from openhands_cli.tui.settings.models import (
     VERIFIED_OPENHANDS_MODELS,
     VERIFIED_PROVIDERS,
 )
