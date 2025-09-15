@@ -399,7 +399,6 @@ async def test_cancel_callback_success():
 @pytest.mark.asyncio
 async def test_has_payment_method_with_payment_method():
     """Test has_payment_method returns True when user has a payment method."""
-
     with (
         patch('integrations.stripe_service.session_maker') as mock_session_maker,
         patch(
@@ -422,7 +421,6 @@ async def test_has_payment_method_with_payment_method():
 @pytest.mark.asyncio
 async def test_has_payment_method_without_payment_method():
     """Test has_payment_method returns False when user has no payment method."""
-
     with (
         patch('integrations.stripe_service.session_maker') as mock_session_maker,
         patch(
@@ -444,7 +442,7 @@ async def test_has_payment_method_without_payment_method():
 
 @pytest.mark.asyncio
 async def test_cancel_subscription_success():
-    """Test successful subscription cancellation"""
+    """Test successful subscription cancellation."""
     from datetime import UTC, datetime
 
     from storage.subscription_access import SubscriptionAccess
@@ -497,7 +495,7 @@ async def test_cancel_subscription_success():
 
 @pytest.mark.asyncio
 async def test_cancel_subscription_no_active_subscription():
-    """Test cancellation when no active subscription exists"""
+    """Test cancellation when no active subscription exists."""
     with (
         patch('server.routes.billing.session_maker') as mock_session_maker,
     ):
@@ -516,7 +514,7 @@ async def test_cancel_subscription_no_active_subscription():
 
 @pytest.mark.asyncio
 async def test_cancel_subscription_missing_stripe_id():
-    """Test cancellation when subscription has no Stripe ID"""
+    """Test cancellation when subscription has no Stripe ID."""
     from datetime import UTC, datetime
 
     from storage.subscription_access import SubscriptionAccess
@@ -552,7 +550,7 @@ async def test_cancel_subscription_missing_stripe_id():
 
 @pytest.mark.asyncio
 async def test_cancel_subscription_stripe_error():
-    """Test cancellation when Stripe API fails"""
+    """Test cancellation when Stripe API fails."""
     from datetime import UTC, datetime
 
     from storage.subscription_access import SubscriptionAccess
@@ -592,7 +590,7 @@ async def test_cancel_subscription_stripe_error():
 
 @pytest.mark.asyncio
 async def test_create_subscription_checkout_session_duplicate_prevention():
-    """Test that creating a subscription when user already has active subscription raises error"""
+    """Test that creating a subscription when user already has active subscription raises error."""
     from datetime import UTC, datetime
     from storage.subscription_access import SubscriptionAccess
 
@@ -618,35 +616,19 @@ async def test_create_subscription_checkout_session_duplicate_prevention():
         # Setup mock session to return existing active subscription
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
 
         # Call the function and expect HTTPException
         with pytest.raises(HTTPException) as exc_info:
             await create_subscription_checkout_session(mock_request, user_id='test_user')
 
         assert exc_info.value.status_code == 400
-        assert 'active subscription already exists' in str(exc_info.value.detail).lower()
+        assert 'user already has an active subscription' in str(exc_info.value.detail).lower()
 
 
 @pytest.mark.asyncio
 async def test_create_subscription_checkout_session_allows_after_cancellation():
-    """Test that creating a subscription is allowed when previous subscription was cancelled"""
-    from datetime import UTC, datetime
-    from storage.subscription_access import SubscriptionAccess
-
-    # Mock cancelled subscription (should not prevent new subscription)
-    mock_subscription_access = SubscriptionAccess(
-        id=1,
-        status='ACTIVE',
-        user_id='test_user',
-        start_at=datetime.now(UTC),
-        end_at=datetime.now(UTC),
-        amount_paid=2000,
-        stripe_invoice_payment_id='pi_test',
-        stripe_subscription_id='sub_test123',
-        cancelled_at=datetime.now(UTC),  # This subscription was cancelled
-    )
-
+    """Test that creating a subscription is allowed when previous subscription was cancelled."""
     mock_request = Request(scope={'type': 'http'})
     mock_request._base_url = URL('http://test.com/')
 
@@ -660,10 +642,10 @@ async def test_create_subscription_checkout_session_allows_after_cancellation():
         patch('stripe.checkout.Session.create_async', AsyncMock(return_value=mock_session_obj)),
         patch('server.routes.billing.SUBSCRIPTION_PRICE_DATA', {'MONTHLY_SUBSCRIPTION': {'unit_amount': 2000}}),
     ):
-        # Setup mock session to return cancelled subscription (should allow new subscription)
+        # Setup mock session - the query should return None because cancelled subscriptions are filtered out
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None  # No active uncancelled subscription
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
 
         # Should succeed
         result = await create_subscription_checkout_session(mock_request, user_id='test_user')
@@ -674,7 +656,7 @@ async def test_create_subscription_checkout_session_allows_after_cancellation():
 
 @pytest.mark.asyncio
 async def test_create_subscription_checkout_session_success_no_existing():
-    """Test successful subscription creation when no existing subscription"""
+    """Test successful subscription creation when no existing subscription."""
     mock_request = Request(scope={'type': 'http'})
     mock_request._base_url = URL('http://test.com/')
 
@@ -691,7 +673,7 @@ async def test_create_subscription_checkout_session_success_no_existing():
         # Setup mock session to return no existing subscription
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
 
         # Should succeed
         result = await create_subscription_checkout_session(mock_request, user_id='test_user')

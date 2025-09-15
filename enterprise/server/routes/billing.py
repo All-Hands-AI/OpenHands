@@ -89,7 +89,7 @@ async def get_credits(user_id: str = Depends(get_user_id)) -> GetCreditsResponse
 async def get_subscription_access(
     user_id: str = Depends(get_user_id),
 ) -> SubscriptionAccessResponse | None:
-    """Get details of the currently valid subscription for the user"""
+    """Get details of the currently valid subscription for the user."""
     with session_maker() as session:
         now = datetime.now(UTC)
         subscription_access = (
@@ -122,7 +122,7 @@ async def has_payment_method(user_id: str = Depends(get_user_id)) -> bool:
 # Endpoint to cancel user's subscription
 @billing_router.post('/cancel-subscription')
 async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONResponse:
-    """Cancel user's active subscription at the end of the current billing period"""
+    """Cancel user's active subscription at the end of the current billing period."""
     if not user_id:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
@@ -342,7 +342,7 @@ async def create_subscription_checkout_session_via_get(
     billing_session_type: BillingSessionType = BillingSessionType.MONTHLY_SUBSCRIPTION,
     user_id: str = Depends(get_user_id),
 ) -> RedirectResponse:
-    """Create a subscription checkout session using a GET request (For easier copy / paste to URL bar)"""
+    """Create a subscription checkout session using a GET request (For easier copy / paste to URL bar)."""
     response = await create_subscription_checkout_session(
         request, billing_session_type, user_id
     )
@@ -451,7 +451,7 @@ async def cancel_callback(session_id: str, request: Request):
 
 @billing_router.post('/stripe-webhook')
 async def stripe_webhook(request: Request) -> JSONResponse:
-    """Endpoint for stripe webhooks"""
+    """Endpoint for stripe webhooks."""
     payload = await request.body()
     sig_header = request.headers.get('stripe-signature')
 

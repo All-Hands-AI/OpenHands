@@ -35,6 +35,7 @@ vi.mock("react-i18next", async () => {
           SETTINGS$NAV_INTEGRATIONS: "Integrations",
           SETTINGS$NAV_APPLICATION: "Application",
           SETTINGS$NAV_CREDITS: "Credits",
+          SETTINGS$NAV_BILLING: "Billing",
           SETTINGS$NAV_API_KEYS: "API Keys",
           SETTINGS$NAV_LLM: "LLM",
           SETTINGS$NAV_USER: "User",
