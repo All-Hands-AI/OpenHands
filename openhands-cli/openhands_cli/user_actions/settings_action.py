@@ -1,22 +1,17 @@
 from enum import Enum
 
+from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
-from openhands_cli.user_actions.types import UserConfirmation
-from openhands_cli.user_actions.prompt_handler import PromptHandler
-from openhands_cli.user_actions.settings_specs import (
-    SETTINGS_TYPE_SPEC,
-    SAVE_SETTINGS_SPEC,
-    create_llm_provider_spec,
-    create_llm_model_spec,
-    create_llm_model_autocomplete_spec,
-    create_api_key_spec,
-    PROVIDER_AUTOCOMPLETE_SPEC,
-)
 from openhands_cli.tui.settings.constants import (
     VERIFIED_OPENHANDS_MODELS,
+    VERIFIED_PROVIDERS,
 )
-from openhands_cli.tui.settings.utils import organize_models_and_providers, get_supported_llm_models
+from openhands_cli.tui.settings.utils import (
+    get_supported_llm_models,
+    organize_models_and_providers,
+)
+from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 class SettingsType(Enum):
@@ -24,36 +19,33 @@ class SettingsType(Enum):
     ADVANCED = 'advanced'
 
 
-def settings_type_confirmation() -> tuple[UserConfirmation, SettingsType | None]:
-    """Prompt user to select settings type using spec-driven approach."""
-    prompt_handler = PromptHandler()
-    result = prompt_handler.execute_prompt(SETTINGS_TYPE_SPEC)
+def settings_type_confirmation() -> SettingsType:
+    question = 'Which settings would you like to modify?'
+    choices = [
+        'LLM (Basic)',
+        'Go back',
+    ]
 
-    if result.confirmation == UserConfirmation.ACCEPT and result.selected_index == 0:
-        return UserConfirmation.ACCEPT, SettingsType.BASIC
+    index = cli_confirm(question, choices)
 
-    return UserConfirmation.REJECT, None
+    if choices[index] == 'Go back':
+        raise KeyboardInterrupt
+
+    options_map = {0: SettingsType.BASIC}
+
+    return options_map.get(index)
 
 
 def choose_llm_provider() -> str:
-    """Choose LLM provider using spec-driven approach."""
-    prompt_handler = PromptHandler()
+    question = 'Step (1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): '
+    options = list(VERIFIED_PROVIDERS.keys()).copy()
 
-    # First prompt: select from verified providers or "Select another provider"
-    provider_spec = create_llm_provider_spec()
-    result = prompt_handler.execute_prompt(provider_spec)
-
-    if result.value == "Select another provider":
-        # Follow-up prompt for custom provider
-        custom_result = prompt_handler.execute_prompt(PROVIDER_AUTOCOMPLETE_SPEC)
-        return custom_result.value or ""
-
-    return result.value or ""
+    index = cli_confirm(question, options, escapable=True)
+    return options[index]
 
 
-def choose_llm_model(provider: str) -> tuple[str | None, bool]:
+def choose_llm_model(provider: str) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
-    prompt_handler = PromptHandler()
 
     # Build models list
     supported = organize_models_and_providers(get_supported_llm_models())
@@ -67,49 +59,43 @@ def choose_llm_model(provider: str) -> tuple[str | None, bool]:
         else:
             models = pi.models
 
-    # First prompt: select from top models or "Select another model"
-    model_spec = create_llm_model_spec(models)
-    result = prompt_handler.execute_prompt(model_spec)
+    question = '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): '
+    alternate_option = 'Select another model'
+    display_options = models[:4] + [alternate_option]
+    index = cli_confirm(question, display_options, escapable=True)
+    chosen_option = display_options[index]
 
-    if result.confirmation != UserConfirmation.ACCEPT:
-        return None, True
+    if chosen_option != alternate_option:
+        return chosen_option
 
-    if result.value == "Select another model":
-        # Follow-up prompt with autocomplete
-        autocomplete_spec = create_llm_model_autocomplete_spec(models)
-        autocomplete_result = prompt_handler.execute_prompt(autocomplete_spec)
+    question = '(Step 2/3) Type model id (TAB to complete, CTRL-c to cancel): '
 
-        if autocomplete_result.confirmation != UserConfirmation.ACCEPT:
-            return None, True
-
-        resp = autocomplete_result.value or ""
-        # Allow user to paste provider/model; normalize to model id part
-        if '/' in resp:
-            resp = resp.split('/')[-1]
-        if '.' in resp and provider != 'anthropic':
-            # keep as-is; dot may be part of version
-            pass
-        return resp, False
-
-    return result.value, False
+    return cli_text_input(
+        question, escapable=True, completer=FuzzyWordCompleter(models, WORD=True)
+    )
 
 
-def prompt_api_key(existing_api_key: SecretStr | None = None) -> tuple[str | None, bool]:
-    """Prompt for API key using spec-driven approach. Return (api_key, deferred)."""
-    prompt_handler = PromptHandler()
+def prompt_api_key(
+    existing_api_key: SecretStr | None = None,
+) -> tuple[str | None, bool]:
+    if existing_api_key:
+        masked_key = existing_api_key.get_secret_value()[:3] + '***'
+        question = f'Enter API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
+    else:
+        question = 'Enter API Key (CTRL-c to cancel): '
 
-    api_key_spec = create_api_key_spec(existing_api_key)
-    result = prompt_handler.execute_prompt(api_key_spec)
-
-    if result.confirmation != UserConfirmation.ACCEPT:
-        return None, True
-
-    return result.value, False
+    question = '(Step 3/3) ' + question
+    return cli_text_input(question, escapable=True)
 
 
 def save_settings_confirmation() -> bool:
     """Prompt user to confirm saving settings."""
-    prompt_handler = PromptHandler()
-    result = prompt_handler.execute_prompt(SAVE_SETTINGS_SPEC)
+    question = 'Save new settings? (They will take effect after restart)'
+    discard = 'No, discard'
+    options = ['Yes, save', discard]
 
-    return result.confirmation == UserConfirmation.ACCEPT and result.selected_index == 0
+    index = cli_confirm(question, options)
+    if options[index] == discard:
+        raise KeyboardInterrupt
+
+    return options[index]

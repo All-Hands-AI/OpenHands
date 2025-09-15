@@ -1,5 +1,3 @@
-VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
-
 VERIFIED_OPENAI_MODELS = [
     'gpt-5-2025-08-07',
     'gpt-5-mini-2025-08-07',
@@ -49,3 +47,11 @@ VERIFIED_OPENHANDS_MODELS = [
     'kimi-k2-0711-preview',
     'qwen3-coder-480b',
 ]
+
+
+VERIFIED_PROVIDERS = {
+    'openhands': VERIFIED_OPENHANDS_MODELS,
+    'anthropic': VERIFIED_ANTHROPIC_MODELS,
+    'openai': VERIFIED_OPENAI_MODELS,
+    'mistral': VERIFIED_MISTRAL_MODELS,
+}

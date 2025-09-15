@@ -1,5 +1,11 @@
 import litellm
-from openhands_cli.tui.settings.constants import VERIFIED_ANTHROPIC_MODELS, VERIFIED_MISTRAL_MODELS, VERIFIED_OPENAI_MODELS, VERIFIED_OPENHANDS_MODELS
+from openhands_cli.tui.settings.constants import (
+    VERIFIED_ANTHROPIC_MODELS,
+    VERIFIED_MISTRAL_MODELS,
+    VERIFIED_OPENAI_MODELS,
+    VERIFIED_OPENHANDS_MODELS,
+    VERIFIED_PROVIDERS,
+)
 from pydantic import BaseModel, Field
 
 
@@ -10,6 +16,7 @@ def split_is_actually_version(split: list[str]) -> bool:
         and bool(split[1][0])
         and split[1][0].isdigit()
     )
+
 
 class ModelInfo(BaseModel):
     """Information about a model and its provider."""
@@ -122,6 +129,7 @@ def organize_models_and_providers(
 
     return result_dict
 
+
 def get_supported_llm_models() -> list[str]:
     """Get all models supported by LiteLLM.
 
@@ -131,21 +139,8 @@ def get_supported_llm_models() -> list[str]:
     model_list = litellm.model_list + list(litellm.model_cost.keys())
     # TODO: get bedrock and ollama models
 
-    # Add OpenHands provider models
-    openhands_models = [
-        'openhands/claude-sonnet-4-20250514',
-        'openhands/gpt-5-2025-08-07',
-        'openhands/gpt-5-mini-2025-08-07',
-        'openhands/claude-opus-4-20250514',
-        'openhands/gemini-2.5-pro',
-        'openhands/o3',
-        'openhands/o4-mini',
-        'openhands/devstral-small-2505',
-        'openhands/devstral-small-2507',
-        'openhands/devstral-medium-2507',
-        'openhands/kimi-k2-0711-preview',
-        'openhands/qwen3-coder-480b',
-    ]
+    models_without_prefix = VERIFIED_PROVIDERS['openhands']
+    openhands_models = ['openhands/' + model for model in models_without_prefix]
+    print(openhands_models)
     model_list = openhands_models + model_list
-
     return list(sorted(set(model_list)))

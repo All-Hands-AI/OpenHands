@@ -1,4 +1,5 @@
 from prompt_toolkit.application import Application
+from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
@@ -8,7 +9,6 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
-from prompt_toolkit.completion import Completer
 
 from openhands_cli.tui import DEFAULT_STYLE
 
@@ -100,7 +100,9 @@ def cli_confirm(
     return int(app.run(in_thread=True))
 
 
-def cli_text_input(question: str, escapable: bool = True, completer: Completer | None = None) -> tuple[str, bool]:
+def cli_text_input(
+    question: str, escapable: bool = True, completer: Completer | None = None
+) -> str:
     """Prompt user to enter a reason for rejecting actions.
 
     Returns:
@@ -112,6 +114,7 @@ def cli_text_input(question: str, escapable: bool = True, completer: Completer |
     kb = KeyBindings()
 
     if escapable:
+
         @kb.add('c-c')
         def _(event: KeyPressEvent) -> None:
             raise KeyboardInterrupt()
@@ -120,15 +123,7 @@ def cli_text_input(question: str, escapable: bool = True, completer: Completer |
         def _(event: KeyPressEvent) -> None:
             raise KeyboardInterrupt()
 
-    try:
-        reason = str(
-            prompt(
-                question,
-                style=DEFAULT_STYLE,
-                key_bindings=kb,
-                completer=completer
-            )
-        )
-        return reason.strip(), False
-    except KeyboardInterrupt:
-        return '', True
+    reason = str(
+        prompt(question, style=DEFAULT_STYLE, key_bindings=kb, completer=completer)
+    )
+    return reason.strip()

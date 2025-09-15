@@ -1,8 +1,6 @@
 import os
 
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from prompt_toolkit import HTML, print_formatted_text
-from pydantic import SecretStr
 
 from openhands.sdk import (
     LLM,
@@ -24,8 +22,6 @@ def setup_agent() -> Conversation:
     """
 
     llm = LLM.load_from_env()
-
-
 
     # Setup tools
     cwd = os.getcwd()
