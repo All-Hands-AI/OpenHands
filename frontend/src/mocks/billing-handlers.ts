@@ -1,5 +1,5 @@
 import { delay, http, HttpResponse } from "msw";
-import { SubscriptionAccess } from "#/types/billing";
+import { SubscriptionAccess } from "#/api/billing-service/billing.types";
 
 // Mock data for different subscription scenarios
 const MOCK_ACTIVE_SUBSCRIPTION: SubscriptionAccess = {

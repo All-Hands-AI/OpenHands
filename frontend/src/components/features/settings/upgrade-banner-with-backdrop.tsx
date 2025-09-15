@@ -23,7 +23,7 @@ export function UpgradeBannerWithBackdrop({
       />
       <div
         data-testid="settings-backdrop"
-        className="absolute inset-0 z-20 opacity-50 bg-[#26282D]"
+        className="fixed inset-0 z-20 opacity-50 bg-[#26282D]"
       />
     </>
   );
