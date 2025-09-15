@@ -1,3 +1,4 @@
+from typing import Callable
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
@@ -9,6 +10,7 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.validation import Validator
 
 from openhands_cli.tui import DEFAULT_STYLE
 
@@ -101,14 +103,24 @@ def cli_confirm(
 
 
 def cli_text_input(
-    question: str, escapable: bool = True, completer: Completer | None = None
+    question: str,
+    escapable: bool = True,
+    completer: Completer | None = None,
+    validator: Validator = None,
+    is_password: bool = False
 ) -> str:
-    """Prompt user to enter a reason for rejecting actions.
+    """Prompt user to enter text input with optional validation.
+
+    Args:
+        question: The prompt question to display
+        escapable: Whether the user can escape with Ctrl+C or Ctrl+P
+        completer: Optional completer for tab completion
+        validator: Optional callable that takes a string and returns True if valid.
+                  If validation fails, the callable should display error messages
+                  and the user will be reprompted.
 
     Returns:
-        Tuple of (reason, should_defer) where:
-        - reason: The reason entered by the user
-        - should_defer: True if user pressed Ctrl+C or Ctrl+P, False otherwise
+        The validated user input string (stripped of whitespace)
     """
 
     kb = KeyBindings()
@@ -123,7 +135,15 @@ def cli_text_input(
         def _(event: KeyPressEvent) -> None:
             raise KeyboardInterrupt()
 
+
     reason = str(
-        prompt(question, style=DEFAULT_STYLE, key_bindings=kb, completer=completer)
+        prompt(
+            question,
+            style=DEFAULT_STYLE,
+            key_bindings=kb,
+            completer=completer,
+            is_password=is_password,
+            validator=validator
+        )
     )
     return reason.strip()

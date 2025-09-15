@@ -10,6 +10,7 @@ from openhands.sdk.llm import (
 )
 
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
+from prompt_toolkit.validation import Validator, ValidationError
 
 
 class SettingsType(Enum):
@@ -72,17 +73,30 @@ def choose_llm_model(provider: str, escapable=True) -> str:
     )
 
 
+class APIKeyValidator(Validator):
+    def validate(self, document):
+        text = document.text
+        if not text:
+            raise ValidationError(
+                message="API key cannot be empty. Please enter a valid API key."
+            )
+
+
 def prompt_api_key(
     existing_api_key: SecretStr | None = None, escapable=True
 ) -> tuple[str | None, bool]:
     if existing_api_key:
         masked_key = existing_api_key.get_secret_value()[:3] + '***'
         question = f'Enter API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
+        # For existing keys, allow empty input to keep current key
+        validator = None
     else:
         question = 'Enter API Key (CTRL-c to cancel): '
+        # For new keys, require non-empty input
+        validator = APIKeyValidator()
 
     question = '(Step 3/3) ' + question
-    return cli_text_input(question, escapable=escapable)
+    return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 
 def save_settings_confirmation() -> bool:
