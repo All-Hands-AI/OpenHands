@@ -1,7 +1,7 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands_cli.user_actions.utils import cli_confirm, prompt_user
+from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 def ask_user_confirmation(pending_actions: list) -> tuple[UserConfirmation, str]:
@@ -56,7 +56,7 @@ def ask_user_confirmation(pending_actions: list) -> tuple[UserConfirmation, str]
     elif index == 1:
         return UserConfirmation.REJECT, reason
     elif index == 2:
-        reason, should_defer = prompt_user(
+        reason, should_defer = cli_text_input(
             'Please enter your reason for rejecting these actions: '
         )
 

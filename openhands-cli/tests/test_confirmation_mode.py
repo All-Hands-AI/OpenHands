@@ -201,14 +201,14 @@ class TestConfirmationMode:
             # Verify that both actions were displayed
             assert mock_print.call_count >= 3  # Header + 2 actions
 
-    @patch('openhands_cli.user_actions.agent_action.prompt_user')
+    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_no_with_reason(
-        self, mock_cli_confirm: Any, mock_prompt_user: Any
+        self, mock_cli_confirm: Any, mock_cli_text_input: Any
     ) -> None:
         """Test that ask_user_confirmation returns REJECT when user selects 'No (with reason)'."""
         mock_cli_confirm.return_value = 2  # Third option (No, with reason)
-        mock_prompt_user.return_value = ('This action is too risky', False)
+        mock_cli_text_input.return_value = ('This action is too risky', False)
 
         mock_action = MagicMock()
         mock_action.tool_name = 'bash'
@@ -217,16 +217,16 @@ class TestConfirmationMode:
         result, reason = ask_user_confirmation([mock_action])
         assert result == UserConfirmation.REJECT
         assert reason == 'This action is too risky'
-        mock_prompt_user.assert_called_once()
+        mock_cli_text_input.assert_called_once()
 
-    @patch('openhands_cli.user_actions.agent_action.prompt_user')
+    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_no_with_reason_cancelled(
-        self, mock_cli_confirm: Any, mock_prompt_user: Any
+        self, mock_cli_confirm: Any, mock_cli_text_input: Any
     ) -> None:
         """Test that ask_user_confirmation falls back to DEFER when reason input is cancelled."""
         mock_cli_confirm.return_value = 2  # Third option (No, with reason)
-        mock_prompt_user.return_value = ('', True)  # User cancelled reason input
+        mock_cli_text_input.return_value = ('', True)  # User cancelled reason input
 
         mock_action = MagicMock()
         mock_action.tool_name = 'bash'
@@ -235,7 +235,7 @@ class TestConfirmationMode:
         result, reason = ask_user_confirmation([mock_action])
         assert result == UserConfirmation.DEFER
         assert reason == ''
-        mock_prompt_user.assert_called_once()
+        mock_cli_text_input.assert_called_once()
 
     def test_user_confirmation_is_escapable_e2e(
         self, monkeypatch: pytest.MonkeyPatch
