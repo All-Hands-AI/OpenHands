@@ -17,7 +17,6 @@ from server.constants import (
     STRIPE_API_KEY,
     STRIPE_WEBHOOK_SECRET,
     SUBSCRIPTION_PRICE_DATA,
-    USER_SETTINGS_VERSION_TO_MODEL,
     get_default_litellm_model,
 )
 from server.logger import logger
