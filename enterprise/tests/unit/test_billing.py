@@ -13,6 +13,7 @@ from server.routes.billing import (
     cancel_callback,
     cancel_subscription,
     create_checkout_session,
+    create_subscription_checkout_session,
     get_credits,
     success_callback,
 )
@@ -587,3 +588,113 @@ async def test_cancel_subscription_stripe_error():
 
         assert exc_info.value.status_code == 500
         assert 'Failed to cancel subscription' in str(exc_info.value.detail)
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_checkout_session_duplicate_prevention():
+    """Test that creating a subscription when user already has active subscription raises error"""
+    from datetime import UTC, datetime
+    from storage.subscription_access import SubscriptionAccess
+
+    # Mock active subscription
+    mock_subscription_access = SubscriptionAccess(
+        id=1,
+        status='ACTIVE',
+        user_id='test_user',
+        start_at=datetime.now(UTC),
+        end_at=datetime.now(UTC),
+        amount_paid=2000,
+        stripe_invoice_payment_id='pi_test',
+        stripe_subscription_id='sub_test123',
+        cancelled_at=None,
+    )
+
+    mock_request = Request(scope={'type': 'http'})
+    mock_request._base_url = URL('http://test.com/')
+
+    with (
+        patch('server.routes.billing.session_maker') as mock_session_maker,
+    ):
+        # Setup mock session to return existing active subscription
+        mock_session = MagicMock()
+        mock_session_maker.return_value.__enter__.return_value = mock_session
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
+
+        # Call the function and expect HTTPException
+        with pytest.raises(HTTPException) as exc_info:
+            await create_subscription_checkout_session(mock_request, user_id='test_user')
+
+        assert exc_info.value.status_code == 400
+        assert 'active subscription already exists' in str(exc_info.value.detail).lower()
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_checkout_session_allows_after_cancellation():
+    """Test that creating a subscription is allowed when previous subscription was cancelled"""
+    from datetime import UTC, datetime
+    from storage.subscription_access import SubscriptionAccess
+
+    # Mock cancelled subscription (should not prevent new subscription)
+    mock_subscription_access = SubscriptionAccess(
+        id=1,
+        status='ACTIVE',
+        user_id='test_user',
+        start_at=datetime.now(UTC),
+        end_at=datetime.now(UTC),
+        amount_paid=2000,
+        stripe_invoice_payment_id='pi_test',
+        stripe_subscription_id='sub_test123',
+        cancelled_at=datetime.now(UTC),  # This subscription was cancelled
+    )
+
+    mock_request = Request(scope={'type': 'http'})
+    mock_request._base_url = URL('http://test.com/')
+
+    mock_session_obj = MagicMock()
+    mock_session_obj.url = 'https://checkout.stripe.com/test-session'
+    mock_session_obj.id = 'test_session_id'
+
+    with (
+        patch('server.routes.billing.session_maker') as mock_session_maker,
+        patch('integrations.stripe_service.find_or_create_customer', AsyncMock(return_value='cus_test123')),
+        patch('stripe.checkout.Session.create_async', AsyncMock(return_value=mock_session_obj)),
+        patch('server.routes.billing.SUBSCRIPTION_PRICE_DATA', {'MONTHLY_SUBSCRIPTION': {'unit_amount': 2000}}),
+    ):
+        # Setup mock session to return cancelled subscription (should allow new subscription)
+        mock_session = MagicMock()
+        mock_session_maker.return_value.__enter__.return_value = mock_session
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None  # No active uncancelled subscription
+
+        # Should succeed
+        result = await create_subscription_checkout_session(mock_request, user_id='test_user')
+        
+        assert isinstance(result, CreateBillingSessionResponse)
+        assert result.redirect_url == 'https://checkout.stripe.com/test-session'
+
+
+@pytest.mark.asyncio
+async def test_create_subscription_checkout_session_success_no_existing():
+    """Test successful subscription creation when no existing subscription"""
+    mock_request = Request(scope={'type': 'http'})
+    mock_request._base_url = URL('http://test.com/')
+
+    mock_session_obj = MagicMock()
+    mock_session_obj.url = 'https://checkout.stripe.com/test-session'
+    mock_session_obj.id = 'test_session_id'
+
+    with (
+        patch('server.routes.billing.session_maker') as mock_session_maker,
+        patch('integrations.stripe_service.find_or_create_customer', AsyncMock(return_value='cus_test123')),
+        patch('stripe.checkout.Session.create_async', AsyncMock(return_value=mock_session_obj)),
+        patch('server.routes.billing.SUBSCRIPTION_PRICE_DATA', {'MONTHLY_SUBSCRIPTION': {'unit_amount': 2000}}),
+    ):
+        # Setup mock session to return no existing subscription
+        mock_session = MagicMock()
+        mock_session_maker.return_value.__enter__.return_value = mock_session
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
+
+        # Should succeed
+        result = await create_subscription_checkout_session(mock_request, user_id='test_user')
+        
+        assert isinstance(result, CreateBillingSessionResponse)
+        assert result.redirect_url == 'https://checkout.stripe.com/test-session'

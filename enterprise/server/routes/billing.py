@@ -268,9 +268,27 @@ async def create_subscription_checkout_session(
     billing_session_type: BillingSessionType = BillingSessionType.MONTHLY_SUBSCRIPTION,
     user_id: str = Depends(get_user_id),
 ) -> CreateBillingSessionResponse:
+    # Prevent duplicate subscriptions for the same user
+    with session_maker() as session:
+        now = datetime.now(UTC)
+        existing_active_subscription = (
+            session.query(SubscriptionAccess)
+            .filter(SubscriptionAccess.status == 'ACTIVE')
+            .filter(SubscriptionAccess.user_id == user_id)
+            .filter(SubscriptionAccess.start_at <= now)
+            .filter(SubscriptionAccess.end_at >= now)
+            .filter(SubscriptionAccess.cancelled_at.is_(None))  # Not cancelled
+            .first()
+        )
+        
+        if existing_active_subscription:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Cannot create subscription: User already has an active subscription that has not been cancelled',
+            )
+
     customer_id = await stripe_service.find_or_create_customer(user_id)
     subscription_price_data = SUBSCRIPTION_PRICE_DATA[billing_session_type.value]
-    # TODO: Prevent duplicate subscriptions for the same user
     checkout_session = await stripe.checkout.Session.create_async(
         customer=customer_id,
         line_items=[
