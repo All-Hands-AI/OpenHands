@@ -102,12 +102,10 @@ class SettingsScreen:
             print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
             return
 
-
-
         # Store the collected settings for persistence
-        self.reconfigure_conversation_settings(provider, llm_model, api_key)
+        self._save_llm_settings(provider, llm_model, api_key)
 
-    def reconfigure_conversation_settings(
+    def _save_llm_settings(
         self, provider: str, model: str, api_key: str
     ):
         """Update conversation settings with new values."""
