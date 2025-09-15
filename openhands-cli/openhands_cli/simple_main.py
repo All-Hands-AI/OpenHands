@@ -25,21 +25,21 @@ def main() -> None:
 
     except ImportError as e:
         print_formatted_text(
-            HTML(f'<red>Error: Agent chat requires additional dependencies: {e}</red>')
+            HTML(f"<red>Error: Agent chat requires additional dependencies: {e}</red>")
         )
         print_formatted_text(
-            HTML('<yellow>Please ensure the agent SDK is properly installed.</yellow>')
+            HTML("<yellow>Please ensure the agent SDK is properly installed.</yellow>")
         )
         raise
     except KeyboardInterrupt:
-        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
     except EOFError:
-        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
     except Exception as e:
-        print_formatted_text(HTML(f'<red>Error starting agent chat: {e}</red>'))
+        print_formatted_text(HTML(f"<red>Error starting agent chat: {e}</red>"))
         traceback.print_exc()
         raise
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
