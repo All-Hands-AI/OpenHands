@@ -3,7 +3,6 @@ import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { QueryClientProvider } from "@tanstack/react-query";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
-import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
 
 // Mock the i18next hook
