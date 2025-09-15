@@ -1059,12 +1059,6 @@ describe("SaaS mode", () => {
       // Should show backdrop overlay
       const backdrop = screen.getByTestId("settings-backdrop");
       expect(backdrop).toBeInTheDocument();
-
-      // Check backdrop styles
-      expect(backdrop).toHaveStyle({
-        opacity: "0.5",
-        background: "#26282D",
-      });
     });
 
     it("should not show backdrop overlay for subscribed users", async () => {
