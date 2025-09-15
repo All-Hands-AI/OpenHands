@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
 
@@ -14,10 +15,19 @@ class TestConversationRunner:
         agent_finished: bool = False,
     ) -> MagicMock:
         convo = MagicMock()
+        
+        # Map old boolean parameters to new enum-based agent_status
+        if agent_finished:
+            agent_status = AgentExecutionStatus.FINISHED
+        elif agent_waiting_for_confirmation:
+            agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+        elif agent_paused:
+            agent_status = AgentExecutionStatus.PAUSED
+        else:
+            agent_status = AgentExecutionStatus.RUNNING
+            
         convo.state = SimpleNamespace(
-            agent_paused=agent_paused,
-            agent_waiting_for_confirmation=agent_waiting_for_confirmation,
-            agent_finished=agent_finished,
+            agent_status=agent_status,
             events=[],
         )
         return convo
