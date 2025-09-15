@@ -26,6 +26,9 @@ jobs:
     name: Publish to S3
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
