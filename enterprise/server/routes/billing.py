@@ -280,7 +280,7 @@ async def create_subscription_checkout_session(
             .filter(SubscriptionAccess.cancelled_at.is_(None))  # Not cancelled
             .first()
         )
-        
+
         if existing_active_subscription:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

@@ -5,7 +5,6 @@ import { createRoutesStub } from "react-router";
 import { renderWithProviders } from "test-utils";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as useSettingsModule from "#/hooks/query/use-settings";
 
 // Mock the useSettings hook
 vi.mock("#/hooks/query/use-settings", async () => {
