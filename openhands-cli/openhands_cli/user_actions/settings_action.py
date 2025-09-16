@@ -125,14 +125,15 @@ def prompt_api_key(
 
 
 # Advanced settings functions
-def prompt_custom_model(step_counter: StepCounter, question: str, escapable=True) -> str:
+def prompt_custom_model(step_counter: StepCounter, escapable=True) -> str:
     """Prompt for custom model name."""
     question = step_counter.next_step("Custom Model (CTRL-c to cancel): ")
     return cli_text_input(question, escapable=escapable)
 
 
-def prompt_base_url(question: str, escapable=True) -> str:
+def prompt_base_url(step_counter: StepCounter, escapable=True) -> str:
     """Prompt for base URL."""
+    question = step_counter.next_step("Base URL (CTRL-c to cancel): ")
     return cli_text_input(question, escapable=escapable, validator=NonEmptyValueValidator())
 
 
@@ -148,9 +149,11 @@ def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = 
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 
-def choose_agent(question: str, escapable=True) -> str:
+def choose_agent(step_counter: StepCounter, escapable=True) -> str:
     """Choose agent type."""
-    # Available agents based on the agenthub
+    question = step_counter.next_step("Agent (TAB for options, CTRL-c to cancel): ")
+
+    # TODO: make sure agent sdk upstream has endpoint to expose agent list
     agents = [
         'CodeActAgent',
         'BrowsingAgent',
@@ -163,16 +166,9 @@ def choose_agent(question: str, escapable=True) -> str:
     return agents[index]
 
 
-def choose_confirmation_mode(question: str, escapable=True) -> bool:
-    """Choose confirmation mode setting."""
-    choices = ['Enable', 'Disable']
-
-    index = cli_confirm(question, choices, escapable=escapable)
-    return index == 0  # True for Enable, False for Disable
-
-
-def choose_memory_condensation(question: str, escapable=True) -> bool:
+def choose_memory_condensation(step_counter: StepCounter, escapable=True) -> bool:
     """Choose memory condensation setting."""
+    question = step_counter.next_step("Memory Condensation (CTRL-c to cancel): ")
     choices = ['Enable', 'Disable']
 
     index = cli_confirm(question, choices, escapable=escapable)

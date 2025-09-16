@@ -109,48 +109,6 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
-    def _prompt_for_base_url(self, steps: StepCounter) -> str:
-        """Helper handles base URL input."""
-        prompt = "Base URL (CTRL-c to cancel): "
-        return prompt_base_url(steps.next_step(prompt))
-
-    def _prompt_for_api_key(self, steps: StepCounter) -> str:
-        """Helper determines question based on existing key."""
-        existing_api_key = None
-        if self.conversation and self.conversation.agent.llm.api_key:
-            existing_api_key = self.conversation.agent.llm.api_key
-
-        if existing_api_key:
-            # Mask the key for display
-            key_str = existing_api_key.get_secret_value()
-            masked_key = f"{key_str[:3]}***{key_str[-4:]}" if len(key_str) > 7 else "***"
-            prompt = f"API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): "
-        else:
-            prompt = "API Key (CTRL-c to cancel): "
-
-        api_key_input = prompt_advanced_api_key(steps.next_step(prompt), existing_api_key)
-
-        # Handle API key logic - empty means keep existing, otherwise use new
-        if api_key_input.strip() == '' and existing_api_key:
-            return existing_api_key.get_secret_value()
-        else:
-            return api_key_input
-
-    def _prompt_for_agent(self, steps: StepCounter) -> str:
-        """Helper handles agent selection with TAB completion."""
-        prompt = "Agent (TAB for options, CTRL-c to cancel): "
-        return choose_agent(steps.next_step(prompt))
-
-    def _prompt_for_confirmation_mode(self, steps: StepCounter) -> bool:
-        """Helper handles confirmation mode toggle."""
-        prompt = "Confirmation Mode (CTRL-c to cancel): "
-        return choose_confirmation_mode(steps.next_step(prompt))
-
-    def _prompt_for_memory_condensation(self, steps: StepCounter) -> bool:
-        """Helper handles memory condensation toggle."""
-        prompt = "Memory Condensation (CTRL-c to cancel): "
-        return choose_memory_condensation(steps.next_step(prompt))
-
     def handle_basic_settings(self, escapable=True):
         step_counter = StepCounter(3)
         try:
@@ -172,14 +130,18 @@ class SettingsScreen:
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
-        steps_counter = StepCounter(6)
+        step_counter = StepCounter(6)
         try:
-            custom_model = prompt_custom_model(steps_counter)
-            base_url = self._prompt_for_base_url(steps_counter)
-            api_key = self._prompt_for_api_key(steps_counter)
-            agent = self._prompt_for_agent(steps_counter)
-            confirmation_mode = self._prompt_for_confirmation_mode(steps_counter)
-            memory_condensation = self._prompt_for_memory_condensation(steps_counter)
+            custom_model = prompt_custom_model(step_counter)
+            base_url = prompt_base_url(step_counter)
+            api_key = prompt_api_key(
+                step_counter,
+                custom_model.split('/')[0] if len(custom_model.split('/')) > 1 else '',
+                self.conversation.agent.llm.api_key if self.conversation else None,
+                escapable=escapable
+            )
+            agent = choose_agent(step_counter)
+            memory_condensation = choose_memory_condensation(step_counter)
 
             # Confirm save
             save_settings_confirmation()
@@ -189,8 +151,11 @@ class SettingsScreen:
 
         # Store the collected settings for persistence
         self._save_advanced_settings(
-            custom_model, base_url, api_key, agent,
-            confirmation_mode, memory_condensation
+            custom_model,
+            base_url,
+            api_key,
+            agent,
+            memory_condensation
         )
 
     def _save_llm_settings(
@@ -201,18 +166,13 @@ class SettingsScreen:
         llm.store_to_json(LLM_SETTINGS_PATH)
 
     def _save_advanced_settings(
-        self, custom_model: str, base_url: str, api_key: str,
-        agent: str, confirmation_mode: bool, memory_condensation: bool
+        self,
+        custom_model: str,
+        base_url: str,
+        api_key: str,
+        agent: str,
+        confirmation_mode: bool,
+        memory_condensation: bool
     ):
-        """Save advanced settings configuration."""
-        # Create LLM config with advanced settings
-        llm = LLM(
-            model=custom_model,
-            api_key=SecretStr(api_key),
-            base_url=base_url
-        )
-        llm.store_to_json(LLM_SETTINGS_PATH)
-
-        # TODO: Save agent config and other advanced settings
-        # This would require extending the settings storage system
-        # For now, we'll just save the LLM settings
+        # TODO: figure out agent configuration
+        pass
