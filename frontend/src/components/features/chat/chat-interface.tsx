@@ -25,7 +25,10 @@ import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
-import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
+import {
+  hasUserEvent,
+  shouldRenderEvent,
+} from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
@@ -168,14 +171,14 @@ export function ChatInterface() {
     onChatBodyScroll,
   };
 
+  const userEventsExist = hasUserEvent(events);
+
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
         {!hasSubstantiveAgentActions &&
           !optimisticUserMessage &&
-          !events.some(
-            (event) => isOpenHandsAction(event) && event.source === "user",
-          ) && (
+          !userEventsExist && (
             <ChatSuggestions
               onSuggestionsClick={(message) =>
                 dispatch(setMessageToSend(message))
@@ -195,7 +198,7 @@ export function ChatInterface() {
             </div>
           )}
 
-          {!isLoadingMessages && (
+          {!isLoadingMessages && userEventsExist && (
             <Messages
               messages={events}
               isAwaitingUserConfirmation={

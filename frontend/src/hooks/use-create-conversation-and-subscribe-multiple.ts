@@ -7,7 +7,7 @@ import { useUserProviders } from "./use-user-providers";
 import { useConversationSubscriptions } from "#/context/conversation-subscriptions-provider";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { renderConversationStartingToast } from "#/components/features/chat/microagent/microagent-status-toast";
 
 interface ConversationData {
@@ -45,7 +45,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
   const conversationQueries = useQueries({
     queries: conversationIdsToWatch.map((conversationId) => ({
       queryKey: ["conversation-ready-poll", conversationId],
-      queryFn: () => OpenHands.getConversation(conversationId),
+      queryFn: () => ConversationService.getConversation(conversationId),
       enabled: !!conversationId,
       refetchInterval: (query: Query<Conversation | null, AxiosError>) => {
         const status = query.state.data?.status;
