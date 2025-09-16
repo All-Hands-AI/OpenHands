@@ -39,7 +39,7 @@ if os.path.exists(swebench_official_report_json):
     
     # Convert instance IDs from "repo/name:pr-123" format to "repo__name-123" format
     def convert_instance_id(instance_id):
-        """Convert instance ID from slash/colon-pr format to double underscore/dash format"""
+        """Convert instance ID from slash/colon-pr format to double underscore/dash format."""
         if '/' in instance_id and ':pr-' in instance_id:
             # Split on '/' and ':pr-'
             parts = instance_id.split('/')
