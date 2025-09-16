@@ -22,13 +22,13 @@ env:
   IMAGE_URI: ghcr.io/all-hands-ai/enterprise-server
 
 jobs:
-  publish-to-s3:
-    name: Publish to S3
+  publish-enterprise-server:
+    name: Publish Enterprise Server
     runs-on: ubuntu-latest
+    outputs:
+      presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
+      file-size: ${{ steps.file-size.outputs.size }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -55,13 +55,6 @@ jobs:
           
           echo "✅ Enterprise-server image exported"
       
-      - name: Prepare S3 upload
-        run: |
-          # S3 will automatically create the path structure when we upload the file
-          echo "S3 upload path:"
-          echo "  Tag folder: ${{ env.TAG_FOLDER }}"
-          echo "  File: enterprise-server-${{ env.TAG }}.tar.gz"
-      
       - name: Upload image to S3
         run: |
           echo "Uploading enterprise-server image to S3..."
@@ -79,19 +72,170 @@ jobs:
           key: ${{ env.TAG_FOLDER }}/enterprise-server-${{ env.TAG }}.tar.gz
           region: ${{ secrets.AWS_REGION || 'us-east-1' }}
           expires-in: '604800'
-            
-      - name: Create S3 publish report
+      
+      - name: Get file size
+        id: file-size
+        run: |
+          SIZE=$(stat -c%s "enterprise-server-${{ env.TAG }}.tar.gz")
+          echo "size=$SIZE bytes" >> $GITHUB_OUTPUT
+
+  publish-runtime-nikolaik:
+    name: Publish Runtime Nikolaik
+    runs-on: ubuntu-latest
+    outputs:
+      presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
+      file-size: ${{ steps.file-size.outputs.size }}
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Pull and export runtime-nikolaik image
+        run: |
+          echo "Pulling runtime-nikolaik image for tag: ${{ env.TAG }}"
+          
+          # Pull the image from GHCR
+          docker pull ghcr.io/all-hands-ai/runtime:${{ env.TAG }}-nikolaik
+          
+          # Export to tarball
+          docker save ghcr.io/all-hands-ai/runtime:${{ env.TAG }}-nikolaik | gzip > runtime-nikolaik-${{ env.TAG }}.tar.gz
+          
+          echo "✅ Runtime-nikolaik image exported"
+      
+      - name: Upload image to S3
+        run: |
+          echo "Uploading runtime-nikolaik image to S3..."
+          
+          # Upload the tarball
+          aws s3 cp runtime-nikolaik-${{ env.TAG }}.tar.gz "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/runtime-nikolaik-${{ env.TAG }}.tar.gz"
+          
+          echo "✅ Image uploaded to S3"
+      
+      - name: Generate presigned URL
+        id: presigned-url
+        uses: ./.github/actions/generate-presigned-url
+        with:
+          bucket: ${{ vars.AWS_RELEASE_BUCKET }}
+          key: ${{ env.TAG_FOLDER }}/runtime-nikolaik-${{ env.TAG }}.tar.gz
+          region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          expires-in: '604800'
+      
+      - name: Get file size
+        id: file-size
+        run: |
+          SIZE=$(stat -c%s "runtime-nikolaik-${{ env.TAG }}.tar.gz")
+          echo "size=$SIZE bytes" >> $GITHUB_OUTPUT
+
+  publish-runtime-ubuntu:
+    name: Publish Runtime Ubuntu
+    runs-on: ubuntu-latest
+    outputs:
+      presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
+      file-size: ${{ steps.file-size.outputs.size }}
+    steps:
+      - name: Configure AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+      
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Pull and export runtime-ubuntu image
+        run: |
+          echo "Pulling runtime-ubuntu image for tag: ${{ env.TAG }}"
+          
+          # Pull the image from GHCR
+          docker pull ghcr.io/all-hands-ai/runtime:${{ env.TAG }}-ubuntu
+          
+          # Export to tarball
+          docker save ghcr.io/all-hands-ai/runtime:${{ env.TAG }}-ubuntu | gzip > runtime-ubuntu-${{ env.TAG }}.tar.gz
+          
+          echo "✅ Runtime-ubuntu image exported"
+      
+      - name: Upload image to S3
+        run: |
+          echo "Uploading runtime-ubuntu image to S3..."
+          
+          # Upload the tarball
+          aws s3 cp runtime-ubuntu-${{ env.TAG }}.tar.gz "s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/runtime-ubuntu-${{ env.TAG }}.tar.gz"
+          
+          echo "✅ Image uploaded to S3"
+      
+      - name: Generate presigned URL
+        id: presigned-url
+        uses: ./.github/actions/generate-presigned-url
+        with:
+          bucket: ${{ vars.AWS_RELEASE_BUCKET }}
+          key: ${{ env.TAG_FOLDER }}/runtime-ubuntu-${{ env.TAG }}.tar.gz
+          region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          expires-in: '604800'
+      
+      - name: Get file size
+        id: file-size
+        run: |
+          SIZE=$(stat -c%s "runtime-ubuntu-${{ env.TAG }}.tar.gz")
+          echo "size=$SIZE bytes" >> $GITHUB_OUTPUT
+
+  create-release-report:
+    name: Create Release Report
+    needs: [publish-enterprise-server, publish-runtime-nikolaik, publish-runtime-ubuntu]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create comprehensive S3 publish report
         id: create-report
         uses: ./.github/actions/s3-publish-report
         with:
           tag: ${{ env.TAG }}
           bucket: ${{ vars.AWS_RELEASE_BUCKET }}
           tag-folder: ${{ env.TAG_FOLDER }}
-          download-url: ${{ steps.presigned-url.outputs.presigned-url }}
+          images: |
+            [
+              {
+                "name": "enterprise-server",
+                "displayName": "Enterprise Server",
+                "filename": "enterprise-server-${{ env.TAG }}.tar.gz",
+                "url": "${{ needs.publish-enterprise-server.outputs.presigned-url }}",
+                "size": "${{ needs.publish-enterprise-server.outputs.file-size }}",
+                "description": "Main OpenHands enterprise application server"
+              },
+              {
+                "name": "runtime-nikolaik",
+                "displayName": "Runtime (Nikolaik)",
+                "filename": "runtime-nikolaik-${{ env.TAG }}.tar.gz",
+                "url": "${{ needs.publish-runtime-nikolaik.outputs.presigned-url }}",
+                "size": "${{ needs.publish-runtime-nikolaik.outputs.file-size }}",
+                "description": "Runtime environment based on Debian (Nikolaik)"
+              },
+              {
+                "name": "runtime-ubuntu",
+                "displayName": "Runtime (Ubuntu)",
+                "filename": "runtime-ubuntu-${{ env.TAG }}.tar.gz",
+                "url": "${{ needs.publish-runtime-ubuntu.outputs.presigned-url }}",
+                "size": "${{ needs.publish-runtime-ubuntu.outputs.file-size }}",
+                "description": "Runtime environment based on Ubuntu"
+              }
+            ]
           repository: ${{ github.repository }}
           run-id: ${{ github.run_id }}
-          url-length: ${{ steps.presigned-url.outputs.url-length }}
-          expires-at: ${{ steps.presigned-url.outputs.expires-at }}
+          url-length: 'unknown'
+          expires-at: '7 days'
       
       - name: Upload HTML report artifact
         uses: actions/upload-artifact@v4
@@ -107,13 +251,14 @@ jobs:
           echo "**Tag**: \`${{ env.TAG }}\`"
           echo "**S3 Location**: \`s3://${{ vars.AWS_RELEASE_BUCKET }}/${{ env.TAG_FOLDER }}/\`"
           echo ""
-          echo "### 📦 Available Image:"
+          echo "### 📦 Available Images:"
           echo "- \`enterprise-server-${{ env.TAG }}.tar.gz\`"
+          echo "- \`runtime-nikolaik-${{ env.TAG }}.tar.gz\`"
+          echo "- \`runtime-ubuntu-${{ env.TAG }}.tar.gz\`"
           echo ""
           echo "### 📋 Download Information:"
           echo "- View the release report in the \`release-report-${{ env.TAG }}\` artifact"
           echo "- Report file: \`${{ steps.create-report.outputs.report-path }}\`"
           echo "- Report size: \`${{ steps.create-report.outputs.report-size }} bytes\`"
-          echo "- The HTML report contains the download link and usage instructions"
-          echo "- URL expires at: ${{ steps.presigned-url.outputs.expires-at }}"
+          echo "- The HTML report contains all download links and usage instructions"
           echo ""

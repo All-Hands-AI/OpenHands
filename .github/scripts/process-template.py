@@ -6,13 +6,42 @@ Much cleaner than bash/sed approach and no external dependencies!
 
 import os
 import sys
-from datetime import datetime, timezone
+import json
+from datetime import datetime
 from string import Template
+
+def generate_images_html(images, tag):
+    """Generate HTML for the images section"""
+    if not images:
+        return "<p>No images available</p>"
+    
+    html_parts = []
+    for i, image in enumerate(images):
+        name = image.get('name', f'image-{i}')
+        display_name = image.get('displayName', name.replace('-', ' ').title())
+        url = image.get('url', '#')
+        size = image.get('size', 'unknown')
+        description = image.get('description', f'Download {display_name}')
+        filename = image.get('filename', f'{name}-{tag}.tar.gz')
+        
+        html_parts.append(f'''
+            <div class="image-card">
+                <h3>{display_name}</h3>
+                <p>{description}</p>
+                <div class="download-info">
+                    <span class="filename">{filename}</span>
+                    <span class="size">{size}</span>
+                </div>
+                <a href="{url}" class="download-button">Download {display_name}</a>
+            </div>
+        ''')
+    
+    return ''.join(html_parts)
 
 def main():
     if len(sys.argv) < 8:
         print("❌ Error: Not enough arguments provided")
-        print("Usage: process-template.py <template_file> <output_file> <tag> <bucket> <tag_folder> <download_url> <repository> <run_id> [url_length] [expires_at]")
+        print("Usage: process-template.py <template_file> <output_file> <tag> <bucket> <tag_folder> <images_json> <repository> <run_id> [url_length] [expires_at]")
         sys.exit(1)
     
     template_file = sys.argv[1]
@@ -20,7 +49,7 @@ def main():
     tag = sys.argv[3]
     bucket = sys.argv[4]
     tag_folder = sys.argv[5]
-    download_url = sys.argv[6]
+    images_json = sys.argv[6]
     repository = sys.argv[7]
     run_id = sys.argv[8]
     url_length = sys.argv[9] if len(sys.argv) > 9 else 'unknown'
@@ -31,8 +60,19 @@ def main():
         print(f"❌ Error: Template file not found: {template_file}")
         sys.exit(1)
     
+    # Parse images JSON
+    try:
+        images = json.loads(images_json)
+        if not isinstance(images, list):
+            print("❌ Error: Images must be a JSON array")
+            sys.exit(1)
+        print(f"📦 Processing {len(images)} images")
+    except json.JSONDecodeError as e:
+        print(f"❌ Error: Invalid JSON in images parameter: {e}")
+        sys.exit(1)
+    
     # Generate timestamp
-    timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     
     print("🔄 Processing template with Python string.Template...")
     print(f"  Template: {template_file}")
@@ -53,7 +93,7 @@ def main():
         template_content = template_content.replace('{{TAG}}', '$TAG')
         template_content = template_content.replace('{{BUCKET}}', '$BUCKET')
         template_content = template_content.replace('{{TAG_FOLDER}}', '$TAG_FOLDER')
-        template_content = template_content.replace('{{DOWNLOAD_URL}}', '$DOWNLOAD_URL')
+        template_content = template_content.replace('{{IMAGES}}', '$IMAGES')
         template_content = template_content.replace('{{REPOSITORY}}', '$REPOSITORY')
         template_content = template_content.replace('{{RUN_ID}}', '$RUN_ID')
         template_content = template_content.replace('{{TIMESTAMP}}', '$TIMESTAMP')
@@ -63,12 +103,15 @@ def main():
         # Create template object (using Python's built-in string.Template)
         template = Template(template_content)
         
+        # Generate images HTML
+        images_html = generate_images_html(images, tag)
+        
         # Prepare context
         context = {
             'TAG': tag,
             'BUCKET': bucket,
             'TAG_FOLDER': tag_folder,
-            'DOWNLOAD_URL': download_url,
+            'IMAGES': images_html,
             'REPOSITORY': repository,
             'RUN_ID': run_id,
             'TIMESTAMP': timestamp,

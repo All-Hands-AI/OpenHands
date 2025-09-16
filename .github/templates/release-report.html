@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Release {{TAG}} - Enterprise Server</title>
+    <title>OpenHands Enterprise {{TAG}}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
@@ -9,7 +9,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             margin: 0; 
             padding: 20px; 
-            background: #f6f8fa;
+            background: #F7F3EE;
             line-height: 1.6;
         }
         .container { 
@@ -21,15 +21,30 @@
             overflow: hidden;
         }
         .header { 
-            background: linear-gradient(135deg, #28a745, #20c997); 
-            color: white; 
+            background: #efe8de; 
+            color: #3A3C45; 
             padding: 30px; 
             text-align: center;
         }
+        .header .logo {
+            max-width: 200px;
+            height: auto;
+            margin-bottom: 30px;
+        }
         .header h1 { 
-            margin: 0; 
-            font-size: 2.5em; 
-            font-weight: 300;
+            margin: 0 0 3px 0; 
+            font-size: 2.2em; 
+            font-weight: 600;
+            line-height: 1.1;
+            color: rgb(153, 135, 60);
+        }
+        .header .version { 
+            margin: 3px 0 0 0; 
+            font-size: 1.5em; 
+            font-weight: 500;
+            opacity: 0.9;
+            line-height: 1.1;
+            color: rgb(153, 135, 60);
         }
         .header p { 
             margin: 10px 0 0 0; 
@@ -40,11 +55,11 @@
             padding: 30px; 
         }
         .info-card { 
-            background: #f8f9fa; 
+            background: #F0F2F7; 
             padding: 20px; 
             border-radius: 6px; 
             margin: 20px 0; 
-            border-left: 4px solid #007cba;
+            border-left: 4px solid #3A3C45;
         }
         .download-section { 
             background: #e8f5e8; 
@@ -53,6 +68,44 @@
             margin: 25px 0; 
             text-align: center;
             border: 2px solid #28a745;
+        }
+        .image-card {
+            background: #F0F2F7;
+            border: 1px solid #D4D8E7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            text-align: left;
+        }
+        .image-card h3 {
+            margin: 0 0 10px 0;
+            color: #3A3C45;
+            font-size: 1.3em;
+        }
+        .image-card p {
+            margin: 0 0 15px 0;
+            color: #6A6F7F;
+            font-size: 0.95em;
+        }
+        .download-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: #ffffff;
+            border-radius: 4px;
+            border: 1px solid #D4D8E7;
+        }
+        .filename {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9em;
+            color: #3A3C45;
+        }
+        .size {
+            font-size: 0.9em;
+            color: #6A6F7F;
+            font-weight: 600;
         }
         .download-button { 
             display: inline-block; 
@@ -81,26 +134,27 @@
             margin: 15px 0;
         }
         .usage-section { 
-            background: #fff3cd; 
+            background: #FFF9E1; 
             padding: 20px; 
             border-radius: 6px; 
             margin: 20px 0;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid #FFE165;
         }
         .code-block { 
-            background: #2d3748; 
-            color: #e2e8f0; 
+            background: #2a3038; 
+            color: #e6edf3; 
             padding: 20px; 
             border-radius: 6px; 
             font-family: 'Monaco', 'Menlo', monospace; 
             font-size: 0.9em;
             overflow-x: auto;
             margin: 15px 0;
+            white-space: pre-wrap;
         }
         .status-badge { 
             display: inline-block; 
-            background: #28a745; 
-            color: white; 
+            background: #BCFF8C; 
+            color: #3A3C45; 
             padding: 4px 12px; 
             border-radius: 20px; 
             font-size: 0.8em; 
@@ -108,17 +162,17 @@
             margin-left: 10px;
         }
         .footer { 
-            background: #f8f9fa; 
+            background: #efe8de; 
             padding: 20px; 
             text-align: center; 
-            color: #6c757d; 
+            color: #3A3C45; 
             font-size: 0.9em;
-            border-top: 1px solid #e1e4e8;
+            border-top: 1px solid #D4D8E7;
         }
         .expiry-warning { 
-            background: #fff3cd; 
-            border: 1px solid #ffc107; 
-            color: #856404; 
+            background: #FFF3C0; 
+            border: 1px solid #FFE165; 
+            color: #99873C; 
             padding: 10px 15px; 
             border-radius: 4px; 
             margin: 15px 0;
@@ -130,18 +184,18 @@
             margin: 15px 0;
         }
         .build-info-item {
-            background: #f8f9fa;
+            background: #F0F2F7;
             padding: 10px;
             border-radius: 4px;
-            border-left: 3px solid #007cba;
+            border-left: 3px solid #3A3C45;
         }
         .build-info-label {
             font-weight: 600;
-            color: #495057;
+            color: #6A6F7F;
             font-size: 0.9em;
         }
         .build-info-value {
-            color: #212529;
+            color: #3A3C45;
             font-family: 'Monaco', 'Menlo', monospace;
             font-size: 0.9em;
         }
@@ -150,7 +204,7 @@
                 grid-template-columns: 1fr;
             }
             .header h1 {
-                font-size: 2em;
+                font-size: 1.8em;
             }
             .content {
                 padding: 20px;
@@ -161,8 +215,9 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚀 Enterprise Server Release {{TAG}}</h1>
-            <p>Build completed successfully <span class="status-badge">READY</span></p>
+            <img src="https://raw.githubusercontent.com/All-Hands-AI/OpenHands/main/docs/logo/light.svg" alt="OpenHands Logo" class="logo">
+            <h1>OpenHands Enterprise</h1>
+            <h2 class="version">{{TAG}}</h2>
         </div>
         
         <div class="content">
@@ -170,24 +225,12 @@
                 <h3>📦 Build Information</h3>
                 <div class="build-info">
                     <div class="build-info-item">
-                        <div class="build-info-label">Tag</div>
+                        <div class="build-info-label">Version</div>
                         <div class="build-info-value">{{TAG}}</div>
                     </div>
                     <div class="build-info-item">
-                        <div class="build-info-label">S3 Location</div>
-                        <div class="build-info-value">s3://{{BUCKET}}/{{TAG_FOLDER}}/</div>
-                    </div>
-                    <div class="build-info-item">
-                        <div class="build-info-label">File</div>
-                        <div class="build-info-value">enterprise-server-{{TAG}}.tar.gz</div>
-                    </div>
-                    <div class="build-info-item">
-                        <div class="build-info-label">Generated</div>
+                        <div class="build-info-label">Build Time</div>
                         <div class="build-info-value">{{TIMESTAMP}}</div>
-                    </div>
-                    <div class="build-info-item">
-                        <div class="build-info-label">URL Length</div>
-                        <div class="build-info-value">{{URL_LENGTH}} characters</div>
                     </div>
                     <div class="build-info-item">
                         <div class="build-info-label">Expires</div>
@@ -197,51 +240,41 @@
             </div>
             
             <div class="download-section">
-                <h3>🔗 Download Enterprise Server</h3>
-                <p>Click the button below to download the enterprise server image:</p>
-                <a href="{{DOWNLOAD_URL}}" class="download-button">Download enterprise-server-{{TAG}}.tar.gz</a>
+                <h3>🔗 Download Images</h3>
+                <p>Click the buttons below to download the available images:</p>
+                
+                {{IMAGES}}
                 
                 <div class="expiry-warning">
-                    ⏰ <strong>Note:</strong> This download link expires in 7 days
+                    ⏰ <strong>Note:</strong> Download links expire in 7 days
                 </div>
-                
-                <details style="margin-top: 20px;">
-                    <summary style="cursor: pointer; font-weight: 600;">Show download URL</summary>
-                    <div class="url-display">{{DOWNLOAD_URL}}</div>
-                </details>
             </div>
             
             <div class="usage-section">
                 <h3>📋 Usage Instructions</h3>
-                <p>After downloading, use these commands to load and run the container:</p>
+                <p>After downloading, use these commands to load the Docker images into your local registry:</p>
                 
-                <div class="code-block">
-# Download the file (if not using the button above)
-wget "{{DOWNLOAD_URL}}" -O enterprise-server-{{TAG}}.tar.gz
+                <div class="code-block"># Download the files (if not using the buttons above)
+wget "https://example.com/enterprise-server-{{TAG}}.tar.gz" -O enterprise-server-{{TAG}}.tar.gz
+wget "https://example.com/runtime-nikolaik-{{TAG}}.tar.gz" -O runtime-nikolaik-{{TAG}}.tar.gz
+wget "https://example.com/runtime-ubuntu-{{TAG}}.tar.gz" -O runtime-ubuntu-{{TAG}}.tar.gz
 
-# Load the Docker image
-docker load &lt; enterprise-server-{{TAG}}.tar.gz
+# Load the Docker images into your local registry
+docker load < enterprise-server-{{TAG}}.tar.gz
+docker load < runtime-nikolaik-{{TAG}}.tar.gz
+docker load < runtime-ubuntu-{{TAG}}.tar.gz
 
-# Run the container
-docker run -p 8080:8080 ghcr.io/all-hands-ai/enterprise-server:{{TAG}}
+# Tag the images for your local registry
+docker tag ghcr.io/all-hands-ai/enterprise-server:{{TAG}} your-registry.com/enterprise-server:{{TAG}}
+docker tag ghcr.io/all-hands-ai/runtime:{{TAG}}-nikolaik your-registry.com/runtime:{{TAG}}-nikolaik
+docker tag ghcr.io/all-hands-ai/runtime:{{TAG}}-ubuntu your-registry.com/runtime:{{TAG}}-ubuntu
 
-# Or run with custom configuration
-docker run -p 8080:8080 \
-  -e OPENHANDS_API_KEY=your-api-key \
-  ghcr.io/all-hands-ai/enterprise-server:{{TAG}}
-                </div>
+# Push to your local registry
+docker push your-registry.com/enterprise-server:{{TAG}}
+docker push your-registry.com/runtime:{{TAG}}-nikolaik
+docker push your-registry.com/runtime:{{TAG}}-ubuntu</div>
             </div>
             
-            <div class="info-card">
-                <h3>🔧 Additional Information</h3>
-                <ul>
-                    <li><strong>Image Size:</strong> Check the downloaded file size</li>
-                    <li><strong>Docker Registry:</strong> <code>ghcr.io/all-hands-ai/enterprise-server</code></li>
-                    <li><strong>Port:</strong> Default port 8080 (configurable)</li>
-                    <li><strong>Environment:</strong> Requires OPENHANDS_API_KEY</li>
-                    <li><strong>Workflow Run:</strong> <a href="https://github.com/{{REPOSITORY}}/actions/runs/{{RUN_ID}}">View in GitHub</a></li>
-                </ul>
-            </div>
         </div>
         
         <div class="footer">

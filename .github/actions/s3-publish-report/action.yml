@@ -10,8 +10,8 @@ inputs:
   tag-folder:
     description: 'S3 tag folder (e.g., releases/1.0.0)'
     required: true
-  download-url:
-    description: 'Presigned download URL'
+  images:
+    description: 'JSON array of image objects with name, url, size, etc.'
     required: true
   repository:
     description: 'GitHub repository (e.g., owner/repo)'
@@ -72,7 +72,7 @@ runs:
           "${{ inputs.tag }}" \
           "${{ inputs.bucket }}" \
           "${{ inputs.tag-folder }}" \
-          "${{ inputs.download-url }}" \
+          "${{ inputs.images }}" \
           "${{ inputs.repository }}" \
           "${{ inputs.run-id }}" \
           "${{ inputs.url-length }}" \
