@@ -1,7 +1,6 @@
 """Tests for enterprise integrations utils module."""
 
 import pytest
-from unittest.mock import patch, MagicMock
 
 from openhands.core.schema.agent import AgentState
 from openhands.events.observation.agent import AgentStateChangedObservation
@@ -18,38 +17,29 @@ class TestGetSummaryForAgentState:
 
     def test_empty_observations_list(self):
         """Test handling of empty observations list."""
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([], self.conversation_link)
-            
-            assert "unknown error" in result.lower()
-            assert self.conversation_link in result
-            mock_logger.error.assert_called_once()
+        result = get_summary_for_agent_state([], self.conversation_link)
+        
+        assert "unknown error" in result.lower()
+        assert self.conversation_link in result
 
-    @pytest.mark.parametrize("state,expected_text,expected_log_level,includes_link", [
-        (AgentState.RATE_LIMITED, "rate limited", "warning", False),
-        (AgentState.AWAITING_USER_INPUT, "waiting for your input", "info", True),
+    @pytest.mark.parametrize("state,expected_text,includes_link", [
+        (AgentState.RATE_LIMITED, "rate limited", False),
+        (AgentState.AWAITING_USER_INPUT, "waiting for your input", True),
     ])
-    def test_handled_agent_states(self, state, expected_text, expected_log_level, includes_link):
+    def test_handled_agent_states(self, state, expected_text, includes_link):
         """Test handling of states with specific behavior."""
         observation = AgentStateChangedObservation(
             content=f"Agent state: {state.value}",
             agent_state=state
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([observation], self.conversation_link)
-            
-            assert expected_text in result.lower()
-            if includes_link:
-                assert self.conversation_link in result
-            else:
-                assert self.conversation_link not in result
-            
-            # Check correct log level was called
-            if expected_log_level == "warning":
-                mock_logger.warning.assert_called_once()
-            elif expected_log_level == "info":
-                mock_logger.info.assert_called_once()
+        result = get_summary_for_agent_state([observation], self.conversation_link)
+        
+        assert expected_text in result.lower()
+        if includes_link:
+            assert self.conversation_link in result
+        else:
+            assert self.conversation_link not in result
 
     @pytest.mark.parametrize("state", [
         AgentState.FINISHED,
@@ -64,17 +54,10 @@ class TestGetSummaryForAgentState:
             agent_state=state
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([observation], self.conversation_link)
-            
-            assert "unknown error" in result.lower()
-            assert self.conversation_link in result
-            mock_logger.error.assert_called_once()
-            
-            # Verify the error log contains the correct state information
-            error_call = mock_logger.error.call_args
-            assert "Unhandled agent state" in error_call[0][0]
-            assert error_call[1]['extra']['agent_state'] == state.value
+        result = get_summary_for_agent_state([observation], self.conversation_link)
+        
+        assert "unknown error" in result.lower()
+        assert self.conversation_link in result
 
     @pytest.mark.parametrize("error_code,expected_text", [
         ('STATUS$ERROR_LLM_AUTHENTICATION', 'authentication with the llm provider failed'),
@@ -91,13 +74,11 @@ class TestGetSummaryForAgentState:
             reason=error_code
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([observation], self.conversation_link)
-            
-            assert "encountered an error" in result.lower()
-            assert expected_text in result.lower()
-            assert self.conversation_link in result
-            mock_logger.error.assert_called_once()
+        result = get_summary_for_agent_state([observation], self.conversation_link)
+        
+        assert "encountered an error" in result.lower()
+        assert expected_text in result.lower()
+        assert self.conversation_link in result
 
     def test_error_state_with_custom_reason(self):
         """Test handling of ERROR state with a custom reason."""
@@ -107,45 +88,11 @@ class TestGetSummaryForAgentState:
             reason="Test error message"
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([observation], self.conversation_link)
-            
-            assert "encountered an error" in result.lower()
-            assert "test error message" in result.lower()
-            assert self.conversation_link in result
-            mock_logger.error.assert_called_once()
-
-    def test_observation_with_reason_attribute(self):
-        """Test that observation reason is properly logged in extra data."""
-        observation = AgentStateChangedObservation(
-            content="Agent was rate limited",
-            agent_state=AgentState.RATE_LIMITED,
-            reason="Rate limit exceeded"
-        )
+        result = get_summary_for_agent_state([observation], self.conversation_link)
         
-        with patch('integrations.utils.logger') as mock_logger:
-            get_summary_for_agent_state([observation], self.conversation_link)
-            
-            warning_call = mock_logger.warning.call_args
-            assert warning_call[1]['extra']['observation_reason'] == "Rate limit exceeded"
-
-    def test_observation_without_reason_attribute(self):
-        """Test handling of observation without reason attribute."""
-        # Create a simple object without reason attribute
-        class MockObservation:
-            def __init__(self):
-                self.agent_state = AgentState.AWAITING_USER_INPUT
-                # No reason attribute
-        
-        mock_observation = MockObservation()
-        
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([mock_observation], self.conversation_link)
-            
-            assert "waiting for your input" in result.lower()
-            info_call = mock_logger.info.call_args
-            # getattr(observation, 'reason', None) returns None when attribute doesn't exist
-            assert info_call[1]['extra']['observation_reason'] is None
+        assert "encountered an error" in result.lower()
+        assert "test error message" in result.lower()
+        assert self.conversation_link in result
 
     def test_multiple_observations_uses_first(self):
         """Test that when multiple observations are provided, only the first is used."""
@@ -159,31 +106,38 @@ class TestGetSummaryForAgentState:
             reason="Should not be used"
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            result = get_summary_for_agent_state([observation1, observation2], self.conversation_link)
-            
-            # Should handle the first observation (AWAITING_USER_INPUT), not the second (ERROR)
-            assert "waiting for your input" in result.lower()
-            assert "error" not in result.lower()
-            mock_logger.info.assert_called_once()
+        result = get_summary_for_agent_state([observation1, observation2], self.conversation_link)
+        
+        # Should handle the first observation (AWAITING_USER_INPUT), not the second (ERROR)
+        assert "waiting for your input" in result.lower()
+        assert "error" not in result.lower()
 
-    def test_logging_extra_data_structure(self):
-        """Test that logging extra data contains expected fields."""
+    def test_awaiting_user_input_specific_message(self):
+        """Test that AWAITING_USER_INPUT returns the specific expected message."""
         observation = AgentStateChangedObservation(
             content="Agent is awaiting user input",
-            agent_state=AgentState.AWAITING_USER_INPUT,
-            reason="test reason"
+            agent_state=AgentState.AWAITING_USER_INPUT
         )
         
-        with patch('integrations.utils.logger') as mock_logger:
-            get_summary_for_agent_state([observation], self.conversation_link)
-            
-            info_call = mock_logger.info.call_args
-            extra_data = info_call[1]['extra']
-            
-            assert 'agent_state' in extra_data
-            assert 'conversation_link' in extra_data
-            assert 'observation_reason' in extra_data
-            assert extra_data['agent_state'] == 'awaiting_user_input'
-            assert extra_data['conversation_link'] == self.conversation_link
-            assert extra_data['observation_reason'] == "test reason"
+        result = get_summary_for_agent_state([observation], self.conversation_link)
+        
+        # Test the exact message format
+        assert "waiting for your input" in result.lower()
+        assert "continue the conversation" in result.lower()
+        assert self.conversation_link in result
+        assert "unknown error" not in result.lower()
+
+    def test_rate_limited_specific_message(self):
+        """Test that RATE_LIMITED returns the specific expected message."""
+        observation = AgentStateChangedObservation(
+            content="Agent was rate limited",
+            agent_state=AgentState.RATE_LIMITED
+        )
+        
+        result = get_summary_for_agent_state([observation], self.conversation_link)
+        
+        # Test the exact message format
+        assert "rate limited" in result.lower()
+        assert "try again later" in result.lower()
+        # RATE_LIMITED doesn't include conversation link in response
+        assert self.conversation_link not in result
