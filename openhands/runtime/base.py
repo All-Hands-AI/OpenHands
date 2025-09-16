@@ -323,7 +323,7 @@ class Runtime(FileEditRuntimeMixin):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
-        """Refresh runtime provider tokens when agent attemps to run action with provider token"""
+        """Refresh runtime provider tokens when agent attempts to run action with provider token"""
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
@@ -584,8 +584,11 @@ fi
 
         self.log('info', 'Git pre-commit hook installed successfully')
 
+    #  Load microagents from a directory
     def _load_microagents_from_directory(
-        self, microagents_dir: Path, source_description: str
+        self,
+        microagents_dir: Path,
+        source_description: str,
     ) -> list[BaseMicroagent]:
         """Load microagents from a directory.
 
@@ -625,12 +628,7 @@ fi
 
             zip_path.unlink()
             repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
-
-            self.log(
-                'info',
-                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}',
-            )
-
+            self.log('info', f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}')
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
         except Exception as e:
@@ -640,201 +638,132 @@ fi
 
         return loaded_microagents
 
+    #  Detect GitLab repositories (unchanged)
     def _is_gitlab_repository(self, repo_name: str) -> bool:
         """Check if a repository is hosted on GitLab.
 
-        Args:
-            repo_name: Repository name (e.g., "gitlab.com/org/repo" or "org/repo")
-
-        Returns:
-            True if the repository is hosted on GitLab, False otherwise
+        Args: repo_name: Repository name (e.g., "gitlab.com/org/repo" or "org/repo")
+        Returns: True if the repository is hosted on GitLab, False otherwise
         """
         try:
-            provider_handler = ProviderHandler(
-                self.git_provider_tokens or MappingProxyType({})
-            )
-            repository = call_async_from_sync(
-                provider_handler.verify_repo_provider,
-                GENERAL_TIMEOUT,
-                repo_name,
+            provider_handler = ProviderHandler(self.git_provider_tokens or MappingProxyType({}))
+            repository = call_async_from_sync(provider_handler.verify_repo_provider,
+                GENERAL_TIMEOUT,repo_name,
             )
             return repository.git_provider == ProviderType.GITLAB
         except Exception:
-            # If we can't determine the provider, assume it's not GitLab
-            # This is a safe fallback since we'll just use the default .openhands
+            # If we can't determine the provider, assume it's not GitLab.
             return False
 
-    def get_microagents_from_org_or_user(
-        self, selected_repository: str
-    ) -> list[BaseMicroagent]:
-        """Load microagents from the organization or user level repository.
+    #  Load org‑/user‑level microagents
+    def get_microagents_from_org_or_user(self, selected_repository: str) -> list[BaseMicroagent]:
+        """Load microagents from the organization/user level repository.
 
-        For example, if the repository is github.com/acme-co/api, this will check if
-        github.com/acme-co/.openhands exists. If it does, it will clone it and load
-        the microagents from the ./microagents/ folder.
-
-        For GitLab repositories, it will use openhands-config instead of .openhands
-        since GitLab doesn't support repository names starting with non-alphanumeric
-        characters.
-
-        Args:
-            selected_repository: The repository path (e.g., "github.com/acme-co/api")
-
-        Returns:
-            A list of loaded microagents from the org/user level repository
+        For GitHub/Bitbucket we look for <org>/.openhands,
+        for GitLab we look for <org>/openhands-config.
         """
         loaded_microagents: list[BaseMicroagent] = []
-
-        self.log(
-            'debug',
-            f'Starting org-level microagent loading for repository: {selected_repository}',
-        )
+        self.log('info', f'Starting org‑level microagent loading for repository: {selected_repository}')
 
         repo_parts = selected_repository.split('/')
-
         if len(repo_parts) < 2:
-            self.log(
-                'warning',
-                f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents',
-            )
+            self.log('warning',f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org‑level microagents')
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        org_name = repo_parts[-2]
-        self.log(
-            'info',
-            f'Extracted org/user name: {org_name}',
-        )
+        # Strip possible domain prefix (e.g. "github.com")
+        start_idx = 0
+        if '.' in repo_parts[0] and '/' not in repo_parts[0]:
+            start_idx = 1
+        selected_repo_name = repo_parts[-1]
+        group_parts = repo_parts[start_idx:-1]
+        candidates = ['/'.join(group_parts[:i]) for i in range(len(group_parts), 0, -1)]
 
-        # Determine if this is a GitLab repository
         is_gitlab = self._is_gitlab_repository(selected_repository)
-        self.log(
-            'debug',
-            f'Repository type detection - is_gitlab: {is_gitlab}',
-        )
+        suffix = 'openhands-config' if is_gitlab else '.openhands'
+        git_fetch_and_reset_to_default_upstream_branch='git fetch --all && git reset --hard $(git rev-parse --abbrev-ref HEAD)'
 
-        # For GitLab, use openhands-config (since .openhands is not a valid repo name)
-        # For other providers, use .openhands
-        if is_gitlab:
-            org_openhands_repo = f'{org_name}/openhands-config'
-        else:
-            org_openhands_repo = f'{org_name}/.openhands'
+        for org_path in candidates:
+            org_name = org_path
+            org_openhands_repo = f'{org_name}/{suffix}'
+            self.log('info', f'{selected_repo_name} Checking for org‑level microagents at {org_openhands_repo}')
 
-        self.log(
-            'info',
-            f'Checking for org-level microagents at {org_openhands_repo}',
-        )
-
-        # Try to clone the org-level repo
-        try:
-            # Create a temporary directory for the org-level repo
-            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
-            self.log(
-                'debug',
-                f'Creating temporary directory for org repo: {org_repo_dir}',
-            )
-
-            # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
+            # Does the org repo exist?
             try:
-                remote_url = call_async_from_sync(
-                    self.provider_handler.get_authenticated_git_url,
+                _ = call_async_from_sync(
+                    self.provider_handler.verify_repo_provider,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
                 )
             except AuthenticationError as e:
-                self.log(
-                    'debug',
-                    f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
-                )
-                raise
+                self.log('warning',f'{selected_repo_name} Received AuthenticationError checking for Org‑level {org_openhands_repo}: {str(e)}')
+                continue
             except Exception as e:
-                self.log(
-                    'debug',
-                    f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
-                )
-                raise
+                self.log('warning', f'{selected_repo_name} Org‑level microagent directory {org_openhands_repo} not found on provider: {str(e)}')
+                continue
 
-            clone_cmd = (
-                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
-            )
-            self.log(
-                'info',
-                'Executing clone command for org-level repo',
-            )
-
-            action = CmdRunAction(command=clone_cmd)
-            obs = self.run_action(action)
-
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                self.log(
-                    'info',
-                    f'Successfully cloned org-level microagents from {org_openhands_repo}',
-                )
-
-                # Load microagents from the org-level repo
-                org_microagents_dir = org_repo_dir / 'microagents'
-                self.log(
-                    'info',
-                    f'Looking for microagents in directory: {org_microagents_dir}',
-                )
-
-                loaded_microagents = self._load_microagents_from_directory(
-                    org_microagents_dir, 'org-level'
-                )
-
-                self.log(
-                    'info',
-                    f'Loaded {len(loaded_microagents)} microagents from org-level repository {org_openhands_repo}',
-                )
-
-                # Clean up the org repo directory
-                action = CmdRunAction(f'rm -rf {org_repo_dir}')
-                self.run_action(action)
+            # Determine local checkout location
+            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
+            self.log('info', f'{selected_repo_name} org-repo {org_openhands_repo} local path should be: {org_repo_dir}')
+            self.git_handler.set_cwd(str(org_repo_dir)) # cast filehandle to a string as required
+            if org_repo_dir.is_dir() and (org_repo_dir / '.git').is_dir():
+                # Existing checkout – try to pull latest changes
+                self.log('info', f'{selected_repo_name} pre‑existing org-repo {org_openhands_repo} found at {org_repo_dir}. Attempting fetch+hard reset')
+                pull_cmd = (f'cd {org_repo_dir} && {git_fetch_and_reset_to_default_upstream_branch}')
+                obs_pull = self.run_action(CmdRunAction(command=pull_cmd, hidden=True))
+                if isinstance(obs_pull, CmdOutputObservation) and obs_pull.exit_code == 0:
+                    self.log('info', f'{selected_repo_name} Successfully updated org-repo {org_repo_dir} from {org_openhands_repo}')
+                else:
+                    self.log('warning', f'{selected_repo_name} Local org-repo {org_openhands_repo} at {org_repo_dir} is dirty or cannot be updated. Using existing copy')
             else:
-                clone_error_msg = (
-                    obs.content
-                    if isinstance(obs, CmdOutputObservation)
-                    else 'Unknown error'
-                )
-                exit_code = (
-                    obs.exit_code if isinstance(obs, CmdOutputObservation) else 'N/A'
-                )
-                self.log(
-                    'info',
-                    f'No org-level microagents found at {org_openhands_repo} (exit_code: {exit_code})',
-                )
-                self.log(
-                    'debug',
-                    f'Clone command output: {clone_error_msg}',
-                )
+                # Clone a fresh copy
+                remote_url = call_async_from_sync(self.provider_handler.get_authenticated_git_url, GENERAL_TIMEOUT, org_openhands_repo,)
+                clone_cmd = f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
+                if not remote_url:
+                    self.log('warning', f'{selected_repo_name} Failed to obtain authenticated URL for org-repo: {org_openhands_repo}')
+                    continue
+                else:
+                    self.log('info', f'{selected_repo_name} Cloning org‑repo {org_openhands_repo} into {org_repo_dir}')
+                    obs_clone = self.run_action(CmdRunAction(command=clone_cmd, hidden=True))
+                    if isinstance(obs_clone, CmdOutputObservation) and obs_clone.exit_code == 0:
+                        self.log('info', f'{selected_repo_name} Successfully cloned org‑repo {org_openhands_repo} to {org_repo_dir}')
+                    else:
+                        # Clean up any partially created directory to avoid later confusion
+                        if org_repo_dir.is_dir():
+                            self.log('info', f'{selected_repo_name} Removing detritus directory {org_repo_dir} from failed org‑repo {org_openhands_repo} clone')
+                            shutil.rmtree(org_repo_dir, ignore_errors=True)
+                        clone_err = (obs_clone.content if isinstance(obs_clone, CmdOutputObservation) else 'unknown')
+                        clone_rc = (getattr(obs_clone, "exit_code", "N/A"))
+                        self.log('error',f'{selected_repo_name} Failed to clone org-repo {org_openhands_repo} (exit_code:{clone_rc}): {clone_err}')
+                        continue
 
-        except AuthenticationError as e:
-            self.log(
-                'debug',
-                f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
-            )
-        except Exception as e:
-            self.log(
-                'debug',
-                f'Error loading org-level microagents from {org_openhands_repo}: {str(e)}',
-            )
+            # Load microagents if the directory exists
+            org_microagents_dir = org_repo_dir / 'microagents'
+            if not org_microagents_dir.is_dir():
+                self.log('info', f'Org Config repo {org_repo_dir} exists, but {org_microagents_dir} does not. Skipping this candidate')
+                continue
+
+            loaded_microagents = self._load_microagents_from_directory(org_microagents_dir, 'org‑level')
+            self.log('info',f'Loaded {len(loaded_microagents)} microagents from org‑level repository {org_openhands_repo}')
+            # First successful repo wins – stop iterating
+            break
 
         return loaded_microagents
 
+    #  Load microagents for the selected repository
     def get_microagents_from_selected_repo(
-        self, selected_repository: str | None
+        self,
+        selected_repository: str | None,
     ) -> list[BaseMicroagent]:
         """Load microagents from the selected repository.
+
         If selected_repository is None, load microagents from the current workspace.
         This is the main entry point for loading microagents.
 
         This method also checks for user/org level microagents stored in a repository.
         For example, if the repository is github.com/acme-co/api, it will also check for
         github.com/acme-co/.openhands and load microagents from there if it exists.
-
         For GitLab repositories, it will use openhands-config instead of .openhands
-        since GitLab doesn't support repository names starting with non-alphanumeric
-        characters.
+        since GitLab doesn't support repository names starting with non‑alphanumeric characters.
         """
         loaded_microagents: list[BaseMicroagent] = []
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
@@ -843,44 +772,29 @@ fi
         # Check for user/org level microagents if a repository is selected
         if selected_repository:
             # Load microagents from the org/user level repository
+            self.log('info',f'Selected repo: {selected_repository}. Searching for org_microagents')
             org_microagents = self.get_microagents_from_org_or_user(selected_repository)
             loaded_microagents.extend(org_microagents)
 
-            # Continue with repository-specific microagents
+            # Continue with repository‑specific microagents
             repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
 
-        self.log(
-            'info',
-            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
-        )
+        self.log('info',f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)')
 
-        # Legacy Repo Instructions
-        # Check for legacy .openhands_instructions file
-        obs = self.read(
-            FileReadAction(path=str(self.workspace_root / '.openhands_instructions'))
-        )
+        # Legacy Repo Instructions `.openhands_instructions` file.
+        obs = self.read(FileReadAction(path=str(self.workspace_root / '.openhands_instructions')))
         if isinstance(obs, ErrorObservation) and repo_root is not None:
             # If the instructions file is not found in the workspace root, try to load it from the repo root
-            self.log(
-                'debug',
-                f'.openhands_instructions not present, trying to load from repository microagents_dir={microagents_dir}',
-            )
-            obs = self.read(
-                FileReadAction(path=str(repo_root / '.openhands_instructions'))
+            self.log('info',f'{self.workspace_root}/.openhands_instructions not present, trying to load {repo_root}/.openhands_instructions',)
+            obs = self.read(FileReadAction(path=str(repo_root / '.openhands_instructions'))
             )
 
         if isinstance(obs, FileReadObservation):
-            self.log('info', 'openhands_instructions microagent loaded.')
-            loaded_microagents.append(
-                BaseMicroagent.load(
-                    path='.openhands_instructions',
-                    microagent_dir=None,
-                    file_content=obs.content,
-                )
-            )
+            self.log('info', '.openhands_instructions microagent loaded.')
+            loaded_microagents.append(BaseMicroagent.load(path='.openhands_instructions', microagent_dir=None, file_content=obs.content))
 
-        # Load microagents from directory
+        # Load microagents from the repository directory
         repo_microagents = self._load_microagents_from_directory(
             microagents_dir, 'repository'
         )
