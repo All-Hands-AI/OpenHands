@@ -1,7 +1,7 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands_cli.user_actions.utils import cli_confirm, prompt_user
+from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 def ask_user_confirmation(pending_actions: list) -> tuple[UserConfirmation, str]:
@@ -56,13 +56,23 @@ def ask_user_confirmation(pending_actions: list) -> tuple[UserConfirmation, str]
     elif index == 1:
         return UserConfirmation.REJECT, reason
     elif index == 2:
-        reason, should_defer = prompt_user(
-            "Please enter your reason for rejecting these actions: "
-        )
+        try:
+            reason_result = cli_text_input(
+                'Please enter your reason for rejecting these actions: '
+            )
+        except Exception:
+            return UserConfirmation.DEFER, ''
 
-        # If user pressed Ctrl+C or Ctrl+P during reason input, defer the action
-        if should_defer:
-            return UserConfirmation.DEFER, ""
+        # Support both string return and (reason, cancelled) tuple for tests
+        cancelled = False
+        if isinstance(reason_result, tuple) and len(reason_result) >= 1:
+            reason = reason_result[0] or ''
+            cancelled = bool(reason_result[1]) if len(reason_result) > 1 else False
+        else:
+            reason = str(reason_result or '').strip()
+
+        if cancelled:
+            return UserConfirmation.DEFER, ''
 
         return UserConfirmation.REJECT, reason
     elif index == 3:

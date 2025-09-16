@@ -82,7 +82,7 @@ def test_commands_dict() -> None:
         '/confirm',
         '/new',
         '/resume',
-        '/settings'
+        '/settings',
     }
     assert set(COMMANDS.keys()) == expected_commands
 

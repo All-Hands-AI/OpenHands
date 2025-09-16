@@ -7,11 +7,38 @@ using PyInstaller with the custom spec file.
 """
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from openhands_cli.locations import LLM_SETTINGS_PATH
+
+
+dummy_settings = {
+    "model": "litellm_proxy/claude-sonnet-4-20250514",
+    "api_key": "adfadf",
+    "base_url": "https://llm-proxy.app.all-hands.dev/",
+    "num_retries": 5,
+    "retry_multiplier": 8,
+    "retry_min_wait": 8,
+    "retry_max_wait": 64,
+    "max_message_chars": 30000,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_input_tokens": 200000,
+    "max_output_tokens": 64000,
+    "drop_params": True,
+    "modify_params": True,
+    "disable_stop_word": False,
+    "caching_prompt": True,
+    "log_completions": False,
+    "log_completions_folder": "logs/completions",
+    "reasoning_effort": "high",
+    "service_id": "default",
+    "OVERRIDE_ON_SERIALIZE": ["api_key", "aws_access_key_id", "aws_secret_access_key"],
+}
 
 
 def clean_build_directories() -> None:
@@ -99,8 +126,13 @@ def test_executable() -> bool:
     """Test the built executable with simplified checks."""
     print('🧪 Testing the built executable...')
 
-    os.environ['LLM_API_KEY'] = 'dummy-test-key'
-    os.environ['LLM_MODEL'] = 'dummy-model'
+    settings_path = Path(LLM_SETTINGS_PATH)
+    if settings_path.exists():
+        print(f"⚠️  Using existing settings at {settings_path}")
+    else:
+        print(f"💾 Creating dummy settings at {settings_path}")
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        settings_path.write_text(json.dumps(dummy_settings))
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
@@ -117,12 +149,13 @@ def test_executable() -> bool:
 
         # Simple test: Check that executable can start and respond to /help command
         print('  Testing executable startup and /help command...')
+        input_script = "/help\n/exit\n" # Send /help command then exit
         result = subprocess.run(
             [str(exe_path)],
             capture_output=True,
             text=True,
             timeout=15,
-            input='/help\n/exit\n',  # Send /help command then exit
+            input=input_script,
             env={
                 **os.environ
             },

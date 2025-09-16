@@ -12,15 +12,19 @@ from openhands.tools import (
     execute_bash_tool,
     str_replace_editor_tool,
 )
+from openhands_cli.locations import LLM_SETTINGS_PATH
 from prompt_toolkit import HTML, print_formatted_text
 
 
-def setup_agent() -> Conversation:
+def setup_agent() -> Conversation | None:
     """
     Setup the agent with environment variables.
     """
 
-    llm = LLM.load_from_env()
+    try:
+        llm = LLM.load_from_json(LLM_SETTINGS_PATH)
+    except FileNotFoundError:
+        return None
 
     # Setup tools
     cwd = os.getcwd()
@@ -35,7 +39,6 @@ def setup_agent() -> Conversation:
     agent = Agent(llm=llm, tools=tools)
     conversation = Conversation(agent=agent)
 
-    print(llm.model)
     print_formatted_text(
         HTML(f"<green>✓ Agent initialized with model: {llm.model}</green>")
     )

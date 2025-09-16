@@ -7,10 +7,10 @@ on:
     branches:
       - main
     paths:
-      - 'openhands-cli/**'
+      - "openhands-cli/**"
   pull_request:
     paths:
-      - 'openhands-cli/**'
+      - "openhands-cli/**"
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
@@ -46,38 +46,13 @@ jobs:
       - name: Build binary executable
         working-directory: openhands-cli
         run: |
-          ./build.sh --install-pyinstaller --no-test
+          ./build.sh --install-pyinstaller | tee output.log
+          echo "Full output:"
+          cat output.log
 
-      - name: Test binary startup and /help command
-        working-directory: openhands-cli
-        env:
-          LLM_API_KEY: dummy-ci-key
-          LLM_MODEL: dummy-ci-model
-        run: |
-          # Test that binary starts and responds to /help command
-          echo "Testing binary startup and /help command..."
-
-          # Send /help command and then exit
-          echo -e "/help\n/exit" | timeout 30s ./dist/openhands-cli 2>&1 | tee output.log || true
-
-          # Check that the application started successfully
-          if grep -q "OpenHands CLI Help" output.log; then
-            echo "✅ Application started and /help command works correctly"
-          else
-            echo "❌ /help command output not found"
-            echo "Full output:"
-            cat output.log
+          if grep -q "❌" output.log; then
+            echo "❌ Found failure marker in output"
             exit 1
           fi
 
-          # Check for expected help content
-          if grep -q "Available commands:" output.log && grep -q "/exit - Exit the application" output.log; then
-            echo "✅ Help content is correct"
-          else
-            echo "❌ Expected help content not found"
-            echo "Full output:"
-            cat output.log
-            exit 1
-          fi
-
-          echo "✅ Binary test completed successfully"
+          echo "✅ Build & test finished without ❌ markers"
