@@ -13,7 +13,6 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-import tempfile
 from openhands_cli.locations import LLM_SETTINGS_PATH
 
 
