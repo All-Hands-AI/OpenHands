@@ -33,11 +33,17 @@ class TestConfirmationMode:
         """Test that setup_agent creates a conversation successfully."""
         with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
             with (
+                patch('openhands_cli.setup.LLM') as mock_llm_class,
                 patch('openhands_cli.setup.Agent'),
                 patch('openhands_cli.setup.Conversation') as mock_conversation,
                 patch('openhands_cli.setup.BashExecutor'),
                 patch('openhands_cli.setup.FileEditorExecutor'),
             ):
+                # Mock LLM.load_from_json to return a mock LLM instance
+                mock_llm_instance = MagicMock()
+                mock_llm_instance.model = 'test-model'
+                mock_llm_class.load_from_json.return_value = mock_llm_instance
+                
                 mock_conv_instance = MagicMock()
                 mock_conversation.return_value = mock_conv_instance
 
@@ -46,6 +52,7 @@ class TestConfirmationMode:
                 # Verify conversation was created and returned
                 assert result == mock_conv_instance
                 mock_conversation.assert_called_once()
+                mock_llm_class.load_from_json.assert_called_once()
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
         """Test that ConversationRunner can set confirmation mode."""
