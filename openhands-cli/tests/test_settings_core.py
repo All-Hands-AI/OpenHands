@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""
+Core Settings Logic tests
+
+Covers essential flows with minimal mocking, using shared fixtures.
+
+Tests:
+- test_settings_type_selection
+- test_provider_selection_with_predefined_options
+- test_provider_selection_with_custom_input
+- test_model_selection_flows
+- test_api_key_validation_and_prompting
+- test_save_confirmation_flows
+
+Fixtures provided in tests/conftest.py:
+- mock_verified_models
+- mock_cli_interactions
+"""
+
+from typing import Any
+from unittest.mock import MagicMock
+
+import pytest
+from prompt_toolkit.completion import FuzzyWordCompleter
+from prompt_toolkit.validation import ValidationError
+from pydantic import SecretStr
+
+from openhands_cli.user_actions.settings_action import (
+    APIKeyValidator,
+    SettingsType,
+    choose_llm_model,
+    choose_llm_provider,
+    prompt_api_key,
+    save_settings_confirmation,
+    settings_type_confirmation,
+)
+
+
+# -------------------------------
+# Settings type selection
+# -------------------------------
+
+def test_settings_type_selection(mock_cli_interactions: Any) -> None:
+    mocks = mock_cli_interactions
+
+    # Basic
+    mocks.cli_confirm.return_value = 0
+    assert settings_type_confirmation() == SettingsType.BASIC
+
+    # Cancel/Go back
+    mocks.cli_confirm.return_value = 1
+    with pytest.raises(KeyboardInterrupt):
+        settings_type_confirmation()
+
+
+# -------------------------------
+# Provider selection flows
+# -------------------------------
+
+def test_provider_selection_with_predefined_options(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+    mocks = mock_cli_interactions
+    # first option among display_options is index 0
+    mocks.cli_confirm.return_value = 0
+    result = choose_llm_provider()
+    assert result in ["openai", "anthropic", "custom"]
+
+
+def test_provider_selection_with_custom_input(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+    mocks = mock_cli_interactions
+    # Due to overlapping provider keys between VERIFIED and UNVERIFIED in fixture,
+    # display_options contains 4 providers (with duplicates) + alternate at index 4
+    mocks.cli_confirm.return_value = 4
+    mocks.cli_text_input.return_value = "my-provider"
+    result = choose_llm_provider()
+    assert result == "my-provider"
+    # Verify fuzzy completer passed
+    _, kwargs = mocks.cli_text_input.call_args
+    assert isinstance(kwargs["completer"], FuzzyWordCompleter)
+
+
+# -------------------------------
+# Model selection flows
+# -------------------------------
+
+def test_model_selection_flows(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+    mocks = mock_cli_interactions
+
+    # Direct pick from predefined list
+    mocks.cli_confirm.return_value = 0
+    result = choose_llm_model("openai")
+    assert result in ["gpt-4o", "gpt-4o-mini", "gpt-custom"]
+
+    # Choose custom model via input
+    mocks.cli_confirm.return_value = 4  # for provider with >=4 models this would be alt; in our data openai has 3 -> alt index is 3
+    mocks.cli_text_input.return_value = "custom-model"
+    # Adjust to actual alt index produced by code (len(models[:4]) yields 3 + 1 alt -> index 3)
+    mocks.cli_confirm.return_value = 3
+    result2 = choose_llm_model("openai")
+    assert result2 == "custom-model"
+
+
+# -------------------------------
+# API key validation and prompting
+# -------------------------------
+
+def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
+    # Validator standalone
+    validator = APIKeyValidator()
+    doc = MagicMock(); doc.text = "sk-abc"
+    validator.validate(doc)
+
+    doc_empty = MagicMock(); doc_empty.text = ""
+    with pytest.raises(ValidationError):
+        validator.validate(doc_empty)
+
+    # Prompting for new key enforces validator
+    mocks = mock_cli_interactions
+    mocks.cli_text_input.return_value = "sk-new"
+    new_key = prompt_api_key()
+    assert new_key == "sk-new"
+    assert mocks.cli_text_input.call_args[1]["validator"] is not None
+
+    # Prompting with existing key shows mask and no validator
+    mocks.cli_text_input.reset_mock()
+    mocks.cli_text_input.return_value = "sk-updated"
+    existing = SecretStr("sk-existing-123")
+    updated = prompt_api_key(existing)
+    assert updated == "sk-updated"
+    assert mocks.cli_text_input.call_args[1]["validator"] is None
+    assert "sk-***" in mocks.cli_text_input.call_args[0][0]
+
+
+# -------------------------------
+# Save confirmation flows
+# -------------------------------
+
+def test_save_confirmation_flows(mock_cli_interactions: Any) -> None:
+    mocks = mock_cli_interactions
+
+    # Save path
+    mocks.cli_confirm.return_value = 0
+    assert save_settings_confirmation() == "Yes, save"
+
+    # Discard path
+    mocks.cli_confirm.return_value = 1
+    with pytest.raises(KeyboardInterrupt):
+        save_settings_confirmation()
