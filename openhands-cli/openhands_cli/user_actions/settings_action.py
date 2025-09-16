@@ -57,7 +57,14 @@ def choose_llm_model(provider: str, escapable=True) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
 
     models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
-    question = '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): '
+
+    if provider == 'openhands':
+        question = (
+            '(Step 2/3) Select Available OpenHands Model:\n'
+            + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
+        )
+    else:
+        question = '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): '
     alternate_option = 'Select another model'
     display_options = models[:4] + [alternate_option]
     index = cli_confirm(question, display_options, escapable=escapable)
@@ -83,8 +90,15 @@ class APIKeyValidator(Validator):
 
 
 def prompt_api_key(
-    existing_api_key: SecretStr | None = None, escapable=True
+    provider: str, existing_api_key: SecretStr | None = None, escapable=True
 ) -> tuple[str | None, bool]:
+    helper_text = (
+        "\nYou can find your OpenHands LLM API Key in the API Keys tab of OpenHands Cloud: "
+        "https://app.all-hands.dev/settings/api-keys\n"
+        if provider == "openhands"
+        else ""
+    )
+
     if existing_api_key:
         masked_key = existing_api_key.get_secret_value()[:3] + '***'
         question = f'Enter API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
@@ -95,7 +109,7 @@ def prompt_api_key(
         # For new keys, require non-empty input
         validator = APIKeyValidator()
 
-    question = '(Step 3/3) ' + question
+    question = helper_text + '(Step 3/3) ' + question
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 

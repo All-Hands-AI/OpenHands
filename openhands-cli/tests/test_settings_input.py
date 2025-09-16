@@ -102,7 +102,7 @@ def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
     # Prompting for new key enforces validator
     mocks = mock_cli_interactions
     mocks.cli_text_input.return_value = "sk-new"
-    new_key = prompt_api_key()
+    new_key = prompt_api_key('provider')
     assert new_key == "sk-new"
     assert mocks.cli_text_input.call_args[1]["validator"] is not None
 
@@ -110,7 +110,7 @@ def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
     mocks.cli_text_input.reset_mock()
     mocks.cli_text_input.return_value = "sk-updated"
     existing = SecretStr("sk-existing-123")
-    updated = prompt_api_key(existing)
+    updated = prompt_api_key('provider', existing)
     assert updated == "sk-updated"
     assert mocks.cli_text_input.call_args[1]["validator"] is None
     assert "sk-***" in mocks.cli_text_input.call_args[0][0]

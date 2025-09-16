@@ -95,7 +95,11 @@ class SettingsScreen:
         try:
             provider = choose_llm_provider(escapable=escapable)
             llm_model = choose_llm_model(provider, escapable=escapable)
-            api_key = prompt_api_key(self.conversation.agent.llm.api_key if self.conversation else None, escapable=escapable)
+            api_key = prompt_api_key(
+                provider,
+                self.conversation.agent.llm.api_key if self.conversation else None,
+                escapable=escapable
+            )
             save_settings_confirmation()
         except KeyboardInterrupt:
             print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
