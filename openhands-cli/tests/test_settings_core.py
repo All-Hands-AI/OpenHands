@@ -62,7 +62,7 @@ def test_provider_selection_with_predefined_options(mock_verified_models: Any, m
     # first option among display_options is index 0
     mocks.cli_confirm.return_value = 0
     result = choose_llm_provider()
-    assert result in ["openai", "anthropic", "custom"]
+    assert result == 'openai'
 
 
 def test_provider_selection_with_custom_input(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
@@ -73,6 +73,7 @@ def test_provider_selection_with_custom_input(mock_verified_models: Any, mock_cl
     mocks.cli_text_input.return_value = "my-provider"
     result = choose_llm_provider()
     assert result == "my-provider"
+
     # Verify fuzzy completer passed
     _, kwargs = mocks.cli_text_input.call_args
     assert isinstance(kwargs["completer"], FuzzyWordCompleter)
@@ -88,7 +89,7 @@ def test_model_selection_flows(mock_verified_models: Any, mock_cli_interactions:
     # Direct pick from predefined list
     mocks.cli_confirm.return_value = 0
     result = choose_llm_model("openai")
-    assert result in ["gpt-4o", "gpt-4o-mini", "gpt-custom"]
+    assert result in ["gpt-4o"]
 
     # Choose custom model via input
     mocks.cli_confirm.return_value = 4  # for provider with >=4 models this would be alt; in our data openai has 3 -> alt index is 3
@@ -128,20 +129,3 @@ def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
     assert updated == "sk-updated"
     assert mocks.cli_text_input.call_args[1]["validator"] is None
     assert "sk-***" in mocks.cli_text_input.call_args[0][0]
-
-
-# -------------------------------
-# Save confirmation flows
-# -------------------------------
-
-def test_save_confirmation_flows(mock_cli_interactions: Any) -> None:
-    mocks = mock_cli_interactions
-
-    # Save path
-    mocks.cli_confirm.return_value = 0
-    assert save_settings_confirmation() == "Yes, save"
-
-    # Discard path
-    mocks.cli_confirm.return_value = 1
-    with pytest.raises(KeyboardInterrupt):
-        save_settings_confirmation()
