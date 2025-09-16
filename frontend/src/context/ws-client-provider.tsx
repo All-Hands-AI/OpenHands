@@ -263,8 +263,13 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    updateStatusWhenErrorMessagePresent(data);
 
+    // Don't set error messages if conversation is intentionally stopped
+    if (conversation && conversation.status === "STOPPED") {
+      return;
+    }
+
+    updateStatusWhenErrorMessagePresent(data);
     setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
@@ -295,6 +300,20 @@ export function WsClientProvider({
   React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
+    }
+
+    // Clear error messages when conversation is intentionally stopped
+    if (conversation && conversation.status === "STOPPED") {
+      removeErrorMessage();
+      setWebSocketStatus("DISCONNECTED");
+      return () => undefined; // conversation intentionally stopped
+    }
+
+    // Set connecting status when conversation is starting
+    if (conversation && conversation.status === "STARTING") {
+      removeErrorMessage();
+      setWebSocketStatus("CONNECTING");
+      return () => undefined; // conversation is starting, will connect when ready
     }
 
     // Only connect when conversation is fully loaded and running
