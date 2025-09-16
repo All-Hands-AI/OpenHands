@@ -20,7 +20,7 @@ Two scenarios:
 
 **Regular SaaS Release** - A new job is added to the release workflow so that
 for every SaaS release tarballs are pushed to S3. Presigned URLs need to be
-published in a changelog accessible by our customers.
+published for our customers.
 
 **Special Troubleshooting Builds** - Add GitHub a workflow to the `deploy` repo
 which is manually triggered to build and push to S3 from a named feature branch.
@@ -70,6 +70,24 @@ to manually trigger a build supplying the target branch name. The image(s) are
 built and published to S3. An S3 link in the build log may be shared with the
 customer.
 
+### 3.3 HTML Report Generation
+
+For both typical releases and troubleshooting releases, the workflow will
+automatically generate a comprehensive HTML report containing all download links
+and usage instructions. This report will be:
+
+- **Attached as a build artifact** - Available for download from the GitHub Actions
+  run page
+- **Self-contained** - Includes all necessary download links with presigned URLs
+- **Customer-ready** - Professional formatting with clear instructions for loading
+  Docker images
+- **Comprehensive** - Contains build information, file sizes, expiration times,
+  and step-by-step usage instructions
+
+The HTML report serves as a complete package that can be downloaded and shared
+directly with customers, eliminating the need to manually copy individual URLs
+from build logs or S3 console.
+
 ## 4. Solution Design
 
 ### 4.1 S3 Bucket Structure
@@ -83,16 +101,11 @@ traceability to the exact code being built.
 This approach aligns with the standard GHCR workflow which uses commit SHAs for
 image tagging, ensuring consistency across our build processes.
 
-To help clients identify the latest prerelease image from a feature branch, each
-branch folder will include a `CHANGELOG.md` file that documents all builds for
-that branch, with the most recent build listed first.
-
 Example:
 
 ```plaintext
 s3://prerelease-bucket/
 ├── jps/publish-prerelease-images/
-│   ├── CHANGELOG.md  # Documents all builds
 │   ├── abc1234/
 │   │   ├── openhands:latest.tar
 │   │   ├── openhands:main-abc1234.tar
@@ -105,15 +118,116 @@ s3://prerelease-bucket/
 │       ├── enterprise:latest.tar
 │       └── runtime-api:latest.tar
 └── mj/security-patch-123/
-    ├── CHANGELOG.md
     └── ghi9012/
         ├── openhands:hotfix-security.tar
         └── enterprise:hotfix-security.tar
 ```
 
-### 4.2 Manual Prerelease Build Workflow
+### 4.2 Security Architecture
 
-#### 4.2.1 Prerequisites
+The S3 publishing workflow implements a two-tier security model using AWS IAM roles
+to minimize credential exposure while maintaining functionality.
+
+#### 4.2.1 Service Account and Read-Only Role
+
+**Service Account**: The primary `service` IAM user with write permissions for S3
+operations (upload, delete, etc.). This account is used for uploading Docker images
+to S3.
+
+**Read-Only Role**: A separate IAM role (`S3PresignedURLRole`) with minimal read-only
+permissions used exclusively for generating presigned URLs.
+
+#### 4.2.2 Security Challenge and Solution
+
+**Initial Problem**: When using a single service account for both uploads and presigned
+URL generation, the `AWS_ACCESS_KEY_ID` was automatically redacted from GitHub Actions
+logs as a secret. This made it impossible to emit presigned URLs in build logs since
+the access key ID is embedded in the URL structure.
+
+**Solution**: Role assumption pattern where:
+
+1. Service account uploads images to S3 (write operations)
+2. Service account assumes the read-only role for presigned URL generation
+3. Presigned URLs are generated with temporary read-only credentials
+4. The temporary access key ID can be safely emitted in logs since it has no write permissions
+
+#### 4.2.3 Implementation Details
+
+The workflow follows this secure sequence:
+
+```bash
+# Step 1: Upload using service account (write permissions)
+aws s3 cp image.tar.gz s3://bucket/path/
+
+# Step 2: Assume read-only role
+aws sts assume-role --role-arn "arn:aws:iam::ACCOUNT:role/S3PresignedURLRole"
+
+# Step 3: Generate presigned URL with temporary read-only credentials
+aws s3 presign s3://bucket/path/image.tar.gz --expires-in 604800
+```
+
+**Security Benefits**:
+
+- Presigned URLs contain only temporary read-only access keys
+- No additional secrets or variables required beyond the service account
+- Temporary credentials expire automatically (typically 1 hour)
+- If presigned URLs are exposed in logs, only read-only access is compromised
+
+#### 4.2.4 Infrastructure Documentation
+
+The complete AWS infrastructure configuration is documented in the `infra` repository
+under `doc/manually-managed.md`, including:
+
+- IAM user and policy definitions
+- Read-only role configuration
+- S3 bucket setup and permissions
+- Complete Terraform resource definitions
+
+### 4.3 Composite Actions Architecture
+
+The S3 publishing workflow is built using GitHub Actions composite actions to promote
+reusability, maintainability, and consistency across different workflow types. The
+composite actions are organized as follows:
+
+#### 4.3.1 Core Actions
+
+**`publish-image-to-s3`** - Main action for publishing individual Docker images:
+
+- Pulls images from GHCR
+- Exports to compressed tarballs
+- Uploads to S3 with proper folder structure
+- Generates presigned URLs using read-only IAM role
+- Returns tab-delimited data for report generation
+
+**`generate-presigned-url`** - Security-focused URL generation:
+
+- Assumes read-only IAM role for minimal permissions
+- Generates presigned URLs with configurable expiration
+- Validates URL format and detects encoding issues
+- Provides comprehensive error handling and logging
+
+**`s3-publish-report`** - HTML report generation:
+
+- Processes tab-delimited image data
+- Uses Python template engine for reliable processing
+- Generates professional HTML reports with styling
+- Handles file size formatting and usage instructions
+
+#### 4.3.2 Data Flow
+
+```text
+Workflow → publish-image-to-s3 → generate-presigned-url
+    ↓
+Tab-delimited data → s3-publish-report → HTML artifact
+```
+
+This architecture ensures that both manual troubleshooting builds and automated
+release workflows can leverage the same underlying actions while maintaining
+security and reliability.
+
+### 4.4 Manual Prerelease Build Workflow
+
+#### 4.4.1 Prerequisites
 
 The following infrastructure and configuration must be in place before
 implementing the manual prerelease build workflow:
@@ -126,7 +240,7 @@ implementing the manual prerelease build workflow:
   - `s3:PutObject` - Upload tarball files
   - `s3:PutObjectAcl` - Set object permissions
   - `s3:GetObject` - Generate presigned URLs
-  - `s3:ListBucket` - List objects for changelog management
+  - `s3:ListBucket` - List objects for S3 management
 - AWS credentials stored as GitHub repository secrets:
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
@@ -148,7 +262,7 @@ implementing the manual prerelease build workflow:
 - `GITHUB_TOKEN` secret available for GHCR authentication
 - Docker images built and available in GHCR before S3 export
 
-#### 4.2.2 Workflow Implementation
+#### 4.4.2 Workflow Implementation
 
 The manual prerelease build workflow will be implemented as a new GitHub Actions
 workflow file: `.github/workflows/s3-prerelease-build.yml`
@@ -175,7 +289,7 @@ workflow file: `.github/workflows/s3-prerelease-build.yml`
    - Create S3 folder structure: `{branch-name}/{commit-sha}/`
    - Upload tarball files to S3
    - Generate presigned URLs for each image
-   - Update branch CHANGELOG.md with build information
+   - Generate build information for reporting
    - Output presigned URLs for easy sharing
 
 **Sample Workflow Structure:**
@@ -257,7 +371,7 @@ jobs:
         run: |
           # Upload tarballs to S3 with proper structure
           # Generate presigned URLs
-          # Update CHANGELOG.md
+          # Generate build information
           # ... (detailed implementation)
       
       - name: Output presigned URLs
@@ -271,37 +385,18 @@ jobs:
           # ... (output presigned URLs)
 ```
 
-**Changelog Format:** The workflow will automatically generate/update a
-`CHANGELOG.md` file in the branch folder with entries like:
+### 4.5 Enhanced Release Workflow with S3 Publishing
 
-```markdown
-## Build History
-
-### 2024-01-16 09:15:42Z - abc1234
-**Commit**: `abc1234` - Fix authentication bug in enterprise mode
-**Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
-**Notes**: Critical security fix for enterprise customers
-**Download**: [View S3 Folder](s3://bucket/branch-name/abc1234/)
-
-### 2024-01-15 14:30:25Z - def5678
-**Commit**: `def5678` - Initial feature implementation
-**Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
-**Notes**: First prerelease build for client testing
-**Download**: [View S3 Folder](s3://bucket/branch-name/def5678/)
-```
-
-### 4.3 Enhanced Release Workflow with S3 Publishing
-
-#### 4.3.1 Prerequisites
+#### 4.5.1 Prerequisites
 
 The following infrastructure and configuration must be in place before
 implementing the enhanced release workflow:
 
 **AWS S3 Configuration:**
 
-- S3 bucket created and configured for prerelease image storage (same as 4.2.1)
+- S3 bucket created and configured for prerelease image storage (same as 4.4.1)
 - Bucket name stored as GitHub repository secret: `S3_PRERELEASE_BUCKET`
-- AWS credentials configured with appropriate permissions (same as 4.2.1)
+- AWS credentials configured with appropriate permissions (same as 4.4.1)
 - AWS credentials stored as GitHub repository secrets:
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
@@ -323,7 +418,7 @@ implementing the enhanced release workflow:
 - Existing build jobs (`ghcr_build_enterprise` and `ghcr_build_runtime`) must be
   working
 
-#### 4.3.2 Workflow Implementation
+#### 4.5.2 Workflow Implementation
 
 The enhanced release workflow will extend the existing `ghcr-build.yml` workflow
 by adding S3 publishing steps to the existing build jobs.
@@ -345,8 +440,7 @@ by adding S3 publishing steps to the existing build jobs.
 3. **Add New Job: `s3-publish-release`**
    - Depends on both `ghcr_build_enterprise` and `ghcr_build_runtime` jobs
    - Only runs on version tag pushes
-   - Generate release changelog entry
-   - Update S3 release changelog
+   - Generate release information
    - Output release information and S3 links
 
 **Sample Workflow Extensions:**
@@ -408,25 +502,13 @@ s3-publish-release:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
     
-    - name: Generate release changelog
+    - name: Generate release information
       run: |
-        # Create or update release changelog
-        cat > release-changelog.md << EOF
-        ## Release ${{ github.ref_name }}
-        
-        **Release Date**: $(date -u +"%Y-%m-%d %H:%M:%SZ")
-        **Commit**: ${{ github.sha }}
-        **Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu
-        
-        ### Download Links:
-        - [Enterprise Server](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/enterprise-server:${{ github.ref_name }}.tar)
-        - [Runtime Nikolaik](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-nikolaik:${{ github.ref_name }}.tar)
-        - [Runtime Ubuntu](s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/runtime-ubuntu:${{ github.ref_name }}.tar)
-        EOF
-    
-    - name: Upload release changelog
-      run: |
-        aws s3 cp release-changelog.md s3://${{ secrets.S3_PRERELEASE_BUCKET }}/releases/${{ github.ref_name }}/CHANGELOG.md
+        # Generate release information
+        echo "## Release ${{ github.ref_name }}"
+        echo "**Release Date**: $(date -u +"%Y-%m-%d %H:%M:%SZ")"
+        echo "**Commit**: ${{ github.sha }}"
+        echo "**Images**: enterprise-server, runtime-nikolaik, runtime-ubuntu"
     
     - name: Output release information
       run: |
@@ -441,7 +523,7 @@ s3-publish-release:
   startsWith(github.ref, 'refs/tags/v')`
 - **Maintains GHCR Publishing**: Existing GHCR publishing remains unchanged
 - **Version-based Structure**: Uses version tags for S3 folder organization
-- **Release Changelog**: Automatically generates changelog for each release
+- **Release Information**: Automatically generates release information
 - **Backward Compatibility**: No changes to existing workflow behavior
 
 ## 5. Open Questions
@@ -459,44 +541,6 @@ s3-publish-release:
 ### 5.3 White List
 
 - How do we secure who can trigger these builds?
-
-### 5.4 Change Log
-
-Ideally this process should be self-documenting and leave a clear trail of what
-was released to the customer and why. The `CHANGELOG.md` file serves multiple
-purposes:
-
-1. **Build Documentation**: Documents all builds for a feature branch with
-   timestamps, commit SHAs, and descriptions of changes
-2. **Latest Build Identification**: Clients can identify the latest build by
-   reading the first entry in the changelog
-3. **Release Trail**: Provides a clear audit trail of what was delivered to
-   customers
-
-The changelog will be automatically generated/updated by the build process and
-should include:
-
-- Build timestamp
-- Commit SHA and short description
-- List of images built
-- Any custom notes from the `.doc/branch-name/CHANGELOG.md` file
-- Links to the specific commit builds
-
-Example changelog entry:
-
-```markdown
-## Build History
-
-### 2024-01-16 09:15:42Z - def5678
-**Commit**: `def5678` - Fix authentication bug in enterprise mode
-**Images**: openhands, enterprise, runtime-api
-**Notes**: Critical security fix for enterprise customers
-
-### 2024-01-15 14:30:25Z - abc1234
-**Commit**: `abc1234` - Initial feature implementation
-**Images**: openhands, enterprise, runtime-api
-**Notes**: First prerelease build for client testing
-```
 
 ## 5. Appendix
 
