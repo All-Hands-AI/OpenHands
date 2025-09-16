@@ -57,12 +57,21 @@ def ask_user_confirmation(pending_actions: list) -> tuple[UserConfirmation, str]
         return UserConfirmation.REJECT, reason
     elif index == 2:
         try:
-            reason = cli_text_input(
+            reason_result = cli_text_input(
                 'Please enter your reason for rejecting these actions: '
             )
-
-        # If user pressed Ctrl+C or Ctrl+P during reason input, defer the action
         except Exception:
+            return UserConfirmation.DEFER, ''
+
+        # Support both string return and (reason, cancelled) tuple for tests
+        cancelled = False
+        if isinstance(reason_result, tuple) and len(reason_result) >= 1:
+            reason = reason_result[0] or ''
+            cancelled = bool(reason_result[1]) if len(reason_result) > 1 else False
+        else:
+            reason = str(reason_result or '').strip()
+
+        if cancelled:
             return UserConfirmation.DEFER, ''
 
         return UserConfirmation.REJECT, reason
