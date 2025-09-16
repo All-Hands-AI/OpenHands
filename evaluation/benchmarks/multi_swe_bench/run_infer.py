@@ -6,9 +6,9 @@ from typing import Any
 
 import pandas as pd
 import toml
-from datasets import load_dataset
 
 import openhands.agenthub
+from datasets import load_dataset
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
 )
@@ -774,9 +774,7 @@ if __name__ == '__main__':
     # so we don't need to manage file uploading to OpenHands's repo
     # dataset = load_dataset(args.dataset, split=args.split)
     # dataset = load_dataset(args.dataset)
-    logger.info(
-        f'Loading dataset {args.dataset} with split {args.split} '
-    )
+    logger.info(f'Loading dataset {args.dataset} with split {args.split} ')
     dataset = load_dataset('json', data_files=args.dataset)
     dataset = dataset[args.split]
     swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')

@@ -59,7 +59,7 @@ function run_eval() {
   local eval_note=$1
   export LANGUAGE=java
   echo "About to run command"
-  COMMAND="EVAL_DOCKER_IMAGE_PREFIX=$EVAL_DOCKER_IMAGE_PREFIX; LANGUAGE=java;  
+  COMMAND="EVAL_DOCKER_IMAGE_PREFIX=$EVAL_DOCKER_IMAGE_PREFIX; LANGUAGE=java;
     poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
     --agent-cls CodeActAgent \
     --llm-config $MODEL \

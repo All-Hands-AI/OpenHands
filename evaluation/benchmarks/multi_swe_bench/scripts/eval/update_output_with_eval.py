@@ -7,10 +7,16 @@ from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_file', type=str)
-parser.add_argument('--force', action='store_true', 
-                    help='Force update all reports even if no changes are detected')
-parser.add_argument('--overwrite-backup', action='store_true',
-                    help='Automatically overwrite existing backup files without prompting')
+parser.add_argument(
+    '--force',
+    action='store_true',
+    help='Force update all reports even if no changes are detected',
+)
+parser.add_argument(
+    '--overwrite-backup',
+    action='store_true',
+    help='Automatically overwrite existing backup files without prompting',
+)
 args = parser.parse_args()
 
 dirname = os.path.dirname(args.input_file)
@@ -27,7 +33,9 @@ instance_id_to_status = defaultdict(
 )
 
 # Process official report if it exists
-swebench_official_report_json = os.path.join(dirname, 'eval_files/dataset/final_report.json')
+swebench_official_report_json = os.path.join(
+    dirname, 'eval_files/dataset/final_report.json'
+)
 openhands_remote_report_jsonl = args.input_file.replace(
     '.jsonl', '.swebench_eval.jsonl'
 )
@@ -36,7 +44,7 @@ if os.path.exists(swebench_official_report_json):
     output_md_filepath = os.path.join(dirname, 'README.md')
     with open(swebench_official_report_json, 'r') as f:
         report = json.load(f)
-    
+
     # Convert instance IDs from "repo/name:pr-123" format to "repo__name-123" format
     def convert_instance_id(instance_id):
         """Convert instance ID from slash/colon-pr format to double underscore/dash format."""
@@ -48,13 +56,21 @@ if os.path.exists(swebench_official_report_json):
                 name_and_pr = parts[1]
                 if ':pr-' in name_and_pr:
                     name, pr_number = name_and_pr.split(':pr-')
-                    return f"{repo_part}__{name}-{pr_number}"
+                    return f'{repo_part}__{name}-{pr_number}'
         return instance_id
-    
+
     # Convert all instance ID lists in the report
-    for key in ['resolved_ids', 'unresolved_ids', 'error_ids', 'empty_patch_ids', 'incomplete_ids']:
+    for key in [
+        'resolved_ids',
+        'unresolved_ids',
+        'error_ids',
+        'empty_patch_ids',
+        'incomplete_ids',
+    ]:
         if key in report:
-            report[key] = [convert_instance_id(instance_id) for instance_id in report[key]]
+            report[key] = [
+                convert_instance_id(instance_id) for instance_id in report[key]
+            ]
 
     output_md = (
         '# Multi-SWE-bench Report\n'
@@ -136,7 +152,9 @@ else:
 # Backup and update the original file row by row
 if os.path.exists(args.input_file + '.bak'):
     if args.overwrite_backup:
-        print('Existing backup file found. Overwriting automatically due to --overwrite-backup flag.')
+        print(
+            'Existing backup file found. Overwriting automatically due to --overwrite-backup flag.'
+        )
         os.remove(args.input_file + '.bak')
     else:
         conf = input('Existing backup file found. Do you want to overwrite it? (y/n)')
