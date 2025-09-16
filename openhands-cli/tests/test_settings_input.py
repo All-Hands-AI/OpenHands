@@ -1,20 +1,6 @@
 #!/usr/bin/env python3
 """
 Core Settings Logic tests
-
-Covers essential flows with minimal mocking, using shared fixtures.
-
-Tests:
-- test_settings_type_selection
-- test_provider_selection_with_predefined_options
-- test_provider_selection_with_custom_input
-- test_model_selection_flows
-- test_api_key_validation_and_prompting
-- test_save_confirmation_flows
-
-Fixtures provided in tests/conftest.py:
-- mock_verified_models
-- mock_cli_interactions
 """
 
 from typing import Any
