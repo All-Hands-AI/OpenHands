@@ -1,5 +1,4 @@
 from litellm import ChatCompletionMessageToolCall
-
 from openhands.core.message import ImageContent, Message, TextContent
 
 

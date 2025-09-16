@@ -4,7 +4,6 @@ import subprocess
 from unittest import mock
 
 import pytest
-
 from openhands.cli import vscode_extension
 
 

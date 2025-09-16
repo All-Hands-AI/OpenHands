@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from openhands.integrations.service_types import GitService
 from openhands.server.routes.mcp import get_conversation_link
 from openhands.server.types import AppMode

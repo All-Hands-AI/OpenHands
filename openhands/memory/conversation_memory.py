@@ -1,7 +1,6 @@
 from typing import Generator
 
 from litellm import ModelResponse
-
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent

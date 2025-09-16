@@ -14,21 +14,6 @@ from typing import Any
 
 import pandas as pd
 import ruamel.yaml
-from datasets import load_dataset
-
-from evaluation.utils.shared import (
-    EvalMetadata,
-    EvalOutput,
-    codeact_user_response,
-    compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
@@ -42,6 +27,21 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+
+from datasets import load_dataset
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    codeact_user_response,
+    compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 
 
 def get_config(

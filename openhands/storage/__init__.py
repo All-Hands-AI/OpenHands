@@ -1,7 +1,6 @@
 import os
 
 import httpx
-
 from openhands.storage.batched_web_hook import BatchedWebHookFileStore
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore

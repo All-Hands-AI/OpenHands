@@ -10,7 +10,6 @@ from conftest import (
     _close_test_runtime,
     _load_runtime,
 )
-
 from openhands.core.config import MCPConfig
 from openhands.core.config.mcp_config import MCPStdioServerConfig
 from openhands.mcp.utils import add_mcp_tools_to_agent

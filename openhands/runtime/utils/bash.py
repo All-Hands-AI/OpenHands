@@ -8,7 +8,6 @@ from typing import Any
 
 import bashlex
 import libtmux
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation

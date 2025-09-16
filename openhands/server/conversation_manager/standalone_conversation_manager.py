@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 from typing import Callable, Iterable
 
 import socketio
-
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError

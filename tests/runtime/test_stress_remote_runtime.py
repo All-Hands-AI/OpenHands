@@ -21,18 +21,6 @@ from unittest.mock import MagicMock
 import pandas as pd
 import pytest
 from conftest import TEST_IN_CI
-
-from evaluation.utils.shared import (
-    EvalException,
-    EvalMetadata,
-    EvalOutput,
-    assert_and_raise,
-    codeact_user_response,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-)
 from openhands.agenthub import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -54,6 +42,18 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.llm import LLM
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+
+from evaluation.utils.shared import (
+    EvalException,
+    EvalMetadata,
+    EvalOutput,
+    assert_and_raise,
+    codeact_user_response,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,

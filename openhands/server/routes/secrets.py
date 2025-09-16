@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, CustomSecret
 from openhands.integrations.service_types import ProviderType

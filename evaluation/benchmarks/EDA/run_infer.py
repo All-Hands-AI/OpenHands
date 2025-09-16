@@ -2,8 +2,18 @@ import asyncio
 import os
 
 import pandas as pd
-from datasets import load_dataset
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    OpenHandsConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import MessageAction
+from openhands.utils.async_utils import call_async_from_sync
 
+from datasets import load_dataset
 from evaluation.benchmarks.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
@@ -16,16 +26,6 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    OpenHandsConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
-from openhands.utils.async_utils import call_async_from_sync
 
 game = None
 

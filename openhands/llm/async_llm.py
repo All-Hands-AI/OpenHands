@@ -3,7 +3,6 @@ from functools import partial
 from typing import Any, Callable
 
 from litellm import acompletion as litellm_acompletion
-
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import (

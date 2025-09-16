@@ -1,8 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from prompt_toolkit.formatted_text import HTML
-
 from openhands.cli.commands import (
     display_mcp_servers,
     handle_commands,
@@ -22,6 +20,7 @@ from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.stream import EventStream
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from prompt_toolkit.formatted_text import HTML
 
 
 class TestHandleCommands:

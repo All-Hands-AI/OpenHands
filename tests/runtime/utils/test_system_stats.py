@@ -4,7 +4,6 @@ import time
 from unittest.mock import patch
 
 import psutil
-
 from openhands.runtime.utils.system_stats import (
     get_system_info,
     get_system_stats,

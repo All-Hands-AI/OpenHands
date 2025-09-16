@@ -1,7 +1,6 @@
 import argparse
 
 import pandas as pd
-
 from openhands.core.logger import openhands_logger as logger
 
 

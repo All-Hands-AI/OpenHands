@@ -1,7 +1,6 @@
 from typing import Any
 
 from fastapi import APIRouter
-
 from openhands.controller.agent import Agent
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.dependencies import get_dependencies

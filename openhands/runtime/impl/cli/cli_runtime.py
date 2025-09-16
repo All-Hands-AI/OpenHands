@@ -16,12 +16,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
 from binaryornot.check import is_binary
-from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.exceptions import ToolError
-from openhands_aci.editor.results import ToolResult
-from openhands_aci.utils.diff import get_diff
-from pydantic import SecretStr
-
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
@@ -50,6 +44,11 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands_aci.editor.editor import OHEditor
+from openhands_aci.editor.exceptions import ToolError
+from openhands_aci.editor.results import ToolResult
+from openhands_aci.utils.diff import get_diff
+from pydantic import SecretStr
 
 if TYPE_CHECKING:
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession

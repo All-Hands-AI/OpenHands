@@ -2,7 +2,6 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
-
 from openhands.cli.commands import handle_commands
 from openhands.core.schema import AgentState
 from openhands.core.schema.exit_reason import ExitReason

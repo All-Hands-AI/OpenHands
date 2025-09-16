@@ -3,7 +3,6 @@ from itertools import islice
 from typing import Iterable
 
 from deprecated import deprecated  # type: ignore
-
 from openhands.events.event import Event, EventSource
 from openhands.events.event_filter import EventFilter
 

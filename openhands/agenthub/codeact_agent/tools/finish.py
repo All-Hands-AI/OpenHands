@@ -1,5 +1,4 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 from openhands.llm.tool_names import FINISH_TOOL_NAME
 
 _FINISH_DESCRIPTION = """Signals the completion of the current task or conversation.

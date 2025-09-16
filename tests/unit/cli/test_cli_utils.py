@@ -2,7 +2,6 @@ from pathlib import Path
 from unittest.mock import MagicMock, PropertyMock, mock_open, patch
 
 import toml
-
 from openhands.cli.tui import UsageMetrics
 from openhands.cli.utils import (
     add_local_config_trusted_dir,

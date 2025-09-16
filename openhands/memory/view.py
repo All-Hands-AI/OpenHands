@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from typing import overload
 
-from pydantic import BaseModel
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction, CondensationRequestAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
+from pydantic import BaseModel
 
 
 class View(BaseModel):

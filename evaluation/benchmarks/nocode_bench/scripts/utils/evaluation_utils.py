@@ -4,6 +4,7 @@ from typing import Awaitable, Callable, TextIO
 
 import numpy as np
 import pandas as pd
+from openhands.core.logger import openhands_logger as logger
 from pydantic import SecretStr
 from tqdm import tqdm
 
@@ -13,7 +14,6 @@ from evaluation.utils.shared import (
     _process_instance_wrapper,
     _process_instance_wrapper_mp,
 )
-from openhands.core.logger import openhands_logger as logger
 
 
 def update_progress_nc(

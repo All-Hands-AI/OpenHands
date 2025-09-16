@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from openhands.cli.commands import (
     display_mcp_servers,
     remove_mcp_server,

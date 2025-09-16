@@ -2,7 +2,6 @@ import os
 
 import socketio
 from dotenv import load_dotenv
-
 from openhands.core.config import load_openhands_config
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.config.server_config import ServerConfig, load_server_config

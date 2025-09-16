@@ -3,7 +3,6 @@ from typing import Any, Callable, Iterable
 from unittest.mock import MagicMock
 
 import pytest
-
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,

@@ -8,9 +8,23 @@ import zipfile
 
 import huggingface_hub
 import pandas as pd
-from datasets import load_dataset
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    OpenHandsConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+    load_from_toml,
+)
+from openhands.core.config.utils import get_agent_config_arg
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 from PIL import Image
 
+from datasets import load_dataset
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.benchmarks.gaia.utils import (
     image_to_jpg_base64_url,
@@ -29,20 +43,6 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    OpenHandsConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-    load_from_toml,
-)
-from openhands.core.config.utils import get_agent_config_arg
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 DATASET_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'data')
 

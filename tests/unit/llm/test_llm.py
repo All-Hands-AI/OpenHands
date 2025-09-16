@@ -8,7 +8,6 @@ from litellm import PromptTokensDetails
 from litellm.exceptions import (
     RateLimitError,
 )
-
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent

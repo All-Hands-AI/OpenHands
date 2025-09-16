@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 from openhands.llm.llm_registry import LLMRegistry

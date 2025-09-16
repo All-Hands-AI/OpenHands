@@ -1,5 +1,4 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
 
 _DETAILED_TASK_TRACKER_DESCRIPTION = """This tool provides structured task management capabilities for development workflows.

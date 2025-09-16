@@ -40,3 +40,6 @@ quote-style = "single"
 
 [lint.flake8-bugbear]
 extend-immutable-calls = ["Depends", "fastapi.Depends", "fastapi.params.Depends"]
+
+[lint.isort]
+known-third-party = ["openhands"]

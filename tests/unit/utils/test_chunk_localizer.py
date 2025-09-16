@@ -1,5 +1,4 @@
 import pytest
-
 from openhands.utils.chunk_localizer import (
     Chunk,
     create_chunks,

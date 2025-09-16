@@ -8,7 +8,6 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from openhands.events.action import MessageAction
 from openhands.events.event import EventSource
 from openhands.events.event_filter import EventFilter

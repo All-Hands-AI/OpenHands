@@ -5,12 +5,34 @@ import os
 import tempfile
 from typing import Any, Literal
 
+import openhands.agenthub
 import pandas as pd
 import toml
-from datasets import load_dataset
 from jinja2 import Environment, FileSystemLoader
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    AgentConfig,
+    OpenHandsConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.utils import get_condenser_config_arg
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.critic import AgentFinishedCritic
+from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
+from openhands.events.observation import (
+    CmdOutputObservation,
+    ErrorObservation,
+    FileReadObservation,
+)
+from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import sleep_if_should_continue
 
-import openhands.agenthub
+from datasets import load_dataset
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
     remove_binary_diffs,
     remove_binary_files_from_git,
@@ -40,28 +62,6 @@ from evaluation.utils.shared import (
     run_evaluation,
     update_llm_config_for_completions_logging,
 )
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    OpenHandsConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.utils import get_condenser_config_arg
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.critic import AgentFinishedCritic
-from openhands.events.action import CmdRunAction, FileReadAction, MessageAction
-from openhands.events.observation import (
-    CmdOutputObservation,
-    ErrorObservation,
-    FileReadObservation,
-)
-from openhands.events.serialization.event import event_from_dict, event_to_dict
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
-from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'

@@ -1,6 +1,5 @@
 import pytest
 from litellm import ModelResponse
-
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig

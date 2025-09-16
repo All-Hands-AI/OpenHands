@@ -7,8 +7,6 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from httpcore import Request
-from pydantic import SecretStr
-
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -22,6 +20,7 @@ from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
 )
+from pydantic import SecretStr
 
 
 @pytest.fixture

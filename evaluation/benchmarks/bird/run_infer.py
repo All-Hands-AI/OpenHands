@@ -9,22 +9,7 @@ import zipfile
 from typing import Any
 
 import pandas as pd
-from datasets import load_dataset
 from func_timeout import FunctionTimedOut, func_timeout
-from tqdm import tqdm
-
-from evaluation.utils.shared import (
-    EvalMetadata,
-    EvalOutput,
-    compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
@@ -37,6 +22,21 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+from tqdm import tqdm
+
+from datasets import load_dataset
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 
 
 def codeact_user_response(state: State) -> str:

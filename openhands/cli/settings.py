@@ -1,13 +1,6 @@
 from pathlib import Path
 from typing import Optional
 
-from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.completion import FuzzyWordCompleter
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.widgets import Frame, TextArea
-from pydantic import SecretStr
-
 from openhands.cli.pt_style import COLOR_GREY, get_cli_style
 from openhands.cli.tui import (
     UserCancelledError,
@@ -36,6 +29,12 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.llm import get_supported_llm_models
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.completion import FuzzyWordCompleter
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.widgets import Frame, TextArea
+from pydantic import SecretStr
 
 
 def display_settings(config: OpenHandsConfig) -> None:

@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 from litellm import ChatCompletionMessageToolCall
-
 from openhands.controller.state.state import State
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent

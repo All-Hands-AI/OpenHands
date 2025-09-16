@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.conversation_manager.standalone_conversation_manager import (
     StandaloneConversationManager,

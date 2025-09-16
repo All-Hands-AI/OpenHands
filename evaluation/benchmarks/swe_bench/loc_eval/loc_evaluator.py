@@ -5,13 +5,13 @@ import os
 import re
 
 import pandas as pd
-from datasets import load_dataset
+from openhands.core.logger import openhands_logger as logger
 from tqdm import tqdm
 
+from datasets import load_dataset
 from evaluation.benchmarks.swe_bench.loc_eval.loc_utils import LocMeta
 from evaluation.benchmarks.swe_bench.run_infer import filter_dataset
 from evaluation.utils.shared import prepare_dataset
-from openhands.core.logger import openhands_logger as logger
 
 
 class LocEvaluator:

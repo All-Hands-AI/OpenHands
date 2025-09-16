@@ -8,7 +8,6 @@ from conftest import (
     _close_test_runtime,
     _load_runtime,
 )
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     CmdRunAction,

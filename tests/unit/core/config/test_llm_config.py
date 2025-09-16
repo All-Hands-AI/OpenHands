@@ -1,7 +1,6 @@
 import pathlib
 
 import pytest
-
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.utils import load_from_toml
 

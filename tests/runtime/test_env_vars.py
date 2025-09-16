@@ -5,7 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from conftest import _close_test_runtime, _load_runtime
-
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 

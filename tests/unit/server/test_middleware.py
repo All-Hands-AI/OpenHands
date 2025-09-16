@@ -4,9 +4,8 @@ from unittest.mock import patch
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from starlette.middleware.cors import CORSMiddleware
-
 from openhands.server.middleware import LocalhostCORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 
 
 @pytest.fixture

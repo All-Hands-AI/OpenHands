@@ -7,7 +7,6 @@ from conftest import (
     _close_test_runtime,
     _load_runtime,
 )
-
 from openhands.agenthub.readonly_agent.function_calling import (
     glob_to_cmdrun,
     grep_to_cmdrun,

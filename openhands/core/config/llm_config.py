@@ -3,10 +3,9 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
-
 from openhands.core.logger import LOG_DIR
 from openhands.core.logger import openhands_logger as logger
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
 
 class LLMConfig(BaseModel):

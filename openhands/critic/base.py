@@ -1,8 +1,7 @@
 import abc
 
-from pydantic import BaseModel
-
 from openhands.events import Event
+from pydantic import BaseModel
 
 
 class CriticResult(BaseModel):

@@ -2,9 +2,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from prompt_toolkit.formatted_text import HTML
-from pydantic import SecretStr
-
 from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
@@ -15,6 +12,8 @@ from openhands.cli.tui import UserCancelledError
 from openhands.core.config import OpenHandsConfig
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from prompt_toolkit.formatted_text import HTML
+from pydantic import SecretStr
 
 
 # Mock classes for condensers

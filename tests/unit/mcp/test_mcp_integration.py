@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import Settings

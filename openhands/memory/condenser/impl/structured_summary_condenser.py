@@ -3,8 +3,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
@@ -20,6 +18,7 @@ from openhands.memory.condenser.condenser import (
     RollingCondenser,
     View,
 )
+from pydantic import BaseModel, Field
 
 
 class StateSummary(BaseModel):

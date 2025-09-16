@@ -3,7 +3,6 @@ import os
 import pprint
 
 import tqdm
-
 from openhands.core.config import (
     get_evaluation_parser,
     get_llm_config_arg,

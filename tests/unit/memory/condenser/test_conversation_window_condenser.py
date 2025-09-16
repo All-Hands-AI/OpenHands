@@ -14,7 +14,6 @@ The tests verify that the condenser:
 from unittest.mock import patch
 
 import pytest
-
 from openhands.events import EventSource
 from openhands.events.action import CmdRunAction, MessageAction, RecallAction
 from openhands.events.action.agent import CondensationAction

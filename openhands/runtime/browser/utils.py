@@ -5,8 +5,6 @@ from pathlib import Path
 from typing import Any
 
 from browsergym.utils.obs import flatten_axtree_to_str
-from PIL import Image
-
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
@@ -14,6 +12,7 @@ from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.base64 import png_base64_url_to_image
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.utils.async_utils import call_sync_from_async
+from PIL import Image
 
 
 def get_axtree_str(

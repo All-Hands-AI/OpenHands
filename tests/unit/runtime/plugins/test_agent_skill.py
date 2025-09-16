@@ -4,7 +4,6 @@ import sys
 
 import docx
 import pytest
-
 from openhands.runtime.plugins.agent_skills.file_ops.file_ops import (
     WINDOW,
     _print_window,

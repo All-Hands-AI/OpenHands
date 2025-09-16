@@ -9,7 +9,6 @@ from litellm import (
     ContentPolicyViolationError,
     ContextWindowExceededError,
 )
-
 from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.control_flags import (

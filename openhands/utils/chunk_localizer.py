@@ -4,11 +4,10 @@ This is primarily used to localize the most relevant chunks in a file
 for a given query (e.g. edit draft produced by the agent).
 """
 
+from openhands.core.logger import openhands_logger as logger
 from pydantic import BaseModel
 from rapidfuzz.distance import LCSseq
 from tree_sitter_language_pack import get_parser
-
-from openhands.core.logger import openhands_logger as logger
 
 
 class Chunk(BaseModel):

@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-
 from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,

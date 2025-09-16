@@ -7,8 +7,6 @@ from zipfile import ZipFile
 
 import httpcore
 import httpx
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
-
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
@@ -50,6 +48,7 @@ from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.system_stats import update_last_execution_time
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
+from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
 
 
 def _is_retryable_error(exception):

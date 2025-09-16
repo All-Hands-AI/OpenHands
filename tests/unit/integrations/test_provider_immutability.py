@@ -1,8 +1,6 @@
 from types import MappingProxyType
 
 import pytest
-from pydantic import SecretStr, ValidationError
-
 from openhands.events.action.commands import CmdRunAction
 from openhands.integrations.provider import (
     ProviderHandler,
@@ -11,6 +9,7 @@ from openhands.integrations.provider import (
 )
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from pydantic import SecretStr, ValidationError
 
 
 def test_provider_token_immutability():

@@ -3,7 +3,6 @@ from typing import Any, TypedDict
 
 import boto3
 import botocore
-
 from openhands.storage.files import FileStore
 
 

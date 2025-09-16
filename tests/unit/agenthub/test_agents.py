@@ -3,7 +3,6 @@ from unittest.mock import Mock
 
 import pytest
 from litellm import ChatCompletionMessageToolCall
-
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
     response_to_actions as codeact_response_to_actions,

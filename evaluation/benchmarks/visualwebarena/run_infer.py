@@ -6,20 +6,6 @@ from typing import Any
 import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
 import gymnasium as gym
 import pandas as pd
-
-from evaluation.utils.shared import (
-    EvalMetadata,
-    EvalOutput,
-    compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-    update_llm_config_for_completions_logging,
-)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
@@ -40,6 +26,20 @@ from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
 from openhands.utils.async_utils import call_async_from_sync
+
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+    update_llm_config_for_completions_logging,
+)
 
 SUPPORTED_AGENT_CLS = {'VisualBrowsingAgent'}
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {

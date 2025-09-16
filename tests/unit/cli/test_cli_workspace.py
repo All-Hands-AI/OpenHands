@@ -4,7 +4,6 @@ import os
 import tempfile
 
 import pytest
-
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 

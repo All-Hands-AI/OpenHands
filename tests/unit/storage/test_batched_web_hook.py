@@ -3,7 +3,6 @@ from unittest.mock import MagicMock
 
 import httpx
 import pytest
-
 from openhands.storage.batched_web_hook import BatchedWebHookFileStore
 from openhands.storage.files import FileStore
 

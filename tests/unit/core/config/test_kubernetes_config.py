@@ -1,7 +1,6 @@
 import pytest
-from pydantic import ValidationError
-
 from openhands.core.config.kubernetes_config import KubernetesConfig
+from pydantic import ValidationError
 
 
 def test_kubernetes_config_defaults():

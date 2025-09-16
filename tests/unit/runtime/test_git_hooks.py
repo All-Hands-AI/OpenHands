@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, call
 
 import pytest
-
 from openhands.events.action import CmdRunAction, FileReadAction
 from openhands.events.observation import (
     CmdOutputObservation,

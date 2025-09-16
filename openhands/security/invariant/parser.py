@@ -1,5 +1,3 @@
-from pydantic import BaseModel, Field
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -15,6 +13,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import event_to_dict
 from openhands.security.invariant.nodes import Function, Message, ToolCall, ToolOutput
+from pydantic import BaseModel, Field
 
 TraceElement = Message | ToolCall | ToolOutput | Function
 

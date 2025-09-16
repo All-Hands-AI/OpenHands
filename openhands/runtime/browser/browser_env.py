@@ -9,7 +9,6 @@ import gymnasium as gym
 import html2text
 import tenacity
 from browsergym.utils.obs import flatten_dom_to_str, overlay_som
-
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.browser.base64 import image_to_png_base64_url

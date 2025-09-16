@@ -10,9 +10,8 @@ from types import FrameType
 from typing import Callable
 from uuid import UUID, uuid4
 
-from uvicorn.server import HANDLED_SIGNALS
-
 from openhands.core.logger import openhands_logger as logger
+from uvicorn.server import HANDLED_SIGNALS
 
 _should_exit = None
 _shutdown_listeners: dict[UUID, Callable] = {}

@@ -11,7 +11,6 @@ from pathlib import Path
 from threading import RLock
 
 import pythonnet
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation

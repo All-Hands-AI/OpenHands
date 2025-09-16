@@ -4,24 +4,6 @@ import os
 from typing import Any
 
 import pandas as pd
-from datasets import load_dataset
-
-from evaluation.benchmarks.mint.datatypes import TaskState
-from evaluation.benchmarks.mint.env import SimplifiedEnv
-from evaluation.benchmarks.mint.prompts import ToolPromptTemplate
-from evaluation.benchmarks.mint.tasks import Task
-from evaluation.utils.shared import (
-    EvalMetadata,
-    EvalOutput,
-    compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
@@ -38,6 +20,24 @@ from openhands.events.action import (
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+
+from datasets import load_dataset
+from evaluation.benchmarks.mint.datatypes import TaskState
+from evaluation.benchmarks.mint.env import SimplifiedEnv
+from evaluation.benchmarks.mint.prompts import ToolPromptTemplate
+from evaluation.benchmarks.mint.tasks import Task
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):

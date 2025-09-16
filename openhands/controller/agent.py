@@ -11,7 +11,6 @@ if TYPE_CHECKING:
     from openhands.events.action.message import SystemMessageAction
     from openhands.utils.prompt import PromptManager
 from litellm import ChatCompletionToolParam
-
 from openhands.core.config import AgentConfig
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,

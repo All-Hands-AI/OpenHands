@@ -5,8 +5,21 @@ import tempfile
 from typing import Any
 
 import pandas as pd
-from datasets import load_dataset
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    OpenHandsConfig,
+    get_llm_config_arg,
+    load_from_toml,
+    parse_arguments,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
+from datasets import load_dataset
 from evaluation.benchmarks.aider_bench.helper import (
     FAKE_RESPONSES,
     INST_SUFFIXES,
@@ -24,19 +37,6 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    OpenHandsConfig,
-    get_llm_config_arg,
-    load_from_toml,
-    parse_arguments,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'

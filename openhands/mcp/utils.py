@@ -8,7 +8,6 @@ if TYPE_CHECKING:
 
 
 from mcp import McpError
-
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSHTTPServerConfig,

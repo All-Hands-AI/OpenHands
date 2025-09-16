@@ -11,8 +11,6 @@ from argparse import Namespace
 from typing import Any
 from uuid import uuid4
 
-from termcolor import colored
-
 import openhands
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, OpenHandsConfig, SandboxConfig
@@ -44,6 +42,7 @@ from openhands.resolver.utils import (
 )
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
+from termcolor import colored
 
 # Don't make this configurable for now, unless we have other competitive agents
 AGENT_CLASS = 'CodeActAgent'

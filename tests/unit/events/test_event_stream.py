@@ -6,8 +6,6 @@ from datetime import datetime
 
 import psutil
 import pytest
-from pytest import TempPathFactory
-
 from openhands.core.schema import ActionType, ObservationType
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -33,6 +31,7 @@ from openhands.storage import get_file_store
 from openhands.storage.locations import (
     get_conversation_event_filename,
 )
+from pytest import TempPathFactory
 
 
 @pytest.fixture

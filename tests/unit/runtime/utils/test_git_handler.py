@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 from openhands.runtime.utils import git_changes, git_diff, git_handler
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 

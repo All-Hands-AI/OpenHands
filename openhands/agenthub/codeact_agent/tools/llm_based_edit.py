@@ -1,5 +1,4 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
-
 from openhands.agenthub.codeact_agent.tools.security_utils import (
     RISK_LEVELS,
     SECURITY_RISK_DESC,

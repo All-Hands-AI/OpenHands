@@ -3,10 +3,6 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse, JSONResponse
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
-from starlette.background import BackgroundTask
-
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -26,6 +22,9 @@ from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
+from starlette.background import BackgroundTask
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()

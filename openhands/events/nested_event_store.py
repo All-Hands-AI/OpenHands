@@ -4,7 +4,6 @@ from urllib.parse import urlencode
 
 import httpx  # type: ignore
 from fastapi import status
-
 from openhands.events.event import Event
 from openhands.events.event_filter import EventFilter
 from openhands.events.event_store_abc import EventStoreABC

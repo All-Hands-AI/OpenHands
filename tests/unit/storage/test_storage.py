@@ -11,7 +11,6 @@ from unittest.mock import patch
 
 import botocore.exceptions
 from google.api_core.exceptions import NotFound
-
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore
 from openhands.storage.local import LocalFileStore

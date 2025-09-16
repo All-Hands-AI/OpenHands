@@ -3,7 +3,6 @@ from dataclasses import dataclass, field
 from itertools import islice
 
 from jinja2 import Environment, FileSystemLoader, Template
-
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge

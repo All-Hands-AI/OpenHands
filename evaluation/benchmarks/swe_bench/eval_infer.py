@@ -9,6 +9,16 @@ from functools import partial
 from typing import Callable
 
 import pandas as pd
+from openhands.core.config import (
+    LLMConfig,
+    OpenHandsConfig,
+    get_evaluation_parser,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime
+from openhands.events.action import CmdRunAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.utils.async_utils import call_async_from_sync
 from tqdm import tqdm
 
 from evaluation.benchmarks.swe_bench.resource.mapping import (
@@ -24,16 +34,6 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.core.config import (
-    LLMConfig,
-    OpenHandsConfig,
-    get_evaluation_parser,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime
-from openhands.events.action import CmdRunAction
-from openhands.events.observation import CmdOutputObservation
-from openhands.utils.async_utils import call_async_from_sync
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')

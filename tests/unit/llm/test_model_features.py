@@ -1,5 +1,4 @@
 import pytest
-
 from openhands.llm.model_features import (
     ModelFeatures,
     get_features,

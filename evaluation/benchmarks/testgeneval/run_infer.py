@@ -7,11 +7,26 @@ import traceback
 from typing import Any
 
 import numpy as np
+import openhands.agenthub
 import pandas as pd
 import toml
-from datasets import load_dataset
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    AgentConfig,
+    OpenHandsConfig,
+    SandboxConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
-import openhands.agenthub
+from datasets import load_dataset
 from evaluation.benchmarks.testgeneval.constants import MAP_REPO_VERSION_TO_SPECS
 from evaluation.benchmarks.testgeneval.prompt import (
     CODEACT_TESTGEN_PROMPT,
@@ -33,21 +48,6 @@ from evaluation.utils.shared import (
     run_evaluation,
     update_llm_config_for_completions_logging,
 )
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    OpenHandsConfig,
-    SandboxConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
-from openhands.events.serialization.event import event_to_dict
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 

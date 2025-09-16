@@ -3,7 +3,6 @@ import uuid
 from typing import Any
 
 import docker
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.runtime.utils import find_available_tcp_port

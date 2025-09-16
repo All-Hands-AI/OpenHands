@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import MutableMapping
 
 import httpx
-
 from openhands.core.logger import openhands_logger as logger
 
 CLIENT = httpx.Client()

@@ -3,7 +3,6 @@ from datetime import datetime
 
 from json_repair import repair_json
 from litellm.types.utils import ModelResponse
-
 from openhands.core.exceptions import LLMResponseError
 from openhands.events.event import Event
 from openhands.events.observation import CmdOutputMetadata

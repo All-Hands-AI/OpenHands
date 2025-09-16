@@ -2,7 +2,6 @@ import os
 
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
-
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State

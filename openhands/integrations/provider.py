@@ -3,14 +3,6 @@ from __future__ import annotations
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, cast, overload
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    WithJsonSchema,
-)
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
@@ -32,6 +24,13 @@ from openhands.integrations.service_types import (
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SecretStr,
+    WithJsonSchema,
+)
 
 
 class ProviderToken(BaseModel):

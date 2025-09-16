@@ -1,7 +1,6 @@
 from typing import Any
 
 from fastapi import Request
-
 from openhands.events.action.action import Action, ActionSecurityRisk
 
 

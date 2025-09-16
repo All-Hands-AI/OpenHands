@@ -4,26 +4,9 @@ import os
 from collections import Counter
 from typing import Any
 
+import openhands.agenthub
 import pandas as pd
 from commit0.harness.constants import SPLIT
-from datasets import load_dataset
-
-import openhands.agenthub
-from evaluation.utils.shared import (
-    EvalException,
-    EvalMetadata,
-    EvalOutput,
-    assert_and_raise,
-    codeact_user_response,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-    update_llm_config_for_completions_logging,
-)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
@@ -39,6 +22,23 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
+
+from datasets import load_dataset
+from evaluation.utils.shared import (
+    EvalException,
+    EvalMetadata,
+    EvalOutput,
+    assert_and_raise,
+    codeact_user_response,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+    update_llm_config_for_completions_logging,
+)
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'

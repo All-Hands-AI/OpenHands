@@ -2,8 +2,6 @@ import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pydantic import ValidationError
-
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig, load_from_env
 from openhands.core.config.mcp_config import (
@@ -17,6 +15,7 @@ from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
+from pydantic import ValidationError
 
 
 def test_valid_sse_config():

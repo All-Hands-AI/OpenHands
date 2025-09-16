@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import Any
 
 import httpx
-from pydantic import SecretStr
-
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -22,6 +20,7 @@ from openhands.integrations.service_types import (
 from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+from pydantic import SecretStr
 
 
 class GitLabService(BaseGitService, GitService):

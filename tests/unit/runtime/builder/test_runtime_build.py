@@ -7,11 +7,9 @@ from pathlib import Path
 from unittest.mock import ANY, MagicMock, mock_open, patch
 
 import docker
+import openhands
 import pytest
 import toml
-from pytest import TempPathFactory
-
-import openhands
 from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.docker import DockerRuntimeBuilder
@@ -26,6 +24,7 @@ from openhands.runtime.utils.runtime_build import (
     prep_build_folder,
     truncate_hash,
 )
+from pytest import TempPathFactory
 
 OH_VERSION = f'oh_v{oh_version}'
 DEFAULT_BASE_IMAGE = 'nikolaik/python-nodejs:python3.12-nodejs22'

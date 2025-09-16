@@ -1,8 +1,6 @@
 from typing import Any
 
 import pandas as pd
-
-from evaluation.utils.shared import assert_and_raise
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import (
@@ -11,6 +9,8 @@ from openhands.events.observation import (
 )
 from openhands.runtime.base import Runtime
 from openhands.utils.shutdown_listener import sleep_if_should_continue
+
+from evaluation.utils.shared import assert_and_raise
 
 
 def complete_runtime(

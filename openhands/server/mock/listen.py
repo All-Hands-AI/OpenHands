@@ -1,6 +1,5 @@
 import uvicorn
 from fastapi import FastAPI, WebSocket
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.shutdown_listener import should_continue
 

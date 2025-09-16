@@ -2,14 +2,13 @@ import asyncio
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.keys import Keys
-
 from openhands.cli.tui import process_agent_pause
 from openhands.core.schema import AgentState
 from openhands.events import EventSource
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.observation import AgentStateChangedObservation
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.keys import Keys
 
 
 class TestProcessAgentPause:

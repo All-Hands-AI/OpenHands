@@ -2,7 +2,6 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
     Issue,

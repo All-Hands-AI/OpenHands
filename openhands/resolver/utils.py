@@ -4,8 +4,6 @@ import os
 import re
 from typing import Callable
 
-from pydantic import SecretStr
-
 from openhands.controller.state.state import State
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
@@ -13,6 +11,7 @@ from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.integrations.service_types import ProviderType
 from openhands.integrations.utils import validate_provider_token
+from pydantic import SecretStr
 
 
 async def identify_token(token: str, base_domain: str | None) -> ProviderType:

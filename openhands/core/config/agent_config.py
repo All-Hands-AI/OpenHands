@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     ConversationWindowCondenserConfig,
@@ -9,6 +7,7 @@ from openhands.core.config.condenser_config import (
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class AgentConfig(BaseModel):

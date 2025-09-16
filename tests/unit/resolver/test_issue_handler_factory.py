@@ -1,6 +1,4 @@
 import pytest
-from pydantic import SecretStr
-
 from openhands.core.config import LLMConfig
 from openhands.integrations.provider import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
@@ -10,6 +8,7 @@ from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextPR,
 )
 from openhands.resolver.issue_handler_factory import IssueHandlerFactory
+from pydantic import SecretStr
 
 
 @pytest.fixture
