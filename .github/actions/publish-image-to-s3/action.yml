@@ -1,0 +1,127 @@
+name: 'Publish Image to S3'
+description: 'Publish a Docker image to S3 and generate presigned URL'
+
+inputs:
+  image-name:
+    description: 'Name of the image (e.g., enterprise-server, runtime-nikolaik)'
+    required: true
+  image-uri:
+    description: 'Full Docker image URI (e.g., ghcr.io/all-hands-ai/enterprise-server)'
+    required: true
+  tag:
+    description: 'Image tag to publish'
+    required: true
+  tag-folder:
+    description: 'S3 folder path (e.g., releases/1.0.0)'
+    required: true
+  bucket:
+    description: 'S3 bucket name'
+    required: true
+  display-name:
+    description: 'Human-readable display name for the image'
+    required: true
+  description:
+    description: 'Description of what the image is for'
+    required: true
+  aws-region:
+    description: 'AWS region'
+    required: false
+    default: 'us-east-1'
+  expires-in:
+    description: 'Presigned URL expiration in seconds'
+    required: false
+    default: '604800'
+
+outputs:
+  image-json:
+    description: 'Complete image information as JSON for report generation'
+    value: ${{ steps.generate-json.outputs.image-json }}
+  presigned-url:
+    description: 'Presigned URL for downloading the image'
+    value: ${{ steps.presigned-url.outputs.presigned-url }}
+  file-size:
+    description: 'Size of the uploaded file in bytes'
+    value: ${{ steps.file-size.outputs.size }}
+  filename:
+    description: 'Name of the uploaded file'
+    value: ${{ steps.file-size.outputs.filename }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Configure AWS CLI
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ inputs.aws-region }}
+    
+    - name: Login to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Pull and export image
+      run: |
+        echo "Pulling ${{ inputs.image-name }} image for tag: ${{ inputs.tag }}"
+        
+        # Pull the image from GHCR
+        docker pull ${{ inputs.image-uri }}:${{ inputs.tag }}
+        
+        # Export to tarball
+        docker save ${{ inputs.image-uri }}:${{ inputs.tag }} | gzip > ${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz
+        
+        echo "✅ ${{ inputs.image-name }} image exported"
+      shell: bash
+    
+    - name: Upload image to S3
+      run: |
+        echo "Uploading ${{ inputs.image-name }} image to S3..."
+        
+        # Upload the tarball
+        aws s3 cp ${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz "s3://${{ inputs.bucket }}/${{ inputs.tag-folder }}/${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz"
+        
+        echo "✅ Image uploaded to S3"
+      shell: bash
+    
+    - name: Generate presigned URL
+      id: presigned-url
+      uses: ./.github/actions/generate-presigned-url
+      with:
+        bucket: ${{ inputs.bucket }}
+        key: ${{ inputs.tag-folder }}/${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz
+        region: ${{ inputs.aws-region }}
+        expires-in: ${{ inputs.expires-in }}
+    
+    - name: Get file size and generate JSON
+      id: generate-json
+      run: |
+        FILENAME="${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz"
+        SIZE=$(stat -c%s "$FILENAME")
+        
+        # Generate the complete image JSON
+        cat > image.json << EOF
+        {
+          "name": "${{ inputs.image-name }}",
+          "displayName": "${{ inputs.display-name }}",
+          "filename": "$FILENAME",
+          "url": "${{ steps.presigned-url.outputs.presigned-url }}",
+          "size": "$SIZE",
+          "description": "${{ inputs.description }}"
+        }
+        EOF
+        
+        # Output the JSON
+        echo "image-json<<EOF" >> $GITHUB_OUTPUT
+        cat image.json >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
+        # Also output individual values for backward compatibility
+        echo "size=$SIZE" >> $GITHUB_OUTPUT
+        echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+      shell: bash
