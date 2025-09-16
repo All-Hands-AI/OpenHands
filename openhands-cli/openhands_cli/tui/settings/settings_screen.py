@@ -1,7 +1,6 @@
 from openhands_cli.locations import LLM_SETTINGS_PATH
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
-    StepCounter,
     choose_llm_model,
     choose_llm_provider,
     prompt_api_key,
@@ -14,6 +13,7 @@ from openhands_cli.user_actions.settings_action import (
     choose_confirmation_mode,
     choose_memory_condensation,
 )
+from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
 from openhands.sdk import Conversation, LLM
 from pydantic import SecretStr
@@ -109,12 +109,6 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
-    # Context-aware helper functions for clean settings flow
-    def _prompt_for_model(self, steps: StepCounter) -> str:
-        """Helper determines question based on basic vs advanced mode."""
-        prompt = "Custom Model (CTRL-c to cancel): "
-        return prompt_custom_model(steps.next_step(prompt))
-
     def _prompt_for_base_url(self, steps: StepCounter) -> str:
         """Helper handles base URL input."""
         prompt = "Base URL (CTRL-c to cancel): "
@@ -158,10 +152,12 @@ class SettingsScreen:
         return choose_memory_condensation(steps.next_step(prompt))
 
     def handle_basic_settings(self, escapable=True):
+        step_counter = StepCounter(3)
         try:
-            provider = choose_llm_provider(escapable=escapable)
-            llm_model = choose_llm_model(provider, escapable=escapable)
+            provider = choose_llm_provider(step_counter, escapable=escapable)
+            llm_model = choose_llm_model(step_counter, provider, escapable=escapable)
             api_key = prompt_api_key(
+                step_counter,
                 provider,
                 self.conversation.agent.llm.api_key if self.conversation else None,
                 escapable=escapable
@@ -176,17 +172,14 @@ class SettingsScreen:
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
+        steps_counter = StepCounter(6)
         try:
-            steps = StepCounter(6)
-
-
-            # Ultra-clean calling code - helpers determine their own questions
-            custom_model = self._prompt_for_model(steps)
-            base_url = self._prompt_for_base_url(steps)
-            api_key = self._prompt_for_api_key(steps)
-            agent = self._prompt_for_agent(steps)
-            confirmation_mode = self._prompt_for_confirmation_mode(steps)
-            memory_condensation = self._prompt_for_memory_condensation(steps)
+            custom_model = prompt_custom_model(steps_counter)
+            base_url = self._prompt_for_base_url(steps_counter)
+            api_key = self._prompt_for_api_key(steps_counter)
+            agent = self._prompt_for_agent(steps_counter)
+            confirmation_mode = self._prompt_for_confirmation_mode(steps_counter)
+            memory_condensation = self._prompt_for_memory_condensation(steps_counter)
 
             # Confirm save
             save_settings_confirmation()

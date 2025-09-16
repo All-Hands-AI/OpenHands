@@ -1,5 +1,6 @@
 from enum import Enum
 
+from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
@@ -20,24 +21,6 @@ class NonEmptyValueValidator(Validator):
             raise ValidationError(
                 message="API key cannot be empty. Please enter a valid API key."
             )
-
-
-class StepCounter:
-    """Automatically manages step numbering for settings flows."""
-
-    def __init__(self, total_steps: int):
-        self.current_step = 0
-        self.total_steps = total_steps
-
-    def next_step(self, prompt: str) -> str:
-        """Get the next step prompt with automatic numbering."""
-        self.current_step += 1
-        return f"(Step {self.current_step}/{self.total_steps}) {prompt}"
-
-
-def format_step_prompt(step: int, total_steps: int, prompt: str) -> str:
-    """Legacy function for backward compatibility with basic settings."""
-    return f"(Step {step}/{total_steps}) {prompt}"
 
 
 class SettingsType(Enum):
@@ -68,8 +51,8 @@ def settings_type_confirmation() -> SettingsType:
     return options_map.get(index)
 
 
-def choose_llm_provider(escapable=True) -> str:
-    question = format_step_prompt(1, 3, 'Select LLM Provider (TAB for options, CTRL-c to cancel): ')
+def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
+    question = step_counter.next_step('Select LLM Provider (TAB for options, CTRL-c to cancel): ')
     options = list(VERIFIED_MODELS.keys()).copy() + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
     alternate_option = 'Select another provider'
 
@@ -80,24 +63,24 @@ def choose_llm_provider(escapable=True) -> str:
     if display_options[index] != alternate_option:
         return chosen_option
 
-    question = format_step_prompt(1, 3, 'Type LLM Provider (TAB to complete, CTRL-c to cancel): ')
+    question = step_counter.existing_step('Type LLM Provider (TAB to complete, CTRL-c to cancel): ')
     return cli_text_input(
         question, escapable=True, completer=FuzzyWordCompleter(options, WORD=True)
     )
 
 
-def choose_llm_model(provider: str, escapable=True) -> str:
+def choose_llm_model(step_counter: StepCounter, provider: str, escapable=True) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
 
     models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
 
     if provider == 'openhands':
         question = (
-            format_step_prompt(2, 3, 'Select Available OpenHands Model:\n')
+            step_counter.next_step('Select Available OpenHands Model:\n')
             + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
         )
     else:
-        question = format_step_prompt(2, 3, 'Select LLM Model (TAB for options, CTRL-c to cancel): ')
+        question = step_counter.next_step('Select LLM Model (TAB for options, CTRL-c to cancel): ')
     alternate_option = 'Select another model'
     display_options = models[:4] + [alternate_option]
     index = cli_confirm(question, display_options, escapable=escapable)
@@ -106,7 +89,7 @@ def choose_llm_model(provider: str, escapable=True) -> str:
     if chosen_option != alternate_option:
         return chosen_option
 
-    question = format_step_prompt(2, 3, 'Type model id (TAB to complete, CTRL-c to cancel): ')
+    question = step_counter.existing_step('Type model id (TAB to complete, CTRL-c to cancel): ')
 
     return cli_text_input(
         question, escapable=True, completer=FuzzyWordCompleter(models, WORD=True)
@@ -115,7 +98,10 @@ def choose_llm_model(provider: str, escapable=True) -> str:
 
 
 def prompt_api_key(
-    provider: str, existing_api_key: SecretStr | None = None, escapable=True
+    step_counter: StepCounter,
+    provider: str,
+    existing_api_key: SecretStr | None = None,
+    escapable=True
 ) -> tuple[str | None, bool]:
     helper_text = (
         "\nYou can find your OpenHands LLM API Key in the API Keys tab of OpenHands Cloud: "
@@ -134,13 +120,14 @@ def prompt_api_key(
         # For new keys, require non-empty input
         validator = NonEmptyValueValidator()
 
-    question = helper_text + format_step_prompt(3, 3, question)
+    question = helper_text + step_counter.next_step(question)
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 
 # Advanced settings functions
-def prompt_custom_model(question: str, escapable=True) -> str:
+def prompt_custom_model(step_counter: StepCounter, question: str, escapable=True) -> str:
     """Prompt for custom model name."""
+    question = step_counter.next_step("Custom Model (CTRL-c to cancel): ")
     return cli_text_input(question, escapable=escapable)
 
 
