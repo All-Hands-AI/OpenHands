@@ -150,6 +150,14 @@
             "pages": [
               "usage/how-to/development-overview",
               {
+                "group":"Contribute",
+                "pages": [
+                  "usage/contributing/start-contributing",
+                  "usage/contributing/development-setup",
+                  "usage/contributing/community-guidelines"
+                ]
+              },
+              {
                 "group": "Architecture",
                 "pages": [
                   "usage/architecture/backend",
