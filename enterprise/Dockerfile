@@ -6,9 +6,6 @@ FROM ${BASE}:${OPENHANDS_VERSION}
 LABEL com.datadoghq.tags.service="deploy"
 LABEL com.datadoghq.tags.env="${DD_ENV}"
 
-# Switch to root to perform system updates
-USER root
-
 # Install Node.js v20+ and npm (which includes npx)
 # Apply security updates to fix CVEs
 RUN apt-get update && \
