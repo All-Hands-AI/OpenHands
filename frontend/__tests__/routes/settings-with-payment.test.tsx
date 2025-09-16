@@ -3,14 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
 import { renderWithProviders } from "test-utils";
-import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as useSettingsModule from "#/hooks/query/use-settings";
 
 // Mock the useSettings hook
 vi.mock("#/hooks/query/use-settings", async () => {
-  const actual = await vi.importActual<typeof import("#/hooks/query/use-settings")>("#/hooks/query/use-settings");
+  const actual = await vi.importActual<
+    typeof import("#/hooks/query/use-settings")
+  >("#/hooks/query/use-settings");
   return {
     ...actual,
     useSettings: vi.fn().mockReturnValue({
@@ -24,21 +24,23 @@ vi.mock("#/hooks/query/use-settings", async () => {
 
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
   return {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_INTEGRATIONS": "Integrations",
-          "SETTINGS$NAV_APPLICATION": "Application",
-          "SETTINGS$NAV_CREDITS": "Credits",
-          "SETTINGS$NAV_API_KEYS": "API Keys",
-          "SETTINGS$NAV_LLM": "LLM",
-          "SETTINGS$NAV_USER": "User",
-          "SETTINGS$NAV_SECRETS": "Secrets",
-          "SETTINGS$NAV_MCP": "MCP",
-          "SETTINGS$TITLE": "Settings"
+          SETTINGS$NAV_INTEGRATIONS: "Integrations",
+          SETTINGS$NAV_APPLICATION: "Application",
+          SETTINGS$NAV_CREDITS: "Credits",
+          SETTINGS$NAV_BILLING: "Billing",
+          SETTINGS$NAV_API_KEYS: "API Keys",
+          SETTINGS$NAV_LLM: "LLM",
+          SETTINGS$NAV_USER: "User",
+          SETTINGS$NAV_SECRETS: "Secrets",
+          SETTINGS$NAV_MCP: "MCP",
+          SETTINGS$TITLE: "Settings",
         };
         return translations[key] || key;
       },
@@ -105,16 +107,16 @@ describe("Settings Billing", () => {
     vi.clearAllMocks();
   });
 
-  it("should not render the credits tab if OSS mode", async () => {
+  it("should not render the billing tab if OSS mode", async () => {
     // OSS mode is set by default in beforeEach
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    const credits = within(navbar).queryByText("Credits");
+    const credits = within(navbar).queryByText("Billing");
     expect(credits).not.toBeInTheDocument();
   });
 
-  it("should render the credits tab if SaaS mode and billing is enabled", async () => {
+  it("should render the billing tab if SaaS mode and billing is enabled", async () => {
     mockUseConfig.mockReturnValue({
       data: {
         APP_MODE: "saas",
@@ -134,10 +136,10 @@ describe("Settings Billing", () => {
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    within(navbar).getByText("Credits");
+    within(navbar).getByText("Billing");
   });
 
-  it("should render the billing settings if clicking the credits item", async () => {
+  it("should render the billing settings if clicking the billing item", async () => {
     const user = userEvent.setup();
     mockUseConfig.mockReturnValue({
       data: {
@@ -158,7 +160,7 @@ describe("Settings Billing", () => {
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    const credits = within(navbar).getByText("Credits");
+    const credits = within(navbar).getByText("Billing");
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
