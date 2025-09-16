@@ -19,11 +19,11 @@ export function StatusBar({
       {/* Connection Status - WebSocket connection */}
       <ConnectionStatus />
 
-      {/* Runtime Status - Runtime environment */}
-      <RuntimeStatus />
-
       {/* Conversation Status - Conversation state */}
       <ConversationStatus conversationStatus={conversationStatus} />
+
+      {/* Runtime Status - Runtime environment */}
+      <RuntimeStatus />
 
       {/* Agent Status - Agent execution */}
       <AgentStatus />
