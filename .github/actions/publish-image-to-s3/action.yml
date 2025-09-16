@@ -31,6 +31,15 @@ inputs:
     description: 'Presigned URL expiration in seconds'
     required: false
     default: '604800'
+  aws-access-key-id:
+    description: 'AWS Access Key ID'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key'
+    required: true
+  github-token:
+    description: 'GitHub token for GHCR authentication'
+    required: true
 
 outputs:
   image-json:
@@ -41,10 +50,10 @@ outputs:
     value: ${{ steps.presigned-url.outputs.presigned-url }}
   file-size:
     description: 'Size of the uploaded file in bytes'
-    value: ${{ steps.file-size.outputs.size }}
+    value: ${{ steps.generate-json.outputs.size }}
   filename:
     description: 'Name of the uploaded file'
-    value: ${{ steps.file-size.outputs.filename }}
+    value: ${{ steps.generate-json.outputs.filename }}
 
 runs:
   using: 'composite'
@@ -55,8 +64,8 @@ runs:
     - name: Configure AWS CLI
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
         aws-region: ${{ inputs.aws-region }}
     
     - name: Login to GHCR
@@ -64,7 +73,7 @@ runs:
       with:
         registry: ghcr.io
         username: ${{ github.repository_owner }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ inputs.github-token }}
     
     - name: Pull and export image
       run: |

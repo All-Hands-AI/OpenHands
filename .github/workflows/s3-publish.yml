@@ -43,6 +43,9 @@ jobs:
           display-name: Enterprise Server
           description: Main OpenHands enterprise application server
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-runtime-nikolaik:
     name: Publish Runtime Nikolaik
@@ -65,6 +68,9 @@ jobs:
           display-name: Runtime (Nikolaik)
           description: Runtime environment based on Debian (Nikolaik)
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-runtime-ubuntu:
     name: Publish Runtime Ubuntu
@@ -87,6 +93,9 @@ jobs:
           display-name: Runtime (Ubuntu)
           description: Runtime environment based on Ubuntu
           aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   create-release-report:
     name: Create Release Report
