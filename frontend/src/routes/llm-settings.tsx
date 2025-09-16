@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
+import { useSearchParams } from "react-router";
 import { ModelSelector } from "#/components/shared/modals/settings/model-selector";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -27,15 +28,25 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
+import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrade-banner-with-backdrop";
+import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/use-create-subscription-checkout-session";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { cn } from "#/utils/utils";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
 
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
   const { data: config } = useConfig();
+  const { data: subscriptionAccess } = useSubscriptionAccess();
+  const { data: isAuthed } = useIsAuthed();
+  const { mutate: createSubscriptionCheckoutSession } =
+    useCreateSubscriptionCheckoutSession();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -113,6 +124,19 @@ function LlmSettingsScreen() {
       setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
     }
   }, [settings?.SECURITY_ANALYZER]);
+
+  // Handle URL parameters for SaaS subscription redirects
+  React.useEffect(() => {
+    const checkout = searchParams.get("checkout");
+
+    if (checkout === "success") {
+      displaySuccessToast(t(I18nKey.SUBSCRIPTION$SUCCESS));
+      setSearchParams({});
+    } else if (checkout === "cancel") {
+      displayErrorToast(t(I18nKey.SUBSCRIPTION$FAILURE));
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, t]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
@@ -219,11 +243,6 @@ function LlmSettingsScreen() {
         onError: handleErrorMutation,
       },
     );
-  };
-
-  const formAction = (formData: FormData) => {
-    if (view === "basic") basicFormAction(formData);
-    else advancedFormAction(formData);
   };
 
   const handleToggleAdvancedSettings = (isToggled: boolean) => {
@@ -390,11 +409,41 @@ function LlmSettingsScreen() {
 
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
+  // Show upgrade banner and disable form in SaaS mode when user doesn't have an active subscription
+  const shouldShowUpgradeBanner =
+    config?.APP_MODE === "saas" && !subscriptionAccess;
+
+  const formAction = (formData: FormData) => {
+    // Prevent form submission for unsubscribed SaaS users
+    if (shouldShowUpgradeBanner) return;
+
+    if (view === "basic") basicFormAction(formData);
+    else advancedFormAction(formData);
+  };
+
   return (
-    <div data-testid="llm-settings-screen" className="h-full">
+    <div
+      data-testid="llm-settings-screen"
+      className={cn(
+        "h-full relative",
+        shouldShowUpgradeBanner && "overflow-hidden",
+      )}
+    >
+      {shouldShowUpgradeBanner && (
+        <UpgradeBannerWithBackdrop
+          onUpgradeClick={() => {
+            createSubscriptionCheckoutSession();
+          }}
+          isDisabled={!isAuthed}
+        />
+      )}
       <form
         action={formAction}
-        className="flex flex-col h-full justify-between"
+        className={cn(
+          "flex flex-col h-full justify-between",
+          shouldShowUpgradeBanner && "h-[calc(100%-theme(spacing.12))]",
+        )}
+        inert={shouldShowUpgradeBanner}
       >
         <div className="p-9 flex flex-col gap-6">
           <SettingsSwitch
@@ -402,6 +451,7 @@ function LlmSettingsScreen() {
             defaultIsToggled={view === "advanced"}
             onToggle={handleToggleAdvancedSettings}
             isToggled={view === "advanced"}
+            isDisabled={shouldShowUpgradeBanner}
           >
             {t(I18nKey.SETTINGS$ADVANCED)}
           </SettingsSwitch>
@@ -410,6 +460,7 @@ function LlmSettingsScreen() {
             <div
               data-testid="llm-settings-form-basic"
               className="flex flex-col gap-6"
+              aria-disabled={shouldShowUpgradeBanner ? "true" : undefined}
             >
               {!isLoading && !isFetching && (
                 <>
@@ -417,6 +468,7 @@ function LlmSettingsScreen() {
                     models={modelsAndProviders}
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
+                    isDisabled={shouldShowUpgradeBanner}
                     wrapperClassName="!flex-col !gap-6"
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
@@ -440,6 +492,7 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 placeholder={settings.LLM_API_KEY_SET ? "<hidden>" : ""}
                 onChange={handleApiKeyIsDirty}
+                isDisabled={shouldShowUpgradeBanner}
                 startContent={
                   settings.LLM_API_KEY_SET && (
                     <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
@@ -454,21 +507,24 @@ function LlmSettingsScreen() {
                 href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
-              <SettingsInput
-                testId="search-api-key-input"
-                name="search-api-key-input"
-                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-                type="password"
-                className="w-full max-w-[680px]"
-                defaultValue={settings.SEARCH_API_KEY || ""}
-                onChange={handleSearchApiKeyIsDirty}
-                placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
-                startContent={
-                  settings.SEARCH_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
-                  )
-                }
-              />
+              {config?.APP_MODE !== "saas" && (
+                <SettingsInput
+                  testId="search-api-key-input"
+                  name="search-api-key-input"
+                  label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                  type="password"
+                  className="w-full max-w-[680px]"
+                  defaultValue={settings.SEARCH_API_KEY || ""}
+                  onChange={handleSearchApiKeyIsDirty}
+                  placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
+                  isDisabled={shouldShowUpgradeBanner}
+                  startContent={
+                    settings.SEARCH_API_KEY_SET && (
+                      <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                    )
+                  }
+                />
+              )}
 
               <HelpLink
                 testId="search-api-key-help-anchor"
@@ -537,44 +593,49 @@ function LlmSettingsScreen() {
                 href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
-              <SettingsInput
-                testId="search-api-key-input"
-                name="search-api-key-input"
-                label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-                type="password"
-                className="w-full max-w-[680px]"
-                defaultValue={settings.SEARCH_API_KEY || ""}
-                onChange={handleSearchApiKeyIsDirty}
-                placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
-                startContent={
-                  settings.SEARCH_API_KEY_SET && (
-                    <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
-                  )
-                }
-              />
+              {config?.APP_MODE !== "saas" && (
+                <>
+                  <SettingsInput
+                    testId="search-api-key-input"
+                    name="search-api-key-input"
+                    label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
+                    type="password"
+                    className="w-full max-w-[680px]"
+                    defaultValue={settings.SEARCH_API_KEY || ""}
+                    onChange={handleSearchApiKeyIsDirty}
+                    placeholder={t(I18nKey.API$TVLY_KEY_EXAMPLE)}
+                    isDisabled={shouldShowUpgradeBanner}
+                    startContent={
+                      settings.SEARCH_API_KEY_SET && (
+                        <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
+                      )
+                    }
+                  />
 
-              <HelpLink
-                testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
-                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
-                href="https://tavily.com/"
-              />
+                  <HelpLink
+                    testId="search-api-key-help-anchor"
+                    text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                    linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
+                    href="https://tavily.com/"
+                  />
 
-              <SettingsDropdownInput
-                testId="agent-input"
-                name="agent-input"
-                label={t(I18nKey.SETTINGS$AGENT)}
-                items={
-                  resources?.agents.map((agent) => ({
-                    key: agent,
-                    label: agent, // TODO: Add i18n support for agent names
-                  })) || []
-                }
-                defaultSelectedKey={settings.AGENT}
-                isClearable={false}
-                onInputChange={handleAgentIsDirty}
-                wrapperClassName="w-full max-w-[680px]"
-              />
+                  <SettingsDropdownInput
+                    testId="agent-input"
+                    name="agent-input"
+                    label={t(I18nKey.SETTINGS$AGENT)}
+                    items={
+                      resources?.agents.map((agent) => ({
+                        key: agent,
+                        label: agent, // TODO: Add i18n support for agent names
+                      })) || []
+                    }
+                    defaultSelectedKey={settings.AGENT}
+                    isClearable={false}
+                    onInputChange={handleAgentIsDirty}
+                    wrapperClassName="w-full max-w-[680px]"
+                  />
+                </>
+              )}
 
               {config?.APP_MODE === "saas" && (
                 <SettingsDropdownInput
@@ -583,7 +644,10 @@ function LlmSettingsScreen() {
                   label={
                     <>
                       {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
-                      <a href="mailto:contact@all-hands.dev">
+                      <a
+                        href="mailto:contact@all-hands.dev"
+                        className="text-blue-500 hover:text-blue-400 underline"
+                      >
                         {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
                       </a>
                     </>
@@ -633,6 +697,7 @@ function LlmSettingsScreen() {
               onToggle={handleConfirmationModeIsDirty}
               defaultIsToggled={settings.CONFIRMATION_MODE}
               isBeta
+              isDisabled={shouldShowUpgradeBanner}
             >
               {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
             </SettingsSwitch>

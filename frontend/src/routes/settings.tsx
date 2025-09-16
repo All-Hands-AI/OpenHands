@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -8,8 +7,8 @@ import { I18nKey } from "#/i18n/declaration";
 import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
+import { ProPill } from "#/components/features/settings/pro-pill";
 import { GetConfigResponse } from "#/api/option-service/option.types";
-import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -22,7 +21,8 @@ const SAAS_NAV_ITEMS = [
   { to: "/settings/user", text: "SETTINGS$NAV_USER" },
   { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
   { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
-  { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
+  { to: "/settings", text: "SETTINGS$NAV_LLM" },
+  { to: "/settings/billing", text: "SETTINGS$NAV_BILLING" },
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
   { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
   { to: "/settings/mcp", text: "SETTINGS$NAV_MCP" },
@@ -48,11 +48,6 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  if (isSaas && pathname === "/settings") {
-    // no llm settings in saas mode, so redirect to user settings
-    return redirect("/settings/user");
-  }
-
   if (!isSaas && SAAS_ONLY_PATHS.includes(pathname)) {
     // if in OSS mode, do not allow access to saas-only paths
     return redirect("/settings");
@@ -64,22 +59,10 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { data: subscriptionAccess } = useSubscriptionAccess();
 
   const isSaas = config?.APP_MODE === "saas";
-  // this is used to determine which settings are available in the UI
-  const navItems = useMemo(() => {
-    const items = [];
-    if (isSaas) {
-      if (subscriptionAccess) {
-        items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
-      }
-      items.push(...SAAS_NAV_ITEMS);
-    } else {
-      items.push(...OSS_NAV_ITEMS);
-    }
-    return items;
-  }, [isSaas, !!subscriptionAccess]);
+
+  const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
   return (
     <main
@@ -102,12 +85,15 @@ function SettingsScreen() {
             to={to}
             className={({ isActive }) =>
               cn(
-                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
+                "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center relative",
                 isActive && "border-primary",
               )
             }
           >
             <span className="text-[#F9FBFE] text-sm">{t(text)}</span>
+            {isSaas && to === "/settings" && (
+              <ProPill className="absolute top-0 -right-7" />
+            )}
           </NavLink>
         ))}
       </nav>

@@ -3,7 +3,6 @@ import { createRoutesStub } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { QueryClientProvider } from "@tanstack/react-query";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
-import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
 
 // Mock the i18next hook
@@ -130,14 +129,15 @@ describe("Settings Screen", () => {
     mockQueryClient.setQueryData(["config"], saasConfig);
 
     const sectionsToInclude = [
+      "llm", // LLM settings are now always shown in SaaS mode
       "user",
       "integrations",
       "application",
-      "credits", // The nav item shows "credits" text but routes to /billing
+      "billing", // The nav item shows "billing" text and routes to /billing
       "secrets",
       "api keys",
     ];
-    const sectionsToExclude = ["llm"];
+    const sectionsToExclude: string[] = []; // No sections are excluded in SaaS mode now
 
     renderSettingsScreen();
 

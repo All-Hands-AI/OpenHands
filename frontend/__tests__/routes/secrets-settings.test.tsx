@@ -7,7 +7,6 @@ import SecretsSettingsScreen from "#/routes/secrets-settings";
 import { SecretsService } from "#/api/secrets-service";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
 import OptionService from "#/api/option-service/option-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 

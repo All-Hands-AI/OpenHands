@@ -5,7 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { RootState } from "#/store";
 
 export function VSCodeTooltipContent() {
@@ -20,7 +20,7 @@ export function VSCodeTooltipContent() {
 
     if (conversationId) {
       try {
-        const data = await OpenHands.getVSCodeUrl(conversationId);
+        const data = await ConversationService.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {

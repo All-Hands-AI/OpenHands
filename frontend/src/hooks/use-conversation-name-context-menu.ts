@@ -8,7 +8,7 @@ import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import { RootState } from "#/store";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useDeleteConversation } from "./mutation/use-delete-conversation";
 import { useStopConversation } from "./mutation/use-stop-conversation";
 import { useGetTrajectory } from "./mutation/use-get-trajectory";
@@ -129,7 +129,7 @@ export function useConversationNameContextMenu({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const data = await OpenHands.getVSCodeUrl(conversationId);
+        const data = await ConversationService.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {

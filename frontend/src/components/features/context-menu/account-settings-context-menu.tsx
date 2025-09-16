@@ -37,9 +37,14 @@ const SAAS_NAV_ITEMS = [
     text: "COMMON$APPLICATION_SETTINGS",
   },
   {
+    icon: <CircuitIcon width={16} height={16} />,
+    to: "/settings",
+    text: "COMMON$LANGUAGE_MODEL_LLM",
+  },
+  {
     icon: <CreditCardIcon width={16} height={16} />,
     to: "/settings/billing",
-    text: "SETTINGS$NAV_CREDITS",
+    text: "SETTINGS$NAV_BILLING",
   },
   {
     icon: <KeyIcon width={16} height={16} />,
@@ -50,6 +55,11 @@ const SAAS_NAV_ITEMS = [
     icon: <KeyIcon width={16} height={16} />,
     to: "/settings/api-keys",
     text: "SETTINGS$NAV_API_KEYS",
+  },
+  {
+    icon: <ServerProcessIcon width={16} height={16} />,
+    to: "/settings/mcp",
+    text: "SETTINGS$NAV_MCP",
   },
 ];
 

@@ -45,3 +45,8 @@ export const shouldRenderEvent = (
 
   return true;
 };
+
+export const hasUserEvent = (
+  events: (OpenHandsAction | OpenHandsObservation)[],
+) =>
+  events.some((event) => isOpenHandsAction(event) && event.source === "user");
