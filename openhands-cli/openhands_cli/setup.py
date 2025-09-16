@@ -12,7 +12,7 @@ from openhands.tools import (
     execute_bash_tool,
     str_replace_editor_tool,
 )
-from openhands_cli.locations import FULL_LLM_SETTINGS_PATH
+from openhands_cli.locations import LLM_SETTINGS_PATH
 from prompt_toolkit import HTML, print_formatted_text
 
 
@@ -22,7 +22,7 @@ def setup_agent() -> Conversation | None:
     """
 
     try:
-        llm = LLM.load_from_json(FULL_LLM_SETTINGS_PATH)
+        llm = LLM.load_from_json(LLM_SETTINGS_PATH)
     except FileNotFoundError:
         return None
 

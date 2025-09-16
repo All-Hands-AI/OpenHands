@@ -126,7 +126,7 @@ def test_executable() -> bool:
     """Test the built executable with simplified checks."""
     print('🧪 Testing the built executable...')
 
-    settings_path = Path(os.path.expanduser(LLM_SETTINGS_PATH))
+    settings_path = Path(LLM_SETTINGS_PATH)
     if settings_path.exists():
         print(f"⚠️  Using existing settings at {settings_path}")
     else:

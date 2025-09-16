@@ -1,4 +1,4 @@
-from openhands_cli.locations import FULL_LLM_SETTINGS_PATH
+from openhands_cli.locations import LLM_SETTINGS_PATH
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
     choose_llm_model,
@@ -109,4 +109,4 @@ class SettingsScreen:
     ):
         """Update conversation settings with new values."""
         llm = LLM(model=f"{provider}/{model}", api_key=SecretStr(api_key))
-        llm.store_to_json(FULL_LLM_SETTINGS_PATH)
+        llm.store_to_json(LLM_SETTINGS_PATH)

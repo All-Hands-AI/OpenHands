@@ -33,7 +33,7 @@ def test_llm_settings_save_and_load(tmp_path: Path):
     settings_path = tmp_path / "llm_settings.json"
     screen = SettingsScreen(conversation=None)
 
-    with patch("openhands_cli.tui.settings.settings_screen.FULL_LLM_SETTINGS_PATH", str(settings_path)):
+    with patch("openhands_cli.tui.settings.settings_screen.LLM_SETTINGS_PATH", str(settings_path)):
         screen._save_llm_settings(provider="openai", model="gpt-4o-mini", api_key="sk-test-123")
 
     assert settings_path.exists(), "settings file should be created"
@@ -54,7 +54,7 @@ def test_first_time_setup_workflow(tmp_path: Path):
     screen = SettingsScreen()
 
     with (
-        patch("openhands_cli.tui.settings.settings_screen.FULL_LLM_SETTINGS_PATH", str(settings_path)),
+        patch("openhands_cli.tui.settings.settings_screen.LLM_SETTINGS_PATH", str(settings_path)),
         patch("openhands_cli.tui.settings.settings_screen.settings_type_confirmation", return_value=SettingsType.BASIC),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_provider", return_value="openai"),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_model", return_value="gpt-4o-mini"),
@@ -74,7 +74,7 @@ def test_update_existing_settings_workflow(tmp_path: Path):
     screen = make_screen_with_conversation(model="openai/gpt-4o-mini", api_key="sk-old")
 
     with (
-        patch("openhands_cli.tui.settings.settings_screen.FULL_LLM_SETTINGS_PATH", str(settings_path)),
+        patch("openhands_cli.tui.settings.settings_screen.LLM_SETTINGS_PATH", str(settings_path)),
         patch("openhands_cli.tui.settings.settings_screen.settings_type_confirmation", return_value=SettingsType.BASIC),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_provider", return_value="anthropic"),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_model", return_value="claude-3-5-sonnet"),
@@ -118,7 +118,7 @@ def test_workflow_cancellation_at_each_step(tmp_path: Path, step_to_cancel: str)
         patches["save_settings_confirmation"].side_effect = KeyboardInterrupt()
 
     with (
-        patch("openhands_cli.tui.settings.settings_screen.FULL_LLM_SETTINGS_PATH", str(settings_path)),
+        patch("openhands_cli.tui.settings.settings_screen.LLM_SETTINGS_PATH", str(settings_path)),
         patch("openhands_cli.tui.settings.settings_screen.settings_type_confirmation", patches["settings_type_confirmation"]),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_provider", patches["choose_llm_provider"]),
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_model", patches["choose_llm_model"]),
