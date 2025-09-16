@@ -7,10 +7,10 @@ on:
     branches:
       - main
     paths:
-      - 'openhands-cli/**'
+      - "openhands-cli/**"
   pull_request:
     paths:
-      - 'openhands-cli/**'
+      - "openhands-cli/**"
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
@@ -50,9 +50,6 @@ jobs:
 
       - name: Test binary startup and /help command
         working-directory: openhands-cli
-        env:
-          LLM_API_KEY: dummy-ci-key
-          LLM_MODEL: dummy-ci-model
         run: |
           # Test that binary starts and responds to /help command
           echo "Testing binary startup and /help command..."
