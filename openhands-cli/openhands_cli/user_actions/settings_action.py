@@ -13,13 +13,22 @@ from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 from prompt_toolkit.validation import Validator, ValidationError
 
 
+class NonEmptyValueValidator(Validator):
+    def validate(self, document):
+        text = document.text
+        if not text:
+            raise ValidationError(
+                message="API key cannot be empty. Please enter a valid API key."
+            )
+
+
 class StepCounter:
     """Automatically manages step numbering for settings flows."""
-    
+
     def __init__(self, total_steps: int):
         self.current_step = 0
         self.total_steps = total_steps
-    
+
     def next_step(self, prompt: str) -> str:
         """Get the next step prompt with automatic numbering."""
         self.current_step += 1
@@ -104,14 +113,6 @@ def choose_llm_model(provider: str, escapable=True) -> str:
     )
 
 
-class APIKeyValidator(Validator):
-    def validate(self, document):
-        text = document.text
-        if not text:
-            raise ValidationError(
-                message="API key cannot be empty. Please enter a valid API key."
-            )
-
 
 def prompt_api_key(
     provider: str, existing_api_key: SecretStr | None = None, escapable=True
@@ -131,7 +132,7 @@ def prompt_api_key(
     else:
         question = 'Enter API Key (CTRL-c to cancel): '
         # For new keys, require non-empty input
-        validator = APIKeyValidator()
+        validator = NonEmptyValueValidator()
 
     question = helper_text + format_step_prompt(3, 3, question)
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
@@ -143,18 +144,9 @@ def prompt_custom_model(question: str, escapable=True) -> str:
     return cli_text_input(question, escapable=escapable)
 
 
-class BaseURLValidator(Validator):
-    def validate(self, document):
-        text = document.text
-        if not text:
-            raise ValidationError(
-                message="Base URL cannot be empty"
-            )
-
-
 def prompt_base_url(question: str, escapable=True) -> str:
     """Prompt for base URL."""
-    return cli_text_input(question, escapable=escapable, validator=BaseURLValidator())
+    return cli_text_input(question, escapable=escapable, validator=NonEmptyValueValidator())
 
 
 def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = None, escapable=True) -> str:
@@ -164,7 +156,7 @@ def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = 
         validator = None
     else:
         # For new keys, require non-empty input
-        validator = APIKeyValidator()
+        validator = NonEmptyValueValidator()
 
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
@@ -174,12 +166,12 @@ def choose_agent(question: str, escapable=True) -> str:
     # Available agents based on the agenthub
     agents = [
         'CodeActAgent',
-        'BrowsingAgent', 
+        'BrowsingAgent',
         'VisualBrowsingAgent',
         'ReadOnlyAgent',
         'LocAgent',
     ]
-    
+
     index = cli_confirm(question, agents, escapable=escapable)
     return agents[index]
 
@@ -187,7 +179,7 @@ def choose_agent(question: str, escapable=True) -> str:
 def choose_confirmation_mode(question: str, escapable=True) -> bool:
     """Choose confirmation mode setting."""
     choices = ['Enable', 'Disable']
-    
+
     index = cli_confirm(question, choices, escapable=escapable)
     return index == 0  # True for Enable, False for Disable
 
@@ -195,7 +187,7 @@ def choose_confirmation_mode(question: str, escapable=True) -> bool:
 def choose_memory_condensation(question: str, escapable=True) -> bool:
     """Choose memory condensation setting."""
     choices = ['Enable', 'Disable']
-    
+
     index = cli_confirm(question, choices, escapable=escapable)
     return index == 0  # True for Enable, False for Disable
 
