@@ -277,7 +277,6 @@ async def handle_settings_command(
         [
             'LLM (Basic)',
             'LLM (Advanced)',
-            'Search API (Optional)',
             'Go back',
         ],
     )

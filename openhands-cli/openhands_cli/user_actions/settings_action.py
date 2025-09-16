@@ -33,7 +33,6 @@ def settings_type_confirmation() -> SettingsType:
     choices = [
         'LLM (Basic)',
         'LLM (Advanced)',
-        'Search API (Optional)',
         'Go back',
     ]
 
@@ -44,8 +43,7 @@ def settings_type_confirmation() -> SettingsType:
 
     options_map = {
         0: SettingsType.BASIC,
-        1: SettingsType.ADVANCED,
-        2: None,  # Search API - not implemented yet
+        1: SettingsType.ADVANCED
     }
 
     return options_map.get(index)
