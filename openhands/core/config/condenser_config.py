@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
 from openhands.core import logger
 from openhands.core.config.llm_config import LLMConfig
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class NoOpCondenserConfig(BaseModel):

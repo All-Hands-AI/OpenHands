@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from openhands.core.config import load_openhands_config
 from openhands.core.exceptions import UserCancelledError
 from openhands.llm.async_llm import AsyncLLM

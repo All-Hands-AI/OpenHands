@@ -2,6 +2,7 @@ import asyncio
 from unittest.mock import patch
 
 import pytest
+
 from openhands.core.config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.llm.metrics import Metrics
@@ -108,9 +109,8 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
 
 def test_run_controller_exposes_aggregated_metrics_in_state():
     """Ensure get_metrics(state) reads from ConversationStats when available."""
-    from openhands.core.main import run_controller
-
     from evaluation.utils.shared import get_metrics
+    from openhands.core.main import run_controller
 
     cfg = OpenHandsConfig()
     # Prevent run_controller from trying to persist state via DummyState

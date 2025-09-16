@@ -11,6 +11,7 @@ from anyio import get_cancelled_exc_class
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
+
 from openhands.core.config.mcp_config import MCPStdioServerConfig
 
 logger = logging.getLogger(__name__)

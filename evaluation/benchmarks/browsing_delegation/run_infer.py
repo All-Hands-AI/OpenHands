@@ -4,18 +4,8 @@ import re
 
 import nltk
 import pandas as pd
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    OpenHandsConfig,
-    get_llm_config_arg,
-    parse_arguments,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
-from openhands.utils.async_utils import call_async_from_sync
-
 from datasets import load_dataset
+
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
@@ -28,6 +18,16 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    OpenHandsConfig,
+    get_llm_config_arg,
+    parse_arguments,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import MessageAction
+from openhands.utils.async_utils import call_async_from_sync
 
 # Only CodeActAgent can delegate to BrowsingAgent
 SUPPORTED_AGENT_CLS = {'CodeActAgent'}

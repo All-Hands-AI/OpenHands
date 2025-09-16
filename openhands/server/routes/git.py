@@ -3,6 +3,8 @@ from typing import cast
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
+from pydantic import SecretStr
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -28,7 +30,6 @@ from openhands.server.user_auth import (
     get_provider_tokens,
     get_user_id,
 )
-from pydantic import SecretStr
 
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 

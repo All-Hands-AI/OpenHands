@@ -13,6 +13,7 @@ import sys
 from typing import Iterable
 
 from litellm import ChatCompletionToolParam
+
 from openhands.core.exceptions import (
     FunctionCallConversionError,
     FunctionCallValidationError,

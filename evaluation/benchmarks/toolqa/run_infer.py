@@ -3,18 +3,6 @@ import os
 from typing import Any
 
 import pandas as pd
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    OpenHandsConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 from evaluation.benchmarks.toolqa.utils import encode_question, eval_answer, get_data
 from evaluation.utils.shared import (
@@ -30,6 +18,18 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    OpenHandsConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,

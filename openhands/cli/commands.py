@@ -5,6 +5,12 @@ from pathlib import Path
 from typing import Any
 
 import tomlkit
+from prompt_toolkit import HTML, print_formatted_text
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.shortcuts import clear, print_container
+from prompt_toolkit.widgets import Frame, TextArea
+from pydantic import ValidationError
+
 from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
@@ -45,11 +51,6 @@ from openhands.events.action import (
 )
 from openhands.events.stream import EventStream
 from openhands.storage.settings.file_settings_store import FileSettingsStore
-from prompt_toolkit import HTML, print_formatted_text
-from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.shortcuts import clear, print_container
-from prompt_toolkit.widgets import Frame, TextArea
-from pydantic import ValidationError
 
 
 async def collect_input(config: OpenHandsConfig, prompt_text: str) -> str | None:

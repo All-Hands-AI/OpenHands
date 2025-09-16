@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 
 from fastapi import Request
+from pydantic import SecretStr
+
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.shared import server_config
@@ -11,7 +13,6 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
-from pydantic import SecretStr
 
 
 class AuthType(Enum):

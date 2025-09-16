@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.commands import (

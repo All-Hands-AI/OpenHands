@@ -3,6 +3,8 @@ import os
 from typing import Any
 from urllib.parse import parse_qs
 
+from socketio.exceptions import ConnectionRefusedError
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
@@ -28,7 +30,6 @@ from openhands.server.shared import (
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
-from socketio.exceptions import ConnectionRefusedError
 
 
 @sio.event

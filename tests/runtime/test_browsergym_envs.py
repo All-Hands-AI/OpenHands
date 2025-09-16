@@ -1,10 +1,10 @@
 import json
 
 import pytest
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.browse import BrowseInteractiveAction
 from openhands.events.observation.browse import BrowserOutputObservation
-
 from tests.runtime.conftest import _close_test_runtime, _load_runtime
 
 

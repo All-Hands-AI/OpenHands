@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.utils import load_openhands_config
-from openhands.storage.data_models.user_secrets import UserSecrets
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -14,6 +10,11 @@ from pydantic import (
     model_validator,
 )
 from pydantic.json import pydantic_encoder
+
+from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.utils import load_openhands_config
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):

@@ -2,8 +2,9 @@ import json
 from typing import Any, Literal
 
 import httpx
-from openhands.core.logger import openhands_logger as logger
 from pydantic import BaseModel
+
+from openhands.core.logger import openhands_logger as logger
 
 
 class FeedbackDataModel(BaseModel):

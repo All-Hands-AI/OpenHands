@@ -5,6 +5,7 @@ import json
 
 import pytest
 from litellm import ChatCompletionToolParam
+
 from openhands.llm.fn_call_converter import (
     IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,

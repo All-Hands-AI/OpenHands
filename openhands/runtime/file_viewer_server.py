@@ -7,9 +7,10 @@ import threading
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from uvicorn import Config, Server
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils.file_viewer import generate_file_viewer_html
-from uvicorn import Config, Server
 
 
 def create_app() -> FastAPI:

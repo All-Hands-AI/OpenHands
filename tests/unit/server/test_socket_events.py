@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from openhands.server.listen_socket import oh_action, oh_user_action
 
 

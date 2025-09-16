@@ -3,13 +3,14 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from pydantic import BaseModel
+
 from openhands.events import Event, EventSource
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.metrics import Cost, Metrics, ResponseLatency, TokenUsage
-from pydantic import BaseModel
 
 # TODO: move `content` into `extras`
 TOP_KEYS = [

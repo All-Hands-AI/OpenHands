@@ -6,11 +6,12 @@ import socket
 import time
 
 import docker
-import openhands
 import pytest
 from conftest import (
     _load_runtime,
 )
+
+import openhands
 from openhands.core.config import MCPConfig
 from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger

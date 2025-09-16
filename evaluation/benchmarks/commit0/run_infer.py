@@ -4,26 +4,11 @@ import os
 from collections import Counter
 from typing import Any
 
-import openhands.agenthub
 import pandas as pd
 from commit0.harness.constants import SPLIT
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    OpenHandsConfig,
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
-from openhands.events.serialization.event import event_to_dict
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
-from openhands.utils.shutdown_listener import sleep_if_should_continue
-
 from datasets import load_dataset
+
+import openhands.agenthub
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -39,6 +24,21 @@ from evaluation.utils.shared import (
     run_evaluation,
     update_llm_config_for_completions_logging,
 )
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    AgentConfig,
+    OpenHandsConfig,
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'

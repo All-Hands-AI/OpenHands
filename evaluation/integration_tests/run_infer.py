@@ -3,19 +3,6 @@ import importlib.util
 import os
 
 import pandas as pd
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    AgentConfig,
-    OpenHandsConfig,
-    get_llm_config_arg,
-    parse_arguments,
-)
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
-from openhands.events.serialization.event import event_to_dict
-from openhands.runtime.base import Runtime
-from openhands.utils.async_utils import call_async_from_sync
 
 from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestResult
 from evaluation.utils.shared import (
@@ -33,6 +20,19 @@ from evaluation.utils.shared import (
 from evaluation.utils.shared import (
     codeact_user_response as fake_user_response,
 )
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    AgentConfig,
+    OpenHandsConfig,
+    get_llm_config_arg,
+    parse_arguments,
+)
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import MessageAction
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': fake_user_response,

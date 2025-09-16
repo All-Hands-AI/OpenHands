@@ -11,6 +11,11 @@ import tempfile
 
 import yaml
 from browsing import pre_login
+
+from evaluation.utils.shared import (
+    get_default_sandbox_config_for_eval,
+    get_openhands_config_for_eval,
+)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     LLMConfig,
@@ -26,11 +31,6 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import BrowserOutputObservation, CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-
-from evaluation.utils.shared import (
-    get_default_sandbox_config_for_eval,
-    get_openhands_config_for_eval,
-)
 
 
 def get_config(

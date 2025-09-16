@@ -23,6 +23,20 @@ import re
 from typing import Callable
 
 import pandas as pd
+from datasets import load_dataset
+
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    compatibility_for_eval_history_pairs,
+    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
+    make_metadata,
+    prepare_dataset,
+    reset_logger_for_multiprocessing,
+    run_evaluation,
+)
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
@@ -38,20 +52,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import Observation
 from openhands.utils.async_utils import call_async_from_sync
-
-from datasets import load_dataset
-from evaluation.utils.shared import (
-    EvalMetadata,
-    EvalOutput,
-    compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
-    get_metrics,
-    get_openhands_config_for_eval,
-    make_metadata,
-    prepare_dataset,
-    reset_logger_for_multiprocessing,
-    run_evaluation,
-)
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||

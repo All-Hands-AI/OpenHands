@@ -1,9 +1,8 @@
+from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestResult
 from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.events.observation import AgentDelegateObservation
 from openhands.runtime.base import Runtime
-
-from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestResult
 
 
 class Test(BaseIntegrationTest):

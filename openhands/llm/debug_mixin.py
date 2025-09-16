@@ -3,6 +3,7 @@ from typing import Any
 
 from litellm import ChatCompletionMessageToolCall
 from litellm.types.utils import ModelResponse
+
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 

@@ -12,6 +12,9 @@ from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
+from pydantic import BaseModel
+from tqdm import tqdm
+
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, SandboxConfig
 from openhands.core.config.agent_config import AgentConfig
@@ -36,8 +39,6 @@ from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.utils import get_pairs_from_events
 from openhands.memory.condenser import get_condensation_metadata
-from pydantic import BaseModel
-from tqdm import tqdm
 
 
 class EvalMetadata(BaseModel):

@@ -5,6 +5,8 @@ from typing import Annotated
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_request
+from pydantic import Field
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -20,7 +22,6 @@ from openhands.server.user_auth import (
     get_user_id,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from pydantic import Field
 
 mcp_server = FastMCP(
     'mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True

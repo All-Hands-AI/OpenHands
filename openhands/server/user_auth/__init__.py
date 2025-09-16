@@ -1,11 +1,12 @@
 from fastapi import Request
+from pydantic import SecretStr
+
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import AuthType, get_user_auth
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
-from pydantic import SecretStr
 
 
 async def get_provider_tokens(request: Request) -> PROVIDER_TOKEN_TYPE | None:

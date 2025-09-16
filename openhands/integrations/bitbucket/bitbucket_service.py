@@ -4,6 +4,8 @@ import re
 from typing import Any
 
 import httpx
+from pydantic import SecretStr
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
@@ -21,7 +23,6 @@ from openhands.integrations.service_types import (
 from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-from pydantic import SecretStr
 
 
 class BitBucketService(BaseGitService, GitService, InstallationsService):

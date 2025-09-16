@@ -23,6 +23,9 @@ from typing import Any
 
 import docx
 import PyPDF2
+from pptx import Presentation
+from pylatexenc.latex2text import LatexNodes2Text
+
 from openhands.runtime.plugins.agent_skills.utils.config import (
     _get_max_token,
     _get_openai_api_key,
@@ -30,8 +33,6 @@ from openhands.runtime.plugins.agent_skills.utils.config import (
     _get_openai_client,
     _get_openai_model,
 )
-from pptx import Presentation
-from pylatexenc.latex2text import LatexNodes2Text
 
 
 def parse_pdf(file_path: str) -> None:

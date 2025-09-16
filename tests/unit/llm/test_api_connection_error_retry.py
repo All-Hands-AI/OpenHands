@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from litellm.exceptions import APIConnectionError
+
 from openhands.core.config import LLMConfig
 from openhands.llm.llm import LLM
 

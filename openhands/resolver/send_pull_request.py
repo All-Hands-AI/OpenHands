@@ -5,6 +5,8 @@ import shutil
 import subprocess
 
 import jinja2
+from pydantic import SecretStr
+
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
@@ -21,7 +23,6 @@ from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import identify_token
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
-from pydantic import SecretStr
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:

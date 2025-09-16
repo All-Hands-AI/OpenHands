@@ -2,23 +2,11 @@ import asyncio
 import json
 import os
 
-import openhands.agenthub
 import pandas as pd
-from litellm import completion as litellm_completion
-from openhands.controller.state.state import State
-from openhands.core.config import (
-    get_evaluation_parser,
-    get_llm_config_arg,
-)
-from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.utils import get_condenser_config_arg
-from openhands.core.logger import openhands_logger as logger
-from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
-from openhands.events.serialization.event import event_from_dict, event_to_dict
-from openhands.utils.async_utils import call_async_from_sync
-
 from datasets import load_dataset
+from litellm import completion as litellm_completion
+
+import openhands.agenthub
 from evaluation.benchmarks.swe_bench.run_infer import (
     AgentFinishedCritic,
     complete_runtime,
@@ -39,6 +27,18 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
+from openhands.controller.state.state import State
+from openhands.core.config import (
+    get_evaluation_parser,
+    get_llm_config_arg,
+)
+from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.utils import get_condenser_config_arg
+from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
+from openhands.events.action import MessageAction
+from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.utils.async_utils import call_async_from_sync
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'

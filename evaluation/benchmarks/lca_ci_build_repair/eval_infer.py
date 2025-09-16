@@ -12,6 +12,13 @@ import os
 from pathlib import Path
 
 import ruamel.yaml
+
+from evaluation.utils.shared import (
+    EvalMetadata,
+    get_default_sandbox_config_for_eval,
+    get_openhands_config_for_eval,
+    make_metadata,
+)
 from openhands.core.config import (
     LLMConfig,
     OpenHandsConfig,
@@ -24,13 +31,6 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-
-from evaluation.utils.shared import (
-    EvalMetadata,
-    get_default_sandbox_config_for_eval,
-    get_openhands_config_for_eval,
-    make_metadata,
-)
 
 
 def get_config(

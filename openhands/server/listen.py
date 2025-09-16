@@ -1,6 +1,7 @@
 import os
 
 import socketio
+
 from openhands.server.app import app as base_app
 from openhands.server.listen_socket import sio
 from openhands.server.middleware import (

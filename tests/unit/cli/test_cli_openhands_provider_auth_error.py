@@ -4,11 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 from litellm.exceptions import AuthenticationError
+from pydantic import SecretStr
+
 from openhands.cli import main as cli
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
-from pydantic import SecretStr
 
 
 @pytest_asyncio.fixture

@@ -3,6 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
+
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import ProviderType
 from openhands.server.routes.secrets import (
@@ -15,7 +17,6 @@ from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
-from pydantic import SecretStr
 
 
 # Mock functions to simulate the actual functions in settings.py

@@ -11,8 +11,9 @@ from typing import Callable
 from urllib.parse import urlparse
 
 import httpx
-import openhands
 import tenacity
+
+import openhands
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger

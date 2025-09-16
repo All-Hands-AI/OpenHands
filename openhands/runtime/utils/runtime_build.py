@@ -8,9 +8,10 @@ from enum import Enum
 from pathlib import Path
 
 import docker
-import openhands
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
+
+import openhands
 from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger

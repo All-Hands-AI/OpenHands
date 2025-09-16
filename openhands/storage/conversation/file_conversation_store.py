@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from pydantic import TypeAdapter
+
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage import get_file_store
@@ -19,7 +21,6 @@ from openhands.storage.locations import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
-from pydantic import TypeAdapter
 
 conversation_metadata_type_adapter = TypeAdapter(ConversationMetadata)
 

@@ -2,6 +2,7 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM

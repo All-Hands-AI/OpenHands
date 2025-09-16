@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from openhands.core.config.mcp_config import MCPConfig
-from openhands.integrations.provider import CustomSecret, ProviderToken
-from openhands.integrations.service_types import ProviderType
-from openhands.storage.data_models.settings import Settings
 from pydantic import (
     BaseModel,
     ConfigDict,
     SecretStr,
 )
+
+from openhands.core.config.mcp_config import MCPConfig
+from openhands.integrations.provider import CustomSecret, ProviderToken
+from openhands.integrations.service_types import ProviderType
+from openhands.storage.data_models.settings import Settings
 
 
 class POSTProviderModel(BaseModel):

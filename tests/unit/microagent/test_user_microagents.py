@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+
 from openhands.events.stream import EventStream
 from openhands.memory.memory import Memory
 from openhands.microagent import KnowledgeMicroagent, MicroagentType, RepoMicroagent

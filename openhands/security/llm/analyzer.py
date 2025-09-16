@@ -3,6 +3,7 @@
 from typing import Any
 
 from fastapi import Request
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.security.analyzer import SecurityAnalyzer

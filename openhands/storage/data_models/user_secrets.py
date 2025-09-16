@@ -1,6 +1,16 @@
 from types import MappingProxyType
 from typing import Any
 
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    SerializationInfo,
+    field_serializer,
+    model_validator,
+)
+from pydantic.json import pydantic_encoder
+
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
@@ -11,15 +21,6 @@ from openhands.integrations.provider import (
     ProviderToken,
 )
 from openhands.integrations.service_types import ProviderType
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SerializationInfo,
-    field_serializer,
-    model_validator,
-)
-from pydantic.json import pydantic_encoder
 
 
 class UserSecrets(BaseModel):

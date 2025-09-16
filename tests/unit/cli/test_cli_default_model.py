@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
 from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.utils import VERIFIED_ANTHROPIC_MODELS
 

@@ -1,6 +1,7 @@
 from typing import Any
 
 import httpx
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.interfaces.issue import (
     Issue,

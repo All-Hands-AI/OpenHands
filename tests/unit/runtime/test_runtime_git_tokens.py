@@ -2,6 +2,8 @@ from types import MappingProxyType
 from unittest.mock import MagicMock, patch
 
 import pytest
+from pydantic import SecretStr
+
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
@@ -13,7 +15,6 @@ from openhands.integrations.service_types import AuthenticationError, Repository
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
-from pydantic import SecretStr
 
 
 class MockRuntime(Runtime):

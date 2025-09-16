@@ -4,6 +4,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 from urllib.parse import quote
 
 import pytest
+
 from openhands.core.config import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler

@@ -9,6 +9,7 @@ from litellm import (
     ChatCompletionToolParam,
     ModelResponse,
 )
+
 from openhands.agenthub.codeact_agent.function_calling import combine_thought
 from openhands.agenthub.codeact_agent.tools import FinishTool
 from openhands.agenthub.loc_agent.tools import (

@@ -2,6 +2,8 @@ import logging
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest import TempPathFactory
+
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import State
 from openhands.controller.stuck import StuckDetector
@@ -17,7 +19,6 @@ from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.stream import EventSource, EventStream
 from openhands.storage import get_file_store
-from pytest import TempPathFactory
 
 
 def collect_events(stream):

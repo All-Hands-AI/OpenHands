@@ -4,10 +4,11 @@ import traceback
 from dataclasses import dataclass, field
 from typing import Any, Self
 
+from pydantic import BaseModel
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
-from pydantic import BaseModel
 
 CMD_OUTPUT_PS1_BEGIN = '\n###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'

@@ -1,12 +1,13 @@
 import os
 
+from pydantic import BaseModel
+
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import file_store
 from openhands.storage.locations import get_experiment_config_filename
 from openhands.utils.import_utils import get_impl
-from pydantic import BaseModel
 
 
 class ExperimentConfig(BaseModel):

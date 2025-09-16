@@ -1,12 +1,13 @@
 from pathlib import Path
 
 import toml
+from pydantic import BaseModel, Field
+
 from openhands.cli.tui import (
     UsageMetrics,
 )
 from openhands.events.event import Event
 from openhands.llm.metrics import Metrics
-from pydantic import BaseModel, Field
 
 _LOCAL_CONFIG_FILE_PATH = Path.home() / '.openhands' / 'config.toml'
 _DEFAULT_CONFIG: dict[str, dict[str, list[str]]] = {'sandbox': {'trusted_dirs': []}}

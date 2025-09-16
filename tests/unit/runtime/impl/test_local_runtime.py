@@ -4,6 +4,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.local.local_runtime import LocalRuntime

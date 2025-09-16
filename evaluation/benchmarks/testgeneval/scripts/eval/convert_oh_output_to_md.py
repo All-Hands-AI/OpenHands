@@ -6,8 +6,9 @@ import json
 import os
 
 import pandas as pd
-from openhands.events.serialization import event_from_dict
 from tqdm import tqdm
+
+from openhands.events.serialization import event_from_dict
 
 tqdm.pandas()
 

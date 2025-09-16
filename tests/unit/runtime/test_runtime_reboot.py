@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, Mock
 
 import httpx
 import pytest
+
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
     AgentRuntimeTimeoutError,

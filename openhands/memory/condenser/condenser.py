@@ -4,13 +4,14 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Any
 
+from pydantic import BaseModel
+
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.view import View
-from pydantic import BaseModel
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
 """Key identifying where metadata is stored in a `State` object's `extra_data` field."""

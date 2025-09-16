@@ -6,6 +6,8 @@ from urllib.parse import urlparse
 
 import httpx
 import tenacity
+from tenacity import RetryCallState
+
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
@@ -32,7 +34,6 @@ from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
-from tenacity import RetryCallState
 
 
 class RemoteRuntime(ActionExecutionClient):

@@ -1,6 +1,7 @@
 from typing import Any
 
 from litellm import BaseModel
+
 from openhands.resolver.interfaces.issue import Issue
 
 

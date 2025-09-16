@@ -2,6 +2,7 @@ import os
 import shutil
 
 import pytest
+
 from openhands.controller.state.control_flags import IterationControlFlag
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent

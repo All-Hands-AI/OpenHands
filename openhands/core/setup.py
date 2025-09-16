@@ -3,6 +3,8 @@ import os
 import uuid
 from typing import Callable
 
+from pydantic import SecretStr
+
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
@@ -28,7 +30,6 @@ from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
-from pydantic import SecretStr
 
 
 def create_runtime(

@@ -3,6 +3,7 @@
 from unittest.mock import patch
 
 import pytest
+
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,

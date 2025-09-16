@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
+from pydantic import BaseModel, ConfigDict, Field
+
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -73,7 +75,6 @@ from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
-from pydantic import BaseModel, ConfigDict, Field
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 

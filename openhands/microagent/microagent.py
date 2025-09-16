@@ -5,12 +5,13 @@ from pathlib import Path
 from typing import Union
 
 import frontmatter
+from pydantic import BaseModel
+
 from openhands.core.exceptions import (
     MicroagentValidationError,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
-from pydantic import BaseModel
 
 
 class BaseMicroagent(BaseModel):

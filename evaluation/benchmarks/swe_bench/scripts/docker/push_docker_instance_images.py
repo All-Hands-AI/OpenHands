@@ -26,10 +26,10 @@ EVAL_DOCKER_IMAGE_PREFIX='docker.io/xingyaoww/' python3 evaluation/swe_bench/scr
 import argparse
 
 import docker
-from openhands.core.logger import openhands_logger as logger
+from datasets import load_dataset
 from tqdm import tqdm
 
-from datasets import load_dataset
+from openhands.core.logger import openhands_logger as logger
 
 logger.setLevel('ERROR')
 from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image  # noqa

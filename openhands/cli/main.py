@@ -5,6 +5,10 @@ import logging
 import os
 import sys
 
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.shortcuts import clear
+
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.cli.commands import (
     check_folder_security_agreement,
@@ -82,9 +86,6 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.utils.utils import create_registry_and_conversation_stats
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.shortcuts import clear
 
 
 async def cleanup_session(

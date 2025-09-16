@@ -2,8 +2,9 @@ import re
 import traceback
 
 from datatypes import ParseError, StepOutput, TaskState
-from openhands.controller.state.state import State
 from tasks.base import Task
+
+from openhands.controller.state.state import State
 
 
 class SimplifiedEnv:

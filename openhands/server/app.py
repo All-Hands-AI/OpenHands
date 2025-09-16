@@ -8,12 +8,13 @@ from fastapi.routing import Mount
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from fastapi import (
     FastAPI,
     Request,
 )
 from fastapi.responses import JSONResponse
+
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.integrations.service_types import AuthenticationError
 from openhands.server.routes.conversation import app as conversation_api_router

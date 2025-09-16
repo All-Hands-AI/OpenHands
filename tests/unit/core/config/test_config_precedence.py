@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from openhands.core.config import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,

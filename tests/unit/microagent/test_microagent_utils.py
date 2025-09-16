@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+
 from openhands.microagent import (
     BaseMicroagent,
     KnowledgeMicroagent,

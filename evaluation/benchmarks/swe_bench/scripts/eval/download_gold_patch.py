@@ -1,7 +1,6 @@
 import argparse
 
 import pandas as pd
-
 from datasets import load_dataset
 
 parser = argparse.ArgumentParser()

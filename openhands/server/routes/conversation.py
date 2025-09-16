@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event_filter import EventFilter
 from openhands.events.event_store import EventStore
@@ -13,7 +15,6 @@ from openhands.server.shared import conversation_manager, file_store
 from openhands.server.user_auth import get_user_id
 from openhands.server.utils import get_conversation, get_conversation_metadata
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from pydantic import BaseModel
 
 app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()

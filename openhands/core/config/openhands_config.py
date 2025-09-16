@@ -1,6 +1,8 @@
 import os
 from typing import Any, ClassVar
 
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
+
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.cli_config import CLIConfig
@@ -16,7 +18,6 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
-from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class OpenHandsConfig(BaseModel):

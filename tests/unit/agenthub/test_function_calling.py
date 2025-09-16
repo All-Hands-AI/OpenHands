@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 from litellm import ModelResponse
+
 from openhands.agenthub.codeact_agent.function_calling import response_to_actions
 from openhands.core.exceptions import FunctionCallValidationError
 from openhands.events.action import (

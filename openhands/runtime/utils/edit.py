@@ -4,6 +4,8 @@ import tempfile
 from abc import ABC, abstractmethod
 from typing import Any
 
+from openhands_aci.utils.diff import get_diff  # type: ignore
+
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -23,7 +25,6 @@ from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
-from openhands_aci.utils.diff import get_diff  # type: ignore
 
 USER_MSG = """
 Code changes will be provided in the form of a draft. You will need to apply the draft to the original code.

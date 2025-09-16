@@ -10,6 +10,8 @@ from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
+from pydantic import BaseModel, SecretStr, ValidationError
+
 from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
@@ -29,7 +31,6 @@ from openhands.core.config.security_config import SecurityConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 from openhands.utils.import_utils import get_impl
-from pydantic import BaseModel, SecretStr, ValidationError
 
 JWT_SECRET = '.jwt_secret'
 load_dotenv()

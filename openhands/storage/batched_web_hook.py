@@ -3,6 +3,7 @@ from typing import Optional
 
 import httpx
 import tenacity
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR

@@ -13,6 +13,24 @@ import threading
 import time
 from typing import Generator
 
+from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit.application import Application
+from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
+from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
+from prompt_toolkit.input import create_input
+from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding.key_processor import KeyPressEvent
+from prompt_toolkit.keys import Keys
+from prompt_toolkit.layout.containers import HSplit, Window
+from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.dimension import Dimension
+from prompt_toolkit.layout.layout import Layout
+from prompt_toolkit.lexers import Lexer
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.widgets import Frame, TextArea
+
 from openhands import __version__
 from openhands.cli.pt_style import (
     COLOR_AGENT_BLUE,
@@ -45,23 +63,6 @@ from openhands.events.observation import (
 )
 from openhands.llm.metrics import Metrics
 from openhands.mcp.error_collector import mcp_error_collector
-from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.application import Application
-from prompt_toolkit.completion import CompleteEvent, Completer, Completion
-from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import HTML, FormattedText, StyleAndTextTuples
-from prompt_toolkit.input import create_input
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.key_binding.key_processor import KeyPressEvent
-from prompt_toolkit.keys import Keys
-from prompt_toolkit.layout.containers import HSplit, Window
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.layout.dimension import Dimension
-from prompt_toolkit.layout.layout import Layout
-from prompt_toolkit.lexers import Lexer
-from prompt_toolkit.patch_stdout import patch_stdout
-from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.widgets import Frame, TextArea
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
