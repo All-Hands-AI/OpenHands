@@ -10,6 +10,33 @@ import json
 from datetime import datetime
 from string import Template
 
+def format_file_size(size_bytes):
+    """
+    Convert bytes to human-readable file size format
+    """
+    if size_bytes == 'unknown' or not size_bytes.isdigit():
+        return size_bytes
+    
+    size_bytes = int(size_bytes)
+    
+    # Define size units
+    units = ['B', 'KB', 'MB', 'GB', 'TB']
+    unit_index = 0
+    size = float(size_bytes)
+    
+    # Convert to appropriate unit
+    while size >= 1024 and unit_index < len(units) - 1:
+        size /= 1024
+        unit_index += 1
+    
+    # Format with appropriate precision
+    if unit_index == 0:  # Bytes
+        return f"{int(size)} {units[unit_index]}"
+    elif size >= 100:  # No decimal places for large numbers
+        return f"{int(size)} {units[unit_index]}"
+    else:  # One decimal place for smaller numbers
+        return f"{size:.1f} {units[unit_index]}"
+
 def generate_images_html(images, tag):
     """Generate HTML for the images section"""
     if not images:
@@ -24,13 +51,16 @@ def generate_images_html(images, tag):
         description = image.get('description', f'Download {display_name}')
         filename = image.get('filename', f'{name}-{tag}.tar.gz')
         
+        # Format the file size for human readability
+        formatted_size = format_file_size(size)
+        
         html_parts.append(f'''
             <div class="image-card">
                 <h3>{display_name}</h3>
                 <p>{description}</p>
                 <div class="download-info">
                     <span class="filename">{filename}</span>
-                    <span class="size">{size}</span>
+                    <span class="size">{formatted_size}</span>
                 </div>
                 <a href="{url}" class="download-button">Download {display_name}</a>
             </div>
