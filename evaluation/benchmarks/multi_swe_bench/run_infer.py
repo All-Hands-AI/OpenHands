@@ -6,9 +6,9 @@ from typing import Any
 
 import pandas as pd
 import toml
+from datasets import load_dataset
 
 import openhands.agenthub
-from datasets import load_dataset
 from evaluation.benchmarks.swe_bench.resource.mapping import (
     get_instance_resource_factor,
 )
