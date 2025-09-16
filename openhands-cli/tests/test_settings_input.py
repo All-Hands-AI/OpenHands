@@ -31,7 +31,6 @@ from openhands_cli.user_actions.settings_action import (
     choose_llm_model,
     choose_llm_provider,
     prompt_api_key,
-    save_settings_confirmation,
     settings_type_confirmation,
 )
 
