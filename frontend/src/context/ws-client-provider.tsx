@@ -289,7 +289,9 @@ export function WsClientProvider({
     // reset events when conversationId changes
     setEvents([]);
     setParsedEvents([]);
-    setWebSocketStatus("CONNECTING");
+    // Don't set CONNECTING status immediately - let the main useEffect handle it
+    // when the conversation is actually ready
+    setWebSocketStatus("DISCONNECTED");
   }, [conversationId]);
 
   React.useEffect(() => {
