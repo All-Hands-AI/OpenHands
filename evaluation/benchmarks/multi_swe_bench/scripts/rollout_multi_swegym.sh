@@ -46,7 +46,7 @@ get_openhands_version
 echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
-echo "SPLIT: $SPLIT"
+echo "EVAL_DOCKER_IMAGE_PREFIX: $EVAL_DOCKER_IMAGE_PREFIX"
 
 # Default to NOT use Hint
 export USE_INSTANCE_IMAGE=true
@@ -59,7 +59,8 @@ function run_eval() {
   local eval_note=$1
   export LANGUAGE=java
   echo "About to run command"
-  COMMAND="LANGUAGE=java;  poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
+  COMMAND="EVAL_DOCKER_IMAGE_PREFIX=$EVAL_DOCKER_IMAGE_PREFIX; LANGUAGE=java;  
+    poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
     --agent-cls CodeActAgent \
     --llm-config $MODEL \
     --max-iterations $MAX_ITER \
