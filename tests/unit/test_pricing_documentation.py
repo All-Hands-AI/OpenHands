@@ -74,17 +74,27 @@ class TestPricingDocumentation:
 
     def extract_pricing_from_docs(self, content: str) -> dict[str, dict[str, float]]:
         """Extract pricing information from documentation."""
-        pricing_table_pattern = r'\| ([^|]+) \| \$([0-9.]+) \| \$([0-9.]+) \|'
+        # Updated pattern to handle cached input cost column (which can be N/A)
+        pricing_table_pattern = (
+            r'\| ([^|]+) \| \$([0-9.]+) \| ([^|]+) \| \$([0-9.]+) \|'
+        )
         matches = re.findall(pricing_table_pattern, content)
 
         pricing_data = {}
         for match in matches:
             model_name = match[0].strip()
             input_cost = float(match[1])
-            output_cost = float(match[2])
+            cached_input_str = match[2].strip()
+            output_cost = float(match[3])
+
+            # Parse cached input cost (can be N/A or $X.XX)
+            cached_input_cost = None
+            if cached_input_str != 'N/A':
+                cached_input_cost = float(cached_input_str.replace('$', ''))
 
             pricing_data[model_name] = {
                 'input_cost_per_million_tokens': input_cost,
+                'cached_input_cost_per_million_tokens': cached_input_cost,
                 'output_cost_per_million_tokens': output_cost,
             }
 
@@ -106,7 +116,7 @@ class TestPricingDocumentation:
         for variation in variations:
             if variation in pricing_data:
                 model_data = pricing_data[variation]
-                return {
+                result = {
                     'input_cost_per_million_tokens': model_data.get(
                         'input_cost_per_token', 0
                     )
@@ -117,12 +127,21 @@ class TestPricingDocumentation:
                     * 1_000_000,
                 }
 
+                # Add cached input cost if available
+                cached_cost = model_data.get('cache_read_input_token_cost', 0)
+                if cached_cost > 0:
+                    result['cached_input_cost_per_million_tokens'] = (
+                        cached_cost * 1_000_000
+                    )
+
+                return result
+
         return {}
 
     def test_pricing_table_exists(self, documentation_content: str):
         """Test that the pricing table exists in the documentation."""
         assert (
-            '| Model | Input Cost (per 1M tokens) | Output Cost (per 1M tokens)'
+            '| Model | Input Cost (per 1M tokens) | Cached Input Cost (per 1M tokens) | Output Cost (per 1M tokens)'
             in documentation_content
         )
         assert 'claude-opus-4-20250514' in documentation_content
@@ -146,6 +165,7 @@ class TestPricingDocumentation:
         assert qwen_pricing is not None
         assert qwen_pricing['input_cost_per_million_tokens'] == 0.4
         assert qwen_pricing['output_cost_per_million_tokens'] == 1.6
+        assert qwen_pricing['cached_input_cost_per_million_tokens'] is None  # N/A
 
         # Test other models against LiteLLM data
         for model_name, doc_pricing in docs_pricing.items():
@@ -174,6 +194,25 @@ class TestPricingDocumentation:
                 ), (
                     f'Output pricing mismatch for {model_name}: docs={doc_pricing["output_cost_per_million_tokens"]}, litellm={litellm_pricing["output_cost_per_million_tokens"]}'
                 )
+
+                # Test cached input cost if both have it
+                doc_cached = doc_pricing.get('cached_input_cost_per_million_tokens')
+                litellm_cached = litellm_pricing.get(
+                    'cached_input_cost_per_million_tokens'
+                )
+
+                if doc_cached is not None and litellm_cached is not None:
+                    assert abs(doc_cached - litellm_cached) < 0.01, (
+                        f'Cached input pricing mismatch for {model_name}: docs={doc_cached}, litellm={litellm_cached}'
+                    )
+                elif doc_cached is None and litellm_cached is not None:
+                    # Documentation shows N/A but LiteLLM has cached pricing - this might be intentional
+                    pass
+                elif doc_cached is not None and litellm_cached is None:
+                    # Documentation has cached pricing but LiteLLM doesn't - this shouldn't happen
+                    raise AssertionError(
+                        f'Documentation has cached pricing for {model_name} but LiteLLM does not'
+                    )
 
     def test_all_openhands_models_documented(
         self, openhands_models: list[str], documentation_content: str
