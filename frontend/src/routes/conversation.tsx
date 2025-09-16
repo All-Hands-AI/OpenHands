@@ -47,8 +47,6 @@ function AppContent() {
   useDocumentTitleFromState();
 
   React.useEffect(() => {
-    console.log("Conversation ID USEEFFECT:", conversation);
-
     if (isFetched && !conversation && isAuthed) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
