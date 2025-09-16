@@ -105,21 +105,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
-      - name: Generate images JSON array
+      - name: Generate images tab-delimited data
         id: generate-images
         run: |
-          # Create the images JSON array from all job outputs
-          cat > images.json << 'EOF'
-          [
-            ${{ needs.publish-enterprise-server.outputs.image-json }},
-            ${{ needs.publish-runtime-nikolaik.outputs.image-json }},
-            ${{ needs.publish-runtime-ubuntu.outputs.image-json }}
-          ]
+          # DESIGN CHOICE: Tab-delimited data instead of JSON
+          # ================================================
+          # We combine multiple tab-delimited lines instead of creating a JSON array
+          # because AWS presigned URLs contain special characters that cause shell
+          # escaping issues when passed as JSON command line arguments or as files.
+          #
+          # Each line format: name<TAB>displayName<TAB>filename<TAB>url<TAB>size<TAB>description
+          # Multiple lines are concatenated (one per image)
+          
+          cat > images.tsv << 'EOF'
+          ${{ needs.publish-enterprise-server.outputs.image-json }}
+          ${{ needs.publish-runtime-nikolaik.outputs.image-json }}
+          ${{ needs.publish-runtime-ubuntu.outputs.image-json }}
           EOF
           
-          # Output the JSON for the next step
+          # Output the tab-delimited data for the next step
           echo "images-json<<EOF" >> $GITHUB_OUTPUT
-          cat images.json >> $GITHUB_OUTPUT
+          cat images.tsv >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Create comprehensive S3 publish report

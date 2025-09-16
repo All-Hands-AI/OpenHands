@@ -43,7 +43,7 @@ inputs:
 
 outputs:
   image-json:
-    description: 'Complete image information as JSON for report generation'
+    description: 'Complete image information as tab-delimited data for report generation (format: name<TAB>displayName<TAB>filename<TAB>url<TAB>size<TAB>description)'
     value: ${{ steps.generate-json.outputs.image-json }}
   presigned-url:
     description: 'Presigned URL for downloading the image'
@@ -107,27 +107,42 @@ runs:
         region: ${{ inputs.aws-region }}
         expires-in: ${{ inputs.expires-in }}
     
-    - name: Get file size and generate JSON
+    - name: Get file size and generate tab-delimited data
       id: generate-json
       run: |
         FILENAME="${{ inputs.image-name }}-${{ inputs.tag }}.tar.gz"
         SIZE=$(stat -c%s "$FILENAME")
         
-        # Generate the complete image JSON
-        cat > image.json << EOF
-        {
-          "name": "${{ inputs.image-name }}",
-          "displayName": "${{ inputs.display-name }}",
-          "filename": "$FILENAME",
-          "url": "${{ steps.presigned-url.outputs.presigned-url }}",
-          "size": "$SIZE",
-          "description": "${{ inputs.description }}"
-        }
-        EOF
+        # DESIGN CHOICE: Tab-delimited data instead of JSON
+        # ================================================
+        # We use tab-delimited format instead of JSON for the following reasons:
+        # 1. AWS presigned URLs contain many special characters (parentheses, ampersands, etc.)
+        #    that cause shell escaping issues when passed as JSON command line arguments
+        # 2. Presigned URLs NEVER contain actual tab character so there are no shell escaping issues
+        #
+        # Format: name<TAB>displayName<TAB>filename<TAB>url<TAB>size<TAB>description
+        # Example: enterprise-server<TAB>Enterprise Server<TAB>file.tar.gz<TAB>https://s3...<TAB>123456<TAB>Description
         
-        # Output the JSON
+        # Write variables to temp files to avoid shell escaping issues
+        echo '${{ inputs.image-name }}' > name.tmp
+        echo '${{ inputs.display-name }}' > display_name.tmp
+        echo '${{ steps.presigned-url.outputs.presigned-url }}' > url.tmp
+        echo '${{ inputs.description }}' > description.tmp
+        
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$(cat name.tmp)" \
+          "$(cat display_name.tmp)" \
+          "$FILENAME" \
+          "$(cat url.tmp)" \
+          "$SIZE" \
+          "$(cat description.tmp)" > image_data.tsv
+        
+        # Clean up temp files
+        rm -f name.tmp display_name.tmp url.tmp description.tmp
+        
+        # Output the tab-delimited data
         echo "image-json<<EOF" >> $GITHUB_OUTPUT
-        cat image.json >> $GITHUB_OUTPUT
+        cat image_data.tsv >> $GITHUB_OUTPUT
         echo "EOF" >> $GITHUB_OUTPUT
         
         # Also output individual values for backward compatibility

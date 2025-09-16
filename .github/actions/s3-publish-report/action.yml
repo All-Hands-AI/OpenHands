@@ -11,7 +11,7 @@ inputs:
     description: 'S3 tag folder (e.g., releases/1.0.0)'
     required: true
   images:
-    description: 'JSON array of image objects with name, url, size, etc.'
+    description: 'Tab-delimited image data (format: name<TAB>displayName<TAB>filename<TAB>url<TAB>size<TAB>description, one per line)'
     required: true
   repository:
     description: 'GitHub repository (e.g., owner/repo)'
@@ -65,18 +65,33 @@ runs:
         echo "  Repository: ${{ inputs.repository }}"
         echo ""
         
-        # Run the Python template processing script
+        # DESIGN CHOICE: Tab-delimited data instead of JSON
+        # ================================================
+        # We use tab-delimited format instead of JSON because AWS presigned URLs
+        # contain special characters that cause shell escaping issues when passed
+        # as command line arguments. Tab-delimited is much simpler and more reliable.
+        #
+        # Write images tab-delimited data to temporary file
+        # Use here-document to preserve all characters exactly
+        cat > images_temp.tsv << 'TSV_EOF'
+        ${{ inputs.images }}
+        TSV_EOF
+        
+        # Run the Python template processing script with file reference
         python .github/scripts/process-template.py \
           "${{ inputs.template-path }}" \
           "${{ inputs.output-path }}" \
           "${{ inputs.tag }}" \
           "${{ inputs.bucket }}" \
           "${{ inputs.tag-folder }}" \
-          "${{ inputs.images }}" \
+          "@images_temp.tsv" \
           "${{ inputs.repository }}" \
           "${{ inputs.run-id }}" \
           "${{ inputs.url-length }}" \
           "${{ inputs.expires-at }}"
+        
+        # Clean up temporary file
+        rm -f images_temp.tsv
         
         # Get the output file size
         REPORT_SIZE=$(wc -c < "${{ inputs.output-path }}")

@@ -38,10 +38,46 @@ def generate_images_html(images, tag):
     
     return ''.join(html_parts)
 
+def parse_tab_delimited_images(images_data):
+    """
+    Parse tab-delimited image data into list of dictionaries
+    
+    DESIGN CHOICE: Tab-delimited instead of JSON
+    ===========================================
+    We use tab-delimited format instead of JSON because:
+    1. AWS presigned URLs contain special characters (parentheses, ampersands, etc.)
+       that cause shell escaping issues when passed as JSON command line arguments
+    2. Presigned URLs NEVER contain actual tab characters (they use %09 encoding)
+    3. Tab-delimited is much simpler - no JSON escaping/parsing needed
+    4. More reliable - no shell escaping issues at all
+    5. Faster processing - simple string splitting vs JSON parsing
+    
+    Format: name<TAB>displayName<TAB>filename<TAB>url<TAB>size<TAB>description
+    """
+    images = []
+    for line in images_data.strip().split('\n'):
+        if not line.strip():  # Skip empty lines
+            continue
+        parts = line.split('\t')
+        if len(parts) != 6:
+            print(f"❌ Error: Invalid tab-delimited line (expected 6 fields, got {len(parts)}): {line[:100]}...")
+            sys.exit(1)
+        
+        images.append({
+            'name': parts[0],
+            'displayName': parts[1],
+            'filename': parts[2],
+            'url': parts[3],
+            'size': parts[4],
+            'description': parts[5]
+        })
+    return images
+
 def main():
     if len(sys.argv) < 8:
         print("❌ Error: Not enough arguments provided")
-        print("Usage: process-template.py <template_file> <output_file> <tag> <bucket> <tag_folder> <images_json> <repository> <run_id> [url_length] [expires_at]")
+        print("Usage: process-template.py <template_file> <output_file> <tag> <bucket> <tag_folder> <images_tsv_or_file> <repository> <run_id> [url_length] [expires_at]")
+        print("Note: images_tsv_or_file can be either tab-delimited string or path to TSV file (prefixed with @)")
         sys.exit(1)
     
     template_file = sys.argv[1]
@@ -49,26 +85,38 @@ def main():
     tag = sys.argv[3]
     bucket = sys.argv[4]
     tag_folder = sys.argv[5]
-    images_json = sys.argv[6]
+    images_input = sys.argv[6]
     repository = sys.argv[7]
     run_id = sys.argv[8]
     url_length = sys.argv[9] if len(sys.argv) > 9 else 'unknown'
     expires_at = sys.argv[10] if len(sys.argv) > 10 else 'unknown'
+    
+    # Handle images input - either tab-delimited string or file path
+    # We prefer file-based approach (@filename) to avoid shell escaping issues
+    # when dealing with AWS presigned URLs containing special characters
+    if images_input.startswith('@'):
+        # Read from file (preferred approach)
+        images_file = images_input[1:]  # Remove @ prefix
+        if not os.path.exists(images_file):
+            print(f"❌ Error: Images file not found: {images_file}")
+            sys.exit(1)
+        with open(images_file, 'r', encoding='utf-8') as f:
+            images_data = f.read()
+    else:
+        # Use as tab-delimited string (fallback)
+        images_data = images_input
     
     # Validate template file exists
     if not os.path.exists(template_file):
         print(f"❌ Error: Template file not found: {template_file}")
         sys.exit(1)
     
-    # Parse images JSON
+    # Parse images tab-delimited data
     try:
-        images = json.loads(images_json)
-        if not isinstance(images, list):
-            print("❌ Error: Images must be a JSON array")
-            sys.exit(1)
+        images = parse_tab_delimited_images(images_data)
         print(f"📦 Processing {len(images)} images")
-    except json.JSONDecodeError as e:
-        print(f"❌ Error: Invalid JSON in images parameter: {e}")
+    except Exception as e:
+        print(f"❌ Error: Invalid tab-delimited data: {e}")
         sys.exit(1)
     
     # Generate timestamp
