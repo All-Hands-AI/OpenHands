@@ -296,8 +296,15 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (conversation?.status !== "RUNNING" && !conversation?.runtime_status) {
-      return () => undefined; // conversation not yet loaded
+
+    // Only connect when conversation is fully loaded and running
+    if (
+      !conversation ||
+      conversation.status !== "RUNNING" ||
+      !conversation.runtime_status ||
+      conversation.runtime_status === "STATUS$STOPPED"
+    ) {
+      return () => undefined; // conversation not ready for WebSocket connection
     }
 
     let sio = sioRef.current;
