@@ -6,8 +6,8 @@ interface SystemMessageContentProps {
 
 export function SystemMessageContent({ content }: SystemMessageContentProps) {
   return (
-    <Typography.Text className="p-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300 shadow-inner">
-      {content}
-    </Typography.Text>
+    <div className="p-4 shadow-inner">
+      <Typography.CodeBlock>{content}</Typography.CodeBlock>
+    </div>
   );
 }

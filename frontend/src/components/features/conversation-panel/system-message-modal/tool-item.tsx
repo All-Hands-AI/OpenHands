@@ -1,6 +1,6 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { Typography } from "#/ui/typography";
 import { ToolParameters } from "./tool-parameters";
+import { ToggleButton } from "./toggle-button";
 
 interface FunctionData {
   name?: string;
@@ -42,20 +42,11 @@ export function ToolItem({ tool, index, isExpanded, onToggle }: ToolItemProps) {
 
   return (
     <div className="rounded-md overflow-hidden">
-      <button
-        type="button"
+      <ToggleButton
+        title={String(name)}
+        isExpanded={isExpanded}
         onClick={() => onToggle(index)}
-        className="w-full py-3 px-2 text-left flex items-center justify-between hover:bg-gray-700 transition-colors"
-      >
-        <div className="flex items-center">
-          <Typography.Text className="font-bold text-gray-100">
-            {String(name)}
-          </Typography.Text>
-        </div>
-        <Typography.Text className="text-gray-300">
-          {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-        </Typography.Text>
-      </button>
+      />
 
       {isExpanded && (
         <div className="px-2 pb-3 pt-1">
