@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
+import { MetricRow } from "./metric-row";
 
 interface UsageSectionProps {
   usage: {
@@ -15,12 +16,10 @@ export function UsageSection({ usage }: UsageSectionProps) {
 
   return (
     <>
-      <div className="flex justify-between items-center pb-2">
-        <span>{t(I18nKey.CONVERSATION$INPUT)}</span>
-        <span className="font-semibold">
-          {usage.prompt_tokens.toLocaleString()}
-        </span>
-      </div>
+      <MetricRow
+        label={t(I18nKey.CONVERSATION$INPUT)}
+        value={usage.prompt_tokens.toLocaleString()}
+      />
 
       <div className="grid grid-cols-2 gap-2 pl-4 text-sm">
         <span className="text-neutral-400">
@@ -37,19 +36,17 @@ export function UsageSection({ usage }: UsageSectionProps) {
         </span>
       </div>
 
-      <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-        <span>{t(I18nKey.CONVERSATION$OUTPUT)}</span>
-        <span className="font-semibold">
-          {usage.completion_tokens.toLocaleString()}
-        </span>
-      </div>
+      <MetricRow
+        label={t(I18nKey.CONVERSATION$OUTPUT)}
+        value={usage.completion_tokens.toLocaleString()}
+      />
 
-      <div className="flex justify-between items-center border-b border-neutral-700 pb-2">
-        <span className="font-semibold">{t(I18nKey.CONVERSATION$TOTAL)}</span>
-        <span className="font-bold">
-          {(usage.prompt_tokens + usage.completion_tokens).toLocaleString()}
-        </span>
-      </div>
+      <MetricRow
+        label={t(I18nKey.CONVERSATION$TOTAL)}
+        value={(usage.prompt_tokens + usage.completion_tokens).toLocaleString()}
+        labelClassName="font-semibold"
+        valueClassName="font-bold"
+      />
     </>
   );
 }
