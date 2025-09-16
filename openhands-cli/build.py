@@ -127,13 +127,13 @@ def test_executable() -> bool:
     """Test the built executable with simplified checks."""
     print('🧪 Testing the built executable...')
 
-    fake_home = Path(tempfile.mkdtemp(prefix="openhands-home-"))
-    os.environ['HOME'] = str(fake_home)
-    os.environ['USERPROFILE'] = str(fake_home)
-
     settings_path = Path(os.path.expanduser(LLM_SETTINGS_PATH))
-    settings_path.parent.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(json.dumps(dummy_settings))
+    if settings_path.exists():
+        print(f"⚠️  Using existing settings at {settings_path}")
+    else:
+        print(f"💾 Creating dummy settings at {settings_path}")
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        settings_path.write_text(json.dumps(dummy_settings))
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
