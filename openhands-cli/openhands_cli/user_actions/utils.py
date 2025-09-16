@@ -1,4 +1,3 @@
-from typing import Callable
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
