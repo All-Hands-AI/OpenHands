@@ -13,8 +13,21 @@ from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 from prompt_toolkit.validation import Validator, ValidationError
 
 
+class StepCounter:
+    """Automatically manages step numbering for settings flows."""
+    
+    def __init__(self, total_steps: int):
+        self.current_step = 0
+        self.total_steps = total_steps
+    
+    def next_step(self, prompt: str) -> str:
+        """Get the next step prompt with automatic numbering."""
+        self.current_step += 1
+        return f"(Step {self.current_step}/{self.total_steps}) {prompt}"
+
+
 def format_step_prompt(step: int, total_steps: int, prompt: str) -> str:
-    """Format a prompt with step numbering."""
+    """Legacy function for backward compatibility with basic settings."""
     return f"(Step {step}/{total_steps}) {prompt}"
 
 
@@ -125,9 +138,8 @@ def prompt_api_key(
 
 
 # Advanced settings functions
-def prompt_custom_model(escapable=True) -> str:
+def prompt_custom_model(question: str, escapable=True) -> str:
     """Prompt for custom model name."""
-    question = format_step_prompt(1, 6, 'Custom Model (CTRL-c to cancel): ')
     return cli_text_input(question, escapable=escapable)
 
 
@@ -140,31 +152,25 @@ class BaseURLValidator(Validator):
             )
 
 
-def prompt_base_url(escapable=True) -> str:
+def prompt_base_url(question: str, escapable=True) -> str:
     """Prompt for base URL."""
-    question = format_step_prompt(2, 6, 'Base URL (CTRL-c to cancel): ')
     return cli_text_input(question, escapable=escapable, validator=BaseURLValidator())
 
 
-def prompt_advanced_api_key(existing_api_key: SecretStr | None = None, escapable=True) -> str:
+def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = None, escapable=True) -> str:
     """Prompt for API key in advanced settings."""
     if existing_api_key:
-        masked_key = existing_api_key.get_secret_value()[:3] + '***' + existing_api_key.get_secret_value()[-3:]
-        question = format_step_prompt(3, 6, f'API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): ')
         # For existing keys, allow empty input to keep current key
         validator = None
     else:
-        question = format_step_prompt(3, 6, 'API Key (CTRL-c to cancel): ')
         # For new keys, require non-empty input
         validator = APIKeyValidator()
 
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 
-def choose_agent(escapable=True) -> str:
+def choose_agent(question: str, escapable=True) -> str:
     """Choose agent type."""
-    question = format_step_prompt(4, 6, 'Agent (TAB for options, CTRL-c to cancel): ')
-    
     # Available agents based on the agenthub
     agents = [
         'CodeActAgent',
@@ -178,18 +184,16 @@ def choose_agent(escapable=True) -> str:
     return agents[index]
 
 
-def choose_confirmation_mode(escapable=True) -> bool:
+def choose_confirmation_mode(question: str, escapable=True) -> bool:
     """Choose confirmation mode setting."""
-    question = format_step_prompt(5, 6, 'Confirmation Mode (CTRL-c to cancel): ')
     choices = ['Enable', 'Disable']
     
     index = cli_confirm(question, choices, escapable=escapable)
     return index == 0  # True for Enable, False for Disable
 
 
-def choose_memory_condensation(escapable=True) -> bool:
+def choose_memory_condensation(question: str, escapable=True) -> bool:
     """Choose memory condensation setting."""
-    question = format_step_prompt(6, 6, 'Memory Condensation (CTRL-c to cancel): ')
     choices = ['Enable', 'Disable']
     
     index = cli_confirm(question, choices, escapable=escapable)

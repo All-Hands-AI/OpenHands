@@ -1,6 +1,7 @@
 from openhands_cli.locations import LLM_SETTINGS_PATH
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
+    StepCounter,
     choose_llm_model,
     choose_llm_provider,
     prompt_api_key,
@@ -108,6 +109,54 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
+    # Context-aware helper functions for clean settings flow
+    def _prompt_for_model(self, steps: StepCounter) -> str:
+        """Helper determines question based on basic vs advanced mode."""
+        prompt = "Custom Model (CTRL-c to cancel): "
+        return prompt_custom_model(steps.next_step(prompt))
+
+    def _prompt_for_base_url(self, steps: StepCounter) -> str:
+        """Helper handles base URL input."""
+        prompt = "Base URL (CTRL-c to cancel): "
+        return prompt_base_url(steps.next_step(prompt))
+
+    def _prompt_for_api_key(self, steps: StepCounter) -> str:
+        """Helper determines question based on existing key."""
+        existing_api_key = None
+        if self.conversation and self.conversation.agent.llm.api_key:
+            existing_api_key = self.conversation.agent.llm.api_key
+        
+        if existing_api_key:
+            # Mask the key for display
+            key_str = existing_api_key.get_secret_value()
+            masked_key = f"{key_str[:3]}***{key_str[-4:]}" if len(key_str) > 7 else "***"
+            prompt = f"API Key [{masked_key}] (CTRL-c to cancel, ENTER to keep current, type new to change): "
+        else:
+            prompt = "API Key (CTRL-c to cancel): "
+        
+        api_key_input = prompt_advanced_api_key(steps.next_step(prompt), existing_api_key)
+        
+        # Handle API key logic - empty means keep existing, otherwise use new
+        if api_key_input.strip() == '' and existing_api_key:
+            return existing_api_key.get_secret_value()
+        else:
+            return api_key_input
+
+    def _prompt_for_agent(self, steps: StepCounter) -> str:
+        """Helper handles agent selection with TAB completion."""
+        prompt = "Agent (TAB for options, CTRL-c to cancel): "
+        return choose_agent(steps.next_step(prompt))
+
+    def _prompt_for_confirmation_mode(self, steps: StepCounter) -> bool:
+        """Helper handles confirmation mode toggle."""
+        prompt = "Confirmation Mode (CTRL-c to cancel): "
+        return choose_confirmation_mode(steps.next_step(prompt))
+
+    def _prompt_for_memory_condensation(self, steps: StepCounter) -> bool:
+        """Helper handles memory condensation toggle."""
+        prompt = "Memory Condensation (CTRL-c to cancel): "
+        return choose_memory_condensation(steps.next_step(prompt))
+
     def handle_basic_settings(self, escapable=True):
         try:
             provider = choose_llm_provider(escapable=escapable)
@@ -126,35 +175,17 @@ class SettingsScreen:
         self._save_llm_settings(provider, llm_model, api_key)
 
     def handle_advanced_settings(self, escapable=True):
-        """Handle advanced settings configuration."""
+        """Handle advanced settings configuration with clean step-by-step flow."""
         try:
-            # Step 1: Custom Model
-            custom_model = prompt_custom_model(escapable=escapable)
+            steps = StepCounter(6)
             
-            # Step 2: Base URL
-            base_url = prompt_base_url(escapable=escapable)
-            
-            # Step 3: API Key
-            existing_api_key = None
-            if self.llm_config and self.llm_config.api_key:
-                existing_api_key = self.llm_config.api_key
-            
-            api_key_input = prompt_advanced_api_key(existing_api_key, escapable=escapable)
-            
-            # Handle API key logic - empty means keep existing, otherwise use new
-            if api_key_input.strip() == '' and existing_api_key:
-                api_key = existing_api_key.get_secret_value()
-            else:
-                api_key = api_key_input
-            
-            # Step 4: Agent
-            agent = choose_agent(escapable=escapable)
-            
-            # Step 5: Confirmation Mode
-            confirmation_mode = choose_confirmation_mode(escapable=escapable)
-            
-            # Step 6: Memory Condensation
-            memory_condensation = choose_memory_condensation(escapable=escapable)
+            # Ultra-clean calling code - helpers determine their own questions
+            custom_model = self._prompt_for_model(steps)
+            base_url = self._prompt_for_base_url(steps)
+            api_key = self._prompt_for_api_key(steps)
+            agent = self._prompt_for_agent(steps)
+            confirmation_mode = self._prompt_for_confirmation_mode(steps)
+            memory_condensation = self._prompt_for_memory_condensation(steps)
             
             # Confirm save
             save_settings_confirmation()
