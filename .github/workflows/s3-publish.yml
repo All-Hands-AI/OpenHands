@@ -29,6 +29,9 @@ jobs:
       presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
       file-size: ${{ steps.file-size.outputs.size }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -86,6 +89,9 @@ jobs:
       presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
       file-size: ${{ steps.file-size.outputs.size }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -143,6 +149,9 @@ jobs:
       presigned-url: ${{ steps.presigned-url.outputs.presigned-url }}
       file-size: ${{ steps.file-size.outputs.size }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Configure AWS CLI
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -198,6 +207,9 @@ jobs:
     needs: [publish-enterprise-server, publish-runtime-nikolaik, publish-runtime-ubuntu]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
       - name: Create comprehensive S3 publish report
         id: create-report
         uses: ./.github/actions/s3-publish-report
