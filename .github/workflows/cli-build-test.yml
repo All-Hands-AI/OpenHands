@@ -46,11 +46,11 @@ jobs:
       - name: Build binary executable
         working-directory: openhands-cli
         run: |
-          ./build.sh --install-pyinstaller | tee build_and_test.log
+          ./build.sh --install-pyinstaller | tee output.log
           echo "Full output:"
           cat output.log
 
-          if grep -q "❌" build_and_test.log; then
+          if grep -q "❌" output.log; then
             echo "❌ Found failure marker in output"
             exit 1
           fi
