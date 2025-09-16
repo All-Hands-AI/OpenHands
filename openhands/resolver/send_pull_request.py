@@ -59,7 +59,7 @@ def apply_patch(repo_dir: str, patch: str) -> None:
             continue
 
         # Handle file rename
-        if old_path and new_path and 'rename from' in patch:
+        if old_path and new_path and 'rename from' in diff.text:
             # Create parent directory of new path
             os.makedirs(os.path.dirname(new_path), exist_ok=True)
             try:
