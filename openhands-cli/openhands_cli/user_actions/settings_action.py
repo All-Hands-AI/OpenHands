@@ -100,7 +100,7 @@ def prompt_api_key(
     provider: str,
     existing_api_key: SecretStr | None = None,
     escapable=True
-) -> tuple[str | None, bool]:
+) -> str:
     helper_text = (
         "\nYou can find your OpenHands LLM API Key in the API Keys tab of OpenHands Cloud: "
         "https://app.all-hands.dev/settings/api-keys\n"
