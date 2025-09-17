@@ -129,14 +129,15 @@ describe("Settings Screen", () => {
     mockQueryClient.setQueryData(["config"], saasConfig);
 
     const sectionsToInclude = [
+      "llm", // LLM settings are now always shown in SaaS mode
       "user",
       "integrations",
       "application",
-      "credits", // The nav item shows "credits" text but routes to /billing
+      "billing", // The nav item shows "billing" text and routes to /billing
       "secrets",
       "api keys",
     ];
-    const sectionsToExclude = ["llm"];
+    const sectionsToExclude: string[] = []; // No sections are excluded in SaaS mode now
 
     renderSettingsScreen();
 
