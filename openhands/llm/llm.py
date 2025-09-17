@@ -418,6 +418,15 @@ class LLM(RetryMixin, DebugMixin):
         if self._tried_model_info:
             return
         self._tried_model_info = True
+
+        # Initialize function calling using centralized model features
+        # This should happen early so it's not affected by early returns
+        features = get_features(self.config.model)
+        if self.config.native_tool_calling is None:
+            self._function_calling_active = features.supports_function_calling
+        else:
+            self._function_calling_active = self.config.native_tool_calling
+
         try:
             if self.config.model.startswith('openrouter'):
                 self.model_info = litellm.get_model_info(self.config.model)
@@ -529,13 +538,6 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        # Initialize function calling using centralized model features
-        features = get_features(self.config.model)
-        if self.config.native_tool_calling is None:
-            self._function_calling_active = features.supports_function_calling
-        else:
-            self._function_calling_active = self.config.native_tool_calling
-
     def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
@@ -547,7 +549,6 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             bool: True if model is vision capable. Return False if model not supported by litellm.
         """
-
         # Allow manual override via environment variable
         if os.getenv('OPENHANDS_FORCE_VISION', '').lower() in (
             '1',
