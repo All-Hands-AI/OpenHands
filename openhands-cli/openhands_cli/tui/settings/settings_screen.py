@@ -1,4 +1,4 @@
-from openhands_cli.locations import AGENT_SPEC_PATH, LLM_SETTINGS_PATH, WORKING_DIR
+from openhands_cli.locations import WORKING_DIR
 from openhands_cli.tui.settings.store import AgentSpecStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
@@ -14,13 +14,11 @@ from openhands_cli.user_actions.settings_action import (
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
 from openhands.sdk import Conversation, LLM, LocalFileStore
-from openhands.sdk.preset.default import get_default_agent_spec, AgentSpec
-from pydantic import SecretStr
+from openhands.sdk.preset.default import get_default_agent_spec
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
-
 
 class SettingsScreen:
     def __init__(self, conversation: Conversation | None = None):

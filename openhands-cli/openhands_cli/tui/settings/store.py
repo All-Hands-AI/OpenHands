@@ -8,7 +8,7 @@ from prompt_toolkit import HTML, print_formatted_text
 class AgentSpecStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
     def __init__(self) -> None:
-        self.file_store = LocalFileStore(WORKING_DIR)
+        self.file_store = LocalFileStore(root=WORKING_DIR)
 
     def load(self) -> AgentSpec | None:
         try:
@@ -22,3 +22,5 @@ class AgentSpecStore:
 
     def save(self, spec: AgentSpec) -> None:
         self.file_store.write(AGENT_SPEC_PATH, spec.model_dump_json())
+
+
