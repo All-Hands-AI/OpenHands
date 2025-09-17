@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useStopConversation = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: (variables: { conversationId: string }) =>
@@ -31,6 +33,9 @@ export const useStopConversation = () => {
       });
       // Also invalidate the conversations list for consistency
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
+    },
+    onSuccess: () => {
+      navigate("/");
     },
   });
 };

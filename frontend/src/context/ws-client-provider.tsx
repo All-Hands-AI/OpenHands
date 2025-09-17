@@ -264,11 +264,6 @@ export function WsClientProvider({
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
 
-    // Don't set error messages if conversation is intentionally stopped
-    if (conversation && conversation.status === "STOPPED") {
-      return;
-    }
-
     updateStatusWhenErrorMessagePresent(data);
     setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }

@@ -2,8 +2,6 @@ import React, { useRef, useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
-import { StatusBar } from "#/components/features/status/status-bar";
-import { AgentControls } from "#/components/features/status/agent-controls";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn, isMobileDevice } from "#/utils/utils";
@@ -20,6 +18,8 @@ import {
 } from "#/state/conversation-slice";
 import { CHAT_INPUT } from "#/utils/constants";
 import { RootState } from "#/store";
+import { ServerStatus } from "../controls/server-status";
+import { AgentStatus } from "../controls/agent-status";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -424,25 +424,16 @@ export function CustomChatInput({
             )}
           </div>
 
-          <div className="w-full grid grid-cols-3 items-center gap-4">
-            {/* Left section - Tools */}
-            <div className="flex items-center justify-start">
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-1">
               <Tools />
+              <ServerStatus conversationStatus={conversationStatus} />
             </div>
-
-            {/* Center section - Status Bar */}
-            <div className="flex items-center justify-center">
-              <StatusBar conversationStatus={conversationStatus} />
-            </div>
-
-            {/* Right section - Agent Controls */}
-            <div className="flex items-center justify-end min-w-0">
-              <AgentControls
-                handleStop={handleStop}
-                handleResumeAgent={handleResumeAgent}
-                disabled={disabled}
-              />
-            </div>
+            <AgentStatus
+              handleStop={handleStop}
+              handleResumeAgent={handleResumeAgent}
+              disabled={disabled}
+            />
           </div>
         </div>
       </div>
