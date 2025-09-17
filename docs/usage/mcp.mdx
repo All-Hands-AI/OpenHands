@@ -67,6 +67,25 @@ sse_servers = [
     # External MCP service with authentication
     {url="https://api.example.com/mcp/sse", api_key="your-api-key"}
 ]
+
+# SHTTP Servers - Modern streamable HTTP transport (recommended)
+shttp_servers = [
+    # Basic SHTTP server with default 60s timeout
+    "https://api.example.com/mcp/shttp",
+    
+    # SHTTP server with custom timeout for long-running tools
+    {
+        url = "https://api.example.com/mcp/shttp",
+        api_key = "your-api-key",
+        timeout = 180  # 3 minutes for processing-heavy tools
+    },
+    
+    # SHTTP server with short timeout for quick operations
+    {
+        url = "https://fast-tools.example.com/mcp/shttp",
+        timeout = 30  # 30 seconds for lightweight tools
+    }
+]
 ```
 
 
@@ -117,6 +136,12 @@ SHTTP (Streamable HTTP) servers are configured using either a string URL or an o
 - `api_key` (optional)
   - Type: `str`
   - Description: API key for authentication
+
+- `timeout` (optional)
+  - Type: `int`
+  - Default: `60`
+  - Range: `1-3600` seconds (1 hour maximum)
+  - Description: Timeout in seconds for tool execution. Use higher values for long-running tools such as file processing or complex calculations.
 
 ### Stdio Servers
 

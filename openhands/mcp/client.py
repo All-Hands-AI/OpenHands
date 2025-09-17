@@ -29,6 +29,7 @@ class MCPClient(BaseModel):
     description: str = 'MCP client tools for server interaction'
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
+    server_timeout: Optional[float] = None  # Timeout from server config for tool calls
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""
@@ -144,8 +145,26 @@ class MCPClient(BaseModel):
             )
             raise
 
-    async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
-        """Call a tool on the MCP server."""
+    async def call_tool(
+        self, tool_name: str, args: dict, timeout: float | None = None
+    ) -> CallToolResult:
+        """Call a tool on the MCP server with optional timeout.
+
+        Args:
+            tool_name: Name of the tool to call
+            args: Arguments to pass to the tool
+            timeout: Timeout in seconds for tool execution (None = no timeout)
+
+        Returns:
+            CallToolResult from the MCP server
+
+        Raises:
+            asyncio.TimeoutError: If the tool call times out
+            ValueError: If the tool is not found
+            RuntimeError: If the client session is not available
+        """
+        import asyncio
+
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
         # The MCPClientTool is primarily for metadata; use the session to call the actual tool.
@@ -153,4 +172,13 @@ class MCPClient(BaseModel):
             raise RuntimeError('Client session is not available.')
 
         async with self.client:
-            return await self.client.call_tool_mcp(name=tool_name, arguments=args)
+            # Use explicit timeout if provided, otherwise use server timeout
+            effective_timeout = timeout if timeout is not None else self.server_timeout
+
+            if effective_timeout is not None:
+                return await asyncio.wait_for(
+                    self.client.call_tool_mcp(name=tool_name, arguments=args),
+                    timeout=effective_timeout,
+                )
+            else:
+                return await self.client.call_tool_mcp(name=tool_name, arguments=args)
