@@ -14,9 +14,14 @@ import subprocess
 import sys
 from pathlib import Path
 from openhands_cli.locations import WORKING_DIR, AGENT_SPEC_PATH
+from openhands.sdk.preset.default import get_default_agent_spec
+from openhands.sdk import LLM
 
-
-dummy_agent_specs = """{"llm":{"model":"litellm_proxy/claude-sonnet-4-20250514","api_key":"**********","base_url":null,"api_version":null,"aws_access_key_id":null,"aws_secret_access_key":null,"aws_region_name":null,"openrouter_site_url":"https://docs.all-hands.dev/","openrouter_app_name":"OpenHands","num_retries":5,"retry_multiplier":8.0,"retry_min_wait":8,"retry_max_wait":64,"timeout":null,"max_message_chars":30000,"temperature":0.0,"top_p":1.0,"top_k":null,"custom_llm_provider":null,"max_input_tokens":200000,"max_output_tokens":64000,"input_cost_per_token":null,"output_cost_per_token":null,"ollama_base_url":null,"drop_params":true,"modify_params":true,"disable_vision":null,"disable_stop_word":false,"caching_prompt":true,"log_completions":false,"log_completions_folder":"logs/completions","custom_tokenizer":null,"native_tool_calling":null,"reasoning_effort":"high","seed":null,"safety_settings":null,"service_id":"default","OVERRIDE_ON_SERIALIZE":["api_key","aws_access_key_id","aws_secret_access_key"]},"tools":[{"name":"BashTool","params":{"working_dir":"/Users/rohitmalhotra/.openhands"}},{"name":"FileEditorTool","params":{}},{"name":"TaskTrackerTool","params":{"save_dir":"/Users/rohitmalhotra/.openhands/.openhands"}},{"name":"BrowserToolSet","params":{}}],"mcp_config":{"mcpServers":{"fetch":{"command":"uvx","args":["mcp-server-fetch"]},"repomix":{"command":"npx","args":["-y","repomix@1.4.2","--mcp"]}}},"filter_tools_regex":"^(?!repomix)(.*)|^repomix.*pack_codebase.*$","agent_context":null,"system_prompt_filename":"system_prompt.j2","system_prompt_kwargs":{"cli_mode":true},"condenser":{"llm":{"model":"litellm_proxy/claude-sonnet-4-20250514","api_key":"**********","base_url":null,"api_version":null,"aws_access_key_id":null,"aws_secret_access_key":null,"aws_region_name":null,"openrouter_site_url":"https://docs.all-hands.dev/","openrouter_app_name":"OpenHands","num_retries":5,"retry_multiplier":8.0,"retry_min_wait":8,"retry_max_wait":64,"timeout":null,"max_message_chars":30000,"temperature":0.0,"top_p":1.0,"top_k":null,"custom_llm_provider":null,"max_input_tokens":200000,"max_output_tokens":64000,"input_cost_per_token":null,"output_cost_per_token":null,"ollama_base_url":null,"drop_params":true,"modify_params":true,"disable_vision":null,"disable_stop_word":false,"caching_prompt":true,"log_completions":false,"log_completions_folder":"logs/completions","custom_tokenizer":null,"native_tool_calling":null,"reasoning_effort":"high","seed":null,"safety_settings":null,"service_id":"default","OVERRIDE_ON_SERIALIZE":["api_key","aws_access_key_id","aws_secret_access_key"]},"max_size":80,"keep_first":4,"kind":"openhands.sdk.context.condenser.llm_summarizing_condenser.LLMSummarizingCondenser","_du_spec":null}}"""
+dummy_agent_specs = get_default_agent_spec(
+    llm=LLM(model='dummy-model', api_key='dummy-key'),
+    working_dir=WORKING_DIR,
+    cli_mode=True
+)
 
 def clean_build_directories() -> None:
     """Clean up previous build artifacts."""
@@ -111,7 +116,7 @@ def test_executable() -> bool:
     else:
         print(f"💾 Creating dummy settings at {specs_path}")
         specs_path.parent.mkdir(parents=True, exist_ok=True)
-        specs_path.write_text(json.dumps(dummy_agent_specs))
+        specs_path.write_text(dummy_agent_specs.model_dump_json())
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
