@@ -12,7 +12,7 @@ from prompt_toolkit.validation import ValidationError
 from pydantic import SecretStr
 
 from openhands_cli.user_actions.settings_action import (
-    APIKeyValidator,
+    NonEmptyValueValidator,
     SettingsType,
     choose_llm_model,
     choose_llm_provider,
@@ -91,7 +91,7 @@ def test_model_selection_flows(mock_verified_models: Any, mock_cli_interactions:
 
 def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
     # Validator standalone
-    validator = APIKeyValidator()
+    validator = NonEmptyValueValidator()
     doc = MagicMock(); doc.text = "sk-abc"
     validator.validate(doc)
 
