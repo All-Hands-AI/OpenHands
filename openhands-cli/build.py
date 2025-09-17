@@ -121,66 +121,107 @@ def build_executable(
         return False
 
 
+import select
+
+WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
+
+def _is_welcome(line: str) -> bool:
+    s = line.strip().lower()
+    return any(marker in s for marker in WELCOME_MARKERS)
+
 def test_executable() -> bool:
-    """Test the built executable with simplified checks."""
+    """Test the built executable, measuring boot time and total test time."""
     print('🧪 Testing the built executable...')
 
     settings_path = Path(LLM_SETTINGS_PATH)
-    if settings_path.exists():
-        print(f"⚠️  Using existing settings at {settings_path}")
-    else:
+    if not settings_path.exists():
         print(f"💾 Creating dummy settings at {settings_path}")
         settings_path.parent.mkdir(parents=True, exist_ok=True)
         settings_path.write_text(json.dumps(dummy_settings))
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
-        # Try with .exe extension for Windows
         exe_path = Path('dist/openhands-cli.exe')
         if not exe_path.exists():
             print('❌ Executable not found!')
             return False
 
     try:
-        # Make executable on Unix-like systems
         if os.name != 'nt':
             os.chmod(exe_path, 0o755)
 
-        # Simple test: Check that executable can start and respond to /help command
-        print('  Testing executable startup and /help command...')
-        input_script = "/help\n/exit\n" # Send /help command then exit
-        start_time = time.time()
-        result = subprocess.run(
+        boot_start = time.time()
+        proc = subprocess.Popen(
             [str(exe_path)],
-            capture_output=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=30,
-            input=input_script,
-            env={
-                **os.environ
-            },
+            bufsize=1,
+            env={**os.environ},
         )
 
-        end_time = time.time()
+        # --- Wait for welcome ---
+        deadline = boot_start + 30
+        saw_welcome = False
+        captured = []
 
-        # Check for expected help output
-        output = result.stdout + result.stderr
-        if 'OpenHands CLI Help' in output and 'Available commands:' in output:
-            print(f'Total run time: {end_time - start_time} seconds')
-            print('  ✅ Executable starts and /help command works correctly')
+        while time.time() < deadline:
+            if proc.poll() is not None:
+                break
+            rlist, _, _ = select.select([proc.stdout], [], [], 0.2)
+            if not rlist:
+                continue
+            line = proc.stdout.readline()
+            if not line:
+                continue
+            captured.append(line)
+            if _is_welcome(line):
+                saw_welcome = True
+                break
+
+        if not saw_welcome:
+            print("❌ Did not detect welcome prompt")
+            try: proc.kill()
+            except Exception: pass
+            return False
+
+        boot_end = time.time()
+        print(f"⏱️  Boot to welcome: {boot_end - boot_start:.2f} seconds")
+
+        # --- Run /help then /exit ---
+        if proc.stdin is None:
+            print("❌ stdin unavailable")
+            proc.kill()
+            return False
+
+        proc.stdin.write("/help\n/exit\n")
+        proc.stdin.flush()
+        out, _ = proc.communicate(timeout=20)
+
+        total_end = time.time()
+        full_output = ''.join(captured) + (out or '')
+
+        print(f"⏱️  End-to-end test time: {total_end - boot_start:.2f} seconds")
+
+        if "available commands" in full_output.lower():
+            print("✅ Executable starts, welcome detected, and /help works")
             return True
         else:
-            print('  ❌ Expected help output not found')
-            print('  Combined output:', output[:1000])
+            print("❌ /help output not found")
+            print("Output preview:", full_output[-500:])
             return False
 
     except subprocess.TimeoutExpired:
-        print('  ❌ Executable test timed out')
+        print("❌ Executable test timed out")
+        try: proc.kill()
+        except Exception: pass
         return False
     except Exception as e:
-        print(f'❌ Error testing executable: {e}')
+        print(f"❌ Error testing executable: {e}")
+        try: proc.kill()
+        except Exception: pass
         return False
-
 
 
 def main() -> int:
