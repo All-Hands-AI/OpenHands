@@ -15,7 +15,9 @@ import sys
 from pathlib import Path
 import time
 from openhands_cli.locations import LLM_SETTINGS_PATH
+import select
 
+WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
 
 dummy_settings = {
     "model": "litellm_proxy/claude-sonnet-4-20250514",
@@ -40,6 +42,13 @@ dummy_settings = {
     "service_id": "default",
     "OVERRIDE_ON_SERIALIZE": ["api_key", "aws_access_key_id", "aws_secret_access_key"],
 }
+
+
+# =================================================
+# SECTION: Build Binary
+# =================================================
+
+
 
 def clean_build_directories() -> None:
     """Clean up previous build artifacts."""
@@ -77,7 +86,6 @@ def check_pyinstaller() -> bool:
 def build_executable(
     spec_file: str = 'openhands-cli.spec',
     clean: bool = True,
-    install_pyinstaller: bool = False,
 ) -> bool:
     """Build the executable using PyInstaller."""
     if clean:
@@ -121,9 +129,10 @@ def build_executable(
         return False
 
 
-import select
+# =================================================
+# SECTION: Test and profile binary
+# =================================================
 
-WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
 
 def _is_welcome(line: str) -> bool:
     s = line.strip().lower()
@@ -224,6 +233,12 @@ def test_executable() -> bool:
         return False
 
 
+
+# =================================================
+# SECTION: Main
+# =================================================
+
+
 def main() -> int:
     """Main function."""
     parser = argparse.ArgumentParser(description='Build OpenHands CLI executable')
@@ -243,7 +258,7 @@ def main() -> int:
     )
 
     parser.add_argument(
-        '--no-build', action='store_true', help='Skip build and test existing executable'
+        '--no-build', action='store_true', help='Skip testing the built executable'
     )
 
     args = parser.parse_args()
