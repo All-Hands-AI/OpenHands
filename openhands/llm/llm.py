@@ -428,6 +428,15 @@ class LLM(RetryMixin, DebugMixin):
             # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             base_url = self.config.base_url.strip() if self.config.base_url else ''
+
+            # Validate base_url to prevent malformed URLs
+            if not base_url:
+                logger.warning(
+                    f'No base_url provided for litellm_proxy model {self.config.model}. '
+                    'Skipping model info retrieval from LiteLLM proxy.'
+                )
+                return
+
             if not base_url.startswith(('http://', 'https://')):
                 base_url = 'http://' + base_url
 
