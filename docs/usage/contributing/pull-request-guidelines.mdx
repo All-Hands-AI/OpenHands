@@ -1,0 +1,63 @@
+---
+title: Pull Request Guidelines
+description: How to open and manage pull requests for OpenHands
+icon:
+---
+
+# Pull Request Guidelines
+
+Thank you for contributing! This page explains how we prefer pull requests to be opened and reviewed for the OpenHands repository.
+
+## Before opening a PR
+
+- Run the project's pre-commit hooks: make install-pre-commit-hooks && pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
+- Ensure unit tests pass: poetry run pytest ./tests/unit
+- For frontend changes: cd frontend && npm run lint:fix && npm run build
+- Follow the repository's commit message / PR title conventions. PR titles should use a conventional prefix (e.g., feat:, fix:, docs:, refactor:, perf:, test:, build:, ci:, chore:, revert:).
+
+## Branching
+
+- Create a feature branch from main named descriptively, e.g., `feat/add-foo`, `fix/correct-bar`.
+- Keep branches small and focused on a single logical change.
+
+## PR Content
+
+- Provide a clear, concise summary of what the PR changes and why.
+- Include any relevant screenshots or recordings for UI changes.
+- If your change affects users, add an end-user friendly changelog entry (see .github/pull_request_template.md).
+- Reference any associated issue numbers.
+
+## Review Process
+
+- Assign reviewers if you know who should review; otherwise, leave it to maintainers.
+- Respond to review comments promptly.
+- Keep changes small when addressing review feedback (use follow-up commits; avoid force-pushing multiple times unless necessary).
+
+## Tests and CI
+
+- Add or update unit tests for behaviour changes.
+- Ensure CI checks pass before requesting final review.
+
+## Styling
+
+- Follow the project's linting and formatting rules. Run pre-commit hooks locally to catch common issues.
+
+## Merging
+
+- Maintainers will merge PRs when they are approved and CI passes.
+- Do not merge your own PR unless you are a maintainer or have explicit permission.
+- Use rebase when integrating changes from main to keep history clean.
+
+## Backporting
+
+- For important bugfixes, maintainers may backport to release branches; discuss backports in PR comments.
+
+## Additional tips
+
+- For large or risky changes, open an issue first to discuss design.
+- When in doubt, ask for guidance in our Slack community: https://dub.sh/openhands
+
+## Sources
+- PR template: .github/pull_request_template.md
+- Contributor guidance: CONTRIBUTING.md
+- Pre-commit configuration: dev_config/python/.pre-commit-config.yaml
