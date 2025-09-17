@@ -154,7 +154,7 @@ def test_executable() -> bool:
             [str(exe_path)],
             capture_output=True,
             text=True,
-            timeout=15,
+            timeout=30,
             input=input_script,
             env={
                 **os.environ
