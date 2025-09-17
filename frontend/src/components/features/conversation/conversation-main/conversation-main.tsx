@@ -2,8 +2,7 @@ import { useSelector } from "react-redux";
 import { useWindowSize } from "@uidotdev/usehooks";
 import { RootState } from "#/store";
 import { MobileLayout } from "./mobile-layout";
-import { DesktopLayoutWithPanel } from "./desktop-layout-with-panel";
-import { DesktopLayoutWithoutPanel } from "./desktop-layout-without-panel";
+import { DesktopLayout } from "./desktop-layout";
 
 export function ConversationMain() {
   const { width } = useWindowSize();
@@ -15,9 +14,5 @@ export function ConversationMain() {
     return <MobileLayout isRightPanelShown={isRightPanelShown} />;
   }
 
-  if (isRightPanelShown) {
-    return <DesktopLayoutWithPanel isRightPanelShown={isRightPanelShown} />;
-  }
-
-  return <DesktopLayoutWithoutPanel isRightPanelShown={isRightPanelShown} />;
+  return <DesktopLayout isRightPanelShown={isRightPanelShown} />;
 }
