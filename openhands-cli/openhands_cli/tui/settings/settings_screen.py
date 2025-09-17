@@ -1,4 +1,5 @@
-from openhands_cli.locations import WORKING_DIR
+import os
+from openhands_cli.locations import AGENT_SPEC_PATH, WORKING_DIR
 from openhands_cli.tui.settings.store import AgentSpecStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
@@ -44,25 +45,21 @@ class SettingsScreen:
                 [
                     ("   LLM Provider", str(provider)),
                     ("   LLM Model", str(llm.model)),
-                    ("   API Key", "********" if llm.api_key else "Not Set"),
                 ]
             )
         else:
             labels_and_values.extend(
                 [
-                    ("   LLM Provider", "openhands"),
-                    ("   LLM Model", str(llm.model)),
-                    ("   API Key", "********" if llm.api_key else "Not Set"),
+                    ("   Custom Model", llm.model),
+                    ("   Base URL", llm.base_url),
+
                 ]
             )
-
-        # Add common settings that are always displayed
         labels_and_values.extend([
-            ("   Agent", "TomCodeActAgent"),  # Default agent type for now
+            ("   API Key", "********" if llm.api_key else "Not Set"),
             ("   Confirmation Mode", "Enabled" if self.conversation.state.confirmation_mode else "Disabled"),
-            ("   Memory Condensation", "Enabled"),  # Default for now
-            ("   Search API Key", "Not Set"),  # Placeholder for search API
-            ("   Configuration File", "~/.openhands/settings.json"),
+            ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
+            ("   Configuration File", os.path.join(WORKING_DIR, AGENT_SPEC_PATH))
         ])
 
         # Calculate max widths for alignment

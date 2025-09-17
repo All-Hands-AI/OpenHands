@@ -1,7 +1,7 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 from openhands.sdk import LocalFileStore
-from openhands.sdk.preset.default import get_default_agent_spec, AgentSpec
+from openhands.sdk.preset.default import AgentSpec
 from openhands_cli.locations import AGENT_SPEC_PATH, WORKING_DIR
 from prompt_toolkit import HTML, print_formatted_text
 
