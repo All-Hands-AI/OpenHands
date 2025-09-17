@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
@@ -39,12 +40,20 @@ function AppContent() {
   const { providers } = useUserProviders();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
+
+  // Force fresh conversation data when navigating to prevent stale cache issues
+  React.useEffect(() => {
+    queryClient.invalidateQueries({
+      queryKey: ["user", "conversation", conversationId],
+    });
+  }, [conversationId, queryClient]);
 
   React.useEffect(() => {
     if (isFetched && !conversation && isAuthed) {
