@@ -2,8 +2,6 @@ import React, { useRef, useCallback, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
-import { ServerStatus } from "#/components/features/controls/server-status";
-import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn, isMobileDevice } from "#/utils/utils";
@@ -20,6 +18,8 @@ import {
 } from "#/state/conversation-slice";
 import { CHAT_INPUT } from "#/utils/constants";
 import { RootState } from "#/store";
+import { ServerStatus } from "../controls/server-status";
+import { AgentStatus } from "../controls/agent-status";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
