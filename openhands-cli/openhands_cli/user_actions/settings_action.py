@@ -135,18 +135,6 @@ def prompt_base_url(step_counter: StepCounter, escapable=True) -> str:
     return cli_text_input(question, escapable=escapable, validator=NonEmptyValueValidator())
 
 
-def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = None, escapable=True) -> str:
-    """Prompt for API key in advanced settings."""
-    if existing_api_key:
-        # For existing keys, allow empty input to keep current key
-        validator = None
-    else:
-        # For new keys, require non-empty input
-        validator = NonEmptyValueValidator()
-
-    return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
-
-
 def choose_memory_condensation(step_counter: StepCounter, escapable=True) -> bool:
     """Choose memory condensation setting."""
     question = step_counter.next_step("Memory Condensation (CTRL-c to cancel): ")
