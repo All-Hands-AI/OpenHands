@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { TaskTrackingObservation } from "#/types/core/observations";
+import { Typography } from "#/ui/typography";
 
 interface TaskTrackingObservationContentProps {
   event: TaskTrackingObservation;
@@ -53,33 +54,33 @@ export function TaskTrackingObservationContent({
               {taskList.map((task, index) => (
                 <div key={task.id} className="border-l-2 border-gray-600 pl-3">
                   <div className="flex items-start gap-2">
-                    <span className="text-lg">
+                    <Typography.Text className="text-lg">
                       {getStatusIcon(task.status)}
-                    </span>
+                    </Typography.Text>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm text-gray-400">
+                        <Typography.Text className="text-sm text-gray-400">
                           {index + 1}.
-                        </span>
-                        <span
+                        </Typography.Text>
+                        <Typography.Text
                           className={`text-xs px-2 py-1 rounded uppercase font-semibold ${getStatusClassName(
                             task.status,
                           )}`}
                         >
                           {task.status.replace("_", " ")}
-                        </span>
+                        </Typography.Text>
                       </div>
                       <h4 className="font-medium text-white mb-1">
                         {task.title}
                       </h4>
-                      <p className="text-xs text-gray-400 mb-1">
+                      <Typography.Text className="text-xs text-gray-400 mb-1">
                         {t("TASK_TRACKING_OBSERVATION$TASK_ID")}: {task.id}
-                      </p>
+                      </Typography.Text>
                       {task.notes && (
-                        <p className="text-sm text-gray-300 italic">
+                        <Typography.Text className="text-sm text-gray-300 italic">
                           {t("TASK_TRACKING_OBSERVATION$TASK_NOTES")}:{" "}
                           {task.notes}
-                        </p>
+                        </Typography.Text>
                       )}
                     </div>
                   </div>
