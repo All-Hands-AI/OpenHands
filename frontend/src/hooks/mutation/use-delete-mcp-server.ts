@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 import { MCPConfig } from "#/types/settings";
 
 export function useDeleteMcpServer() {
@@ -27,7 +27,7 @@ export function useDeleteMcpServer() {
         mcp_config: newConfig,
       };
 
-      await OpenHands.saveSettings(apiSettings);
+      await SettingsService.saveSettings(apiSettings);
     },
     onSuccess: () => {
       // Invalidate the settings query to trigger a refetch

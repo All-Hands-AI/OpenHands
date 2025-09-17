@@ -49,7 +49,7 @@ export function AnalyticsConsentFormModal({
             {t(I18nKey.ANALYTICS$DESCRIPTION)}
           </BaseModalDescription>
 
-          <label className="flex gap-2 items-center self-start">
+          <label className="flex gap-2 items-center self-start text-sm">
             <input name="analytics" type="checkbox" defaultChecked />
             {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
           </label>

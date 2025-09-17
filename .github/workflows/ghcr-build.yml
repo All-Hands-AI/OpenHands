@@ -176,8 +176,10 @@ jobs:
     # Do not build enterprise in forks
     if: github.event.pull_request.head.repo.fork != true
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Set up Docker Buildx for better performance
       - name: Set up Docker Buildx
@@ -235,12 +237,11 @@ jobs:
 
   enterprise-preview:
     name: Enterprise preview
-    if: |
-      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
-      (github.event_name == 'pull_request' && github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'deploy'))
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
     runs-on: blacksmith-4vcpu-ubuntu-2204
     needs: [ghcr_build_enterprise]
     steps:
+      # This should match the version in enterprise-preview.yml
       - name: Trigger remote job
         run: |
           curl --fail-with-body -sS -X POST \

@@ -199,6 +199,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.config.security.security_analyzer, SecurityAnalyzer
             )
             self.security_analyzer = analyzer_cls()
+            self.security_analyzer.set_event_stream(self.event_stream)
             logger.debug(
                 f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
             )
@@ -863,7 +864,7 @@ fi
             # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
+                f'.openhands_instructions not present, trying to load from repository microagents_dir={microagents_dir}',
             )
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))

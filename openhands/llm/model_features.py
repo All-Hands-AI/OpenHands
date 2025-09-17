@@ -122,6 +122,7 @@ SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
     'o1*',
     # grok-4 specific model name (basename)
     'grok-4-0709',
+    'grok-code-fast-1',
     # DeepSeek R1 family
     'deepseek-r1-0528*',
 ]
