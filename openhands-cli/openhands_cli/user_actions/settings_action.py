@@ -147,23 +147,6 @@ def prompt_advanced_api_key(question: str, existing_api_key: SecretStr | None = 
     return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
 
 
-def choose_agent(step_counter: StepCounter, escapable=True) -> str:
-    """Choose agent type."""
-    question = step_counter.next_step("Agent (TAB for options, CTRL-c to cancel): ")
-
-    # TODO: make sure agent sdk upstream has endpoint to expose agent list
-    agents = [
-        'CodeActAgent',
-        'BrowsingAgent',
-        'VisualBrowsingAgent',
-        'ReadOnlyAgent',
-        'LocAgent',
-    ]
-
-    index = cli_confirm(question, agents, escapable=escapable)
-    return agents[index]
-
-
 def choose_memory_condensation(step_counter: StepCounter, escapable=True) -> bool:
     """Choose memory condensation setting."""
     question = step_counter.next_step("Memory Condensation (CTRL-c to cancel): ")

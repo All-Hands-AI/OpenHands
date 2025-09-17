@@ -1,4 +1,5 @@
-from openhands_cli.locations import LLM_SETTINGS_PATH
+from openhands_cli.locations import AGENT_SPEC_PATH, LLM_SETTINGS_PATH, WORKING_DIR
+from openhands_cli.tui.settings.store import AgentSpecStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
     choose_llm_model,
@@ -8,14 +9,12 @@ from openhands_cli.user_actions.settings_action import (
     settings_type_confirmation,
     prompt_custom_model,
     prompt_base_url,
-    prompt_advanced_api_key,
-    choose_agent,
-    choose_confirmation_mode,
     choose_memory_condensation,
 )
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk import Conversation, LLM
+from openhands.sdk import Conversation, LLM, LocalFileStore
+from openhands.sdk.preset.default import get_default_agent_spec, AgentSpec
 from pydantic import SecretStr
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -25,13 +24,16 @@ from openhands_cli.pt_style import COLOR_GREY
 
 class SettingsScreen:
     def __init__(self, conversation: Conversation | None = None):
+        self.file_store = LocalFileStore(WORKING_DIR)
+        self.spec_store = AgentSpecStore()
         self.conversation = conversation
 
     def display_settings(self) -> None:
-        if not self.conversation:
+        agent_spec = self.spec_store.load()
+        if not agent_spec:
             return
 
-        llm = self.conversation.agent.llm
+        llm = agent_spec.llm
         advanced_llm_settings = True if llm.base_url else False
 
         # Prepare labels and values based on settings
@@ -126,11 +128,11 @@ class SettingsScreen:
             return
 
         # Store the collected settings for persistence
-        self._save_llm_settings(provider, llm_model, api_key)
+        self._apply_llm(f"{provider}/{llm_model}", api_key)
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
-        step_counter = StepCounter(6)
+        step_counter = StepCounter(4)
         try:
             custom_model = prompt_custom_model(step_counter)
             base_url = prompt_base_url(step_counter)
@@ -140,7 +142,6 @@ class SettingsScreen:
                 self.conversation.agent.llm.api_key if self.conversation else None,
                 escapable=escapable
             )
-            agent = choose_agent(step_counter)
             memory_condensation = choose_memory_condensation(step_counter)
 
             # Confirm save
@@ -154,25 +155,55 @@ class SettingsScreen:
             custom_model,
             base_url,
             api_key,
-            agent,
             memory_condensation
         )
 
-    def _save_llm_settings(
-        self, provider: str, model: str, api_key: str
-    ):
-        """Update conversation settings with new values."""
-        llm = LLM(model=f"{provider}/{model}", api_key=SecretStr(api_key))
-        llm.store_to_json(LLM_SETTINGS_PATH)
+    def _apply_llm(
+        self,
+        model,
+        api_key,
+        base_url: str | None = None
+    ) -> None:
+        llm = LLM(
+            model=model,
+            api_key=api_key,
+            base_url=base_url
+        )
+
+        agent_spec = self.spec_store.load()
+        if not agent_spec:
+            agent_spec = get_default_agent_spec(
+                llm=llm,
+                working_dir=WORKING_DIR,
+                cli_mode=True
+            )
+
+        agent_spec.llm = llm
+        self.spec_store.save(agent_spec)
+
 
     def _save_advanced_settings(
         self,
         custom_model: str,
         base_url: str,
         api_key: str,
-        agent: str,
-        confirmation_mode: bool,
         memory_condensation: bool
     ):
-        # TODO: figure out agent configuration
-        pass
+        self._apply_llm(
+            custom_model,
+            api_key,
+            base_url=base_url
+        )
+
+        agent_spec = self.spec_store.load()
+        if not agent_spec:
+            return
+
+
+        if not memory_condensation:
+            agent_spec.condenser = None
+
+        print(agent_spec.model_dump_json())
+        self.spec_store.save(agent_spec)
+
+
