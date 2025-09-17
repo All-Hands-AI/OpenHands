@@ -2,20 +2,24 @@
 
 import tempfile
 from pathlib import Path
+from types import MappingProxyType
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.events import EventStream
-from openhands.integrations.service_types import ProviderType, Repository, AuthenticationError
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    ProviderType,
+    Repository,
+)
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent.microagent import (
     RepoMicroagent,
 )
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
-from types import MappingProxyType
 
 
 class MockRuntime(Runtime):
@@ -40,9 +44,9 @@ class MockRuntime(Runtime):
             config=config,
             event_stream=event_stream,
             llm_registry=llm_registry,
-            sid='test'
+            sid='test',
         )
-        self.git_provider_tokens=MappingProxyType({})
+        self.git_provider_tokens = MappingProxyType({})
         self._workspace_root = workspace_root
         self._logs = []
 
@@ -139,6 +143,7 @@ class MockRuntime(Runtime):
     def list_files(self, path=None):
         # Return a list of all files under the given directory (as strings)
         from pathlib import Path
+
         target_path = Path(path) if path else self._workspace_root
         if not target_path.is_dir():
             return []
@@ -223,12 +228,15 @@ def test_get_microagents_from_org_or_user_github_success(temp_workspace):
         git_provider=ProviderType.GITHUB,
         is_public=True,
     )
+
     async def mock_verify(*args, **kwargs):
         return mock_org_repo
 
     with patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify):
         # Invoke the org‑level microagent loading
-        loaded_microagents = runtime.get_microagents_from_org_or_user('github.com/owner/repo')
+        loaded_microagents = runtime.get_microagents_from_org_or_user(
+            'github.com/owner/repo'
+        )
         assert len(loaded_microagents) > 0
         # The test microagent created by create_test_microagents has name 'mock_test'
         names = [m.name for m in loaded_microagents]
@@ -244,7 +252,9 @@ def test_get_microagents_from_org_or_user_auth_error_continuation(temp_workspace
         raise AuthenticationError('auth failed')
 
     with patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify):
-        loaded_microagents = runtime.get_microagents_from_org_or_user('github.com/owner/repo')
+        loaded_microagents = runtime.get_microagents_from_org_or_user(
+            'github.com/owner/repo'
+        )
         assert loaded_microagents == []
 
         # Verify that a warning was logged about the AuthenticationError
@@ -321,7 +331,7 @@ def test_get_microagents_from_org_or_user_gitlab_success_with_config(temp_worksp
                     git_provider=ProviderType.GITLAB,
                     is_public=True,
                 ),
-                'https://gitlab.com/owner/openhands-config.git'
+                'https://gitlab.com/owner/openhands-config.git',
             ]
 
             result = runtime.get_microagents_from_org_or_user('gitlab.com/owner/repo')
@@ -395,7 +405,9 @@ def test_get_microagents_from_selected_repo_github_only_openhands(temp_workspace
             assert isinstance(result, list)
 
 
-def test_org_microagent_fallback_subgroup_has_microagents_top_level_missing(temp_workspace):
+def test_org_microagent_fallback_subgroup_has_microagents_top_level_missing(
+    temp_workspace,
+):
     """When the top‑level org repo has microagents but a sub‑group org repo also exists,
     the sub‑group should be selected for loading microagents (priority to deeper level)."""
     runtime = MockRuntime(temp_workspace)
@@ -413,11 +425,11 @@ def test_org_microagent_fallback_subgroup_has_microagents_top_level_missing(temp
     # Mock verify_repo_provider to simulate remote checks:
     async def mock_verify(repo):
         # Simulate that the deepest org repo does NOT exist, forcing selection of sub‑group
-        if repo == "top/sub1/sub2/openhands-config":
+        if repo == 'top/sub1/sub2/openhands-config':
             raise Exception('not found')
         elif repo in [
-            "top/sub1/openhands-config",
-            "top/openhands-config",
+            'top/sub1/openhands-config',
+            'top/openhands-config',
         ]:
             return Repository(
                 id='1',
@@ -427,11 +439,13 @@ def test_org_microagent_fallback_subgroup_has_microagents_top_level_missing(temp
             )
         raise Exception('unexpected')
 
-    with patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify), \
-         patch.object(runtime, '_is_gitlab_repository', return_value=True):
+    with (
+        patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify),
+        patch.object(runtime, '_is_gitlab_repository', return_value=True),
+    ):
         # Use default run_action (success) from MockRuntime
         loaded = runtime.get_microagents_from_org_or_user(
-            "gitlab.com/top/sub1/sub2/repo"
+            'gitlab.com/top/sub1/sub2/repo'
         )
         # Should load microagents from the sub‑group org repo (deeper level)
         assert any(isinstance(m, RepoMicroagent) for m in loaded)
@@ -440,10 +454,9 @@ def test_org_microagent_fallback_subgroup_has_microagents_top_level_missing(temp
         assert any('mock_test' in n for n in names)
 
 
-
 def test_org_microagent_fallback_subgroup_missing_top_level_has(temp_workspace):
     """When the sub‑group org repo is missing remotely but a local directory exists with microagents,
-+    fallback to that local sub‑group directory (since it has microagents)."""
+    +    fallback to that local sub‑group directory (since it has microagents)."""
     runtime = MockRuntime(temp_workspace)
 
     # Top‑level org repo with microagents
@@ -458,11 +471,11 @@ def test_org_microagent_fallback_subgroup_missing_top_level_has(temp_workspace):
 
     async def mock_verify(repo):
         # Remote checks: only top‑level repo is found; sub‑group remote missing
-        if repo == "top/sub1/sub2/openhands-config":
+        if repo == 'top/sub1/sub2/openhands-config':
             raise Exception('not found')
-        elif repo == "top/sub1/openhands-config":
+        elif repo == 'top/sub1/openhands-config':
             raise Exception('not found')  # remote missing
-        elif repo == "top/openhands-config":
+        elif repo == 'top/openhands-config':
             return Repository(
                 id='1',
                 full_name='top/.openhands-config',
@@ -472,20 +485,23 @@ def test_org_microagent_fallback_subgroup_missing_top_level_has(temp_workspace):
         else:
             raise Exception('unexpected')
 
-    with patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify), \
-         patch.object(runtime, '_is_gitlab_repository', return_value=True):
+    with (
+        patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify),
+        patch.object(runtime, '_is_gitlab_repository', return_value=True),
+    ):
         loaded = runtime.get_microagents_from_org_or_user(
-            "gitlab.com/top/sub1/sub2/repo"
+            'gitlab.com/top/sub1/sub2/repo'
         )
         # Should load microagents from the top‑level org repo (since sub‑group has none)
         assert any(isinstance(m, RepoMicroagent) for m in loaded)
         # Verify that the source path includes the top‑level directory but not sub‑group
-        assert any('org_openhands_top' in m.source and 'sub1' not in m.source for m in loaded)
+        assert any(
+            'org_openhands_top' in m.source and 'sub1' not in m.source for m in loaded
+        )
         # (Removed: sub‑group source path check is not applicable when fallback to top‑level repo)
         names = [m.name for m in loaded]
         # Expect microagents from top‑level (named 'mock_test')
         assert any('mock_test' in n for n in names)
-
 
 
 def test_org_microagent_fallback_missing_all_candidates(temp_workspace):
@@ -498,6 +514,6 @@ def test_org_microagent_fallback_missing_all_candidates(temp_workspace):
 
     with patch.object(runtime.provider_handler, 'verify_repo_provider', mock_verify):
         loaded = runtime.get_microagents_from_org_or_user(
-            "gitlab.com/top/sub1/sub2/repo"
+            'gitlab.com/top/sub1/sub2/repo'
         )
         assert loaded == []
