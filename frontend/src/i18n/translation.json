@@ -9183,22 +9183,6 @@
     "tr": "kullanıldı",
     "uk": "використано"
   },
-  "SETTINGS$RUNTIME_SETTINGS": {
-    "en": "Runtime Settings (",
-    "ja": "ランタイム設定 (",
-    "zh-CN": "运行时设定 (",
-    "zh-TW": "執行階段設定 (",
-    "ko-KR": "런타임 설정 (",
-    "de": "Laufzeiteinstellungen (",
-    "no": "Kjøretidsinnstillinger (",
-    "it": "Impostazioni di runtime (",
-    "pt": "Configurações de tempo de execução (",
-    "es": "Configuración de tiempo de ejecución (",
-    "ar": "إعدادات وقت التشغيل (",
-    "fr": "Paramètres d'exécution (",
-    "tr": "Çalışma Zamanı Ayarları (",
-    "uk": "Налаштування середовища виконання ("
-  },
   "SETTINGS$RESET_CONFIRMATION": {
     "en": "Are you sure you want to reset all settings?",
     "ja": "すべての設定をリセットしてもよろしいですか？",
