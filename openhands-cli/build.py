@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+import time
 from openhands_cli.locations import LLM_SETTINGS_PATH
 
 
@@ -39,7 +40,6 @@ dummy_settings = {
     "service_id": "default",
     "OVERRIDE_ON_SERIALIZE": ["api_key", "aws_access_key_id", "aws_secret_access_key"],
 }
-
 
 def clean_build_directories() -> None:
     """Clean up previous build artifacts."""
@@ -73,7 +73,6 @@ def check_pyinstaller() -> bool:
         )
         print('   uv add --dev pyinstaller')
         return False
-
 
 def build_executable(
     spec_file: str = 'openhands-cli.spec',
@@ -150,6 +149,7 @@ def test_executable() -> bool:
         # Simple test: Check that executable can start and respond to /help command
         print('  Testing executable startup and /help command...')
         input_script = "/help\n/exit\n" # Send /help command then exit
+        start_time = time.time()
         result = subprocess.run(
             [str(exe_path)],
             capture_output=True,
@@ -161,9 +161,12 @@ def test_executable() -> bool:
             },
         )
 
+        end_time = time.time()
+
         # Check for expected help output
         output = result.stdout + result.stderr
         if 'OpenHands CLI Help' in output and 'Available commands:' in output:
+            print(f'Total run time: {end_time - start_time} seconds')
             print('  ✅ Executable starts and /help command works correctly')
             return True
         else:
@@ -177,6 +180,7 @@ def test_executable() -> bool:
     except Exception as e:
         print(f'❌ Error testing executable: {e}')
         return False
+
 
 
 def main() -> int:
@@ -197,6 +201,10 @@ def main() -> int:
         help='Install PyInstaller using uv before building',
     )
 
+    parser.add_argument(
+        '--no-build', action='store_true', help='Skip build and test existing executable'
+    )
+
     args = parser.parse_args()
 
     print('🚀 OpenHands CLI Build Script')
@@ -208,7 +216,7 @@ def main() -> int:
         return 1
 
     # Build the executable
-    if not build_executable(
+    if not args.no_build and not build_executable(
         args.spec, clean=not args.no_clean, install_pyinstaller=args.install_pyinstaller
     ):
         return 1
@@ -223,6 +231,8 @@ def main() -> int:
     print("📁 Check the 'dist/' directory for your executable")
 
     return 0
+
+
 
 
 if __name__ == '__main__':

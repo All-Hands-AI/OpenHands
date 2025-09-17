@@ -70,11 +70,15 @@ a = Analysis(
         'notebook',
         # Exclude mcp CLI parts that cause issues
         'mcp.cli',
-        'mcp.cli.cli',
+        'prompt_toolkit.contrib.ssh',   # needs asyncssh
+        'fastmcp.cli',                  # if CLI not needed
+        'fastapi',
+        'boto3',
+        'botocore'
     ],
-    noarchive=False,
+    noarchive=True,
     # IMPORTANT: do not use optimize=2 (-OO) because it strips docstrings used by PLY/bashlex grammar
-    optimize=0,
+    optimize=1,
 )
 pyz = PYZ(a.pure)
 
