@@ -14,6 +14,17 @@ from openhands_cli.tui.tui import (
     display_help,
     display_welcome,
 )
+from openhands_cli.runner import ConversationRunner
+from openhands.sdk.conversation.state import AgentExecutionStatus
+from prompt_toolkit import PromptSession, print_formatted_text
+from openhands.sdk import (
+    Message,
+    TextContent,
+)
+from prompt_toolkit.formatted_text import HTML
+
+from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands_cli.tui.tui import CommandCompleter
 
 logger = logging.getLogger(__name__)
 
@@ -38,22 +49,6 @@ def run_cli_entry() -> None:
     session_id = str(uuid.uuid4())[:8]
 
     display_welcome(session_id)
-
-
-
-
-    from openhands_cli.runner import ConversationRunner
-    from openhands.sdk.conversation.state import AgentExecutionStatus
-    from prompt_toolkit import PromptSession, print_formatted_text
-    from openhands.sdk import (
-        Message,
-        TextContent,
-    )
-    from prompt_toolkit.formatted_text import HTML
-
-    from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-    from openhands_cli.tui.tui import CommandCompleter
-
 
     # Create prompt session with command completer
     session = PromptSession(completer=CommandCompleter())

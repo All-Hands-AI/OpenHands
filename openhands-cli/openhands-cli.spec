@@ -44,7 +44,6 @@ a = Analysis(
         # Include OpenHands SDK submodules explicitly to avoid resolution issues
         *collect_submodules('openhands.sdk'),
         *collect_submodules('openhands.tools'),
-
         *collect_submodules('tiktoken'),
         *collect_submodules('tiktoken_ext'),
         *collect_submodules('litellm'),
@@ -54,10 +53,13 @@ a = Analysis(
         'mcp.client',
         'mcp.server',
         'mcp.shared',
+        'openhands.tools.execute_bash',
+        'openhands.tools.str_replace_editor',
+        'openhands.tools.task_tracker',
     ],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=[str(project_root / "hooks" / "rthook_profile_imports.py")],
     excludes=[
         # Exclude unnecessary modules to reduce binary size
         'tkinter',
@@ -74,7 +76,9 @@ a = Analysis(
         'fastmcp.cli',
         'boto3',
         'botocore',
-        'ollama'
+        'posthog',
+        'browser-use',
+        'openhands.tools.browser_use'
     ],
     noarchive=False,
     # IMPORTANT: do not use optimize=2 (-OO) because it strips docstrings used by PLY/bashlex grammar

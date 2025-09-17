@@ -273,7 +273,7 @@ def main() -> int:
 
     # Build the executable
     if not args.no_build and not build_executable(
-        args.spec, clean=not args.no_clean, install_pyinstaller=args.install_pyinstaller
+        args.spec, clean=not args.no_clean
     ):
         return 1
 
