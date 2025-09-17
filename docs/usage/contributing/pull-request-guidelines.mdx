@@ -1,63 +1,69 @@
 ---
 title: Pull Request Guidelines
-description: How to open and manage pull requests for OpenHands
+description: Learn how to create great pull requests that help improve OpenHands
 icon:
 ---
 
-# Pull Request Guidelines
+# 🔄 Pull Request Guidelines
 
-Thank you for contributing! This page explains how we prefer pull requests to be opened and reviewed for the OpenHands repository.
+Thanks for contributing to OpenHands! This guide will help you create pull requests that are easy to review and get merged quickly.
 
-## Before opening a PR
+## 🚀 Before You Start
 
-- Run the project's pre-commit hooks: make install-pre-commit-hooks && pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
-- Ensure unit tests pass: poetry run pytest ./tests/unit
-- For frontend changes: cd frontend && npm run lint:fix && npm run build
-- Follow the repository's commit message / PR title conventions. PR titles should use a conventional prefix (e.g., feat:, fix:, docs:, refactor:, perf:, test:, build:, ci:, chore:, revert:).
+Before opening your PR, make sure you've completed these steps:
 
-## Branching
+- **Run pre-commit hooks**: `make install-pre-commit-hooks && pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+- **Test your changes**: `poetry run pytest ./tests/unit`
+- **Frontend changes**: `cd frontend && npm run lint:fix && npm run build`
+- **Follow naming conventions**: Use conventional prefixes like `feat:`, `fix:`, `docs:`, `refactor:`, etc.
 
-- Create a feature branch from main named descriptively, e.g., `feat/add-foo`, `fix/correct-bar`.
-- Keep branches small and focused on a single logical change.
+## 🌿 Branching Strategy
 
-## PR Content
+Keep your contributions organized:
 
-- Provide a clear, concise summary of what the PR changes and why.
-- Include any relevant screenshots or recordings for UI changes.
-- If your change affects users, add an end-user friendly changelog entry (see .github/pull_request_template.md).
-- Reference any associated issue numbers.
+- **Create descriptive branches** from `main` - like `feat/add-foo` or `fix/correct-bar`
+- **Keep it focused** - one logical change per branch
+- **Stay current** - regularly sync with the main branch
 
-## Review Process
+## 📝 Writing Great PRs
 
-- Assign reviewers if you know who should review; otherwise, leave it to maintainers.
-- Respond to review comments promptly.
-- Keep changes small when addressing review feedback (use follow-up commits; avoid force-pushing multiple times unless necessary).
+Make your PR easy to understand and review:
 
-## Tests and CI
+- **Clear summary** - Explain what changes and why in plain language
+- **Visual proof** - Include screenshots or recordings for UI changes
+- **User impact** - Add changelog entries for user-facing changes (see our [PR template](https://github.com/All-Hands-AI/OpenHands/blob/main/.github/pull_request_template.md))
+- **Link issues** - Reference related issue numbers
 
-- Add or update unit tests for behaviour changes.
-- Ensure CI checks pass before requesting final review.
+## 👀 Review Process
 
-## Styling
+Help reviewers help you:
 
-- Follow the project's linting and formatting rules. Run pre-commit hooks locally to catch common issues.
+- **Assign reviewers** if you know who should look at your changes
+- **Respond promptly** to feedback and questions
+- **Small iterations** - Use follow-up commits rather than force-pushing repeatedly
 
-## Merging
+## ✅ Testing & Quality
 
-- Maintainers will merge PRs when they are approved and CI passes.
-- Do not merge your own PR unless you are a maintainer or have explicit permission.
-- Use rebase when integrating changes from main to keep history clean.
+Ensure your code meets our standards:
 
-## Backporting
+- **Add tests** for new functionality or bug fixes
+- **Green CI** - Make sure all checks pass before requesting final review
+- **Follow style** - Our pre-commit hooks will catch most formatting issues
 
-- For important bugfixes, maintainers may backport to release branches; discuss backports in PR comments.
+## 🎯 Getting Merged
 
-## Additional tips
+The final steps:
 
-- For large or risky changes, open an issue first to discuss design.
-- When in doubt, ask for guidance in our Slack community: https://dub.sh/openhands
+- **Maintainer approval** - We'll merge when approved and CI passes
+- **No self-merging** - Unless you're a maintainer, let others merge your PR
+- **Clean history** - We prefer rebasing to keep the git history tidy
 
-## Sources
-- PR template: .github/pull_request_template.md
-- Contributor guidance: CONTRIBUTING.md
-- Pre-commit configuration: dev_config/python/.pre-commit-config.yaml
+## 🔧 Pro Tips
+
+- **Big changes?** Open an issue first to discuss the approach
+- **Need help?** Join our [Slack community](https://dub.sh/openhands) for guidance
+- **Bug fixes** - Important fixes may be backported to release branches
+
+---
+
+*For more details, check out our [PR template](https://github.com/All-Hands-AI/OpenHands/blob/main/.github/pull_request_template.md) and [contributing guide](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md).*

@@ -154,7 +154,9 @@
                 "pages": [
                   "usage/contributing/start-contributing",
                   "usage/contributing/development-setup",
-                  "usage/contributing/community-guidelines"
+                  "usage/contributing/pull-request-guidelines",
+                  "usage/contributing/community-guidelines",
+                  "usage/contributing/code-of-conduct"
                 ]
               },
               {
