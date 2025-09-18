@@ -7,7 +7,6 @@ import initialQueryReducer from "./state/initial-query-slice";
 import commandReducer from "./state/command-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
-import statusReducer from "./state/status-slice";
 import metricsReducer from "./state/metrics-slice";
 import microagentManagementReducer from "./state/microagent-management-slice";
 import conversationReducer from "./state/conversation-slice";
@@ -22,7 +21,6 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
-  status: statusReducer,
   metrics: metricsReducer,
   microagentManagement: microagentManagementReducer,
   conversation: conversationReducer,

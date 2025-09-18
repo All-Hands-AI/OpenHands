@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
 import { RootState } from "#/store";
+import { useStatusStore } from "#/state/status-store";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { getStatusCode } from "#/utils/status";
@@ -30,7 +31,7 @@ export function AgentStatus({
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const { curStatusMessage } = useStatusStore();
   const { webSocketStatus } = useWsClient();
   const { data: conversation } = useActiveConversation();
 
