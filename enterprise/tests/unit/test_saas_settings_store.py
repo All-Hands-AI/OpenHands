@@ -495,7 +495,7 @@ async def test_version_migration_preserves_user_model_selection(
     # First, simulate a user who has already selected a model and saved it
     user_selected_model = 'anthropic/claude-3-5-sonnet-20241022'
     settings_store.user_id = 'test-user-id'
-    
+
     # Create a user settings record with an old version (simulating existing user)
     with settings_store.session_maker() as session:
         # Create user settings with old version and user's model choice
@@ -504,15 +504,15 @@ async def test_version_migration_preserves_user_model_selection(
             user_version=0,  # Old version to trigger migration
             llm_model=user_selected_model,  # User's selected model
             language='en',
-            agent='CodeActAgent'
+            agent='CodeActAgent',
         )
         session.add(user_settings)
         session.commit()
-    
+
     # Mock the litellm API to return default model
     file_store = MagicMock()
     file_store.read.side_effect = FileNotFoundError()
-    
+
     with (
         patch('storage.saas_settings_store.REQUIRE_PAYMENT', False),
         patch(
@@ -523,7 +523,7 @@ async def test_version_migration_preserves_user_model_selection(
     ):
         # When load() is called, it should trigger version migration
         loaded_settings = await settings_store.load()
-        
+
         # The bug: version migration overwrites user's model with default
         # This test should FAIL initially, demonstrating the bug
         assert loaded_settings is not None
@@ -531,62 +531,7 @@ async def test_version_migration_preserves_user_model_selection(
             f"Expected user's model '{user_selected_model}' to be preserved during version migration, "
             f"but got '{loaded_settings.llm_model}'"
         )
-        
-        # Verify the user_version was updated
-        with settings_store.session_maker() as session:
-            updated_user = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == 'test-user-id')
-                .first()
-            )
-            assert updated_user.user_version == CURRENT_USER_SETTINGS_VERSION
 
-
-@pytest.mark.asyncio
-async def test_version_migration_preserves_user_model_selection(
-    settings_store, mock_litellm_api, mock_stripe, mock_github_user, session_maker
-):
-    """Test that version migration preserves existing user model selection instead of overwriting with default."""
-    # First, simulate a user who has already selected a model and saved it
-    user_selected_model = 'anthropic/claude-3-5-sonnet-20241022'
-    settings_store.user_id = 'test-user-id'
-    
-    # Create a user settings record with an old version (simulating existing user)
-    with settings_store.session_maker() as session:
-        # Create user settings with old version and user's model choice
-        user_settings = UserSettings(
-            keycloak_user_id='test-user-id',
-            user_version=0,  # Old version to trigger migration
-            llm_model=user_selected_model,  # User's selected model
-            language='en',
-            agent='CodeActAgent'
-        )
-        session.add(user_settings)
-        session.commit()
-    
-    # Mock the litellm API to return default model
-    file_store = MagicMock()
-    file_store.read.side_effect = FileNotFoundError()
-    
-    with (
-        patch('storage.saas_settings_store.REQUIRE_PAYMENT', False),
-        patch(
-            'storage.saas_settings_store.get_file_store',
-            MagicMock(return_value=file_store),
-        ),
-        patch('storage.saas_settings_store.session_maker', session_maker),
-    ):
-        # When load() is called, it should trigger version migration
-        loaded_settings = await settings_store.load()
-        
-        # The bug: version migration overwrites user's model with default
-        # This test should FAIL initially, demonstrating the bug
-        assert loaded_settings is not None
-        assert loaded_settings.llm_model == user_selected_model, (
-            f"Expected user's model '{user_selected_model}' to be preserved during version migration, "
-            f"but got '{loaded_settings.llm_model}'"
-        )
-        
         # Verify the user_version was updated
         with settings_store.session_maker() as session:
             updated_user = (
