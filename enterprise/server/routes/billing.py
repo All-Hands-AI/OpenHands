@@ -417,7 +417,7 @@ async def success_callback(session_id: str, request: Request):
             session.commit()
 
     return RedirectResponse(
-        f'{request.base_url}settings?checkout=success', status_code=302
+        f'{request.base_url}settings/billing?checkout=success', status_code=302
     )
 
 
@@ -444,6 +444,21 @@ async def cancel_callback(session_id: str, request: Request):
             session.merge(billing_session)
             session.commit()
 
+            # Redirect credit purchases to billing screen, subscriptions to LLM settings
+            if (
+                billing_session.billing_session_type
+                == BillingSessionType.DIRECT_PAYMENT.value
+            ):
+                return RedirectResponse(
+                    f'{request.base_url}settings/billing?checkout=cancel',
+                    status_code=302,
+                )
+            else:
+                return RedirectResponse(
+                    f'{request.base_url}settings?checkout=cancel', status_code=302
+                )
+
+    # If no billing session found, default to LLM settings (subscription flow)
     return RedirectResponse(
         f'{request.base_url}settings?checkout=cancel', status_code=302
     )
