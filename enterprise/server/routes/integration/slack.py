@@ -278,7 +278,6 @@ async def on_event(request: Request, background_tasks: BackgroundTasks):
         logger.info('slack_is_duplicate')
         return JSONResponse({'success': True})
 
-    # TODO: Get team id
     payload = {
         'message_ts': message_ts,
         'thread_ts': thread_ts,
@@ -293,6 +292,7 @@ async def on_event(request: Request, background_tasks: BackgroundTasks):
         message=payload,
     )
 
+    print('received message', payload)
     background_tasks.add_task(slack_manager.receive_message, message)
     return JSONResponse({'success': True})
 

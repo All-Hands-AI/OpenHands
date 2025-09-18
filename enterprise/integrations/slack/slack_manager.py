@@ -79,6 +79,8 @@ class SlackManager(Manager):
 
             # slack_view.slack_to_openhands_user = slack_user # attach user auth info to view
 
+        print("fetched slack user", slack_user)
+
         saas_user_auth = None
         if slack_user:
             saas_user_auth = await self._get_user_auth(slack_user.keycloak_user_id)
@@ -180,9 +182,13 @@ class SlackManager(Manager):
     async def receive_message(self, message: Message):
         self._confirm_incoming_source_type(message)
 
+        print("authenticating user")
+
         slack_user, saas_user_auth = await self.authenticate_user(
             slack_user_id=message.message['slack_user_id']
         )
+
+        print('user auth', slack_user, saas_user_auth)
 
         try:
             slack_view = SlackFactory.create_slack_view_from_payload(
@@ -257,6 +263,7 @@ class SlackManager(Manager):
         elif isinstance(slack_view, SlackNewConversationFromRepoFormView):
             return True
         elif isinstance(slack_view, SlackNewConversationView):
+            print('starting new convo')
             user = slack_view.slack_to_openhands_user
             user_repos: list[Repository] = await self._get_repositories(
                 slack_view.saas_user_auth

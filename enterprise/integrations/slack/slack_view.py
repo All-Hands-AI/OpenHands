@@ -333,6 +333,7 @@ class SlackFactory:
     def create_slack_view_from_payload(
         message: Message, slack_user: SlackUser | None, saas_user_auth: UserAuth | None
     ):
+        print('creating view')
         payload = message.message
         slack_user_id = payload['slack_user_id']
         channel_id = payload.get('channel_id')
