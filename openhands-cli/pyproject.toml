@@ -17,8 +17,8 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@442e789946845a1c04cf59a0ac002a003fa1eedb#subdirectory=openhands/sdk",
-  "openhands-tools @ git+https://github.com/All-Hands-AI/agent-sdk.git@442e789946845a1c04cf59a0ac002a003fa1eedb#subdirectory=openhands/tools",
+  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@0e62eeeba193905478187e2f3117846d6cc97718#subdirectory=openhands/sdk",
+  "openhands-tools @ git+https://github.com/All-Hands-AI/agent-sdk.git@0e62eeeba193905478187e2f3117846d6cc97718#subdirectory=openhands/tools",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
@@ -53,8 +53,8 @@ packages = [ { include = "openhands_cli" } ]
 [tool.poetry.dependencies]
 python = "^3.12"
 prompt-toolkit = "^3.0.0"
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "442e789946845a1c04cf59a0ac002a003fa1eedb", subdirectory = "openhands/sdk" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "442e789946845a1c04cf59a0ac002a003fa1eedb", subdirectory = "openhands/tools" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "0e62eeeba193905478187e2f3117846d6cc97718", subdirectory = "openhands/sdk" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "0e62eeeba193905478187e2f3117846d6cc97718", subdirectory = "openhands/tools" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
@@ -115,4 +115,4 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "442e789946845a1c04cf59a0ac002a003fa1eedb" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "0e62eeeba193905478187e2f3117846d6cc97718" }
