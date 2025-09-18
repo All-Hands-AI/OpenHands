@@ -288,7 +288,8 @@ async def test_success_callback_success():
 
         assert response.status_code == 302
         assert (
-            response.headers['location'] == 'http://test.com/settings?checkout=success'
+            response.headers['location']
+            == 'http://test.com/settings/billing?checkout=success'
         )
 
         # Verify LiteLLM API calls
