@@ -637,27 +637,6 @@ function LlmSettingsScreen() {
                 </>
               )}
 
-              {config?.APP_MODE === "saas" && (
-                <SettingsDropdownInput
-                  testId="runtime-settings-input"
-                  name="runtime-settings-input"
-                  label={
-                    <>
-                      {t(I18nKey.SETTINGS$RUNTIME_SETTINGS)}
-                      <a
-                        href="mailto:contact@all-hands.dev"
-                        className="text-blue-500 hover:text-blue-400 underline"
-                      >
-                        {t(I18nKey.SETTINGS$GET_IN_TOUCH)}
-                      </a>
-                    </>
-                  }
-                  items={[]}
-                  isDisabled
-                  wrapperClassName="w-full max-w-[680px]"
-                />
-              )}
-
               <div className="w-full max-w-[680px]">
                 <SettingsInput
                   testId="condenser-max-size-input"
