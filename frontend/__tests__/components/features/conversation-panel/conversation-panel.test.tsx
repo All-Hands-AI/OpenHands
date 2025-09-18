@@ -20,13 +20,7 @@ describe("ConversationPanel", () => {
 
   const renderConversationPanel = (config?: QueryClientConfig) =>
     renderWithProviders(<RouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
-      },
+      preloadedState: {},
     });
 
   beforeAll(() => {
@@ -298,13 +292,7 @@ describe("ConversationPanel", () => {
     ]);
 
     renderWithProviders(<MyRouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
-      },
+      preloadedState: {},
     });
 
     const toggleButton = screen.getByText("Toggle");
