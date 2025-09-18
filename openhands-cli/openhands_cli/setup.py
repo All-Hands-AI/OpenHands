@@ -1,7 +1,6 @@
 from openhands.sdk import (
     Agent,
-    Conversation,
-    LLM,
+    Conversation
 )
 from openhands_cli.tui.settings.store import AgentSpecStore
 from prompt_toolkit import HTML, print_formatted_text

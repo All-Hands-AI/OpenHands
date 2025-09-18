@@ -198,7 +198,6 @@ class SettingsScreen:
         if not memory_condensation:
             agent_spec.condenser = None
 
-        print(agent_spec.model_dump_json())
         self.spec_store.save(agent_spec)
 
 
