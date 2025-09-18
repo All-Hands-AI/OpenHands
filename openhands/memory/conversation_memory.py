@@ -281,6 +281,7 @@ class ConversationMemory:
                     tool_metadata.model_response.choices[0], 'message'
                 )
                 content = assistant_msg.content or ''
+                print(f"DEBUG: assistant_msg.content='{content}'")
 
                 # save content if any, to thought
                 if action.thought:
@@ -293,10 +294,16 @@ class ConversationMemory:
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
+
+            # Ensure assistant messages have non-empty content (required by some LLM providers like Mistral)
+            if role == 'assistant' and not (action.thought and action.thought.strip()):
+                thought_text = 'Task completed.'
+            else:
+                thought_text = action.thought or ''
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
-                    content=[TextContent(text=action.thought)],
+                    content=[TextContent(text=thought_text)],
                 )
             ]
         elif isinstance(action, MessageAction):
