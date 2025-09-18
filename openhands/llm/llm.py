@@ -441,7 +441,7 @@ class LLM(RetryMixin, DebugMixin):
             # Validate base_url to prevent malformed URLs
             if not base_url:
                 logger.warning(
-                    f'No base_url provided for litellm_proxy model {self.config.model}. '
+                    f'No base_url provided for litellm_proxy model {self.config.model_dump()}. '
                     'Skipping model info retrieval from LiteLLM proxy.'
                 )
                 return
