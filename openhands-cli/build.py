@@ -83,7 +83,6 @@ def check_pyinstaller() -> bool:
         print('   uv add --dev pyinstaller')
         return False
 
-
 def build_executable(
     spec_file: str = 'openhands-cli.spec',
     clean: bool = True,
@@ -274,7 +273,7 @@ def main() -> int:
 
     # Build the executable
     if not args.no_build and not build_executable(
-        args.spec, clean=not args.no_clean, install_pyinstaller=args.install_pyinstaller
+        args.spec, clean=not args.no_clean
     ):
         return 1
 
@@ -288,6 +287,8 @@ def main() -> int:
     print("📁 Check the 'dist/' directory for your executable")
 
     return 0
+
+
 
 
 if __name__ == '__main__':
