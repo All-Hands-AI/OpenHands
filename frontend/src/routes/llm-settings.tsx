@@ -620,24 +620,24 @@ function LlmSettingsScreen() {
                     linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
                     href="https://tavily.com/"
                   />
+
+                  <SettingsDropdownInput
+                    testId="agent-input"
+                    name="agent-input"
+                    label={t(I18nKey.SETTINGS$AGENT)}
+                    items={
+                      resources?.agents.map((agent) => ({
+                        key: agent,
+                        label: agent, // TODO: Add i18n support for agent names
+                      })) || []
+                    }
+                    defaultSelectedKey={settings.AGENT}
+                    isClearable={false}
+                    onInputChange={handleAgentIsDirty}
+                    wrapperClassName="w-full max-w-[680px]"
+                  />
                 </>
               )}
-
-              <SettingsDropdownInput
-                testId="agent-input"
-                name="agent-input"
-                label={t(I18nKey.SETTINGS$AGENT)}
-                items={
-                  resources?.agents.map((agent) => ({
-                    key: agent,
-                    label: agent, // TODO: Add i18n support for agent names
-                  })) || []
-                }
-                defaultSelectedKey={settings.AGENT}
-                isClearable={false}
-                onInputChange={handleAgentIsDirty}
-                wrapperClassName="w-full max-w-[680px]"
-              />
 
               <div className="w-full max-w-[680px]">
                 <SettingsInput
