@@ -39,7 +39,7 @@ Results will be in `evaluation/evaluation_outputs/outputs/miniwob/`
 To calculate the average reward, run:
 
 ```sh
-poetry run python evaluation/benchmarks/miniwob/get_success_rate.py evaluation/evaluation_outputs/outputs/miniwob/SOME_AGENT/EXP_NAME/output.jsonl
+uv run python evaluation/benchmarks/miniwob/get_success_rate.py evaluation/evaluation_outputs/outputs/miniwob/SOME_AGENT/EXP_NAME/output.jsonl
 ```
 
 ## Submit your evaluation results

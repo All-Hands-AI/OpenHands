@@ -14,13 +14,13 @@ BLUE=$(shell tput -Txterm setaf 6)
 RESET=$(shell tput -Txterm sgr0)
 
 build:
-	@poetry install
+	@uv sync
 	@cd $(OPENHANDS) && $(MAKE) build
 
 
 _run_setup:
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
-	@cd app && FRONTEND_DIRECTORY=$(OPENHANDS_FRONTEND_PATH) poetry run uvicorn saas_server:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
+	@cd app && FRONTEND_DIRECTORY=$(OPENHANDS_FRONTEND_PATH) uv run uvicorn saas_server:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
@@ -35,8 +35,8 @@ run:
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
 	@echo "$(OPENHANDS_FRONTEND_PATH)"
-	@cd app && FRONTEND_DIRECTORY=$(OPENHANDS_FRONTEND_PATH) poetry run uvicorn saas_server:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload-dir $(OPENHANDS_PATH) --reload --reload-dir ./ --reload-exclude "./workspace"
+	@cd app && FRONTEND_DIRECTORY=$(OPENHANDS_FRONTEND_PATH) uv run uvicorn saas_server:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload-dir $(OPENHANDS_PATH) --reload --reload-dir ./ --reload-exclude "./workspace"
 
 
 lint:
-	@poetry run pre-commit run --all-files --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+	@uv run pre-commit run --all-files --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml

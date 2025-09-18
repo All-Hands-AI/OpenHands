@@ -32,7 +32,7 @@ Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 To calculate the success rate, run:
 
 ```sh
-poetry run python evaluation/benchmarks/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+uv run python evaluation/benchmarks/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
 ```
 
 ## Submit your evaluation results

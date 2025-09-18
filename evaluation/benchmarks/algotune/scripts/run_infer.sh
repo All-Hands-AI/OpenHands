@@ -2,7 +2,7 @@
 set -eo pipefail
 
 # Generate the tasks
-poetry run python evaluation/benchmarks/algotune/adapter/run_adapter.py --output-path evaluation/benchmarks/algotune/tasks
+uv run python evaluation/benchmarks/algotune/adapter/run_adapter.py --output-path evaluation/benchmarks/algotune/tasks
 
 source "evaluation/utils/version_control.sh"
 
@@ -59,7 +59,7 @@ fi
 echo "ENABLE_VOLUMES: $ENABLE_VOLUMES"
 
 # Construct the command
-COMMAND="poetry run python evaluation/benchmarks/algotune/run_infer.py \
+COMMAND="uv run python evaluation/benchmarks/algotune/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --optim_task $OPTIM_TASK \
