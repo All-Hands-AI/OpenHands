@@ -7,6 +7,7 @@ from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
 from openhands.sdk.llm import LLM
 from pydantic import ConfigDict, SecretStr, model_validator
+from openhands.sdk.conversation.state import AgentExecutionStatus
 
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
@@ -43,7 +44,7 @@ class FakeAgent(AgentBase):
     ) -> None:
         self.step_count += 1
         if self.step_count == self.finish_on_step:
-            state.agent_finished = True
+            state.agent_status = AgentExecutionStatus.FINISHED
 
 
 @pytest.fixture()
@@ -53,11 +54,8 @@ def agent() -> FakeAgent:
 
 
 class TestConversationRunner:
-
-    @pytest.mark.parametrize("paused", [False, True])
-    def test_non_confirmation_mode_runs_once(
-        self, agent: FakeAgent, paused: bool
-    ) -> None:
+    @pytest.mark.parametrize('agent_status', [AgentExecutionStatus.RUNNING, AgentExecutionStatus.PAUSED])
+    def test_non_confirmation_mode_runs_once(self, agent: FakeAgent, agent_status: AgentExecutionStatus) -> None:
         """
         1. Confirmation mode is not on
         2. Process message resumes paused conversation or continues running conversation
@@ -65,29 +63,28 @@ class TestConversationRunner:
 
         convo = Conversation(agent)
         convo.max_iteration_per_run = 1
-        convo.state.agent_paused = paused
+        convo.state.agent_status = agent_status
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(False)
         cr.process_message(message=None)
 
         assert agent.step_count == 1
-        assert not convo.state.agent_paused
+        assert convo.state.agent_status != AgentExecutionStatus.PAUSED
 
     @pytest.mark.parametrize(
-        "confirmation, agent_paused, agent_finished, expected_run_calls",
+        'confirmation, final_status, expected_run_calls',
         [
-            # Case 1: Agent paused & waiting; user DEFERS -> early return, no run()
-            (UserConfirmation.DEFER, True, False, 0),
-            # Case 2: Agent waiting; user ACCEPTS -> run() once, break (finished=True)
-            (UserConfirmation.ACCEPT, False, True, 1),
+            # Case 1: Agent waiting for confirmation; user DEFERS -> early return, no run()
+            (UserConfirmation.DEFER, AgentExecutionStatus.WAITING_FOR_CONFIRMATION, 0),
+            # Case 2: Agent waiting for confirmation; user ACCEPTS -> run() once, break (finished=True)
+            (UserConfirmation.ACCEPT, AgentExecutionStatus.FINISHED, 1),
         ],
     )
     def test_confirmation_mode_waiting_and_user_decision_controls_run(
         self,
         agent: FakeAgent,
         confirmation: UserConfirmation,
-        agent_paused: bool,
-        agent_finished: bool,
+        final_status: AgentExecutionStatus,
         expected_run_calls: int,
     ) -> None:
         """
@@ -98,13 +95,10 @@ class TestConversationRunner:
         5. If accepted, run call to agent should be made
 
         """
-
-        if agent_finished:
+        if final_status == AgentExecutionStatus.FINISHED:
             agent.finish_on_step = 1
         convo = Conversation(agent)
-        convo.state.agent_paused = agent_paused
-
-        convo.state.agent_waiting_for_confirmation = True
+        convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(True)
         with patch.object(
@@ -113,7 +107,7 @@ class TestConversationRunner:
             cr.process_message(message=None)
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
-        assert convo.state.agent_finished == agent_finished
+        assert convo.state.agent_status == final_status
 
     def test_confirmation_mode_not_waiting__runs_once_when_finished_true(
         self, agent: FakeAgent
@@ -125,8 +119,7 @@ class TestConversationRunner:
         """
         agent.finish_on_step = 1
         convo = Conversation(agent)
-        convo.state.agent_paused = True
-        convo.state.agent_waiting_for_confirmation = False
+        convo.state.agent_status = AgentExecutionStatus.PAUSED
 
         cr = ConversationRunner(convo)
         cr.set_confirmation_mode(True)

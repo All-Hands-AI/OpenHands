@@ -7,11 +7,47 @@ using PyInstaller with the custom spec file.
 """
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+import time
+from openhands_cli.locations import LLM_SETTINGS_PATH
+import select
+
+WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
+
+dummy_settings = {
+    "model": "litellm_proxy/claude-sonnet-4-20250514",
+    "api_key": "adfadf",
+    "base_url": "https://llm-proxy.app.all-hands.dev/",
+    "num_retries": 5,
+    "retry_multiplier": 8,
+    "retry_min_wait": 8,
+    "retry_max_wait": 64,
+    "max_message_chars": 30000,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_input_tokens": 200000,
+    "max_output_tokens": 64000,
+    "drop_params": True,
+    "modify_params": True,
+    "disable_stop_word": False,
+    "caching_prompt": True,
+    "log_completions": False,
+    "log_completions_folder": "logs/completions",
+    "reasoning_effort": "high",
+    "service_id": "default",
+    "OVERRIDE_ON_SERIALIZE": ["api_key", "aws_access_key_id", "aws_secret_access_key"],
+}
+
+
+# =================================================
+# SECTION: Build Binary
+# =================================================
+
 
 
 def clean_build_directories() -> None:
@@ -47,11 +83,9 @@ def check_pyinstaller() -> bool:
         print('   uv add --dev pyinstaller')
         return False
 
-
 def build_executable(
     spec_file: str = 'openhands-cli.spec',
     clean: bool = True,
-    install_pyinstaller: bool = False,
 ) -> bool:
     """Build the executable using PyInstaller."""
     if clean:
@@ -95,55 +129,114 @@ def build_executable(
         return False
 
 
+# =================================================
+# SECTION: Test and profile binary
+# =================================================
+
+
+def _is_welcome(line: str) -> bool:
+    s = line.strip().lower()
+    return any(marker in s for marker in WELCOME_MARKERS)
+
 def test_executable() -> bool:
-    """Test the built executable with simplified checks."""
+    """Test the built executable, measuring boot time and total test time."""
     print('🧪 Testing the built executable...')
 
-    os.environ['LLM_API_KEY'] = 'dummy-test-key'
-    os.environ['LLM_MODEL'] = 'dummy-model'
+    settings_path = Path(LLM_SETTINGS_PATH)
+    if not settings_path.exists():
+        print(f"💾 Creating dummy settings at {settings_path}")
+        settings_path.parent.mkdir(parents=True, exist_ok=True)
+        settings_path.write_text(json.dumps(dummy_settings))
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
-        # Try with .exe extension for Windows
         exe_path = Path('dist/openhands-cli.exe')
         if not exe_path.exists():
             print('❌ Executable not found!')
             return False
 
     try:
-        # Make executable on Unix-like systems
         if os.name != 'nt':
             os.chmod(exe_path, 0o755)
 
-        # Simple test: Check that executable can start and respond to /help command
-        print('  Testing executable startup and /help command...')
-        result = subprocess.run(
+        boot_start = time.time()
+        proc = subprocess.Popen(
             [str(exe_path)],
-            capture_output=True,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            timeout=15,
-            input='/help\n/exit\n',  # Send /help command then exit
-            env={
-                **os.environ
-            },
+            bufsize=1,
+            env={**os.environ},
         )
 
-        # Check for expected help output
-        output = result.stdout + result.stderr
-        if 'OpenHands CLI Help' in output and 'Available commands:' in output:
-            print('  ✅ Executable starts and /help command works correctly')
+        # --- Wait for welcome ---
+        deadline = boot_start + 30
+        saw_welcome = False
+        captured = []
+
+        while time.time() < deadline:
+            if proc.poll() is not None:
+                break
+            rlist, _, _ = select.select([proc.stdout], [], [], 0.2)
+            if not rlist:
+                continue
+            line = proc.stdout.readline()
+            if not line:
+                continue
+            captured.append(line)
+            if _is_welcome(line):
+                saw_welcome = True
+                break
+
+        if not saw_welcome:
+            print("❌ Did not detect welcome prompt")
+            try: proc.kill()
+            except Exception: pass
+            return False
+
+        boot_end = time.time()
+        print(f"⏱️  Boot to welcome: {boot_end - boot_start:.2f} seconds")
+
+        # --- Run /help then /exit ---
+        if proc.stdin is None:
+            print("❌ stdin unavailable")
+            proc.kill()
+            return False
+
+        proc.stdin.write("/help\n/exit\n")
+        proc.stdin.flush()
+        out, _ = proc.communicate(timeout=20)
+
+        total_end = time.time()
+        full_output = ''.join(captured) + (out or '')
+
+        print(f"⏱️  End-to-end test time: {total_end - boot_start:.2f} seconds")
+
+        if "available commands" in full_output.lower():
+            print("✅ Executable starts, welcome detected, and /help works")
             return True
         else:
-            print('  ❌ Expected help output not found')
-            print('  Combined output:', output[:1000])
+            print("❌ /help output not found")
+            print("Output preview:", full_output[-500:])
             return False
 
     except subprocess.TimeoutExpired:
-        print('  ❌ Executable test timed out')
+        print("❌ Executable test timed out")
+        try: proc.kill()
+        except Exception: pass
         return False
     except Exception as e:
-        print(f'❌ Error testing executable: {e}')
+        print(f"❌ Error testing executable: {e}")
+        try: proc.kill()
+        except Exception: pass
         return False
+
+
+
+# =================================================
+# SECTION: Main
+# =================================================
 
 
 def main() -> int:
@@ -164,6 +257,10 @@ def main() -> int:
         help='Install PyInstaller using uv before building',
     )
 
+    parser.add_argument(
+        '--no-build', action='store_true', help='Skip testing the built executable'
+    )
+
     args = parser.parse_args()
 
     print('🚀 OpenHands CLI Build Script')
@@ -175,8 +272,8 @@ def main() -> int:
         return 1
 
     # Build the executable
-    if not build_executable(
-        args.spec, clean=not args.no_clean, install_pyinstaller=args.install_pyinstaller
+    if not args.no_build and not build_executable(
+        args.spec, clean=not args.no_clean
     ):
         return 1
 
@@ -190,6 +287,8 @@ def main() -> int:
     print("📁 Check the 'dist/' directory for your executable")
 
     return 0
+
+
 
 
 if __name__ == '__main__':

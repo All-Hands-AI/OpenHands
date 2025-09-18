@@ -1,4 +1,5 @@
 from prompt_toolkit.application import Application
+from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
@@ -8,6 +9,7 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
+from prompt_toolkit.validation import Validator
 
 from openhands_cli.tui import DEFAULT_STYLE
 
@@ -18,29 +20,29 @@ def build_keybindings(
     """Create keybindings for the confirm UI. Split for testability."""
     kb = KeyBindings()
 
-    @kb.add('up')
+    @kb.add("up")
     def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
-    @kb.add('down')
+    @kb.add("down")
     def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
-    @kb.add('enter')
+    @kb.add("enter")
     def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     if escapable:
 
-        @kb.add('c-c')  # Ctrl+C
+        @kb.add("c-c")  # Ctrl+C
         def _handle_hard_interrupt(event: KeyPressEvent) -> None:
             event.app.exit(exception=KeyboardInterrupt())
 
-        @kb.add('c-p')  # Ctrl+P
+        @kb.add("c-p")  # Ctrl+P
         def _handle_pause_interrupt(event: KeyPressEvent) -> None:
             event.app.exit(exception=KeyboardInterrupt())
 
-        @kb.add('escape')  # Escape key
+        @kb.add("escape")  # Escape key
         def _handle_escape(event: KeyPressEvent) -> None:
             event.app.exit(exception=KeyboardInterrupt())
 
@@ -52,12 +54,12 @@ def build_layout(question: str, choices: list[str], selected_ref: list[int]) -> 
 
     def get_choice_text() -> list[tuple[str, str]]:
         lines: list[tuple[str, str]] = []
-        lines.append(('class:question', f'{question}\n\n'))
+        lines.append(("class:question", f"{question}\n\n"))
         for i, choice in enumerate(choices):
             is_selected = i == selected_ref[0]
-            prefix = '> ' if is_selected else '  '
-            style = 'class:selected' if is_selected else 'class:unselected'
-            lines.append((style, f'{prefix}{choice}\n'))
+            prefix = "> " if is_selected else "  "
+            style = "class:selected" if is_selected else "class:unselected"
+            lines.append((style, f"{prefix}{choice}\n"))
         return lines
 
     content_window = Window(
@@ -69,7 +71,7 @@ def build_layout(question: str, choices: list[str], selected_ref: list[int]) -> 
 
 
 def cli_confirm(
-    question: str = 'Are you sure?',
+    question: str = "Are you sure?",
     choices: list[str] | None = None,
     initial_selection: int = 0,
     escapable: bool = False,
@@ -81,7 +83,7 @@ def cli_confirm(
     Returns the index of the selected choice.
     """
     if choices is None:
-        choices = ['Yes', 'No']
+        choices = ["Yes", "No"]
     selected = [initial_selection]  # Using list to allow modification in closure
 
     kb = build_keybindings(choices, selected, escapable)
@@ -99,33 +101,48 @@ def cli_confirm(
     return int(app.run(in_thread=True))
 
 
-def prompt_user(question: str) -> tuple[str, bool]:
-    """Prompt user to enter a reason for rejecting actions.
+def cli_text_input(
+    question: str,
+    escapable: bool = True,
+    completer: Completer | None = None,
+    validator: Validator = None,
+    is_password: bool = False
+) -> str:
+    """Prompt user to enter text input with optional validation.
+
+    Args:
+        question: The prompt question to display
+        escapable: Whether the user can escape with Ctrl+C or Ctrl+P
+        completer: Optional completer for tab completion
+        validator: Optional callable that takes a string and returns True if valid.
+                  If validation fails, the callable should display error messages
+                  and the user will be reprompted.
 
     Returns:
-        Tuple of (reason, should_defer) where:
-        - reason: The reason entered by the user
-        - should_defer: True if user pressed Ctrl+C or Ctrl+P, False otherwise
+        The validated user input string (stripped of whitespace)
     """
 
     kb = KeyBindings()
 
-    @kb.add('c-c')
-    def _(event: KeyPressEvent) -> None:
-        raise KeyboardInterrupt()
+    if escapable:
 
-    @kb.add('c-p')
-    def _(event: KeyPressEvent) -> None:
-        raise KeyboardInterrupt()
+        @kb.add('c-c')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
 
-    try:
-        reason = str(
-            prompt(
-                question,
-                style=DEFAULT_STYLE,
-                key_bindings=kb,
-            )
+        @kb.add('c-p')
+        def _(event: KeyPressEvent) -> None:
+            raise KeyboardInterrupt()
+
+
+    reason = str(
+        prompt(
+            question,
+            style=DEFAULT_STYLE,
+            key_bindings=kb,
+            completer=completer,
+            is_password=is_password,
+            validator=validator
         )
-        return reason.strip(), False
-    except KeyboardInterrupt:
-        return '', True
+    )
+    return reason.strip()
