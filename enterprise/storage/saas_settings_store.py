@@ -309,7 +309,9 @@ class SaasSettingsStore(SettingsStore):
 
         settings.agent = 'CodeActAgent'
         # Use the model corresponding to the current user settings version
-        settings.llm_model = get_default_litellm_model()
+        # Only set default model if no model is currently set (preserve user selection)
+        if not settings.llm_model:
+            settings.llm_model = get_default_litellm_model()
         settings.llm_api_key = SecretStr(key)
         settings.llm_base_url = LITE_LLM_API_URL
         return settings
