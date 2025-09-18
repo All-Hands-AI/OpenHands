@@ -3,7 +3,7 @@ import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
 import { appendOutput } from "#/state/command-slice";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
+import { useJupyterStore } from "#/state/jupyter-store";
 import ObservationType from "#/types/observation-type";
 
 export function handleObservationMessage(message: ObservationMessage) {
@@ -23,14 +23,12 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.RUN_IPYTHON:
-      store.dispatch(
-        appendJupyterOutput({
-          content: message.content,
-          imageUrls: Array.isArray(message.extras?.image_urls)
-            ? message.extras.image_urls
-            : undefined,
-        }),
-      );
+      useJupyterStore.getState().appendJupyterOutput({
+        content: message.content,
+        imageUrls: Array.isArray(message.extras?.image_urls)
+          ? message.extras.image_urls
+          : undefined,
+      });
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
