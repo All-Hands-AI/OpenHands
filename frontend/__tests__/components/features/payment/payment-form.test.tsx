@@ -1,24 +1,30 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
-import OpenHands from "#/api/open-hands";
+import BillingService from "#/api/billing-service/billing-service.api";
 import OptionService from "#/api/option-service/option-service.api";
 import { PaymentForm } from "#/components/features/payment/payment-form";
+import { renderWithProviders } from "../../../../test-utils";
+
+// Mock the stripe checkout hook to avoid JSDOM navigation issues
+const mockMutate = vi.fn().mockResolvedValue(undefined);
+vi.mock("#/hooks/mutation/stripe/use-create-stripe-checkout-session", () => ({
+  useCreateStripeCheckoutSession: () => ({
+    mutate: mockMutate,
+    mutateAsync: vi.fn().mockResolvedValue(undefined),
+    isPending: false,
+  }),
+}));
 
 describe("PaymentForm", () => {
-  const getBalanceSpy = vi.spyOn(OpenHands, "getBalance");
-  const createCheckoutSessionSpy = vi.spyOn(OpenHands, "createCheckoutSession");
+  const getBalanceSpy = vi.spyOn(BillingService, "getBalance");
+  const createCheckoutSessionSpy = vi.spyOn(
+    BillingService,
+    "createCheckoutSession",
+  );
   const getConfigSpy = vi.spyOn(OptionService, "getConfig");
 
-  const renderPaymentForm = () =>
-    render(<PaymentForm />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+  const renderPaymentForm = () => renderWithProviders(<PaymentForm />);
 
   beforeEach(() => {
     // useBalance hook will return the balance only if the APP_MODE is "saas" and the billing feature is enabled
@@ -38,6 +44,7 @@ describe("PaymentForm", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    mockMutate.mockClear();
   });
 
   it("should render the users current balance", async () => {
@@ -70,7 +77,7 @@ describe("PaymentForm", () => {
     const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     await user.click(topUpButton);
 
-    expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50);
+    expect(mockMutate).toHaveBeenCalledWith({ amount: 50 });
   });
 
   it("should only accept integer values", async () => {
@@ -83,7 +90,7 @@ describe("PaymentForm", () => {
     const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
     await user.click(topUpButton);
 
-    expect(createCheckoutSessionSpy).toHaveBeenCalledWith(50);
+    expect(mockMutate).toHaveBeenCalledWith({ amount: 50 });
   });
 
   it("should disable the top-up button if the user enters an invalid amount", async () => {
@@ -123,7 +130,7 @@ describe("PaymentForm", () => {
       const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
-      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
     });
 
     test("user enters an empty string", async () => {
@@ -136,7 +143,7 @@ describe("PaymentForm", () => {
       const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
-      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
     });
 
     test("user enters a non-numeric value", async () => {
@@ -151,7 +158,7 @@ describe("PaymentForm", () => {
       const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
-      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
     });
 
     test("user enters less than the minimum amount", async () => {
@@ -164,7 +171,7 @@ describe("PaymentForm", () => {
       const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
-      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
     });
 
     test("user enters a decimal value", async () => {
@@ -178,7 +185,175 @@ describe("PaymentForm", () => {
       const topUpButton = screen.getByText("PAYMENT$ADD_CREDIT");
       await user.click(topUpButton);
 
-      expect(createCheckoutSessionSpy).not.toHaveBeenCalled();
+      expect(mockMutate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Cancel Subscription", () => {
+    const getSubscriptionAccessSpy = vi.spyOn(
+      BillingService,
+      "getSubscriptionAccess",
+    );
+    const cancelSubscriptionSpy = vi.spyOn(
+      BillingService,
+      "cancelSubscription",
+    );
+
+    beforeEach(() => {
+      // Mock active subscription
+      getSubscriptionAccessSpy.mockResolvedValue({
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2024-12-31T23:59:59Z",
+        created_at: "2024-01-01T00:00:00Z",
+      });
+    });
+
+    it("should render cancel subscription button when user has active subscription", async () => {
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const cancelButton = screen.getByTestId("cancel-subscription-button");
+        expect(cancelButton).toBeInTheDocument();
+        expect(cancelButton).toHaveTextContent("PAYMENT$CANCEL_SUBSCRIPTION");
+      });
+    });
+
+    it("should not render cancel subscription button when user has no subscription", async () => {
+      getSubscriptionAccessSpy.mockResolvedValue(null);
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const cancelButton = screen.queryByTestId("cancel-subscription-button");
+        expect(cancelButton).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show confirmation modal when cancel subscription button is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
+      await user.click(cancelButton);
+
+      // Should show confirmation modal
+      expect(
+        screen.getByTestId("cancel-subscription-modal"),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("PAYMENT$CANCEL_SUBSCRIPTION_TITLE"),
+      ).toBeInTheDocument();
+      // The message should be rendered (either with Trans component or regular text)
+      const modalContent = screen.getByTestId("cancel-subscription-modal");
+      expect(modalContent).toBeInTheDocument();
+      expect(screen.getByTestId("confirm-cancel-button")).toBeInTheDocument();
+      expect(screen.getByTestId("modal-cancel-button")).toBeInTheDocument();
+    });
+
+    it("should close modal when cancel button in modal is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
+      await user.click(cancelButton);
+
+      // Modal should be visible
+      expect(
+        screen.getByTestId("cancel-subscription-modal"),
+      ).toBeInTheDocument();
+
+      // Click cancel in modal
+      const modalCancelButton = screen.getByTestId("modal-cancel-button");
+      await user.click(modalCancelButton);
+
+      // Modal should be closed
+      expect(
+        screen.queryByTestId("cancel-subscription-modal"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should call cancel subscription API when confirm button is clicked", async () => {
+      const user = userEvent.setup();
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
+      await user.click(cancelButton);
+
+      // Click confirm in modal
+      const confirmButton = screen.getByTestId("confirm-cancel-button");
+      await user.click(confirmButton);
+
+      // Should call the cancel subscription API
+      expect(cancelSubscriptionSpy).toHaveBeenCalled();
+    });
+
+    it("should close modal after successful cancellation", async () => {
+      const user = userEvent.setup();
+      cancelSubscriptionSpy.mockResolvedValue({
+        status: "success",
+        message: "Subscription cancelled successfully",
+      });
+      renderPaymentForm();
+
+      const cancelButton = await screen.findByTestId(
+        "cancel-subscription-button",
+      );
+      await user.click(cancelButton);
+
+      const confirmButton = screen.getByTestId("confirm-cancel-button");
+      await user.click(confirmButton);
+
+      // Wait for API call to complete and modal to close
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("cancel-subscription-modal"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show next billing date for active subscription", async () => {
+      // Mock active subscription with end_at as next billing date
+      getSubscriptionAccessSpy.mockResolvedValue({
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2025-01-01T00:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        cancelled_at: null,
+        stripe_subscription_id: "sub_123",
+      });
+
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const nextBillingInfo = screen.getByTestId("next-billing-date");
+        expect(nextBillingInfo).toBeInTheDocument();
+        // Check that it contains some date-related content (translation key or actual date)
+        expect(nextBillingInfo).toHaveTextContent(
+          /2025|PAYMENT.*BILLING.*DATE/,
+        );
+      });
+    });
+
+    it("should not show next billing date when subscription is cancelled", async () => {
+      // Mock cancelled subscription
+      getSubscriptionAccessSpy.mockResolvedValue({
+        start_at: "2024-01-01T00:00:00Z",
+        end_at: "2025-01-01T00:00:00Z",
+        created_at: "2024-01-01T00:00:00Z",
+        cancelled_at: "2024-06-15T10:30:00Z",
+        stripe_subscription_id: "sub_123",
+      });
+
+      renderPaymentForm();
+
+      await waitFor(() => {
+        const nextBillingInfo = screen.queryByTestId("next-billing-date");
+        expect(nextBillingInfo).not.toBeInTheDocument();
+      });
     });
   });
 });

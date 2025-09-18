@@ -146,7 +146,8 @@ class CodeActAgent(Agent):
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
-                    use_short_description=use_short_tool_desc
+                    use_short_description=use_short_tool_desc,
+                    runtime_type=self.config.runtime,
                 )
             )
         return tools
