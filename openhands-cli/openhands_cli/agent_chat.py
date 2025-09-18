@@ -7,24 +7,23 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 import logging
 import uuid
 
-
-from openhands_cli.setup import setup_agent
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
-from openhands_cli.tui.tui import (
-    display_help,
-    display_welcome,
-)
-from openhands_cli.runner import ConversationRunner
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from prompt_toolkit import PromptSession, print_formatted_text
 from openhands.sdk import (
     Message,
     TextContent,
 )
+from openhands.sdk.conversation.state import AgentExecutionStatus
+from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
+from openhands_cli.runner import ConversationRunner
+from openhands_cli.setup import setup_agent
+from openhands_cli.tui.settings.settings_screen import SettingsScreen
+from openhands_cli.tui.tui import (
+    CommandCompleter,
+    display_help,
+    display_welcome,
+)
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-from openhands_cli.tui.tui import CommandCompleter
 
 logger = logging.getLogger(__name__)
 
