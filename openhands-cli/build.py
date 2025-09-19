@@ -113,6 +113,7 @@ def build_executable(
 # SECTION: Test and profile binary
 # =================================================
 
+WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
 
 def _is_welcome(line: str) -> bool:
     s = line.strip().lower()
