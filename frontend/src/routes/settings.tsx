@@ -75,7 +75,8 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-base-secondary rounded-xl h-full"
+      className="rounded-xl h-full"
+      style={{ backgroundColor: "#26282D" }}
     >
       <SettingsLayout navigationItems={navItems} isSaas={isSaas}>
         <div className="flex flex-col gap-6 h-full">
