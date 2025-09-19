@@ -133,7 +133,7 @@ describe("Settings Screen", () => {
       "user",
       "integrations",
       "application",
-      "credits", // The nav item shows "Credits" text and routes to /billing
+      "billing", // The nav item shows "Billing" text and routes to /billing
       "secrets",
       "api keys",
     ];

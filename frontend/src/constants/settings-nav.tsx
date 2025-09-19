@@ -36,7 +36,7 @@ export const SAAS_NAV_ITEMS: SettingsNavItem[] = [
   {
     icon: <CreditCardIcon width={22} height={22} />,
     to: "/settings/billing",
-    text: "SETTINGS$NAV_CREDITS",
+    text: "SETTINGS$NAV_BILLING",
   },
   {
     icon: <KeyIcon width={22} height={22} />,
