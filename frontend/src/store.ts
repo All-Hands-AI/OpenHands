@@ -4,7 +4,6 @@ import browserReducer from "./state/browser-slice";
 import fileStateReducer from "./state/file-state-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
-import metricsReducer from "./state/metrics-slice";
 import conversationReducer from "./state/conversation-slice";
 import eventMessageReducer from "./state/event-message-slice";
 
@@ -14,7 +13,6 @@ export const rootReducer = combineReducers({
   agent: agentReducer,
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
-  metrics: metricsReducer,
   conversation: conversationReducer,
   eventMessage: eventMessageReducer,
 });

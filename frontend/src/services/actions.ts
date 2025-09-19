@@ -1,7 +1,7 @@
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
+import useMetricsStore from "#/stores/metrics-store";
 import { useStatusStore } from "#/state/status-store";
-import { setMetrics } from "#/state/metrics-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -26,7 +26,7 @@ export function handleActionMessage(message: ActionMessage) {
       max_budget_per_task: message.llm_metrics?.max_budget_per_task ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    useMetricsStore.getState().setMetrics(metrics);
   }
 
   if (message.action === ActionType.RUN) {

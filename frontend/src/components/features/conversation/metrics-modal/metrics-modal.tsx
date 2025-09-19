@@ -1,12 +1,11 @@
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { BaseModal } from "../../../shared/modals/base-modal/base-modal";
-import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { CostSection } from "./cost-section";
 import { UsageSection } from "./usage-section";
 import { ContextWindowSection } from "./context-window-section";
 import { EmptyState } from "./empty-state";
+import useMetricsStore from "#/stores/metrics-store";
 
 interface MetricsModalProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ interface MetricsModalProps {
 
 export function MetricsModal({ isOpen, onOpenChange }: MetricsModalProps) {
   const { t } = useTranslation();
-  const metrics = useSelector((state: RootState) => state.metrics);
+  const metrics = useMetricsStore();
 
   return (
     <BaseModal
