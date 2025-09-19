@@ -340,9 +340,15 @@ class Runtime(FileEditRuntimeMixin):
             sid=self.sid,
         )
 
-        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
+        logger.info(
+            f'Fetching latest provider tokens for runtime: {self.sid}, '
+            f'providers: {providers_called}'
+        )
         env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
+        )
+        logger.info(
+            f'Successfully fetched {len(env_vars)} token(s) for runtime: {self.sid}'
         )
 
         if len(env_vars) == 0:
@@ -355,8 +361,9 @@ class Runtime(FileEditRuntimeMixin):
                 )
             self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
-            logger.warning(
-                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            logger.error(
+                f'Failed to export latest github token to runtime: {self.sid}, {e}',
+                exc_info=True,
             )
 
     async def _handle_action(self, event: Action) -> None:

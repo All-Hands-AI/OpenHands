@@ -1,7 +1,7 @@
 import { trackError } from "#/utils/error-handler";
 import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
-import { setMetrics } from "#/state/metrics-slice";
+import useMetricsStore from "#/stores/metrics-store";
+import { useStatusStore } from "#/state/status-store";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -10,7 +10,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
+import { useCommandStore } from "#/state/command-store";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { queryClient } from "#/query-client-config";
 
@@ -26,11 +26,11 @@ export function handleActionMessage(message: ActionMessage) {
       max_budget_per_task: message.llm_metrics?.max_budget_per_task ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    useMetricsStore.getState().setMetrics(metrics);
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+    useCommandStore.getState().appendInput(message.args.command);
   }
 
   if (message.action === ActionType.RUN_IPYTHON) {
@@ -52,11 +52,9 @@ export function handleStatusMessage(message: StatusMessage) {
       queryKey: ["user", "conversation", conversationId],
     });
   } else if (message.type === "info") {
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
+    useStatusStore.getState().setCurStatusMessage({
+      ...message,
+    });
   } else if (message.type === "error") {
     trackError({
       message: message.message,

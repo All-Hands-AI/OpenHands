@@ -57,11 +57,6 @@ describe("MicroagentManagement", () => {
   const renderMicroagentManagement = (config?: QueryClientConfig) =>
     renderWithProviders(<RouterStub />, {
       preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
         microagentManagement: {
           addMicroagentModalVisible: false,
           updateMicroagentModalVisible: false,
@@ -1351,11 +1346,6 @@ describe("MicroagentManagement", () => {
       // Render with modal already visible in Redux state
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: null,
             addMicroagentModalVisible: true, // Start with modal visible
@@ -1646,11 +1636,6 @@ describe("MicroagentManagement", () => {
     const renderMicroagentManagementMain = (selectedMicroagentItem: any) =>
       renderWithProviders(<MicroagentManagementMain />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             addMicroagentModalVisible: false,
             selectedRepository: {
@@ -1998,11 +1983,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible in Redux state
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2037,11 +2017,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2075,11 +2050,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2118,11 +2088,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2174,11 +2139,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2225,11 +2185,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2279,11 +2234,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible but no microagent data
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: null,
             addMicroagentModalVisible: false,
@@ -2325,11 +2275,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2374,11 +2319,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2561,11 +2501,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2601,11 +2536,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2658,11 +2588,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2718,11 +2643,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2776,11 +2696,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
