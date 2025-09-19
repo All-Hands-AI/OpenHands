@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import { setMetrics } from "#/state/metrics-slice";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 
 // Mock the store and actions
 const mockDispatch = vi.fn();
