@@ -2,6 +2,7 @@ from openhands.events.action.action import (
     Action,
     ActionConfirmationStatus,
     ActionSecurityRisk,
+    Thought,
 )
 from openhands.events.action.agent import (
     AgentDelegateAction,
@@ -44,5 +45,6 @@ __all__ = [
     'RecallAction',
     'MCPAction',
     'TaskTrackingAction',
+    'Thought',
     'ActionSecurityRisk',
 ]
