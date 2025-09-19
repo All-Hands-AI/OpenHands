@@ -1,3 +1,4 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { ContextMenu } from "#/ui/context-menu";
@@ -6,90 +7,13 @@ import { Divider } from "#/ui/divider";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
-import CreditCardIcon from "#/icons/credit-card.svg?react";
-import KeyIcon from "#/icons/key.svg?react";
 import LogOutIcon from "#/icons/log-out.svg?react";
-import ServerProcessIcon from "#/icons/server-process.svg?react";
-import SettingsGearIcon from "#/icons/settings-gear.svg?react";
-import CircuitIcon from "#/icons/u-circuit.svg?react";
-import PuzzlePieceIcon from "#/icons/u-puzzle-piece.svg?react";
-import UserIcon from "#/icons/user.svg?react";
+import { SAAS_NAV_ITEMS, OSS_NAV_ITEMS } from "#/constants/settings-nav";
 
 interface AccountSettingsContextMenuProps {
   onLogout: () => void;
   onClose: () => void;
 }
-
-const SAAS_NAV_ITEMS = [
-  {
-    icon: <UserIcon width={16} height={16} />,
-    to: "/settings/user",
-    text: "COMMON$USER_SETTINGS",
-  },
-  {
-    icon: <PuzzlePieceIcon width={16} height={16} />,
-    to: "/settings/integrations",
-    text: "SETTINGS$NAV_INTEGRATIONS",
-  },
-  {
-    icon: <SettingsGearIcon width={16} height={16} />,
-    to: "/settings/app",
-    text: "COMMON$APPLICATION_SETTINGS",
-  },
-  {
-    icon: <CircuitIcon width={16} height={16} />,
-    to: "/settings",
-    text: "COMMON$LANGUAGE_MODEL_LLM",
-  },
-  {
-    icon: <CreditCardIcon width={16} height={16} />,
-    to: "/settings/billing",
-    text: "SETTINGS$NAV_BILLING",
-  },
-  {
-    icon: <KeyIcon width={16} height={16} />,
-    to: "/settings/secrets",
-    text: "SETTINGS$NAV_SECRETS",
-  },
-  {
-    icon: <KeyIcon width={16} height={16} />,
-    to: "/settings/api-keys",
-    text: "SETTINGS$NAV_API_KEYS",
-  },
-  {
-    icon: <ServerProcessIcon width={16} height={16} />,
-    to: "/settings/mcp",
-    text: "SETTINGS$NAV_MCP",
-  },
-];
-
-const OSS_NAV_ITEMS = [
-  {
-    icon: <CircuitIcon width={16} height={16} />,
-    to: "/settings",
-    text: "COMMON$LANGUAGE_MODEL_LLM",
-  },
-  {
-    icon: <ServerProcessIcon width={16} height={16} />,
-    to: "/settings/mcp",
-    text: "COMMON$MODEL_CONTEXT_PROTOCOL_MCP",
-  },
-  {
-    icon: <PuzzlePieceIcon width={16} height={16} />,
-    to: "/settings/integrations",
-    text: "SETTINGS$NAV_INTEGRATIONS",
-  },
-  {
-    icon: <SettingsGearIcon width={16} height={16} />,
-    to: "/settings/app",
-    text: "COMMON$APPLICATION_SETTINGS",
-  },
-  {
-    icon: <KeyIcon width={16} height={16} />,
-    to: "/settings/secrets",
-    text: "SETTINGS$NAV_SECRETS",
-  },
-];
 
 export function AccountSettingsContextMenu({
   onLogout,
@@ -100,7 +24,13 @@ export function AccountSettingsContextMenu({
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
-  const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
+  const navItems = (isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS).map((item) => ({
+    ...item,
+    icon: React.cloneElement(item.icon, {
+      width: 16,
+      height: 16,
+    } as React.SVGProps<SVGSVGElement>),
+  }));
 
   const handleNavigationClick = () => {
     onClose();
@@ -112,7 +42,7 @@ export function AccountSettingsContextMenu({
       testId="account-settings-context-menu"
       ref={ref}
       alignment="right"
-      className="mt-0 md:right-full md:left-full md:bottom-0 ml-0 z-10 w-fit z-[9999]"
+      className="mt-0 md:right-full md:left-full md:bottom-0 ml-0 w-fit z-[9999]"
     >
       {navItems.map(({ to, text, icon }) => (
         <Link key={to} to={to} className="text-decoration-none">

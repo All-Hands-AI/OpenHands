@@ -203,7 +203,7 @@ function UserSettingsScreen() {
 
   return (
     <div data-testid="user-settings-screen" className="flex flex-col h-full">
-      <div className="p-9 flex flex-col gap-6">
+      <div className="flex flex-col gap-6">
         {isLoading ? (
           <div className="animate-pulse h-8 w-64 bg-tertiary rounded-sm" />
         ) : (
