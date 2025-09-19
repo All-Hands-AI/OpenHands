@@ -17,8 +17,12 @@ vi.mock("#/state/command-slice", () => ({
   appendInput: mockAppendInput,
 }));
 
-vi.mock("#/state/jupyter-slice", () => ({
-  appendJupyterInput: mockAppendJupyterInput,
+vi.mock("#/state/jupyter-store", () => ({
+  useJupyterStore: {
+    getState: () => ({
+      appendJupyterInput: mockAppendJupyterInput,
+    }),
+  },
 }));
 
 describe("handleActionMessage", () => {
@@ -59,7 +63,8 @@ describe("handleActionMessage", () => {
       args: {
         code: "print('Hello from Jupyter!')",
       },
-      message: "Running Python code interactively: print('Hello from Jupyter!')",
+      message:
+        "Running Python code interactively: print('Hello from Jupyter!')",
       timestamp: "2023-01-01T00:00:00Z",
     };
 
@@ -67,7 +72,9 @@ describe("handleActionMessage", () => {
     handleActionMessage(ipythonAction);
 
     // Check that appendJupyterInput was called with the code
-    expect(mockDispatch).toHaveBeenCalledWith(mockAppendJupyterInput("print('Hello from Jupyter!')"));
+    expect(mockAppendJupyterInput).toHaveBeenCalledWith(
+      "print('Hello from Jupyter!')",
+    );
     expect(mockAppendInput).not.toHaveBeenCalled();
   });
 
