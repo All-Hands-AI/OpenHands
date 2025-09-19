@@ -10,7 +10,7 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
+import { useCommandStore } from "#/state/command-store";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import { queryClient } from "#/query-client-config";
 
@@ -30,7 +30,7 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
+    useCommandStore.getState().appendInput(message.args.command);
   }
 
   if (message.action === ActionType.RUN_IPYTHON) {
