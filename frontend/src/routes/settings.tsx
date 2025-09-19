@@ -77,7 +77,7 @@ function SettingsScreen() {
       data-testid="settings-screen"
       className="bg-base-secondary rounded-xl h-full flex flex-col px-[14px] pt-8"
     >
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden gap-10">
         <nav data-testid="settings-navbar" className="flex flex-col w-64 gap-6">
           <div className="flex items-center gap-2 ml-1.5">
             <SettingsIcon width={16} height={16} />
