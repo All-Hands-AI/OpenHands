@@ -90,6 +90,7 @@ pillow = "^11.3.0"
 starlette = "^0.48.0"
 urllib3 = "^2.5.0"
 requests = "^2.32.5"
+setuptools = ">=78.1.1"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
