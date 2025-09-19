@@ -7,14 +7,11 @@ import { cn } from "#/utils/utils";
 import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
 
 function Terminal() {
-  const { commands } = useSelector((state: RootState) => state.cmd);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
-  const ref = useTerminal({
-    commands,
-  });
+  const ref = useTerminal();
 
   return (
     <div className="h-full flex flex-col rounded-xl">

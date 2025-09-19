@@ -2,10 +2,9 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams, useNavigate } from "react-router";
-import { useSelector } from "react-redux";
 import { useWsClient } from "#/context/ws-client-provider";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
-import { RootState } from "#/store";
+import useMetricsStore from "#/stores/metrics-store";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
@@ -36,7 +35,7 @@ export function useConversationNameContextMenu({
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
   const { mutate: getTrajectory } = useGetTrajectory();
-  const metrics = useSelector((state: RootState) => state.metrics);
+  const metrics = useMetricsStore();
 
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
