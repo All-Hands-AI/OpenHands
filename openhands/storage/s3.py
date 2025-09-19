@@ -40,7 +40,7 @@ class S3FileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         stack = '\n'.join(traceback.format_stack())
-        logger.debug('S3FileStore write stack trace:\n%s', stack)
+        logger.info('S3FileStore write stack trace:\n%s', stack)
         try:
             as_bytes = (
                 contents.encode('utf-8') if isinstance(contents, str) else contents

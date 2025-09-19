@@ -161,7 +161,7 @@ class EventStream(EventStore):
         self._clean_up_subscriber(subscriber_id, callback_id)
 
     def add_event(self, event: Event, source: EventSource) -> None:
-        logger.debug(f'Adding event with ID {event.id}')
+        logger.info(f'Adding event with ID {event.id}')
         if event.id != Event.INVALID_ID:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
@@ -184,7 +184,7 @@ class EventStream(EventStore):
             if len(current_write_page) == self.cache_size:
                 self._write_page_cache = []
 
-        logger.debug(f'Event now has ID {event.id}')
+        logger.info(f'Event now has ID {event.id}')
         if event.id is not None:
             # Write the event to the store - this can take some time
             event_json = json.dumps(data)
@@ -206,7 +206,7 @@ class EventStream(EventStore):
 
     def _store_cache_page(self, current_write_page: list[dict]):
         """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
-        logger.debug(
+        logger.info(
             f'Writing event cache if page len {len(current_write_page)} is greater than {self.cache_size}'
         )
         if len(current_write_page) < self.cache_size:
