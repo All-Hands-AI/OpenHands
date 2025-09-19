@@ -1,11 +1,19 @@
 import os
+import sys
 import tempfile
 import time
+
+import pytest
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
+
+# Skip all tests in this module if running on Windows
+pytestmark = pytest.mark.skipif(
+    sys.platform == 'win32', reason='BashSession tests require Unix-like system'
+)
 
 
 def get_no_change_timeout_suffix(timeout_seconds):
