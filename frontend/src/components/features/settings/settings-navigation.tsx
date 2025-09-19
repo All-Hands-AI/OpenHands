@@ -59,10 +59,10 @@ export function SettingsNavigation({
           <button
             type="button"
             onClick={onCloseMobileMenu}
-            className="md:hidden p-2 hover:bg-[#454545] rounded-md transition-colors"
+            className="md:hidden p-0.5 hover:bg-[#454545] rounded-md transition-colors"
             aria-label="Close navigation menu"
           >
-            <CloseIcon width={20} height={20} />
+            <CloseIcon width={32} height={32} />
           </button>
         </div>
 
