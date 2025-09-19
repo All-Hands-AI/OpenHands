@@ -526,12 +526,14 @@ function LlmSettingsScreen() {
                 />
               )}
 
-              <HelpLink
-                testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
-                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
-                href="https://tavily.com/"
-              />
+              {config?.APP_MODE !== "saas" && (
+                <HelpLink
+                  testId="search-api-key-help-anchor"
+                  text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
+                  linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
+                  href="https://tavily.com/"
+                />
+              )}
             </div>
           )}
 
