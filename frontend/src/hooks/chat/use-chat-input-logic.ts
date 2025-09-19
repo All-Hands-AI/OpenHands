@@ -9,7 +9,7 @@ import {
   isContentEmpty,
   clearEmptyContent,
   getTextContent,
-} from "#/components/features/chat/utils/chat-input-utils";
+} from "#/components/features/chat/utils/chat-input.utils";
 
 /**
  * Hook for managing chat input content logic

@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import {
   clearTextContent,
   clearFileInput,
-} from "#/components/features/chat/utils/chat-input-utils";
+} from "#/components/features/chat/utils/chat-input.utils";
 
 /**
  * Hook for handling chat message submission

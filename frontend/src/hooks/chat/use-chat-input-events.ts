@@ -3,7 +3,7 @@ import { isMobileDevice } from "#/utils/utils";
 import {
   ensureCursorVisible,
   clearEmptyContent,
-} from "#/components/features/chat/utils/chat-input-utils";
+} from "#/components/features/chat/utils/chat-input.utils";
 
 /**
  * Hook for handling chat input events
