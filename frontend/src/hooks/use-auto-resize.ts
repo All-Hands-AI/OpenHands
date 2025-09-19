@@ -1,4 +1,4 @@
-import { useCallback, useEffect, RefObject } from "react";
+import { useCallback, useEffect, RefObject, useRef } from "react";
 import { IMessageToSend } from "#/state/conversation-slice";
 import { useDragResize } from "./use-drag-resize";
 
@@ -24,6 +24,7 @@ interface UseAutoResizeReturn {
   handleGripMouseDown: (e: React.MouseEvent) => void;
   handleGripTouchStart: (e: React.TouchEvent) => void;
   increaseHeightForEmptyContent: () => void;
+  resetManualResize: () => void;
 }
 
 // Height management utilities
@@ -111,44 +112,6 @@ const measureElementHeights = (
   };
 };
 
-const determineResizeStrategy = (
-  measurements: HeightMeasurements,
-  minHeight: number,
-  maxHeight: number,
-): ResizeStrategy => {
-  const { currentHeight, contentHeight } = measurements;
-
-  // If content fits in current height, just manage overflow
-  if (contentHeight <= currentHeight) {
-    return {
-      finalHeight: currentHeight,
-      overflowY: "hidden",
-    };
-  }
-
-  // If content exceeds current height but is within normal auto-resize range
-  if (contentHeight <= maxHeight) {
-    // Only grow if the current height is close to the content height (not manually resized much larger)
-    if (!isManuallyOversized(currentHeight, contentHeight)) {
-      return {
-        finalHeight: Math.max(contentHeight, minHeight),
-        overflowY: "hidden",
-      };
-    }
-    // Keep manual height but show scrollbar since content exceeds visible area
-    return {
-      finalHeight: currentHeight,
-      overflowY: "auto",
-    };
-  }
-
-  // Content exceeds max height
-  return {
-    finalHeight: maxHeight,
-    overflowY: "auto",
-  };
-};
-
 const applyResizeStrategy = (
   element: HTMLElement,
   strategy: ResizeStrategy,
@@ -190,14 +153,30 @@ export const useAutoResize = (
 
   const constraints: HeightConstraints = { minHeight, maxHeight };
 
+  // Tracks whether the user has manually resized via the drag grip
+  const hasUserResizedRef = useRef(false);
+
   // Use the drag resize hook for manual resizing functionality
   const { handleGripMouseDown, handleGripTouchStart } = useDragResize({
     elementRef,
     minHeight,
     maxHeight,
-    onGripDragStart: enableManualResize ? onGripDragStart : undefined,
-    onGripDragEnd: enableManualResize ? onGripDragEnd : undefined,
+    onGripDragStart: enableManualResize
+      ? () => {
+          hasUserResizedRef.current = true;
+          onGripDragStart?.();
+        }
+      : undefined,
+    onGripDragEnd: enableManualResize
+      ? () => {
+          onGripDragEnd?.();
+        }
+      : undefined,
     onHeightChange,
+    onReachedMinHeight: () => {
+      // Re-enable autosize behavior once user drags back to the minimum
+      hasUserResizedRef.current = false;
+    },
   });
 
   // Auto-resize functionality for contenteditable div
@@ -225,22 +204,66 @@ export const useAutoResize = (
     const element = elementRef.current;
     if (!element) return;
 
-    // Measure element heights
+    // Measure current and content heights
     const measurements = measureElementHeights(element, minHeight);
+    const { currentHeight, contentHeight } = measurements;
 
-    // Determine the best resize strategy
-    const strategy = determineResizeStrategy(
-      measurements,
-      minHeight,
-      maxHeight,
-    );
+    // If content fits within current height
+    if (contentHeight <= currentHeight) {
+      // If user manually resized and we're above min height, preserve their chosen height
+      if (hasUserResizedRef.current && currentHeight > minHeight) {
+        applyResizeStrategy(element, {
+          finalHeight: currentHeight,
+          overflowY: "hidden",
+        });
+        executeHeightCallback(currentHeight, onHeightChange);
+        return;
+      }
 
-    // Apply the resize strategy
-    applyResizeStrategy(element, strategy);
+      // Otherwise allow shrinking towards content (respect minHeight)
+      const finalHeight = Math.max(contentHeight, minHeight);
+      applyResizeStrategy(element, {
+        finalHeight,
+        overflowY: "hidden",
+      });
+      executeHeightCallback(finalHeight, onHeightChange);
+      return;
+    }
 
-    // Execute height change callback
-    executeHeightCallback(strategy.finalHeight, onHeightChange);
+    // If content exceeds current height but within max
+    if (contentHeight <= maxHeight) {
+      // Grow unless the element is manually oversized beyond content significantly
+      if (!isManuallyOversized(currentHeight, contentHeight)) {
+        const finalHeight = Math.max(contentHeight, minHeight);
+        applyResizeStrategy(element, {
+          finalHeight,
+          overflowY: "hidden",
+        });
+        executeHeightCallback(finalHeight, onHeightChange);
+        return;
+      }
+
+      // Keep manual height and allow scrolling as needed
+      applyResizeStrategy(element, {
+        finalHeight: currentHeight,
+        overflowY: "auto",
+      });
+      executeHeightCallback(currentHeight, onHeightChange);
+      return;
+    }
+
+    // Content exceeds max height
+    applyResizeStrategy(element, {
+      finalHeight: maxHeight,
+      overflowY: "auto",
+    });
+    executeHeightCallback(maxHeight, onHeightChange);
   }, [elementRef, minHeight, maxHeight, onHeightChange]);
+
+  // Utility to reset manual-resize state (called after submit/clear)
+  const resetManualResize = () => {
+    hasUserResizedRef.current = false;
+  };
 
   // Function to increase height when content is empty
   const increaseHeightForEmptyContent = () => {
@@ -278,5 +301,6 @@ export const useAutoResize = (
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   };
 };

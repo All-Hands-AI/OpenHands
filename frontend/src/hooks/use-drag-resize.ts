@@ -9,6 +9,7 @@ interface UseDragResizeOptions {
   onGripDragStart?: () => void;
   onGripDragEnd?: () => void;
   onHeightChange?: (height: number) => void;
+  onReachedMinHeight?: () => void; // new: notify when user drags to min height
 }
 
 export const useDragResize = ({
@@ -18,6 +19,7 @@ export const useDragResize = ({
   onGripDragStart,
   onGripDragEnd,
   onHeightChange,
+  onReachedMinHeight,
 }: UseDragResizeOptions) => {
   const getClientY = (event: MouseEvent | TouchEvent): number => {
     if ("touches" in event && event.touches.length > 0) {
@@ -55,6 +57,11 @@ export const useDragResize = ({
       // Call the height change callback if provided
       if (onHeightChange) {
         onHeightChange(newHeight);
+      }
+
+      // If the user dragged down to minHeight, notify so manual mode can be cleared
+      if (onReachedMinHeight && newHeight === minHeight) {
+        onReachedMinHeight();
       }
     };
     return handleDragMove;

@@ -140,6 +140,7 @@ export function CustomChatInput({
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 400,
@@ -223,7 +224,8 @@ export function CustomChatInput({
         fileInputRef.current.value = "";
       }
 
-      // Reset height and show suggestions again
+      // Allow shrink for next input and reset height
+      resetManualResize();
       smartResize();
     }
   };
@@ -242,7 +244,8 @@ export function CustomChatInput({
       fileInputRef.current.value = "";
     }
 
-    // Reset height and show suggestions again
+    // Allow shrink for next input and reset height
+    resetManualResize();
     smartResize();
   };
 
