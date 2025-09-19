@@ -78,10 +78,8 @@ function SettingsScreen() {
       className="bg-base-secondary rounded-xl h-full"
     >
       <SettingsLayout navigationItems={navItems} isSaas={isSaas}>
-        <div className="flex flex-col gap-4 md:gap-6 h-full">
-          <Typography.H2 className="text-lg md:text-xl lg:text-2xl">
-            {t(currentSectionTitle)}
-          </Typography.H2>
+        <div className="flex flex-col gap-6 h-full">
+          <Typography.H2>{t(currentSectionTitle)}</Typography.H2>
           <div className="flex-1 overflow-auto">
             <Outlet />
           </div>

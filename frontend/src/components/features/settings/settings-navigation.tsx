@@ -41,22 +41,20 @@ export function SettingsNavigation({
       <nav
         data-testid="settings-navbar"
         className={cn(
-          "flex flex-col gap-4 md:gap-6 transition-transform duration-300 ease-in-out",
+          "flex flex-col gap-6 transition-transform duration-300 ease-in-out",
           // Mobile: full screen overlay
           "fixed inset-0 z-50 w-full bg-base-secondary p-4 transform md:transform-none",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           // Desktop: static sidebar
-          "md:relative md:translate-x-0 md:w-48 lg:w-64 md:p-0 md:bg-transparent",
+          "md:relative md:translate-x-0 md:w-64 md:p-0 md:bg-transparent",
         )}
       >
         <div className="flex items-center gap-2 ml-1.5">
           <SettingsIcon width={16} height={16} />
-          <Typography.H2 className="hidden md:block">
-            {t(I18nKey.SETTINGS$TITLE)}
-          </Typography.H2>
+          <Typography.H2>{t(I18nKey.SETTINGS$TITLE)}</Typography.H2>
         </div>
 
-        <div className="flex flex-col gap-2 md:gap-3">
+        <div className="flex flex-col gap-2">
           {navigationItems.map(({ to, icon, text }) => (
             <NavLink
               end

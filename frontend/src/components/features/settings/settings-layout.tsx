@@ -30,25 +30,26 @@ export function SettingsLayout({
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full">
+    <div className="flex flex-col h-full px-[14px] pt-8">
       {/* Mobile header */}
       <MobileHeader
         isMobileMenuOpen={isMobileMenuOpen}
         onToggleMenu={toggleMobileMenu}
       />
 
-      {/* Navigation */}
-      <SettingsNavigation
-        isMobileMenuOpen={isMobileMenuOpen}
-        onCloseMobileMenu={closeMobileMenu}
-        navigationItems={navigationItems}
-        isSaas={isSaas}
-      />
+      {/* Desktop layout with navigation and main content */}
+      <div className="flex flex-1 overflow-hidden gap-10">
+        {/* Navigation */}
+        <SettingsNavigation
+          isMobileMenuOpen={isMobileMenuOpen}
+          onCloseMobileMenu={closeMobileMenu}
+          navigationItems={navigationItems}
+          isSaas={isSaas}
+        />
 
-      {/* Main content */}
-      <main className="flex-1 px-3 sm:px-[14px] md:px-6 lg:px-8 py-4 md:py-6 overflow-auto">
-        {children}
-      </main>
+        {/* Main content */}
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
     </div>
   );
 }
