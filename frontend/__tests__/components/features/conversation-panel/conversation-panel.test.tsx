@@ -1,10 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClientConfig } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
-import { renderWithProviders } from "test-utils";
+import { renderWithQueryAndI18n } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
@@ -18,10 +17,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: QueryClientConfig) =>
-    renderWithProviders(<RouterStub />, {
-      preloadedState: {},
-    });
+  const renderConversationPanel = () => renderWithQueryAndI18n(<RouterStub />);
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
@@ -291,9 +287,7 @@ describe("ConversationPanel", () => {
       },
     ]);
 
-    renderWithProviders(<MyRouterStub />, {
-      preloadedState: {},
-    });
+    renderWithQueryAndI18n(<MyRouterStub />);
 
     const toggleButton = screen.getByText("Toggle");
 
