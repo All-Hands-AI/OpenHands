@@ -172,6 +172,17 @@ def get_summary_for_agent_state(
 
         return f'OpenHands encountered an error: **{reason}**.\n\n[See the conversation]({conversation_link}) for more information.'
 
+    if state == AgentState.AWAITING_USER_INPUT:
+        logger.info(
+            'Agent is awaiting user input',
+            extra={
+                'agent_state': state.value,
+                'conversation_link': conversation_link,
+                'observation_reason': getattr(observation, 'reason', None),
+            },
+        )
+        return f'OpenHands is waiting for your input. [Continue the conversation]({conversation_link}) to provide additional instructions.'
+
     # Log unknown agent state as error
     logger.error(
         'Unknown error: Unhandled agent state',
