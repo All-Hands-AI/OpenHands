@@ -1,5 +1,4 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -11,15 +10,8 @@ import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
-import {
-  clearAllFiles,
-  setShouldHideSuggestions,
-  setSubmittedMessage,
-  setMessageToSend,
-  setIsRightPanelShown,
-} from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import { CHAT_INPUT } from "#/utils/constants";
-import { RootState } from "#/store";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -49,11 +41,16 @@ export function CustomChatInput({
   const [isDragOver, setIsDragOver] = useState(false);
   const [isGripVisible, setIsGripVisible] = useState(false);
 
-  const { messageToSend, submittedMessage, hasRightPanelToggled } = useSelector(
-    (state: RootState) => state.conversation,
-  );
-
-  const dispatch = useDispatch();
+  const {
+    messageToSend,
+    submittedMessage,
+    hasRightPanelToggled,
+    clearAllFiles,
+    setShouldHideSuggestions,
+    setSubmittedMessage,
+    setMessageToSend,
+    setIsRightPanelShown,
+  } = useConversationStore();
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
@@ -65,8 +62,8 @@ export function CustomChatInput({
       return;
     }
     onSubmit(submittedMessage);
-    dispatch(setSubmittedMessage(null));
-  }, [submittedMessage, disabled, onSubmit, dispatch]);
+    setSubmittedMessage(null);
+  }, [submittedMessage, disabled, onSubmit, setSubmittedMessage]);
 
   const { t } = useTranslation();
 
@@ -79,11 +76,11 @@ export function CustomChatInput({
   useEffect(() => {
     if (chatInputRef.current) {
       const currentText = chatInputRef.current?.innerText || "";
-      // Dispatch to save current input value when drawer state changes
-      dispatch(setMessageToSend(currentText));
-      dispatch(setIsRightPanelShown(hasRightPanelToggled));
+      // Save current input value when drawer state changes
+      setMessageToSend(currentText);
+      setIsRightPanelShown(hasRightPanelToggled);
     }
-  }, [hasRightPanelToggled, dispatch]);
+  }, [hasRightPanelToggled, setMessageToSend, setIsRightPanelShown]);
 
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
@@ -129,9 +126,9 @@ export function CustomChatInput({
     (height: number) => {
       // Hide suggestions when input height exceeds the threshold
       const shouldHideChatSuggestions = height > CHAT_INPUT.HEIGHT_THRESHOLD;
-      dispatch(setShouldHideSuggestions(shouldHideChatSuggestions));
+      setShouldHideSuggestions(shouldHideChatSuggestions);
     },
-    [dispatch],
+    [setShouldHideSuggestions],
   );
 
   // Use the auto-resize hook with height change callback
@@ -153,10 +150,10 @@ export function CustomChatInput({
   // Cleanup: reset suggestions visibility when component unmounts
   useEffect(
     () => () => {
-      dispatch(setShouldHideSuggestions(false));
-      dispatch(clearAllFiles());
+      setShouldHideSuggestions(false);
+      clearAllFiles();
     },
-    [dispatch],
+    [setShouldHideSuggestions, clearAllFiles],
   );
 
   // Function to add files and notify parent

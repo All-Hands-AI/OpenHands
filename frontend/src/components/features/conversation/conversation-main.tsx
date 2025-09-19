@@ -1,10 +1,9 @@
-import { useSelector } from "react-redux";
 import { useWindowSize } from "@uidotdev/usehooks";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { ChatInterface } from "../chat/chat-interface";
 import { ConversationTabContent } from "./conversation-tabs/conversation-tab-content/conversation-tab-content";
 import { cn } from "#/utils/utils";
-import { RootState } from "#/store";
+import { useConversationStore } from "#/state/conversation-store";
 
 interface ChatInterfaceWrapperProps {
   isRightPanelShown: boolean;
@@ -28,9 +27,7 @@ export function ChatInterfaceWrapper({
 
 export function ConversationMain() {
   const { width } = useWindowSize();
-  const isRightPanelShown = useSelector(
-    (state: RootState) => state.conversation.isRightPanelShown,
-  );
+  const { isRightPanelShown } = useConversationStore();
 
   if (width && width <= 1024) {
     return (
