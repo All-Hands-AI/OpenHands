@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/use-terminal";
-import { Command } from "#/state/command-slice";
+import { Command, useCommandStore } from "#/state/command-store";
 import { AgentState } from "#/types/agent-state";
 import { renderWithProviders } from "../../test-utils";
 
@@ -19,10 +19,10 @@ interface TestTerminalComponentProps {
   commands: Command[];
 }
 
-function TestTerminalComponent({
-  commands,
-}: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands });
+function TestTerminalComponent({ commands }: TestTerminalComponentProps) {
+  // Set commands in Zustand store
+  useCommandStore.setState({ commands });
+  const ref = useTerminal();
   return <div ref={ref} />;
 }
 
@@ -60,7 +60,6 @@ describe("useTerminal", () => {
     renderWithProviders(<TestTerminalComponent commands={[]} />, {
       preloadedState: {
         agent: { curAgentState: AgentState.RUNNING },
-        cmd: { commands: [] },
       },
     });
   });
@@ -74,7 +73,6 @@ describe("useTerminal", () => {
     renderWithProviders(<TestTerminalComponent commands={commands} />, {
       preloadedState: {
         agent: { curAgentState: AgentState.RUNNING },
-        cmd: { commands },
       },
     });
 
@@ -94,17 +92,11 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    renderWithProviders(
-      <TestTerminalComponent
-        commands={commands}
-      />,
-      {
-        preloadedState: {
-          agent: { curAgentState: AgentState.RUNNING },
-          cmd: { commands },
-        },
+    renderWithProviders(<TestTerminalComponent commands={commands} />, {
+      preloadedState: {
+        agent: { curAgentState: AgentState.RUNNING },
       },
-    );
+    });
 
     // This test is no longer relevant as secrets filtering has been removed
   });

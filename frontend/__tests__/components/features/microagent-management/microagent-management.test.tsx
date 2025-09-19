@@ -7,7 +7,8 @@ import React from "react";
 import { renderWithProviders } from "test-utils";
 import MicroagentManagement from "#/routes/microagent-management";
 import { MicroagentManagementMain } from "#/components/features/microagent-management/microagent-management-main";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { GitRepository } from "#/types/git";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { Conversation } from "#/api/open-hands.types";
@@ -56,11 +57,6 @@ describe("MicroagentManagement", () => {
   const renderMicroagentManagement = (config?: QueryClientConfig) =>
     renderWithProviders(<RouterStub />, {
       preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
         microagentManagement: {
           addMicroagentModalVisible: false,
           updateMicroagentModalVisible: false,
@@ -231,20 +227,20 @@ describe("MicroagentManagement", () => {
     });
 
     // Setup default mock for retrieveUserGitRepositories
-    vi.spyOn(OpenHands, "retrieveUserGitRepositories").mockResolvedValue({
+    vi.spyOn(GitService, "retrieveUserGitRepositories").mockResolvedValue({
       data: [...mockRepositories],
       nextPage: null,
     });
     // Setup default mock for getRepositoryMicroagents
-    vi.spyOn(OpenHands, "getRepositoryMicroagents").mockResolvedValue([
+    vi.spyOn(GitService, "getRepositoryMicroagents").mockResolvedValue([
       ...mockMicroagents,
     ]);
     // Setup default mock for searchConversations
-    vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
+    vi.spyOn(ConversationService, "searchConversations").mockResolvedValue([
       ...mockConversations,
     ]);
     // Setup default mock for getRepositoryMicroagentContent
-    vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
       content: "Original microagent content for testing updates",
       path: ".openhands/microagents/update-test-microagent",
       git_provider: "github",
@@ -1290,7 +1286,7 @@ describe("MicroagentManagement", () => {
   // Add microagent integration tests
   describe("Add microagent functionality", () => {
     beforeEach(() => {
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [{ name: "main", commit_sha: "abc123", protected: false }],
         has_next_page: false,
         current_page: 1,
@@ -1350,11 +1346,6 @@ describe("MicroagentManagement", () => {
       // Render with modal already visible in Redux state
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: null,
             addMicroagentModalVisible: true, // Start with modal visible
@@ -1645,11 +1636,6 @@ describe("MicroagentManagement", () => {
     const renderMicroagentManagementMain = (selectedMicroagentItem: any) =>
       renderWithProviders(<MicroagentManagementMain />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             addMicroagentModalVisible: false,
             selectedRepository: {
@@ -1983,7 +1969,7 @@ describe("MicroagentManagement", () => {
     };
 
     beforeEach(() => {
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [{ name: "main", commit_sha: "abc123", protected: false }],
         has_next_page: false,
         current_page: 1,
@@ -1997,11 +1983,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible in Redux state
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2036,11 +2017,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2074,11 +2050,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2117,11 +2088,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2173,11 +2139,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2224,11 +2185,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2278,11 +2234,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible but no microagent data
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: null,
             addMicroagentModalVisible: false,
@@ -2314,7 +2265,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return empty content for this test
-      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
         content: "",
         path: ".openhands/microagents/update-test-microagent",
         git_provider: "github",
@@ -2324,11 +2275,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2363,7 +2309,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return content without triggers for this test
-      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
         content: "Original microagent content for testing updates",
         path: ".openhands/microagents/update-test-microagent",
         git_provider: "github",
@@ -2373,11 +2319,6 @@ describe("MicroagentManagement", () => {
       // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForUpdate,
@@ -2560,11 +2501,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2600,11 +2536,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2647,7 +2578,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return the expected content for this test
-      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
         content: "Test microagent content for learn functionality",
         path: ".openhands/microagents/learn-test-microagent",
         git_provider: "github",
@@ -2657,11 +2588,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2707,7 +2633,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return empty content for this test
-      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
         content: "",
         path: ".openhands/microagents/learn-test-microagent",
         git_provider: "github",
@@ -2717,11 +2643,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,
@@ -2765,7 +2686,7 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Mock the content API to return content without triggers for this test
-      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryMicroagentContent").mockResolvedValue({
         content: "Test microagent content for learn functionality",
         path: ".openhands/microagents/learn-test-microagent",
         git_provider: "github",
@@ -2775,11 +2696,6 @@ describe("MicroagentManagement", () => {
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
-          metrics: {
-            cost: null,
-            max_budget_per_task: null,
-            usage: null,
-          },
           microagentManagement: {
             selectedMicroagentItem: {
               microagent: mockMicroagentForLearn,

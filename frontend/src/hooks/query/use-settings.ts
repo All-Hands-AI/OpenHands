@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { Settings } from "#/types/settings";
 import { useIsAuthed } from "./use-is-authed";
 
 const getSettingsQueryFn = async (): Promise<Settings> => {
-  const apiSettings = await OpenHands.getSettings();
+  const apiSettings = await SettingsService.getSettings();
 
   return {
     LLM_MODEL: apiSettings.llm_model,

@@ -26,10 +26,6 @@ export interface FeedbackResponse {
   body: FeedbackBodyResponse;
 }
 
-export interface GitHubAccessTokenResponse {
-  access_token: string;
-}
-
 export interface AuthenticationResponse {
   message: string;
   login?: string; // Only present when allow list is enabled
@@ -44,25 +40,6 @@ export interface Feedback {
   trajectory: unknown[];
 }
 
-export interface GetConfigResponse {
-  APP_MODE: "saas" | "oss";
-  APP_SLUG?: string;
-  GITHUB_CLIENT_ID: string;
-  POSTHOG_CLIENT_KEY: string;
-  PROVIDERS_CONFIGURED?: Provider[];
-  AUTH_URL?: string;
-  FEATURE_FLAGS: {
-    ENABLE_BILLING: boolean;
-    HIDE_LLM_SETTINGS: boolean;
-    ENABLE_JIRA: boolean;
-    ENABLE_JIRA_DC: boolean;
-    ENABLE_LINEAR: boolean;
-  };
-  MAINTENANCE?: {
-    startTime: string;
-  };
-}
-
 export interface GetVSCodeUrlResponse {
   vscode_url: string | null;
   error?: string;
@@ -70,11 +47,6 @@ export interface GetVSCodeUrlResponse {
 
 export interface GetTrajectoryResponse {
   trajectory: unknown[] | null;
-  error?: string;
-}
-
-export interface AuthenticateResponse {
-  message?: string;
   error?: string;
 }
 

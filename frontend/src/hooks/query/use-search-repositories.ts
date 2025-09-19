@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import GitService from "#/api/git-service/git-service.api";
 import { Provider } from "#/types/settings";
 
 export function useSearchRepositories(
@@ -11,7 +11,7 @@ export function useSearchRepositories(
   return useQuery({
     queryKey: ["repositories", "search", query, selectedProvider, pageSize],
     queryFn: () =>
-      OpenHands.searchGitRepositories(
+      GitService.searchGitRepositories(
         query,
         pageSize,
         selectedProvider || undefined,
