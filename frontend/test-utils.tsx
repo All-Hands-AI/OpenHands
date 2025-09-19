@@ -79,6 +79,28 @@ export function renderWithProviders(
   return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }
 
+// Export a render function for components that only need QueryClient and i18next providers
+// (without Redux store)
+export function renderWithQueryAndI18n(
+  ui: React.ReactElement,
+  renderOptions: Omit<RenderOptions, "wrapper"> = {},
+) {
+  function Wrapper({ children }: PropsWithChildren) {
+    return (
+      <QueryClientProvider
+        client={
+          new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+          })
+        }
+      >
+        <I18nextProvider i18n={i18n}>{children}</I18nextProvider>
+      </QueryClientProvider>
+    );
+  }
+  return render(ui, { wrapper: Wrapper, ...renderOptions });
+}
+
 export const createAxiosNotFoundErrorObject = () =>
   new AxiosError(
     "Request failed with status code 404",
