@@ -2,8 +2,8 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
-import { appendOutput } from "#/state/command-slice";
 import { useJupyterStore } from "#/state/jupyter-store";
+import { useCommandStore } from "#/state/command-store";
 import ObservationType from "#/types/observation-type";
 
 export function handleObservationMessage(message: ObservationMessage) {
@@ -19,7 +19,7 @@ export function handleObservationMessage(message: ObservationMessage) {
         content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...\r\n\n${tail}`;
       }
 
-      store.dispatch(appendOutput(content));
+      useCommandStore.getState().appendOutput(content);
       break;
     }
     case ObservationType.RUN_IPYTHON:
