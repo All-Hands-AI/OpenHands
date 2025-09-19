@@ -7,7 +7,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { resetConversationState } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
 
@@ -38,6 +38,7 @@ function AppContent() {
   const { mutate: startConversation } = useStartConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const { resetConversationState } = useConversationStore();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const clearTerminal = useCommandStore((state) => state.clearTerminal);
@@ -86,14 +87,14 @@ function AppContent() {
   React.useEffect(() => {
     clearTerminal();
     dispatch(clearJupyter());
-    dispatch(resetConversationState());
+    resetConversationState();
     dispatch(setCurrentAgentState(AgentState.LOADING));
-  }, [conversationId, clearTerminal]);
+  }, [conversationId, clearTerminal, resetConversationState]);
 
   useEffectOnce(() => {
     clearTerminal();
     dispatch(clearJupyter());
-    dispatch(resetConversationState());
+    resetConversationState();
     dispatch(setCurrentAgentState(AgentState.LOADING));
   });
 

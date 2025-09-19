@@ -1,7 +1,5 @@
 import { lazy, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
 import { ConversationLoading } from "../../conversation-loading";
 import { I18nKey } from "#/i18n/declaration";
 import { TabWrapper } from "./tab-wrapper";
@@ -9,6 +7,7 @@ import { TabContainer } from "./tab-container";
 import { TabContentArea } from "./tab-content-area";
 import { ConversationTabTitle } from "../conversation-tab-title";
 import Terminal from "#/components/features/terminal/terminal";
+import { useConversationStore } from "#/state/conversation-store";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -18,12 +17,7 @@ const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
 export function ConversationTabContent() {
-  const selectedTab = useSelector(
-    (state: RootState) => state.conversation.selectedTab,
-  );
-  const { shouldShownAgentLoading } = useSelector(
-    (state: RootState) => state.conversation,
-  );
+  const { selectedTab, shouldShownAgentLoading } = useConversationStore();
 
   const { t } = useTranslation();
 

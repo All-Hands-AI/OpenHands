@@ -1,11 +1,10 @@
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import { Suggestions } from "#/components/features/suggestions/suggestions";
 import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import { RootState } from "#/store";
+import { useConversationStore } from "#/state/conversation-store";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -13,9 +12,7 @@ interface ChatSuggestionsProps {
 
 export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   const { t } = useTranslation();
-  const shouldHideSuggestions = useSelector(
-    (state: RootState) => state.conversation.shouldHideSuggestions,
-  );
+  const { shouldHideSuggestions } = useConversationStore();
 
   return (
     <AnimatePresence>

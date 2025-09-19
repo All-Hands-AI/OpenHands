@@ -1,22 +1,14 @@
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { isFileImage } from "#/utils/is-file-image";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { validateFiles } from "#/utils/file-validation";
 import { CustomChatInput } from "./custom-chat-input";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { GitControlBar } from "./git-control-bar";
-import {
-  addImages,
-  addFiles,
-  clearAllFiles,
-  addFileLoading,
-  removeFileLoading,
-  addImageLoading,
-  removeImageLoading,
-} from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import { processFiles, processImages } from "#/utils/file-processing";
+import { RootState } from "#/store";
 
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
@@ -33,12 +25,20 @@ export function InteractiveChatBox({
   hasSubstantiveAgentActions,
   optimisticUserMessage,
 }: InteractiveChatBoxProps) {
-  const dispatch = useDispatch();
+  const {
+    images,
+    files,
+    addImages,
+    addFiles,
+    clearAllFiles,
+    addFileLoading,
+    removeFileLoading,
+    addImageLoading,
+    removeImageLoading,
+  } = useConversationStore();
   const curAgentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
-  const images = useSelector((state: RootState) => state.conversation.images);
-  const files = useSelector((state: RootState) => state.conversation.files);
   const { data: conversation } = useActiveConversation();
 
   // Helper function to validate and filter files
@@ -58,26 +58,24 @@ export function InteractiveChatBox({
 
   // Helper function to show loading indicators for files
   const showLoadingIndicators = (validFiles: File[], validImages: File[]) => {
-    validFiles.forEach((file) => dispatch(addFileLoading(file.name)));
-    validImages.forEach((image) => dispatch(addImageLoading(image.name)));
+    validFiles.forEach((file) => addFileLoading(file.name));
+    validImages.forEach((image) => addImageLoading(image.name));
   };
 
   // Helper function to handle successful file processing results
   const handleSuccessfulFiles = (fileResults: { successful: File[] }) => {
     if (fileResults.successful.length > 0) {
-      dispatch(addFiles(fileResults.successful));
-      fileResults.successful.forEach((file) =>
-        dispatch(removeFileLoading(file.name)),
-      );
+      addFiles(fileResults.successful);
+      fileResults.successful.forEach((file) => removeFileLoading(file.name));
     }
   };
 
   // Helper function to handle successful image processing results
   const handleSuccessfulImages = (imageResults: { successful: File[] }) => {
     if (imageResults.successful.length > 0) {
-      dispatch(addImages(imageResults.successful));
+      addImages(imageResults.successful);
       imageResults.successful.forEach((image) =>
-        dispatch(removeImageLoading(image.name)),
+        removeImageLoading(image.name),
       );
     }
   };
@@ -88,14 +86,14 @@ export function InteractiveChatBox({
     imageResults: { failed: { file: File; error: Error }[] },
   ) => {
     fileResults.failed.forEach(({ file, error }) => {
-      dispatch(removeFileLoading(file.name));
+      removeFileLoading(file.name);
       displayErrorToast(
         `Failed to process file ${file.name}: ${error.message}`,
       );
     });
 
     imageResults.failed.forEach(({ file, error }) => {
-      dispatch(removeImageLoading(file.name));
+      removeImageLoading(file.name);
       displayErrorToast(
         `Failed to process image ${file.name}: ${error.message}`,
       );
@@ -104,8 +102,8 @@ export function InteractiveChatBox({
 
   // Helper function to clear loading states on error
   const clearLoadingStates = (validFiles: File[], validImages: File[]) => {
-    validFiles.forEach((file) => dispatch(removeFileLoading(file.name)));
-    validImages.forEach((image) => dispatch(removeImageLoading(image.name)));
+    validFiles.forEach((file) => removeFileLoading(file.name));
+    validImages.forEach((image) => removeImageLoading(image.name));
   };
 
   const handleUpload = async (selectedFiles: File[]) => {
@@ -140,7 +138,7 @@ export function InteractiveChatBox({
 
   const handleSubmit = (message: string) => {
     onSubmit(message, images, files);
-    dispatch(clearAllFiles());
+    clearAllFiles();
   };
 
   const handleSuggestionsClick = (suggestion: string) => {

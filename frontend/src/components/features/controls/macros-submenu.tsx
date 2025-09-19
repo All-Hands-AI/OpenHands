@@ -1,5 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
@@ -9,7 +8,7 @@ import PrStatusIcon from "#/icons/pr-status.svg?react";
 import DocumentIcon from "#/icons/document.svg?react";
 import WaterIcon from "#/icons/u-water.svg?react";
 import { I18nKey } from "#/i18n/declaration";
-import { setMessageToSend } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import { REPO_SUGGESTIONS } from "#/utils/suggestions/repo-suggestions";
 import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
@@ -22,22 +21,22 @@ interface MacrosSubmenuProps {
 
 export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
+  const { setMessageToSend } = useConversationStore();
 
   const onIncreaseTestCoverage = () => {
-    dispatch(setMessageToSend(REPO_SUGGESTIONS.INCREASE_TEST_COVERAGE));
+    setMessageToSend(REPO_SUGGESTIONS.INCREASE_TEST_COVERAGE);
     onClose();
   };
   const onFixReadme = () => {
-    dispatch(setMessageToSend(REPO_SUGGESTIONS.FIX_README));
+    setMessageToSend(REPO_SUGGESTIONS.FIX_README);
     onClose();
   };
   const onAutoMergePRs = () => {
-    dispatch(setMessageToSend(REPO_SUGGESTIONS.AUTO_MERGE_PRS));
+    setMessageToSend(REPO_SUGGESTIONS.AUTO_MERGE_PRS);
     onClose();
   };
   const onCleanDependencies = () => {
-    dispatch(setMessageToSend(REPO_SUGGESTIONS.CLEAN_DEPENDENCIES));
+    setMessageToSend(REPO_SUGGESTIONS.CLEAN_DEPENDENCIES);
     onClose();
   };
 
