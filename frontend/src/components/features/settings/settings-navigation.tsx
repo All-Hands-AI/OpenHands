@@ -59,20 +59,19 @@ export function SettingsNavigation({
         <div className="flex flex-col gap-2 md:gap-3">
           {navigationItems.map(({ to, icon, text }) => (
             <NavLink
+              end
               key={to}
               to={to}
               onClick={onCloseMobileMenu}
               className={({ isActive }) =>
                 cn(
-                  "flex items-center gap-3 px-3 sm:px-[14px] py-2 rounded-md transition-colors",
-                  isActive
-                    ? "bg-tertiary text-white"
-                    : "text-[#A3A3A3] hover:bg-tertiary hover:text-white",
+                  "flex items-center gap-3 p-1 sm:px-[14px] sm:py-2 rounded-md transition-colors",
+                  isActive ? "bg-[#454545]" : "hover:bg-[#454545]",
                 )
               }
             >
               {icon}
-              <Typography.Text className="text-[#A3A3A3] text-sm">
+              <Typography.Text className="text-[#A3A3A3]">
                 {t(text as I18nKey)}
               </Typography.Text>
               {isSaas && to === "/settings" && <ProPill className="ml-2" />}
