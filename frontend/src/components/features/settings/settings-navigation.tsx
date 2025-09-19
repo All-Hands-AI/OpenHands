@@ -4,6 +4,7 @@ import { cn } from "#/utils/utils";
 import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import SettingsIcon from "#/icons/settings-gear.svg?react";
+import CloseIcon from "#/icons/close.svg?react";
 import { ProPill } from "./pro-pill";
 
 interface NavigationItem {
@@ -49,9 +50,20 @@ export function SettingsNavigation({
           "md:relative md:translate-x-0 md:w-64 md:p-0 md:bg-transparent",
         )}
       >
-        <div className="flex items-center gap-2 ml-1.5">
-          <SettingsIcon width={16} height={16} />
-          <Typography.H2>{t(I18nKey.SETTINGS$TITLE)}</Typography.H2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 ml-1.5">
+            <SettingsIcon width={16} height={16} />
+            <Typography.H2>{t(I18nKey.SETTINGS$TITLE)}</Typography.H2>
+          </div>
+          {/* Close button - only visible on mobile */}
+          <button
+            type="button"
+            onClick={onCloseMobileMenu}
+            className="md:hidden p-2 hover:bg-[#454545] rounded-md transition-colors"
+            aria-label="Close navigation menu"
+          >
+            <CloseIcon width={20} height={20} />
+          </button>
         </div>
 
         <div className="flex flex-col gap-2">
