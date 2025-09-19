@@ -1,4 +1,5 @@
 import threading
+import traceback
 from typing import Optional
 
 import httpx
@@ -62,6 +63,11 @@ class BatchedWebHookFileStore(FileStore):
             batch_size_limit_bytes: Size limit in bytes after which a batch is sent.
                 If None, uses the default constant WEBHOOK_BATCH_SIZE_LIMIT_BYTES.
         """
+        logger.info(
+            f'BatchedWebHookFileStore __init__ called with filestore type {type(file_store)}'
+        )
+        stack = '\n'.join(traceback.format_stack())
+        logger.info('BatchedWebHookFileStore __init__ stack trace:\n%s', stack)
         self.file_store = file_store
         self.base_url = base_url
         if client is None:
@@ -89,6 +95,9 @@ class BatchedWebHookFileStore(FileStore):
             path: The path to write to
             contents: The contents to write
         """
+        logger.info(
+            f'BatchedWebHookFileStore write to {path} in filestore of type {type(self.file_store)}'
+        )
         self.file_store.write(path, contents)
         self._queue_update(path, 'write', contents)
 
