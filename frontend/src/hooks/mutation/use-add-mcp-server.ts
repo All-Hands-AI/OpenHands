@@ -10,6 +10,7 @@ interface MCPServerConfig {
   name?: string;
   url?: string;
   api_key?: string;
+  timeout?: number;
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -49,6 +50,7 @@ export function useAddMcpServer() {
         const shttpServer: MCPSHTTPServer = {
           url: server.url!,
           ...(server.api_key && { api_key: server.api_key }),
+          ...(server.timeout !== undefined && { timeout: server.timeout }),
         };
         newConfig.shttp_servers.push(shttpServer);
       }
