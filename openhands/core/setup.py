@@ -16,6 +16,7 @@ from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_S
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
+from openhands.events.stream import EventStreamABC
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
@@ -156,7 +157,7 @@ def initialize_repository_for_runtime(
 
 def create_memory(
     runtime: Runtime,
-    event_stream: EventStream,
+    event_stream: EventStreamABC,
     sid: str,
     selected_repository: str | None = None,
     repo_directory: str | None = None,
@@ -221,9 +222,7 @@ def create_controller(
         logger.debug(
             f'Trying to restore agent state from session {event_stream.sid} if available'
         )
-        initial_state = State.restore_from_session(
-            event_stream.sid, event_stream.file_store
-        )
+        initial_state = State.restore_from_session(event_stream)
     except Exception as e:
         logger.debug(f'Cannot restore agent state: {e}')
 

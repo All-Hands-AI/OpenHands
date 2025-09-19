@@ -12,9 +12,8 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStreamABC
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.storage.files import FileStore
 
 
 class StateTracker:
@@ -28,12 +27,8 @@ class StateTracker:
 
     """
 
-    def __init__(
-        self, sid: str | None, file_store: FileStore | None, user_id: str | None
-    ):
-        self.sid = sid
-        self.file_store = file_store
-        self.user_id = user_id
+    def __init__(self, event_stream: EventStreamABC):
+        self.event_stream = event_stream
 
         # filter out events that are not relevant to the agent
         # so they will not be included in the agent history
@@ -72,7 +67,7 @@ class StateTracker:
         if state is None:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
-                user_id=self.user_id,
+                user_id=self.event_stream.user_id,
                 inputs={},
                 conversation_stats=conversation_stats,
                 iteration_flag=IterationControlFlag(
@@ -101,7 +96,7 @@ class StateTracker:
 
             state.conversation_stats = conversation_stats
 
-    def _init_history(self, event_stream: EventStream) -> None:
+    def _init_history(self, event_stream: EventStreamABC) -> None:
         """Initializes the agent's history from the event stream.
 
         The history is a list of events that:
@@ -194,7 +189,7 @@ class StateTracker:
         # make sure history is in sync
         self.state.start_id = start_id
 
-    def close(self, event_stream: EventStream):
+    def close(self):
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.
         # history will need to be complete WITH delegates events
@@ -205,11 +200,11 @@ class StateTracker:
         end_id = (
             self.state.end_id
             if self.state.end_id >= 0
-            else event_stream.get_latest_event_id()
+            else self.event_stream.get_latest_event_id()
         )
 
         self.state.history = list(
-            event_stream.search_events(
+            self.event_stream.search_events(
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
@@ -245,8 +240,7 @@ class StateTracker:
 
     def save_state(self):
         """Save's current state to persistent store"""
-        if self.sid and self.file_store:
-            self.state.save_to_session(self.sid, self.file_store, self.user_id)
+        self.state.save_to_session(self.event_stream)
 
         if self.state.conversation_stats:
             self.state.conversation_stats.save_metrics()

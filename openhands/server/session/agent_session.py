@@ -5,8 +5,8 @@ from logging import LoggerAdapter
 from types import MappingProxyType
 from typing import Callable, cast
 
-from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.controller.agent_controller import AgentController
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
@@ -15,7 +15,7 @@ from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStream, EventStreamABC
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     PROVIDER_TOKEN_TYPE,
@@ -48,9 +48,10 @@ class AgentSession:
 
     sid: str
     user_id: str | None
-    event_stream: EventStream
+    event_stream: EventStreamABC
     llm_registry: LLMRegistry
     file_store: FileStore
+    # controller: AgentSdkController | None = None
     controller: AgentController | None = None
     runtime: Runtime | None = None
 
@@ -77,6 +78,8 @@ class AgentSession:
         - file_store: Instance of the FileStore
         """
         self.sid = sid
+        # Using new AgentSDK
+        # self.event_stream = AgentSdkEventStream()
         self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
@@ -424,6 +427,7 @@ class AgentSession:
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
+        # controller = AgentSdkController()
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -497,9 +501,7 @@ class AgentSession:
         # Use a heuristic to figure out if we should have a state:
         # if we have events in the stream.
         try:
-            restored_state = State.restore_from_session(
-                self.sid, self.file_store, self.user_id
-            )
+            restored_state = State.restore_from_session(self.event_stream)
             self.logger.debug(f'Restored state from session, sid: {self.sid}')
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
