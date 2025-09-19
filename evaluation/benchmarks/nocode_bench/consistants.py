@@ -119,7 +119,7 @@ PYLINT_CONFIG.update(
         k: {
             'conda_env': 'pylint_210',
             'pre_install': [
-                r"sed -i 's/setuptools==[0-9.]\+/setuptools>=78.1.1/' requirements_test_min.txt"
+                r"sed -i 's/setuptools==[0-9.]\+/setuptools==58.0.0/' requirements_test_min.txt"
             ],
             'install': 'pip install -r requirements_test.txt',
             'test_cmd': 'pytest -rA --color=no',
@@ -157,7 +157,7 @@ ASTROPY_CONFIG.update(
         k: {
             'conda_env': 'astropy_40',
             'pre_install': [
-                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools>=78.1.1",/' pyproject.toml"""
+                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools==68.0.0",/' pyproject.toml"""
             ],
             'install': 'python -m pip install -e .[test] --verbose',
             'test_cmd': 'pytest --color=no -rA',
@@ -170,9 +170,9 @@ ASTROPY_CONFIG.update(
         k: {
             'conda_env': 'astropy_41',
             'pre_install': [
-                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools>=78.1.1",/' pyproject.toml""",
+                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools==68.0.0",/' pyproject.toml""",
                 """sed -i 's/^qt_no_exception_capture = 1$/; qt_no_exception_capture = 1/' setup.cfg""",
-                r"""sed -i '/setuptools>=78.1.1",/a \    "markupsafe==2.0.1",' pyproject.tomlsed -i '/setuptools>=78.1.1",/a \    "markupsafe==2.0.1",' pyproject.toml""",
+                r"""sed -i '/setuptools==68.0.0",/a \    "markupsafe==2.0.1",' pyproject.tomlsed -i '/setuptools==68.0.0",/a \    "markupsafe==2.0.1",' pyproject.toml""",
             ],
             'install': 'python -m pip install -e .[test] --verbose',
             'test_cmd': 'pytest --color=no -rA',
@@ -185,8 +185,8 @@ ASTROPY_CONFIG.update(
         k: {
             'conda_env': 'astropy_42',
             'pre_install': [
-                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools>=78.1.1",/' pyproject.toml""",
-                r"""sed -i '/setuptools>=78.1.1",/a \    "markupsafe==2.0.1",' pyproject.tomlsed -i '/setuptools>=78.1.1",/a \    "markupsafe==2.0.1",' pyproject.toml""",
+                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools==68.0.0",/' pyproject.toml""",
+                r"""sed -i '/setuptools==68.0.0",/a \    "markupsafe==2.0.1",' pyproject.tomlsed -i '/setuptools==68.0.0",/a \    "markupsafe==2.0.1",' pyproject.toml""",
             ],
             'install': 'python -m pip install -e .[test] --verbose',
             'test_cmd': 'pytest --color=no -rA',
@@ -200,7 +200,7 @@ ASTROPY_CONFIG.update(
         k: {
             'conda_env': 'astropy_52',
             'pre_install': [
-                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools>=78.1.1",/' pyproject.toml"""
+                r"""sed -i 's/requires = \["setuptools",/requires = \["setuptools==68.0.0",/' pyproject.toml"""
             ],
             'install': 'python -m pip install -e .[test] --verbose',
             'test_cmd': 'pytest --color=no -rA',
