@@ -1,9 +1,11 @@
 import os
+import traceback
 from typing import Any, TypedDict
 
 import boto3
 import botocore
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 
 
@@ -37,6 +39,8 @@ class S3FileStore(FileStore):
         )
 
     def write(self, path: str, contents: str | bytes) -> None:
+        stack = '\n'.join(traceback.format_stack())
+        logger.debug('S3FileStore write stack trace:\n%s', stack)
         try:
             as_bytes = (
                 contents.encode('utf-8') if isinstance(contents, str) else contents
