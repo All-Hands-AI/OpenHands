@@ -27,10 +27,6 @@ vi.mock("#/state/status-store", () => ({
   },
 }));
 
-vi.mock("#/state/chat-slice", () => ({
-  addErrorMessage: vi.fn(),
-}));
-
 vi.mock("#/utils/error-handler", () => ({
   trackError: vi.fn(),
 }));
@@ -94,7 +90,7 @@ describe("handleStatusMessage", () => {
     expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });
 
-  it("should dispatch addErrorMessage for error messages", () => {
+  it("should call trackError for error messages", () => {
     // Create an error status message
     const statusMessage: StatusMessage = {
       status_update: true,
@@ -112,6 +108,9 @@ describe("handleStatusMessage", () => {
       source: "chat",
       metadata: { msgId: "ERROR_ID" },
     });
+
+    // Verify that store.dispatch was not called
+    expect(store.dispatch).not.toHaveBeenCalled();
 
     // Verify that queryClient.invalidateQueries was not called
     expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
