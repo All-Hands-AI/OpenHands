@@ -5,12 +5,14 @@ type ConversationTabNavProps = {
   icon: ComponentType<{ className: string }>;
   onClick(): void;
   isActive?: boolean;
+  "data-testid"?: string;
 };
 
 export function ConversationTabNav({
   icon: Icon,
   onClick,
   isActive,
+  "data-testid": dataTestId,
 }: ConversationTabNavProps) {
   return (
     <button
@@ -18,6 +20,7 @@ export function ConversationTabNav({
       onClick={() => {
         onClick();
       }}
+      data-testid={dataTestId}
       className={cn(
         "p-1 rounded-md cursor-pointer",
         "text-[#9299AA] bg-[#0D0F11]",

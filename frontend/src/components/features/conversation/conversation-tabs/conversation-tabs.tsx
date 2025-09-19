@@ -140,6 +140,10 @@ export function ConversationTabs() {
     },
   ];
 
+  // Debug logging to help troubleshoot tab visibility
+  console.log("ConversationTabs: Rendering", tabs.length, "tabs");
+  console.log("ConversationTabs: Tasks tab config:", tabs[tabs.length - 1]);
+
   return (
     <div
       className={cn(
@@ -161,6 +165,7 @@ export function ConversationTabs() {
               icon={icon}
               onClick={onClick}
               isActive={isActive}
+              data-testid={index === tabs.length - 1 ? "tasks-tab" : undefined}
             />
           </ChatActionTooltip>
         ),
