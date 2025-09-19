@@ -65,7 +65,7 @@ pygithub = "^2.5.0"
 joblib = "*"
 openhands-aci = "0.3.2"
 python-socketio = "^5.11.4"
-sse-starlette = "^2.1.3"
+sse-starlette = "^3.0.2"
 psutil = "*"
 python-json-logger = "^3.2.1"
 prompt-toolkit = "^3.0.50"
@@ -83,6 +83,13 @@ python-pptx = "*"
 pylatexenc = "*"
 python-docx = "*"
 bashlex = "^0.18"
+
+# Explicitly pinned packages for latest versions
+pypdf = "^6.0.0"
+pillow = "^11.3.0"
+starlette = "^0.48.0"
+urllib3 = "^2.5.0"
+requests = "^2.32.5"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"

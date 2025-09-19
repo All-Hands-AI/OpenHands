@@ -2,7 +2,6 @@ from experiments.constants import (
     ENABLE_EXPERIMENT_MANAGER,
 )
 from experiments.experiment_versions import (
-    handle_claude4_vs_gpt5_experiment,
     handle_condenser_max_step_experiment,
     handle_system_prompt_experiment,
 )
@@ -44,9 +43,6 @@ class SaaSExperimentManager(ExperimentManager):
             return conversation_settings
 
         # Apply conversation-scoped experiments
-        conversation_settings = handle_claude4_vs_gpt5_experiment(
-            user_id, conversation_id, conversation_settings
-        )
         conversation_settings = handle_condenser_max_step_experiment(
             user_id, conversation_id, conversation_settings
         )
