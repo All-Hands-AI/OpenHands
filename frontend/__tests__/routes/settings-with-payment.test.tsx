@@ -136,7 +136,7 @@ describe("Settings Billing", () => {
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    within(navbar).getByText("Billing");
+    within(navbar).getByText("Credits");
   });
 
   it("should render the billing settings if clicking the billing item", async () => {
@@ -160,7 +160,7 @@ describe("Settings Billing", () => {
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
-    const credits = within(navbar).getByText("Billing");
+    const credits = within(navbar).getByText("Credits");
     await user.click(credits);
 
     const billingSection = await screen.findByTestId("billing-settings");
