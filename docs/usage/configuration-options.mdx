@@ -8,6 +8,11 @@ description: This page outlines all available configuration options for OpenHand
    In GUI Mode, any settings applied through the Settings UI will take precedence.
 </Note>
 
+<Note>
+   **Looking for Environment Variables?** All configuration options can also be set using environment variables. 
+   See the [Environment Variables Reference](./environment-variables) for a complete list with examples.
+</Note>
+
 ## Location of the `config.toml` File
 
 When running OpenHands in CLI, headless, or development mode, you can use a project-specific `config.toml` file for configuration, which must be
@@ -17,6 +22,11 @@ specify a different path to the `config.toml` file.
 ## Core Configuration
 
 The core configuration options are defined in the `[core]` section of the `config.toml` file.
+
+Core configuration options can be set as environment variables by converting to uppercase. For example:
+- `debug` → `DEBUG`
+- `cache_dir` → `CACHE_DIR`
+- `runtime` → `RUNTIME`
 
 ### Workspace
 - `workspace_base` **(Deprecated)**
@@ -140,6 +150,11 @@ The core configuration options are defined in the `[core]` section of the `confi
 The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
 
 To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
+
+All LLM configuration options can be set as environment variables by prefixing with `LLM_` and converting to uppercase. For example:
+- `model` → `LLM_MODEL`
+- `api_key` → `LLM_API_KEY`
+- `base_url` → `LLM_BASE_URL`
 
 <Note>
 For development setups, you can also define custom named LLM configurations. See [Custom LLM Configurations](./llms/custom-llm-configs) for details.
@@ -277,6 +292,11 @@ For development setups, you can also define custom named LLM configurations. See
 
 The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
 
+Agent configuration options can be set as environment variables by prefixing with `AGENT_` and converting to uppercase. For example:
+- `enable_browsing` → `AGENT_ENABLE_BROWSING`
+- `function_calling` → `AGENT_FUNCTION_CALLING`
+- `llm_config` → `AGENT_LLM_CONFIG`
+
 ### LLM Configuration
 - `llm_config`
   - Type: `str`
@@ -327,6 +347,11 @@ The sandbox configuration options are defined in the `[sandbox]` section of the 
 
 
 To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-e SANDBOX_TIMEOUT`.
+
+All sandbox configuration options can be set as environment variables by prefixing with `SANDBOX_` and converting to uppercase. For example:
+- `timeout` → `SANDBOX_TIMEOUT`
+- `user_id` → `SANDBOX_USER_ID`
+- `base_container_image` → `SANDBOX_BASE_CONTAINER_IMAGE`
 
 ### Execution
 - `timeout`
@@ -389,6 +414,10 @@ To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-
 The security configuration options are defined in the `[security]` section of the `config.toml` file.
 
 To use these with the docker command, pass in `-e SECURITY_<option>`. Example: `-e SECURITY_CONFIRMATION_MODE`.
+
+All security configuration options can be set as environment variables by prefixing with `SECURITY_` and converting to uppercase. For example:
+- `confirmation_mode` → `SECURITY_CONFIRMATION_MODE`
+- `security_analyzer` → `SECURITY_SECURITY_ANALYZER`
 
 ### Confirmation Mode
 - `confirmation_mode`

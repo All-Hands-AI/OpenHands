@@ -29,6 +29,11 @@ export const SAAS_NAV_ITEMS: SettingsNavItem[] = [
     text: "SETTINGS$NAV_APPLICATION",
   },
   {
+    icon: <CircuitIcon width={22} height={22} />,
+    to: "/settings",
+    text: "COMMON$LANGUAGE_MODEL_LLM",
+  },
+  {
     icon: <CreditCardIcon width={22} height={22} />,
     to: "/settings/billing",
     text: "SETTINGS$NAV_CREDITS",

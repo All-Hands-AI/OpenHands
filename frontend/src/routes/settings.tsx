@@ -7,6 +7,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
+import { ProPill } from "#/components/features/settings/pro-pill";
 import { GetConfigResponse } from "#/api/option-service/option.types";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { SAAS_NAV_ITEMS, OSS_NAV_ITEMS } from "#/constants/settings-nav";
@@ -32,11 +33,6 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
   }
 
   const isSaas = config?.APP_MODE === "saas";
-
-  if (isSaas && pathname === "/settings") {
-    // no llm settings in saas mode, so redirect to user settings
-    return redirect("/settings/user");
-  }
 
   if (!isSaas && SAAS_ONLY_PATHS.includes(pathname)) {
     // if in OSS mode, do not allow access to saas-only paths
@@ -104,6 +100,7 @@ function SettingsScreen() {
                 <Typography.Text className="text-[#A3A3A3]">
                   {t(text)}
                 </Typography.Text>
+                {isSaas && to === "/settings" && <ProPill className="ml-2" />}
               </NavLink>
             ))}
           </div>
