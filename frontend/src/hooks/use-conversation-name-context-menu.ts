@@ -2,13 +2,12 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams, useNavigate } from "react-router";
-import { useSelector } from "react-redux";
 import { useWsClient } from "#/context/ws-client-provider";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
-import { RootState } from "#/store";
+import useMetricsStore from "#/stores/metrics-store";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useDeleteConversation } from "./mutation/use-delete-conversation";
 import { useStopConversation } from "./mutation/use-stop-conversation";
 import { useGetTrajectory } from "./mutation/use-get-trajectory";
@@ -36,7 +35,7 @@ export function useConversationNameContextMenu({
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
   const { mutate: getTrajectory } = useGetTrajectory();
-  const metrics = useSelector((state: RootState) => state.metrics);
+  const metrics = useMetricsStore();
 
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
@@ -129,7 +128,7 @@ export function useConversationNameContextMenu({
     // Fetch the VS Code URL from the API
     if (conversationId) {
       try {
-        const data = await OpenHands.getVSCodeUrl(conversationId);
+        const data = await ConversationService.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {

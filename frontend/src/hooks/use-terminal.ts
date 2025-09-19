@@ -2,25 +2,17 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { useSelector } from "react-redux";
-import { Command } from "#/state/command-slice";
-import { RootState } from "#/store";
+import { Command, useCommandStore } from "#/state/command-store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { RootState } from "#/store";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
   The reason for this is that the hook exposes a ref that requires a DOM element to be rendered.
 */
-
-interface UseTerminalConfig {
-  commands: Command[];
-}
-
-const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
-  commands: [],
-};
 
 const renderCommand = (
   command: Command,
@@ -44,11 +36,10 @@ const renderCommand = (
 // This ensures terminal history is preserved when navigating away and back
 const persistentLastCommandIndex = { current: 0 };
 
-export const useTerminal = ({
-  commands,
-}: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
+export const useTerminal = () => {
   const { send } = useWsClient();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const commands = useCommandStore((state) => state.commands);
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
