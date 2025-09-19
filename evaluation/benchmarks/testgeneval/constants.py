@@ -93,7 +93,7 @@ SPECS_FLASK = {
         'packages': 'requirements.txt',
         'install': 'python -m pip install -e .',
         'pip_packages': [
-            'setuptools==70.0.0',
+            'setuptools>=78.1.1',
             'Werkzeug==2.3.7',
             'Jinja2==3.0.1',
             'itsdangerous==2.1.2',
@@ -324,7 +324,7 @@ SPECS_PYTEST['4.4']['pip_packages'] = [
     'more-itertools==10.1.0',
     'pluggy==0.13.1',
     'py==1.11.0',
-    'setuptools==68.0.0',
+    'setuptools>=78.1.1',
     'six==1.16.0',
 ]
 SPECS_PYTEST['4.5']['pip_packages'] = [
@@ -333,7 +333,7 @@ SPECS_PYTEST['4.5']['pip_packages'] = [
     'more-itertools==10.1.0',
     'pluggy==0.11.0',
     'py==1.11.0',
-    'setuptools==68.0.0',
+    'setuptools>=78.1.1',
     'six==1.16.0',
     'wcwidth==0.2.6',
 ]
@@ -436,7 +436,7 @@ SPECS_MATPLOTLIB = {
             'pyparsing==3.0.9',
             'python-dateutil==2.8.2',
             'six==1.16.0',
-            'setuptools==68.1.2',
+            'setuptools>=78.1.1',
             'setuptools-scm==7.1.0',
             'typing-extensions==4.7.1',
         ],
@@ -579,7 +579,7 @@ SPECS_ASTROPY = {
             'pytest-xdist==3.3.1',
             'pytest==7.4.0',
             'PyYAML==6.0.1',
-            'setuptools==68.0.0',
+            'setuptools>=78.1.1',
             'sortedcontainers==2.4.0',
             'tomli==2.0.1',
         ],
@@ -592,7 +592,7 @@ SPECS_ASTROPY.update(
         k: {
             'python': '3.6',
             'install': 'python -m pip install -e .[test] --verbose',
-            'packages': 'setuptools==38.2.4',
+            'packages': 'setuptools>=78.1.1',
             'pip_packages': [
                 'attrs==17.3.0',
                 'exceptiongroup==0.0.0a0',
@@ -629,7 +629,7 @@ SPECS_ASTROPY.update(
 )
 for k in ['4.1', '4.2', '4.3', '5.0', '5.1', '5.2', 'v5.3']:
     SPECS_ASTROPY[k]['pre_install'] = [
-        'sed -i \'s/requires = \\["setuptools",/requires = \\["setuptools==68.0.0",/\' pyproject.toml'
+        'sed -i \'s/requires = \\["setuptools",/requires = \\["setuptools>=78.1.1",/\' pyproject.toml'
     ]
 for k in ['v5.3']:
     SPECS_ASTROPY[k]['python'] = '3.10'
@@ -713,7 +713,7 @@ SPECS_XARRAY = {
             'pytz==2023.3',
             'six==1.16.0',
             'scipy==1.11.1',
-            'setuptools==68.0.0',
+            'setuptools>=78.1.1',
             'dask==2022.8.1',
         ],
         'no_use_env': True,

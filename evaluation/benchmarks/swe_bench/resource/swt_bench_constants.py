@@ -32,7 +32,7 @@ MAP_VERSION_TO_INSTALL_FLASK = {
         'packages': 'requirements.txt',
         'install': 'python -m pip install -e .',
         'pip_packages': [
-            'setuptools==70.0.0',
+            'setuptools>=78.1.1',
             'Werkzeug==2.3.7',
             'Jinja2==3.0.1',
             'itsdangerous==2.1.2',
@@ -231,7 +231,7 @@ MAP_VERSION_TO_INSTALL_PYTEST['4.4']['pip_packages'] = [
     'more-itertools==10.1.0',
     'pluggy==0.13.1',
     'py==1.11.0',
-    'setuptools==68.0.0',
+    'setuptools>=78.1.1',
     'six==1.16.0',
 ]
 MAP_VERSION_TO_INSTALL_PYTEST['4.5']['pip_packages'] = [
@@ -240,7 +240,7 @@ MAP_VERSION_TO_INSTALL_PYTEST['4.5']['pip_packages'] = [
     'more-itertools==10.1.0',
     'pluggy==0.11.0',
     'py==1.11.0',
-    'setuptools==68.0.0',
+    'setuptools>=78.1.1',
     'six==1.16.0',
     'wcwidth==0.2.6',
 ]
@@ -348,7 +348,7 @@ MAP_VERSION_TO_INSTALL_MATPLOTLIB = {
             'pyparsing==3.0.9',
             'python-dateutil==2.8.2',
             'six==1.16.0',
-            'setuptools==68.1.2',
+            'setuptools>=78.1.1',
             'setuptools-scm==7.1.0',
             'typing-extensions==4.7.1',
         ],
@@ -478,7 +478,7 @@ MAP_VERSION_TO_INSTALL_ASTROPY = {
             'pytest-xdist==3.3.1',
             'pytest==7.4.0',
             'PyYAML==6.0.1',
-            'setuptools==68.0.0',
+            'setuptools>=78.1.1',
             'sortedcontainers==2.4.0',
             'tomli==2.0.1',
         ],
@@ -488,7 +488,7 @@ MAP_VERSION_TO_INSTALL_ASTROPY = {
 }
 for k in ['4.1', '4.2', '4.3', '5.0', '5.1', '5.2']:
     MAP_VERSION_TO_INSTALL_ASTROPY[k]['pre_install'] = [
-        'sed -i \'s/requires = \\["setuptools",/requires = \\["setuptools==68.0.0",/\' pyproject.toml'
+        'sed -i \'s/requires = \\["setuptools",/requires = \\["setuptools>=78.1.1",/\' pyproject.toml'
     ]
 MAP_VERSION_TO_INSTALL_SYMPY = {
     k: {
@@ -558,7 +558,7 @@ MAP_VERSION_TO_INSTALL_XARRAY = {
             'pytz==2023.3',
             'six==1.16.0',
             'scipy==1.11.1',
-            'setuptools==68.0.0',
+            'setuptools>=78.1.1',
         ],
         'no_use_env': True,
     }
