@@ -5,6 +5,8 @@ from openhands.sdk.preset.default import AgentSpec
 from openhands_cli.locations import AGENT_SPEC_PATH, WORKING_DIR
 from prompt_toolkit import HTML, print_formatted_text
 
+from openhands.sdk import LLM
+
 class AgentSpecStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
     def __init__(self) -> None:
@@ -21,6 +23,6 @@ class AgentSpecStore:
             return None
 
     def save(self, spec: AgentSpec) -> None:
-        self.file_store.write(AGENT_SPEC_PATH, spec.model_dump_json())
-
+        serialized_spec = spec.model_dump_json(context={"expose_secrets": True})
+        self.file_store.write(AGENT_SPEC_PATH, serialized_spec)
 
