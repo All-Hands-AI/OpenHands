@@ -215,6 +215,9 @@ class EventStream(EventStore):
         end = start + self.cache_size
         contents = json.dumps(current_write_page)
         cache_filename = self._get_filename_for_cache(start, end)
+        logger.info(
+            f'writing event cache to {cache_filename} in file store of type {type(self.file_store)}'
+        )
         self.file_store.write(cache_filename, contents)
 
     def set_secrets(self, secrets: dict[str, str]) -> None:
