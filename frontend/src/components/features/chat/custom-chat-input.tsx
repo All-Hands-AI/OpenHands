@@ -117,7 +117,6 @@ export function CustomChatInput({
     },
     [dispatch],
   );
-
   return (
     <div className={`w-full ${className}`}>
       {/* Hidden file input */}
