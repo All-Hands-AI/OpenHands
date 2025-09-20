@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
-import { useSelector } from "react-redux";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -8,20 +7,15 @@ import { code } from "../markdown/code";
 import { ul, ol } from "../markdown/list";
 import { paragraph } from "../markdown/paragraph";
 import { anchor } from "../markdown/anchor";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { useRepositoryMicroagentContent } from "#/hooks/query/use-repository-microagent-content";
 import { I18nKey } from "#/i18n/declaration";
 import { extractRepositoryInfo } from "#/utils/utils";
 
 export function MicroagentManagementViewMicroagentContent() {
   const { t } = useTranslation();
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedMicroagentItem, selectedRepository } =
+    useMicroagentManagementStore();
 
   const { microagent } = selectedMicroagentItem ?? {};
 

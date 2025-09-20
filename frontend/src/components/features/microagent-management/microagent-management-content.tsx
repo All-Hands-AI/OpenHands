@@ -1,15 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
 import { MicroagentManagementUpsertMicroagentModal } from "./microagent-management-upsert-microagent-modal";
-import { RootState } from "#/store";
-import {
-  setAddMicroagentModalVisible,
-  setUpdateMicroagentModalVisible,
-  setLearnThisRepoModalVisible,
-} from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
 import {
   LearnThisRepoFormData,
@@ -106,13 +100,14 @@ export function MicroagentManagementContent() {
     updateMicroagentModalVisible,
     selectedRepository,
     learnThisRepoModalVisible,
-  } = useSelector((state: RootState) => state.microagentManagement);
+    setAddMicroagentModalVisible,
+    setUpdateMicroagentModalVisible,
+    setLearnThisRepoModalVisible,
+  } = useMicroagentManagementStore();
 
   const { providers } = useUserProviders();
 
   const { t } = useTranslation();
-
-  const dispatch = useDispatch();
 
   const { createConversationAndSubscribe, isPending } =
     useCreateConversationAndSubscribeMultiple();
@@ -130,9 +125,9 @@ export function MicroagentManagementContent() {
 
   const hideUpsertMicroagentModal = (isUpdate: boolean = false) => {
     if (isUpdate) {
-      dispatch(setUpdateMicroagentModalVisible(false));
+      setUpdateMicroagentModalVisible(false);
     } else {
-      dispatch(setAddMicroagentModalVisible(false));
+      setAddMicroagentModalVisible(false);
     }
   };
 
@@ -264,7 +259,7 @@ export function MicroagentManagementContent() {
   };
 
   const hideLearnThisRepoModal = () => {
-    dispatch(setLearnThisRepoModalVisible(false));
+    setLearnThisRepoModalVisible(false);
   };
 
   const handleLearnThisRepoConfirm = (formData: LearnThisRepoFormData) => {

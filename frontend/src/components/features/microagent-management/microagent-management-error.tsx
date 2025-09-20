@@ -1,16 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "../settings/brand-button";
 import { Loader } from "#/components/shared/loader";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 
 export function MicroagentManagementError() {
   const { t } = useTranslation();
 
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedMicroagentItem } = useMicroagentManagementStore();
 
   const { conversation } = selectedMicroagentItem ?? {};
 

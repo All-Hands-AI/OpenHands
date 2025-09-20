@@ -1,14 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Spinner } from "@heroui/react";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
 import { useMicroagentManagementConversations } from "#/hooks/query/use-microagent-management-conversations";
 import { GitRepository } from "#/types/git";
-import { RootState } from "#/store";
-import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -19,11 +17,8 @@ interface MicroagentManagementRepoMicroagentsProps {
 export function MicroagentManagementRepoMicroagents({
   repository,
 }: MicroagentManagementRepoMicroagentsProps) {
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const dispatch = useDispatch();
+  const { selectedMicroagentItem, setSelectedMicroagentItem } =
+    useMicroagentManagementStore();
 
   const { t } = useTranslation();
 
@@ -60,26 +55,22 @@ export function MicroagentManagementRepoMicroagents({
           conversation.conversation_id === selectedConversation.conversation_id,
       );
       if (latestSelectedConversation) {
-        dispatch(
-          setSelectedMicroagentItem({
-            microagent: null,
-            conversation: latestSelectedConversation,
-          }),
-        );
+        setSelectedMicroagentItem({
+          microagent: undefined,
+          conversation: latestSelectedConversation,
+        });
       }
     }
   }, [conversations]);
 
   useEffect(
     () => () => {
-      dispatch(
-        setSelectedMicroagentItem({
-          microagent: null,
-          conversation: null,
-        }),
-      );
+      setSelectedMicroagentItem({
+        microagent: undefined,
+        conversation: undefined,
+      });
     },
-    [],
+    [setSelectedMicroagentItem],
   );
 
   // Show loading only when both queries are loading

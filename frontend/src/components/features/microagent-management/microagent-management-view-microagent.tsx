@@ -1,16 +1,10 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { MicroagentManagementViewMicroagentHeader } from "./microagent-management-view-microagent-header";
 import { MicroagentManagementViewMicroagentContent } from "./microagent-management-view-microagent-content";
 
 export function MicroagentManagementViewMicroagent() {
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedMicroagentItem, selectedRepository } =
+    useMicroagentManagementStore();
 
   const { microagent } = selectedMicroagentItem ?? {};
 

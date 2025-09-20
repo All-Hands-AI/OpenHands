@@ -1,5 +1,4 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { MicroagentManagementDefault } from "./microagent-management-default";
 import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
 import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
@@ -8,9 +7,7 @@ import { MicroagentManagementError } from "./microagent-management-error";
 import { MicroagentManagementConversationStopped } from "./microagent-management-conversation-stopped";
 
 export function MicroagentManagementMain() {
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedMicroagentItem } = useMicroagentManagementStore();
 
   const { microagent, conversation } = selectedMicroagentItem ?? {};
 

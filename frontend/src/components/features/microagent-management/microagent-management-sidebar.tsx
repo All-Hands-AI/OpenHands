@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
@@ -7,11 +6,7 @@ import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { GitProviderDropdown } from "#/components/features/home/git-provider-dropdown";
-import {
-  setPersonalRepositories,
-  setOrganizationRepositories,
-  setRepositories,
-} from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { GitRepository } from "#/types/git";
 import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
@@ -35,7 +30,11 @@ export function MicroagentManagementSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const dispatch = useDispatch();
+  const {
+    setPersonalRepositories,
+    setOrganizationRepositories,
+    setRepositories,
+  } = useMicroagentManagementStore();
 
   const { t } = useTranslation();
 
@@ -96,9 +95,9 @@ export function MicroagentManagementSidebar({
 
   useEffect(() => {
     if (!filteredRepositories?.length) {
-      dispatch(setPersonalRepositories([]));
-      dispatch(setOrganizationRepositories([]));
-      dispatch(setRepositories([]));
+      setPersonalRepositories([]);
+      setOrganizationRepositories([]);
+      setRepositories([]);
       return;
     }
 
@@ -121,10 +120,16 @@ export function MicroagentManagementSidebar({
       }
     });
 
-    dispatch(setPersonalRepositories(personalRepos));
-    dispatch(setOrganizationRepositories(organizationRepos));
-    dispatch(setRepositories(otherRepos));
-  }, [filteredRepositories, selectedProvider, dispatch]);
+    setPersonalRepositories(personalRepos);
+    setOrganizationRepositories(organizationRepos);
+    setRepositories(otherRepos);
+  }, [
+    filteredRepositories,
+    selectedProvider,
+    setPersonalRepositories,
+    setOrganizationRepositories,
+    setRepositories,
+  ]);
 
   // Handle scroll to bottom for pagination
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {

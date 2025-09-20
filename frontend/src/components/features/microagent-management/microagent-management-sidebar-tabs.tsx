@@ -1,9 +1,8 @@
 import { Tab, Tabs } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { MicroagentManagementRepositories } from "./microagent-management-repositories";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 
 interface MicroagentManagementSidebarTabsProps {
   isSearchLoading?: boolean;
@@ -15,7 +14,7 @@ export function MicroagentManagementSidebarTabs({
   const { t } = useTranslation();
 
   const { repositories, personalRepositories, organizationRepositories } =
-    useSelector((state: RootState) => state.microagentManagement);
+    useMicroagentManagementStore();
 
   return (
     <div className="flex w-full flex-col">

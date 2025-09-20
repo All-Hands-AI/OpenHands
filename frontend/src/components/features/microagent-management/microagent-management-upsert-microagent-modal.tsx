@@ -1,12 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { FaCircleInfo } from "react-icons/fa6";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import XIcon from "#/icons/x.svg?react";
 import { cn, extractRepositoryInfo } from "#/utils/utils";
 import { BadgeInput } from "#/components/shared/inputs/badge-input";
@@ -32,13 +31,8 @@ export function MicroagentManagementUpsertMicroagentModal({
   const [triggers, setTriggers] = useState<string[]>([]);
   const [query, setQuery] = useState<string>("");
 
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedRepository, selectedMicroagentItem } =
+    useMicroagentManagementStore();
 
   const { microagent } = selectedMicroagentItem ?? {};
 
