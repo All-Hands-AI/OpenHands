@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
-import { jupyterReducer } from "#/state/jupyter-slice";
-import { vi, describe, it, expect } from "vitest";
+import { useJupyterStore } from "#/state/jupyter-store";
+import { vi, describe, it, expect, beforeEach } from "vitest";
 
 describe("JupyterEditor", () => {
   const mockStore = configureStore({
@@ -15,19 +15,20 @@ describe("JupyterEditor", () => {
       code: () => ({}),
       cmd: () => ({}),
       agent: () => ({}),
-      jupyter: jupyterReducer,
       securityAnalyzer: () => ({}),
       status: () => ({}),
     },
-    preloadedState: {
-      jupyter: {
-        cells: Array(20).fill({
-          content: "Test cell content",
-          type: "input",
-          output: "Test output",
-        }),
-      },
-    },
+  });
+
+  beforeEach(() => {
+    // Reset the Zustand store before each test
+    useJupyterStore.setState({
+      cells: Array(20).fill({
+        content: "Test cell content",
+        type: "input",
+        imageUrls: undefined,
+      }),
+    });
   });
 
   it("should have a scrollable container", () => {
@@ -36,7 +37,7 @@ describe("JupyterEditor", () => {
         <div style={{ height: "100vh" }}>
           <JupyterEditor maxWidth={800} />
         </div>
-      </Provider>
+      </Provider>,
     );
 
     const container = screen.getByTestId("jupyter-container");

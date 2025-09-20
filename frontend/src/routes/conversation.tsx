@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import { clearJupyter } from "#/state/jupyter-slice";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { resetConversationState } from "#/state/conversation-slice";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
@@ -85,14 +85,14 @@ function AppContent() {
 
   React.useEffect(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    useJupyterStore.getState().clearJupyter();
     dispatch(resetConversationState());
     dispatch(setCurrentAgentState(AgentState.LOADING));
   }, [conversationId, clearTerminal]);
 
   useEffectOnce(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    useJupyterStore.getState().clearJupyter();
     dispatch(resetConversationState());
     dispatch(setCurrentAgentState(AgentState.LOADING));
   });

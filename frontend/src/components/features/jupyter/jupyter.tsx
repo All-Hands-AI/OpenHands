@@ -9,13 +9,14 @@ import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { I18nKey } from "#/i18n/declaration";
 import JupyterLargeIcon from "#/icons/jupyter-large.svg?react";
 import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
+import { useJupyterStore } from "#/state/jupyter-store";
 
 interface JupyterEditorProps {
   maxWidth: number;
 }
 
 export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
-  const cells = useSelector((state: RootState) => state.jupyter?.cells ?? []);
+  const cells = useJupyterStore((state) => state.cells);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const jupyterRef = React.useRef<HTMLDivElement>(null);
