@@ -128,7 +128,7 @@ jobs:
       - name: Install dependencies
         working-directory: ./openhands-cli
         run: |
-          uv sync --extra dev
+          uv sync --group dev
 
       - name: Run CLI unit tests
         working-directory: ./openhands-cli

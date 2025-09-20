@@ -33,26 +33,33 @@ class TestConfirmationMode:
         """Test that setup_agent creates a conversation successfully."""
         with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
             with (
-                patch('openhands_cli.setup.LLM') as mock_llm_class,
-                patch('openhands_cli.setup.Agent'),
-                patch('openhands_cli.setup.Conversation') as mock_conversation,
-                patch('openhands_cli.setup.BashExecutor'),
-                patch('openhands_cli.setup.FileEditorExecutor'),
+                patch('openhands_cli.setup.Agent') as mock_agent_class,
+                patch('openhands_cli.setup.Conversation') as mock_conversation_class,
+                patch('openhands_cli.setup.AgentSpecStore') as mock_spec_store_class,
             ):
-                # Mock LLM.load_from_json to return a mock LLM instance
-                mock_llm_instance = MagicMock()
-                mock_llm_instance.model = 'test-model'
-                mock_llm_class.load_from_json.return_value = mock_llm_instance
-                
-                mock_conv_instance = MagicMock()
-                mock_conversation.return_value = mock_conv_instance
+                # Mock AgentSpecStore
+                mock_spec_store_instance = MagicMock()
+                mock_spec = MagicMock()
+                mock_spec_store_instance.load.return_value = mock_spec
+                mock_spec_store_class.return_value = mock_spec_store_instance
+
+                # Mock Agent.from_spec to return a mock agent
+                mock_agent_instance = MagicMock()
+                mock_agent_instance.llm.model = 'test-model'
+                mock_agent_class.from_spec.return_value = mock_agent_instance
+
+                # Mock Conversation constructor to return a mock conversation
+                mock_conversation_instance = MagicMock()
+                mock_conversation_class.return_value = mock_conversation_instance
 
                 result = setup_agent()
 
                 # Verify conversation was created and returned
-                assert result == mock_conv_instance
-                mock_conversation.assert_called_once()
-                mock_llm_class.load_from_json.assert_called_once()
+                assert result == mock_conversation_instance
+                mock_spec_store_class.assert_called_once()
+                mock_spec_store_instance.load.assert_called_once()
+                mock_agent_class.from_spec.assert_called_once_with(mock_spec)
+                mock_conversation_class.assert_called_once_with(agent=mock_agent_instance)
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
         """Test that ConversationRunner can set confirmation mode."""
