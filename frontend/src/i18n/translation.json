@@ -14558,5 +14558,21 @@
     "tr": "Jupyter defteriniz boş. Gösterilecek hücre yok.",
     "de": "Ihr Jupyter-Notebook ist leer. Keine Zellen zum Anzeigen.",
     "uk": "Ваш Jupyter-ноутбук порожній. Немає клітинок для відображення."
+  },
+  "COMMON$CONFIRMATION_MODE_ENABLED": {
+    "en": "Confirmation mode enabled",
+    "ja": "確認モードが有効になっています",
+    "zh-CN": "已启用确认模式",
+    "zh-TW": "已啟用確認模式",
+    "ko-KR": "확인 모드가 활성화되었습니다",
+    "no": "Bekreftelsesmodus aktivert",
+    "it": "Modalità di conferma abilitata",
+    "pt": "Modo de confirmação ativado",
+    "es": "Modo de confirmación activado",
+    "ar": "تم تفعيل وضع التأكيد",
+    "fr": "Mode de confirmation activé",
+    "tr": "Onay modu etkinleştirildi",
+    "de": "Bestätigungsmodus aktiviert",
+    "uk": "Режим підтвердження увімкнено"
   }
 }
