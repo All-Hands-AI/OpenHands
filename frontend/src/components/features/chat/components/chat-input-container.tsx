@@ -52,8 +52,9 @@ export function ChatInputContainer({
 }: ChatInputContainerProps) {
   return (
     <div
+      // added mt-6 for better spacing between last message and chat box
       ref={chatContainerRef}
-      className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
+      className="bg-[#25272D]   box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 mt-6 relative rounded-[15px] w-full"
       onDragOver={(e) => onDragOver(e, disabled)}
       onDragLeave={(e) => onDragLeave(e, disabled)}
       onDrop={(e) => onDrop(e, disabled)}
