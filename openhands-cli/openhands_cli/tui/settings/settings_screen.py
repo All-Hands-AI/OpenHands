@@ -14,8 +14,8 @@ from openhands_cli.user_actions.settings_action import (
 )
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk import Conversation, LLM, LocalFileStore
-from openhands.sdk.preset.default import get_default_agent_spec
+from openhands.sdk import Conversation, LLM, LocalFileStore, Agent
+from openhands.sdk.preset.default import get_default_agent
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -165,16 +165,16 @@ class SettingsScreen:
             base_url=base_url
         )
 
-        agent_spec = self.spec_store.load()
-        if not agent_spec:
-            agent_spec = get_default_agent_spec(
+        agent = self.spec_store.load()
+        if not agent:
+            agent = get_default_agent(
                 llm=llm,
                 working_dir=WORKING_DIR,
                 cli_mode=True
             )
 
-        agent_spec.llm = llm
-        self.spec_store.save(agent_spec)
+        agent = agent.model_copy(update={"llm": llm})
+        self.spec_store.save(agent)
 
 
     def _save_advanced_settings(
@@ -196,7 +196,7 @@ class SettingsScreen:
 
 
         if not memory_condensation:
-            agent_spec.condenser = None
+            agent_spec.model_copy(update={"condenser": None})
 
         self.spec_store.save(agent_spec)
 

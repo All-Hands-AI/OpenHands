@@ -13,12 +13,12 @@ import subprocess
 import sys
 from pathlib import Path
 from openhands_cli.locations import WORKING_DIR, AGENT_SPEC_PATH
-from openhands.sdk.preset.default import get_default_agent_spec
+from openhands.sdk.preset.default import get_default_agent
 from openhands.sdk import LLM
 import time
 import select
 
-dummy_agent_specs = get_default_agent_spec(
+dummy_agent_specs = get_default_agent(
     llm=LLM(model='dummy-model', api_key='dummy-key'),
     working_dir=WORKING_DIR,
     cli_mode=True

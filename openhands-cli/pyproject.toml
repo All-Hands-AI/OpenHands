@@ -84,7 +84,7 @@ ignore_missing_imports = true
 # Ruff 0.11+ layout
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "db47ec822cb7159f1dc068acfb7c870e35ebfdc1" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "db47ec822cb7159f1dc068acfb7c870e35ebfdc1" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "1e317a910380faec1dd7e101e3386f116c40f244" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "1e317a910380faec1dd7e101e3386f116c40f244" }
 
 # --- Tooling configuration ---
