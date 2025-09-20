@@ -55,6 +55,7 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 from openhands.utils.utils import create_registry_and_conversation_stats
+from openhands.utils.http_session import httpx_verify_option
 
 # Pattern for accessing runtime pods externally
 RUNTIME_URL_PATTERN = os.getenv(
@@ -266,6 +267,7 @@ class SaasNestedConversationManager(ConversationManager):
     ):
         logger.info('starting_nested_conversation', extra={'sid': sid})
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': session_api_key,
             }
@@ -484,6 +486,7 @@ class SaasNestedConversationManager(ConversationManager):
             raise ValueError(f'no_such_conversation:{sid}')
         nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': runtime['session_api_key'],
             }
@@ -551,6 +554,7 @@ class SaasNestedConversationManager(ConversationManager):
                 return None
 
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': session_api_key,
                 }
@@ -828,6 +832,7 @@ class SaasNestedConversationManager(ConversationManager):
     @contextlib.asynccontextmanager
     async def _httpx_client(self):
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={'X-API-Key': self.config.sandbox.api_key or ''},
             timeout=_HTTP_TIMEOUT,
         ) as client:

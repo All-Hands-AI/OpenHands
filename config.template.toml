@@ -49,6 +49,9 @@
 # Enable the browser environment
 #enable_browser = true
 
+# Skip TLS certificate verification for outbound HTTP requests (NOT recommended)
+#insecure_skip_verify = false
+
 # Maximum budget per task, 0.0 means no limit
 #max_budget_per_task = 0.0
 

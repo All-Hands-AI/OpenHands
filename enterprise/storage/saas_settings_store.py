@@ -31,6 +31,7 @@ from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 
 
 @dataclass
@@ -215,6 +216,7 @@ class SaasSettingsStore(SettingsStore):
             )
 
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'x-goog-api-key': LITE_LLM_API_KEY,
                 }
