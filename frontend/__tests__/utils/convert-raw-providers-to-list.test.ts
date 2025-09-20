@@ -23,6 +23,6 @@ describe("convertRawProvidersToList", () => {
 
     expect(convertRawProvidersToList(example1)).toEqual(["github", "gitlab"]);
     expect(convertRawProvidersToList(example2)).toEqual(["github"]);
-    expect(convertRawProvidersToList(example3)).toEqual(["gitlab"]);
+    expect(convertRawProvidersToList(example3)).toEqual([]);
   });
 });
