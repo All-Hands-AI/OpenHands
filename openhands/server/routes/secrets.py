@@ -75,7 +75,9 @@ async def check_provider_tokens(
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
             if token_value.token:
                 confirmed_token_type = await validate_provider_token(
-                    token_value.token, token_value.host
+                    token_value.token,
+                    token_value.host,
+                    token_value.bitbucket_mode,
                 )  # FE always sends latest host
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
@@ -90,7 +92,9 @@ async def check_provider_tokens(
                 and existing_token.token
             ):
                 confirmed_token_type = await validate_provider_token(
-                    existing_token.token, token_value.host
+                    existing_token.token,
+                    token_value.host,
+                    token_value.bitbucket_mode or existing_token.bitbucket_mode,
                 )  # Host has changed, check it against existing token
                 if not confirmed_token_type or confirmed_token_type != token_type:
                     msg = process_token_validation_result(
@@ -132,9 +136,15 @@ async def store_provider_tokens(
                     if existing_token and existing_token.token:
                         provider_info.provider_tokens[provider] = existing_token
 
+                update_fields = {'host': token_value.host}
+                if provider == ProviderType.BITBUCKET:
+                    update_fields['bitbucket_mode'] = (
+                        token_value.bitbucket_mode or 'cloud'
+                    )
+
                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
                     provider
-                ].model_copy(update={'host': token_value.host})
+                ].model_copy(update=update_fields)
 
         updated_secrets = user_secrets.model_copy(
             update={'provider_tokens': provider_info.provider_tokens}

@@ -68,6 +68,10 @@ class UserSecrets(BaseModel):
                 'host': provider_token.host,
                 'user_id': provider_token.user_id,
             }
+            if provider_token.bitbucket_mode:
+                tokens[token_type_str]['bitbucket_mode'] = (
+                    provider_token.bitbucket_mode
+                )
 
         return tokens
 

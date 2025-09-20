@@ -8,9 +8,7 @@ from openhands.integrations.provider import (
 )
 from openhands.server.dependencies import get_dependencies
 from openhands.server.routes.secrets import invalidate_legacy_secrets_store
-from openhands.server.settings import (
-    GETSettingsModel,
-)
+from openhands.server.settings import GETSettingsModel, ProviderTokenSettings
 from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
@@ -56,11 +54,18 @@ async def load_settings(
             user_secrets.provider_tokens if user_secrets else provider_tokens
         )
 
-        provider_tokens_set: dict[ProviderType, str | None] = {}
+        provider_tokens_set: dict[ProviderType, ProviderTokenSettings | None] = {}
         if git_providers:
             for provider_type, provider_token in git_providers.items():
                 if provider_token.token or provider_token.user_id:
-                    provider_tokens_set[provider_type] = provider_token.host
+                    bitbucket_mode = None
+                    if provider_type == ProviderType.BITBUCKET:
+                        bitbucket_mode = provider_token.bitbucket_mode or 'cloud'
+
+                    provider_tokens_set[provider_type] = ProviderTokenSettings(
+                        host=provider_token.host,
+                        bitbucket_mode=bitbucket_mode,
+                    )
 
         settings_with_token_data = GETSettingsModel(
             **settings.model_dump(exclude={'secrets_store'}),
