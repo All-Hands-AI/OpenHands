@@ -9,7 +9,7 @@ description: This page outlines all available configuration options for OpenHand
 </Note>
 
 <Note>
-   **Looking for Environment Variables?** All configuration options can also be set using environment variables. 
+   **Looking for Environment Variables?** All configuration options can also be set using environment variables.
    See the [Environment Variables Reference](./environment-variables) for a complete list with examples.
 </Note>
 
@@ -17,7 +17,8 @@ description: This page outlines all available configuration options for OpenHand
 
 When running OpenHands in CLI, headless, or development mode, you can use a project-specific `config.toml` file for configuration, which must be
 located in the same directory from which the command is run. Alternatively, you may use the `--config-file` option to
-specify a different path to the `config.toml` file.
+specify a different path to the `config.toml` file. When running the GUI server, you can set the `CONFIG_FILE`
+environment variable to override the default path that the backend uses when loading configuration.
 
 ## Core Configuration
 

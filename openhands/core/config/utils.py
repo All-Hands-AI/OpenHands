@@ -1,4 +1,5 @@
 import argparse
+import logging
 import os
 import pathlib
 import platform
@@ -34,6 +35,8 @@ from openhands.storage.files import FileStore
 from openhands.utils.import_utils import get_impl
 
 JWT_SECRET = '.jwt_secret'
+CONFIG_FILE_ENV_VAR = 'CONFIG_FILE'
+_last_logged_config_toml: str | None = None
 load_dotenv()
 
 
@@ -825,6 +828,9 @@ def load_openhands_config(
         set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
+    env_config_file = os.environ.get(CONFIG_FILE_ENV_VAR)
+    if env_config_file and config_file == 'config.toml':
+        config_file = os.path.expanduser(env_config_file)
     config = OpenHandsConfig()
     load_from_toml(config, config_file)
     load_from_env(config, os.environ)
@@ -833,6 +839,27 @@ def load_openhands_config(
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
+    if (
+        logger.openhands_logger.isEnabledFor(logging.DEBUG)
+        or config.debug
+        or logger.DEBUG
+    ):
+        try:
+            config_as_toml = toml.dumps(
+                config.model_dump(mode='json', exclude_none=True)
+            ).strip()
+        except (TypeError, ValueError) as exc:
+            logger.openhands_logger.debug(
+                'Failed to serialize configuration to TOML for debug logging: %s',
+                exc,
+            )
+        else:
+            global _last_logged_config_toml
+            if _last_logged_config_toml != config_as_toml:
+                logger.openhands_logger.debug(
+                    'Loaded OpenHands configuration (TOML):\n%s', config_as_toml
+                )
+                _last_logged_config_toml = config_as_toml
     return config
 
 
