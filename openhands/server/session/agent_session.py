@@ -328,6 +328,17 @@ class AgentSession:
                 git_provider_tokens, custom_secrets
             )
 
+            self.logger.info(
+                f'[TOKEN_DEBUG] Creating RemoteRuntime: sid={self.sid}, '
+                f'attach_to_existing=False (HARDCODED!), '
+                f'has_tokens={overrided_tokens is not None}, '
+                f'user_id={self.user_id}'
+            )
+            if overrided_tokens:
+                self.logger.info(
+                    f'[TOKEN_DEBUG] Provider tokens present: {list(overrided_tokens.keys())}'
+                )
+
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -336,7 +347,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
-                attach_to_existing=False,
+                attach_to_existing=False,  # TODO: This should be True when resuming!
                 git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
