@@ -46,6 +46,7 @@ export function LikertScale({
     t(I18nKey.FEEDBACK$REASON_FORGOT_CONTEXT),
     t(I18nKey.FEEDBACK$REASON_UNNECESSARY_CHANGES),
     t(I18nKey.FEEDBACK$REASON_SHOULD_ASK_FIRST),
+    t(I18nKey.FEEDBACK$REASON_DIDNT_FINISH_JOB),
     t(I18nKey.FEEDBACK$REASON_OTHER),
   ];
 
@@ -187,7 +188,7 @@ export function LikertScale({
 
     return selectedRating && selectedRating >= rating
       ? "text-yellow-400"
-      : "text-gray-300 hover:text-yellow-200";
+      : "text-gray-300";
   };
 
   return (
@@ -205,7 +206,12 @@ export function LikertScale({
               key={rating}
               onClick={() => handleRatingClick(rating)}
               disabled={isSubmitted}
-              className={cn("text-xl transition-all", getButtonClass(rating))}
+              className={cn(
+                "oh-star text-xl transition-all",
+                getButtonClass(rating),
+                !isSubmitted &&
+                  "hover:text-yellow-400 [&:has(~.oh-star:hover)]:text-yellow-400",
+              )}
               aria-label={`Rate ${rating} stars`}
             >
               <FaStar />

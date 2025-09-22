@@ -463,7 +463,7 @@ def update_existing_pull_request(
 
                 # Summarize with LLM if provided
                 if llm_config is not None:
-                    llm = LLM(llm_config)
+                    llm = LLM(llm_config, service_id='resolver')
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),

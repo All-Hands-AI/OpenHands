@@ -1,12 +1,13 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  GetConfigResponse,
-  Conversation,
-  ResultSet,
-} from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
+import { Conversation, ResultSet } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
+import {
+  ApiSettings,
+  PostApiSettings,
+} from "#/settings-service/settings.types";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
@@ -25,11 +26,13 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  provider_tokens_set: { github: null, gitlab: null, bitbucket: null },
+  provider_tokens_set: {},
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  condenser_max_size: DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
+  enable_solvability_analysis: DEFAULT_SETTINGS.ENABLE_SOLVABILITY_ANALYSIS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
   max_budget_per_task: DEFAULT_SETTINGS.MAX_BUDGET_PER_TASK,
 };
@@ -122,7 +125,7 @@ const openHandsHandlers = [
   ),
 
   http.get("/api/options/security-analyzers", async () =>
-    HttpResponse.json(["mock-invariant"]),
+    HttpResponse.json(["llm", "none"]),
   ),
 
   http.post("http://localhost:3001/api/submit-feedback", async () => {
@@ -167,7 +170,6 @@ export const handlers = [
       APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-      STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
@@ -197,7 +199,14 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+      const current = MOCK_USER_PREFERENCES.settings || {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      };
+      // Persist new values over current/mock defaults
+      MOCK_USER_PREFERENCES.settings = {
+        ...current,
+        ...(body as Partial<ApiSettings>),
+      };
       return HttpResponse.json(null, { status: 200 });
     }
 

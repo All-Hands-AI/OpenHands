@@ -90,14 +90,6 @@ class Event:
         until the timeout is reached.
         """
         self._timeout = value
-        if value is not None and value > 600:
-            from openhands.core.logger import openhands_logger as logger
-
-            logger.warning(
-                'Timeout greater than 600 seconds may not be supported by '
-                'the runtime. Consider setting a lower timeout.'
-            )
-
         # Check if .blocking is an attribute of the event
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set

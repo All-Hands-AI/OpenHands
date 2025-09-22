@@ -33,6 +33,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import Event
@@ -43,6 +44,7 @@ from openhands.events.observation import (
     FileReadObservation,
     NullObservation,
     Observation,
+    TaskTrackingObservation,
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
@@ -52,6 +54,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.service_types import AuthenticationError
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -64,6 +67,8 @@ from openhands.runtime.plugins import (
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
+from openhands.security import SecurityAnalyzer, options
+from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -118,11 +123,13 @@ class Runtime(FileEditRuntimeMixin):
     status_callback: Callable[[str, RuntimeStatus, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
+    security_analyzer: 'SecurityAnalyzer | None' = None
 
     def __init__(
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -176,12 +183,26 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
+            self,
+            enable_llm_editor=config.get_agent_config().enable_llm_editor,
+            llm_registry=llm_registry,
         )
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
+
+        # Initialize security analyzer
+        self.security_analyzer = None
+        if self.config.security.security_analyzer:
+            analyzer_cls = options.SecurityAnalyzers.get(
+                self.config.security.security_analyzer, SecurityAnalyzer
+            )
+            self.security_analyzer = analyzer_cls()
+            self.security_analyzer.set_event_stream(self.event_stream)
+            logger.debug(
+                f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
+            )
 
     @property
     def runtime_initialized(self) -> bool:
@@ -195,9 +216,11 @@ class Runtime(FileEditRuntimeMixin):
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
+        # Configure git settings
+        self._setup_git_config()
+
     def close(self) -> None:
-        """
-        This should only be called by conversation manager or closing the session.
+        """This should only be called by conversation manager or closing the session.
         If called for instance by error handling, it could prevent recovery.
         """
         pass
@@ -272,7 +295,7 @@ class Runtime(FileEditRuntimeMixin):
                 # Note: json.dumps gives us nice escaping for free
                 cmd += f'export {key}={json.dumps(value)}; '
                 # Add to .bashrc if not already present
-                bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
+                bashrc_cmd += f'touch ~/.bashrc; grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
 
             if not cmd:
                 return
@@ -300,12 +323,7 @@ class Runtime(FileEditRuntimeMixin):
             asyncio.get_event_loop().run_until_complete(self._handle_action(event))
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
-        """
-        Refresh runtime provider tokens when agent attemps to run action with provider token
-        """
-        if not self.user_id:
-            return
-
+        """Refresh runtime provider tokens when agent attemps to run action with provider token"""
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
@@ -313,9 +331,24 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
-        env_vars = await self.provider_handler.get_env_vars(
+        provider_handler = ProviderHandler(
+            provider_tokens=self.git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=self.user_id,
+            external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=self.sid,
+        )
+
+        logger.info(
+            f'Fetching latest provider tokens for runtime: {self.sid}, '
+            f'providers: {providers_called}'
+        )
+        env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
+        )
+        logger.info(
+            f'Successfully fetched {len(env_vars)} token(s) for runtime: {self.sid}'
         )
 
         if len(env_vars) == 0:
@@ -323,13 +356,14 @@ class Runtime(FileEditRuntimeMixin):
 
         try:
             if self.event_stream:
-                await self.provider_handler.set_event_stream_secrets(
+                await provider_handler.set_event_stream_secrets(
                     self.event_stream, env_vars=env_vars
                 )
-            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
+            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
-            logger.warning(
-                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            logger.error(
+                f'Failed to export latest github token to runtime: {self.sid}, {e}',
+                exc_info=True,
             )
 
     async def _handle_action(self, event: Action) -> None:
@@ -837,7 +871,7 @@ fi
             # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
+                f'.openhands_instructions not present, trying to load from repository microagents_dir={microagents_dir}',
             )
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))
@@ -869,6 +903,58 @@ fi
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
+            elif isinstance(action, TaskTrackingAction):
+                # Get the session-specific task file path
+                conversation_dir = get_conversation_dir(
+                    self.sid, self.event_stream.user_id
+                )
+                task_file_path = f'{conversation_dir}TASKS.md'
+
+                if action.command == 'plan':
+                    # Write the serialized task list to the session directory
+                    content = '# Task List\n\n'
+                    for i, task in enumerate(action.task_list, 1):
+                        status_icon = {
+                            'todo': '⏳',
+                            'in_progress': '🔄',
+                            'done': '✅',
+                        }.get(task.get('status', 'todo'), '⏳')
+                        content += f'{i}. {status_icon} {task.get("title", "")}\n{task.get("notes", "")}\n'
+
+                    try:
+                        self.event_stream.file_store.write(task_file_path, content)
+                        return TaskTrackingObservation(
+                            content=f'Task list has been updated with {len(action.task_list)} items. Stored in session directory: {task_file_path}',
+                            command=action.command,
+                            task_list=action.task_list,
+                        )
+                    except Exception as e:
+                        return ErrorObservation(
+                            f'Failed to write task list to session directory {task_file_path}: {str(e)}'
+                        )
+
+                elif action.command == 'view':
+                    # Read the TASKS.md file from the session directory
+                    try:
+                        content = self.event_stream.file_store.read(task_file_path)
+                        return TaskTrackingObservation(
+                            content=content,
+                            command=action.command,
+                            task_list=[],  # Empty for view command
+                        )
+                    except FileNotFoundError:
+                        return TaskTrackingObservation(
+                            command=action.command,
+                            task_list=[],
+                            content='No task list found. Use the "plan" command to create one.',
+                        )
+                    except Exception as e:
+                        return TaskTrackingObservation(
+                            command=action.command,
+                            task_list=[],
+                            content=f'Failed to read the task list from session directory {task_file_path}. Error: {str(e)}',
+                        )
+
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
@@ -906,6 +992,42 @@ fi
     @abstractmethod
     async def connect(self) -> None:
         pass
+
+    def _setup_git_config(self) -> None:
+        """Configure git user settings during initial environment setup.
+
+        This method is called automatically during setup_initial_env() to ensure
+        git configuration is applied to the runtime environment.
+        """
+        # Get git configuration from config
+        git_user_name = self.config.git_user_name
+        git_user_email = self.config.git_user_email
+
+        # Skip git configuration for CLI runtime to preserve user's local git settings
+        is_cli_runtime = self.config.runtime == 'cli'
+        if is_cli_runtime:
+            logger.debug(
+                "Skipping git configuration for CLI runtime - using user's local git config"
+            )
+            return
+
+        # All runtimes (except CLI) use global git config
+        cmd = f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
+
+        # Execute git configuration command
+        try:
+            action = CmdRunAction(command=cmd)
+            obs = self.run(action)
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                logger.warning(
+                    f'Git config command failed: {cmd}, error: {obs.content}'
+                )
+            else:
+                logger.info(
+                    f'Successfully configured git: name={git_user_name}, email={git_user_email}'
+                )
+        except Exception as e:
+            logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
 
     @abstractmethod
     def get_mcp_config(
@@ -1001,10 +1123,10 @@ fi
     def _execute_shell_fn_git_handler(
         self, command: str, cwd: str | None
     ) -> CommandResult:
-        """
-        This function is used by the GitHandler to execute shell commands.
-        """
-        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        """This function is used by the GitHandler to execute shell commands."""
+        obs = self.run(
+            CmdRunAction(command=command, is_static=True, hidden=True, cwd=cwd)
+        )
         exit_code = 0
         content = ''
 
@@ -1019,9 +1141,7 @@ fi
         return CommandResult(content=content, exit_code=exit_code)
 
     def _create_file_fn_git_handler(self, path: str, content: str) -> int:
-        """
-        This function is used by the GitHandler to execute shell commands.
-        """
+        """This function is used by the GitHandler to execute shell commands."""
         obs = self.write(FileWriteAction(path=path, content=content))
         if isinstance(obs, ErrorObservation):
             return -1
@@ -1036,6 +1156,27 @@ fi
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
 
+    def get_workspace_branch(self, primary_repo_path: str | None = None) -> str | None:
+        """
+        Get the current branch of the workspace.
+
+        Args:
+            primary_repo_path: Path to the primary repository within the workspace.
+                              If None, uses the workspace root.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        if primary_repo_path:
+            # Use the primary repository path
+            git_cwd = str(self.workspace_root / primary_repo_path)
+        else:
+            # Use the workspace root
+            git_cwd = str(self.workspace_root)
+
+        self.git_handler.set_cwd(git_cwd)
+        return self.git_handler.get_current_branch()
+
     @property
     def additional_agent_instructions(self) -> str:
         return ''
@@ -1043,8 +1184,7 @@ fi
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
     ) -> bool:
-        """
-        Subscribe to shell command output stream.
+        """Subscribe to shell command output stream.
         This method is meant to be overridden by runtime implementations
         that want to stream shell command output to external consumers.
 

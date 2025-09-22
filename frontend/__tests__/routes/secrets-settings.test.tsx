@@ -6,7 +6,8 @@ import { createRoutesStub, Outlet } from "react-router";
 import SecretsSettingsScreen from "#/routes/secrets-settings";
 import { SecretsService } from "#/api/secrets-service";
 import { GetSecretsResponse } from "#/api/secrets-service.types";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
+import OptionService from "#/api/option-service/option-service.api";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
 const MOCK_GET_SECRETS_RESPONSE: GetSecretsResponse["custom_secrets"] = [
@@ -53,7 +54,7 @@ const renderSecretsSettings = () =>
   });
 
 beforeEach(() => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
   // @ts-expect-error - only return the config we need
   getConfigSpy.mockResolvedValue({
     APP_MODE: "oss",
@@ -67,8 +68,8 @@ describe("Content", () => {
   });
 
   it("should NOT render a button to connect with git if they havent already in oss", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
     getConfigSpy.mockResolvedValue({
@@ -86,30 +87,21 @@ describe("Content", () => {
     expect(screen.queryByTestId("connect-git-button")).not.toBeInTheDocument();
   });
 
-  it("should render a button to connect with git if they havent already in saas", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  it("should render add secret button in saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     // @ts-expect-error - only return the config we need
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
     });
-    getSettingsSpy.mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-      provider_tokens_set: {},
-    });
 
     renderSecretsSettings();
 
-    // In SAAS mode, getSecrets is still called because the user is authenticated
+    // In SAAS mode, getSecrets is called and add secret button should be available
     await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
-    await waitFor(() =>
-      expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
-    );
-    const button = await screen.findByTestId("connect-git-button");
-    await userEvent.click(button);
-
-    screen.getByTestId("git-settings-screen");
+    const button = await screen.findByTestId("add-secret-button");
+    expect(button).toBeInTheDocument();
+    expect(screen.queryByTestId("connect-git-button")).not.toBeInTheDocument();
   });
 
   it("should render an empty table when there are no existing secrets", async () => {
@@ -485,7 +477,9 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
+    expect(
+      screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS"),
+    ).toBeInTheDocument();
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Custom_Secret");
@@ -569,7 +563,9 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
+    expect(
+      screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS"),
+    ).toBeInTheDocument();
 
     expect(nameInput).toHaveValue(MOCK_GET_SECRETS_RESPONSE[0].name);
     expect(valueInput).toHaveValue("my-custom-secret-value");

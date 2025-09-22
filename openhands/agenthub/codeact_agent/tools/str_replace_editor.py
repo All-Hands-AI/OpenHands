@@ -1,5 +1,12 @@
+import os
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    RISK_LEVELS,
+    SECURITY_RISK_DESC,
+)
+from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
 _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
@@ -48,9 +55,51 @@ Notes for using the `str_replace` command:
 """
 
 
+def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
+    """Get the workspace mount path from SANDBOX_VOLUMES environment variable.
+
+    For LocalRuntime and CLIRuntime, returns the host path from SANDBOX_VOLUMES.
+    For other runtimes, returns the default container path (/workspace).
+
+    Args:
+        runtime_type: The runtime type ('local', 'cli', 'docker', etc.)
+
+    Returns:
+        The workspace mount path in sandbox, defaults to '/workspace' if not found.
+    """
+    # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
+    if runtime_type in ('local', 'cli'):
+        sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
+        if sandbox_volumes:
+            # Split by commas to handle multiple mounts
+            mounts = sandbox_volumes.split(',')
+
+            # Check if any mount explicitly targets /workspace
+            for mount in mounts:
+                parts = mount.split(':')
+                if len(parts) >= 2 and parts[1] == '/workspace':
+                    host_path = os.path.abspath(parts[0])
+                    return host_path
+
+        # Fallback for local/CLI runtimes when SANDBOX_VOLUMES is not set:
+        # Use current working directory as it's likely the workspace root
+        return os.getcwd()
+
+    # For all other runtimes (docker, remote, etc.), use default container path
+    return DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+
+
 def create_str_replace_editor_tool(
     use_short_description: bool = False,
+    workspace_mount_path_in_sandbox: str | None = None,
+    runtime_type: str | None = None,
 ) -> ChatCompletionToolParam:
+    # If no workspace path is provided, try to get it from environment
+    if workspace_mount_path_in_sandbox is None:
+        workspace_mount_path_in_sandbox = _get_workspace_mount_path_from_env(
+            runtime_type
+        )
+
     description = (
         _SHORT_STR_REPLACE_EDITOR_DESCRIPTION
         if use_short_description
@@ -76,7 +125,7 @@ def create_str_replace_editor_tool(
                         'type': 'string',
                     },
                     'path': {
-                        'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                        'description': f'Absolute path to file or directory, e.g. `{workspace_mount_path_in_sandbox}/file.py` or `{workspace_mount_path_in_sandbox}`.',
                         'type': 'string',
                     },
                     'file_text': {
@@ -100,8 +149,13 @@ def create_str_replace_editor_tool(
                         'items': {'type': 'integer'},
                         'type': 'array',
                     },
+                    'security_risk': {
+                        'type': 'string',
+                        'description': SECURITY_RISK_DESC,
+                        'enum': RISK_LEVELS,
+                    },
                 },
-                'required': ['command', 'path'],
+                'required': ['command', 'path', 'security_risk'],
             },
         ),
     )

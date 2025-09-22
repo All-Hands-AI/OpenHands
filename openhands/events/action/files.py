@@ -19,7 +19,7 @@ class FileReadAction(Action):
     thought: str = ''
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
 
@@ -42,7 +42,7 @@ class FileWriteAction(Action):
     thought: str = ''
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
@@ -111,7 +111,7 @@ class FileEditAction(Action):
     thought: str = ''
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
     impl_source: FileEditSource = FileEditSource.OH_ACI
 
     def __repr__(self) -> str:

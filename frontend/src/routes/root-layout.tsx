@@ -27,6 +27,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { cn, isMobileDevice } from "#/utils/utils";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -199,20 +200,23 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
+      className={cn(
+        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base",
+        pathname === "/" ? "p-0" : "p-0 md:p-3 md:pl-0",
+        isMobileDevice() && "overflow-hidden",
+      )}
     >
       <Sidebar />
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
+      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
         {config.data?.MAINTENANCE && (
           <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+        <div id="root-outlet" className="flex-1 relative overflow-auto">
+          <EmailVerificationGuard>
+            <Outlet />
+          </EmailVerificationGuard>
+        </div>
       </div>
 
       {renderAuthModal && (

@@ -150,7 +150,6 @@ class Metrics:
         response_id: str,
     ) -> None:
         """Add a single usage record."""
-
         # Token each turn for calculating context usage.
         per_turn_token = prompt_tokens + completion_tokens
 
