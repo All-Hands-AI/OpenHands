@@ -161,18 +161,78 @@ class DockerNestedConversationManager(ConversationManager):
             nested_url = self._get_nested_url(sid)
             session_api_key = self._get_session_api_key_for_conversation(sid)
         except Exception as e:
-            logger.error(
-                f'[TOKEN_DEBUG] Failed to get nested URL for sid={sid}: {e}. '
-                f'Container may not exist. Returning STOPPED status.'
+            logger.warning(
+                f'[TOKEN_DEBUG] Container missing for sid={sid}: {e}. '
+                f'This is likely a resume after stop. Attempting to recreate container with attach_to_existing=True.'
             )
-            # Return a stopped status if we can't find the container
-            return AgentLoopInfo(
-                conversation_id=sid,
-                url='',
-                session_api_key='',
-                event_store=None,  # type: ignore
-                status=ConversationStatus.STOPPED,
-            )
+
+            # Container doesn't exist - this is likely a resume scenario
+            # Recreate the container with attach_to_existing=True to trigger token refresh
+            try:
+                # Create the runtime with is_resume=True to ensure attach_to_existing=True
+                runtime = await self._create_runtime(
+                    sid, user_id, settings, is_resume=True
+                )
+
+                logger.info(
+                    f'[TOKEN_DEBUG] Created runtime with attach_to_existing=True for resume operation. '
+                    f'Now initializing container for {sid}.'
+                )
+
+                # Build and initialize the container
+                await call_sync_from_async(runtime.maybe_build_runtime_container_image)
+                self._runtime_container_image = runtime.runtime_container_image
+                await call_sync_from_async(runtime.init_container)
+
+                # Start the conversation with the resume-enabled runtime
+                asyncio.create_task(
+                    self._start_conversation(
+                        sid,
+                        settings,
+                        runtime,
+                        None,  # initial_user_msg - No initial message on resume
+                        None,  # replay_json
+                        runtime.api_url,
+                    )
+                )
+
+                # Wait a bit for container to start
+                await asyncio.sleep(2)
+
+                # Try to get the URL again
+                try:
+                    nested_url = self._get_nested_url(sid)
+                    session_api_key = self._get_session_api_key_for_conversation(sid)
+
+                    logger.info(
+                        f'[TOKEN_DEBUG] Successfully recreated container for {sid} with attach_to_existing=True. '
+                        f'Token refresh should now be triggered.'
+                    )
+                except Exception as retry_error:
+                    logger.error(
+                        f'[TOKEN_DEBUG] Container still not ready after recreation: {retry_error}'
+                    )
+                    # Return STARTING status to indicate it's being created
+                    return AgentLoopInfo(
+                        conversation_id=sid,
+                        url='',
+                        session_api_key='',
+                        event_store=None,  # type: ignore
+                        status=ConversationStatus.STARTING,
+                    )
+
+            except Exception as recreate_error:
+                logger.error(
+                    f'[TOKEN_DEBUG] Failed to recreate container for resume: {recreate_error}. '
+                    f'Returning STOPPED status.'
+                )
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url='',
+                    session_api_key='',
+                    event_store=None,  # type: ignore
+                    status=ConversationStatus.STOPPED,
+                )
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
@@ -208,7 +268,7 @@ class DockerNestedConversationManager(ConversationManager):
             f'SOURCE=docker._start_agent_loop'
         )
         await self.ensure_num_conversations_below_limit(sid, user_id)
-        runtime = await self._create_runtime(sid, user_id, settings)
+        runtime = await self._create_runtime(sid, user_id, settings, is_resume=False)
         self._starting_conversation_ids.add(sid)
         try:
             # Build the runtime container image if it is missing
@@ -585,7 +645,7 @@ class DockerNestedConversationManager(ConversationManager):
         return provider_handler
 
     async def _create_runtime(
-        self, sid: str, user_id: str | None, settings: Settings
+        self, sid: str, user_id: str | None, settings: Settings, is_resume: bool = False
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
@@ -661,7 +721,7 @@ class DockerNestedConversationManager(ConversationManager):
             sid=sid,
             plugins=agent.sandbox_plugins,
             headless_mode=False,
-            attach_to_existing=False,
+            attach_to_existing=is_resume,  # Use is_resume to trigger token refresh on resume
             main_module='openhands.server',
             llm_registry=llm_registry,
         )
