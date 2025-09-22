@@ -121,8 +121,14 @@ class AgentSession:
             f'has_git_tokens={git_provider_tokens is not None}, '
             f'selected_repository={selected_repository}, '
             f'has_initial_message={initial_message is not None}, '
-            f'has_replay_json={replay_json is not None}'
+            f'has_replay_json={replay_json is not None}, '
+            f'SOURCE=agent_session.py (WebSocket API)'
         )
+
+        if git_provider_tokens:
+            self.logger.info(
+                f'[TOKEN_DEBUG] Git provider tokens present: {list(git_provider_tokens.keys())}'
+            )
 
         if self.controller or self.runtime:
             self.logger.info(
@@ -354,9 +360,37 @@ class AgentSession:
         # Log whether we should be attaching to existing or not
         # This is where we would check if runtime exists, but for now just log
         self.logger.info(
-            '[TOKEN_DEBUG] DECISION POINT: Should we attach_to_existing? '
-            'Currently hardcoded to False. This is where we need to check if runtime exists.'
+            f'[TOKEN_DEBUG] DECISION POINT in agent_session.py: Should we attach_to_existing? '
+            f'Currently hardcoded to False. Session ID: {self.sid}'
         )
+
+        # Check if runtime exists for debugging
+        if runtime_cls == RemoteRuntime:
+            import httpx
+
+            try:
+                url = f'{config.sandbox.remote_runtime_api_url}/sessions/{self.sid}'
+                headers = {}
+                if config.sandbox.api_key:
+                    headers['X-API-Key'] = config.sandbox.api_key
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(url, headers=headers, timeout=30)
+                if response.status_code == 404:
+                    self.logger.info(
+                        f'[TOKEN_DEBUG] No existing runtime found for session {self.sid} - '
+                        f'should create new (attach_to_existing=False)'
+                    )
+                else:
+                    data = response.json()
+                    status = data.get('status', '')
+                    self.logger.info(
+                        f'[TOKEN_DEBUG] Found existing runtime for session {self.sid} with status={status} - '
+                        f'should attach (attach_to_existing=True) but we are using False!'
+                    )
+            except Exception as e:
+                self.logger.warning(
+                    f'[TOKEN_DEBUG] Error checking runtime existence: {e}'
+                )
 
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
