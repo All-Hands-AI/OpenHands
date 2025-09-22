@@ -801,6 +801,48 @@ class RemoteRuntime(ActionExecutionClient):
                             )
                         break
 
+                elif (
+                    'bitbucket_token' in env_key.lower()
+                    and 'bitbucket.org' in current_url
+                ):
+                    # Handle Bitbucket
+                    import re
+
+                    match = re.search(
+                        r'bitbucket\.org[:/]([^/]+/[^/]+?)(?:\.git)?$', current_url
+                    )
+                    if match:
+                        repo_path = match.group(1)
+                        # Check if token has username:app_password format
+                        if ':' in token:
+                            # App token format: username:app_password
+                            new_url = f'https://{token}@bitbucket.org/{repo_path}.git'
+                        else:
+                            # Access token format: use x-token-auth
+                            new_url = f'https://x-token-auth:{token}@bitbucket.org/{repo_path}.git'
+                        self.log(
+                            'info',
+                            f'[TOKEN_DEBUG] Updating Bitbucket remote URL for {repo_path}',
+                        )
+
+                        result = self.run_action(
+                            CmdRunAction(f'git remote set-url origin {new_url}')
+                        )
+                        if (
+                            isinstance(result, CmdOutputObservation)
+                            and result.exit_code == 0
+                        ):
+                            self.log(
+                                'info',
+                                '[TOKEN_DEBUG] Successfully updated git remote URL',
+                            )
+                        else:
+                            self.log(
+                                'warning',
+                                f'[TOKEN_DEBUG] Failed to update git remote URL: {result.content}',
+                            )
+                        break
+
         except Exception as e:
             self.log(
                 'warning',
