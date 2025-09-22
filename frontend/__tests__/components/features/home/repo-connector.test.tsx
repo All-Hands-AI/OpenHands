@@ -6,7 +6,8 @@ import { setupStore } from "test-utils";
 import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
 import SettingsService from "#/settings-service/settings-service.api";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import OptionService from "#/api/option-service/option-service.api";
 import { GitRepository } from "#/types/git";
 import { RepoConnector } from "#/components/features/home/repo-connector";
@@ -86,7 +87,7 @@ describe("RepoConnector", () => {
 
   it("should render the available repositories in the dropdown", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -95,7 +96,7 @@ describe("RepoConnector", () => {
     });
 
     // Mock the search function that's used by the dropdown
-    vi.spyOn(OpenHands, "searchGitRepositories").mockResolvedValue(
+    vi.spyOn(GitService, "searchGitRepositories").mockResolvedValue(
       MOCK_RESPOSITORIES,
     );
 
@@ -123,7 +124,7 @@ describe("RepoConnector", () => {
 
   it("should only enable the launch button if a repo is selected", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -137,7 +138,7 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeDisabled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -195,7 +196,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -242,7 +243,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -286,7 +287,7 @@ describe("RepoConnector", () => {
     });
 
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -314,7 +315,10 @@ describe("RepoConnector", () => {
   });
 
   it("should create a conversation and redirect with the selected repo when pressing the launch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
     createConversationSpy.mockResolvedValue({
       conversation_id: "mock-conversation-id",
       title: "Test Conversation",
@@ -329,7 +333,7 @@ describe("RepoConnector", () => {
       session_api_key: null,
     });
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -348,7 +352,7 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -399,10 +403,13 @@ describe("RepoConnector", () => {
   });
 
   it("should change the launch button text to 'Loading...' when creating a conversation", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
     createConversationSpy.mockImplementation(() => new Promise(() => {})); // Never resolves to keep loading state
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -411,7 +418,7 @@ describe("RepoConnector", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },

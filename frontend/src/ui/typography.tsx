@@ -5,6 +5,10 @@ const typographyVariants = cva("", {
   variants: {
     variant: {
       h1: "text-[32px] text-white font-bold leading-5",
+      h3: "text-sm font-semibold text-gray-300",
+      span: "text-sm font-normal text-white leading-5.5",
+      codeBlock:
+        "font-mono text-sm leading-relaxed text-gray-300 whitespace-pre-wrap",
     },
   },
   defaultVariants: {
@@ -49,5 +53,44 @@ export function H1({
   );
 }
 
-// Attach H1 to Typography for the expected API
+export function H3({
+  className,
+  testId,
+  children,
+}: Omit<TypographyProps, "variant">) {
+  return (
+    <Typography variant="h3" className={className} testId={testId}>
+      {children}
+    </Typography>
+  );
+}
+
+export function Text({
+  className,
+  testId,
+  children,
+}: Omit<TypographyProps, "variant">) {
+  return (
+    <Typography variant="span" className={className} testId={testId}>
+      {children}
+    </Typography>
+  );
+}
+
+export function CodeBlock({
+  className,
+  testId,
+  children,
+}: Omit<TypographyProps, "variant">) {
+  return (
+    <Typography variant="codeBlock" className={className} testId={testId}>
+      {children}
+    </Typography>
+  );
+}
+
+// Attach components to Typography for the expected API
 Typography.H1 = H1;
+Typography.H3 = H3;
+Typography.Text = Text;
+Typography.CodeBlock = CodeBlock;

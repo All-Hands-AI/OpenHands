@@ -2,31 +2,23 @@
 
 import sys
 
+# Import only essential modules for CLI help
+# Other imports are deferred until they're actually needed
 import openhands
 import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.cli.gui_launcher import launch_gui_server
-from openhands.cli.main import run_cli_command
-from openhands.core.config import get_cli_parser
-from openhands.core.config.arg_utils import get_subparser
+from openhands.cli.fast_help import handle_fast_commands
 
 
 def main():
     """Main entry point with subcommand support and backward compatibility."""
-    parser = get_cli_parser()
-
-    # If user only asks for --help or -h without a subcommand
-    if len(sys.argv) == 2 and sys.argv[1] in ('--help', '-h'):
-        # Print top-level help
-        print(parser.format_help())
-
-        # Also print help for `cli` subcommand
-        print('\n' + '=' * 80)
-        print('CLI command help:\n')
-
-        cli_parser = get_subparser(parser, 'cli')
-        print(cli_parser.format_help())
-
+    # Fast path for help and version commands
+    if handle_fast_commands():
         sys.exit(0)
+
+    # Import parser only when needed - only if we're not just showing help
+    from openhands.core.config import get_cli_parser
+
+    parser = get_cli_parser()
 
     # Special case: no subcommand provided, simulate "openhands cli"
     if len(sys.argv) == 1 or (
@@ -42,8 +34,14 @@ def main():
         sys.exit(0)
 
     if args.command == 'serve':
+        # Import gui_launcher only when needed
+        from openhands.cli.gui_launcher import launch_gui_server
+
         launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
     elif args.command == 'cli' or args.command is None:
+        # Import main only when needed
+        from openhands.cli.main import run_cli_command
+
         run_cli_command(args)
     else:
         parser.print_help()
