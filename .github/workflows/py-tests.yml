@@ -25,6 +25,10 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.12"]
+    permissions:
+      # For coverage comment and python-coverage-comment-action branch
+      pull-requests: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -48,10 +52,14 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Unit Tests
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv ./tests/unit
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv ./tests/unit --cov=openhands
       - name: Run Runtime Tests with CLIRuntime
-        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
-
+        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py --cov=openhands --cov-append
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
   # Run specific Windows python tests
   test-on-windows:
     name: Python Tests on Windows
