@@ -12,13 +12,13 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from openhands_cli.locations import WORKING_DIR, AGENT_SPEC_PATH
+from openhands_cli.locations import WORKING_DIR, AGENT_SETTINGS_PATH
 from openhands.sdk.preset.default import get_default_agent
 from openhands.sdk import LLM
 import time
 import select
 
-dummy_agent_specs = get_default_agent(
+dummy_agent = get_default_agent(
     llm=LLM(model='dummy-model', api_key='dummy-key'),
     working_dir=WORKING_DIR,
     cli_mode=True
@@ -123,7 +123,7 @@ def test_executable() -> bool:
     """Test the built executable, measuring boot time and total test time."""
     print('🧪 Testing the built executable...')
 
-    spec_path = os.path.join(WORKING_DIR, AGENT_SPEC_PATH)
+    spec_path = os.path.join(WORKING_DIR, AGENT_SETTINGS_PATH)
 
     specs_path = Path(os.path.expanduser(spec_path))
     if specs_path.exists():
@@ -131,7 +131,7 @@ def test_executable() -> bool:
     else:
         print(f"💾 Creating dummy settings at {specs_path}")
         specs_path.parent.mkdir(parents=True, exist_ok=True)
-        specs_path.write_text(dummy_agent_specs.model_dump_json())
+        specs_path.write_text(dummy_agent.model_dump_json())
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():

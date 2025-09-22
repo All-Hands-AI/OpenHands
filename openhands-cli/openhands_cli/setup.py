@@ -2,7 +2,7 @@ from openhands.sdk import (
     Agent,
     Conversation
 )
-from openhands_cli.tui.settings.store import AgentSpecStore
+from openhands_cli.tui.settings.store import AgentStore
 from prompt_toolkit import HTML, print_formatted_text
 from openhands.tools.bash import BashTool
 from openhands.tools.str_replace_editor import FileEditorTool
@@ -18,8 +18,8 @@ def setup_agent() -> Conversation | None:
     Setup the agent with environment variables.
     """
 
-    spec_store = AgentSpecStore()
-    agent = spec_store.load()
+    agent_store = AgentStore()
+    agent = agent_store.load()
     if not agent:
         return None
 

@@ -35,9 +35,9 @@ class TestConfirmationMode:
             with (
                 patch('openhands_cli.setup.Agent') as mock_agent_class,
                 patch('openhands_cli.setup.Conversation') as mock_conversation_class,
-                patch('openhands_cli.setup.AgentSpecStore') as mock_spec_store_class,
+                patch('openhands_cli.setup.AgentStore') as mock_spec_store_class,
             ):
-                # Mock AgentSpecStore
+                # Mock AgentStore
                 mock_spec_store_instance = MagicMock()
                 mock_spec = MagicMock()
                 mock_spec_store_instance.load.return_value = mock_spec

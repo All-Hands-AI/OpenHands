@@ -1,6 +1,6 @@
 import os
-from openhands_cli.locations import AGENT_SPEC_PATH, WORKING_DIR
-from openhands_cli.tui.settings.store import AgentSpecStore
+from openhands_cli.locations import AGENT_SETTINGS_PATH, WORKING_DIR
+from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
     choose_llm_model,
@@ -14,7 +14,7 @@ from openhands_cli.user_actions.settings_action import (
 )
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk import Conversation, LLM, LocalFileStore, Agent
+from openhands.sdk import Conversation, LLM, LocalFileStore
 from openhands.sdk.preset.default import get_default_agent
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -24,11 +24,11 @@ from openhands_cli.pt_style import COLOR_GREY
 class SettingsScreen:
     def __init__(self, conversation: Conversation | None = None):
         self.file_store = LocalFileStore(WORKING_DIR)
-        self.spec_store = AgentSpecStore()
+        self.agent_store = AgentStore()
         self.conversation = conversation
 
     def display_settings(self) -> None:
-        agent_spec = self.spec_store.load()
+        agent_spec = self.agent_store.load()
         if not agent_spec:
             return
 
@@ -57,9 +57,9 @@ class SettingsScreen:
             )
         labels_and_values.extend([
             ("   API Key", "********" if llm.api_key else "Not Set"),
-            ("   Confirmation Mode", "Enabled" if self.conversation.state.confirmation_mode else "Disabled"),
+            ("   Confirmation Mode", "Enabled" if self.conversation.state.confirmation_policy else "Disabled"),
             ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
-            ("   Configuration File", os.path.join(WORKING_DIR, AGENT_SPEC_PATH))
+            ("   Configuration File", os.path.join(WORKING_DIR, AGENT_SETTINGS_PATH))
         ])
 
         # Calculate max widths for alignment
@@ -165,7 +165,7 @@ class SettingsScreen:
             base_url=base_url
         )
 
-        agent = self.spec_store.load()
+        agent = self.agent_store.load()
         if not agent:
             agent = get_default_agent(
                 llm=llm,
@@ -174,7 +174,7 @@ class SettingsScreen:
             )
 
         agent = agent.model_copy(update={"llm": llm})
-        self.spec_store.save(agent)
+        self.agent_store.save(agent)
 
 
     def _save_advanced_settings(
@@ -190,7 +190,7 @@ class SettingsScreen:
             base_url=base_url
         )
 
-        agent_spec = self.spec_store.load()
+        agent_spec = self.agent_store.load()
         if not agent_spec:
             return
 
@@ -198,7 +198,7 @@ class SettingsScreen:
         if not memory_condensation:
             agent_spec.model_copy(update={"condenser": None})
 
-        self.spec_store.save(agent_spec)
+        self.agent_store.save(agent_spec)
 
 
 
