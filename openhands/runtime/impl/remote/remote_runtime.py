@@ -313,6 +313,11 @@ class RemoteRuntime(ActionExecutionClient):
         4. Update env vars
         """
         self.log('info', f'Attempting to resume runtime with ID: {self.runtime_id}')
+        # TODO: Debug logging for token refresh investigation
+        self.log(
+            'debug',
+            f'[TOKEN_DEBUG] Starting resume process for runtime {self.runtime_id}',
+        )
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             response = self._send_runtime_api_request(
