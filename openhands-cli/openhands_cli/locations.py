@@ -1,7 +1,7 @@
 import os
 
 # Configuration directory for storing agent settings and CLI configuration
-CONFIGURATIONS_DIR = os.path.expanduser("~/.openhands")
+PERSISTENCE_DIR = os.path.expanduser("~/.openhands")
 
 # Working directory for agent operations (current directory where CLI is run)
 WORK_DIR = os.getcwd()
