@@ -192,4 +192,39 @@ describe("useUpdateConversation", () => {
       queryKey: ["user", "conversation", conversationId],
     });
   });
+
+  it("should not invalidate queries on error to prevent race conditions", async () => {
+    const mockUpdateConversation = vi.mocked(ConversationService.updateConversation);
+    mockUpdateConversation.mockRejectedValue(new Error("Update failed"));
+
+    const { result } = renderHook(() => useUpdateConversation(), { wrapper });
+
+    const conversationId = "test-conversation-id";
+    const originalTitle = "Original Title";
+    const newTitle = "Updated Title";
+
+    // Set up initial cache data
+    const initialData = [
+      { conversation_id: conversationId, title: originalTitle },
+    ];
+    queryClient.setQueryData(["user", "conversations"], initialData);
+
+    // Spy on query invalidation
+    const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
+
+    // Attempt to update (will fail)
+    result.current.mutate({ conversationId, newTitle });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+
+    // Verify that queries were NOT invalidated on error
+    // This prevents race conditions where failed updates trigger refetches
+    expect(invalidateQueriesSpy).not.toHaveBeenCalled();
+
+    // Verify that the optimistic update was reverted
+    const revertedData = queryClient.getQueryData(["user", "conversations"]) as any[];
+    expect(revertedData[0].title).toBe(originalTitle);
+  });
 });

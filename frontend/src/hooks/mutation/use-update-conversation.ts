@@ -36,8 +36,8 @@ export const useUpdateConversation = () => {
         );
       }
     },
-    onSettled: (data, error, variables) => {
-      // Invalidate and refetch the conversation list to show the updated title
+    onSuccess: (data, variables) => {
+      // Only invalidate queries on successful update to avoid race conditions
       queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
