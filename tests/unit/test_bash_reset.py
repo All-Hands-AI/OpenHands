@@ -1,6 +1,5 @@
 """Tests for the bash reset terminal functionality."""
 
-import pytest
 from unittest.mock import Mock, patch
 
 from openhands.events.action import CmdRunAction
@@ -13,12 +12,12 @@ class TestBashResetTerminal:
 
     def test_cmd_run_action_with_reset_terminal(self):
         """Test that CmdRunAction can be created with reset_terminal parameter."""
-        action = CmdRunAction(command="", reset_terminal=True)
+        action = CmdRunAction(command='', reset_terminal=True)
         assert action.reset_terminal is True
 
     def test_cmd_run_action_reset_terminal_default(self):
         """Test that reset_terminal defaults to False."""
-        action = CmdRunAction(command="echo hello")
+        action = CmdRunAction(command='echo hello')
         assert action.reset_terminal is False
 
     @patch('openhands.runtime.utils.bash.libtmux')
@@ -37,11 +36,10 @@ class TestBashResetTerminal:
         mock_session.active_window = Mock()
 
         # Create bash session
-        bash_session = BashSession(work_dir="/tmp", username="test")
+        bash_session = BashSession(work_dir='/tmp', username='test')
         bash_session.initialize()
 
         # Store initial state
-        initial_cwd = bash_session.cwd
 
         # Mock the close method to avoid actual tmux operations
         with patch.object(bash_session, 'close'):
@@ -68,11 +66,11 @@ class TestBashResetTerminal:
         mock_session.active_window = Mock()
 
         # Create bash session
-        bash_session = BashSession(work_dir="/tmp", username="test")
+        bash_session = BashSession(work_dir='/tmp', username='test')
         bash_session.initialize()
 
         # Create action with reset_terminal=True
-        action = CmdRunAction(command="", reset_terminal=True)
+        action = CmdRunAction(command='', reset_terminal=True)
 
         # Mock the reset method
         with patch.object(bash_session, 'reset') as mock_reset:
@@ -83,26 +81,33 @@ class TestBashResetTerminal:
 
             # Verify the result is a success message
             assert isinstance(result, CmdOutputObservation)
-            assert "Terminal session has been reset successfully" in result.content
+            assert 'Terminal session has been reset successfully' in result.content
 
     def test_function_calling_reset_terminal_parameter(self):
         """Test that function calling properly handles reset_terminal parameter."""
-        from openhands.agenthub.codeact_agent.function_calling import response_to_actions
-        from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
         from litellm import ModelResponse
+
+        from openhands.agenthub.codeact_agent.function_calling import (
+            response_to_actions,
+        )
+        from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 
         # Create a mock response with reset_terminal parameter
         mock_response = Mock(spec=ModelResponse)
-        mock_response.id = "test_response_id"
+        mock_response.id = 'test_response_id'
         mock_response.choices = [Mock()]
         mock_response.choices[0].message = Mock()
         mock_response.choices[0].message.tool_calls = [Mock()]
         mock_response.choices[0].message.tool_calls[0].function = Mock()
-        mock_response.choices[0].message.tool_calls[0].function.name = create_cmd_run_tool()['function']['name']
-        mock_response.choices[0].message.tool_calls[0].function.arguments = '{"command": "", "reset_terminal": true}'
+        mock_response.choices[0].message.tool_calls[
+            0
+        ].function.name = create_cmd_run_tool()['function']['name']
+        mock_response.choices[0].message.tool_calls[
+            0
+        ].function.arguments = '{"command": "", "reset_terminal": true}'
 
         # Set the tool_call_id to a string
-        mock_response.choices[0].message.tool_calls[0].id = "test_tool_call_id"
+        mock_response.choices[0].message.tool_calls[0].id = 'test_tool_call_id'
 
         # Test that the parameter is properly parsed
         actions = response_to_actions(mock_response)
