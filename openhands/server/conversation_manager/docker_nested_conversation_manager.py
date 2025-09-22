@@ -98,6 +98,12 @@ class DockerNestedConversationManager(ConversationManager):
             for name in names
             if name.startswith('openhands-runtime-')
         }
+        logger.info(
+            f'[TOKEN_DEBUG] Docker.get_running_agent_loops: '
+            f'found {len(conversation_ids)} running containers, '
+            f'filter_to_sids={filter_to_sids}, '
+            f'container_names={list(names)[:3]}...'  # Show first 3 names
+        )
         if filter_to_sids is not None:
             conversation_ids = {
                 conversation_id
@@ -166,6 +172,14 @@ class DockerNestedConversationManager(ConversationManager):
         replay_json: str | None,
     ):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] DockerNestedConversationManager._start_agent_loop CALLED: '
+            f'sid={sid}, user_id={user_id}, '
+            f'has_settings={settings is not None}, '
+            f'has_initial_msg={initial_user_msg is not None}, '
+            f'has_replay={replay_json is not None}, '
+            f'SOURCE=docker._start_agent_loop'
+        )
         await self.ensure_num_conversations_below_limit(sid, user_id)
         runtime = await self._create_runtime(sid, user_id, settings)
         self._starting_conversation_ids.add(sid)
