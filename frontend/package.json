@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.56.0",
+  "version": "0.57.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -58,7 +58,8 @@
     "tailwind-scrollbar": "^4.0.2",
     "vite": "^7.1.4",
     "web-vitals": "^5.1.0",
-    "ws": "^8.18.2"
+    "ws": "^8.18.2",
+    "zustand": "^5.0.8"
   },
   "scripts": {
     "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev",

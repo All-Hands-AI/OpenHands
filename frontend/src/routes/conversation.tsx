@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { clearTerminal } from "#/state/command-slice";
+import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { resetConversationState } from "#/state/conversation-slice";
@@ -24,7 +24,7 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
-import { ConversationMain } from "#/components/features/conversation/conversation-main";
+import { ConversationMain } from "#/components/features/conversation/conversation-main/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
@@ -40,6 +40,7 @@ function AppContent() {
   const { providers } = useUserProviders();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const clearTerminal = useCommandStore((state) => state.clearTerminal);
   const queryClient = useQueryClient();
 
   // Fetch batch feedback data when conversation is loaded
@@ -83,14 +84,14 @@ function AppContent() {
   ]);
 
   React.useEffect(() => {
-    dispatch(clearTerminal());
+    clearTerminal();
     dispatch(clearJupyter());
     dispatch(resetConversationState());
     dispatch(setCurrentAgentState(AgentState.LOADING));
-  }, [conversationId]);
+  }, [conversationId, clearTerminal]);
 
   useEffectOnce(() => {
-    dispatch(clearTerminal());
+    clearTerminal();
     dispatch(clearJupyter());
     dispatch(resetConversationState());
     dispatch(setCurrentAgentState(AgentState.LOADING));

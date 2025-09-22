@@ -18,6 +18,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
+import { useInitialQueryStore } from "#/stores/initial-query-store";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -33,6 +34,7 @@ import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { setMessageToSend } from "#/state/conversation-slice";
+import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -67,9 +69,7 @@ export function ChatInterface() {
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const { selectedRepository, replayJson } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
+  const { selectedRepository, replayJson } = useInitialQueryStore();
   const params = useParams();
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
@@ -210,17 +210,20 @@ export function ChatInterface() {
 
         <div className="flex flex-col gap-[6px]">
           <div className="flex justify-between relative">
-            {events.length > 0 && (
-              <TrajectoryActions
-                onPositiveFeedback={() =>
-                  onClickShareFeedbackActionButton("positive")
-                }
-                onNegativeFeedback={() =>
-                  onClickShareFeedbackActionButton("negative")
-                }
-                isSaasMode={config?.APP_MODE === "saas"}
-              />
-            )}
+            <div className="flex items-center gap-1">
+              <ConfirmationModeEnabled />
+              {events.length > 0 && (
+                <TrajectoryActions
+                  onPositiveFeedback={() =>
+                    onClickShareFeedbackActionButton("positive")
+                  }
+                  onNegativeFeedback={() =>
+                    onClickShareFeedbackActionButton("negative")
+                  }
+                  isSaasMode={config?.APP_MODE === "saas"}
+                />
+              )}
+            </div>
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
