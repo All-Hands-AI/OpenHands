@@ -127,25 +127,52 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        is_running = await self.is_agent_loop_running(sid)
         logger.info(
-            f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop: '
-            f'sid={sid}, is_running={is_running}, '
-            f'will_start_new={not is_running}, '
-            f'SOURCE=docker_nested_conversation_manager'
+            f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop ENTRY: '
+            f'sid={sid}, user_id={user_id}'
         )
-        if not is_running:
-            logger.info(f'[TOKEN_DEBUG] Starting NEW agent loop for sid={sid} (Docker)')
-            await self._start_agent_loop(
-                sid, settings, user_id, initial_user_msg, replay_json
-            )
-        else:
-            logger.info(
-                f'[TOKEN_DEBUG] Using EXISTING agent loop for sid={sid} - THIS IS RESUME! (Docker)'
-            )
 
-        nested_url = self._get_nested_url(sid)
-        session_api_key = self._get_session_api_key_for_conversation(sid)
+        try:
+            is_running = await self.is_agent_loop_running(sid)
+            logger.info(
+                f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop: '
+                f'sid={sid}, is_running={is_running}, '
+                f'will_start_new={not is_running}, '
+                f'SOURCE=docker_nested_conversation_manager'
+            )
+            if not is_running:
+                logger.info(
+                    f'[TOKEN_DEBUG] Starting NEW agent loop for sid={sid} (Docker)'
+                )
+                await self._start_agent_loop(
+                    sid, settings, user_id, initial_user_msg, replay_json
+                )
+            else:
+                logger.info(
+                    f'[TOKEN_DEBUG] Using EXISTING agent loop for sid={sid} - THIS IS RESUME! (Docker)'
+                )
+        except Exception as e:
+            logger.error(
+                f'[TOKEN_DEBUG] Error in Docker maybe_start_agent_loop: {e}, sid={sid}'
+            )
+            raise
+
+        try:
+            nested_url = self._get_nested_url(sid)
+            session_api_key = self._get_session_api_key_for_conversation(sid)
+        except Exception as e:
+            logger.error(
+                f'[TOKEN_DEBUG] Failed to get nested URL for sid={sid}: {e}. '
+                f'Container may not exist. Returning STOPPED status.'
+            )
+            # Return a stopped status if we can't find the container
+            return AgentLoopInfo(
+                conversation_id=sid,
+                url='',
+                session_api_key='',
+                event_store=None,  # type: ignore
+                status=ConversationStatus.STOPPED,
+            )
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,

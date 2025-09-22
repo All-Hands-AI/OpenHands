@@ -299,6 +299,10 @@ class StandaloneConversationManager(ConversationManager):
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] StandaloneConversationManager.maybe_start_agent_loop ENTRY: '
+            f'sid={sid}, user_id={user_id}'
+        )
         session = self._local_agent_loops_by_sid.get(sid)
         logger.info(
             f'[TOKEN_DEBUG] maybe_start_agent_loop: '
