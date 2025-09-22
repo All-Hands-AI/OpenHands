@@ -121,9 +121,21 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        if not await self.is_agent_loop_running(sid):
+        is_running = await self.is_agent_loop_running(sid)
+        logger.info(
+            f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop: '
+            f'sid={sid}, is_running={is_running}, '
+            f'will_start_new={not is_running}, '
+            f'SOURCE=docker_nested_conversation_manager'
+        )
+        if not is_running:
+            logger.info(f'[TOKEN_DEBUG] Starting NEW agent loop for sid={sid} (Docker)')
             await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
+            )
+        else:
+            logger.info(
+                f'[TOKEN_DEBUG] Using EXISTING agent loop for sid={sid} - THIS IS RESUME! (Docker)'
             )
 
         nested_url = self._get_nested_url(sid)
