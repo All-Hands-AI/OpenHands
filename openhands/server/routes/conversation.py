@@ -9,6 +9,13 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.memory.memory import Memory
 from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
+from openhands.server.data_models.metrics_response import (
+    ConversationMetricsResponse,
+    CostResponse,
+    MetricsResponse,
+    ResponseLatencyResponse,
+    TokenUsageResponse,
+)
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager, file_store
@@ -268,3 +275,142 @@ async def get_microagents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error getting microagents: {e}'},
         )
+
+
+def _convert_token_usage_to_response(token_usage) -> TokenUsageResponse:
+    """Convert a TokenUsage object to TokenUsageResponse."""
+    if not token_usage:
+        return TokenUsageResponse()
+
+    return TokenUsageResponse(
+        model=getattr(token_usage, 'model', ''),
+        prompt_tokens=getattr(token_usage, 'prompt_tokens', 0),
+        completion_tokens=getattr(token_usage, 'completion_tokens', 0),
+        cache_read_tokens=getattr(token_usage, 'cache_read_tokens', 0),
+        cache_write_tokens=getattr(token_usage, 'cache_write_tokens', 0),
+        context_window=getattr(token_usage, 'context_window', 0),
+        per_turn_token=getattr(token_usage, 'per_turn_token', 0),
+    )
+
+
+def _convert_cost_to_response(cost) -> CostResponse:
+    """Convert a Cost object to CostResponse."""
+    return CostResponse(
+        model=getattr(cost, 'model', ''),
+        cost=getattr(cost, 'cost', 0.0),
+        timestamp=getattr(cost, 'timestamp', 0.0),
+    )
+
+
+def _convert_latency_to_response(latency) -> ResponseLatencyResponse:
+    """Convert a ResponseLatency object to ResponseLatencyResponse."""
+    return ResponseLatencyResponse(
+        model=getattr(latency, 'model', ''),
+        latency=getattr(latency, 'latency', 0.0),
+        response_id=getattr(latency, 'response_id', ''),
+    )
+
+
+def _convert_metrics_to_response(metrics) -> MetricsResponse:
+    """Convert a Metrics object to MetricsResponse."""
+    if not metrics:
+        return MetricsResponse(
+            accumulated_cost=0.0,
+            accumulated_token_usage=TokenUsageResponse(),
+            costs=[],
+            response_latencies=[],
+            token_usages=[],
+        )
+
+    return MetricsResponse(
+        accumulated_cost=getattr(metrics, 'accumulated_cost', 0.0),
+        max_budget_per_task=getattr(metrics, 'max_budget_per_task', None),
+        accumulated_token_usage=_convert_token_usage_to_response(
+            getattr(metrics, 'accumulated_token_usage', None)
+        ),
+        costs=[
+            _convert_cost_to_response(cost) for cost in getattr(metrics, 'costs', [])
+        ],
+        response_latencies=[
+            _convert_latency_to_response(latency)
+            for latency in getattr(metrics, 'response_latencies', [])
+        ],
+        token_usages=[
+            _convert_token_usage_to_response(usage)
+            for usage in getattr(metrics, 'token_usages', [])
+        ],
+    )
+
+
+@app.get('/metrics')
+async def get_conversation_metrics(
+    conversation_id: str,
+    metadata: ConversationMetadata = Depends(get_conversation_metadata),
+) -> ConversationMetricsResponse:
+    """Get comprehensive metrics data for a conversation.
+
+    This endpoint returns both accumulated metrics from conversation metadata
+    and real-time metrics from active sessions if available.
+
+    Args:
+        conversation_id: The conversation ID
+        metadata: Conversation metadata dependency
+
+    Returns:
+        ConversationMetricsResponse: Comprehensive metrics data
+    """
+    # Check if there's an active session with live metrics
+    has_active_session = await conversation_manager.is_agent_loop_running(
+        conversation_id
+    )
+
+    # Initialize response
+    response = ConversationMetricsResponse(
+        conversation_id=conversation_id,
+        has_active_session=has_active_session,
+    )
+
+    # Get live metrics from active session if available
+    if has_active_session:
+        try:
+            # Get conversation stats from the active session
+            agent_session = conversation_manager.get_agent_session(conversation_id)
+            if agent_session and hasattr(agent_session, 'conversation_stats'):
+                conversation_stats = agent_session.conversation_stats
+                if conversation_stats:
+                    # Get combined metrics across all services
+                    combined_metrics = conversation_stats.get_combined_metrics()
+                    response.metrics = _convert_metrics_to_response(combined_metrics)
+
+                    # Get per-service metrics
+                    for (
+                        service_id,
+                        service_metrics,
+                    ) in conversation_stats.service_to_metrics.items():
+                        response.service_metrics[service_id] = (
+                            _convert_metrics_to_response(service_metrics)
+                        )
+        except Exception as e:
+            logger.warning(
+                f'Error getting live metrics for conversation {conversation_id}: {e}'
+            )
+            # If we can't get live metrics, we'll fall back to stored metadata
+            pass
+
+    # If no live metrics available, use stored metadata
+    if not response.metrics:
+        # Create metrics from conversation metadata
+        accumulated_usage = TokenUsageResponse(
+            prompt_tokens=getattr(metadata, 'prompt_tokens', 0),
+            completion_tokens=getattr(metadata, 'completion_tokens', 0),
+        )
+
+        response.metrics = MetricsResponse(
+            accumulated_cost=getattr(metadata, 'accumulated_cost', 0.0),
+            accumulated_token_usage=accumulated_usage,
+            costs=[],
+            response_latencies=[],
+            token_usages=[],
+        )
+
+    return response

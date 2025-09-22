@@ -461,6 +461,11 @@ async def _get_conversation_info(
             url=agent_loop_info.url if agent_loop_info else None,
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
             pr_number=conversation.pr_number,
+            # Include metrics data from conversation metadata
+            accumulated_cost=getattr(conversation, 'accumulated_cost', 0.0),
+            prompt_tokens=getattr(conversation, 'prompt_tokens', 0),
+            completion_tokens=getattr(conversation, 'completion_tokens', 0),
+            total_tokens=getattr(conversation, 'total_tokens', 0),
         )
     except Exception as e:
         logger.error(

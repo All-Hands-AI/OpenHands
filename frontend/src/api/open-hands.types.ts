@@ -139,3 +139,41 @@ export type GetFilesResponse = string[];
 export interface GetFileResponse {
   code: string;
 }
+
+export interface TokenUsageResponse {
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  context_window: number;
+  per_turn_token: number;
+}
+
+export interface CostResponse {
+  model: string;
+  cost: number;
+  timestamp: number;
+}
+
+export interface ResponseLatencyResponse {
+  model: string;
+  latency: number;
+  response_id: string;
+}
+
+export interface MetricsResponse {
+  accumulated_cost: number;
+  max_budget_per_task?: number;
+  accumulated_token_usage: TokenUsageResponse;
+  costs: CostResponse[];
+  response_latencies: ResponseLatencyResponse[];
+  token_usages: TokenUsageResponse[];
+}
+
+export interface ConversationMetricsResponse {
+  conversation_id: string;
+  metrics?: MetricsResponse;
+  service_metrics: Record<string, MetricsResponse>;
+  has_active_session: boolean;
+}
