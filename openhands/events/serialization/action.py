@@ -1,7 +1,7 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action import Action, ActionSecurityRisk, Thought
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -110,7 +110,8 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
-    args = action.get('args', {})
+    # Work on a copy of args to avoid mutating the caller's dictionary
+    args = dict(action.get('args', {}))
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 
@@ -123,6 +124,24 @@ def action_from_dict(action: dict) -> Action:
     # images_urls has been renamed to image_urls
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
+
+    # Convert thought arg from legacy formats and capture optional reasoning_content
+    rc = args.pop('reasoning_content', None)
+    if 'thought' in args:
+        t = args['thought']
+        if isinstance(t, dict):
+            # Accept either {'text': '...', 'reasoning_content': '...'} or legacy {'thought': '...'}
+            text = t.get('text') or t.get('thought') or ''
+            reasoning_content = t.get('reasoning_content') or rc
+            args['thought'] = Thought(text=text, reasoning_content=reasoning_content)
+        elif isinstance(t, str):
+            args['thought'] = Thought(text=t, reasoning_content=rc)
+        # Inputs to action_from_dict come from wire (JSON→dict), so t will be dict or str.
+        # Thought instances should not appear here; if they do, they are out-of-band.
+        # We intentionally do not handle object instances to keep deserialization strict.
+    elif rc is not None:
+        # No text thought provided, but reasoning content exists
+        args['thought'] = Thought(text='', reasoning_content=rc)
 
     # Handle security_risk deserialization
     if 'security_risk' in args and args['security_risk'] is not None:
