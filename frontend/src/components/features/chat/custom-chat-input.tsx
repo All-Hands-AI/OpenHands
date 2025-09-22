@@ -86,6 +86,7 @@ export function CustomChatInput({
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   } = useGripResize(
     chatInputRef as React.RefObject<HTMLDivElement | null>,
     messageToSend,
@@ -96,6 +97,7 @@ export function CustomChatInput({
     fileInputRef as React.RefObject<HTMLInputElement | null>,
     smartResize,
     onSubmit,
+    resetManualResize,
   );
 
   const { handleInput, handlePaste, handleKeyDown, handleBlur, handleFocus } =
