@@ -5,11 +5,9 @@ import os
 import tempfile
 from typing import Any, Literal
 
-import numpy as np
 import pandas as pd
 import toml
 from datasets import load_dataset
-from jinja2 import Environment, FileSystemLoader
 
 import openhands.agenthub
 from evaluation.benchmarks.swe_perf.binary_patch_utils import (
@@ -21,7 +19,6 @@ from evaluation.benchmarks.swe_perf.resource.mapping import (
 )
 from evaluation.benchmarks.swe_perf.resource.swt_bench_constants import (
     MAP_REPO_TO_INSTALL,
-    MAP_REPO_TO_TEST_FRAMEWORK_VERBOSE,
     MAP_VERSION_TO_INSTALL,
 )
 from evaluation.utils.shared import (
@@ -247,11 +244,11 @@ def get_instance_docker_image(
     )  # to comply with docker image naming convention
     return (docker_image_prefix.rstrip('/') + '/' + image_name).lower()
 
+
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-
     base_container_image = get_instance_docker_image(
         instance['instance_id'],
     )
