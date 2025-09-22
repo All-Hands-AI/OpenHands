@@ -56,7 +56,6 @@ a = Analysis(
         'openhands.tools.execute_bash',
         'openhands.tools.str_replace_editor',
         'openhands.tools.task_tracker',
-        'openhands.tools.browser_use'
     ],
     hookspath=[],
     hooksconfig={},
@@ -77,7 +76,10 @@ a = Analysis(
         'prompt_toolkit.contrib.ssh',
         'fastmcp.cli',
         'boto3',
-        'botocore'
+        'botocore',
+        'posthog',
+        'browser-use',
+        'openhands.tools.browser_use'
     ],
     noarchive=False,
     # IMPORTANT: do not use optimize=2 (-OO) because it strips docstrings used by PLY/bashlex grammar
