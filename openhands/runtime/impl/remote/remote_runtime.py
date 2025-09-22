@@ -79,6 +79,14 @@ class RemoteRuntime(ActionExecutionClient):
             git_provider_tokens,
         )
         logger.debug(f'RemoteRuntime.init user_id {user_id}')
+        # Debug logging for initialization parameters
+        self.log(
+            'info',
+            f'[TOKEN_DEBUG] RemoteRuntime.__init__ called with: '
+            f'sid={sid}, attach_to_existing={attach_to_existing}, '
+            f'has_tokens={git_provider_tokens is not None}, '
+            f'user_id={user_id}',
+        )
         if self.config.sandbox.api_key is None:
             raise ValueError(
                 'API key is required to use the remote runtime. '
@@ -136,6 +144,11 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _start_or_attach_to_runtime(self) -> None:
         self.log('info', 'Starting or attaching to runtime')
+        self.log(
+            'info',
+            f'[TOKEN_DEBUG] _start_or_attach_to_runtime: attach_to_existing={self.attach_to_existing}, '
+            f'has_tokens={self.git_provider_tokens is not None}',
+        )
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             self.log('info', f'Using existing runtime with ID: {self.runtime_id}')
@@ -174,6 +187,11 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _check_existing_runtime(self) -> bool:
         self.log('info', f'Checking for existing runtime with session ID: {self.sid}')
+        self.log(
+            'info',
+            f'[TOKEN_DEBUG] _check_existing_runtime: attach_to_existing={self.attach_to_existing}, '
+            f'has_tokens={self.git_provider_tokens is not None}',
+        )
         try:
             response = self._send_runtime_api_request(
                 'GET',
@@ -182,6 +200,11 @@ class RemoteRuntime(ActionExecutionClient):
             data = response.json()
             status = data.get('status')
             self.log('info', f'Found runtime with status: {status}')
+            self.log(
+                'info',
+                f'[TOKEN_DEBUG] Runtime response data: runtime_id={data.get("runtime_id")}, '
+                f'status={status}, session_id={data.get("session_id")}',
+            )
             if status == 'running' or status == 'paused':
                 self._parse_runtime_response(response)
         except httpx.HTTPError as e:
