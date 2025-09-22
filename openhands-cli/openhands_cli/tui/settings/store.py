@@ -1,9 +1,37 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 import os
-from openhands.sdk import LocalFileStore, Agent
+from openhands.sdk import LocalFileStore, Agent, ToolSpec
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
+
+
+def create_default_tools(work_dir: str) -> list[ToolSpec]:
+    """Create default tools with the specified working directory."""
+    tools = []
+    
+    # Create BashTool with working_dir
+    bash_tool = ToolSpec(
+        name='BashTool',
+        params={'working_dir': work_dir}
+    )
+    tools.append(bash_tool)
+    
+    # Create FileEditorTool with workspace_root
+    file_editor_tool = ToolSpec(
+        name='FileEditorTool', 
+        params={'workspace_root': work_dir}
+    )
+    tools.append(file_editor_tool)
+    
+    # Create TaskTrackerTool with save_dir
+    task_tracker_tool = ToolSpec(
+        name='TaskTrackerTool',
+        params={'save_dir': os.path.join(work_dir, '.openhands_tasks')}
+    )
+    tools.append(task_tracker_tool)
+    
+    return tools
 
 
 class AgentStore:
@@ -16,25 +44,8 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
-            if not agent.tools:
-                return agent
-
-            updated_tools = []
-            for tool_spec in agent.tools:
-                if tool_spec.name == "BashTool":
-                    # Update the working_dir parameter to use current directory
-                    updated_params = tool_spec.params or {}
-                    updated_params["working_dir"] = WORK_DIR
-                    updated_tool_spec = tool_spec.model_copy(update={"params": updated_params})
-                    updated_tools.append(updated_tool_spec)
-                elif tool_spec.name == "FileEditorTool":
-                    # Update the workspace_root parameter to use current directory
-                    updated_params = tool_spec.params or {}
-                    updated_params["workspace_root"] = WORK_DIR
-                    updated_tool_spec = tool_spec.model_copy(update={"params": updated_params})
-                    updated_tools.append(updated_tool_spec)
-                else:
-                    updated_tools.append(tool_spec)
+            # Override the entire tools field with new tools from create_default_tools
+            updated_tools = create_default_tools(WORK_DIR)
             agent = agent.model_copy(update={"tools": updated_tools})
 
             return agent
