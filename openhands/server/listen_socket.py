@@ -49,6 +49,11 @@ async def connect(connection_id: str, environ: dict) -> None:
         logger.info(
             f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
         )
+        logger.info(
+            f'[TOKEN_DEBUG] SocketIO connect: conversation_id={conversation_id}, '
+            f'connection_id={connection_id}, latest_event_id={latest_event_id}, '
+            f'SOURCE=listen_socket.py (SocketIO entry point)'
+        )
         raw_list = query_params.get('providers_set', [])
         providers_list = []
         for item in raw_list:
@@ -119,6 +124,11 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set
+        )
+
+        logger.info(
+            f'[TOKEN_DEBUG] About to join conversation: conversation_id={conversation_id}, '
+            f'has_conversation_init_data={conversation_init_data is not None}'
         )
 
         agent_loop_info = await conversation_manager.join_conversation(
