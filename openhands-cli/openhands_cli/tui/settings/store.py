@@ -16,7 +16,7 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
-            # Fix bash tool spec to use current directory instead of hardcoded path
+            # Fix bash and file editor tool specs to use current directory instead of hardcoded path
             if not agent.tools:
                 return agent
 
@@ -26,6 +26,12 @@ class AgentStore:
                     # Update the working_dir parameter to use current directory
                     updated_params = tool_spec.params or {}
                     updated_params["working_dir"] = WORK_DIR
+                    updated_tool_spec = tool_spec.model_copy(update={"params": updated_params})
+                    updated_tools.append(updated_tool_spec)
+                elif tool_spec.name == "FileEditorTool":
+                    # Update the workspace_root parameter to use current directory
+                    updated_params = tool_spec.params or {}
+                    updated_params["workspace_root"] = WORK_DIR
                     updated_tool_spec = tool_spec.model_copy(update={"params": updated_params})
                     updated_tools.append(updated_tool_spec)
                 else:

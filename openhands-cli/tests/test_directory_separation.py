@@ -12,7 +12,7 @@ from openhands_cli.tui.settings.store import AgentStore
 class TestDirectorySeparation:
     """Test that WORK_DIR and PERSISTENCE_DIR are properly separated."""
 
-    def test_work_dir_and_configurations_dir_are_different(self):
+    def test_work_dir_and_persistence_dir_are_different(self):
         """Test that WORK_DIR and PERSISTENCE_DIR are separate directories."""
         # WORK_DIR should be the current working directory
         assert WORK_DIR == os.getcwd()
@@ -24,7 +24,7 @@ class TestDirectorySeparation:
         # They should be different
         assert WORK_DIR != PERSISTENCE_DIR
 
-    def test_agent_store_uses_configurations_dir(self):
+    def test_agent_store_uses_persistence_dir(self):
         """Test that AgentStore uses PERSISTENCE_DIR for file storage."""
         agent_store = AgentStore()
         assert agent_store.file_store.root == PERSISTENCE_DIR
@@ -36,18 +36,18 @@ class TestDirectorySeparation:
         mock_file_store.assert_called_once_with(root=PERSISTENCE_DIR)
 
 
-class TestBashToolSpecFix:
-    """Test that bash tool spec is fixed to use current directory."""
+class TestToolSpecFix:
+    """Test that bash and file editor tool specs are fixed to use current directory."""
 
-    def test_bash_tool_spec_updated_on_load(self):
-        """Test that BashTool working_dir is updated to current directory when loading agent."""
-        # Create a mock agent with BashTool that has a different working_dir
+    def test_bash_and_file_editor_tool_spec_updated_on_load(self):
+        """Test that BashTool working_dir and FileEditorTool workspace_root are updated to current directory when loading agent."""
+        # Create a mock agent with BashTool and FileEditorTool that have different working directories
         original_working_dir = "/some/other/path"
         mock_agent = Agent(
             llm=LLM(model="test/model", api_key="test-key"),
             tools=[
                 ToolSpec(name="BashTool", params={"working_dir": original_working_dir}),
-                ToolSpec(name="FileEditorTool"),
+                ToolSpec(name="FileEditorTool", params={"workspace_root": original_working_dir}),
             ]
         )
 
@@ -63,26 +63,33 @@ class TestBashToolSpecFix:
             # Verify the agent was loaded
             assert loaded_agent is not None
 
-            # Find the BashTool spec
+            # Find the BashTool and FileEditorTool specs
             bash_tool_spec = None
+            file_editor_tool_spec = None
             for tool_spec in loaded_agent.tools:
                 if tool_spec.name == "BashTool":
                     bash_tool_spec = tool_spec
-                    break
+                elif tool_spec.name == "FileEditorTool":
+                    file_editor_tool_spec = tool_spec
 
             # Verify BashTool was found and working_dir was updated
             assert bash_tool_spec is not None
             assert bash_tool_spec.params["working_dir"] == WORK_DIR
             assert bash_tool_spec.params["working_dir"] != original_working_dir
 
-    def test_non_bash_tools_unchanged_on_load(self):
-        """Test that non-BashTool specs are not modified when loading agent."""
+            # Verify FileEditorTool was found and workspace_root was updated
+            assert file_editor_tool_spec is not None
+            assert file_editor_tool_spec.params["workspace_root"] == WORK_DIR
+            assert file_editor_tool_spec.params["workspace_root"] != original_working_dir
+
+    def test_non_working_dir_tools_unchanged_on_load(self):
+        """Test that tools other than BashTool and FileEditorTool are not modified when loading agent."""
         # Create a mock agent with various tools
         mock_agent = Agent(
             llm=LLM(model="test/model", api_key="test-key"),
             tools=[
                 ToolSpec(name="BashTool", params={"working_dir": "/old/path"}),
-                ToolSpec(name="FileEditorTool"),
+                ToolSpec(name="FileEditorTool", params={"workspace_root": "/old/path"}),
                 ToolSpec(name="TaskTrackerTool", params={"save_dir": "/some/path"}),
             ]
         )
@@ -99,11 +106,14 @@ class TestBashToolSpecFix:
             # Verify the agent was loaded
             assert loaded_agent is not None
 
-            # Check that non-BashTool specs are unchanged
+            # Check that BashTool and FileEditorTool working_dir are updated, but other tools are unchanged
             for tool_spec in loaded_agent.tools:
-                if tool_spec.name == "FileEditorTool":
-                    # FileEditorTool should have no params or unchanged params
-                    assert tool_spec.params is None or tool_spec.params == {}
+                if tool_spec.name == "BashTool":
+                    # BashTool working_dir should be updated
+                    assert tool_spec.params["working_dir"] == WORK_DIR
+                elif tool_spec.name == "FileEditorTool":
+                    # FileEditorTool workspace_root should be updated
+                    assert tool_spec.params["workspace_root"] == WORK_DIR
                 elif tool_spec.name == "TaskTrackerTool":
                     # TaskTrackerTool params should be unchanged
                     assert tool_spec.params["save_dir"] == "/some/path"
@@ -150,13 +160,14 @@ class TestBashToolSpecFix:
             assert loaded_agent is not None
             assert loaded_agent.tools == []
 
-    def test_bash_tool_without_params_gets_working_dir(self):
-        """Test that BashTool without params gets working_dir added."""
-        # Create a mock agent with BashTool that has no params
+    def test_tools_without_params_get_working_dir(self):
+        """Test that BashTool and FileEditorTool without params get working directory parameters added."""
+        # Create a mock agent with BashTool and FileEditorTool that have no params
         mock_agent = Agent(
             llm=LLM(model="test/model", api_key="test-key"),
             tools=[
                 ToolSpec(name="BashTool"),  # No params
+                ToolSpec(name="FileEditorTool"),  # No params
             ]
         )
 
@@ -172,17 +183,24 @@ class TestBashToolSpecFix:
             # Verify the agent was loaded
             assert loaded_agent is not None
 
-            # Find the BashTool spec
+            # Find the BashTool and FileEditorTool specs
             bash_tool_spec = None
+            file_editor_tool_spec = None
             for tool_spec in loaded_agent.tools:
                 if tool_spec.name == "BashTool":
                     bash_tool_spec = tool_spec
-                    break
+                elif tool_spec.name == "FileEditorTool":
+                    file_editor_tool_spec = tool_spec
 
             # Verify BashTool was found and working_dir was added
             assert bash_tool_spec is not None
             assert bash_tool_spec.params is not None
             assert bash_tool_spec.params["working_dir"] == WORK_DIR
+
+            # Verify FileEditorTool was found and workspace_root was added
+            assert file_editor_tool_spec is not None
+            assert file_editor_tool_spec.params is not None
+            assert file_editor_tool_spec.params["workspace_root"] == WORK_DIR
 
 
 class TestIntegration:
@@ -221,12 +239,12 @@ class TestIntegration:
                 import importlib
                 import openhands_cli.locations
                 importlib.reload(openhands_cli.locations)
-                from openhands_cli.locations import WORK_DIR as NEW_WORK_DIR, PERSISTENCE_DIR as NEW_CONFIGURATIONS_DIR
+                from openhands_cli.locations import WORK_DIR as NEW_WORK_DIR, PERSISTENCE_DIR as NEW_PERSISTENCE_DIR
 
-                # Verify WORK_DIR changed but CONFIGURATIONS_DIR stayed the same
+                # Verify WORK_DIR changed but PERSISTENCE_DIR stayed the same
                 assert NEW_WORK_DIR == temp_work_dir
-                assert NEW_CONFIGURATIONS_DIR == os.path.expanduser("~/.openhands")
-                assert NEW_WORK_DIR != NEW_CONFIGURATIONS_DIR
+                assert NEW_PERSISTENCE_DIR == os.path.expanduser("~/.openhands")
+                assert NEW_WORK_DIR != NEW_PERSISTENCE_DIR
 
             finally:
                 # Restore original working directory
