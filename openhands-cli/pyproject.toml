@@ -81,8 +81,6 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
-# Ruff 0.11+ layout
-
 [tool.uv.sources]
 openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "a1165a620da4e9b967788eba4166fcb59bdfad2e" }
 openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "a1165a620da4e9b967788eba4166fcb59bdfad2e" }
