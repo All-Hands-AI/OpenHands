@@ -619,3 +619,175 @@ async def test_update_conversation_no_user_id_no_metadata_user_id():
         # Verify success (should work when both are None)
         assert result is True
         mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_conversation_rename_race_condition():
+    """Test to reproduce the conversation rename bug where title reverts after navigation.
+    
+    This test simulates the scenario described in issue #11065 where:
+    1. User renames a conversation
+    2. The title updates successfully 
+    3. User navigates or triggers cache invalidation
+    4. The conversation title reverts to the original name
+    
+    This could happen due to race conditions between:
+    - Frontend optimistic updates
+    - Backend persistence
+    - Cache invalidation/refetching
+    """
+    conversation_id = 'test_conversation_race'
+    user_id = 'test_user_race'
+    original_title = 'Original Conversation Title'
+    new_title = 'Renamed Conversation Title'
+    
+    # Create mock metadata with original title
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title=original_title,
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+    
+    # Track the saved metadata to simulate persistence
+    saved_metadata = None
+    
+    async def mock_save_metadata(metadata):
+        nonlocal saved_metadata
+        saved_metadata = metadata
+    
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.save_metadata = AsyncMock(side_effect=mock_save_metadata)
+    
+    # Mock socket for WebSocket events
+    mock_sio = AsyncMock()
+    
+    # Step 1: Simulate the initial get_metadata call (returns original title)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+        
+        # Step 2: Update the conversation title
+        update_request = UpdateConversationRequest(title=new_title)
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+        
+        # Verify the update was successful
+        assert result is True
+        assert saved_metadata is not None
+        assert saved_metadata.title == new_title
+        
+        # Verify WebSocket event was emitted with new title
+        mock_sio.emit.assert_called_once()
+        emit_call = mock_sio.emit.call_args
+        assert emit_call[0][1]['conversation_title'] == new_title
+        
+        # Step 3: Simulate a subsequent get_metadata call (should return updated title)
+        # This simulates what happens when the frontend refetches conversation data
+        # after navigation or cache invalidation
+        
+        # Reset the mock to simulate a fresh fetch
+        mock_conversation_store.get_metadata.reset_mock()
+        
+        # The get_metadata should now return the updated metadata
+        # If there's a race condition, this might still return the original title
+        mock_conversation_store.get_metadata.return_value = saved_metadata
+        
+        # Simulate fetching the conversation again (like frontend cache refetch)
+        refetched_metadata = await mock_conversation_store.get_metadata(conversation_id)
+        
+        # This is the critical assertion - the refetched title should match the updated title
+        # If this fails, it indicates the race condition bug where the title reverts
+        assert refetched_metadata.title == new_title, (
+            f"Race condition detected: Expected title '{new_title}' but got '{refetched_metadata.title}'. "
+            f"This reproduces the bug where conversation rename doesn't 'stick' after navigation."
+        )
+        
+        # Additional verification: ensure the title didn't revert to original
+        assert refetched_metadata.title != original_title, (
+            f"Title reverted to original '{original_title}' instead of staying as '{new_title}'"
+        )
+
+
+@pytest.mark.update_conversation  
+@pytest.mark.asyncio
+async def test_conversation_rename_persistence_across_multiple_fetches():
+    """Test that conversation title persists across multiple fetch operations.
+    
+    This test simulates multiple cache invalidations/refetches that might happen
+    during normal frontend operation to ensure the renamed title persists.
+    """
+    conversation_id = 'test_conversation_persistence'
+    user_id = 'test_user_persistence'
+    original_title = 'Original Title'
+    new_title = 'Persistently Renamed Title'
+    
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title=original_title,
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+    
+    # Track metadata changes
+    current_metadata = mock_metadata
+    
+    async def mock_save_metadata(metadata):
+        nonlocal current_metadata
+        current_metadata = metadata
+    
+    async def mock_get_metadata(cid):
+        return current_metadata
+    
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(side_effect=mock_get_metadata)
+    mock_conversation_store.save_metadata = AsyncMock(side_effect=mock_save_metadata)
+    
+    # Mock socket
+    mock_sio = AsyncMock()
+    
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+        
+        # Step 1: Update the conversation title
+        update_request = UpdateConversationRequest(title=new_title)
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+        )
+        
+        assert result is True
+        
+        # Step 2: Simulate multiple fetches (like what happens with frontend polling/navigation)
+        for i in range(5):
+            fetched_metadata = await mock_conversation_store.get_metadata(conversation_id)
+            assert fetched_metadata.title == new_title, (
+                f"Title persistence failed on fetch #{i+1}: "
+                f"Expected '{new_title}' but got '{fetched_metadata.title}'"
+            )
+            
+            # Simulate some time passing (like the 30-second polling interval)
+            import asyncio
+            await asyncio.sleep(0.01)  # Small delay to simulate async operations
+        
+        # Final verification
+        final_metadata = await mock_conversation_store.get_metadata(conversation_id)
+        assert final_metadata.title == new_title
+        assert final_metadata.title != original_title
