@@ -4,7 +4,7 @@ from openhands.sdk import (
 )
 from openhands_cli.tui.settings.store import AgentStore
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.tools.bash import BashTool
+from openhands.tools.execute_bash import BashTool
 from openhands.tools.str_replace_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.sdk import register_tool
