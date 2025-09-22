@@ -666,12 +666,17 @@ class RemoteRuntime(ActionExecutionClient):
                 # Get fresh tokens for all providers
                 import asyncio
 
-                fresh_env_vars = asyncio.run(
-                    provider_handler.get_env_vars(
-                        expose_secrets=True,
-                        get_latest=True,
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    fresh_env_vars = loop.run_until_complete(
+                        provider_handler.get_env_vars(
+                            expose_secrets=True,
+                            get_latest=True,
+                        )
                     )
-                )
+                finally:
+                    loop.close()
 
                 if fresh_env_vars:
                     self.log(
