@@ -114,7 +114,21 @@ class AgentSession:
         - agent_to_llm_config:
         - agent_configs:
         """
+        self.logger.info(
+            f'[TOKEN_DEBUG] AgentSession.start() called: '
+            f'sid={self.sid}, '
+            f'runtime_name={runtime_name}, '
+            f'has_git_tokens={git_provider_tokens is not None}, '
+            f'selected_repository={selected_repository}, '
+            f'has_initial_message={initial_message is not None}, '
+            f'has_replay_json={replay_json is not None}'
+        )
+
         if self.controller or self.runtime:
+            self.logger.info(
+                f'[TOKEN_DEBUG] Session already started - controller exists: {self.controller is not None}, '
+                f'runtime exists: {self.runtime is not None}'
+            )
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
@@ -132,6 +146,11 @@ class AgentSession:
             custom_secrets=custom_secrets if custom_secrets else {}  # type: ignore[arg-type]
         )
         try:
+            self.logger.info(
+                f'[TOKEN_DEBUG] About to call _create_runtime: '
+                f'runtime_name={runtime_name}, '
+                f'has_tokens={git_provider_tokens is not None}'
+            )
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
@@ -140,6 +159,9 @@ class AgentSession:
                 custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
+            )
+            self.logger.info(
+                f'[TOKEN_DEBUG] _create_runtime returned: runtime_connected={runtime_connected}'
             )
 
             repo_directory = None
@@ -321,6 +343,21 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
+
+        self.logger.info(
+            f'[TOKEN_DEBUG] In _create_runtime: '
+            f'runtime_cls={runtime_cls.__name__ if runtime_cls else None}, '
+            f'is_RemoteRuntime={runtime_cls == RemoteRuntime}, '
+            f'sid={self.sid}'
+        )
+
+        # Log whether we should be attaching to existing or not
+        # This is where we would check if runtime exists, but for now just log
+        self.logger.info(
+            '[TOKEN_DEBUG] DECISION POINT: Should we attach_to_existing? '
+            'Currently hardcoded to False. This is where we need to check if runtime exists.'
+        )
+
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
