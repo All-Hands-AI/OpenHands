@@ -485,6 +485,13 @@ async def start_conversation(
     return the existing agent loop info.
     """
     logger.info(f'Starting conversation: {conversation_id}')
+    logger.info(
+        f'[TOKEN_DEBUG] REST API /start endpoint: '
+        f'conversation_id={conversation_id}, '
+        f'user_id={user_id}, '
+        f'has_providers={providers_set.providers_set is not None and len(providers_set.providers_set) > 0}, '
+        f'SOURCE=manage_conversations.py (REST API start)'
+    )
 
     try:
         # Check that the conversation exists
@@ -505,10 +512,17 @@ async def start_conversation(
         )
 
         # Start the agent loop
+        logger.info(
+            f'[TOKEN_DEBUG] About to call maybe_start_agent_loop from REST API: '
+            f'conversation_id={conversation_id}'
+        )
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
             sid=conversation_id,
             settings=conversation_init_data,
             user_id=user_id,
+        )
+        logger.info(
+            f'[TOKEN_DEBUG] maybe_start_agent_loop returned: status={agent_loop_info.status}'
         )
 
         return ConversationResponse(
