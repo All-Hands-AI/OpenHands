@@ -24,6 +24,14 @@ class SecurityAnalyzer:
             'Need to implement security_risk method in SecurityAnalyzer subclass'
         )
 
+    def set_event_stream(self, event_stream) -> None:
+        """Set the event stream for accessing conversation history.
+
+        Args:
+            event_stream: EventStream instance for accessing events
+        """
+        pass
+
     async def close(self) -> None:
         """Cleanup resources allocated by the SecurityAnalyzer."""
         pass

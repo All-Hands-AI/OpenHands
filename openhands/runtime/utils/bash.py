@@ -206,7 +206,9 @@ class BashSession:
         # else:
         window_command = _shell_command
 
-        logger.debug(f'Initializing bash session with command: {window_command}')
+        logger.debug(
+            f'Initializing bash session in {self.work_dir} with command: {window_command}'
+        )
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
@@ -331,6 +333,9 @@ class BashSession:
 
         # Update the current working directory if it has changed
         if metadata.working_dir != self._cwd and metadata.working_dir:
+            logger.debug(
+                f'directory_changed: {self._cwd}; {metadata.working_dir}; {command}'
+            )
             self._cwd = metadata.working_dir
 
         logger.debug(f'COMMAND OUTPUT: {pane_content}')
@@ -598,8 +603,12 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
-            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
-            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
+            cur_pane_lines = cur_pane_output.split('\n')
+            if len(cur_pane_lines) <= 20:
+                logger.debug('PANE_CONTENT: {cur_pane_output}')
+            else:
+                logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_lines[:10]}')
+                logger.debug(f'END OF PANE CONTENT: {cur_pane_lines[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             current_ps1_count = len(ps1_matches)
 
