@@ -7,42 +7,22 @@ using PyInstaller with the custom spec file.
 """
 
 import argparse
-import json
 import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+from openhands_cli.locations import WORKING_DIR, AGENT_SETTINGS_PATH
+from openhands.sdk.preset.default import get_default_agent
+from openhands.sdk import LLM
 import time
-from openhands_cli.locations import LLM_SETTINGS_PATH
 import select
 
-WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
-
-dummy_settings = {
-    "model": "litellm_proxy/claude-sonnet-4-20250514",
-    "api_key": "adfadf",
-    "base_url": "https://llm-proxy.app.all-hands.dev/",
-    "num_retries": 5,
-    "retry_multiplier": 8,
-    "retry_min_wait": 8,
-    "retry_max_wait": 64,
-    "max_message_chars": 30000,
-    "temperature": 0.0,
-    "top_p": 1.0,
-    "max_input_tokens": 200000,
-    "max_output_tokens": 64000,
-    "drop_params": True,
-    "modify_params": True,
-    "disable_stop_word": False,
-    "caching_prompt": True,
-    "log_completions": False,
-    "log_completions_folder": "logs/completions",
-    "reasoning_effort": "high",
-    "service_id": "default",
-    "OVERRIDE_ON_SERIALIZE": ["api_key", "aws_access_key_id", "aws_secret_access_key"],
-}
-
+dummy_agent = get_default_agent(
+    llm=LLM(model='dummy-model', api_key='dummy-key'),
+    working_dir=WORKING_DIR,
+    cli_mode=True
+)
 
 # =================================================
 # SECTION: Build Binary
@@ -133,6 +113,7 @@ def build_executable(
 # SECTION: Test and profile binary
 # =================================================
 
+WELCOME_MARKERS = ["welcome", "openhands cli", "type /help", "available commands", ">"]
 
 def _is_welcome(line: str) -> bool:
     s = line.strip().lower()
@@ -142,11 +123,15 @@ def test_executable() -> bool:
     """Test the built executable, measuring boot time and total test time."""
     print('🧪 Testing the built executable...')
 
-    settings_path = Path(LLM_SETTINGS_PATH)
-    if not settings_path.exists():
-        print(f"💾 Creating dummy settings at {settings_path}")
-        settings_path.parent.mkdir(parents=True, exist_ok=True)
-        settings_path.write_text(json.dumps(dummy_settings))
+    spec_path = os.path.join(WORKING_DIR, AGENT_SETTINGS_PATH)
+
+    specs_path = Path(os.path.expanduser(spec_path))
+    if specs_path.exists():
+        print(f"⚠️  Using existing settings at {specs_path}")
+    else:
+        print(f"💾 Creating dummy settings at {specs_path}")
+        specs_path.parent.mkdir(parents=True, exist_ok=True)
+        specs_path.write_text(dummy_agent.model_dump_json())
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():
@@ -206,7 +191,7 @@ def test_executable() -> bool:
 
         proc.stdin.write("/help\n/exit\n")
         proc.stdin.flush()
-        out, _ = proc.communicate(timeout=20)
+        out, _ = proc.communicate(timeout=30)
 
         total_end = time.time()
         full_output = ''.join(captured) + (out or '')

@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from openhands.sdk import ActionBase
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
@@ -33,26 +34,32 @@ class TestConfirmationMode:
         """Test that setup_agent creates a conversation successfully."""
         with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
             with (
-                patch('openhands_cli.setup.LLM') as mock_llm_class,
-                patch('openhands_cli.setup.Agent'),
-                patch('openhands_cli.setup.Conversation') as mock_conversation,
-                patch('openhands_cli.setup.BashExecutor'),
-                patch('openhands_cli.setup.FileEditorExecutor'),
+                patch('openhands_cli.setup.Agent') as mock_agent_class,
+                patch('openhands_cli.setup.Conversation') as mock_conversation_class,
+                patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
+                patch('openhands_cli.setup.print_formatted_text') as mock_print,
+                patch('openhands_cli.setup.HTML') as mock_html,
             ):
-                # Mock LLM.load_from_json to return a mock LLM instance
-                mock_llm_instance = MagicMock()
-                mock_llm_instance.model = 'test-model'
-                mock_llm_class.load_from_json.return_value = mock_llm_instance
-                
-                mock_conv_instance = MagicMock()
-                mock_conversation.return_value = mock_conv_instance
+                # Mock AgentStore
+                mock_agent_store_instance = MagicMock()
+                mock_agent_instance = MagicMock()
+                mock_agent_instance.llm.model = 'test-model'
+                mock_agent_store_instance.load.return_value = mock_agent_instance
+                mock_agent_store_class.return_value = mock_agent_store_instance
+
+                # Mock Conversation constructor to return a mock conversation
+                mock_conversation_instance = MagicMock()
+                mock_conversation_class.return_value = mock_conversation_instance
 
                 result = setup_agent()
 
                 # Verify conversation was created and returned
-                assert result == mock_conv_instance
-                mock_conversation.assert_called_once()
-                mock_llm_class.load_from_json.assert_called_once()
+                assert result == mock_conversation_instance
+                mock_agent_store_class.assert_called_once()
+                mock_agent_store_instance.load.assert_called_once()
+                mock_conversation_class.assert_called_once_with(agent=mock_agent_instance)
+                # Verify print_formatted_text was called
+                mock_print.assert_called_once()
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
         """Test that ConversationRunner can set confirmation mode."""
@@ -63,12 +70,12 @@ class TestConfirmationMode:
         # Test enabling confirmation mode
         runner.set_confirmation_mode(True)
         assert runner.confirmation_mode is True
-        mock_conversation.set_confirmation_mode.assert_called_with(True)
+        mock_conversation.set_confirmation_policy.assert_called_with(AlwaysConfirm())
 
         # Test disabling confirmation mode
         runner.set_confirmation_mode(False)
         assert runner.confirmation_mode is False
-        mock_conversation.set_confirmation_mode.assert_called_with(False)
+        mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())
 
     def test_conversation_runner_initial_state(self) -> None:
         """Test that ConversationRunner starts with confirmation mode disabled."""
@@ -305,10 +312,6 @@ class TestConfirmationMode:
         runner.set_confirmation_mode(True)
         assert runner.confirmation_mode is True
 
-        # Mock the conversation state to simulate waiting for confirmation
-        mock_conversation.state.agent_waiting_for_confirmation = True
-        mock_conversation.state.agent_finished = False
-
         # Mock get_unmatched_actions to return some actions
         with patch('openhands_cli.runner.get_unmatched_actions') as mock_get_actions:
             mock_action = MagicMock()
@@ -327,4 +330,4 @@ class TestConfirmationMode:
                     # Verify that confirmation mode was disabled
                     assert result == UserConfirmation.ALWAYS_ACCEPT
                     assert runner.confirmation_mode is False
-                    mock_conversation.set_confirmation_mode.assert_called_with(False)
+                    mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())

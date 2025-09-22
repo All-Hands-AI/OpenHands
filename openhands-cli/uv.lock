@@ -1464,51 +1464,42 @@ dependencies = [
     { name = "typer" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "black" },
     { name = "flake8" },
     { name = "isort" },
     { name = "mypy" },
     { name = "pre-commit" },
+    { name = "pyinstaller" },
     { name = "pytest" },
     { name = "ruff" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "pyinstaller" },
-    { name = "pytest" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "black", marker = "extra == 'dev'", specifier = ">=23" },
-    { name = "flake8", marker = "extra == 'dev'", specifier = ">=6" },
-    { name = "isort", marker = "extra == 'dev'", specifier = ">=5" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1" },
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=0e62eeeba193905478187e2f3117846d6cc97718" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=0e62eeeba193905478187e2f3117846d6cc97718" },
-    { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=3.7" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=a1165a620da4e9b967788eba4166fcb59bdfad2e" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=a1165a620da4e9b967788eba4166fcb59bdfad2e" },
     { name = "prompt-toolkit", specifier = ">=3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=7" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.11.8" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "black", specifier = ">=23" },
+    { name = "flake8", specifier = ">=6" },
+    { name = "isort", specifier = ">=5" },
+    { name = "mypy", specifier = ">=1" },
     { name = "pre-commit", specifier = ">=4.3" },
     { name = "pyinstaller", specifier = ">=6.15" },
     { name = "pytest", specifier = ">=8.4.1" },
+    { name = "ruff", specifier = ">=0.11.8" },
 ]
 
 [[package]]
 name = "openhands-sdk"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=0e62eeeba193905478187e2f3117846d6cc97718#0e62eeeba193905478187e2f3117846d6cc97718" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=a1165a620da4e9b967788eba4166fcb59bdfad2e#a1165a620da4e9b967788eba4166fcb59bdfad2e" }
 dependencies = [
     { name = "fastmcp" },
     { name = "litellm" },
@@ -1521,7 +1512,7 @@ dependencies = [
 [[package]]
 name = "openhands-tools"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=0e62eeeba193905478187e2f3117846d6cc97718#0e62eeeba193905478187e2f3117846d6cc97718" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=a1165a620da4e9b967788eba4166fcb59bdfad2e#a1165a620da4e9b967788eba4166fcb59bdfad2e" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
