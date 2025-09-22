@@ -34,7 +34,7 @@ def test_llm_settings_save_and_load(tmp_path: Path):
 
     # Mock the spec store to verify settings are saved
     with patch.object(screen.agent_store, 'save') as mock_save:
-        screen._apply_llm(
+        screen._save_llm_settings(
             model="openai/gpt-4o-mini",
             api_key="sk-test-123"
         )

@@ -123,7 +123,7 @@ class SettingsScreen:
             return
 
         # Store the collected settings for persistence
-        self._apply_llm(f"{provider}/{llm_model}", api_key)
+        self._save_llm_settings(f"{provider}/{llm_model}", api_key)
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
@@ -153,7 +153,7 @@ class SettingsScreen:
             memory_condensation
         )
 
-    def _apply_llm(
+    def _save_llm_settings(
         self,
         model,
         api_key,
@@ -184,7 +184,7 @@ class SettingsScreen:
         api_key: str,
         memory_condensation: bool
     ):
-        self._apply_llm(
+        self._save_llm_settings(
             custom_model,
             api_key,
             base_url=base_url
