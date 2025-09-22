@@ -342,75 +342,80 @@ def _convert_metrics_to_response(metrics) -> MetricsResponse:
     )
 
 
-@app.get('/metrics')
-async def get_conversation_metrics(
+@app.get('/stats')
+async def get_conversation_stats(
     conversation_id: str,
-    metadata: ConversationMetadata = Depends(get_conversation_metadata),
+    request: Request,
 ) -> ConversationMetricsResponse:
-    """Get comprehensive metrics data for a conversation.
+    """Get conversation statistics from stored pickle data.
 
-    This endpoint returns both accumulated metrics from conversation metadata
-    and real-time metrics from active sessions if available.
-
-    Args:
-        conversation_id: The conversation ID
-        metadata: Conversation metadata dependency
-
-    Returns:
-        ConversationMetricsResponse: Comprehensive metrics data
+    Returns metrics data from the conversation_stats pickle file.
     """
-    # Check if there's an active session with live metrics
-    has_active_session = await conversation_manager.is_agent_loop_running(
-        conversation_id
-    )
-
-    # Initialize response
-    response = ConversationMetricsResponse(
-        conversation_id=conversation_id,
-        has_active_session=has_active_session,
-    )
-
-    # Get live metrics from active session if available
-    if has_active_session:
-        try:
-            # Get conversation stats from the active session
-            agent_session = conversation_manager.get_agent_session(conversation_id)
-            if agent_session and hasattr(agent_session, 'conversation_stats'):
-                conversation_stats = agent_session.conversation_stats
-                if conversation_stats:
-                    # Get combined metrics across all services
-                    combined_metrics = conversation_stats.get_combined_metrics()
-                    response.metrics = _convert_metrics_to_response(combined_metrics)
-
-                    # Get per-service metrics
-                    for (
-                        service_id,
-                        service_metrics,
-                    ) in conversation_stats.service_to_metrics.items():
-                        response.service_metrics[service_id] = (
-                            _convert_metrics_to_response(service_metrics)
-                        )
-        except Exception as e:
-            logger.warning(
-                f'Error getting live metrics for conversation {conversation_id}: {e}'
-            )
-            # If we can't get live metrics, we'll fall back to stored metadata
-            pass
-
-    # If no live metrics available, use stored metadata
-    if not response.metrics:
-        # Create metrics from conversation metadata
-        accumulated_usage = TokenUsageResponse(
-            prompt_tokens=getattr(metadata, 'prompt_tokens', 0),
-            completion_tokens=getattr(metadata, 'completion_tokens', 0),
+    try:
+        # Get the file store from the session manager
+        session_manager = request.app.state.session_manager
+        file_store = (
+            getattr(session_manager, 'file_store', None) if session_manager else None
         )
 
-        response.metrics = MetricsResponse(
-            accumulated_cost=getattr(metadata, 'accumulated_cost', 0.0),
-            accumulated_token_usage=accumulated_usage,
-            costs=[],
-            response_latencies=[],
-            token_usages=[],
+        if not file_store:
+            raise HTTPException(status_code=500, detail='File store not available')
+
+        # Get user_id from the conversation metadata
+        conversation_store = request.app.state.conversation_store
+        user_id = None
+        if conversation_store:
+            try:
+                conversation = await conversation_store.get_conversation_metadata(
+                    conversation_id
+                )
+                user_id = getattr(conversation, 'user_id', None)
+            except Exception:
+                pass  # Continue without user_id
+
+        # Create ConversationStats to load the pickle data
+        from openhands.llm.metrics import Metrics
+        from openhands.server.services.conversation_stats import ConversationStats
+
+        stats = ConversationStats(
+            file_store=file_store,
+            conversation_id=conversation_id,
+            user_id=user_id,
         )
 
-    return response
+        # Get combined metrics from restored data
+        combined_metrics = None
+        service_metrics = {}
+
+        # Check if we have any metrics data
+        if stats.restored_metrics or stats.service_to_metrics:
+            # Get combined metrics
+            if stats.service_to_metrics:
+                # If we have active service metrics, use those
+                combined_metrics = _convert_metrics_to_response(
+                    stats.get_combined_metrics()
+                )
+                for service_id, metrics in stats.service_to_metrics.items():
+                    service_metrics[service_id] = _convert_metrics_to_response(metrics)
+            elif stats.restored_metrics:
+                # If we only have restored metrics, combine those
+                total_metrics = Metrics()
+                for metrics in stats.restored_metrics.values():
+                    total_metrics.merge(metrics)
+                combined_metrics = _convert_metrics_to_response(total_metrics)
+                for service_id, metrics in stats.restored_metrics.items():
+                    service_metrics[service_id] = _convert_metrics_to_response(metrics)
+
+        return ConversationMetricsResponse(
+            conversation_id=conversation_id,
+            metrics=combined_metrics,
+            service_metrics=service_metrics,
+            has_active_session=conversation_id
+            in (session_manager.sessions if session_manager else {}),
+        )
+
+    except Exception as e:
+        logger.error(f'Error getting conversation stats: {e}')
+        raise HTTPException(
+            status_code=500, detail=f'Error getting conversation stats: {str(e)}'
+        )
