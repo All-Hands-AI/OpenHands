@@ -293,54 +293,6 @@ class AgentSession:
             return MappingProxyType(tokens)
         return git_provider_tokens
 
-    def _check_runtime_exists(self, runtime_name: str, config: OpenHandsConfig) -> bool:
-        """Check if a runtime already exists for this session ID.
-
-        Returns True if a runtime exists with status 'running' or 'paused'.
-        """
-        runtime_cls = get_runtime_cls(runtime_name)
-        if runtime_cls != RemoteRuntime:
-            # Non-remote runtimes don't support attach_to_existing
-            return False
-
-        try:
-            import httpx
-
-            # Check if a runtime exists for this session
-            url = f'{config.sandbox.remote_runtime_api_url}/sessions/{self.sid}'
-            self.logger.info(f'[TOKEN_DEBUG] Checking for existing runtime at: {url}')
-
-            # Use the same auth as RemoteRuntime would use
-            headers = {}
-            if config.sandbox.api_key:
-                headers['X-API-Key'] = config.sandbox.api_key
-
-            response = httpx.get(url, headers=headers, timeout=30)
-
-            if response.status_code == 404:
-                self.logger.info(
-                    f'[TOKEN_DEBUG] No existing runtime found for session {self.sid}'
-                )
-                return False
-
-            response.raise_for_status()
-            data = response.json()
-            status = data.get('status', '')
-
-            self.logger.info(
-                f'[TOKEN_DEBUG] Found existing runtime for session {self.sid} with status: {status}'
-            )
-
-            # Only attach to existing if runtime is running or paused
-            return status in ['running', 'paused']
-
-        except Exception as e:
-            self.logger.warning(
-                f'[TOKEN_DEBUG] Error checking for existing runtime: {e}. '
-                f'Will create new runtime.'
-            )
-            return False
-
     async def _create_runtime(
         self,
         runtime_name: str,
@@ -369,10 +321,6 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-
-        # Check if we should attach to an existing runtime
-        should_attach = self._check_runtime_exists(runtime_name, config)
-
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
@@ -382,7 +330,7 @@ class AgentSession:
 
             self.logger.info(
                 f'[TOKEN_DEBUG] Creating RemoteRuntime: sid={self.sid}, '
-                f'attach_to_existing={should_attach} (dynamic based on runtime existence), '
+                f'attach_to_existing=False (HARDCODED!), '
                 f'has_tokens={overrided_tokens is not None}, '
                 f'user_id={self.user_id}'
             )
@@ -399,7 +347,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
-                attach_to_existing=should_attach,  # Dynamic based on runtime existence
+                attach_to_existing=False,  # TODO: This should be True when resuming!
                 git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
@@ -412,7 +360,6 @@ class AgentSession:
 
             # Merge git provider tokens with custom secrets before passing over to runtime
             env_vars.update(await provider_handler.get_env_vars(expose_secrets=True))
-            # For non-RemoteRuntime, should_attach is always False
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
@@ -421,7 +368,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
-                attach_to_existing=False,  # Non-remote runtimes don't support attach
+                attach_to_existing=False,
                 env_vars=env_vars,
                 git_provider_tokens=git_provider_tokens,
             )
