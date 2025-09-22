@@ -18,6 +18,8 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.action.commands import CmdRunAction
+from openhands.events.observation.commands import CmdOutputObservation
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
@@ -313,10 +315,15 @@ class RemoteRuntime(ActionExecutionClient):
         4. Update env vars
         """
         self.log('info', f'Attempting to resume runtime with ID: {self.runtime_id}')
-        # TODO: Debug logging for token refresh investigation
+        # Debug logging for token refresh investigation
         self.log(
-            'debug',
+            'info',
             f'[TOKEN_DEBUG] Starting resume process for runtime {self.runtime_id}',
+        )
+        self.log(
+            'info',
+            f'[TOKEN_DEBUG] attach_to_existing={self.attach_to_existing}, '
+            f'has git_provider_tokens={self.git_provider_tokens is not None}',
         )
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
@@ -346,6 +353,23 @@ class RemoteRuntime(ActionExecutionClient):
                 exc_info=True,
             )
             raise
+
+        # IMPORTANT: Even when attaching to existing runtime after resume,
+        # we need to refresh provider tokens that may have expired
+        try:
+            self.log(
+                'info',
+                '[TOKEN_DEBUG] Refreshing provider tokens after resume',
+            )
+            self._refresh_provider_tokens_on_resume()
+            self.log('info', 'Successfully refreshed provider tokens after resume')
+        except Exception as e:
+            self.log(
+                'error',
+                f'Failed to refresh provider tokens after resume: {e}',
+                exc_info=True,
+            )
+            # Don't fail the resume if token refresh fails - let the agent handle it
 
         try:
             self.setup_initial_env()
@@ -601,6 +625,183 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _stop_if_closed(self, retry_state: RetryCallState) -> bool:
         return self._runtime_closed
+
+    def _refresh_provider_tokens_on_resume(self) -> None:
+        """Refresh provider tokens after resuming a paused runtime.
+
+        This is critical because tokens expire after ~2 hours, and if a runtime
+        was paused and resumed after that time, the old tokens will be invalid.
+        This method fetches fresh tokens and updates git remote URLs.
+        """
+        if not self.git_provider_tokens:
+            self.log('debug', '[TOKEN_DEBUG] No provider tokens to refresh')
+            return
+
+        # Import here to avoid circular dependency
+
+        from openhands.integrations.provider import ProviderHandler
+
+        self.log(
+            'info',
+            f'[TOKEN_DEBUG] Creating provider handler for session {self.sid}',
+        )
+
+        provider_handler = ProviderHandler(
+            provider_tokens=self.git_provider_tokens,
+            external_auth_id=self.user_id,
+            external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=self.sid,
+        )
+
+        # Get fresh tokens with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                self.log(
+                    'info',
+                    f'[TOKEN_DEBUG] Fetching fresh tokens (attempt {attempt + 1}/{max_retries})',
+                )
+
+                # Get fresh tokens for all providers
+                import asyncio
+
+                fresh_env_vars = asyncio.run(
+                    provider_handler.get_env_vars(
+                        expose_secrets=True,
+                        get_latest=True,
+                    )
+                )
+
+                if fresh_env_vars:
+                    self.log(
+                        'info',
+                        f'[TOKEN_DEBUG] Got fresh tokens for {len(fresh_env_vars)} providers',
+                    )
+
+                    # Export fresh tokens to environment
+                    self.add_env_vars(fresh_env_vars)
+
+                    # Update git remote URLs with fresh tokens
+                    self._update_git_remote_urls(fresh_env_vars)
+
+                    self.log('info', '[TOKEN_DEBUG] Successfully refreshed all tokens')
+                    return
+                else:
+                    self.log('warning', '[TOKEN_DEBUG] No fresh tokens returned')
+
+            except Exception as e:
+                self.log(
+                    'warning',
+                    f'[TOKEN_DEBUG] Token refresh attempt {attempt + 1} failed: {e}',
+                )
+                if attempt < max_retries - 1:
+                    import time
+
+                    time.sleep(2**attempt)  # Exponential backoff: 1s, 2s
+                else:
+                    raise
+
+    def _update_git_remote_urls(self, env_vars: dict[str, str]) -> None:
+        """Update git remote URLs with fresh tokens.
+
+        When a repo is cloned, the token is embedded in the URL. If that token
+        expires, we need to update the URL with a fresh token.
+        """
+        try:
+            # Check if we have a git repo
+            result = self.run_action(CmdRunAction('git rev-parse --git-dir'))
+            if not isinstance(result, CmdOutputObservation) or result.exit_code != 0:
+                self.log(
+                    'debug',
+                    '[TOKEN_DEBUG] Not in a git repository, skipping URL update',
+                )
+                return
+
+            # Get current remote URL
+            result = self.run_action(CmdRunAction('git remote get-url origin'))
+            if not isinstance(result, CmdOutputObservation) or result.exit_code != 0:
+                self.log('debug', '[TOKEN_DEBUG] No origin remote found')
+                return
+
+            current_url = result.content.strip()
+            self.log(
+                'info', f'[TOKEN_DEBUG] Current git remote URL: {current_url[:50]}...'
+            )
+
+            # Parse and update the URL with fresh token
+            for env_key, token in env_vars.items():
+                if 'github_token' in env_key.lower() and 'github.com' in current_url:
+                    # Extract repo path from URL
+                    import re
+
+                    match = re.search(
+                        r'github\.com[:/]([^/]+/[^/]+?)(\.git)?$', current_url
+                    )
+                    if match:
+                        repo_path = match.group(1)
+                        new_url = f'https://{token}@github.com/{repo_path}.git'
+                        self.log(
+                            'info',
+                            f'[TOKEN_DEBUG] Updating GitHub remote URL for {repo_path}',
+                        )
+
+                        result = self.run_action(
+                            CmdRunAction(f'git remote set-url origin {new_url}')
+                        )
+                        if (
+                            isinstance(result, CmdOutputObservation)
+                            and result.exit_code == 0
+                        ):
+                            self.log(
+                                'info',
+                                '[TOKEN_DEBUG] Successfully updated git remote URL',
+                            )
+                        else:
+                            self.log(
+                                'warning',
+                                f'[TOKEN_DEBUG] Failed to update git remote URL: {result.content}',
+                            )
+                        break
+
+                elif 'gitlab_token' in env_key.lower() and 'gitlab' in current_url:
+                    # Similar logic for GitLab
+                    import re
+
+                    match = re.search(r'gitlab\.[^/]+/(.+?)(\.git)?$', current_url)
+                    if match:
+                        repo_path = match.group(1)
+                        domain = current_url.split('/')[2]  # Extract domain
+                        new_url = f'https://oauth2:{token}@{domain}/{repo_path}.git'
+                        self.log(
+                            'info',
+                            f'[TOKEN_DEBUG] Updating GitLab remote URL for {repo_path}',
+                        )
+
+                        result = self.run_action(
+                            CmdRunAction(f'git remote set-url origin {new_url}')
+                        )
+                        if (
+                            isinstance(result, CmdOutputObservation)
+                            and result.exit_code == 0
+                        ):
+                            self.log(
+                                'info',
+                                '[TOKEN_DEBUG] Successfully updated git remote URL',
+                            )
+                        else:
+                            self.log(
+                                'warning',
+                                f'[TOKEN_DEBUG] Failed to update git remote URL: {result.content}',
+                            )
+                        break
+
+        except Exception as e:
+            self.log(
+                'warning',
+                f'[TOKEN_DEBUG] Failed to update git remote URLs: {e}',
+            )
+            # Don't fail resume if we can't update URLs - agent can handle it
 
     def get_action_execution_server_startup_command(self):
         return get_action_execution_server_startup_command(
