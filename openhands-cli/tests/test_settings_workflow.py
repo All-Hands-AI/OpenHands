@@ -3,12 +3,12 @@ from unittest.mock import MagicMock, patch
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from pathlib import Path
 
-from openhands.sdk import LLM, Conversation
+from openhands.sdk import LLM, Conversation, LocalFileStore
+from openhands.sdk.preset.default import get_default_agent
+from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import SettingsType
 from pydantic import SecretStr
 import pytest
-from openhands_cli.agent_chat import run_cli_entry
-
 
 def read_json(path: Path) -> dict:
     with open(path, "r") as f:
@@ -23,9 +23,13 @@ def make_screen_with_conversation(model="openai/gpt-4o-mini", api_key="sk-xyz"):
     return SettingsScreen(conversation=conv)
 
 def seed_file(path: Path, model: str = "openai/gpt-4o-mini", api_key: str = "sk-old"):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    LLM(model=model, api_key=SecretStr(api_key)).store_to_json(str(path))
-
+    store = AgentStore()
+    store.file_store = LocalFileStore(root=str(path))
+    agent = get_default_agent(
+        llm=LLM(model=model, api_key=SecretStr(api_key)),
+        working_dir=str(path)
+    )
+    store.save(agent)
 
 
 def test_llm_settings_save_and_load(tmp_path: Path):
@@ -68,7 +72,7 @@ def test_first_time_setup_workflow(tmp_path: Path):
 
 def test_update_existing_settings_workflow(tmp_path: Path):
     """Test that the settings update workflow completes without errors."""
-    settings_path = tmp_path / "llm_settings.json"
+    settings_path = tmp_path / "agent_settings.json"
     seed_file(settings_path, model="openai/gpt-4o-mini", api_key="sk-old")
     screen = make_screen_with_conversation(model="openai/gpt-4o-mini", api_key="sk-old")
 

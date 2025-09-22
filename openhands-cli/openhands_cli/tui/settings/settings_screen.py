@@ -1,5 +1,5 @@
 import os
-from openhands_cli.locations import AGENT_SETTINGS_PATH, WORKING_DIR
+from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
@@ -23,7 +23,7 @@ from openhands_cli.pt_style import COLOR_GREY
 
 class SettingsScreen:
     def __init__(self, conversation: Conversation | None = None):
-        self.file_store = LocalFileStore(WORKING_DIR)
+        self.file_store = LocalFileStore(PERSISTENCE_DIR)
         self.agent_store = AgentStore()
         self.conversation = conversation
 
@@ -59,7 +59,7 @@ class SettingsScreen:
             ("   API Key", "********" if llm.api_key else "Not Set"),
             ("   Confirmation Mode", "Enabled" if self.conversation.state.confirmation_policy else "Disabled"),
             ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
-            ("   Configuration File", os.path.join(WORKING_DIR, AGENT_SETTINGS_PATH))
+            ("   Configuration File", os.path.join(PERSISTENCE_DIR, AGENT_SETTINGS_PATH))
         ])
 
         # Calculate max widths for alignment
@@ -169,7 +169,7 @@ class SettingsScreen:
         if not agent:
             agent = get_default_agent(
                 llm=llm,
-                working_dir=WORKING_DIR,
+                working_dir=WORK_DIR,
                 cli_mode=True
             )
 
