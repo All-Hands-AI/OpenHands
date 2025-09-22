@@ -16,7 +16,6 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
-            # Fix bash and file editor tool specs to use current directory instead of hardcoded path
             if not agent.tools:
                 return agent
 

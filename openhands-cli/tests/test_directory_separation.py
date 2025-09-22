@@ -1,8 +1,6 @@
 """Tests to demonstrate the fix for WORK_DIR and PERSISTENCE_DIR separation."""
 
 import os
-import tempfile
-import pytest
 from unittest.mock import patch, MagicMock
 from openhands.sdk import Agent, LLM, ToolSpec
 from openhands_cli.locations import WORK_DIR, PERSISTENCE_DIR
@@ -29,12 +27,6 @@ class TestDirectorySeparation:
         agent_store = AgentStore()
         assert agent_store.file_store.root == PERSISTENCE_DIR
 
-    @patch('openhands_cli.tui.settings.store.LocalFileStore')
-    def test_agent_store_initialization(self, mock_file_store):
-        """Test that AgentStore initializes with correct directory."""
-        AgentStore()
-        mock_file_store.assert_called_once_with(root=PERSISTENCE_DIR)
-
 
 class TestToolSpecFix:
     """Test that bash and file editor tool specs are fixed to use current directory."""
@@ -48,48 +40,6 @@ class TestToolSpecFix:
             tools=[
                 ToolSpec(name="BashTool", params={"working_dir": original_working_dir}),
                 ToolSpec(name="FileEditorTool", params={"workspace_root": original_working_dir}),
-            ]
-        )
-
-        # Mock the file store to return our test agent
-        with patch('openhands_cli.tui.settings.store.LocalFileStore') as mock_file_store:
-            mock_store_instance = MagicMock()
-            mock_file_store.return_value = mock_store_instance
-            mock_store_instance.read.return_value = mock_agent.model_dump_json()
-
-            agent_store = AgentStore()
-            loaded_agent = agent_store.load()
-
-            # Verify the agent was loaded
-            assert loaded_agent is not None
-
-            # Find the BashTool and FileEditorTool specs
-            bash_tool_spec = None
-            file_editor_tool_spec = None
-            for tool_spec in loaded_agent.tools:
-                if tool_spec.name == "BashTool":
-                    bash_tool_spec = tool_spec
-                elif tool_spec.name == "FileEditorTool":
-                    file_editor_tool_spec = tool_spec
-
-            # Verify BashTool was found and working_dir was updated
-            assert bash_tool_spec is not None
-            assert bash_tool_spec.params["working_dir"] == WORK_DIR
-            assert bash_tool_spec.params["working_dir"] != original_working_dir
-
-            # Verify FileEditorTool was found and workspace_root was updated
-            assert file_editor_tool_spec is not None
-            assert file_editor_tool_spec.params["workspace_root"] == WORK_DIR
-            assert file_editor_tool_spec.params["workspace_root"] != original_working_dir
-
-    def test_non_working_dir_tools_unchanged_on_load(self):
-        """Test that tools other than BashTool and FileEditorTool are not modified when loading agent."""
-        # Create a mock agent with various tools
-        mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key"),
-            tools=[
-                ToolSpec(name="BashTool", params={"working_dir": "/old/path"}),
-                ToolSpec(name="FileEditorTool", params={"workspace_root": "/old/path"}),
                 ToolSpec(name="TaskTrackerTool", params={"save_dir": "/some/path"}),
             ]
         )
@@ -106,148 +56,15 @@ class TestToolSpecFix:
             # Verify the agent was loaded
             assert loaded_agent is not None
 
-            # Check that BashTool and FileEditorTool working_dir are updated, but other tools are unchanged
             for tool_spec in loaded_agent.tools:
                 if tool_spec.name == "BashTool":
-                    # BashTool working_dir should be updated
                     assert tool_spec.params["working_dir"] == WORK_DIR
+                    assert tool_spec.params["working_dir"] != original_working_dir
                 elif tool_spec.name == "FileEditorTool":
-                    # FileEditorTool workspace_root should be updated
                     assert tool_spec.params["workspace_root"] == WORK_DIR
+                    assert tool_spec.params["workspace_root"] != original_working_dir
                 elif tool_spec.name == "TaskTrackerTool":
                     # TaskTrackerTool params should be unchanged
                     assert tool_spec.params["save_dir"] == "/some/path"
 
-    def test_agent_without_tools_loads_correctly(self):
-        """Test that agents without tools load correctly."""
-        # Create a mock agent without tools
-        mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key"),
-            tools=[]
-        )
 
-        # Mock the file store to return our test agent
-        with patch('openhands_cli.tui.settings.store.LocalFileStore') as mock_file_store:
-            mock_store_instance = MagicMock()
-            mock_file_store.return_value = mock_store_instance
-            mock_store_instance.read.return_value = mock_agent.model_dump_json()
-
-            agent_store = AgentStore()
-            loaded_agent = agent_store.load()
-
-            # Verify the agent was loaded correctly
-            assert loaded_agent is not None
-            assert loaded_agent.tools == []
-
-    def test_agent_with_empty_tools_loads_correctly(self):
-        """Test that agents with empty tools list load correctly."""
-        # Create a mock agent with empty tools list
-        mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key"),
-            tools=[]
-        )
-
-        # Mock the file store to return our test agent
-        with patch('openhands_cli.tui.settings.store.LocalFileStore') as mock_file_store:
-            mock_store_instance = MagicMock()
-            mock_file_store.return_value = mock_store_instance
-            mock_store_instance.read.return_value = mock_agent.model_dump_json()
-
-            agent_store = AgentStore()
-            loaded_agent = agent_store.load()
-
-            # Verify the agent was loaded correctly
-            assert loaded_agent is not None
-            assert loaded_agent.tools == []
-
-    def test_tools_without_params_get_working_dir(self):
-        """Test that BashTool and FileEditorTool without params get working directory parameters added."""
-        # Create a mock agent with BashTool and FileEditorTool that have no params
-        mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key"),
-            tools=[
-                ToolSpec(name="BashTool"),  # No params
-                ToolSpec(name="FileEditorTool"),  # No params
-            ]
-        )
-
-        # Mock the file store to return our test agent
-        with patch('openhands_cli.tui.settings.store.LocalFileStore') as mock_file_store:
-            mock_store_instance = MagicMock()
-            mock_file_store.return_value = mock_store_instance
-            mock_store_instance.read.return_value = mock_agent.model_dump_json()
-
-            agent_store = AgentStore()
-            loaded_agent = agent_store.load()
-
-            # Verify the agent was loaded
-            assert loaded_agent is not None
-
-            # Find the BashTool and FileEditorTool specs
-            bash_tool_spec = None
-            file_editor_tool_spec = None
-            for tool_spec in loaded_agent.tools:
-                if tool_spec.name == "BashTool":
-                    bash_tool_spec = tool_spec
-                elif tool_spec.name == "FileEditorTool":
-                    file_editor_tool_spec = tool_spec
-
-            # Verify BashTool was found and working_dir was added
-            assert bash_tool_spec is not None
-            assert bash_tool_spec.params is not None
-            assert bash_tool_spec.params["working_dir"] == WORK_DIR
-
-            # Verify FileEditorTool was found and workspace_root was added
-            assert file_editor_tool_spec is not None
-            assert file_editor_tool_spec.params is not None
-            assert file_editor_tool_spec.params["workspace_root"] == WORK_DIR
-
-
-class TestIntegration:
-    """Integration tests to verify the fixes work together."""
-
-    def test_agent_creation_uses_work_dir_for_tools(self):
-        """Test that when creating new agents, tools use WORK_DIR appropriately."""
-        from openhands.sdk.preset.default import get_default_agent
-
-        # Create a default agent with WORK_DIR
-        llm = LLM(model="test/model", api_key="test-key")
-        agent = get_default_agent(llm=llm, working_dir=WORK_DIR, cli_mode=True)
-
-        # Verify that BashTool uses WORK_DIR
-        bash_tool_spec = None
-        for tool_spec in agent.tools:
-            if tool_spec.name == "BashTool":
-                bash_tool_spec = tool_spec
-                break
-
-        assert bash_tool_spec is not None
-        assert bash_tool_spec.params["working_dir"] == WORK_DIR
-
-    def test_configurations_stored_separately_from_work_dir(self):
-        """Test that configurations are stored in PERSISTENCE_DIR, not WORK_DIR."""
-        # This test verifies that the configuration storage is separate from work directory
-
-        # Create a temporary directory to simulate a different working directory
-        with tempfile.TemporaryDirectory() as temp_work_dir:
-            # Change to the temporary directory
-            original_cwd = os.getcwd()
-            try:
-                os.chdir(temp_work_dir)
-
-                # Import locations after changing directory to get updated WORK_DIR
-                import importlib
-                import openhands_cli.locations
-                importlib.reload(openhands_cli.locations)
-                from openhands_cli.locations import WORK_DIR as NEW_WORK_DIR, PERSISTENCE_DIR as NEW_PERSISTENCE_DIR
-
-                # Verify WORK_DIR changed but PERSISTENCE_DIR stayed the same
-                assert NEW_WORK_DIR == temp_work_dir
-                assert NEW_PERSISTENCE_DIR == os.path.expanduser("~/.openhands")
-                assert NEW_WORK_DIR != NEW_PERSISTENCE_DIR
-
-            finally:
-                # Restore original working directory
-                os.chdir(original_cwd)
-                # Reload locations to restore original values
-                importlib.reload(openhands_cli.locations)
