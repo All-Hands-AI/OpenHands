@@ -1,4 +1,5 @@
 from openhands.sdk import Conversation, Message
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.event.utils import get_unmatched_actions
 from prompt_toolkit import HTML, print_formatted_text
@@ -17,7 +18,11 @@ class ConversationRunner:
 
     def set_confirmation_mode(self, confirmation_mode: bool) -> None:
         self.confirmation_mode = confirmation_mode
-        self.conversation.set_confirmation_mode(confirmation_mode)
+
+        if confirmation_mode:
+            self.conversation.set_confirmation_policy(AlwaysConfirm())
+        else:
+            self.conversation.set_confirmation_policy(NeverConfirm())
 
     def _start_listener(self) -> None:
         self.listener = PauseListener(on_pause=self.conversation.pause)

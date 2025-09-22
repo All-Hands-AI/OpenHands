@@ -31,17 +31,17 @@ def seed_file(path: Path, model: str = "openai/gpt-4o-mini", api_key: str = "sk-
 def test_llm_settings_save_and_load(tmp_path: Path):
     """Test that the settings screen can save basic LLM settings."""
     screen = SettingsScreen(conversation=None)
-    
+
     # Mock the spec store to verify settings are saved
-    with patch.object(screen.spec_store, 'save') as mock_save:
+    with patch.object(screen.agent_store, 'save') as mock_save:
         screen._apply_llm(
-            model="openai/gpt-4o-mini", 
+            model="openai/gpt-4o-mini",
             api_key="sk-test-123"
         )
-        
+
         # Verify that save was called
         mock_save.assert_called_once()
-        
+
         # Get the agent spec that was saved
         saved_spec = mock_save.call_args[0][0]
         assert saved_spec.llm.model == "openai/gpt-4o-mini"
@@ -61,7 +61,7 @@ def test_first_time_setup_workflow(tmp_path: Path):
     ):
         # The workflow should complete without errors
         screen.configure_settings()
-        
+
     # Since the current implementation doesn't save to file, we just verify the workflow completed
     assert True  # If we get here, the workflow completed successfully
 
@@ -81,7 +81,7 @@ def test_update_existing_settings_workflow(tmp_path: Path):
     ):
         # The workflow should complete without errors
         screen.configure_settings()
-        
+
     # Since the current implementation doesn't save to file, we just verify the workflow completed
     assert True  # If we get here, the workflow completed successfully
 
@@ -120,7 +120,7 @@ def test_workflow_cancellation_at_each_step(tmp_path: Path, step_to_cancel: str)
         patch("openhands_cli.tui.settings.settings_screen.choose_llm_model", patches["choose_llm_model"]),
         patch("openhands_cli.tui.settings.settings_screen.prompt_api_key", patches["prompt_api_key"]),
         patch("openhands_cli.tui.settings.settings_screen.save_settings_confirmation", patches["save_settings_confirmation"]),
-        patch.object(screen.spec_store, 'save') as mock_save,
+        patch.object(screen.agent_store, 'save') as mock_save,
     ):
         screen.configure_settings()
 
