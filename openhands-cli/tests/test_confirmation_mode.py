@@ -37,17 +37,15 @@ class TestConfirmationMode:
                 patch('openhands_cli.setup.Agent') as mock_agent_class,
                 patch('openhands_cli.setup.Conversation') as mock_conversation_class,
                 patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
+                patch('openhands_cli.setup.print_formatted_text') as mock_print,
+                patch('openhands_cli.setup.HTML') as mock_html,
             ):
                 # Mock AgentStore
                 mock_agent_store_instance = MagicMock()
-                mock_spec = MagicMock()
-                mock_agent_store_instance.load.return_value = mock_spec
-                mock_agent_store_class.return_value = mock_agent_store_instance
-
-                # Mock Agent.from_spec to return a mock agent
                 mock_agent_instance = MagicMock()
                 mock_agent_instance.llm.model = 'test-model'
-                mock_agent_class.from_spec.return_value = mock_agent_instance
+                mock_agent_store_instance.load.return_value = mock_agent_instance
+                mock_agent_store_class.return_value = mock_agent_store_instance
 
                 # Mock Conversation constructor to return a mock conversation
                 mock_conversation_instance = MagicMock()
@@ -59,8 +57,9 @@ class TestConfirmationMode:
                 assert result == mock_conversation_instance
                 mock_agent_store_class.assert_called_once()
                 mock_agent_store_instance.load.assert_called_once()
-                mock_agent_class.from_spec.assert_called_once_with(mock_spec)
                 mock_conversation_class.assert_called_once_with(agent=mock_agent_instance)
+                # Verify print_formatted_text was called
+                mock_print.assert_called_once()
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
         """Test that ConversationRunner can set confirmation mode."""
@@ -331,4 +330,4 @@ class TestConfirmationMode:
                     # Verify that confirmation mode was disabled
                     assert result == UserConfirmation.ALWAYS_ACCEPT
                     assert runner.confirmation_mode is False
-                    mock_conversation.set_confirmation_policy.assert_called_with(AlwaysConfirm())
+                    mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())
