@@ -1,5 +1,5 @@
 import { useAuthUrl } from "./use-auth-url";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
 
 interface UseGitHubAuthUrlConfig {
   appMode: GetConfigResponse["APP_MODE"] | null;
