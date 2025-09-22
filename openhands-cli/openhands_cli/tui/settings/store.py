@@ -17,7 +17,7 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
-            # Override the entire tools field with new tools from create_default_tools
+            # Update tools with most recent working directory
             updated_tools = get_default_tools(
                 working_dir=WORK_DIR,
                 persistence_dir=PERSISTENCE_DIR,
