@@ -49,7 +49,7 @@ async def get_conversation_link(
 
 
 async def save_pr_metadata(
-    user_id: str | None, conversation_id: str, tool_result: str
+    user_id: str | None, conversation_id: str, tool_result: str, source_branch: str
 ) -> None:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     conversation: ConversationMetadata = await conversation_store.get_metadata(
@@ -76,6 +76,12 @@ async def save_pr_metadata(
         logger.warning(
             f'Failed to extract PR number for conversation {conversation_id}'
         )
+
+    # Update the selected branch to the source branch used for the PR
+    logger.info(
+        f'Updating selected branch to: {source_branch} for conversation {conversation_id}'
+    )
+    conversation.selected_branch = source_branch
 
     await conversation_store.save_metadata(conversation)
 
@@ -139,7 +145,7 @@ async def create_pr(
         )
 
         if conversation_id:
-            await save_pr_metadata(user_id, conversation_id, response)
+            await save_pr_metadata(user_id, conversation_id, response, source_branch)
 
     except Exception as e:
         error = f'Error creating pull request: {e}'
@@ -213,7 +219,7 @@ async def create_mr(
         )
 
         if conversation_id:
-            await save_pr_metadata(user_id, conversation_id, response)
+            await save_pr_metadata(user_id, conversation_id, response, source_branch)
 
     except Exception as e:
         error = f'Error creating merge request: {e}'
@@ -279,7 +285,7 @@ async def create_bitbucket_pr(
         )
 
         if conversation_id:
-            await save_pr_metadata(user_id, conversation_id, response)
+            await save_pr_metadata(user_id, conversation_id, response, source_branch)
 
     except Exception as e:
         error = f'Error creating pull request: {e}'
