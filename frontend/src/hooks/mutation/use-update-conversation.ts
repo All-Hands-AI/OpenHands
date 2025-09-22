@@ -36,16 +36,35 @@ export const useUpdateConversation = () => {
         );
       }
     },
-    onSuccess: (data, variables) => {
-      // Only invalidate queries on successful update to avoid race conditions
+    onSuccess: async (data, variables) => {
+      // Cancel any ongoing queries for this conversation to prevent race conditions
+      await queryClient.cancelQueries({
+        queryKey: ["user", "conversation", variables.conversationId],
+      });
+
+      // Update the individual conversation cache immediately with the new title
+      queryClient.setQueryData(
+        ["user", "conversation", variables.conversationId],
+        (oldData: unknown) => {
+          if (oldData && typeof oldData === "object") {
+            return { ...oldData, title: variables.newTitle };
+          }
+          return oldData;
+        },
+      );
+
+      // Invalidate and refetch the conversation list to show the updated title
       queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
 
-      // Also invalidate the specific conversation query
-      queryClient.invalidateQueries({
-        queryKey: ["user", "conversation", variables.conversationId],
-      });
+      // Delay invalidation of the individual conversation to allow backend persistence
+      // and prevent immediate race conditions with polling
+      setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ["user", "conversation", variables.conversationId],
+        });
+      }, 5000); // 5 second delay to allow backend to persist
     },
   });
 };
