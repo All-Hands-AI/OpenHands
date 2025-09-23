@@ -1,5 +1,6 @@
 import asyncio
 import os
+from typing import Any
 
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine, event
@@ -106,7 +107,7 @@ def _get_db_engine():
 async def async_creator():
     loop = asyncio.get_running_loop()
     async with Connector(loop=loop) as connector:
-        connect_kwargs = {
+        connect_kwargs: dict[str, Any] = {
             'user': DB_USER,
             'password': DB_PASS,
             'db': DB_NAME,

@@ -7,11 +7,6 @@ from sqlalchemy import create_engine, event
 
 from storage.base import Base
 
-target_metadata = Base.metadata
-# Set schema for target metadata if DB_SCHEMA is provided
-if DB_SCHEMA:
-    target_metadata.schema = DB_SCHEMA
-
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASS = os.getenv('DB_PASS', 'postgres')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
@@ -27,6 +22,11 @@ GCP_REGION = os.getenv('GCP_REGION')
 
 POOL_SIZE = int(os.getenv('DB_POOL_SIZE', '25'))
 MAX_OVERFLOW = int(os.getenv('DB_MAX_OVERFLOW', '10'))
+
+target_metadata = Base.metadata
+# Set schema for target metadata if DB_SCHEMA is provided
+if DB_SCHEMA:
+    target_metadata.schema = DB_SCHEMA
 
 # RDS IAM authentication setup
 if DB_AUTH_TYPE == 'rds-iam':
