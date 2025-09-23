@@ -270,7 +270,11 @@ async def saas_user_auth_from_cookie(request: Request) -> SaasUserAuth | None:
     try:
         signed_token = request.cookies.get('keycloak_auth')
         if not signed_token:
+            logger.info('[TOKEN_DEBUG] No keycloak_auth cookie found in request')
             return None
+        logger.info(
+            f'[TOKEN_DEBUG] Found keycloak_auth cookie, size={len(signed_token)}'
+        )
         return await saas_user_auth_from_signed_token(signed_token)
     except Exception as exc:
         raise CookieError from exc

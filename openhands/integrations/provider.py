@@ -178,6 +178,11 @@ class ProviderHandler:
                 f'[TOKEN_DEBUG] Attempting to fetch latest {provider} token from '
                 f'{self.REFRESH_TOKEN_URL} for session {self.sid}'
             )
+            logger.info(
+                f'[TOKEN_DEBUG] Using session API key: '
+                f'{self.session_api_key[:10] if self.session_api_key else "None"}..., '
+                f'provider={provider.value}, sid={self.sid}'
+            )
 
             async with httpx.AsyncClient(follow_redirects=False) as client:
                 resp = await client.get(
@@ -202,6 +207,11 @@ class ProviderHandler:
                     f'[TOKEN_DEBUG] Got 302 redirect for {provider} token refresh. '
                     f'Keycloak session expired. Redirect URL: {redirect_url[:200]}... '
                     f'User needs to re-authenticate.'
+                )
+                # Log OAuth2 proxy cookie details
+                set_cookie = resp.headers.get('set-cookie', 'N/A')
+                logger.info(
+                    f'[TOKEN_DEBUG] OAuth2 proxy CSRF cookie in redirect: {set_cookie[:150]}...'
                 )
                 # Don't try to parse JSON from a redirect response
                 return None

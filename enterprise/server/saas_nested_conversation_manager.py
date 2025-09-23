@@ -569,10 +569,17 @@ class SaasNestedConversationManager(ConversationManager):
 
     async def close_session(self, sid: str):
         logger.info('close_session', extra={'sid': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] close_session called for {sid}, about to pause runtime'
+        )
         runtime = await self._get_runtime(sid)
         if runtime is None:
             logger.info('no_session_to_close', extra={'sid': sid})
+            logger.info(f'[TOKEN_DEBUG] No runtime found to close for {sid}')
             return
+        logger.info(
+            f'[TOKEN_DEBUG] Pausing runtime {runtime.get("runtime_id")} for session {sid}'
+        )
         async with self._httpx_client() as client:
             response = await client.post(
                 f'{self.remote_runtime_api_url}/pause',
@@ -887,6 +894,15 @@ class SaasNestedConversationManager(ConversationManager):
             f'user_id={user_id}, '
             f'has_provider_tokens={bool(provider_handler and provider_handler.provider_tokens)}'
         )
+
+        # Log the state of tokens before runtime creation
+        if provider_handler and provider_handler.provider_tokens:
+            logger.info(
+                f'[TOKEN_DEBUG] Provider tokens before runtime creation: '
+                f'{list(provider_handler.provider_tokens.keys())}'
+            )
+        else:
+            logger.info('[TOKEN_DEBUG] No provider tokens before runtime creation')
 
         runtime = RemoteRuntime(
             config=config,
