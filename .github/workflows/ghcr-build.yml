@@ -213,6 +213,7 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
+        context: ${{ github.event_name == 'pull_request' && 'pr-head-sha' || 'default' }}
         with:
           images: ghcr.io/all-hands-ai/enterprise-server
           tags: |
@@ -232,9 +233,8 @@ jobs:
         run: |
           # Duplicated with build.sh
           sanitized_ref_name=$(echo "${{github.event.pull_request.head.sha}}" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
-          OPENHANDS_BUILD_VERSION=$sanitized_ref_name
           sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
-          echo "OPENHANDS_DOCKER_TAG=${sanitized_ref_name}" >> $GITHUB_ENV
+          echo "OPENHANDS_BUILD_VERSION=${sanitized_ref_name}" >> $GITHUB_ENV
       - name: Build and push Docker image
         uses: useblacksmith/build-push-action@v1
         with:
@@ -244,7 +244,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            OPENHANDS_VERSION=${{ env.OPENHANDS_DOCKER_TAG }}
+            OPENHANDS_VERSION=${{ env.OPENHANDS_BUILD_VERSION }}
           platforms: linux/amd64
           # Add build provenance
           provenance: true
@@ -255,7 +255,7 @@ jobs:
         # if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
-          image-ref: "ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.OPENHANDS_DOCKER_TAG }}"
+          image-ref: "ghcr.io/${{ github.repository_owner }}/enterprise-server:sha-${{ env.OPENHANDS_BUILD_VERSION }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
 
