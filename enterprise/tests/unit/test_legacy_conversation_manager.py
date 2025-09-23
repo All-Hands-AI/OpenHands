@@ -188,7 +188,6 @@ class TestIsLegacyRuntime:
         assert result is False
 
 
-
 class TestShouldStartInLegacyMode:
     """Test the should_start_in_legacy_mode method."""
 

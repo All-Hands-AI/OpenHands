@@ -337,7 +337,8 @@ class LegacyConversationManager(ConversationManager):
         Returns:
             bool: True if this is a legacy runtime, False otherwise
         """
-        if runtime is None:
+        # Ensure runtime is actually a dict (not None, mock, or other object)
+        if not isinstance(runtime, dict):
             return False
 
         # Handle case where command field might not exist (e.g., paused runtimes)
@@ -348,6 +349,10 @@ class LegacyConversationManager(ConversationManager):
             if runtime.get('status', '').lower() == 'paused':
                 return False
             # Unknown state - default to False (use new manager)
+            return False
+
+        # Ensure command is a string before checking substring
+        if not isinstance(command, str):
             return False
 
         return 'openhands.server' not in command
