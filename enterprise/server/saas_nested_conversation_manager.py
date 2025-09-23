@@ -184,9 +184,7 @@ class SaasNestedConversationManager(ConversationManager):
         key = self._get_redis_conversation_key(user_id, sid)
         starting = await redis.get(key)
 
-        logger.info(
-            f'[TOKEN_DEBUG] Getting runtime for sid={sid}...'
-        )
+        logger.info(f'[TOKEN_DEBUG] Getting runtime for sid={sid}...')
         runtime = await self._get_runtime(sid)
 
         logger.info(
@@ -218,9 +216,7 @@ class SaasNestedConversationManager(ConversationManager):
                     f'will treat as NEW conversation with attach_to_existing=False'
                 )
         else:
-            logger.info(
-                f'[TOKEN_DEBUG] No runtime found for {sid}, will create NEW'
-            )
+            logger.info(f'[TOKEN_DEBUG] No runtime found for {sid}, will create NEW')
 
         nested_url = None
         session_api_key = None
@@ -241,11 +237,13 @@ class SaasNestedConversationManager(ConversationManager):
                 status = ConversationStatus[status_str]
                 logger.info(f'[TOKEN_DEBUG] Mapped to ConversationStatus.{status_str}')
             else:
-                logger.warning(f'[TOKEN_DEBUG] Unknown status "{status_str}", using STOPPED')
+                logger.warning(
+                    f'[TOKEN_DEBUG] Unknown status "{status_str}", using STOPPED'
+                )
 
         if status is ConversationStatus.STOPPED and starting:
             logger.info(
-                f'[TOKEN_DEBUG] Redis says already starting, changing status from STOPPED to STARTING'
+                '[TOKEN_DEBUG] Redis says already starting, changing status from STOPPED to STARTING'
             )
             status = ConversationStatus.STARTING
 
@@ -291,7 +289,13 @@ class SaasNestedConversationManager(ConversationManager):
         )
 
     async def _start_agent_loop(
-        self, sid, settings, user_id, initial_user_msg=None, replay_json=None, is_resume=False
+        self,
+        sid,
+        settings,
+        user_id,
+        initial_user_msg=None,
+        replay_json=None,
+        is_resume=False,
     ):
         try:
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
@@ -872,7 +876,9 @@ class SaasNestedConversationManager(ConversationManager):
             attach_to_existing=is_resume,  # Use is_resume to trigger token refresh on resume
             headless_mode=False,
             user_id=user_id,
-            git_provider_tokens=provider_handler.provider_tokens if provider_handler else None,
+            git_provider_tokens=provider_handler.provider_tokens
+            if provider_handler
+            else None,
             main_module='openhands.server',
             llm_registry=llm_registry,
         )
@@ -975,7 +981,9 @@ class SaasNestedConversationManager(ConversationManager):
         if status in ConversationStatus:
             logger.info(f'[TOKEN_DEBUG] Direct mapping to ConversationStatus.{status}')
             return ConversationStatus[status]
-        logger.info(f'[TOKEN_DEBUG] Unknown status "{status}", defaulting to ConversationStatus.STOPPED')
+        logger.info(
+            f'[TOKEN_DEBUG] Unknown status "{status}", defaulting to ConversationStatus.STOPPED'
+        )
         return ConversationStatus.STOPPED
 
     def _get_nested_url_for_runtime(self, runtime_id: str, conversation_id: str):
