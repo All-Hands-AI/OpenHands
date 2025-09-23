@@ -37,6 +37,14 @@ class ApiKeyStore:
         """
         api_key = self.generate_api_key()
 
+        logger.info(
+            f'[TOKEN_DEBUG] Creating API key: '
+            f'user_id={user_id}, '
+            f'name={name}, '
+            f'expires_at={expires_at}, '
+            f'key_preview={api_key[:10]}...'
+        )
+
         with self.session_maker() as session:
             key_record = ApiKey(
                 key=api_key, user_id=user_id, name=name, expires_at=expires_at
@@ -44,21 +52,43 @@ class ApiKeyStore:
             session.add(key_record)
             session.commit()
 
+            logger.info(
+                f'[TOKEN_DEBUG] API key created successfully: '
+                f'key_id={key_record.id}, '
+                f'user_id={user_id}, '
+                f'name={name}'
+            )
+
         return api_key
 
     def validate_api_key(self, api_key: str) -> str | None:
         """Validate an API key and return the associated user_id if valid."""
         now = datetime.now(UTC)
 
+        logger.info(
+            f'[TOKEN_DEBUG] Validating API key: '
+            f'key_preview={api_key[:10] if api_key else "None"}...'
+        )
+
         with self.session_maker() as session:
             key_record = session.query(ApiKey).filter(ApiKey.key == api_key).first()
 
             if not key_record:
+                logger.info(
+                    f'[TOKEN_DEBUG] API key not found in database: '
+                    f'key_preview={api_key[:10] if api_key else "None"}...'
+                )
                 return None
 
             # Check if the key has expired
             if key_record.expires_at and key_record.expires_at < now:
                 logger.info(f'API key has expired: {key_record.id}')
+                logger.info(
+                    f'[TOKEN_DEBUG] API key expired: '
+                    f'key_id={key_record.id}, '
+                    f'expires_at={key_record.expires_at}, '
+                    f'now={now}'
+                )
                 return None
 
             # Update last_used_at timestamp
@@ -68,6 +98,13 @@ class ApiKeyStore:
                 .values(last_used_at=now)
             )
             session.commit()
+
+            logger.info(
+                f'[TOKEN_DEBUG] API key validated successfully: '
+                f'key_id={key_record.id}, '
+                f'user_id={key_record.user_id}, '
+                f'name={key_record.name}'
+            )
 
             return key_record.user_id
 
