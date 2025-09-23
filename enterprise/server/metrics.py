@@ -29,6 +29,21 @@ async def _update_metrics():
                 RUNNING_AGENT_LOOPS_GAUGE.labels(session_id=sid).set(1)
 
 
+async def _update_metrics_cov_check():
+    """Update any prometheus metrics that are not updated during normal operation."""
+    if isinstance(conversation_manager, ClusteredConversationManager):
+        running_agent_loops = (
+            await conversation_manager.get_running_agent_loops_locally()
+        )
+        # Clear so we don't keep counting old sessions.
+        # This is theoretically a race condition but this is scraped on a regular interval.
+        RUNNING_AGENT_LOOPS_GAUGE.clear()
+        # running_agent_loops shouldn't be None, but can be.
+        if running_agent_loops is not None:
+            for sid in running_agent_loops:
+                RUNNING_AGENT_LOOPS_GAUGE.labels(session_id=sid).set(1)
+
+
 def metrics_app() -> Callable:
     metrics_callable = make_asgi_app()
 
