@@ -859,7 +859,7 @@ class SaasNestedConversationManager(ConversationManager):
             f'[TOKEN_DEBUG] Creating RemoteRuntime: '
             f'sid={sid}, attach_to_existing={is_resume}, '
             f'user_id={user_id}, '
-            f'has_provider_tokens={bool(provider_handler and provider_handler.git_provider_tokens)}'
+            f'has_provider_tokens={bool(provider_handler and provider_handler.provider_tokens)}'
         )
 
         runtime = RemoteRuntime(
@@ -872,7 +872,7 @@ class SaasNestedConversationManager(ConversationManager):
             attach_to_existing=is_resume,  # Use is_resume to trigger token refresh on resume
             headless_mode=False,
             user_id=user_id,
-            git_provider_tokens=provider_handler.git_provider_tokens if provider_handler else None,
+            git_provider_tokens=provider_handler.provider_tokens if provider_handler else None,
             main_module='openhands.server',
             llm_registry=llm_registry,
         )
