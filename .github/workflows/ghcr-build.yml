@@ -180,6 +180,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'security/container-runtime-${{ matrix.base_image.tag }}'
 
   ghcr_build_enterprise:
     name: Push Enterprise Image
@@ -254,7 +255,7 @@ jobs:
         # if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
-          image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:${{ env.OPENHANDS_DOCKER_TAG }}"
+          image-ref: "ghcr.io/${{ github.repository_owner }}/enterprise-server:${{ env.OPENHANDS_DOCKER_TAG }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
 
@@ -263,6 +264,7 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
+          category: 'security/container-enterprise-server'
 
   enterprise-preview:
     name: Enterprise preview
