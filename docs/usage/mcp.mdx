@@ -73,30 +73,11 @@ shttp_servers = [
     # Basic SHTTP server with default 60s timeout
     "https://api.example.com/mcp/shttp",
     
-    # File processing server with long timeout for heavy operations
+    # Server with custom timeout for heavy operations
     {
         url = "https://files.example.com/mcp/shttp",
         api_key = "your-api-key",
         timeout = 1800  # 30 minutes for large file processing
-    },
-    
-    # Quick API server with short timeout for responsive operations
-    {
-        url = "https://quick-api.example.com/mcp/shttp",
-        timeout = 15  # 15 seconds for fast API calls
-    },
-    
-    # Calculation server with medium timeout for computational tasks
-    {
-        url = "https://compute.example.com/mcp/shttp", 
-        api_key = "compute-key",
-        timeout = 300  # 5 minutes for data analysis
-    },
-    
-    # No timeout specified - uses default 60s
-    {
-        url = "https://default.example.com/mcp/shttp",
-        api_key = "default-key"
     }
 ]
 ```

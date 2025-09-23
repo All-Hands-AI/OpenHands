@@ -126,13 +126,13 @@ export function MCPServerForm({
 
     const timeout = parseInt(timeoutStr.trim(), 10);
     if (Number.isNaN(timeout)) {
-      return "Timeout must be a valid number";
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_INVALID_NUMBER);
     }
     if (timeout <= 0) {
-      return "Timeout must be positive";
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_POSITIVE);
     }
     if (timeout > 3600) {
-      return "Timeout cannot exceed 3600 seconds (1 hour)";
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_MAX_EXCEEDED);
     }
     return null;
   };
