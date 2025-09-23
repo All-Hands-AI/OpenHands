@@ -65,23 +65,12 @@ def _get_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
-            # Note: SSL is enabled by default for pg8000 when connecting to RDS, no need to specify ssl=require
-            url_params = []
-            if DB_SCHEMA:
-                url_params.append(f'options=-csearch_path={DB_SCHEMA}')
-            
-            if url_params:
-                params_str = '&'.join(url_params)
-                base_url = (
-                    f'postgresql+pg8000://{DB_USER}:dummy-password'
-                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                    f'?{params_str}'
-                )
-            else:
-                base_url = (
-                    f'postgresql+pg8000://{DB_USER}:dummy-password'
-                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                )
+            # Note: SSL is enabled by default for pg8000 when connecting to RDS
+            # For pg8000, we cannot use URL parameters like options, so schema must be handled differently
+            base_url = (
+                f'postgresql+pg8000://{DB_USER}:dummy-password'
+                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            )
             engine = create_engine(
                 base_url,
                 pool_size=POOL_SIZE,
@@ -96,6 +85,14 @@ def _get_db_engine():
                 # Replace password in connect arguments
                 cparams['password'] = token
                 return dialect.connect(*cargs, **cparams)
+            
+            # Hook: after connection is established, set the schema if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                        dbapi_connection.commit()
 
             return engine
         else:
@@ -156,23 +153,12 @@ def _get_async_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
-            # Note: SSL is enabled by default for asyncpg when connecting to RDS, no need to specify ssl=require
-            url_params = []
-            if DB_SCHEMA:
-                url_params.append(f'options=-csearch_path={DB_SCHEMA}')
-            
-            if url_params:
-                params_str = '&'.join(url_params)
-                base_url = (
-                    f'postgresql+asyncpg://{DB_USER}:dummy-password'
-                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                    f'?{params_str}'
-                )
-            else:
-                base_url = (
-                    f'postgresql+asyncpg://{DB_USER}:dummy-password'
-                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                )
+            # Note: SSL is enabled by default for asyncpg when connecting to RDS
+            # For asyncpg, we cannot use URL parameters like options, so schema must be handled differently
+            base_url = (
+                f'postgresql+asyncpg://{DB_USER}:dummy-password'
+                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            )
             engine = create_async_engine(
                 base_url, echo=True, pool_pre_ping=True, poolclass=NullPool
             )
@@ -184,6 +170,14 @@ def _get_async_db_engine():
                 # Replace password in connect arguments
                 cparams['password'] = token
                 return dialect.connect(*cargs, **cparams)
+            
+            # Hook: after connection is established, set the schema if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine.sync_engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    # For asyncpg, we need to handle schema differently
+                    # This will be executed on the underlying sync connection
+                    dbapi_connection.execute(f"SET search_path TO {DB_SCHEMA}")
 
             return engine
         else:
