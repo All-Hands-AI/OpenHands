@@ -1,12 +1,12 @@
 from openhands.sdk import Conversation, Message
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm, ConfirmRisky, SecurityRisk
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.event.utils import get_unmatched_actions
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
-from openhands_cli.user_actions.types import UserConfirmation
+from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
 
 
 class ConversationRunner:
@@ -108,14 +108,15 @@ class ConversationRunner:
         pending_actions = get_unmatched_actions(self.conversation.state.events)
 
         if pending_actions:
-            user_confirmation, reason = ask_user_confirmation(pending_actions)
-            if user_confirmation == UserConfirmation.REJECT:
+            confirmation_result = ask_user_confirmation(pending_actions)
+            
+            if confirmation_result.decision == UserConfirmation.REJECT:
                 self.conversation.reject_pending_actions(
-                    reason or "User rejected the actions"
+                    confirmation_result.reason or "User rejected the actions"
                 )
-            elif user_confirmation == UserConfirmation.DEFER:
+            elif confirmation_result.decision == UserConfirmation.DEFER:
                 self.conversation.pause()
-            elif user_confirmation == UserConfirmation.ALWAYS_ACCEPT:
+            elif confirmation_result.decision == UserConfirmation.ALWAYS_ACCEPT:
                 # Disable confirmation mode when user selects "Always proceed"
                 print_formatted_text(
                     HTML(
@@ -123,7 +124,16 @@ class ConversationRunner:
                     )
                 )
                 self.set_confirmation_mode(False)
+            
+            # Handle policy changes
+            if confirmation_result.policy_change:
+                print_formatted_text(
+                    HTML(
+                        "<yellow>Security-based confirmation enabled. LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>"
+                    )
+                )
+                self.conversation.set_confirmation_policy(confirmation_result.policy_change)
 
-            return user_confirmation
+            return confirmation_result.decision
 
         return UserConfirmation.ACCEPT
