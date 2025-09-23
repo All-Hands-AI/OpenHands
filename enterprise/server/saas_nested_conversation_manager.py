@@ -273,6 +273,13 @@ class SaasNestedConversationManager(ConversationManager):
                 )
             )
 
+            # IMPORTANT: Return STARTING status so frontend knows we're resuming!
+            # Don't return STOPPED when we're actually starting
+            status = ConversationStatus.STARTING
+            logger.info(
+                f'[TOKEN_DEBUG] Changed status from STOPPED to STARTING for resume operation'
+            )
+
         logger.info(
             f'[TOKEN_DEBUG] Returning from maybe_start_agent_loop: '
             f'sid={sid}, status={status}, '
