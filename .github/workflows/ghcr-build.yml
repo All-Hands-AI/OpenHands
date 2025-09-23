@@ -213,7 +213,6 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
-        context: ${{ github.event_name == 'pull_request' && 'pr-head-sha' || 'default' }}
         with:
           images: ghcr.io/all-hands-ai/enterprise-server
           tags: |
@@ -228,6 +227,7 @@ jobs:
             latest=auto
             prefix=
             suffix=
+          context: ${{ github.event_name == 'pull_request' && 'pr-head-sha' || 'default' }}
       - name: Determine app image tag
         shell: bash
         run: |
