@@ -203,15 +203,23 @@ class ProviderHandler:
             # Check for redirect (expired Keycloak session)
             if resp.status_code == 302:
                 redirect_url = resp.headers.get('Location', 'Unknown')
+                # Check if this is OAuth2 proxy CSRF issue vs actual token expiry
+                is_csrf_issue = '_oauth2_proxy_csrf' in resp.headers.get(
+                    'set-cookie', ''
+                )
                 logger.error(
                     f'[TOKEN_DEBUG] Got 302 redirect for {provider} token refresh. '
-                    f'Keycloak session expired. Redirect URL: {redirect_url[:200]}... '
+                    f'{"OAuth2 Proxy CSRF validation failed" if is_csrf_issue else "Keycloak session expired"}. '
+                    f'Redirect URL: {redirect_url[:200]}... '
                     f'User needs to re-authenticate.'
                 )
                 # Log OAuth2 proxy cookie details
                 set_cookie = resp.headers.get('set-cookie', 'N/A')
                 logger.info(
                     f'[TOKEN_DEBUG] OAuth2 proxy CSRF cookie in redirect: {set_cookie[:150]}...'
+                )
+                logger.info(
+                    f'[TOKEN_DEBUG] This appears to be {"a CSRF validation issue (pod changed?)" if is_csrf_issue else "a token expiry issue"}'
                 )
                 # Don't try to parse JSON from a redirect response
                 return None
