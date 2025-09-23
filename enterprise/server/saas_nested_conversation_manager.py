@@ -277,7 +277,7 @@ class SaasNestedConversationManager(ConversationManager):
             # Don't return STOPPED when we're actually starting
             status = ConversationStatus.STARTING
             logger.info(
-                f'[TOKEN_DEBUG] Changed status from STOPPED to STARTING for resume operation'
+                '[TOKEN_DEBUG] Changed status from STOPPED to STARTING for resume operation'
             )
 
         logger.info(
