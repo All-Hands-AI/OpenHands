@@ -297,11 +297,22 @@ async def saas_user_auth_from_signed_token(signed_token: str) -> SaasUserAuth:
     try:
         offline_token = await token_manager.load_offline_token(user_id)
         if offline_token:
+            # Compare tokens definitively
+            tokens_match = offline_token == refresh_token
             logger.info(
-                f'[TOKEN_DEBUG] Found offline token in DB: '
-                f'{offline_token[:20] if offline_token else "None"}... '
-                f'(cookie token: {refresh_token[:20] if refresh_token else "None"}...)'
+                f'[TOKEN_DEBUG] Token comparison: '
+                f'TOKENS_ARE_{"SAME" if tokens_match else "DIFFERENT"}! '
+                f'Cookie len={len(refresh_token) if refresh_token else 0}, '
+                f'DB len={len(offline_token) if offline_token else 0}'
             )
+            if not tokens_match:
+                # Log first 50 chars for better comparison
+                logger.info(
+                    f'[TOKEN_DEBUG] Cookie token: {refresh_token[:50] if refresh_token else "None"}...'
+                )
+                logger.info(
+                    f'[TOKEN_DEBUG] DB offline token: {offline_token[:50] if offline_token else "None"}...'
+                )
             # TODO: Consider using offline_token instead of refresh_token
             # refresh_token = offline_token
         else:
