@@ -19,7 +19,7 @@ jobs:
   # Run python tests on Linux
   test-on-linux:
     name: Python Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
     strategy:
@@ -100,7 +100,7 @@ jobs:
           DEBUG: "1"
   test-enterprise:
     name: Enterprise Python Unit Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
         python-version: ["3.12"]
