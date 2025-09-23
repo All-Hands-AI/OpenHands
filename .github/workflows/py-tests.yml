@@ -112,7 +112,7 @@ jobs:
         run: poetry install --with dev,test
       - name: Run Unit Tests
         working-directory: ./enterprise
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit --cov=. --cov-branch
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit --cov=. --cov-branch
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:

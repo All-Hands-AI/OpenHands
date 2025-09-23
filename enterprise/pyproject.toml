@@ -88,4 +88,4 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 relative_files = true
-omit = tests/*
+omit = "tests/*"
