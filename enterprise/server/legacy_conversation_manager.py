@@ -8,6 +8,7 @@ from server.clustered_conversation_manager import ClusteredConversationManager
 from server.saas_nested_conversation_manager import SaasNestedConversationManager
 
 from openhands.core.config import LLMConfig, OpenHandsConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -33,8 +34,8 @@ class LegacyCacheEntry:
 
 @dataclass
 class LegacyConversationManager(ConversationManager):
-    """
-    Conversation manager for use while migrating - since existing conversations are not nested!
+    """Conversation manager for use while migrating - since existing conversations are not nested.
+
     Separate class from SaasNestedConversationManager so it can be easliy removed in a few weeks.
     (As of 2025-07-23)
     """
@@ -187,20 +188,20 @@ class LegacyConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        print(
+        logger.info(
             f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
             f'sid={sid}, user_id={user_id}, has_provider_tokens={bool(settings.provider_tokens)}'
         )
 
         if await self.should_start_in_legacy_mode(sid):
-            print(
+            logger.info(
                 f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to ClusteredConversationManager (legacy mode)'
             )
             return await self.legacy_conversation_manager.maybe_start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
 
-        print(
+        logger.info(
             f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to SaasNestedConversationManager (new mode)'
         )
         return await self.conversation_manager.maybe_start_agent_loop(
@@ -282,8 +283,8 @@ class LegacyConversationManager(ConversationManager):
             del self._legacy_cache[key]
 
     async def should_start_in_legacy_mode(self, conversation_id: str) -> bool:
-        """
-        Check if a conversation should run in legacy mode by directly checking the runtime.
+        """Check if a conversation should run in legacy mode by directly checking the runtime.
+
         The /list method does not include stopped conversations even though the PVC for these
         may not yet have been deleted, so we need to check /sessions/{session_id} directly.
         """
@@ -295,7 +296,7 @@ class LegacyConversationManager(ConversationManager):
             cached_entry = self._legacy_cache[conversation_id]
             # Check if the cached value is still valid
             if time.time() - cached_entry.timestamp <= _LEGACY_ENTRY_TIMEOUT_SECONDS:
-                print(
+                logger.info(
                     f'[TOKEN_DEBUG] LegacyManager: Using cached legacy status for {conversation_id}: '
                     f'is_legacy={cached_entry.is_legacy}'
                 )
@@ -306,18 +307,18 @@ class LegacyConversationManager(ConversationManager):
 
         # Log runtime details for debugging
         if runtime:
-            print(
+            logger.info(
                 f"[TOKEN_DEBUG] LegacyManager: Runtime check for {conversation_id}: "
                 f"status={runtime.get('status')}, has_command={bool(runtime.get('command'))}, "
                 f"command_preview={str(runtime.get('command', ''))[:100]}"
             )
         else:
-            print(
+            logger.info(
                 f'[TOKEN_DEBUG] LegacyManager: No runtime found for {conversation_id}'
             )
 
         is_legacy = self.is_legacy_runtime(runtime)
-        print(
+        logger.info(
             f"[TOKEN_DEBUG] LegacyManager: Determined legacy status for {conversation_id}: "
             f"is_legacy={is_legacy}, will use {'ClusteredConversationManager' if is_legacy else 'SaasNestedConversationManager'}"
         )
@@ -328,8 +329,7 @@ class LegacyConversationManager(ConversationManager):
         return is_legacy
 
     def is_legacy_runtime(self, runtime: dict | None) -> bool:
-        """
-        Determine if a runtime is a legacy runtime based on its command.
+        """Determine if a runtime is a legacy runtime based on its command.
 
         Args:
             runtime: The runtime dictionary or None if not found
