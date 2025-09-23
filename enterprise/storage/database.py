@@ -182,21 +182,21 @@ def _get_async_db_engine():
                 base_url, echo=True, pool_pre_ping=True, poolclass=NullPool
             )
 
-            # Hook: before a connection is made, inject a fresh token
+            # Hook: before a connection is made, inject a fresh token and set schema
             @event.listens_for(engine.sync_engine, 'do_connect')
             def provide_token(dialect, conn_rec, cargs, cparams):
                 token = get_auth_token()
                 # Replace password in connect arguments
                 cparams['password'] = token
+                # Set schema via server_settings for asyncpg
+                if DB_SCHEMA:
+                    cparams['server_settings'] = {'search_path': DB_SCHEMA}
                 return dialect.connect(*cargs, **cparams)
-            
-            # Note: Schema handling for async engines is complex due to asyncpg adapter limitations
-            # Schema will be handled at the application level when needed
 
             return engine
         else:
             # Regular password authentication with asyncpg
-            # asyncpg doesn't accept options as URL parameter, so handle schema via SQL
+            # asyncpg doesn't accept options as URL parameter, so handle schema via server_settings
             host_string = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
             engine = create_async_engine(
                 host_string,
@@ -204,8 +204,13 @@ def _get_async_db_engine():
                 poolclass=NullPool,
             )
             
-            # Note: Schema handling for async engines is complex due to asyncpg adapter limitations
-            # Schema will be handled at the application level when needed
+            # Set schema via server_settings for asyncpg
+            if DB_SCHEMA:
+                @event.listens_for(engine.sync_engine, 'do_connect')
+                def set_schema(dialect, conn_rec, cargs, cparams):
+                    # Set schema via server_settings for asyncpg
+                    cparams['server_settings'] = {'search_path': DB_SCHEMA}
+                    return dialect.connect(*cargs, **cparams)
             
             return engine
 
