@@ -254,7 +254,7 @@ jobs:
         # if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
-          image-ref: "${{ env.OPENHANDS_DOCKER_TAG }}"
+          image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:${{ env.OPENHANDS_DOCKER_TAG }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
 
