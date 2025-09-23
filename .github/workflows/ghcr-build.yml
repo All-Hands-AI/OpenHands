@@ -227,7 +227,8 @@ jobs:
             latest=auto
             prefix=
             suffix=
-          context: ${{ github.event_name == 'pull_request' && 'pr-head-sha' || 'default' }}
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
       - name: Determine app image tag
         shell: bash
         run: |
