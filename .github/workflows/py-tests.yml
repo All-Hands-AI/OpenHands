@@ -142,4 +142,10 @@ jobs:
           uses: py-cov-action/python-coverage-comment-action@v3
           with:
             GITHUB_TOKEN: ${{ github.token }}
-
+        - name: Coverage comment
+          id: enterprise_coverage_comment
+          uses: py-cov-action/python-coverage-comment-action@v3
+          with:
+            GITHUB_TOKEN: ${{ github.token }}
+            SUBPROJECT_ID: enterprise
+            COVERAGE_PATH: enterprise/
