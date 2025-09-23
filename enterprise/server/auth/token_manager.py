@@ -439,8 +439,16 @@ class TokenManager:
             0 if refresh_expires_in == 0 else current_time + refresh_expires_in
         )
 
+        # Log detailed expiration info for debugging
+        access_expires_hours = expires_in / 3600 if expires_in > 0 else 'Never'
+        refresh_expires_days = (
+            refresh_expires_in / 86400 if refresh_expires_in > 0 else 'Never'
+        )
+
         logger.info(
-            f'Token refresh successful. New access token expires at: {access_token_expires_at}, refresh token expires at: {refresh_token_expires_at}'
+            f'[TOKEN_DEBUG] Token refresh successful. Access token expires in: {access_expires_hours} hours, '
+            f'Refresh token expires in: {refresh_expires_days} days. '
+            f'Raw values - expires_in: {expires_in}s, refresh_expires_in: {refresh_expires_in}s'
         )
         return {
             'access_token': access_token,
