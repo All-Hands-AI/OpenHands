@@ -98,12 +98,6 @@ class DockerNestedConversationManager(ConversationManager):
             for name in names
             if name.startswith('openhands-runtime-')
         }
-        logger.info(
-            f'[TOKEN_DEBUG] Docker.get_running_agent_loops: '
-            f'found {len(conversation_ids)} running containers, '
-            f'filter_to_sids={filter_to_sids}, '
-            f'container_names={list(names)[:3]}...'  # Show first 3 names
-        )
         if filter_to_sids is not None:
             conversation_ids = {
                 conversation_id
@@ -127,112 +121,13 @@ class DockerNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        logger.info(
-            f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop ENTRY: '
-            f'sid={sid}, user_id={user_id}'
-        )
-
-        try:
-            is_running = await self.is_agent_loop_running(sid)
-            logger.info(
-                f'[TOKEN_DEBUG] DockerNestedConversationManager.maybe_start_agent_loop: '
-                f'sid={sid}, is_running={is_running}, '
-                f'will_start_new={not is_running}, '
-                f'SOURCE=docker_nested_conversation_manager'
-            )
-            if not is_running:
-                logger.info(
-                    f'[TOKEN_DEBUG] Starting NEW agent loop for sid={sid} (Docker)'
-                )
-                await self._start_agent_loop(
-                    sid, settings, user_id, initial_user_msg, replay_json
-                )
-            else:
-                logger.info(
-                    f'[TOKEN_DEBUG] Using EXISTING agent loop for sid={sid} - THIS IS RESUME! (Docker)'
-                )
-        except Exception as e:
-            logger.error(
-                f'[TOKEN_DEBUG] Error in Docker maybe_start_agent_loop: {e}, sid={sid}'
-            )
-            raise
-
-        try:
-            nested_url = self._get_nested_url(sid)
-            session_api_key = self._get_session_api_key_for_conversation(sid)
-        except Exception as e:
-            logger.warning(
-                f'[TOKEN_DEBUG] Container missing for sid={sid}: {e}. '
-                f'This is likely a resume after stop. Attempting to recreate container with attach_to_existing=True.'
+        if not await self.is_agent_loop_running(sid):
+            await self._start_agent_loop(
+                sid, settings, user_id, initial_user_msg, replay_json
             )
 
-            # Container doesn't exist - this is likely a resume scenario
-            # Recreate the container with attach_to_existing=True to trigger token refresh
-            try:
-                # Create the runtime with is_resume=True to ensure attach_to_existing=True
-                runtime = await self._create_runtime(
-                    sid, user_id, settings, is_resume=True
-                )
-
-                logger.info(
-                    f'[TOKEN_DEBUG] Created runtime with attach_to_existing=True for resume operation. '
-                    f'Now initializing container for {sid}.'
-                )
-
-                # Build and initialize the container
-                await call_sync_from_async(runtime.maybe_build_runtime_container_image)
-                self._runtime_container_image = runtime.runtime_container_image
-                await call_sync_from_async(runtime.init_container)
-
-                # Start the conversation with the resume-enabled runtime
-                asyncio.create_task(
-                    self._start_conversation(
-                        sid,
-                        settings,
-                        runtime,
-                        None,  # initial_user_msg - No initial message on resume
-                        None,  # replay_json
-                        runtime.api_url,
-                    )
-                )
-
-                # Wait a bit for container to start
-                await asyncio.sleep(2)
-
-                # Try to get the URL again
-                try:
-                    nested_url = self._get_nested_url(sid)
-                    session_api_key = self._get_session_api_key_for_conversation(sid)
-
-                    logger.info(
-                        f'[TOKEN_DEBUG] Successfully recreated container for {sid} with attach_to_existing=True. '
-                        f'Token refresh should now be triggered.'
-                    )
-                except Exception as retry_error:
-                    logger.error(
-                        f'[TOKEN_DEBUG] Container still not ready after recreation: {retry_error}'
-                    )
-                    # Return STARTING status to indicate it's being created
-                    return AgentLoopInfo(
-                        conversation_id=sid,
-                        url='',
-                        session_api_key='',
-                        event_store=None,  # type: ignore
-                        status=ConversationStatus.STARTING,
-                    )
-
-            except Exception as recreate_error:
-                logger.error(
-                    f'[TOKEN_DEBUG] Failed to recreate container for resume: {recreate_error}. '
-                    f'Returning STOPPED status.'
-                )
-                return AgentLoopInfo(
-                    conversation_id=sid,
-                    url='',
-                    session_api_key='',
-                    event_store=None,  # type: ignore
-                    status=ConversationStatus.STOPPED,
-                )
+        nested_url = self._get_nested_url(sid)
+        session_api_key = self._get_session_api_key_for_conversation(sid)
         return AgentLoopInfo(
             conversation_id=sid,
             url=nested_url,
@@ -259,16 +154,8 @@ class DockerNestedConversationManager(ConversationManager):
         replay_json: str | None,
     ):
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
-        logger.info(
-            f'[TOKEN_DEBUG] DockerNestedConversationManager._start_agent_loop CALLED: '
-            f'sid={sid}, user_id={user_id}, '
-            f'has_settings={settings is not None}, '
-            f'has_initial_msg={initial_user_msg is not None}, '
-            f'has_replay={replay_json is not None}, '
-            f'SOURCE=docker._start_agent_loop'
-        )
         await self.ensure_num_conversations_below_limit(sid, user_id)
-        runtime = await self._create_runtime(sid, user_id, settings, is_resume=False)
+        runtime = await self._create_runtime(sid, user_id, settings)
         self._starting_conversation_ids.add(sid)
         try:
             # Build the runtime container image if it is missing
@@ -645,7 +532,7 @@ class DockerNestedConversationManager(ConversationManager):
         return provider_handler
 
     async def _create_runtime(
-        self, sid: str, user_id: str | None, settings: Settings, is_resume: bool = False
+        self, sid: str, user_id: str | None, settings: Settings
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
@@ -721,7 +608,7 @@ class DockerNestedConversationManager(ConversationManager):
             sid=sid,
             plugins=agent.sandbox_plugins,
             headless_mode=False,
-            attach_to_existing=is_resume,  # Use is_resume to trigger token refresh on resume
+            attach_to_existing=False,
             main_module='openhands.server',
             llm_registry=llm_registry,
         )
