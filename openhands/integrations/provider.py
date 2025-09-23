@@ -192,6 +192,9 @@ class ProviderHandler:
                 f'[TOKEN_DEBUG] Response status: {resp.status_code} for {provider}'
             )
 
+            # Log response headers for debugging
+            logger.info(f'[TOKEN_DEBUG] Response headers: {dict(resp.headers)}')
+
             # Check for redirect (expired Keycloak session)
             if resp.status_code == 302:
                 redirect_url = resp.headers.get('Location', 'Unknown')
@@ -201,6 +204,24 @@ class ProviderHandler:
                     f'User needs to re-authenticate.'
                 )
                 # Don't try to parse JSON from a redirect response
+                return None
+
+            # Check for forbidden (wrong session key)
+            if resp.status_code == 403:
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 403 Forbidden for {provider} token refresh. '
+                    f'Session key mismatch or invalid. Session API key: '
+                    f'{self.session_api_key[:10] if self.session_api_key else "None"}... '
+                    f'Response body: {resp.text[:200]}'
+                )
+                return None
+
+            # Check for unauthorized
+            if resp.status_code == 401:
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 401 Unauthorized for {provider} token refresh. '
+                    f'Authentication failed. Response body: {resp.text[:200]}'
+                )
                 return None
 
             resp.raise_for_status()

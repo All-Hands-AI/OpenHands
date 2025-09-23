@@ -226,6 +226,11 @@ class SaasNestedConversationManager(ConversationManager):
         if runtime:
             nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
             session_api_key = runtime.get('session_api_key')
+            logger.info(
+                f'[TOKEN_DEBUG] Retrieved session_api_key from stored runtime: '
+                f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
+                f'runtime_id={runtime.get("runtime_id")}'
+            )
             status_str = (runtime.get('status') or 'stopped').upper()
             logger.info(
                 f'[TOKEN_DEBUG] Processing runtime: '
@@ -325,6 +330,11 @@ class SaasNestedConversationManager(ConversationManager):
                 )
 
             session_api_key = runtime.session.headers['X-Session-API-Key']
+            logger.info(
+                f'[TOKEN_DEBUG] Got session_api_key from runtime: '
+                f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
+                f'is_resume={is_resume}'
+            )
 
             await self._start_conversation(
                 sid,
@@ -352,6 +362,11 @@ class SaasNestedConversationManager(ConversationManager):
         session_api_key: str,
     ):
         logger.info('starting_nested_conversation', extra={'sid': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] _start_conversation with session_api_key: '
+            f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
+            f'api_url={api_url[:50] if api_url else "None"}...'
+        )
         async with httpx.AsyncClient(
             headers={
                 'X-Session-API-Key': session_api_key,

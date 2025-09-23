@@ -227,12 +227,23 @@ class SaasUserAuth(UserAuth):
 def get_api_key_from_header(request: Request):
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Bearer '):
-        return auth_header.replace('Bearer ', '')
+        api_key = auth_header.replace('Bearer ', '')
+        logger.info(
+            f'[TOKEN_DEBUG] Got API key from Authorization header: '
+            f'key_preview={api_key[:10] if api_key else "None"}...'
+        )
+        return api_key
 
     # This is a temp hack
     # Streamable HTTP MCP Client works via redirect requests, but drops the Authorization header for reason
     # We include `X-Session-API-Key` header by default due to nested runtimes, so it used as a drop in replacement here
-    return request.headers.get('X-Session-API-Key')
+    session_api_key = request.headers.get('X-Session-API-Key')
+    if session_api_key:
+        logger.info(
+            f'[TOKEN_DEBUG] Got API key from X-Session-API-Key header: '
+            f'key_preview={session_api_key[:10] if session_api_key else "None"}...'
+        )
+    return session_api_key
 
 
 async def saas_user_auth_from_bearer(request: Request) -> SaasUserAuth | None:
