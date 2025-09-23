@@ -50,18 +50,27 @@ def _get_db_engine():
                 'password': DB_PASS,
                 'db': DB_NAME,
             }
-            # Add schema support for GCP connections
-            if DB_SCHEMA:
-                connect_kwargs['options'] = f'-csearch_path={DB_SCHEMA}'
+            # Note: pg8000 doesn't accept 'options' parameter, so we'll handle schema via SQL
+            # Schema will be set after connection via event listener
             return connector.connect(instance_string, 'pg8000', **connect_kwargs)
 
-        return create_engine(
+        engine = create_engine(
             'postgresql+pg8000://',
             creator=get_db_connection,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
             pool_pre_ping=True,
         )
+        
+        # Set schema via SQL after connection if specified
+        if DB_SCHEMA:
+            @event.listens_for(engine, 'connect')
+            def set_search_path(dbapi_connection, connection_record):
+                with dbapi_connection.cursor() as cursor:
+                    cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                    dbapi_connection.commit()
+        
+        return engine
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
