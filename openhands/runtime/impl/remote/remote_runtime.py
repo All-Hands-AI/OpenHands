@@ -669,6 +669,20 @@ class RemoteRuntime(ActionExecutionClient):
             f'[TOKEN_DEBUG] Creating provider handler for session {self.sid}',
         )
 
+        # Log current token info (without exposing actual tokens)
+        self.log('info', '[TOKEN_DEBUG] Current token status before refresh:')
+        if self.git_provider_tokens:
+            for provider, token_info in self.git_provider_tokens.items():
+                # token_info is ProviderToken type, which has access_token attribute
+                if hasattr(token_info, 'access_token'):
+                    token = getattr(token_info, 'access_token', '')
+                    token_preview = f'{token[:8]}...' if token else 'None'
+                    expires_at = getattr(token_info, 'expires_at', 'unknown')
+                    self.log(
+                        'info',
+                        f'[TOKEN_DEBUG]   {provider}: token={token_preview}, expires_at={expires_at}',
+                    )
+
         provider_handler = ProviderHandler(
             provider_tokens=self.git_provider_tokens,
             external_auth_id=self.user_id,
@@ -704,8 +718,65 @@ class RemoteRuntime(ActionExecutionClient):
                 if fresh_env_vars:
                     self.log(
                         'info',
-                        f'[TOKEN_DEBUG] Got fresh tokens for {len(fresh_env_vars)} providers',
+                        f'[TOKEN_DEBUG] Got response with {len(fresh_env_vars)} env vars',
                     )
+
+                    # Check if tokens actually changed
+                    tokens_changed = False
+                    for key, new_value in fresh_env_vars.items():
+                        if 'TOKEN' in key.upper() or 'PAT' in key.upper():
+                            # Try to find corresponding old token
+                            old_token = ''
+                            if self.git_provider_tokens:
+                                # Try to match the env var key to a provider
+                                from openhands.integrations.service_types import (
+                                    ProviderType,
+                                )
+
+                                for provider_type in ProviderType:
+                                    if provider_type.value.upper() in key.upper():
+                                        old_token_info = self.git_provider_tokens.get(
+                                            provider_type
+                                        )
+                                        if old_token_info and hasattr(
+                                            old_token_info, 'access_token'
+                                        ):
+                                            old_token = getattr(
+                                                old_token_info, 'access_token', ''
+                                            )
+                                            break
+
+                            if old_token and new_value:
+                                if old_token != new_value:
+                                    tokens_changed = True
+                                    self.log(
+                                        'info',
+                                        f'[TOKEN_DEBUG] Token CHANGED for {key}: '
+                                        f'old={old_token[:8]}..., new={new_value[:8]}...',
+                                    )
+                                else:
+                                    self.log(
+                                        'info',
+                                        f'[TOKEN_DEBUG] Token UNCHANGED for {key} '
+                                        f'(token={new_value[:8]}..., still valid?)',
+                                    )
+                            elif new_value and not old_token:
+                                self.log(
+                                    'info',
+                                    f'[TOKEN_DEBUG] NEW token for {key}: {new_value[:8]}...',
+                                )
+                                tokens_changed = True
+
+                    if tokens_changed:
+                        self.log(
+                            'info',
+                            '[TOKEN_DEBUG] ✅ Tokens were REFRESHED with new values',
+                        )
+                    else:
+                        self.log(
+                            'info',
+                            '[TOKEN_DEBUG] ⚠️ Tokens UNCHANGED (likely still valid, not expired)',
+                        )
 
                     # Export fresh tokens to environment
                     self.add_env_vars(fresh_env_vars)
@@ -713,10 +784,16 @@ class RemoteRuntime(ActionExecutionClient):
                     # Update git remote URLs with fresh tokens
                     self._update_git_remote_urls(fresh_env_vars)
 
-                    self.log('info', '[TOKEN_DEBUG] Successfully refreshed all tokens')
+                    self.log(
+                        'info',
+                        '[TOKEN_DEBUG] Successfully updated environment and git URLs',
+                    )
                     return
                 else:
-                    self.log('warning', '[TOKEN_DEBUG] No fresh tokens returned')
+                    self.log(
+                        'warning',
+                        '[TOKEN_DEBUG] No env vars returned from provider handler',
+                    )
 
             except Exception as e:
                 self.log(
