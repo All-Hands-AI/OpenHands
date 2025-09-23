@@ -236,6 +236,7 @@ jobs:
           sanitized_ref_name=$(echo "${{github.event.pull_request.head.sha}}" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
           sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
           echo "OPENHANDS_BUILD_VERSION=${sanitized_ref_name}" >> $GITHUB_ENV
+          echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
       - name: Build and push Docker image
         uses: useblacksmith/build-push-action@v1
         with:
@@ -256,7 +257,7 @@ jobs:
         # if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
-          image-ref: "ghcr.io/${{ github.repository_owner }}/enterprise-server:sha-${{ env.OPENHANDS_BUILD_VERSION }}"
+          image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:sha-${{ env.OPENHANDS_BUILD_VERSION }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
 
