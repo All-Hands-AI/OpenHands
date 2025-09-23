@@ -13,6 +13,7 @@ DB_PORT = os.environ.get('DB_PORT', '5432')  # for non-GCP environments
 DB_USER = os.environ.get('DB_USER', 'postgres')
 DB_PASS = os.environ.get('DB_PASS', 'postgres').strip()
 DB_NAME = os.environ.get('DB_NAME', 'openhands')
+DB_SCHEMA = os.environ.get('DB_SCHEMA')  # PostgreSQL schema name
 DB_AUTH_TYPE = os.environ.get('DB_AUTH_TYPE', 'password')  # 'password' or 'rds-iam'
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')  # AWS region for RDS IAM auth
 
@@ -43,9 +44,15 @@ def _get_db_engine():
         def get_db_connection():
             connector = Connector()
             instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
-            return connector.connect(
-                instance_string, 'pg8000', user=DB_USER, password=DB_PASS, db=DB_NAME
-            )
+            connect_kwargs = {
+                'user': DB_USER,
+                'password': DB_PASS,
+                'db': DB_NAME,
+            }
+            # Add schema support for GCP connections
+            if DB_SCHEMA:
+                connect_kwargs['options'] = f'-csearch_path={DB_SCHEMA}'
+            return connector.connect(instance_string, 'pg8000', **connect_kwargs)
 
         return create_engine(
             'postgresql+pg8000://',
@@ -57,10 +64,14 @@ def _get_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
+            url_params = ['ssl=require']
+            if DB_SCHEMA:
+                url_params.append(f'options=-csearch_path={DB_SCHEMA}')
+            params_str = '&'.join(url_params)
             base_url = (
                 f'postgresql+pg8000://{DB_USER}:dummy-password'
                 f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                f'?ssl=require'
+                f'?{params_str}'
             )
             engine = create_engine(
                 base_url,
@@ -82,6 +93,8 @@ def _get_db_engine():
             host_string = (
                 f'postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
             )
+            if DB_SCHEMA:
+                host_string += f'?options=-csearch_path={DB_SCHEMA}'
             return create_engine(
                 host_string,
                 pool_size=POOL_SIZE,
@@ -93,12 +106,18 @@ def _get_db_engine():
 async def async_creator():
     loop = asyncio.get_running_loop()
     async with Connector(loop=loop) as connector:
+        connect_kwargs = {
+            'user': DB_USER,
+            'password': DB_PASS,
+            'db': DB_NAME,
+        }
+        # Add schema support for async GCP connections
+        if DB_SCHEMA:
+            connect_kwargs['server_settings'] = {'search_path': DB_SCHEMA}
         conn = await connector.connect_async(
             f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}',  # Cloud SQL instance connection name"
             'asyncpg',
-            user=DB_USER,
-            password=DB_PASS,
-            db=DB_NAME,
+            **connect_kwargs,
         )
         return conn
 
@@ -128,10 +147,14 @@ def _get_async_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
+            url_params = ['ssl=require']
+            if DB_SCHEMA:
+                url_params.append(f'options=-csearch_path={DB_SCHEMA}')
+            params_str = '&'.join(url_params)
             base_url = (
                 f'postgresql+asyncpg://{DB_USER}:dummy-password'
                 f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                f'?ssl=require'
+                f'?{params_str}'
             )
             engine = create_async_engine(
                 base_url, echo=True, pool_pre_ping=True, poolclass=NullPool
@@ -148,6 +171,8 @@ def _get_async_db_engine():
             return engine
         else:
             host_string = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            if DB_SCHEMA:
+                host_string += f'?options=-csearch_path={DB_SCHEMA}'
             return create_async_engine(
                 host_string,
                 # Use NullPool to disable connection pooling and avoid event loop issues
