@@ -175,17 +175,18 @@ class TestIsLegacyRuntime:
         assert result is True
 
     def test_is_legacy_runtime_empty_command(self, legacy_manager):
-        """Test with empty command."""
+        """Test with empty command - should use new manager."""
         runtime = {'command': ''}
         result = legacy_manager.is_legacy_runtime(runtime)
-        assert result is True
+        assert result is False  # Empty command means use new manager
 
     def test_is_legacy_runtime_missing_command_key(self, legacy_manager):
-        """Test with runtime missing command key."""
+        """Test with runtime missing command key - should use new manager."""
         runtime = {'other_key': 'value'}
-        # This should raise a KeyError
-        with pytest.raises(KeyError):
-            legacy_manager.is_legacy_runtime(runtime)
+        # Should not raise KeyError, returns False (use new manager)
+        result = legacy_manager.is_legacy_runtime(runtime)
+        assert result is False
+
 
 
 class TestShouldStartInLegacyMode:
