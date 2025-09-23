@@ -1,5 +1,9 @@
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk.security.confirmation_policy import ConfirmRisky, SecurityRisk
+from openhands.sdk.security.confirmation_policy import (
+    ConfirmRisky,
+    SecurityRisk,
+    NeverConfirm
+)
 
 from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
@@ -74,7 +78,10 @@ def ask_user_confirmation(pending_actions: list) -> ConfirmationResult:
 
         return ConfirmationResult(decision=UserConfirmation.REJECT, reason=reason)
     elif index == 3:
-        return ConfirmationResult(decision=UserConfirmation.ALWAYS_ACCEPT)
+        return ConfirmationResult(
+            decision=UserConfirmation.ACCEPT,
+            policy_change=NeverConfirm()
+        )
     elif index == 4:
         return ConfirmationResult(
             decision=UserConfirmation.ACCEPT,

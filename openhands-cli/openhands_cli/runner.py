@@ -1,12 +1,17 @@
 from openhands.sdk import Conversation, Message
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm, ConfirmRisky, SecurityRisk
+from openhands.sdk.security.confirmation_policy import (
+    AlwaysConfirm,
+    NeverConfirm,
+    ConfirmRisky,
+    ConfirmationPolicyBase
+)
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.event.utils import get_unmatched_actions
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
-from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
+from openhands_cli.user_actions.types import UserConfirmation
 
 
 class ConversationRunner:
@@ -14,15 +19,22 @@ class ConversationRunner:
 
     def __init__(self, conversation: Conversation):
         self.conversation = conversation
-        self.confirmation_mode = False
 
-    def set_confirmation_mode(self, confirmation_mode: bool) -> None:
-        self.confirmation_mode = confirmation_mode
+    @property
+    def is_confirmation_mode_enabled(self):
+        policy = self.conversation.state.confirmation_policy
+        return not isinstance(policy, NeverConfirm)
 
-        if confirmation_mode:
-            self.conversation.set_confirmation_policy(AlwaysConfirm())
-        else:
+    def toggle_confirmation_mode(self):
+        if self.is_confirmation_mode_enabled:
             self.conversation.set_confirmation_policy(NeverConfirm())
+        else:
+            self.conversation.set_confirmation_policy(AlwaysConfirm())
+
+    def set_confirmation_policy(self, confirmation_policy: ConfirmationPolicyBase) -> None:
+        self.confirmation_mode = confirmation_policy
+
+
 
     def _start_listener(self) -> None:
         self.listener = PauseListener(on_pause=self.conversation.pause)
@@ -105,35 +117,53 @@ class ConversationRunner:
         Returns:
             UserConfirmation indicating the user's choice
         """
+
         pending_actions = get_unmatched_actions(self.conversation.state.events)
+        if not pending_actions:
+            return UserConfirmation.ACCEPT
 
-        if pending_actions:
-            confirmation_result = ask_user_confirmation(pending_actions)
-            
-            if confirmation_result.decision == UserConfirmation.REJECT:
-                self.conversation.reject_pending_actions(
-                    confirmation_result.reason or "User rejected the actions"
-                )
-            elif confirmation_result.decision == UserConfirmation.DEFER:
-                self.conversation.pause()
-            elif confirmation_result.decision == UserConfirmation.ALWAYS_ACCEPT:
-                # Disable confirmation mode when user selects "Always proceed"
-                print_formatted_text(
-                    HTML(
-                        "<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>"
-                    )
-                )
-                self.set_confirmation_mode(False)
-            
-            # Handle policy changes
-            if confirmation_result.policy_change:
-                print_formatted_text(
-                    HTML(
-                        "<yellow>Security-based confirmation enabled. LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>"
-                    )
-                )
-                self.conversation.set_confirmation_policy(confirmation_result.policy_change)
 
-            return confirmation_result.decision
 
-        return UserConfirmation.ACCEPT
+        result = ask_user_confirmation(pending_actions)
+        decision = result.decision
+        policy_change = result.policy_change
+
+
+        if decision == UserConfirmation.REJECT:
+            self.conversation.reject_pending_actions(
+                result.reason or "User rejected the actions"
+            )
+            return decision
+
+
+        if decision == UserConfirmation.DEFER:
+            self.conversation.pause()
+            return decision
+
+
+        if isinstance(policy_change, NeverConfirm):
+            print_formatted_text(
+                HTML(
+                    "<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>"
+                )
+            )
+            self.set_confirmation_policy(policy_change)
+            return decision
+
+
+
+        if isinstance(policy_change, ConfirmRisky):
+            print_formatted_text(
+                HTML(
+                    "<yellow>Security-based confirmation enabled. "
+                    "LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>"
+                )
+            )
+            self.set_confirmation_policy(policy_change)
+            return decision
+
+
+        # Accept action without changing existing policies
+        assert decision == UserConfirmation.ACCEPT
+        return decision
+
