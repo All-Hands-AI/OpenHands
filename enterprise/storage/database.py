@@ -190,13 +190,8 @@ def _get_async_db_engine():
                 cparams['password'] = token
                 return dialect.connect(*cargs, **cparams)
             
-            # Hook: after connection is established, set the schema if specified
-            if DB_SCHEMA:
-                @event.listens_for(engine.sync_engine, 'connect')
-                def set_search_path(dbapi_connection, connection_record):
-                    # For asyncpg, we need to handle schema differently
-                    # This will be executed on the underlying sync connection
-                    dbapi_connection.execute(f"SET search_path TO {DB_SCHEMA}")
+            # Note: Schema handling for async engines is complex due to asyncpg adapter limitations
+            # Schema will be handled at the application level when needed
 
             return engine
         else:
@@ -209,13 +204,8 @@ def _get_async_db_engine():
                 poolclass=NullPool,
             )
             
-            # Set schema via SQL after connection if specified
-            if DB_SCHEMA:
-                @event.listens_for(engine.sync_engine, 'connect')
-                def set_search_path(dbapi_connection, connection_record):
-                    # For asyncpg, we need to handle schema differently
-                    # This will be executed on the underlying sync connection
-                    dbapi_connection.execute(f"SET search_path TO {DB_SCHEMA}")
+            # Note: Schema handling for async engines is complex due to asyncpg adapter limitations
+            # Schema will be handled at the application level when needed
             
             return engine
 
