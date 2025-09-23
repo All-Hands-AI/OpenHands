@@ -512,6 +512,14 @@ async def start_conversation(
         )
 
         # Start the agent loop
+        # Log the actual conversation manager type
+        manager_class = type(conversation_manager).__name__
+        manager_module = type(conversation_manager).__module__
+        logger.info(
+            f'[TOKEN_DEBUG] Conversation manager type: class={manager_class}, '
+            f'module={manager_module}, SOURCE=manage_conversations.py'
+        )
+
         logger.info(
             f'[TOKEN_DEBUG] About to call maybe_start_agent_loop from REST API: '
             f'conversation_id={conversation_id}'
