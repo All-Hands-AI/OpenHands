@@ -166,6 +166,21 @@ jobs:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
 
+      - name: Run Trivy vulnerability scanner
+        # if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        # This only reports, does not fail the build on CVE.
+        with:
+          image-ref: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security tab
+        # if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
   ghcr_build_enterprise:
     name: Push Enterprise Image
     runs-on: blacksmith-8vcpu-ubuntu-2204
@@ -234,6 +249,20 @@ jobs:
           provenance: true
           # Add build attestations for better security
           sbom: true
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        # if: github.event_name != 'pull_request'
+        # This only reports, does not fail the build on CVE.
+        with:
+          image-ref: "${{ env.OPENHANDS_DOCKER_TAG }}"
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security tab
+        # if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
 
   enterprise-preview:
     name: Enterprise preview
