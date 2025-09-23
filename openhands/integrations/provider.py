@@ -174,7 +174,12 @@ class ProviderHandler:
     ) -> SecretStr | None:
         """Get latest token from service"""
         try:
-            async with httpx.AsyncClient() as client:
+            logger.info(
+                f'[TOKEN_DEBUG] Attempting to fetch latest {provider} token from '
+                f'{self.REFRESH_TOKEN_URL} for session {self.sid}'
+            )
+
+            async with httpx.AsyncClient(follow_redirects=False) as client:
                 resp = await client.get(
                     self.REFRESH_TOKEN_URL,
                     headers={
@@ -183,13 +188,38 @@ class ProviderHandler:
                     params={'provider': provider.value, 'sid': self.sid},
                 )
 
+            logger.info(
+                f'[TOKEN_DEBUG] Response status: {resp.status_code} for {provider}'
+            )
+
+            # Check for redirect (expired Keycloak session)
+            if resp.status_code == 302:
+                redirect_url = resp.headers.get('Location', 'Unknown')
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 302 redirect for {provider} token refresh. '
+                    f'Keycloak session expired. Redirect URL: {redirect_url[:200]}... '
+                    f'User needs to re-authenticate.'
+                )
+                # Don't try to parse JSON from a redirect response
+                return None
+
             resp.raise_for_status()
             data = TokenResponse.model_validate_json(resp.text)
+
+            # Log token info (safely)
+            token_str = data.token
+            logger.info(
+                f'[TOKEN_DEBUG] Successfully fetched {provider} token. '
+                f'Token prefix: {token_str[:10] if len(token_str) > 10 else "SHORT"}, '
+                f'Length: {len(token_str)}'
+            )
+
             return SecretStr(data.token)
 
         except Exception as e:
             logger.error(
-                f'Failed to fetch latest token for provider {provider}: {e}',
+                f'[TOKEN_DEBUG] Failed to fetch latest token for provider {provider}: '
+                f'{type(e).__name__}: {e}',
                 exc_info=True,
             )
 

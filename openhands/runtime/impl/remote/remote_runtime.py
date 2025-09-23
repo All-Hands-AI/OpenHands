@@ -845,6 +845,23 @@ class RemoteRuntime(ActionExecutionClient):
                     )
                     if match:
                         repo_path = match.group(1)
+
+                        # Log token details for debugging
+                        token_prefix = token[:10] if len(token) > 10 else token
+                        token_type = 'unknown'
+                        if token.startswith('gho_'):
+                            token_type = 'OAuth'
+                        elif token.startswith('ghp_'):
+                            token_type = 'Personal Access Token'
+                        elif token.startswith('github_pat_'):
+                            token_type = 'Fine-grained PAT'
+
+                        self.log(
+                            'info',
+                            f'[TOKEN_DEBUG] GitHub token analysis: type={token_type}, '
+                            f'prefix={token_prefix}, length={len(token)}, env_key={env_key}',
+                        )
+
                         new_url = f'https://{token}@github.com/{repo_path}.git'
                         self.log(
                             'info',
