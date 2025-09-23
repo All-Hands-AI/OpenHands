@@ -96,17 +96,27 @@ def _get_db_engine():
 
             return engine
         else:
+            # Regular password authentication with pg8000
+            # pg8000 doesn't accept options as URL parameter, so handle schema via SQL
             host_string = (
                 f'postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
             )
-            if DB_SCHEMA:
-                host_string += f'?options=-csearch_path={DB_SCHEMA}'
-            return create_engine(
+            engine = create_engine(
                 host_string,
                 pool_size=POOL_SIZE,
                 max_overflow=MAX_OVERFLOW,
                 pool_pre_ping=True,
             )
+            
+            # Set schema via SQL after connection if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                        dbapi_connection.commit()
+            
+            return engine
 
 
 async def async_creator():
@@ -181,14 +191,24 @@ def _get_async_db_engine():
 
             return engine
         else:
+            # Regular password authentication with asyncpg
+            # asyncpg doesn't accept options as URL parameter, so handle schema via SQL
             host_string = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-            if DB_SCHEMA:
-                host_string += f'?options=-csearch_path={DB_SCHEMA}'
-            return create_async_engine(
+            engine = create_async_engine(
                 host_string,
                 # Use NullPool to disable connection pooling and avoid event loop issues
                 poolclass=NullPool,
             )
+            
+            # Set schema via SQL after connection if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine.sync_engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    # For asyncpg, we need to handle schema differently
+                    # This will be executed on the underlying sync connection
+                    dbapi_connection.execute(f"SET search_path TO {DB_SCHEMA}")
+            
+            return engine
 
 
 engine = _get_db_engine()

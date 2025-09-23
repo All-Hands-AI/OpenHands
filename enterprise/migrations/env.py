@@ -100,17 +100,27 @@ def get_engine(database_name=DB_NAME):
 
             return engine
         else:
+            # Regular password authentication
+            # Use postgresql:// (default driver) but handle schema via SQL to be safe
             url = (
                 f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database_name}'
             )
-            if DB_SCHEMA:
-                url += f'?options=-csearch_path={DB_SCHEMA}'
-            return create_engine(
+            engine = create_engine(
                 url,
                 pool_size=POOL_SIZE,
                 max_overflow=MAX_OVERFLOW,
                 pool_pre_ping=True,
             )
+            
+            # Set schema via SQL after connection if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                        dbapi_connection.commit()
+            
+            return engine
 
 
 engine = get_engine()
