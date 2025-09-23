@@ -22,17 +22,16 @@ class ConversationRunner:
 
     @property
     def is_confirmation_mode_enabled(self):
-        policy = self.conversation.state.confirmation_policy
-        return not isinstance(policy, NeverConfirm)
+        return self.conversation.confirmation_policy_active
 
     def toggle_confirmation_mode(self):
         if self.is_confirmation_mode_enabled:
-            self.conversation.set_confirmation_policy(NeverConfirm())
+            self.set_confirmation_policy(NeverConfirm())
         else:
-            self.conversation.set_confirmation_policy(AlwaysConfirm())
+            self.set_confirmation_policy(AlwaysConfirm())
 
     def set_confirmation_policy(self, confirmation_policy: ConfirmationPolicyBase) -> None:
-        self.confirmation_mode = confirmation_policy
+        self.conversation.set_confirmation_policy(confirmation_policy)
 
 
 
@@ -70,7 +69,7 @@ class ConversationRunner:
         if message:
             self.conversation.send_message(message)
 
-        if self.confirmation_mode:
+        if self.is_confirmation_mode_enabled:
             self._run_with_confirmation()
         else:
             self._run_without_confirmation()
@@ -124,7 +123,10 @@ class ConversationRunner:
 
 
 
-        result = ask_user_confirmation(pending_actions)
+        result = ask_user_confirmation(
+            pending_actions,
+            isinstance(self.conversation.state.confirmation_policy, ConfirmRisky)
+        )
         decision = result.decision
         policy_change = result.policy_change
 

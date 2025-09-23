@@ -9,7 +9,10 @@ from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResul
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
-def ask_user_confirmation(pending_actions: list) -> ConfirmationResult:
+def ask_user_confirmation(
+    pending_actions: list,
+    using_risk_based_policy: bool = False
+) -> ConfirmationResult:
     """Ask user to confirm pending actions.
 
     Args:
@@ -44,8 +47,10 @@ def ask_user_confirmation(pending_actions: list) -> ConfirmationResult:
         "No, reject (w/o reason)",
         "No, reject with reason",
         "Always proceed (don't ask again)",
-        "Auto-confirm LOW/MEDIUM risk, ask for HIGH risk",
     ]
+
+    if not using_risk_based_policy:
+        options.append("Auto-confirm LOW/MEDIUM risk, ask for HIGH risk")
 
     try:
         index = cli_confirm(question, options, escapable=True)
