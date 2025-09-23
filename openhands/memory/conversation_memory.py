@@ -281,7 +281,6 @@ class ConversationMemory:
                     tool_metadata.model_response.choices[0], 'message'
                 )
                 content = assistant_msg.content or ''
-                print(f"DEBUG: assistant_msg.content='{content}'")
 
                 # save content if any, to thought
                 if action.thought:
