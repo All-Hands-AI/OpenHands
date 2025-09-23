@@ -53,13 +53,19 @@ jobs:
         run: make build
       - name: Run Unit Tests
         run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -s ./tests/unit --cov=openhands --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.${{ matrix.python_version }}"
       - name: Run Runtime Tests with CLIRuntime
-        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -s tests/runtime/test_bash.py --cov=openhands --cov-append --cov-branch
+        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -s tests/runtime/test_bash.py --cov=openhands --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.runtime.${{ matrix.python_version }}"
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
           name: coverage-openhands
-          path: .coverage
+          path: |
+            .coverage.${{ matrix.python_version }}
+            .coverage.runtime.${{ matrix.python_version }}
           include-hidden-files: true
   # Run specific Windows python tests
   test-on-windows:
@@ -111,13 +117,15 @@ jobs:
         working-directory: ./enterprise
         run: poetry install --with dev,test
       - name: Run Unit Tests
-        working-directory: ./enterprise
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit --cov=. --cov-branch
+        # Use base working directory for coverage paths to line up.
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./enterprise/tests/unit --cov=enterprise --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.enterprise.${{ matrix.python_version }}"
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
           name: coverage-enterprise
-          path: ./enterprise/.coverage
+          path: ".coverage.enterprise.${{ matrix.python_version }}"
           include-hidden-files: true
   coverage-comment:
       name: Coverage Comment
@@ -142,10 +150,5 @@ jobs:
           uses: py-cov-action/python-coverage-comment-action@v3
           with:
             GITHUB_TOKEN: ${{ github.token }}
-        - name: Coverage comment
-          id: enterprise_coverage_comment
-          uses: py-cov-action/python-coverage-comment-action@v3
-          with:
-            GITHUB_TOKEN: ${{ github.token }}
-            SUBPROJECT_ID: enterprise
-            COVERAGE_PATH: enterprise/
+            MERGE_COVERAGE_FILES: true
+
