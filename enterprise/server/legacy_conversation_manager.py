@@ -188,10 +188,17 @@ class LegacyConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        logger.info(
-            f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
-            f'sid={sid}, user_id={user_id}, has_provider_tokens={bool(settings.provider_tokens)}'
-        )
+        try:
+            has_tokens = bool(settings and hasattr(settings, 'provider_tokens') and settings.provider_tokens)
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
+                f'sid={sid}, user_id={user_id}, has_provider_tokens={has_tokens}'
+            )
+        except Exception as e:
+            logger.error(f'[TOKEN_DEBUG] Error logging entry: {e}')
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: sid={sid}, user_id={user_id}'
+            )
 
         if await self.should_start_in_legacy_mode(sid):
             logger.info(
