@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
@@ -10,9 +10,10 @@ EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
-# SPLIT=$8
-LANGUAGE=$8
-# N_RUNS=$10
+SPLIT=$8
+N_RUNS=$9
+MODE=${10}
+
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -30,11 +31,6 @@ if [ -z "$MAX_ITER" ]; then
   MAX_ITER=100
 fi
 
-if [ -z "$USE_INSTANCE_IMAGE" ]; then
-  echo "USE_INSTANCE_IMAGE not specified, use default true"
-  USE_INSTANCE_IMAGE=true
-fi
-
 if [ -z "$RUN_WITH_BROWSING" ]; then
   echo "RUN_WITH_BROWSING not specified, use default false"
   RUN_WITH_BROWSING=false
@@ -42,49 +38,28 @@ fi
 
 
 if [ -z "$DATASET" ]; then
-  echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
-  DATASET="princeton-nlp/SWE-bench_Lite"
-fi
-
-if [ -z "$LANGUAGE" ]; then
-  echo "LANGUAGE not specified, use default python"
-  LANGUAGE="java"
+  echo "DATASET not specified, use default SWE-Perf/SWE-Perf"
+  DATASET="SWE-Perf/SWE-Perf"
 fi
 
 if [ -z "$SPLIT" ]; then
-  echo "LANUGUAGE not specified, use default python"
-  SPLIT="train"
+  echo "SPLIT not specified, use default test"
+  SPLIT="test"
 fi
 
-##TODO:适配多语言的版本
-# if [ -z "$SPLIT" ]; then
-#   if [ "$LANGUAGE" = "python" ]; then
-#   echo "SPLIT is test as LANUGUAGE is python"
-#     SPLIT="test"
-#   elif [ "$LANGUAGE" = "java" ]; then
-#   echo "SPLIT is java_verified as LANUGUAGE is java"
-#     SPLIT="java_verified"
-#   fi
-# fi
-
-if [ -z "$EVAL_DOCKER_IMAGE_PREFIX" ]; then
-  if [ "$LANGUAGE" = "python" ]; then
-  echo "EVAL_DOCKER_IMAGE_PREFIX is docker.io/xingyaoww/ as default as LANGUAGE is python"
-    EVAL_DOCKER_IMAGE_PREFIX="docker.io/xingyaoww/"
-  elif [ "$LANGUAGE" = "java" ]; then
-  echo "EVAL_DOCKER_IMAGE_PREFIX is empty as LANGUAGE is java"
-    EVAL_DOCKER_IMAGE_PREFIX=""
-  fi
+if [ -z "$MODE" ]; then
+  MODE="swe"
+  echo "MODE not specified, use default $MODE"
 fi
 
-export EVAL_DOCKER_IMAGE_PREFIX=$EVAL_DOCKER_IMAGE_PREFIX
-echo "EVAL_DOCKER_IMAGE_PREFIX: $EVAL_DOCKER_IMAGE_PREFIX"
-export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
-echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+if [ -n "$EVAL_CONDENSER" ]; then
+  echo "Using Condenser Config: $EVAL_CONDENSER"
+else
+  echo "No Condenser Config provided via EVAL_CONDENSER, use default (NoOpCondenser)."
+fi
+
 export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
 echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
-export LANGUAGE=$LANGUAGE
-echo "LANGUAGE: $LANGUAGE"
 
 get_openhands_version
 
@@ -93,6 +68,11 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 echo "SPLIT: $SPLIT"
+echo "MAX_ITER: $MAX_ITER"
+echo "NUM_WORKERS: $NUM_WORKERS"
+echo "COMMIT_HASH: $COMMIT_HASH"
+echo "MODE: $MODE"
+echo "EVAL_CONDENSER: $EVAL_CONDENSER"
 
 # Default to NOT use Hint
 if [ -z "$USE_HINT_TEXT" ]; then
@@ -112,17 +92,28 @@ fi
 if [ -n "$EXP_NAME" ]; then
   EVAL_NOTE="$EVAL_NOTE-$EXP_NAME"
 fi
+# if mode != swe, add mode to the eval note
+if [ "$MODE" != "swe" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${MODE}"
+fi
+# Add condenser config to eval note if provided
+if [ -n "$EVAL_CONDENSER" ]; then
+  EVAL_NOTE="${EVAL_NOTE}-${EVAL_CONDENSER}"
+fi
 
 function run_eval() {
-  local eval_note=$1
-  COMMAND="poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
+  local eval_note="${1}"
+  COMMAND="poetry run python evaluation/benchmarks/swe_perf/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \
     --eval-num-workers $NUM_WORKERS \
     --eval-note $eval_note \
     --dataset $DATASET \
-    --split $SPLIT"
+    --split $SPLIT \
+    --mode $MODE"
+
+
 
   if [ -n "$EVAL_LIMIT" ]; then
     echo "EVAL_LIMIT: $EVAL_LIMIT"
