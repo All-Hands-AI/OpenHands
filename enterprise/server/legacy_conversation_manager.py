@@ -189,7 +189,11 @@ class LegacyConversationManager(ConversationManager):
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
         try:
-            has_tokens = bool(settings and hasattr(settings, 'provider_tokens') and settings.provider_tokens)
+            has_tokens = bool(
+                settings
+                and hasattr(settings, 'provider_tokens')
+                and settings.provider_tokens
+            )
             logger.info(
                 f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
                 f'sid={sid}, user_id={user_id}, has_provider_tokens={has_tokens}'
