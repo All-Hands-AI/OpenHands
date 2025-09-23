@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -13,6 +13,8 @@ DB_PORT = os.environ.get('DB_PORT', '5432')  # for non-GCP environments
 DB_USER = os.environ.get('DB_USER', 'postgres')
 DB_PASS = os.environ.get('DB_PASS', 'postgres').strip()
 DB_NAME = os.environ.get('DB_NAME', 'openhands')
+DB_AUTH_TYPE = os.environ.get('DB_AUTH_TYPE', 'password')  # 'password' or 'rds-iam'
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')  # AWS region for RDS IAM auth
 
 GCP_DB_INSTANCE = os.environ.get('GCP_DB_INSTANCE')  # for GCP environments
 GCP_PROJECT = os.environ.get('GCP_PROJECT')
@@ -20,6 +22,19 @@ GCP_REGION = os.environ.get('GCP_REGION')
 
 POOL_SIZE = int(os.environ.get('DB_POOL_SIZE', '25'))
 MAX_OVERFLOW = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
+
+# RDS IAM authentication setup
+if DB_AUTH_TYPE == 'rds-iam':
+    import boto3
+
+    # boto3 client (reused for token generation)
+    rds = boto3.client('rds', region_name=AWS_REGION)
+
+    def get_auth_token():
+        """Generate a fresh IAM DB auth token."""
+        return rds.generate_db_auth_token(
+            DBHostname=DB_HOST, Port=DB_PORT, DBUsername=DB_USER
+        )
 
 
 def _get_db_engine():
@@ -40,15 +55,39 @@ def _get_db_engine():
             pool_pre_ping=True,
         )
     else:
-        host_string = (
-            f'postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-        )
-        return create_engine(
-            host_string,
-            pool_size=POOL_SIZE,
-            max_overflow=MAX_OVERFLOW,
-            pool_pre_ping=True,
-        )
+        if DB_AUTH_TYPE == 'rds-iam':
+            # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
+            base_url = (
+                f'postgresql+pg8000://{DB_USER}:dummy-password'
+                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                f'?ssl=require'
+            )
+            engine = create_engine(
+                base_url,
+                pool_size=POOL_SIZE,
+                max_overflow=MAX_OVERFLOW,
+                pool_pre_ping=True,
+            )
+
+            # Hook: before a connection is made, inject a fresh token
+            @event.listens_for(engine, 'do_connect')
+            def provide_token(dialect, conn_rec, cargs, cparams):
+                token = get_auth_token()
+                # Replace password in connect arguments
+                cparams['password'] = token
+                return dialect.connect(*cargs, **cparams)
+
+            return engine
+        else:
+            host_string = (
+                f'postgresql+pg8000://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            )
+            return create_engine(
+                host_string,
+                pool_size=POOL_SIZE,
+                max_overflow=MAX_OVERFLOW,
+                pool_pre_ping=True,
+            )
 
 
 async def async_creator():
@@ -87,14 +126,33 @@ def _get_async_db_engine():
             poolclass=NullPool,
         )
     else:
-        host_string = (
-            f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-        )
-        return create_async_engine(
-            host_string,
-            # Use NullPool to disable connection pooling and avoid event loop issues
-            poolclass=NullPool,
-        )
+        if DB_AUTH_TYPE == 'rds-iam':
+            # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
+            base_url = (
+                f'postgresql+asyncpg://{DB_USER}:dummy-password'
+                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                f'?ssl=require'
+            )
+            engine = create_async_engine(
+                base_url, echo=True, pool_pre_ping=True, poolclass=NullPool
+            )
+
+            # Hook: before a connection is made, inject a fresh token
+            @event.listens_for(engine.sync_engine, 'do_connect')
+            def provide_token(dialect, conn_rec, cargs, cparams):
+                token = get_auth_token()
+                # Replace password in connect arguments
+                cparams['password'] = token
+                return dialect.connect(*cargs, **cparams)
+
+            return engine
+        else:
+            host_string = f'postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+            return create_async_engine(
+                host_string,
+                # Use NullPool to disable connection pooling and avoid event loop issues
+                poolclass=NullPool,
+            )
 
 
 engine = _get_db_engine()

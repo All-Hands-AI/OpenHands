@@ -4,6 +4,7 @@ from logging.config import fileConfig
 from alembic import context
 from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine
+
 from storage.base import Base
 
 target_metadata = Base.metadata
@@ -13,6 +14,7 @@ DB_PASS = os.getenv('DB_PASS', 'postgres')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'openhands')
+DB_SCHEMA = os.getenv('DB_SCHEMA')
 
 GCP_DB_INSTANCE = os.getenv('GCP_DB_INSTANCE')
 GCP_PROJECT = os.getenv('GCP_PROJECT')
