@@ -65,15 +65,23 @@ def _get_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
-            url_params = ['ssl=require']
+            # Note: SSL is enabled by default for pg8000 when connecting to RDS, no need to specify ssl=require
+            url_params = []
             if DB_SCHEMA:
                 url_params.append(f'options=-csearch_path={DB_SCHEMA}')
-            params_str = '&'.join(url_params)
-            base_url = (
-                f'postgresql+pg8000://{DB_USER}:dummy-password'
-                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                f'?{params_str}'
-            )
+            
+            if url_params:
+                params_str = '&'.join(url_params)
+                base_url = (
+                    f'postgresql+pg8000://{DB_USER}:dummy-password'
+                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                    f'?{params_str}'
+                )
+            else:
+                base_url = (
+                    f'postgresql+pg8000://{DB_USER}:dummy-password'
+                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                )
             engine = create_engine(
                 base_url,
                 pool_size=POOL_SIZE,
@@ -148,15 +156,23 @@ def _get_async_db_engine():
     else:
         if DB_AUTH_TYPE == 'rds-iam':
             # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
-            url_params = ['ssl=require']
+            # Note: SSL is enabled by default for asyncpg when connecting to RDS, no need to specify ssl=require
+            url_params = []
             if DB_SCHEMA:
                 url_params.append(f'options=-csearch_path={DB_SCHEMA}')
-            params_str = '&'.join(url_params)
-            base_url = (
-                f'postgresql+asyncpg://{DB_USER}:dummy-password'
-                f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
-                f'?{params_str}'
-            )
+            
+            if url_params:
+                params_str = '&'.join(url_params)
+                base_url = (
+                    f'postgresql+asyncpg://{DB_USER}:dummy-password'
+                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                    f'?{params_str}'
+                )
+            else:
+                base_url = (
+                    f'postgresql+asyncpg://{DB_USER}:dummy-password'
+                    f'@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+                )
             engine = create_async_engine(
                 base_url, echo=True, pool_pre_ping=True, poolclass=NullPool
             )
