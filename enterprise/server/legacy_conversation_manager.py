@@ -187,10 +187,22 @@ class LegacyConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
+        print(
+            f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
+            f'sid={sid}, user_id={user_id}, has_provider_tokens={bool(settings.provider_tokens)}'
+        )
+
         if await self.should_start_in_legacy_mode(sid):
+            print(
+                f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to ClusteredConversationManager (legacy mode)'
+            )
             return await self.legacy_conversation_manager.maybe_start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
+
+        print(
+            f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to SaasNestedConversationManager (new mode)'
+        )
         return await self.conversation_manager.maybe_start_agent_loop(
             sid, settings, user_id, initial_user_msg, replay_json
         )
@@ -283,11 +295,32 @@ class LegacyConversationManager(ConversationManager):
             cached_entry = self._legacy_cache[conversation_id]
             # Check if the cached value is still valid
             if time.time() - cached_entry.timestamp <= _LEGACY_ENTRY_TIMEOUT_SECONDS:
+                print(
+                    f'[TOKEN_DEBUG] LegacyManager: Using cached legacy status for {conversation_id}: '
+                    f'is_legacy={cached_entry.is_legacy}'
+                )
                 return cached_entry.is_legacy
 
         # If not in cache or expired, check the runtime directly
         runtime = await self.conversation_manager._get_runtime(conversation_id)
+
+        # Log runtime details for debugging
+        if runtime:
+            print(
+                f"[TOKEN_DEBUG] LegacyManager: Runtime check for {conversation_id}: "
+                f"status={runtime.get('status')}, has_command={bool(runtime.get('command'))}, "
+                f"command_preview={str(runtime.get('command', ''))[:100]}"
+            )
+        else:
+            print(
+                f'[TOKEN_DEBUG] LegacyManager: No runtime found for {conversation_id}'
+            )
+
         is_legacy = self.is_legacy_runtime(runtime)
+        print(
+            f"[TOKEN_DEBUG] LegacyManager: Determined legacy status for {conversation_id}: "
+            f"is_legacy={is_legacy}, will use {'ClusteredConversationManager' if is_legacy else 'SaasNestedConversationManager'}"
+        )
 
         # Cache the result with current timestamp
         self._legacy_cache[conversation_id] = LegacyCacheEntry(is_legacy, time.time())
@@ -306,7 +339,18 @@ class LegacyConversationManager(ConversationManager):
         """
         if runtime is None:
             return False
-        return 'openhands.server' not in runtime['command']
+
+        # Handle case where command field might not exist (e.g., paused runtimes)
+        command = runtime.get('command', '')
+        if not command:
+            # If no command field, check if this is a paused runtime
+            # Paused runtimes should use the new conversation manager
+            if runtime.get('status', '').lower() == 'paused':
+                return False
+            # Unknown state - default to False (use new manager)
+            return False
+
+        return 'openhands.server' not in command
 
     @classmethod
     def get_instance(
