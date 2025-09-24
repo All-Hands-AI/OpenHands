@@ -170,17 +170,36 @@ class AgentSession:
                 f'[TOKEN_DEBUG] _create_runtime returned: runtime_connected={runtime_connected}'
             )
 
+            if not runtime_connected:
+                self.logger.error(
+                    '[TOKEN_DEBUG] Runtime connection failed but continuing with session start'
+                )
+
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.split('/')[-1]
 
+            self.logger.info(
+                '[TOKEN_DEBUG] Setting up provider handler and event stream secrets'
+            )
             if git_provider_tokens:
+                self.logger.info(
+                    f'[TOKEN_DEBUG] Creating ProviderHandler with tokens: {list(git_provider_tokens.keys())}'
+                )
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
+                self.logger.info(
+                    '[TOKEN_DEBUG] Provider handler event stream secrets set successfully'
+                )
+            else:
+                self.logger.info('[TOKEN_DEBUG] No git provider tokens to set up')
 
             if custom_secrets:
+                self.logger.info('[TOKEN_DEBUG] Setting custom secrets in event stream')
                 custom_secrets_handler.set_event_stream_secrets(self.event_stream)
+                self.logger.info('[TOKEN_DEBUG] Custom secrets set successfully')
 
+            self.logger.info('[TOKEN_DEBUG] About to create memory')
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
@@ -189,13 +208,24 @@ class AgentSession:
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
                 working_dir=config.workspace_mount_path_in_sandbox,
             )
+            self.logger.info('[TOKEN_DEBUG] Memory created successfully')
 
             # NOTE: this needs to happen before controller is created
             # so MCP tools can be included into the SystemMessageAction
+            self.logger.info(
+                '[TOKEN_DEBUG] Checking if MCP tools should be added to agent'
+            )
             if self.runtime and runtime_connected and agent.config.enable_mcp:
+                self.logger.info('[TOKEN_DEBUG] Adding MCP tools to agent')
                 await add_mcp_tools_to_agent(agent, self.runtime, self.memory)
+                self.logger.info('[TOKEN_DEBUG] MCP tools added successfully')
+            else:
+                self.logger.info(
+                    '[TOKEN_DEBUG] Skipping MCP tools - either no runtime, not connected, or MCP disabled'
+                )
 
             if replay_json:
+                self.logger.info('[TOKEN_DEBUG] Running replay scenario')
                 initial_message = self._run_replay(
                     initial_message,
                     replay_json,
@@ -206,7 +236,9 @@ class AgentSession:
                     agent_to_llm_config,
                     agent_configs,
                 )
+                self.logger.info('[TOKEN_DEBUG] Replay completed successfully')
             else:
+                self.logger.info('[TOKEN_DEBUG] About to create agent controller')
                 self.controller, restored_state = self._create_controller(
                     agent,
                     config.security.confirmation_mode,
@@ -215,19 +247,41 @@ class AgentSession:
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
                 )
+                self.logger.info(
+                    f'[TOKEN_DEBUG] Agent controller created successfully: restored_state={restored_state}'
+                )
 
+            self.logger.info(
+                f'[TOKEN_DEBUG] Setting up initial agent state: closed={self._closed}, has_initial_message={initial_message is not None}'
+            )
             if not self._closed:
                 if initial_message:
+                    self.logger.info(
+                        '[TOKEN_DEBUG] Adding initial message to event stream and setting agent to RUNNING'
+                    )
                     self.event_stream.add_event(initial_message, EventSource.USER)
                     self.event_stream.add_event(
                         ChangeAgentStateAction(AgentState.RUNNING),
                         EventSource.ENVIRONMENT,
                     )
+                    self.logger.info(
+                        '[TOKEN_DEBUG] Agent state set to RUNNING successfully'
+                    )
                 else:
+                    self.logger.info(
+                        '[TOKEN_DEBUG] No initial message - setting agent to AWAITING_USER_INPUT'
+                    )
                     self.event_stream.add_event(
                         ChangeAgentStateAction(AgentState.AWAITING_USER_INPUT),
                         EventSource.ENVIRONMENT,
                     )
+                    self.logger.info(
+                        '[TOKEN_DEBUG] Agent state set to AWAITING_USER_INPUT successfully'
+                    )
+
+            self.logger.info(
+                '[TOKEN_DEBUG] Agent session start completed successfully!'
+            )
             finished = True
         finally:
             self._starting = False
@@ -418,7 +472,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
                 headless_mode=False,
-                attach_to_existing=False,  # TODO: This should be True when resuming!
+                attach_to_existing=False,
                 git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
@@ -444,21 +498,47 @@ class AgentSession:
                 git_provider_tokens=git_provider_tokens,
             )
 
+        self.logger.info('[TOKEN_DEBUG] About to connect to runtime')
         try:
             await self.runtime.connect()
+            self.logger.info('[TOKEN_DEBUG] Runtime connected successfully')
         except AgentRuntimeUnavailableError as e:
-            self.logger.error(f'Runtime initialization failed: {e}')
+            self.logger.error(f'[TOKEN_DEBUG] Runtime connection failed: {e}')
             if self._status_callback:
                 self._status_callback(
                     'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
             return False
 
-        await self.runtime.clone_or_init_repo(
-            git_provider_tokens, selected_repository, selected_branch
+        self.logger.info(
+            f'[TOKEN_DEBUG] About to clone/init repo: repository={selected_repository}, branch={selected_branch}'
         )
-        await call_sync_from_async(self.runtime.maybe_run_setup_script)
-        await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
+        try:
+            await self.runtime.clone_or_init_repo(
+                git_provider_tokens, selected_repository, selected_branch
+            )
+            self.logger.info(
+                '[TOKEN_DEBUG] Repository clone/init completed successfully'
+            )
+        except Exception as e:
+            self.logger.error(f'[TOKEN_DEBUG] Repository clone/init failed: {e}')
+            raise
+
+        self.logger.info('[TOKEN_DEBUG] Running setup script')
+        try:
+            await call_sync_from_async(self.runtime.maybe_run_setup_script)
+            self.logger.info('[TOKEN_DEBUG] Setup script completed successfully')
+        except Exception as e:
+            self.logger.error(f'[TOKEN_DEBUG] Setup script failed: {e}')
+            raise
+
+        self.logger.info('[TOKEN_DEBUG] Setting up git hooks')
+        try:
+            await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
+            self.logger.info('[TOKEN_DEBUG] Git hooks setup completed successfully')
+        except Exception as e:
+            self.logger.error(f'[TOKEN_DEBUG] Git hooks setup failed: {e}')
+            raise
 
         self.logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
@@ -505,7 +585,13 @@ class AgentSession:
             '-------------------------------------------------------------------------------------------'
         )
         self.logger.debug(msg)
+        self.logger.info('[TOKEN_DEBUG] About to restore state from previous session')
         initial_state = self._maybe_restore_state()
+        self.logger.info(
+            f'[TOKEN_DEBUG] State restoration completed: has_initial_state={initial_state is not None}'
+        )
+
+        self.logger.info('[TOKEN_DEBUG] Creating AgentController instance')
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -524,6 +610,7 @@ class AgentSession:
             replay_events=replay_events,
             security_analyzer=self.runtime.security_analyzer if self.runtime else None,
         )
+        self.logger.info('[TOKEN_DEBUG] AgentController instance created successfully')
 
         return (controller, initial_state is not None)
 
