@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import { clearJupyter } from "#/state/jupyter-slice";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { useConversationStore } from "#/state/conversation-store";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { AgentState } from "#/types/agent-state";
@@ -42,6 +42,7 @@ function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const clearTerminal = useCommandStore((state) => state.clearTerminal);
+  const clearJupyter = useJupyterStore((state) => state.clearJupyter);
   const queryClient = useQueryClient();
 
   // Fetch batch feedback data when conversation is loaded
@@ -86,14 +87,14 @@ function AppContent() {
 
   React.useEffect(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    clearJupyter();
     resetConversationState();
     dispatch(setCurrentAgentState(AgentState.LOADING));
   }, [conversationId, clearTerminal, resetConversationState]);
 
   useEffectOnce(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    clearJupyter();
     resetConversationState();
     dispatch(setCurrentAgentState(AgentState.LOADING));
   });

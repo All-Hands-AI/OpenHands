@@ -1,8 +1,8 @@
 import { setCurrentAgentState } from "#/state/agent-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { useCommandStore } from "#/state/command-store";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
 import { useBrowserStore } from "#/stores/browser-store";
 
@@ -23,14 +23,12 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.RUN_IPYTHON:
-      store.dispatch(
-        appendJupyterOutput({
-          content: message.content,
-          imageUrls: Array.isArray(message.extras?.image_urls)
-            ? message.extras.image_urls
-            : undefined,
-        }),
-      );
+      useJupyterStore.getState().appendJupyterOutput({
+        content: message.content,
+        imageUrls: Array.isArray(message.extras?.image_urls)
+          ? message.extras.image_urls
+          : undefined,
+      });
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:

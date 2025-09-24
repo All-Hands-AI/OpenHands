@@ -1,10 +1,8 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import agentReducer from "./state/agent-slice";
-import { jupyterReducer } from "./state/jupyter-slice";
 
 export const rootReducer = combineReducers({
   agent: agentReducer,
-  jupyter: jupyterReducer,
 });
 
 const store = configureStore({
