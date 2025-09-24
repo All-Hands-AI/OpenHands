@@ -2,7 +2,6 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import agentReducer from "./state/agent-slice";
 import browserReducer from "./state/browser-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
-import securityAnalyzerReducer from "./state/security-analyzer-slice";
 import microagentManagementReducer from "./state/microagent-management-slice";
 import eventMessageReducer from "./state/event-message-slice";
 
@@ -10,7 +9,6 @@ export const rootReducer = combineReducers({
   browser: browserReducer,
   agent: agentReducer,
   jupyter: jupyterReducer,
-  securityAnalyzer: securityAnalyzerReducer,
   microagentManagement: microagentManagementReducer,
   eventMessage: eventMessageReducer,
 });
