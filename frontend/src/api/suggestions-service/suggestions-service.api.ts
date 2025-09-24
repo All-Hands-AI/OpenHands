@@ -1,4 +1,4 @@
-import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { SuggestedTask } from "#/utils/types";
 import { openHands } from "../open-hands-axios";
 
 export class SuggestionsService {

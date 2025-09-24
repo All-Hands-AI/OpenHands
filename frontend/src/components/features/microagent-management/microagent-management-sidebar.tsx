@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
@@ -7,11 +6,7 @@ import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { GitProviderDropdown } from "#/components/features/home/git-provider-dropdown";
-import {
-  setPersonalRepositories,
-  setOrganizationRepositories,
-  setRepositories,
-} from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { GitRepository } from "#/types/git";
 import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
@@ -35,7 +30,11 @@ export function MicroagentManagementSidebar({
   const [searchQuery, setSearchQuery] = useState("");
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-  const dispatch = useDispatch();
+  const {
+    setPersonalRepositories,
+    setOrganizationRepositories,
+    setRepositories,
+  } = useMicroagentManagementStore();
 
   const { t } = useTranslation();
 
@@ -54,7 +53,7 @@ export function MicroagentManagementSidebar({
 
   // Server-side search functionality
   const { data: searchResults, isLoading: isSearchLoading } =
-    useSearchRepositories(debouncedSearchQuery, selectedProvider, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
+    useSearchRepositories(debouncedSearchQuery, selectedProvider, false, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
 
   // Auto-select provider if there's only one
   useEffect(() => {
@@ -96,9 +95,9 @@ export function MicroagentManagementSidebar({
 
   useEffect(() => {
     if (!filteredRepositories?.length) {
-      dispatch(setPersonalRepositories([]));
-      dispatch(setOrganizationRepositories([]));
-      dispatch(setRepositories([]));
+      setPersonalRepositories([]);
+      setOrganizationRepositories([]);
+      setRepositories([]);
       return;
     }
 
@@ -121,10 +120,16 @@ export function MicroagentManagementSidebar({
       }
     });
 
-    dispatch(setPersonalRepositories(personalRepos));
-    dispatch(setOrganizationRepositories(organizationRepos));
-    dispatch(setRepositories(otherRepos));
-  }, [filteredRepositories, selectedProvider, dispatch]);
+    setPersonalRepositories(personalRepos);
+    setOrganizationRepositories(organizationRepos);
+    setRepositories(otherRepos);
+  }, [
+    filteredRepositories,
+    selectedProvider,
+    setPersonalRepositories,
+    setOrganizationRepositories,
+    setRepositories,
+  ]);
 
   // Handle scroll to bottom for pagination
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -144,7 +149,7 @@ export function MicroagentManagementSidebar({
   return (
     <div
       className={cn(
-        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
+        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col custom-scrollbar-always",
         isSmallerScreen && "w-full border-none",
       )}
       onScroll={handleScroll}
@@ -160,6 +165,9 @@ export function MicroagentManagementSidebar({
             placeholder="Select Provider"
             onChange={handleProviderChange}
             className="w-full"
+            inputClassName="w-full h-10 min-h-10 max-h-10 text-sm placeholder:text-tertiary-alt pl-6.5"
+            toggleButtonClassName="w-10 h-10 translate-y-[1px]"
+            itemClassName="text-sm"
           />
         </div>
       )}
@@ -178,7 +186,7 @@ export function MicroagentManagementSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn(
-              "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:text-tertiary-alt",
               "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed h-10 box-shadow-none outline-none",
               "pr-10", // Space for spinner
             )}
