@@ -15,6 +15,7 @@ interface MCPServerConfig {
   name?: string;
   url?: string;
   api_key?: string;
+  timeout?: number;
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -120,6 +121,22 @@ export function MCPServerForm({
     return null;
   };
 
+  const validateTimeout = (timeoutStr: string): string | null => {
+    if (!timeoutStr.trim()) return null; // Optional field
+
+    const timeout = parseInt(timeoutStr.trim(), 10);
+    if (Number.isNaN(timeout)) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_INVALID_NUMBER);
+    }
+    if (timeout <= 0) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_POSITIVE);
+    }
+    if (timeout > 3600) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_TIMEOUT_MAX_EXCEEDED);
+    }
+    return null;
+  };
+
   const validateStdioServer = (formData: FormData): string | null => {
     const name = formData.get("name")?.toString().trim() || "";
     const command = formData.get("command")?.toString().trim() || "";
@@ -148,6 +165,14 @@ export function MCPServerForm({
       if (urlError) return urlError;
       const urlDupError = validateUrlUniqueness(url);
       if (urlDupError) return urlDupError;
+
+      // Validate timeout for SHTTP servers only
+      if (serverType === "shttp") {
+        const timeoutStr = formData.get("timeout")?.toString() || "";
+        const timeoutError = validateTimeout(timeoutStr);
+        if (timeoutError) return timeoutError;
+      }
+
       return null;
     }
 
@@ -203,12 +228,23 @@ export function MCPServerForm({
     if (serverType === "sse" || serverType === "shttp") {
       const url = formData.get("url")?.toString().trim();
       const apiKey = formData.get("api_key")?.toString().trim();
+      const timeoutStr = formData.get("timeout")?.toString().trim();
 
-      onSubmit({
+      const serverConfig: MCPServerConfig = {
         ...baseConfig,
         url: url!,
         ...(apiKey && { api_key: apiKey }),
-      });
+      };
+
+      // Only add timeout for SHTTP servers
+      if (serverType === "shttp" && timeoutStr) {
+        const timeoutValue = parseInt(timeoutStr, 10);
+        if (!Number.isNaN(timeoutValue)) {
+          serverConfig.timeout = timeoutValue;
+        }
+      }
+
+      onSubmit(serverConfig);
     } else if (serverType === "stdio") {
       const name = formData.get("name")?.toString().trim();
       const command = formData.get("command")?.toString().trim();
@@ -283,6 +319,21 @@ export function MCPServerForm({
             defaultValue={server?.api_key || ""}
             placeholder={t(I18nKey.SETTINGS$MCP_API_KEY_PLACEHOLDER)}
           />
+
+          {serverType === "shttp" && (
+            <SettingsInput
+              testId="timeout-input"
+              name="timeout"
+              type="number"
+              label="Timeout (seconds)"
+              className="w-full max-w-[680px]"
+              showOptionalTag
+              defaultValue={server?.timeout?.toString() || ""}
+              placeholder="60"
+              min={1}
+              max={3600}
+            />
+          )}
         </>
       )}
 
