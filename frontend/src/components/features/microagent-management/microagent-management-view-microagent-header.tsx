@@ -1,22 +1,16 @@
-import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { RootState } from "#/store";
 import { BrandButton } from "../settings/brand-button";
 import { getProviderName, constructMicroagentUrl } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
-import { setUpdateMicroagentModalVisible } from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 
 export function MicroagentManagementViewMicroagentHeader() {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const {
+    selectedMicroagentItem,
+    selectedRepository,
+    setUpdateMicroagentModalVisible,
+  } = useMicroagentManagementStore();
 
   const { microagent } = selectedMicroagentItem ?? {};
 
@@ -32,7 +26,7 @@ export function MicroagentManagementViewMicroagentHeader() {
   );
 
   const handleLearnSomethingNew = () => {
-    dispatch(setUpdateMicroagentModalVisible(true));
+    setUpdateMicroagentModalVisible(true);
   };
 
   return (

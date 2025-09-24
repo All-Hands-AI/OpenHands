@@ -119,9 +119,7 @@ function AppContent() {
               <ConversationTabs />
             </div>
 
-            <div className="flex h-full overflow-auto">
-              <ConversationMain />
-            </div>
+            <ConversationMain />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>
