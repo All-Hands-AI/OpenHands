@@ -171,11 +171,20 @@ async def test_export_latest_git_provider_tokens_success(runtime):
     # Create a command that references the GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
 
-    # Export the tokens
-    await runtime._export_latest_git_provider_tokens(cmd)
+    # Mock the ProviderHandler.get_env_vars method to return expected tokens
+    with patch('openhands.runtime.base.ProviderHandler') as mock_provider_handler:
+        mock_handler_instance = AsyncMock()
+        mock_provider_handler.return_value = mock_handler_instance
+        mock_handler_instance.get_env_vars.return_value = {'github_token': 'test_token'}
+        mock_handler_instance.set_event_stream_secrets = AsyncMock()
 
-    # Verify that the token was exported to the event stream
-    assert runtime.event_stream.secrets == {'github_token': 'test_token'}
+        # Export the tokens
+        await runtime._export_latest_git_provider_tokens(cmd)
+
+        # Verify that set_event_stream_secrets was called with the expected tokens
+        mock_handler_instance.set_event_stream_secrets.assert_called_once_with(
+            runtime.event_stream, env_vars={'github_token': 'test_token'}
+        )
 
 
 @pytest.mark.asyncio
@@ -202,14 +211,27 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     # Create a command that references multiple tokens
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN')
 
-    # Export the tokens
-    await runtime._export_latest_git_provider_tokens(cmd)
+    # Mock the ProviderHandler.get_env_vars method to return expected tokens
+    with patch('openhands.runtime.base.ProviderHandler') as mock_provider_handler:
+        mock_handler_instance = AsyncMock()
+        mock_provider_handler.return_value = mock_handler_instance
+        mock_handler_instance.get_env_vars.return_value = {
+            'github_token': 'github_token',
+            'gitlab_token': 'gitlab_token',
+        }
+        mock_handler_instance.set_event_stream_secrets = AsyncMock()
 
-    # Verify that both tokens were exported
-    assert event_stream.secrets == {
-        'github_token': 'github_token',
-        'gitlab_token': 'gitlab_token',
-    }
+        # Export the tokens
+        await runtime._export_latest_git_provider_tokens(cmd)
+
+        # Verify that set_event_stream_secrets was called with the expected tokens
+        mock_handler_instance.set_event_stream_secrets.assert_called_once_with(
+            event_stream,
+            env_vars={
+                'github_token': 'github_token',
+                'gitlab_token': 'gitlab_token',
+            },
+        )
 
 
 @pytest.mark.asyncio

@@ -182,9 +182,9 @@ async def test_create_mcp_clients_stdio_success(mock_mcp_client):
         ),
         MCPStdioServerConfig(
             name='test-server-2',
-            command='node',
-            args=['server2.js'],
-            env={'NODE_ENV': 'development'},
+            command='python',
+            args=['-m', 'server2'],
+            env={'PYTHON_ENV': 'development'},
         ),
     ]
 
