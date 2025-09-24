@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import ActionType from "#/types/action-type";
 import { ActionMessage } from "#/types/message";
-import useMetricsStore from "#/stores/metrics-store";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 
 // Mock the store and actions
 const mockDispatch = vi.fn();
@@ -27,12 +25,8 @@ vi.mock("#/state/jupyter-slice", () => ({
   appendJupyterInput: mockAppendJupyterInput,
 }));
 
-vi.mock("#/stores/metrics-store", () => ({
-  default: {
-    getState: () => ({
-      setMetrics: vi.fn(),
-    }),
-  },
+vi.mock("#/state/metrics-slice", () => ({
+  setMetrics: vi.fn(),
 }));
 
 vi.mock("#/state/security-analyzer-slice", () => ({
