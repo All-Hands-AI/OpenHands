@@ -342,13 +342,7 @@ describe("InteractiveChatBox", () => {
     // Simulate parent component updating the value prop
     rerender(
       <MemoryRouter>
-        <InteractiveChatBox
-          onSubmit={onSubmit}
-          onStop={onStop}
-          isWaitingForUserInput={true}
-          hasSubstantiveAgentActions={true}
-          optimisticUserMessage={false}
-        />
+        <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />
       </MemoryRouter>,
     );
 
