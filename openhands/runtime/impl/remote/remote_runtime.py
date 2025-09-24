@@ -176,11 +176,29 @@ class RemoteRuntime(ActionExecutionClient):
         assert self.runtime_url is not None, (
             'Runtime URL is not set. This should never happen.'
         )
+        # Log initialization path differences
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
+            self.log(
+                'info',
+                '[INIT_PATH_DEBUG] Following NEW runtime path: will wait for runtime and show "Runtime is ready"',
+            )
+        else:
+            self.log(
+                'info',
+                '[INIT_PATH_DEBUG] Following ATTACH path: skipping "Waiting" message and "Runtime is ready" message',
+            )
+
         self._wait_until_alive()
+
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
+            self.log('info', '[INIT_PATH_DEBUG] Completed NEW runtime initialization')
+        else:
+            self.log(
+                'info',
+                '[INIT_PATH_DEBUG] Completed ATTACH runtime initialization (minimal setup)',
+            )
         self.set_runtime_status(RuntimeStatus.READY)
 
     def _check_existing_runtime(self) -> bool:
@@ -222,21 +240,36 @@ class RemoteRuntime(ActionExecutionClient):
 
         if status == 'running':
             self.log('info', 'Found existing runtime in running state')
+            self.log(
+                'info', '[STATE_TRANSITION] Runtime state: running → (no change needed)'
+            )
             return True
         elif status == 'stopped':
             self.log('info', 'Found existing runtime, but it is stopped')
+            self.log(
+                'info', '[STATE_TRANSITION] Runtime state: stopped → (cannot resume)'
+            )
             return False
         elif status == 'paused':
             self.log(
                 'info', 'Found existing runtime in paused state, attempting to resume'
             )
+            self.log('info', '[STATE_TRANSITION] Runtime state: paused → resuming')
             try:
                 self._resume_runtime()
                 self.log('info', 'Successfully resumed paused runtime')
+                self.log(
+                    'info',
+                    '[STATE_TRANSITION] Runtime state: paused → running (resume successful)',
+                )
                 return True
             except Exception as e:
                 self.log(
                     'error', f'Failed to resume paused runtime: {e}', exc_info=True
+                )
+                self.log(
+                    'error',
+                    '[STATE_TRANSITION] Runtime state: paused → failed (resume failed)',
                 )
                 # Return false to indicate we couldn't use the existing runtime
                 return False
@@ -346,6 +379,11 @@ class RemoteRuntime(ActionExecutionClient):
             f'[TOKEN_DEBUG] attach_to_existing={self.attach_to_existing}, '
             f'has git_provider_tokens={self.git_provider_tokens is not None}',
         )
+        self.log(
+            'info',
+            f'[RESUME_PATH_DEBUG] _resume_runtime called with attach_to_existing={self.attach_to_existing}. '
+            f'This is problematic if False - we are resuming but not attaching!',
+        )
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             response = self._send_runtime_api_request(
@@ -376,6 +414,11 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         try:
+            self.log(
+                'info',
+                '[ENV_SETUP_DEBUG] Calling setup_initial_env() after resume. '
+                f'attach_to_existing={self.attach_to_existing} - if False, this might re-initialize things!',
+            )
             self.setup_initial_env()
             self.log('info', 'Successfully set up initial environment after resume')
         except Exception as e:
@@ -387,6 +430,10 @@ class RemoteRuntime(ActionExecutionClient):
             raise
 
         self.log('info', 'Runtime successfully resumed and alive.')
+        self.log(
+            'info',
+            f'[RESUME_COMPLETE_DEBUG] Resume completed with attach_to_existing={self.attach_to_existing}',
+        )
 
     def _parse_runtime_response(self, response: httpx.Response) -> None:
         start_response = response.json()
