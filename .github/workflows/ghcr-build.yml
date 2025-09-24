@@ -85,6 +85,25 @@ jobs:
         run: |
           ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
 
+      - name: Run Trivy vulnerability scanner
+        # if: github.event_name != 'pull_request'
+        uses: aquasecurity/trivy-action@master
+        # This only reports, does not fail the build on CVE.
+        with:
+          image-ref: ghcr.io/${{ env.REPO_OWNER }}/openhands:${{ env.RELEVANT_SHA }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          timeout: '10m'
+          scanners: 'vuln'  # Only scan vulnerabilities, not secrets/config
+          severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
+
+      - name: Upload Trivy results to GitHub Security tab
+        # if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+          category: 'security/container-openhands-${{ matrix.base_image.tag }}'
+
   # Builds the runtime Docker images
   ghcr_build_runtime:
     name: Build Image
@@ -174,6 +193,9 @@ jobs:
           image-ref: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           format: 'sarif'
           output: 'trivy-results.sarif'
+          timeout: '10m'
+          scanners: 'vuln'  # Only scan vulnerabilities, not secrets/config
+          severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
 
       - name: Upload Trivy results to GitHub Security tab
         # if: github.event_name != 'pull_request'
@@ -260,6 +282,9 @@ jobs:
           image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:sha-${{ env.OPENHANDS_BUILD_VERSION }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
+          timeout: '10m'
+          scanners: 'vuln'  # Only scan vulnerabilities, not secrets/config
+          severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
 
       - name: Upload Trivy results to GitHub Security tab
         # if: github.event_name != 'pull_request'
