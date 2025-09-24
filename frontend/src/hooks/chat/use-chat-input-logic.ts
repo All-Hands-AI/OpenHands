@@ -1,12 +1,10 @@
 import { useRef, useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { setMessageToSend } from "#/state/conversation-slice";
-import { RootState } from "#/store";
 import {
   isContentEmpty,
   clearEmptyContent,
   getTextContent,
 } from "#/components/features/chat/utils/chat-input.utils";
+import { useConversationStore } from "#/state/conversation-store";
 
 /**
  * Hook for managing chat input content logic
@@ -14,19 +12,21 @@ import {
 export const useChatInputLogic = () => {
   const chatInputRef = useRef<HTMLDivElement | null>(null);
 
-  const { messageToSend, isRightPanelShown } = useSelector(
-    (state: RootState) => state.conversation,
-  );
-
-  const dispatch = useDispatch();
+  const {
+    messageToSend,
+    hasRightPanelToggled,
+    setMessageToSend,
+    setIsRightPanelShown,
+  } = useConversationStore();
 
   // Save current input value when drawer state changes
   useEffect(() => {
     if (chatInputRef.current) {
       const currentText = getTextContent(chatInputRef.current);
-      dispatch(setMessageToSend(currentText));
+      setMessageToSend(currentText);
+      setIsRightPanelShown(hasRightPanelToggled);
     }
-  }, [isRightPanelShown, dispatch]);
+  }, [hasRightPanelToggled, setMessageToSend, setIsRightPanelShown]);
 
   // Helper function to check if contentEditable is truly empty
   const checkIsContentEmpty = useCallback(

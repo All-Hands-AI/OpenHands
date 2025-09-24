@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import JupyterIcon from "#/icons/jupyter.svg?react";
@@ -14,20 +13,17 @@ import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { VSCodeTooltipContent } from "./vscode-tooltip-content";
 import {
-  setSelectedTab,
-  setIsRightPanelShown,
+  useConversationStore,
   type ConversationTab,
-} from "#/state/conversation-slice";
-import { RootState } from "#/store";
+} from "#/state/conversation-store";
 
 export function ConversationTabs() {
-  const dispatch = useDispatch();
-  const selectedTab = useSelector(
-    (state: RootState) => state.conversation.selectedTab,
-  );
-  const { isRightPanelShown } = useSelector(
-    (state: RootState) => state.conversation,
-  );
+  const {
+    selectedTab,
+    isRightPanelShown,
+    setHasRightPanelToggled,
+    setSelectedTab,
+  } = useConversationStore();
 
   // Persist selectedTab and isRightPanelShown in localStorage
   const [persistedSelectedTab, setPersistedSelectedTab] =
@@ -36,22 +32,26 @@ export function ConversationTabs() {
       "editor",
     );
 
-  const [, setPersistedIsRightPanelShown] = useLocalStorage<boolean>(
-    "conversation-right-panel-shown",
-    true,
-  );
+  const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
+    useLocalStorage<boolean>("conversation-right-panel-shown", true);
 
   const onTabChange = (value: ConversationTab | null) => {
-    dispatch(setSelectedTab(value));
+    setSelectedTab(value);
     // Persist the selected tab to localStorage
     setPersistedSelectedTab(value);
   };
 
-  // Initialize Redux state from localStorage on component mount
+  // Initialize Zustand state from localStorage on component mount
   useEffect(() => {
     // Initialize selectedTab from localStorage if available
-    dispatch(setSelectedTab(persistedSelectedTab));
-  }, []);
+    setSelectedTab(persistedSelectedTab);
+    setHasRightPanelToggled(persistedIsRightPanelShown);
+  }, [
+    setSelectedTab,
+    setHasRightPanelToggled,
+    persistedSelectedTab,
+    persistedIsRightPanelShown,
+  ]);
 
   useEffect(() => {
     const handlePanelVisibilityChange = () => {
@@ -71,13 +71,13 @@ export function ConversationTabs() {
   const onTabSelected = (tab: ConversationTab) => {
     if (selectedTab === tab && isRightPanelShown) {
       // If clicking the same active tab, close the drawer
-      dispatch(setIsRightPanelShown(false));
+      setHasRightPanelToggled(false);
       setPersistedIsRightPanelShown(false);
     } else {
       // If clicking a different tab or drawer is closed, open drawer and select tab
       onTabChange(tab);
       if (!isRightPanelShown) {
-        dispatch(setIsRightPanelShown(true));
+        setHasRightPanelToggled(true);
         setPersistedIsRightPanelShown(true);
       }
     }

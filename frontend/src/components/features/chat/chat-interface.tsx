@@ -1,4 +1,4 @@
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -33,7 +33,7 @@ import {
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
-import { setMessageToSend } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 
 function getEntryPoint(
@@ -46,7 +46,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const dispatch = useDispatch();
+  const { setMessageToSend } = useConversationStore();
   const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -141,7 +141,7 @@ export function ChatInterface() {
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
     setOptimisticUserMessage(content);
-    dispatch(setMessageToSend(null));
+    setMessageToSend("");
   };
 
   const handleStop = () => {
@@ -155,10 +155,6 @@ export function ChatInterface() {
     setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
   };
-
-  const isWaitingForUserInput =
-    curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
 
   // Create a ScrollProvider with the scroll hook values
   const scrollProviderValue = {
@@ -180,9 +176,7 @@ export function ChatInterface() {
           !optimisticUserMessage &&
           !userEventsExist && (
             <ChatSuggestions
-              onSuggestionsClick={(message) =>
-                dispatch(setMessageToSend(message))
-              }
+              onSuggestionsClick={(message) => setMessageToSend(message)}
             />
           )}
         {/* Note: We only hide chat suggestions when there's a user message */}
@@ -237,9 +231,6 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            isWaitingForUserInput={isWaitingForUserInput}
-            hasSubstantiveAgentActions={hasSubstantiveAgentActions}
-            optimisticUserMessage={!!optimisticUserMessage}
           />
         </div>
 
