@@ -5,7 +5,6 @@ import fileStateReducer from "./state/file-state-slice";
 import { jupyterReducer } from "./state/jupyter-slice";
 import securityAnalyzerReducer from "./state/security-analyzer-slice";
 import microagentManagementReducer from "./state/microagent-management-slice";
-import conversationReducer from "./state/conversation-slice";
 import eventMessageReducer from "./state/event-message-slice";
 
 export const rootReducer = combineReducers({
@@ -15,7 +14,6 @@ export const rootReducer = combineReducers({
   jupyter: jupyterReducer,
   securityAnalyzer: securityAnalyzerReducer,
   microagentManagement: microagentManagementReducer,
-  conversation: conversationReducer,
   eventMessage: eventMessageReducer,
 });
 
