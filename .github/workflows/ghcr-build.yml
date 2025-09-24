@@ -103,6 +103,7 @@ jobs:
         with:
           sarif_file: 'trivy-results.sarif'
           category: 'security/container-openhands-${{ matrix.base_image.tag }}'
+          sha: "${{ env.RELEVANT_SHA }}"
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
@@ -279,7 +280,7 @@ jobs:
         # if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
-          image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:sha-${{ env.OPENHANDS_BUILD_VERSION }}"
+          image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:sha-${{ env.RELEVANT_SHA }}"
           format: 'sarif'
           output: 'trivy-results.sarif'
           timeout: '10m'
