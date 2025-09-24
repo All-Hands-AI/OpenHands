@@ -1,26 +1,23 @@
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "#/store";
 import { UploadedFile } from "./uploaded-file";
 import { UploadedImage } from "./uploaded-image";
-import { removeFile, removeImage } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 
 export function UploadedFiles() {
-  const dispatch = useDispatch();
-  const images = useSelector((state: RootState) => state.conversation.images);
-  const files = useSelector((state: RootState) => state.conversation.files);
-  const loadingFiles = useSelector(
-    (state: RootState) => state.conversation.loadingFiles,
-  );
-  const loadingImages = useSelector(
-    (state: RootState) => state.conversation.loadingImages,
-  );
+  const {
+    images,
+    files,
+    loadingFiles,
+    loadingImages,
+    removeFile,
+    removeImage,
+  } = useConversationStore();
 
   const handleRemoveFile = (index: number) => {
-    dispatch(removeFile(index));
+    removeFile(index);
   };
 
   const handleRemoveImage = (index: number) => {
-    dispatch(removeImage(index));
+    removeImage(index);
   };
 
   // Don't render anything if there are no files, images, or loading items

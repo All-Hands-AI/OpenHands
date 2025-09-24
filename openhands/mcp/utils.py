@@ -1,3 +1,4 @@
+import asyncio
 import json
 import shutil
 from typing import TYPE_CHECKING
@@ -128,6 +129,11 @@ async def create_mcp_clients(
         )
         client = MCPClient()
 
+        # Set server timeout for SHTTP servers
+        if isinstance(server, MCPSHTTPServerConfig) and server.timeout is not None:
+            client.server_timeout = float(server.timeout)
+            logger.debug(f'Set SHTTP server timeout to {server.timeout}s')
+
         try:
             await client.connect_http(server, conversation_id=conversation_id)
 
@@ -250,6 +256,22 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
         return MCPObservation(
             content=json.dumps(response.model_dump(mode='json')),
+            name=action.name,
+            arguments=action.arguments,
+        )
+    except asyncio.TimeoutError:
+        # Handle timeout errors specifically
+        timeout_val = getattr(matching_client, 'server_timeout', 'unknown')
+        logger.error(f'MCP tool {action.name} timed out after {timeout_val}s')
+        error_content = json.dumps(
+            {
+                'isError': True,
+                'error': f'Tool "{action.name}" timed out after {timeout_val} seconds',
+                'content': [],
+            }
+        )
+        return MCPObservation(
+            content=error_content,
             name=action.name,
             arguments=action.arguments,
         )
