@@ -684,6 +684,12 @@ wheels = [
 ]
 
 [[package]]
+name = "func-timeout"
+version = "4.3.5"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/0d/bf0567477f7281d9a3926c582bfef21bff7498fc0ffd3e9de21811896a0b/func_timeout-4.3.5.tar.gz", hash = "sha256:74cd3c428ec94f4edfba81f9b2f14904846d5ffccc27c92433b8b5939b5575dd", size = 44264, upload-time = "2019-08-19T21:32:07.43Z" }
+
+[[package]]
 name = "google-api-core"
 version = "2.25.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1478,8 +1484,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=68fed9e285f9e5fd42f8aa2c6932acb7f86bc351" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=68fed9e285f9e5fd42f8aa2c6932acb7f86bc351" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=55409a58b590ee276b54f99fa83e0f62f8e7b467" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=55409a58b590ee276b54f99fa83e0f62f8e7b467" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1499,7 +1505,7 @@ dev = [
 [[package]]
 name = "openhands-sdk"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=68fed9e285f9e5fd42f8aa2c6932acb7f86bc351#68fed9e285f9e5fd42f8aa2c6932acb7f86bc351" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=55409a58b590ee276b54f99fa83e0f62f8e7b467#55409a58b590ee276b54f99fa83e0f62f8e7b467" }
 dependencies = [
     { name = "fastmcp" },
     { name = "litellm" },
@@ -1507,17 +1513,19 @@ dependencies = [
     { name = "python-frontmatter" },
     { name = "python-json-logger" },
     { name = "tenacity" },
+    { name = "websockets" },
 ]
 
 [[package]]
 name = "openhands-tools"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=68fed9e285f9e5fd42f8aa2c6932acb7f86bc351#68fed9e285f9e5fd42f8aa2c6932acb7f86bc351" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=55409a58b590ee276b54f99fa83e0f62f8e7b467#55409a58b590ee276b54f99fa83e0f62f8e7b467" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
     { name = "browser-use" },
     { name = "cachetools" },
+    { name = "func-timeout" },
     { name = "libtmux" },
     { name = "openhands-sdk" },
     { name = "pydantic" },

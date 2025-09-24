@@ -103,9 +103,8 @@ def run_cli_entry() -> None:
                 )
                 continue
             elif command == "/confirm":
-                current_mode = runner.confirmation_mode
-                runner.set_confirmation_mode(not current_mode)
-                new_status = "enabled" if not current_mode else "disabled"
+                runner.toggle_confirmation_mode()
+                new_status = "enabled" if runner.is_confirmation_mode_enabled else "disabled"
                 print_formatted_text(
                     HTML(f"<yellow>Confirmation mode {new_status}</yellow>")
                 )

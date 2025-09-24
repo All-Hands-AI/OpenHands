@@ -36,6 +36,7 @@ class TestPauseListener:
     def test_pause_listener_context_manager(self) -> None:
         """Test pause_listener context manager."""
         mock_conversation = MagicMock(spec=Conversation)
+        mock_conversation.pause = MagicMock()
 
         with create_pipe_input() as pipe:
             with pause_listener(mock_conversation, pipe) as listener:
