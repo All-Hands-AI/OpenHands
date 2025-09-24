@@ -14,7 +14,6 @@ import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { VSCodeTooltipContent } from "./vscode-tooltip-content";
 import {
-  setHasRightPanelToggled,
   setSelectedTab,
   setIsRightPanelShown,
   type ConversationTab,
@@ -51,7 +50,6 @@ export function ConversationTabs() {
     // Initialize selectedTab from localStorage if available
     dispatch(setSelectedTab(persistedSelectedTab));
     dispatch(setIsRightPanelShown(persistedIsRightPanelShown));
-    dispatch(setHasRightPanelToggled(persistedIsRightPanelShown));
   }, []);
 
   useEffect(() => {
@@ -72,13 +70,13 @@ export function ConversationTabs() {
   const onTabSelected = (tab: ConversationTab) => {
     if (selectedTab === tab && isRightPanelShown) {
       // If clicking the same active tab, close the drawer
-      dispatch(setHasRightPanelToggled(false));
+      dispatch(setIsRightPanelShown(false));
       setPersistedIsRightPanelShown(false);
     } else {
       // If clicking a different tab or drawer is closed, open drawer and select tab
       onTabChange(tab);
       if (!isRightPanelShown) {
-        dispatch(setHasRightPanelToggled(true));
+        dispatch(setIsRightPanelShown(true));
         setPersistedIsRightPanelShown(true);
       }
     }

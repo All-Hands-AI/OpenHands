@@ -1,9 +1,6 @@
 import { useRef, useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  setMessageToSend,
-  setIsRightPanelShown,
-} from "#/state/conversation-slice";
+import { setMessageToSend } from "#/state/conversation-slice";
 import { RootState } from "#/store";
 import {
   isContentEmpty,
@@ -17,7 +14,7 @@ import {
 export const useChatInputLogic = () => {
   const chatInputRef = useRef<HTMLDivElement | null>(null);
 
-  const { messageToSend, hasRightPanelToggled } = useSelector(
+  const { messageToSend, isRightPanelShown } = useSelector(
     (state: RootState) => state.conversation,
   );
 
@@ -28,9 +25,8 @@ export const useChatInputLogic = () => {
     if (chatInputRef.current) {
       const currentText = getTextContent(chatInputRef.current);
       dispatch(setMessageToSend(currentText));
-      dispatch(setIsRightPanelShown(hasRightPanelToggled));
     }
-  }, [hasRightPanelToggled, dispatch]);
+  }, [isRightPanelShown, dispatch]);
 
   // Helper function to check if contentEditable is truly empty
   const checkIsContentEmpty = useCallback(
