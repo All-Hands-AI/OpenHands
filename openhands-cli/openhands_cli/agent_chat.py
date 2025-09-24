@@ -39,16 +39,12 @@ def run_cli_entry() -> None:
         EOFError: If EOF is encountered
     """
 
-    agent_context = AgentContext(
-        system_message_suffix=f"You current working directory is: {WORK_DIR}",
-    )
-
-    conversation = setup_agent(agent_context)
+    conversation = setup_agent()
     settings_screen = SettingsScreen()
 
     while not conversation:
         settings_screen.handle_basic_settings(escapable=False)
-        conversation = setup_agent(agent_context)
+        conversation = setup_agent()
 
     # Generate session ID
     session_id = str(uuid.uuid4())[:8]
