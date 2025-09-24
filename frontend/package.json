@@ -100,7 +100,7 @@
     "@playwright/test": "^1.55.1",
     "@react-router/dev": "^7.9.1",
     "@tailwindcss/typography": "^0.5.18",
-    "@tanstack/eslint-plugin-query": "^5.86.0",
+    "@tanstack/eslint-plugin-query": "^5.90.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
