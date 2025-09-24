@@ -1,9 +1,3 @@
-from openhands.sdk import Conversation, Message
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from openhands.sdk.event.utils import get_unmatched_actions
-from prompt_toolkit import HTML, print_formatted_text
-
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
 from openhands_cli.user_actions.types import UserConfirmation
@@ -12,11 +6,13 @@ from openhands_cli.user_actions.types import UserConfirmation
 class ConversationRunner:
     """Handles the conversation state machine logic cleanly."""
 
-    def __init__(self, conversation: Conversation):
+    def __init__(self, conversation):
         self.conversation = conversation
         self.confirmation_mode = False
 
     def set_confirmation_mode(self, confirmation_mode: bool) -> None:
+        from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
+        
         self.confirmation_mode = confirmation_mode
 
         if confirmation_mode:
@@ -29,6 +25,9 @@ class ConversationRunner:
         self.listener.start()
 
     def _print_run_status(self) -> None:
+        from openhands.sdk.conversation.state import AgentExecutionStatus
+        from prompt_toolkit import HTML, print_formatted_text
+        
         print_formatted_text("")
         if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
             print_formatted_text(
@@ -45,7 +44,7 @@ class ConversationRunner:
             )
         print_formatted_text("")
 
-    def process_message(self, message: Message | None) -> None:
+    def process_message(self, message) -> None:
         """Process a user message through the conversation.
 
         Args:
@@ -68,6 +67,8 @@ class ConversationRunner:
             self.conversation.run()
 
     def _run_with_confirmation(self) -> None:
+        from openhands.sdk.conversation.state import AgentExecutionStatus
+        
         # If agent was paused, resume with confirmation request
         if (
             self.conversation.state.agent_status
@@ -105,6 +106,8 @@ class ConversationRunner:
         Returns:
             UserConfirmation indicating the user's choice
         """
+        from openhands.sdk.event.utils import get_unmatched_actions
+        
         pending_actions = get_unmatched_actions(self.conversation.state.events)
 
         if pending_actions:

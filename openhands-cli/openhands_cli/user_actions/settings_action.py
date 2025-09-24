@@ -5,10 +5,7 @@ from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
 
-from openhands.sdk.llm import (
-    VERIFIED_MODELS,
-    UNVERIFIED_MODELS_EXCLUDING_BEDROCK
-)
+# Lazy import moved to function to improve startup time
 
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 from prompt_toolkit.validation import Validator, ValidationError
@@ -50,6 +47,8 @@ def settings_type_confirmation() -> SettingsType:
 
 
 def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
+    from openhands.sdk.llm import VERIFIED_MODELS, UNVERIFIED_MODELS_EXCLUDING_BEDROCK
+    
     question = step_counter.next_step('Select LLM Provider (TAB for options, CTRL-c to cancel): ')
     options = list(VERIFIED_MODELS.keys()).copy() + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
     alternate_option = 'Select another provider'
@@ -69,6 +68,7 @@ def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
 
 def choose_llm_model(step_counter: StepCounter, provider: str, escapable=True) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
+    from openhands.sdk.llm import VERIFIED_MODELS, UNVERIFIED_MODELS_EXCLUDING_BEDROCK
 
     models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
 

@@ -2,8 +2,6 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
-from openhands.sdk import Conversation
-from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.input import Input, create_input
 from prompt_toolkit.keys import Keys
 
@@ -36,6 +34,8 @@ class PauseListener(threading.Thread):
         return pause_detected
 
     def _execute_pause(self) -> None:
+        from prompt_toolkit import HTML, print_formatted_text
+        
         self._pause_event.set()  # Mark pause event occurred
         print_formatted_text(HTML(""))
         print_formatted_text(
@@ -71,7 +71,7 @@ class PauseListener(threading.Thread):
 
 @contextmanager
 def pause_listener(
-    conversation: Conversation, input_source: Input | None = None
+    conversation, input_source: Input | None = None
 ) -> Iterator[PauseListener]:
     """Ensure PauseListener always starts/stops cleanly."""
     listener = PauseListener(on_pause=conversation.pause, input_source=input_source)

@@ -14,15 +14,15 @@ from openhands_cli.user_actions.settings_action import (
 )
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk import Conversation, LLM, LocalFileStore
-from openhands.sdk.preset.default import get_default_agent
+# Lazy imports moved to methods to improve startup time
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
 
 class SettingsScreen:
-    def __init__(self, conversation: Conversation | None = None):
+    def __init__(self, conversation=None):
+        from openhands.sdk import LocalFileStore
         self.file_store = LocalFileStore(PERSISTENCE_DIR)
         self.agent_store = AgentStore()
         self.conversation = conversation
@@ -159,6 +159,9 @@ class SettingsScreen:
         api_key,
         base_url: str | None = None
     ) -> None:
+        from openhands.sdk import LLM
+        from openhands.sdk.preset.default import get_default_agent
+        
         llm = LLM(
             model=model,
             api_key=api_key,

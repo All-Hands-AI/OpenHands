@@ -7,13 +7,7 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 import logging
 import uuid
 
-from openhands.sdk import (
-    Message,
-    TextContent,
-)
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from prompt_toolkit import PromptSession, print_formatted_text
-from prompt_toolkit.formatted_text import HTML
+# Lazy imports moved to functions to improve startup time
 
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_agent
@@ -36,6 +30,10 @@ def run_cli_entry() -> None:
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
+    # Lazy imports to improve startup time
+    from openhands.sdk import Message, TextContent
+    from prompt_toolkit import PromptSession, print_formatted_text
+    from prompt_toolkit.formatted_text import HTML
 
     conversation = setup_agent()
     settings_screen = SettingsScreen()
@@ -118,6 +116,8 @@ def run_cli_entry() -> None:
                 display_welcome(session_id)
                 continue
             elif command == "/resume":
+                from openhands.sdk.conversation.state import AgentExecutionStatus
+                
                 if not (
                     conversation.state.agent_status == AgentExecutionStatus.PAUSED
                     or conversation.state.agent_status
