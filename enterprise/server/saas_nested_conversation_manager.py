@@ -301,8 +301,8 @@ class SaasNestedConversationManager(ConversationManager):
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
             logger.info(f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}')
             logger.info(
-                f'[CRITICAL_DEBUG] _start_agent_loop called - this creates a NEW runtime '
-                f'(attach_to_existing=False). Check if this is being called for resume scenarios!'
+                '[CRITICAL_DEBUG] _start_agent_loop called - this creates a NEW runtime '
+                '(attach_to_existing=False). Check if this is being called for resume scenarios!'
             )
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
@@ -833,7 +833,9 @@ class SaasNestedConversationManager(ConversationManager):
                     f'This may cause re-initialization issues!'
                 )
         else:
-            logger.info(f'[RESUME_DEBUG] No existing runtime found, creating fresh runtime')
+            logger.info(
+                '[RESUME_DEBUG] No existing runtime found, creating fresh runtime'
+            )
 
         llm_registry, conversation_stats, config = (
             create_registry_and_conversation_stats(self.config, sid, user_id, settings)
