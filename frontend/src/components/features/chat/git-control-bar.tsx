@@ -11,17 +11,9 @@ import { GitControlBarTooltipWrapper } from "./git-control-bar-tooltip-wrapper";
 
 interface GitControlBarProps {
   onSuggestionsClick: (value: string) => void;
-  isWaitingForUserInput: boolean;
-  hasSubstantiveAgentActions: boolean;
-  optimisticUserMessage: boolean;
 }
 
-export function GitControlBar({
-  onSuggestionsClick,
-  isWaitingForUserInput,
-  hasSubstantiveAgentActions,
-  optimisticUserMessage,
-}: GitControlBarProps) {
+export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
   const { t } = useTranslation();
 
   const { data: conversation } = useActiveConversation();
@@ -29,12 +21,6 @@ export function GitControlBar({
   const selectedRepository = conversation?.selected_repository;
   const gitProvider = conversation?.git_provider as Provider;
   const selectedBranch = conversation?.selected_branch;
-
-  // Button is enabled when the agent is waiting for user input, has substantive actions, and no optimistic message
-  const isButtonEnabled =
-    isWaitingForUserInput &&
-    hasSubstantiveAgentActions &&
-    !optimisticUserMessage;
 
   const hasRepository = !!selectedRepository;
 
@@ -73,7 +59,6 @@ export function GitControlBar({
             >
               <GitControlBarPullButton
                 onSuggestionsClick={onSuggestionsClick}
-                isEnabled={isButtonEnabled}
               />
             </GitControlBarTooltipWrapper>
 
@@ -84,7 +69,6 @@ export function GitControlBar({
             >
               <GitControlBarPushButton
                 onSuggestionsClick={onSuggestionsClick}
-                isEnabled={isButtonEnabled}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
               />
@@ -97,7 +81,6 @@ export function GitControlBar({
             >
               <GitControlBarPrButton
                 onSuggestionsClick={onSuggestionsClick}
-                isEnabled={isButtonEnabled}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
               />

@@ -67,6 +67,19 @@ sse_servers = [
     # External MCP service with authentication
     {url="https://api.example.com/mcp/sse", api_key="your-api-key"}
 ]
+
+# SHTTP Servers - Modern streamable HTTP transport (recommended)
+shttp_servers = [
+    # Basic SHTTP server with default 60s timeout
+    "https://api.example.com/mcp/shttp",
+    
+    # Server with custom timeout for heavy operations
+    {
+        url = "https://files.example.com/mcp/shttp",
+        api_key = "your-api-key",
+        timeout = 1800  # 30 minutes for large file processing
+    }
+]
 ```
 
 
@@ -117,6 +130,17 @@ SHTTP (Streamable HTTP) servers are configured using either a string URL or an o
 - `api_key` (optional)
   - Type: `str`
   - Description: API key for authentication
+
+- `timeout` (optional)
+  - Type: `int`
+  - Default: `60`
+  - Range: `1-3600` seconds (1 hour maximum)
+  - Description: Timeout in seconds for tool execution. This prevents tool calls from hanging indefinitely.
+  - **Use Cases:**
+    - **Short timeout (1-30s)**: For lightweight operations like status checks or simple queries
+    - **Medium timeout (30-300s)**: For standard processing tasks like data analysis or API calls  
+    - **Long timeout (300-3600s)**: For heavy operations like file processing, complex calculations, or batch operations
+  - **Note**: This timeout only applies to individual tool calls, not server connection establishment.
 
 ### Stdio Servers
 
@@ -191,6 +215,28 @@ SHTTP is the modern HTTP-based transport protocol that provides enhanced feature
 - **Better Error Handling**: Enhanced error reporting and recovery mechanisms
 
 SHTTP is the recommended transport for HTTP-based MCP servers as it provides better reliability and features compared to the legacy SSE transport.
+
+#### SHTTP Timeout Best Practices
+
+When configuring SHTTP timeouts, consider these guidelines:
+
+**Timeout Selection:**
+- **Database queries**: 30-60 seconds
+- **File operations**: 60-300 seconds (depending on file size)
+- **Web scraping**: 60-120 seconds
+- **Complex calculations**: 300-1800 seconds
+- **Batch processing**: 1800-3600 seconds (maximum)
+
+**Error Handling:**
+When a tool call exceeds the configured timeout:
+- The operation is cancelled with an `asyncio.TimeoutError`
+- The agent receives a timeout error message
+- The server connection remains active for subsequent requests
+
+**Monitoring:**
+- Set timeouts based on your tool's actual performance characteristics
+- Monitor timeout occurrences to optimize timeout values
+- Consider implementing server-side timeout handling for graceful degradation
 
 ### Standard Input/Output (stdio)
 Stdio transport enables communication through standard input and output streams, making it ideal for local integrations and command-line tools. This transport is used for locally executed MCP servers that run as separate processes.
