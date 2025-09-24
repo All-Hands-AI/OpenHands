@@ -13,12 +13,24 @@ vi.mock("#/store", () => ({
   },
 }));
 
-vi.mock("#/state/command-slice", () => ({
-  appendInput: mockAppendInput,
+vi.mock("#/state/command-store", () => ({
+  useCommandStore: {
+    getState: () => ({
+      appendInput: mockAppendInput,
+    }),
+  },
 }));
 
 vi.mock("#/state/jupyter-slice", () => ({
   appendJupyterInput: mockAppendJupyterInput,
+}));
+
+vi.mock("#/state/metrics-slice", () => ({
+  setMetrics: vi.fn(),
+}));
+
+vi.mock("#/state/security-analyzer-slice", () => ({
+  appendSecurityAnalyzerInput: vi.fn(),
 }));
 
 describe("handleActionMessage", () => {
@@ -45,7 +57,8 @@ describe("handleActionMessage", () => {
     handleActionMessage(runAction);
 
     // Check that appendInput was called with the command
-    expect(mockDispatch).toHaveBeenCalledWith(mockAppendInput("ls -la"));
+    expect(mockAppendInput).toHaveBeenCalledWith("ls -la");
+    expect(mockDispatch).not.toHaveBeenCalled();
     expect(mockAppendJupyterInput).not.toHaveBeenCalled();
   });
 
@@ -59,7 +72,8 @@ describe("handleActionMessage", () => {
       args: {
         code: "print('Hello from Jupyter!')",
       },
-      message: "Running Python code interactively: print('Hello from Jupyter!')",
+      message:
+        "Running Python code interactively: print('Hello from Jupyter!')",
       timestamp: "2023-01-01T00:00:00Z",
     };
 
@@ -67,7 +81,9 @@ describe("handleActionMessage", () => {
     handleActionMessage(ipythonAction);
 
     // Check that appendJupyterInput was called with the code
-    expect(mockDispatch).toHaveBeenCalledWith(mockAppendJupyterInput("print('Hello from Jupyter!')"));
+    expect(mockDispatch).toHaveBeenCalledWith(
+      mockAppendJupyterInput("print('Hello from Jupyter!')"),
+    );
     expect(mockAppendInput).not.toHaveBeenCalled();
   });
 
@@ -89,7 +105,9 @@ describe("handleActionMessage", () => {
     // Handle the action
     handleActionMessage(hiddenAction);
 
-    // Check that nothing was dispatched
+    // Check that nothing was dispatched or called
     expect(mockDispatch).not.toHaveBeenCalled();
+    expect(mockAppendInput).not.toHaveBeenCalled();
+    expect(mockAppendJupyterInput).not.toHaveBeenCalled();
   });
 });

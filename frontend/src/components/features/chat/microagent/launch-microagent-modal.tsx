@@ -13,6 +13,7 @@ import { useHandleRuntimeActive } from "#/hooks/use-handle-runtime-active";
 import { LoadingMicroagentBody } from "./loading-microagent-body";
 import { LoadingMicroagentTextarea } from "./loading-microagent-textarea";
 import { useGetMicroagents } from "#/hooks/query/use-get-microagents";
+import { Typography } from "#/ui/typography";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
@@ -76,9 +77,9 @@ export function LaunchMicroagentModal({
             </button>
           </div>
 
-          <span className="text-sm text-[#A3A3A3] font-normal leading-5">
+          <Typography.Text className="text-sm text-[#A3A3A3] font-normal leading-5">
             {t("MICROAGENT$DEFINITION")}
-          </span>
+          </Typography.Text>
 
           <form
             data-testid="launch-microagent-modal"

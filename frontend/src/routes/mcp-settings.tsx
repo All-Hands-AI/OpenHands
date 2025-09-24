@@ -20,6 +20,7 @@ interface MCPServerConfig {
   name?: string;
   url?: string;
   api_key?: string;
+  timeout?: number;
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -67,6 +68,7 @@ function MCPSettingsScreen() {
       type: "shttp" as const,
       url: typeof server === "string" ? server : server.url,
       api_key: typeof server === "object" ? server.api_key : undefined,
+      timeout: typeof server === "object" ? server.timeout : undefined,
     })),
   ];
 

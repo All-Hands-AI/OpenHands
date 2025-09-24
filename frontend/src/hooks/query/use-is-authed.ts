@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import OpenHands from "#/api/open-hands";
+import AuthService from "#/api/auth-service/auth-service.api";
 import { useConfig } from "./use-config";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
@@ -15,7 +15,7 @@ export const useIsAuthed = () => {
     queryFn: async () => {
       try {
         // If in OSS mode or authentication succeeds, return true
-        await OpenHands.authenticate(appMode!);
+        await AuthService.authenticate(appMode!);
         return true;
       } catch (error) {
         // If it's a 401 error, return false (not authenticated)

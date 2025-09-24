@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import posthog from "posthog-js";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import OpenHands from "#/api/open-hands";
-import { PostSettings, PostApiSettings } from "#/types/settings";
+import SettingsService from "#/settings-service/settings-service.api";
+import { PostSettings } from "#/types/settings";
+import { PostApiSettings } from "#/settings-service/settings.types";
 import { useSettings } from "../query/use-settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
@@ -36,7 +37,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
       settings.GIT_USER_EMAIL?.trim() || DEFAULT_SETTINGS.GIT_USER_EMAIL,
   };
 
-  await OpenHands.saveSettings(apiSettings);
+  await SettingsService.saveSettings(apiSettings);
 };
 
 export const useSaveSettings = () => {
