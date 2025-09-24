@@ -1,7 +1,7 @@
 from enum import Enum
 
 from openhands_cli.tui.utils import StepCounter
-from openhands_cli.user_actions.types import NonEmptyValueValidator
+from openhands_cli.user_actions.utils import NonEmptyValueValidator
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 

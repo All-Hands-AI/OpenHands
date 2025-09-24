@@ -9,7 +9,8 @@ from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
-from prompt_toolkit.validation import Validator
+from prompt_toolkit.validation import Validator, ValidationError
+
 
 from openhands_cli.tui import DEFAULT_STYLE
 
@@ -146,3 +147,14 @@ def cli_text_input(
         )
     )
     return reason.strip()
+
+
+
+
+class NonEmptyValueValidator(Validator):
+    def validate(self, document):
+        text = document.text
+        if not text:
+            raise ValidationError(
+                message="API key cannot be empty. Please enter a valid API key."
+            )
