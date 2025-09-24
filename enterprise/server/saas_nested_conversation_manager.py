@@ -244,18 +244,14 @@ class SaasNestedConversationManager(ConversationManager):
         )
 
         if status is ConversationStatus.STOPPED:
-            logger.info(
-                f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}'
-            )
+            logger.info(f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}')
 
             # Mark the agentloop as starting in redis
             await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
             logger.info(f'[TOKEN_DEBUG] Set Redis key {key} to mark as starting')
 
             # Start the agent loop in the background
-            logger.info(
-                f'[TOKEN_DEBUG] Creating background task to start agent loop'
-            )
+            logger.info('[TOKEN_DEBUG] Creating background task to start agent loop')
             asyncio.create_task(
                 self._start_agent_loop(
                     sid, settings, user_id, initial_user_msg, replay_json
@@ -281,9 +277,7 @@ class SaasNestedConversationManager(ConversationManager):
     ):
         try:
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
-            logger.info(
-                f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}'
-            )
+            logger.info(f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}')
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
             runtime = await self._create_runtime(
