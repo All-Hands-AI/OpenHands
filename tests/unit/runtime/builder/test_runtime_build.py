@@ -584,11 +584,7 @@ def _format_size_to_gb(bytes_size):
 
 
 def test_list_dangling_images():
-    try:
-        client = docker.from_env()
-    except docker.errors.DockerException:
-        pytest.skip('Docker is not available')
-
+    client = docker.from_env()
     dangling_images = client.images.list(filters={'dangling': True})
     if dangling_images and len(dangling_images) > 0:
         for image in dangling_images:
