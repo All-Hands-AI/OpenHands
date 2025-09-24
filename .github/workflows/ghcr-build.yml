@@ -104,8 +104,7 @@ jobs:
           sarif_file: 'trivy-results.sarif'
           category: 'security/container-openhands-${{ matrix.base_image.tag }}'
           sha: "${{ env.RELEVANT_SHA }}"
-          ref: ${{ github.event.pull_request.head.ref || github.ref }}
-
+          ref: refs/heads/${{ github.event.pull_request.head.ref || github.ref_name }}
   # Builds the runtime Docker images
   ghcr_build_runtime:
     name: Build Image
