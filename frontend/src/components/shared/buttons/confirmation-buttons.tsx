@@ -7,7 +7,7 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useWsClient } from "#/context/ws-client-provider";
 import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
 import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/u-warning.svg?react";
 import { RootState } from "#/store";
