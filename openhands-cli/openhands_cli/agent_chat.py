@@ -24,6 +24,7 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands_cli.user_actions.mcp_action import handle_mcp_configuration
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +85,10 @@ def run_cli_entry() -> None:
             elif command == "/settings":
                 settings_screen = SettingsScreen(conversation)
                 settings_screen.display_settings()
+                continue
+
+            elif command == "/mcp":
+                handle_mcp_configuration()
                 continue
 
             elif command == "/clear":
