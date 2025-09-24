@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { useEffect } from "react";
-import { RootState } from "#/store";
 import { useStatusStore } from "#/state/status-store";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -14,6 +12,7 @@ import { cn } from "#/utils/utils";
 import { AgentLoading } from "./agent-loading";
 import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
+import { useAgentStore } from "#/stores/agent-store";
 
 export interface AgentStatusProps {
   className?: string;
@@ -30,7 +29,7 @@ export function AgentStatus({
 }: AgentStatusProps) {
   const { t } = useTranslation();
   const { setShouldShownAgentLoading } = useConversationStore();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
   const { curStatusMessage } = useStatusStore();
   const { webSocketStatus } = useWsClient();
   const { data: conversation } = useActiveConversation();

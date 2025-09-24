@@ -1,10 +1,11 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
 import { useCommandStore } from "#/state/command-store";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
 import { useBrowserStore } from "#/stores/browser-store";
+import { useAgentStore } from "#/stores/agent-store";
+import { AgentState } from "#/types/agent-state";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -45,7 +46,11 @@ export function handleObservationMessage(message: ObservationMessage) {
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      if (typeof message.extras.agent_state === "string") {
+        useAgentStore
+          .getState()
+          .setCurrentAgentState(message.extras.agent_state as AgentState);
+      }
       break;
     case ObservationType.DELEGATE:
     case ObservationType.READ:

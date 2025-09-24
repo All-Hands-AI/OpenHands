@@ -8,7 +8,7 @@ import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { useConversationStore } from "#/state/conversation-store";
-import { setCurrentAgentState } from "#/state/agent-slice";
+import { useAgentStore } from "#/stores/agent-store";
 import { AgentState } from "#/types/agent-state";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
@@ -42,6 +42,9 @@ function AppContent() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const clearTerminal = useCommandStore((state) => state.clearTerminal);
+  const setCurrentAgentState = useAgentStore(
+    (state) => state.setCurrentAgentState,
+  );
   const queryClient = useQueryClient();
 
   // Fetch batch feedback data when conversation is loaded
@@ -88,14 +91,19 @@ function AppContent() {
     clearTerminal();
     dispatch(clearJupyter());
     resetConversationState();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
-  }, [conversationId, clearTerminal, resetConversationState]);
+    setCurrentAgentState(AgentState.LOADING);
+  }, [
+    conversationId,
+    clearTerminal,
+    setCurrentAgentState,
+    resetConversationState,
+  ]);
 
   useEffectOnce(() => {
     clearTerminal();
     dispatch(clearJupyter());
     resetConversationState();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
+    setCurrentAgentState(AgentState.LOADING);
   });
 
   return (
