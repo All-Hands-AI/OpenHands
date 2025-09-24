@@ -22,10 +22,14 @@ from server.constants import (
     get_default_litellm_model,
 )
 from server.logger import logger
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
 from storage.stored_settings import StoredSettings
 from storage.user_settings import UserSettings
+
+from storage.subscription_access import SubscriptionAccess
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
@@ -70,14 +74,61 @@ class SaasSettingsStore(SettingsStore):
             existing = None
             kwargs = {}
             if item:
-                kwargs = item.model_dump(context={'expose_secrets': True})
-                self._encrypt_kwargs(kwargs)
                 query = session.query(UserSettings).filter(
                     UserSettings.keycloak_user_id == self.user_id
                 )
 
                 # First check if we have an existing entry in the new table
                 existing = query.first()
+                # Pro gating for LLM settings (enterprise-only) when REQUIRE_PAYMENT is enabled
+                if REQUIRE_PAYMENT:
+                    # Determine if user has active subscription (local import, default-allow on failure)
+                    has_active_subscription = True
+                    try:
+                        now = datetime.now(UTC)
+                        has_active_subscription = (
+                            session.query(SubscriptionAccess)
+                            .filter(SubscriptionAccess.status == 'ACTIVE')
+                            .filter(SubscriptionAccess.user_id == self.user_id)
+                            .filter((SubscriptionAccess.start_at.is_(None)) | (SubscriptionAccess.start_at <= now))
+                            .filter((SubscriptionAccess.end_at.is_(None)) | (SubscriptionAccess.end_at >= now))
+                            .first()
+                            is not None
+                        )
+                    except Exception:
+                        has_active_subscription = True
+
+                    # Identify if request attempts to mutate LLM fields
+                    def _norm(v):
+                        if v is None:
+                            return None
+                        try:
+                            return v.get_secret_value() if hasattr(v, 'get_secret_value') else str(v)
+                        except Exception:
+                            return str(v)
+
+                    proposed_llm_model = getattr(item, 'llm_model', None)
+                    proposed_llm_api_key = _norm(getattr(item, 'llm_api_key', None))
+                    proposed_llm_base_url = getattr(item, 'llm_base_url', None)
+
+                    existing_llm_model = existing.llm_model if existing else None
+                    existing_llm_api_key = existing.llm_api_key if existing else None
+                    existing_llm_base_url = existing.llm_base_url if existing else None
+
+                    is_llm_change = (
+                        (proposed_llm_model is not None and proposed_llm_model != existing_llm_model)
+                        or (proposed_llm_api_key is not None and proposed_llm_api_key.strip() != (existing_llm_api_key or '').strip())
+                        or (proposed_llm_base_url is not None and proposed_llm_base_url != existing_llm_base_url)
+                    )
+
+                    if is_llm_change and not has_active_subscription:
+                        raise PermissionError('LLM settings require an active subscription')
+
+
+
+                # Prepare payload for persistence
+                kwargs = item.model_dump(context={'expose_secrets': True})
+                self._encrypt_kwargs(kwargs)
 
             kwargs = {
                 key: value

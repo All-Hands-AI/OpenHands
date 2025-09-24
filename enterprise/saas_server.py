@@ -127,4 +127,10 @@ async def expired_exception_handler(request: Request, exc: ExpiredError):
     return JSONResponse({'error': ExpiredError.__name__}, status.HTTP_401_UNAUTHORIZED)
 
 
+@base_app.exception_handler(PermissionError)
+async def permission_exception_handler(request: Request, exc: PermissionError):
+    # Map enterprise store() PermissionError to 403 without changing OSS routes
+    return JSONResponse({'error': str(exc) or 'Forbidden'}, status.HTTP_403_FORBIDDEN)
+
+
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)
