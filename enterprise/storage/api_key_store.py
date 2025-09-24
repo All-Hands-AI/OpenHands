@@ -42,7 +42,7 @@ class ApiKeyStore:
             f'user_id={user_id}, '
             f'name={name}, '
             f'expires_at={expires_at}, '
-            f'key_preview={api_key[:10]}...'
+            f'key_preview={api_key[:10] if api_key else "None"}...'
         )
 
         with self.session_maker() as session:
