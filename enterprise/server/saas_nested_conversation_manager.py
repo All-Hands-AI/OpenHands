@@ -195,28 +195,14 @@ class SaasNestedConversationManager(ConversationManager):
             f'session_api_key_exists={bool(runtime.get("session_api_key")) if runtime else False}'
         )
 
-        # Check if this is a resume scenario - existing runtime in paused state
-        is_resume = False
+        # Log runtime status for debugging
         if runtime:
             runtime_status = runtime.get('status', '').lower()
             logger.info(
-                f'[TOKEN_DEBUG] Runtime status check: status="{runtime_status}", '
-                f'is_paused={runtime_status == "paused"}, '
-                f'will_resume={runtime_status == "paused"}'
+                f'[TOKEN_DEBUG] Runtime status check: status="{runtime_status}"'
             )
-            if runtime_status == 'paused':
-                is_resume = True
-                logger.info(
-                    f'[TOKEN_DEBUG] SaaS: Detected paused runtime for {sid}, '
-                    f'this is a RESUME operation. Will use attach_to_existing=True'
-                )
-            else:
-                logger.info(
-                    f'[TOKEN_DEBUG] Runtime status is "{runtime_status}" (not paused), '
-                    f'will treat as NEW conversation with attach_to_existing=False'
-                )
         else:
-            logger.info(f'[TOKEN_DEBUG] No runtime found for {sid}, will create NEW')
+            logger.info(f'[TOKEN_DEBUG] No runtime found for {sid}')
 
         nested_url = None
         session_api_key = None
@@ -254,13 +240,12 @@ class SaasNestedConversationManager(ConversationManager):
 
         logger.info(
             f'[TOKEN_DEBUG] Final status decision: status={status}, '
-            f'will_start_new={status is ConversationStatus.STOPPED}, '
-            f'is_resume={is_resume}'
+            f'will_start_new={status is ConversationStatus.STOPPED}'
         )
 
         if status is ConversationStatus.STOPPED:
             logger.info(
-                f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}, is_resume={is_resume}'
+                f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}'
             )
 
             # Mark the agentloop as starting in redis
@@ -268,28 +253,19 @@ class SaasNestedConversationManager(ConversationManager):
             logger.info(f'[TOKEN_DEBUG] Set Redis key {key} to mark as starting')
 
             # Start the agent loop in the background
-            # Pass is_resume flag to ensure token refresh happens
             logger.info(
-                f'[TOKEN_DEBUG] Creating background task to start agent loop with is_resume={is_resume}'
+                f'[TOKEN_DEBUG] Creating background task to start agent loop'
             )
             asyncio.create_task(
                 self._start_agent_loop(
-                    sid, settings, user_id, initial_user_msg, replay_json, is_resume
+                    sid, settings, user_id, initial_user_msg, replay_json
                 )
-            )
-
-            # IMPORTANT: Return STARTING status so frontend knows we're resuming!
-            # Don't return STOPPED when we're actually starting
-            status = ConversationStatus.STARTING
-            logger.info(
-                '[TOKEN_DEBUG] Changed status from STOPPED to STARTING for resume operation'
             )
 
         logger.info(
             f'[TOKEN_DEBUG] Returning from maybe_start_agent_loop: '
             f'sid={sid}, status={status}, '
-            f'has_url={bool(nested_url)}, has_api_key={bool(session_api_key)}, '
-            f'was_resume={is_resume}'
+            f'has_url={bool(nested_url)}, has_api_key={bool(session_api_key)}'
         )
 
         return AgentLoopInfo(
@@ -301,24 +277,17 @@ class SaasNestedConversationManager(ConversationManager):
         )
 
     async def _start_agent_loop(
-        self,
-        sid,
-        settings,
-        user_id,
-        initial_user_msg=None,
-        replay_json=None,
-        is_resume=False,
+        self, sid, settings, user_id, initial_user_msg=None, replay_json=None
     ):
         try:
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
             logger.info(
-                f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}, is_resume={is_resume}, '
-                f'will set attach_to_existing={is_resume}'
+                f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}'
             )
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
             runtime = await self._create_runtime(
-                sid, user_id, settings, provider_handler, is_resume
+                sid, user_id, settings, provider_handler
             )
             await runtime.connect()
 
@@ -332,8 +301,7 @@ class SaasNestedConversationManager(ConversationManager):
             session_api_key = runtime.session.headers['X-Session-API-Key']
             logger.info(
                 f'[TOKEN_DEBUG] Got session_api_key from runtime: '
-                f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
-                f'is_resume={is_resume}'
+                f'key_preview={session_api_key[:10] if session_api_key else "None"}...'
             )
 
             await self._start_conversation(
@@ -826,7 +794,6 @@ class SaasNestedConversationManager(ConversationManager):
         user_id: str,
         settings: Settings,
         provider_handler: ProviderHandler,
-        is_resume: bool = False,
     ):
         llm_registry, conversation_stats, config = (
             create_registry_and_conversation_stats(self.config, sid, user_id, settings)
@@ -890,7 +857,7 @@ class SaasNestedConversationManager(ConversationManager):
 
         logger.info(
             f'[TOKEN_DEBUG] Creating RemoteRuntime: '
-            f'sid={sid}, attach_to_existing={is_resume}, '
+            f'sid={sid}, attach_to_existing=False, '
             f'user_id={user_id}, '
             f'has_provider_tokens={bool(provider_handler and provider_handler.provider_tokens)}'
         )
@@ -911,7 +878,7 @@ class SaasNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             # env_vars=env_vars,
             # status_callback: Callable[..., None] | None = None,
-            attach_to_existing=is_resume,  # Use is_resume to trigger token refresh on resume
+            attach_to_existing=False,
             headless_mode=False,
             user_id=user_id,
             git_provider_tokens=provider_handler.provider_tokens
