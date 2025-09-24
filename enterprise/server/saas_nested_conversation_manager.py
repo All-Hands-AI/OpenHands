@@ -224,12 +224,28 @@ class SaasNestedConversationManager(ConversationManager):
                 f'nested_url={nested_url[:50] if nested_url else None}..., '
                 f'has_api_key={bool(session_api_key)}'
             )
+
+            # THIS IS THE BUG! We should use _parse_status instead of direct mapping
+            logger.warning(
+                f'[BUG_ALERT] Direct status mapping: "{status_str}" - should use _parse_status() '
+                f'which maps PAUSED->STOPPED, but we are not using it!'
+            )
+
             if status_str in ConversationStatus:
                 status = ConversationStatus[status_str]
                 logger.info(f'[TOKEN_DEBUG] Mapped to ConversationStatus.{status_str}')
             else:
                 logger.warning(
                     f'[TOKEN_DEBUG] Unknown status "{status_str}", using STOPPED'
+                )
+
+            # Log what _parse_status would have returned
+            correct_status = self._parse_status(runtime)
+            if correct_status != status:
+                logger.error(
+                    f'[BUG_CONFIRMED] Status mismatch! Direct mapping gave {status}, '
+                    f'but _parse_status would give {correct_status}. '
+                    f'This is why resume appears as STOPPED!'
                 )
 
         if status is ConversationStatus.STOPPED and starting:
@@ -245,6 +261,12 @@ class SaasNestedConversationManager(ConversationManager):
 
         if status is ConversationStatus.STOPPED:
             logger.info(f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}')
+            logger.info(
+                f'[CRITICAL_PATH] Status is STOPPED, so creating NEW runtime. '
+                f'Runtime exists={runtime is not None}, '
+                f'Runtime status={runtime.get("status") if runtime else None}. '
+                f'This is the problematic path for resume!'
+            )
 
             # Mark the agentloop as starting in redis
             await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
@@ -278,6 +300,10 @@ class SaasNestedConversationManager(ConversationManager):
         try:
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
             logger.info(f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}')
+            logger.info(
+                f'[CRITICAL_DEBUG] _start_agent_loop called - this creates a NEW runtime '
+                f'(attach_to_existing=False). Check if this is being called for resume scenarios!'
+            )
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
             runtime = await self._create_runtime(
@@ -789,6 +815,26 @@ class SaasNestedConversationManager(ConversationManager):
         settings: Settings,
         provider_handler: ProviderHandler,
     ):
+        # Check if we have an existing runtime to understand the context
+        logger.info(f'[RESUME_DEBUG] _create_runtime called for sid={sid}')
+        existing_runtime = await self._get_runtime(sid)
+        if existing_runtime:
+            logger.info(
+                f'[RESUME_DEBUG] Found existing runtime before creating new one: '
+                f'runtime_id={existing_runtime.get("runtime_id")}, '
+                f'status={existing_runtime.get("status")}, '
+                f'has_api_key={bool(existing_runtime.get("session_api_key"))}'
+            )
+            # Log if we might be creating a runtime when one exists
+            if existing_runtime.get('status') in ['paused', 'stopped']:
+                logger.warning(
+                    f'[RESUME_DEBUG] Creating new runtime with attach_to_existing=False '
+                    f'when existing runtime is in {existing_runtime.get("status")} state. '
+                    f'This may cause re-initialization issues!'
+                )
+        else:
+            logger.info(f'[RESUME_DEBUG] No existing runtime found, creating fresh runtime')
+
         llm_registry, conversation_stats, config = (
             create_registry_and_conversation_stats(self.config, sid, user_id, settings)
         )
@@ -848,6 +894,13 @@ class SaasNestedConversationManager(ConversationManager):
 
         if self._runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
+
+        # Log the attach_to_existing decision
+        logger.info(
+            f'[ATTACH_DEBUG] Making attach_to_existing decision: '
+            f'sid={sid}, hardcoded_value=False, '
+            f'should_it_be_true_for_resume={existing_runtime and existing_runtime.get("status") in ["paused", "stopped"]}'
+        )
 
         logger.info(
             f'[TOKEN_DEBUG] Creating RemoteRuntime: '

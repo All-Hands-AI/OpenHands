@@ -209,15 +209,26 @@ class Runtime(FileEditRuntimeMixin):
         return self._runtime_initialized
 
     def setup_initial_env(self) -> None:
+        logger.debug(
+            f'[ENV_SETUP_DEBUG] setup_initial_env called with attach_to_existing={self.attach_to_existing}'
+        )
         if self.attach_to_existing:
+            logger.debug(
+                '[ENV_SETUP_DEBUG] Skipping environment setup - attach_to_existing is True'
+            )
             return
+        logger.debug(
+            '[ENV_SETUP_DEBUG] Performing full environment setup - attach_to_existing is False'
+        )
         logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
         # Configure git settings
+        logger.debug('[ENV_SETUP_DEBUG] Configuring git settings')
         self._setup_git_config()
+        logger.debug('[ENV_SETUP_DEBUG] Environment setup complete')
 
     def close(self) -> None:
         """This should only be called by conversation manager or closing the session.

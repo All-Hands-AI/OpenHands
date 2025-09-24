@@ -266,6 +266,10 @@ class TokenManager:
         user_id = user_info.get('sub')
         username = user_info.get('preferred_username')
         logger.info(f'Getting token for user {username} and IDP {idp}')
+        logger.info(
+            f'[TOKEN_SOURCE_DEBUG] get_idp_token called with access_token '
+            f'(from cookie/request), will check DB for stored tokens'
+        )
         token_store = await AuthTokenStore.get_instance(
             keycloak_user_id=user_id, idp=idp
         )
@@ -468,6 +472,10 @@ class TokenManager:
         logger.info(
             f'[TOKEN_DEBUG] Getting {idp} token from offline token. '
             f'Token preview: {offline_token[:20] if offline_token else "None"}...'
+        )
+        logger.info(
+            f'[TOKEN_SOURCE_DEBUG] Using OFFLINE token (from DB) to refresh {idp} token, '
+            f'token_length={len(offline_token) if offline_token else 0}'
         )
 
         try:
