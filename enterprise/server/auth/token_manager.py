@@ -467,9 +467,7 @@ class TokenManager:
     ) -> str:
         logger.info(
             f'[TOKEN_DEBUG] Getting {idp} token from offline token. '
-            f'Token preview: {offline_token[:20]}...'
-            if offline_token
-            else 'No token'
+            f'Token preview: {offline_token[:20] if offline_token else "None"}...'
         )
 
         try:
