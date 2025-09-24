@@ -1058,18 +1058,17 @@ def test_claude_sonnet_4_max_output_tokens(mock_get_model_info):
     """Test that Claude Sonnet 4 models get the correct max_output_tokens and max_input_tokens values."""
     mock_get_model_info.return_value = {
         'max_input_tokens': 100000,
-        'max_output_tokens': 200000,
+        'max_output_tokens': 100000,
     }
     # Create LLM instance with a Claude Sonnet 4 model
     config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
     llm = LLM(config, service_id='test-service')
     llm.init_model_info()
 
-    # Verify max_output_tokens is set to the expected value
-    assert llm.config.max_output_tokens == 64000
-    # Verify max_input_tokens is set to the expected value
-    # For Claude models, we expect a specific value from litellm
-    assert llm.config.max_input_tokens == 200000
+    assert llm.config.max_output_tokens == 64000, 'output max should be decreased'
+    assert llm.config.max_input_tokens == 100000, (
+        'input max should be the litellm value'
+    )
 
 
 def test_sambanova_deepseek_model_max_output_tokens():
