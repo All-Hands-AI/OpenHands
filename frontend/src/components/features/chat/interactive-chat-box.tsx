@@ -13,17 +13,11 @@ import { RootState } from "#/store";
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
-  isWaitingForUserInput: boolean;
-  hasSubstantiveAgentActions: boolean;
-  optimisticUserMessage: boolean;
 }
 
 export function InteractiveChatBox({
   onSubmit,
   onStop,
-  isWaitingForUserInput,
-  hasSubstantiveAgentActions,
-  optimisticUserMessage,
 }: InteractiveChatBoxProps) {
   const {
     images,
@@ -159,12 +153,7 @@ export function InteractiveChatBox({
         conversationStatus={conversation?.status || null}
       />
       <div className="mt-4">
-        <GitControlBar
-          onSuggestionsClick={handleSuggestionsClick}
-          isWaitingForUserInput={isWaitingForUserInput}
-          hasSubstantiveAgentActions={hasSubstantiveAgentActions}
-          optimisticUserMessage={optimisticUserMessage}
-        />
+        <GitControlBar onSuggestionsClick={handleSuggestionsClick} />
       </div>
     </div>
   );

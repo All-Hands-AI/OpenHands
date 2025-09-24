@@ -156,10 +156,6 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const isWaitingForUserInput =
-    curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
-
   // Create a ScrollProvider with the scroll hook values
   const scrollProviderValue = {
     scrollRef,
@@ -235,9 +231,6 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            isWaitingForUserInput={isWaitingForUserInput}
-            hasSubstantiveAgentActions={hasSubstantiveAgentActions}
-            optimisticUserMessage={!!optimisticUserMessage}
           />
         </div>
 
