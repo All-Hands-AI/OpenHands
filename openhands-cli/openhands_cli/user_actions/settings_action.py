@@ -1,6 +1,7 @@
 from enum import Enum
 
 from openhands_cli.tui.utils import StepCounter
+from openhands_cli.user_actions.types import NonEmptyValueValidator
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
@@ -11,16 +12,6 @@ from openhands.sdk.llm import (
 )
 
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
-from prompt_toolkit.validation import Validator, ValidationError
-
-
-class NonEmptyValueValidator(Validator):
-    def validate(self, document):
-        text = document.text
-        if not text:
-            raise ValidationError(
-                message="API key cannot be empty. Please enter a valid API key."
-            )
 
 
 class SettingsType(Enum):

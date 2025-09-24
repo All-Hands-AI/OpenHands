@@ -2,19 +2,10 @@ import enum
 from typing import Dict, Any, List, Optional
 
 from openhands_cli.tui.utils import StepCounter
+from openhands_cli.user_actions.types import NonEmptyValueValidator
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
-from prompt_toolkit.validation import Validator, ValidationError
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
-
-
-class NonEmptyValueValidator(Validator):
-    def validate(self, document):
-        text = document.text
-        if not text:
-            raise ValidationError(
-                message="Value cannot be empty. Please enter a valid value."
-            )
 
 
 class MCPActionType(enum.Enum):
@@ -52,6 +43,9 @@ def mcp_action_menu() -> MCPActionType:
         3: MCPActionType.GO_BACK
     }
 
+    if choices[index] == 'Go back':
+        raise KeyboardInterrupt
+
     return action_map[index]
 
 
@@ -63,10 +57,10 @@ def list_mcp_servers() -> None:
 
     print_formatted_text(HTML("<gold>Configured MCP Servers:</gold>"))
     print_formatted_text("")
-    
+
     for name, config in _mcp_servers.items():
         print_formatted_text(HTML(f"<white>• {name}</white>"))
-        
+
         if 'command' in config:
             command = config['command']
             args = config.get('args', [])
@@ -79,7 +73,7 @@ def list_mcp_servers() -> None:
             print_formatted_text(HTML(f"  <grey>Type: URL-based</grey>"))
             print_formatted_text(HTML(f"  <grey>URL: {url}</grey>"))
             print_formatted_text(HTML(f"  <grey>Auth: {auth}</grey>"))
-        
+
         print_formatted_text("")
 
 
@@ -92,7 +86,7 @@ def choose_server_type(step_counter: StepCounter) -> MCPServerType:
     ]
 
     index = cli_confirm(question, choices, escapable=True)
-    
+
     return MCPServerType.COMMAND if index == 0 else MCPServerType.URL
 
 
@@ -101,11 +95,11 @@ def prompt_server_name(step_counter: StepCounter, existing_names: List[str]) -> 
     while True:
         question = step_counter.next_step('Enter server name (CTRL-c to cancel): ')
         name = cli_text_input(question, escapable=True, validator=NonEmptyValueValidator())
-        
+
         if name in existing_names:
             print_formatted_text(HTML(f"<red>Server '{name}' already exists. Please choose a different name.</red>"))
             continue
-        
+
         return name
 
 
@@ -116,16 +110,16 @@ def prompt_command_config(step_counter: StepCounter) -> Dict[str, Any]:
         escapable=True,
         validator=NonEmptyValueValidator()
     )
-    
+
     args_input = cli_text_input(
         step_counter.next_step('Enter arguments (space-separated, or press ENTER for none): '),
         escapable=True
     )
-    
+
     config = {'command': command}
     if args_input.strip():
         config['args'] = args_input.strip().split()
-    
+
     return config
 
 
@@ -136,48 +130,48 @@ def prompt_url_config(step_counter: StepCounter) -> Dict[str, Any]:
         escapable=True,
         validator=NonEmptyValueValidator()
     )
-    
+
     question = step_counter.next_step('Select authentication type:')
     auth_choices = ['none', 'oauth', 'api_key']
     auth_index = cli_confirm(question, auth_choices, escapable=True)
     auth_type = auth_choices[auth_index]
-    
+
     config = {'url': url}
     if auth_type != 'none':
         config['auth'] = auth_type
-    
+
     return config
 
 
 def add_mcp_server() -> None:
     """Add a new MCP server configuration."""
     step_counter = StepCounter()
-    
+
     try:
         # Get server name
         server_name = prompt_server_name(step_counter, list(_mcp_servers.keys()))
-        
+
         # Get server type
         server_type = choose_server_type(step_counter)
-        
+
         # Get server configuration based on type
         if server_type == MCPServerType.COMMAND:
             config = prompt_command_config(step_counter)
         else:
             config = prompt_url_config(step_counter)
-        
+
         # Store the configuration
         _mcp_servers[server_name] = config
-        
+
         print_formatted_text(HTML(f"<green>✓ MCP server '{server_name}' added successfully!</green>"))
-        
+
         # Display the configuration
         print_formatted_text(HTML("<grey>Configuration:</grey>"))
         for key, value in config.items():
             if isinstance(value, list):
                 value = ' '.join(value)
             print_formatted_text(HTML(f"<grey>  {key}: {value}</grey>"))
-        
+
     except KeyboardInterrupt:
         print_formatted_text(HTML("<yellow>Operation cancelled.</yellow>"))
 
@@ -187,31 +181,31 @@ def remove_mcp_server() -> None:
     if not _mcp_servers:
         print_formatted_text(HTML("<yellow>No MCP servers configured to remove.</yellow>"))
         return
-    
+
     question = 'Select server to remove:'
     server_names = list(_mcp_servers.keys())
     choices = server_names + ['Cancel']
-    
+
     try:
         index = cli_confirm(question, choices, escapable=True)
-        
+
         if index == len(server_names):  # Cancel option
             print_formatted_text(HTML("<yellow>Operation cancelled.</yellow>"))
             return
-        
+
         server_name = server_names[index]
-        
+
         # Confirm removal
         confirm_question = f"Are you sure you want to remove server '{server_name}'?"
         confirm_choices = ['Yes, remove it', 'No, keep it']
         confirm_index = cli_confirm(confirm_question, confirm_choices, escapable=True)
-        
+
         if confirm_index == 0:
             del _mcp_servers[server_name]
             print_formatted_text(HTML(f"<green>✓ MCP server '{server_name}' removed successfully!</green>"))
         else:
             print_formatted_text(HTML("<yellow>Operation cancelled.</yellow>"))
-            
+
     except KeyboardInterrupt:
         print_formatted_text(HTML("<yellow>Operation cancelled.</yellow>"))
 
@@ -221,7 +215,7 @@ def handle_mcp_configuration() -> None:
     while True:
         try:
             action = mcp_action_menu()
-            
+
             if action == MCPActionType.LIST:
                 list_mcp_servers()
             elif action == MCPActionType.ADD:
@@ -230,7 +224,7 @@ def handle_mcp_configuration() -> None:
                 remove_mcp_server()
             elif action == MCPActionType.GO_BACK:
                 break
-                
+
         except KeyboardInterrupt:
             print_formatted_text(HTML("<yellow>Returning to main menu...</yellow>"))
             break
@@ -240,7 +234,7 @@ def get_mcp_config() -> Dict[str, Any]:
     """Get the current MCP configuration in the format expected by the agent SDK."""
     if not _mcp_servers:
         return {}
-    
+
     config = {"mcpServers": {}}
     for name, server_config in _mcp_servers.items():
         if 'command' in server_config:
@@ -256,5 +250,5 @@ def get_mcp_config() -> Dict[str, Any]:
             }
             if server_config.get('auth') == 'oauth':
                 config["mcpServers"][name]["auth"] = "oauth"
-    
+
     return config

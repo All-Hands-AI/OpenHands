@@ -12,6 +12,7 @@ from openhands.sdk import (
     TextContent,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
@@ -24,7 +25,6 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-from openhands_cli.user_actions.mcp_action import handle_mcp_configuration
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +88,8 @@ def run_cli_entry() -> None:
                 continue
 
             elif command == "/mcp":
-                handle_mcp_configuration()
+                mcp_screen = MCPScreen()
+                mcp_screen.mcp_action_menu()
                 continue
 
             elif command == "/clear":
