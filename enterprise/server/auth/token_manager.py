@@ -267,8 +267,8 @@ class TokenManager:
         username = user_info.get('preferred_username')
         logger.info(f'Getting token for user {username} and IDP {idp}')
         logger.info(
-            f'[TOKEN_SOURCE_DEBUG] get_idp_token called with access_token '
-            f'(from cookie/request), will check DB for stored tokens'
+            '[TOKEN_SOURCE_DEBUG] get_idp_token called with access_token '
+            '(from cookie/request), will check DB for stored tokens'
         )
         token_store = await AuthTokenStore.get_instance(
             keycloak_user_id=user_id, idp=idp
