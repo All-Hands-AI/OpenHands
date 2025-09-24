@@ -204,3 +204,5 @@ lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
 concurrency = [ "gevent" ]
+relative_files = true
+omit = [ "enterprise/tests/*", "**/test_*" ]
