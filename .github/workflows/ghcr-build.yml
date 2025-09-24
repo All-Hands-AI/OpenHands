@@ -195,10 +195,18 @@ jobs:
         with:
           image-ref: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           format: 'sarif'
-          output: 'trivy-results.sarif'
+          output: 'trivy-results-raw.sarif'
           timeout: '10m'
           scanners: 'vuln'  # Only scan vulnerabilities, not secrets/config
           severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
+      - name: Customize SARIF with image flavor
+        run: |
+          # Modify the tool name to include the image flavor
+          jq --arg flavor "${{ matrix.base_image.tag }}" \
+            '.runs[0].tool.driver.name = "Trivy (" + $flavor + ")"' \
+            trivy-results-raw.sarif > trivy-results.sarif
+
+          echo "Modified tool name to: $(jq -r '.runs[0].tool.driver.name' trivy-results.sarif)"
 
       - name: Upload Trivy results to GitHub Security tab
         # if: github.event_name != 'pull_request'
