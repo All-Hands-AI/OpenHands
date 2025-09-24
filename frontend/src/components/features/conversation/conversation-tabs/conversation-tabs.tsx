@@ -36,8 +36,10 @@ export function ConversationTabs() {
       "editor",
     );
 
-  const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
-    useLocalStorage<boolean>("conversation-right-panel-shown", true);
+  const [, setPersistedIsRightPanelShown] = useLocalStorage<boolean>(
+    "conversation-right-panel-shown",
+    true,
+  );
 
   const onTabChange = (value: ConversationTab | null) => {
     dispatch(setSelectedTab(value));
@@ -49,7 +51,6 @@ export function ConversationTabs() {
   useEffect(() => {
     // Initialize selectedTab from localStorage if available
     dispatch(setSelectedTab(persistedSelectedTab));
-    dispatch(setIsRightPanelShown(persistedIsRightPanelShown));
   }, []);
 
   useEffect(() => {
