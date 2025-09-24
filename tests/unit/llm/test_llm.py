@@ -1053,11 +1053,17 @@ def test_claude_3_7_sonnet_max_output_tokens():
     assert llm.config.max_input_tokens is None
 
 
-def test_claude_sonnet_4_max_output_tokens():
+@patch('openhands.llm.llm.litellm.get_model_info')
+def test_claude_sonnet_4_max_output_tokens(mock_get_model_info):
     """Test that Claude Sonnet 4 models get the correct max_output_tokens and max_input_tokens values."""
+    mock_get_model_info.return_value = {
+        'max_input_tokens': 100000,
+        'max_output_tokens': 200000,
+    }
     # Create LLM instance with a Claude Sonnet 4 model
     config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
     llm = LLM(config, service_id='test-service')
+    llm.init_model_info()
 
     # Verify max_output_tokens is set to the expected value
     assert llm.config.max_output_tokens == 64000
