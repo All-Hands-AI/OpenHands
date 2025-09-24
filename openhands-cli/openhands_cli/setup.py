@@ -1,6 +1,7 @@
 from openhands.sdk import (
-    Agent,
-    Conversation
+    AgentContext,
+    Conversation,
+    BaseConversation
 )
 from openhands_cli.tui.settings.store import AgentStore
 from prompt_toolkit import HTML, print_formatted_text
@@ -13,7 +14,7 @@ register_tool("BashTool", BashTool)
 register_tool("FileEditorTool", FileEditorTool)
 register_tool("TaskTrackerTool", TaskTrackerTool)
 
-def setup_agent() -> Conversation | None:
+def setup_agent(agent_context: AgentContext) -> BaseConversation | None:
     """
     Setup the agent with environment variables.
     """
@@ -24,7 +25,7 @@ def setup_agent() -> Conversation | None:
         return None
 
     # Create agent
-    conversation = Conversation(agent=agent)
+    conversation = Conversation(agent=agent.model_copy(update={"agent_context": agent_context}))
 
     print_formatted_text(
         HTML(f"<green>✓ Agent initialized with model: {agent.llm.model}</green>")

@@ -10,6 +10,7 @@ import uuid
 from openhands.sdk import (
     Message,
     TextContent,
+    AgentContext,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -24,6 +25,7 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands_cli.locations import WORK_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +39,16 @@ def run_cli_entry() -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = setup_agent()
+    agent_context = AgentContext(
+        system_message_suffix=f"You current working directory is: {WORK_DIR}",
+    )
+
+    conversation = setup_agent(agent_context)
     settings_screen = SettingsScreen()
 
     while not conversation:
         settings_screen.handle_basic_settings(escapable=False)
-        conversation = setup_agent()
+        conversation = setup_agent(agent_context)
 
     # Generate session ID
     session_id = str(uuid.uuid4())[:8]

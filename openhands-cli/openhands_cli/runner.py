@@ -1,4 +1,4 @@
-from openhands.sdk import Conversation, Message
+from openhands.sdk import BaseConversation, Message
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     NeverConfirm,
@@ -17,7 +17,7 @@ from openhands_cli.user_actions.types import UserConfirmation
 class ConversationRunner:
     """Handles the conversation state machine logic cleanly."""
 
-    def __init__(self, conversation: Conversation):
+    def __init__(self, conversation: BaseConversation):
         self.conversation = conversation
 
     @property
