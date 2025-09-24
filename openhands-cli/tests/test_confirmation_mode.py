@@ -62,29 +62,29 @@ class TestConfirmationMode:
                 mock_print.assert_called_once()
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
-        """Test that ConversationRunner can set confirmation mode."""
+        """Test that ConversationRunner can set confirmation policy."""
 
         mock_conversation = MagicMock()
+        mock_conversation.confirmation_policy_active = False
         runner = ConversationRunner(mock_conversation)
 
         # Test enabling confirmation mode
-        runner.set_confirmation_mode(True)
-        assert runner.confirmation_mode is True
+        runner.set_confirmation_policy(AlwaysConfirm())
         mock_conversation.set_confirmation_policy.assert_called_with(AlwaysConfirm())
 
         # Test disabling confirmation mode
-        runner.set_confirmation_mode(False)
-        assert runner.confirmation_mode is False
+        runner.set_confirmation_policy(NeverConfirm())
         mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())
 
     def test_conversation_runner_initial_state(self) -> None:
         """Test that ConversationRunner starts with confirmation mode disabled."""
 
         mock_conversation = MagicMock()
+        mock_conversation.confirmation_policy_active = False
         runner = ConversationRunner(mock_conversation)
 
         # Verify initial state
-        assert runner.confirmation_mode is False
+        assert runner.is_confirmation_mode_enabled is False
 
     def test_ask_user_confirmation_empty_actions(self) -> None:
         """Test that ask_user_confirmation returns ACCEPT for empty actions list."""
@@ -322,7 +322,7 @@ class TestConfirmationMode:
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_always_accept(self, mock_cli_confirm: Any) -> None:
-        """Test that ask_user_confirmation returns ALWAYS_ACCEPT when user selects fourth option."""
+        """Test that ask_user_confirmation returns ACCEPT with NeverConfirm policy when user selects fourth option."""
         mock_cli_confirm.return_value = 3  # Fourth option (Always proceed)
 
         mock_action = MagicMock()
@@ -330,19 +330,20 @@ class TestConfirmationMode:
         mock_action.action = 'echo test'
 
         result = ask_user_confirmation([mock_action])
-        assert result.decision == UserConfirmation.ALWAYS_ACCEPT
+        assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
         assert result.reason == ""
-        assert result.policy_change is None
+        assert isinstance(result.policy_change, NeverConfirm)
 
     def test_conversation_runner_handles_always_accept(self) -> None:
-        """Test that ConversationRunner disables confirmation mode when ALWAYS_ACCEPT is returned."""
+        """Test that ConversationRunner disables confirmation mode when NeverConfirm policy is returned."""
         mock_conversation = MagicMock()
+        mock_conversation.confirmation_policy_active = True
         runner = ConversationRunner(mock_conversation)
 
         # Enable confirmation mode first
-        runner.set_confirmation_mode(True)
-        assert runner.confirmation_mode is True
+        runner.set_confirmation_policy(AlwaysConfirm())
+        assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
         with patch('openhands_cli.runner.get_unmatched_actions') as mock_get_actions:
@@ -351,12 +352,12 @@ class TestConfirmationMode:
             mock_action.action = 'echo test'
             mock_get_actions.return_value = [mock_action]
 
-            # Mock ask_user_confirmation to return ALWAYS_ACCEPT
+            # Mock ask_user_confirmation to return ACCEPT with NeverConfirm policy
             with patch('openhands_cli.runner.ask_user_confirmation') as mock_ask:
                 mock_ask.return_value = ConfirmationResult(
-                    decision=UserConfirmation.ALWAYS_ACCEPT,
+                    decision=UserConfirmation.ACCEPT,
                     reason="",
-                    policy_change=None
+                    policy_change=NeverConfirm()
                 )
 
                 # Mock print_formatted_text to avoid output during test
@@ -364,8 +365,8 @@ class TestConfirmationMode:
                     result = runner._handle_confirmation_request()
 
                     # Verify that confirmation mode was disabled
-                    assert result == UserConfirmation.ALWAYS_ACCEPT
-                    assert runner.confirmation_mode is False
+                    assert result == UserConfirmation.ACCEPT
+                    # Should have called set_confirmation_policy with NeverConfirm
                     mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
@@ -388,11 +389,12 @@ class TestConfirmationMode:
     def test_conversation_runner_handles_auto_confirm_safe(self) -> None:
         """Test that ConversationRunner sets ConfirmRisky policy when policy_change is provided."""
         mock_conversation = MagicMock()
+        mock_conversation.confirmation_policy_active = True
         runner = ConversationRunner(mock_conversation)
 
         # Enable confirmation mode first
-        runner.set_confirmation_mode(True)
-        assert runner.confirmation_mode is True
+        runner.set_confirmation_policy(AlwaysConfirm())
+        assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
         with patch('openhands_cli.runner.get_unmatched_actions') as mock_get_actions:
@@ -416,7 +418,5 @@ class TestConfirmationMode:
 
                     # Verify that security-based confirmation policy was set
                     assert result == UserConfirmation.ACCEPT
-                    # Confirmation mode should still be enabled
-                    assert runner.confirmation_mode is True
                     # Should set ConfirmRisky policy with HIGH threshold
                     mock_conversation.set_confirmation_policy.assert_called_with(expected_policy)

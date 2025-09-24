@@ -6,6 +6,7 @@ from openhands.sdk import Conversation, ConversationCallbackType
 from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
 from openhands.sdk.llm import LLM
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 from pydantic import ConfigDict, SecretStr, model_validator
 from openhands.sdk.conversation.state import AgentExecutionStatus
 
@@ -65,7 +66,7 @@ class TestConversationRunner:
         convo.max_iteration_per_run = 1
         convo.state.agent_status = agent_status
         cr = ConversationRunner(convo)
-        cr.set_confirmation_mode(False)
+        cr.set_confirmation_policy(NeverConfirm())
         cr.process_message(message=None)
 
         assert agent.step_count == 1
@@ -100,7 +101,7 @@ class TestConversationRunner:
         convo = Conversation(agent)
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
-        cr.set_confirmation_mode(True)
+        cr.set_confirmation_policy(AlwaysConfirm())
         with patch.object(
             cr, "_handle_confirmation_request", return_value=confirmation
         ) as mock_confirmation_request:
@@ -122,7 +123,7 @@ class TestConversationRunner:
         convo.state.agent_status = AgentExecutionStatus.PAUSED
 
         cr = ConversationRunner(convo)
-        cr.set_confirmation_mode(True)
+        cr.set_confirmation_policy(AlwaysConfirm())
 
         with patch.object(cr, "_handle_confirmation_request") as _mock_h:
             cr.process_message(message=None)
