@@ -6,20 +6,36 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 
 import logging
 import uuid
+from typing import TYPE_CHECKING
 
-# Lazy imports moved to functions to improve startup time
-
-from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import setup_agent
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
-from openhands_cli.tui.tui import (
-    CommandCompleter,
-    display_help,
-    display_welcome,
-)
-from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+if TYPE_CHECKING:
+    from openhands.sdk import Message, TextContent
+    from openhands.sdk.conversation.state import AgentExecutionStatus
+    from prompt_toolkit import PromptSession, print_formatted_text
+    from prompt_toolkit.formatted_text import HTML
+    from openhands_cli.runner import ConversationRunner
+    from openhands_cli.setup import setup_agent
+    from openhands_cli.tui.settings.settings_screen import SettingsScreen
+    from openhands_cli.tui.tui import CommandCompleter, display_help, display_welcome
+    from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 
 logger = logging.getLogger(__name__)
+
+
+def _fast_exit():
+    """Perform fast exit to avoid waiting for thread cleanup."""
+    import os
+    import threading
+    
+    # Give threads a brief moment to clean up
+    active_threads = [t for t in threading.enumerate() if t != threading.current_thread()]
+    if active_threads:
+        # Wait briefly for daemon threads to finish
+        import time
+        time.sleep(0.01)
+    
+    # Force exit to avoid waiting for any remaining cleanup
+    os._exit(0)
 
 
 def run_cli_entry() -> None:
@@ -30,10 +46,12 @@ def run_cli_entry() -> None:
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
-    # Lazy imports to improve startup time
-    from openhands.sdk import Message, TextContent
-    from prompt_toolkit import PromptSession, print_formatted_text
-    from prompt_toolkit.formatted_text import HTML
+    # Import heavy dependencies only when needed
+    from openhands_cli.setup import setup_agent
+    from openhands_cli.tui.settings.settings_screen import SettingsScreen
+    from openhands_cli.tui.tui import display_welcome, CommandCompleter
+    from openhands_cli.runner import ConversationRunner
+    from prompt_toolkit import PromptSession
 
     conversation = setup_agent()
     settings_screen = SettingsScreen()
@@ -56,6 +74,8 @@ def run_cli_entry() -> None:
     # Main chat loop
     while True:
         try:
+            from prompt_toolkit.formatted_text import HTML
+            
             # Get user input
             user_input = session.prompt(
                 HTML("<gold>> </gold>"),
@@ -68,15 +88,22 @@ def run_cli_entry() -> None:
             # Handle commands
             command = user_input.strip().lower()
 
+            # Import SDK components only when needed
+            from openhands.sdk import Message, TextContent
+            
             message = Message(
                 role="user",
                 content=[TextContent(text=user_input)],
             )
 
             if command == "/exit":
+                from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+                from prompt_toolkit import print_formatted_text
+                
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                    _fast_exit()
                     break
 
             elif command == "/settings":
@@ -88,9 +115,12 @@ def run_cli_entry() -> None:
                 display_welcome(session_id)
                 continue
             elif command == "/help":
+                from openhands_cli.tui.tui import display_help
                 display_help()
                 continue
             elif command == "/status":
+                from prompt_toolkit import print_formatted_text
+                
                 print_formatted_text(HTML(f"<grey>Session ID: {session_id}</grey>"))
                 print_formatted_text(HTML("<grey>Status: Active</grey>"))
                 confirmation_status = (
@@ -101,6 +131,8 @@ def run_cli_entry() -> None:
                 )
                 continue
             elif command == "/confirm":
+                from prompt_toolkit import print_formatted_text
+                
                 current_mode = runner.confirmation_mode
                 runner.set_confirmation_mode(not current_mode)
                 new_status = "enabled" if not current_mode else "disabled"
@@ -109,6 +141,8 @@ def run_cli_entry() -> None:
                 )
                 continue
             elif command == "/new":
+                from prompt_toolkit import print_formatted_text
+                
                 print_formatted_text(
                     HTML("<yellow>Starting new conversation...</yellow>")
                 )
@@ -117,6 +151,7 @@ def run_cli_entry() -> None:
                 continue
             elif command == "/resume":
                 from openhands.sdk.conversation.state import AgentExecutionStatus
+                from prompt_toolkit import print_formatted_text
                 
                 if not (
                     conversation.state.agent_status == AgentExecutionStatus.PAUSED
@@ -137,7 +172,11 @@ def run_cli_entry() -> None:
             print()  # Add spacing
 
         except KeyboardInterrupt:
+            from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+            from prompt_toolkit import print_formatted_text
+            
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                _fast_exit()
                 break

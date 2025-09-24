@@ -1,19 +1,18 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 import os
+from openhands.sdk import LocalFileStore, Agent
+from openhands.sdk.preset.default import get_default_tools
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
+from prompt_toolkit import HTML, print_formatted_text
 
 
 class AgentStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
     def __init__(self) -> None:
-        from openhands.sdk import LocalFileStore
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
 
-    def load(self):
-        from openhands.sdk import Agent
-        from openhands.sdk.preset.default import get_default_tools
-        
+    def load(self) -> Agent | None:
         try:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
@@ -30,11 +29,10 @@ class AgentStore:
         except FileNotFoundError:
             return None
         except Exception:
-            from prompt_toolkit import HTML, print_formatted_text
             print_formatted_text(HTML("\n<red>Agent configuration file is corrupted!</red>"))
             return None
 
-    def save(self, agent) -> None:
+    def save(self, agent: Agent) -> None:
         serialized_spec = agent.model_dump_json(context={"expose_secrets": True})
         self.file_store.write(AGENT_SETTINGS_PATH, serialized_spec)
 

@@ -1,9 +1,13 @@
 import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
+from typing import TYPE_CHECKING
 
-from prompt_toolkit.input import Input, create_input
-from prompt_toolkit.keys import Keys
+if TYPE_CHECKING:
+    from openhands.sdk import Conversation
+    from prompt_toolkit import HTML, print_formatted_text
+    from prompt_toolkit.input import Input
+    from prompt_toolkit.keys import Keys
 
 
 class PauseListener(threading.Thread):
@@ -15,15 +19,23 @@ class PauseListener(threading.Thread):
     def __init__(
         self,
         on_pause: Callable,
-        input_source: Input | None = None,  # used to pipe inputs for unit tests
+        input_source=None,  # used to pipe inputs for unit tests
     ):
         super().__init__(daemon=True)
         self.on_pause = on_pause
         self._stop_event = threading.Event()
         self._pause_event = threading.Event()
-        self._input = input_source or create_input()
+        
+        # Lazy import to avoid startup cost
+        if input_source is None:
+            from prompt_toolkit.input import create_input
+            self._input = create_input()
+        else:
+            self._input = input_source
 
     def _detect_pause_key_presses(self) -> bool:
+        from prompt_toolkit.keys import Keys
+        
         pause_detected = False
 
         for key_press in self._input.read_keys():
@@ -60,7 +72,15 @@ class PauseListener(threading.Thread):
                 pass
 
     def stop(self) -> None:
+        """Stop the listener and ensure quick shutdown."""
         self._stop_event.set()
+        
+        # Force close input to break out of read_keys() loop quickly
+        try:
+            if hasattr(self._input, 'close'):
+                self._input.close()
+        except Exception:
+            pass
 
     def is_stopped(self) -> bool:
         return self._stop_event.is_set()
@@ -71,7 +91,7 @@ class PauseListener(threading.Thread):
 
 @contextmanager
 def pause_listener(
-    conversation, input_source: Input | None = None
+    conversation, input_source=None
 ) -> Iterator[PauseListener]:
     """Ensure PauseListener always starts/stops cleanly."""
     listener = PauseListener(on_pause=conversation.pause, input_source=input_source)
@@ -80,3 +100,5 @@ def pause_listener(
         yield listener
     finally:
         listener.stop()
+        # Give the thread a moment to shut down cleanly
+        listener.join(timeout=0.1)

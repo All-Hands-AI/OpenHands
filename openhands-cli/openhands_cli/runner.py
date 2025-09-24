@@ -1,6 +1,14 @@
-from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
-from openhands_cli.user_actions import ask_user_confirmation
-from openhands_cli.user_actions.types import UserConfirmation
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from openhands.sdk import Conversation, Message
+    from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
+    from openhands.sdk.conversation.state import AgentExecutionStatus
+    from openhands.sdk.event.utils import get_unmatched_actions
+    from prompt_toolkit import HTML, print_formatted_text
+    from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
+    from openhands_cli.user_actions import ask_user_confirmation
+    from openhands_cli.user_actions.types import UserConfirmation
 
 
 class ConversationRunner:
@@ -21,6 +29,8 @@ class ConversationRunner:
             self.conversation.set_confirmation_policy(NeverConfirm())
 
     def _start_listener(self) -> None:
+        from openhands_cli.listeners.pause_listener import PauseListener
+        
         self.listener = PauseListener(on_pause=self.conversation.pause)
         self.listener.start()
 
@@ -63,11 +73,15 @@ class ConversationRunner:
             self._run_without_confirmation()
 
     def _run_without_confirmation(self) -> None:
+        from openhands_cli.listeners.pause_listener import pause_listener
+        
         with pause_listener(self.conversation):
             self.conversation.run()
 
     def _run_with_confirmation(self) -> None:
         from openhands.sdk.conversation.state import AgentExecutionStatus
+        from openhands_cli.listeners.pause_listener import pause_listener
+        from openhands_cli.user_actions.types import UserConfirmation
         
         # If agent was paused, resume with confirmation request
         if (
@@ -100,13 +114,16 @@ class ConversationRunner:
             else:
                 raise Exception("Infinite loop")
 
-    def _handle_confirmation_request(self) -> UserConfirmation:
+    def _handle_confirmation_request(self):
         """Handle confirmation request from user.
 
         Returns:
             UserConfirmation indicating the user's choice
         """
         from openhands.sdk.event.utils import get_unmatched_actions
+        from openhands_cli.user_actions import ask_user_confirmation
+        from openhands_cli.user_actions.types import UserConfirmation
+        from prompt_toolkit import HTML, print_formatted_text
         
         pending_actions = get_unmatched_actions(self.conversation.state.events)
 
