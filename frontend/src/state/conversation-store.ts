@@ -53,11 +53,17 @@ interface ConversationActions {
 
 type ConversationStore = ConversationState & ConversationActions;
 
+// Helper function to get initial right panel state from localStorage
+const getInitialRightPanelState = (): boolean => {
+  const stored = localStorage.getItem("conversation-right-panel-shown");
+  return stored !== null ? JSON.parse(stored) : true;
+};
+
 export const useConversationStore = create<ConversationStore>()(
   devtools(
     (set) => ({
       // Initial state
-      isRightPanelShown: true,
+      isRightPanelShown: getInitialRightPanelState(),
       selectedTab: "editor" as ConversationTab,
       images: [],
       files: [],

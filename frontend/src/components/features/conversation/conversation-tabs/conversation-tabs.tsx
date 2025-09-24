@@ -23,7 +23,6 @@ export function ConversationTabs() {
     isRightPanelShown,
     setHasRightPanelToggled,
     setSelectedTab,
-    setIsRightPanelShown,
   } = useConversationStore();
 
   // Persist selectedTab and isRightPanelShown in localStorage
@@ -46,11 +45,9 @@ export function ConversationTabs() {
   useEffect(() => {
     // Initialize selectedTab from localStorage if available
     setSelectedTab(persistedSelectedTab);
-    setIsRightPanelShown(persistedIsRightPanelShown);
     setHasRightPanelToggled(persistedIsRightPanelShown);
   }, [
     setSelectedTab,
-    setIsRightPanelShown,
     setHasRightPanelToggled,
     persistedSelectedTab,
     persistedIsRightPanelShown,
