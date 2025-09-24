@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
 import { MicroagentStatus } from "#/types/microagent-status";
 import { SuccessIndicator } from "../success-indicator";
+import { Typography } from "#/ui/typography";
 
 interface MicroagentStatusIndicatorProps {
   status: MicroagentStatus;
@@ -81,7 +82,9 @@ export function MicroagentStatusIndicator({
       );
     }
 
-    return <span className="underline">{statusText}</span>;
+    return (
+      <Typography.Text className="underline">{statusText}</Typography.Text>
+    );
   };
 
   return (
