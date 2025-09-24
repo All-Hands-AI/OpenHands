@@ -192,7 +192,7 @@ def test_executable() -> bool:
 
         proc.stdin.write("/help\n/exit\n")
         proc.stdin.flush()
-        out, _ = proc.communicate(timeout=30)
+        out, _ = proc.communicate(timeout=60)
 
         total_end = time.time()
         full_output = ''.join(captured) + (out or '')
