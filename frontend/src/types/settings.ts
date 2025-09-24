@@ -27,6 +27,7 @@ export type MCPStdioServer = {
 export type MCPSHTTPServer = {
   url: string;
   api_key?: string;
+  timeout?: number;
 };
 
 export type MCPConfig = {
