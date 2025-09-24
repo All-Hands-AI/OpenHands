@@ -87,7 +87,7 @@ jobs:
           ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
 
       - name: Run Trivy vulnerability scanner
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@master
         # This only reports, does not fail the build on CVE.
         with:
@@ -99,7 +99,7 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
 
       - name: Upload Trivy results to GitHub Security tab
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
@@ -189,7 +189,7 @@ jobs:
           path: containers/runtime
 
       - name: Run Trivy vulnerability scanner
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@master
         # This only reports, does not fail the build on CVE.
         with:
@@ -200,6 +200,7 @@ jobs:
           scanners: 'vuln'  # Only scan vulnerabilities, not secrets/config
           severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
       - name: Customize SARIF with image flavor
+        if: github.event_name != 'pull_request'
         run: |
           # Modify the tool name to include the image flavor
           jq --arg flavor "${{ matrix.base_image.tag }}" \
@@ -209,7 +210,7 @@ jobs:
           echo "Modified tool name to: $(jq -r '.runs[0].tool.driver.name' trivy-results.sarif)"
 
       - name: Upload Trivy results to GitHub Security tab
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
@@ -288,7 +289,7 @@ jobs:
           sbom: true
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         # This only reports, does not fail the build on CVE.
         with:
           image-ref: "ghcr.io/${{ env.REPO_OWNER }}/enterprise-server:sha-${{ env.RELEVANT_SHA }}"
@@ -299,7 +300,7 @@ jobs:
           severity: 'CRITICAL,HIGH,MEDIUM'  # Skip LOW severity
 
       - name: Upload Trivy results to GitHub Security tab
-        # if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
