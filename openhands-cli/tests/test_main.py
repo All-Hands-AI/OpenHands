@@ -1,5 +1,6 @@
 """Tests for main entry point functionality."""
 
+import uuid
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,6 +20,7 @@ class TestMainEntryPoint:
         """Test that main() starts agent chat directly when setup succeeds."""
         # Mock setup_conversation to return a valid conversation
         mock_conversation = MagicMock()
+        mock_conversation.id = str(uuid.uuid4())
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise KeyboardInterrupt to exit the loop
@@ -50,6 +52,7 @@ class TestMainEntryPoint:
         """Test that main() handles KeyboardInterrupt gracefully."""
         # Mock setup_conversation to return a valid conversation
         mock_conversation = MagicMock()
+        mock_conversation.id = str(uuid.uuid4())
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise KeyboardInterrupt
@@ -67,6 +70,7 @@ class TestMainEntryPoint:
         """Test that main() handles EOFError gracefully."""
         # Mock setup_conversation to return a valid conversation
         mock_conversation = MagicMock()
+        mock_conversation.id = str(uuid.uuid4())
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise EOFError

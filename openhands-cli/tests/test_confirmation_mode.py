@@ -38,7 +38,18 @@ class TestConfirmationMode:
                 patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
                 patch('openhands_cli.setup.print_formatted_text') as mock_print,
                 patch('openhands_cli.setup.HTML') as mock_html,
+                patch('openhands_cli.setup.LocalFileStore') as mock_filestore_class,
+                patch('openhands_cli.setup.get_conversation_perisistence_path') as mock_get_path,
+                patch('openhands_cli.setup.uuid') as mock_uuid,
             ):
+                # Mock dependencies
+                mock_conversation_id = MagicMock()
+                mock_uuid.uuid4.return_value = mock_conversation_id
+                mock_filestore_instance = MagicMock()
+                mock_filestore_class.return_value = mock_filestore_instance
+                mock_path = '/test/path'
+                mock_get_path.return_value = mock_path
+
                 # Mock AgentStore
                 mock_agent_store_instance = MagicMock()
                 mock_agent_instance = MagicMock()
@@ -56,7 +67,13 @@ class TestConfirmationMode:
                 assert result == mock_conversation_instance
                 mock_agent_store_class.assert_called_once()
                 mock_agent_store_instance.load.assert_called_once()
-                mock_conversation_class.assert_called_once_with(agent=mock_agent_instance)
+                mock_get_path.assert_called_once_with(mock_conversation_id)
+                mock_filestore_class.assert_called_once_with(mock_path)
+                mock_conversation_class.assert_called_once_with(
+                    agent=mock_agent_instance,
+                    persist_filestore=mock_filestore_instance,
+                    conversation_id=mock_conversation_id
+                )
                 # Verify print_formatted_text was called
                 mock_print.assert_called_once()
 

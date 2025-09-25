@@ -61,10 +61,7 @@ def run_cli_entry() -> None:
         except MissingAgentSpec:
             settings_screen.handle_basic_settings(escapable=False)
 
-    # Generate session ID
-    session_id = str(uuid.uuid4())[:8]
-
-    display_welcome(session_id)
+    display_welcome(conversation.id)
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
@@ -107,13 +104,15 @@ def run_cli_entry() -> None:
                 continue
 
             elif command == "/clear":
-                display_welcome(session_id)
+                display_welcome(conversation.id)
                 continue
+
             elif command == "/help":
                 display_help()
                 continue
+
             elif command == "/status":
-                print_formatted_text(HTML(f"<grey>Session ID: {session_id}</grey>"))
+                print_formatted_text(HTML(f"<grey>Conversation ID: {conversation.id}</grey>"))
                 print_formatted_text(HTML("<grey>Status: Active</grey>"))
                 confirmation_status = (
                     "enabled" if conversation.state.confirmation_mode else "disabled"
@@ -122,6 +121,7 @@ def run_cli_entry() -> None:
                     HTML(f"<grey>Confirmation mode: {confirmation_status}</grey>")
                 )
                 continue
+
             elif command == "/confirm":
                 runner.toggle_confirmation_mode()
                 new_status = "enabled" if runner.is_confirmation_mode_enabled else "disabled"
@@ -129,13 +129,7 @@ def run_cli_entry() -> None:
                     HTML(f"<yellow>Confirmation mode {new_status}</yellow>")
                 )
                 continue
-            elif command == "/new":
-                print_formatted_text(
-                    HTML("<yellow>Starting new conversation...</yellow>")
-                )
-                session_id = str(uuid.uuid4())[:8]
-                display_welcome(session_id)
-                continue
+
             elif command == "/resume":
                 if not (
                     conversation.state.agent_status == AgentExecutionStatus.PAUSED
@@ -145,7 +139,6 @@ def run_cli_entry() -> None:
                     print_formatted_text(
                         HTML("<red>No paused conversation to resume...</red>")
                     )
-
                     continue
 
                 # Resume without new message
