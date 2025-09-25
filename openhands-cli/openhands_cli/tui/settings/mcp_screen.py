@@ -1,4 +1,4 @@
-from openhands_cli.locations import MCP_CONFIG_PATH, PERSISTENCE_DIR
+from openhands_cli.locations import MCP_CONFIG_POINTER_FILE, PERSISTENCE_DIR
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.mcp_action import (
     MCPActionType,
@@ -23,8 +23,8 @@ class MCPScreen:
                 self.list_mcp_servers()
 
             if settings_type == MCPActionType.ADD_JSON_CONFIG:
-                config_path = propmt_mcp_json_config_file()
-                self.save_mcp_configuration(config_path)
+                user_mcp_config_path = propmt_mcp_json_config_file()
+                self.save_mcp_configuration(user_mcp_config_path)
 
 
         except KeyboardInterrupt:
@@ -34,10 +34,10 @@ class MCPScreen:
 
     def save_mcp_configuration(
         self,
-        config_path: str
+        user_mcp_config_path: str
     ):
 
-        self.file_store.write(MCP_CONFIG_PATH, config_path)
+        self.file_store.write(MCP_CONFIG_POINTER_FILE, user_mcp_config_path)
         print_formatted_text(HTML(f"<green>✓ MCP config path saved successfully!</green>"))
 
 

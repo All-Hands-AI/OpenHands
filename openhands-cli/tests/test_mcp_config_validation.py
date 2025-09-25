@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_PATH
+from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_POINTER_FILE
 import pytest
 from prompt_toolkit.validation import ValidationError
 
@@ -112,8 +112,8 @@ def _make_store(tmp_path: Path) -> AgentStore:
 def _write_agent_settings(store: AgentStore, agent: Agent) -> None:
     store.save(agent)
 
-def _write_mcp_config_pointer(store: AgentStore, path: str) -> None:
-    store.file_store.write(MCP_CONFIG_PATH, path)
+def _write_mcp_config_pointer(store: AgentStore, user_mcp_config_path: str) -> None:
+    store.file_store.write(MCP_CONFIG_POINTER_FILE, user_mcp_config_path)
 
 class TestAgentStoreMCPConfiguration:
     """Test the AgentStore MCP configuration loading functionality."""
@@ -121,7 +121,7 @@ class TestAgentStoreMCPConfiguration:
 
     def test_load_mcp_configuration_file_not_found(self, tmp_path):
         """
-        No MCP_CONFIG_PATH file present under store root.
+        No MCP_CONFIG_POINTER_FILE file present under store root.
         Should return {}.
         """
         store = _make_store(tmp_path)
@@ -129,7 +129,7 @@ class TestAgentStoreMCPConfiguration:
 
     def test_load_mcp_configuration_path_not_exist(self, tmp_path):
         """
-        MCP_CONFIG_PATH file points to a non-existent absolute path.
+        MCP_CONFIG_POINTER_FILE file points to a non-existent absolute path.
         Should return {}.
         """
         store = _make_store(tmp_path)

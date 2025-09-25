@@ -59,10 +59,10 @@ def mcp_action_menu() -> MCPActionType:
 
 def propmt_mcp_json_config_file() -> str:
     question = 'Enter absolute path to MCP JSON config file (CTRL-c to cancel): '
-    config_path = cli_text_input(
+    user_mcp_config_path = cli_text_input(
         question,
         escapable=True,
         validator=MCPConfigValidator()
     )
-    return config_path
+    return user_mcp_config_path
 

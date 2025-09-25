@@ -8,4 +8,4 @@ WORK_DIR = os.getcwd()
 
 AGENT_SETTINGS_PATH = "agent_settings.json"
 
-MCP_CONFIG_PATH = "mcp_config_path.txt"
+MCP_CONFIG_POINTER_FILE = "mcp_config_pointer.txt"
