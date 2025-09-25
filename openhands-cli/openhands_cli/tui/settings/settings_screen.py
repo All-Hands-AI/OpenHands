@@ -162,7 +162,8 @@ class SettingsScreen:
         llm = LLM(
             model=model,
             api_key=api_key,
-            base_url=base_url
+            base_url=base_url,
+            service_id="openhands-cli"
         )
 
         agent = self.agent_store.load()

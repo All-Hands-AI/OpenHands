@@ -15,7 +15,7 @@ from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import setup_agent
+from openhands_cli.setup import setup_conversation, MissingAgentSpec
 from openhands_cli.user_actions import agent_action, ask_user_confirmation, utils
 from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
 from tests.utils import _send_keys
@@ -30,11 +30,10 @@ class MockAction(ActionBase):
 class TestConfirmationMode:
     """Test suite for confirmation mode functionality."""
 
-    def test_setup_agent_creates_conversation(self) -> None:
-        """Test that setup_agent creates a conversation successfully."""
+    def test_setup_conversation_creates_conversation(self) -> None:
+        """Test that setup_conversation creates a conversation successfully."""
         with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
             with (
-                patch('openhands_cli.setup.Agent') as mock_agent_class,
                 patch('openhands_cli.setup.Conversation') as mock_conversation_class,
                 patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
                 patch('openhands_cli.setup.print_formatted_text') as mock_print,
@@ -51,7 +50,7 @@ class TestConfirmationMode:
                 mock_conversation_instance = MagicMock()
                 mock_conversation_class.return_value = mock_conversation_instance
 
-                result = setup_agent()
+                result = setup_conversation()
 
                 # Verify conversation was created and returned
                 assert result == mock_conversation_instance
@@ -60,6 +59,24 @@ class TestConfirmationMode:
                 mock_conversation_class.assert_called_once_with(agent=mock_agent_instance)
                 # Verify print_formatted_text was called
                 mock_print.assert_called_once()
+
+    def test_setup_conversation_raises_missing_agent_spec(self) -> None:
+        """Test that setup_conversation raises MissingAgentSpec when agent is not found."""
+        with (
+            patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
+        ):
+            # Mock AgentStore to return None (no agent found)
+            mock_agent_store_instance = MagicMock()
+            mock_agent_store_instance.load.return_value = None
+            mock_agent_store_class.return_value = mock_agent_store_instance
+
+            # Should raise MissingAgentSpec
+            with pytest.raises(MissingAgentSpec) as exc_info:
+                setup_conversation()
+            
+            assert "Agent specification not found" in str(exc_info.value)
+            mock_agent_store_class.assert_called_once()
+            mock_agent_store_instance.load.assert_called_once()
 
     def test_conversation_runner_set_confirmation_mode(self) -> None:
         """Test that ConversationRunner can set confirmation policy."""

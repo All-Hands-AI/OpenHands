@@ -17,7 +17,7 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import setup_agent
+from openhands_cli.setup import setup_conversation, MissingAgentSpec
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.tui import (
     CommandCompleter,
@@ -39,12 +39,14 @@ def run_cli_entry() -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = setup_agent()
+    conversation = None
     settings_screen = SettingsScreen()
 
     while not conversation:
-        settings_screen.handle_basic_settings(escapable=False)
-        conversation = setup_agent()
+        try:
+            conversation = setup_conversation()
+        except MissingAgentSpec:
+            settings_screen.handle_basic_settings(escapable=False)
 
     # Generate session ID
     session_id = str(uuid.uuid4())[:8]
