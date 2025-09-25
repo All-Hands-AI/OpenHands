@@ -157,18 +157,25 @@ def cli_text_input(
 
 def get_session_prompter() -> PromptSession:
     bindings = KeyBindings()
-    # Create prompt session with command completer
+
+    @bindings.add("\\", "enter")
+    def _(event: KeyPressEvent) -> None:
+        # Typing '\' + Enter forces a newline regardless
+        event.current_buffer.insert_text("\n")
+
     @bindings.add("enter")
     def _handle_enter(event: KeyPressEvent):
         event.app.exit(result=event.current_buffer.text)
 
     @bindings.add("c-c")
     def _keyboard_interrupt(event: KeyPressEvent):
-        event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
+        event.app.exit(exception=KeyboardInterrupt)
 
     session = PromptSession(
         completer=CommandCompleter(),
-        key_bindings=bindings
+        key_bindings=bindings,
+        prompt_continuation=lambda width, line_number, is_soft_wrap: "...",
+        multiline=True,
     )
 
     return session
