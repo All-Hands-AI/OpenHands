@@ -94,7 +94,7 @@ def test_client_non_pro():
     """Test client for non-pro user"""
     # Mock the enterprise billing to return no subscription (non-pro user)
     mock_get_subscription = AsyncMock(return_value=None)
-    
+
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -125,7 +125,7 @@ def test_client_pro():
     mock_subscription = MagicMock()
     mock_subscription.status = 'ACTIVE'
     mock_get_subscription = AsyncMock(return_value=mock_subscription)
-    
+
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -265,7 +265,7 @@ async def test_expired_subscription_cannot_access_llm_settings():
     """SECURITY TEST: User with expired subscription should not access LLM settings"""
     # Create a test client with expired subscription (no subscription returned)
     mock_get_subscription = AsyncMock(return_value=None)
-    
+
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
