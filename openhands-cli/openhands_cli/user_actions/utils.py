@@ -155,7 +155,10 @@ def cli_text_input(
     return reason.strip()
 
 
-def get_session_prompter() -> PromptSession:
+def get_session_prompter(
+    input: Input | None = None,  # strictly for unit testing
+    output: Output | None = None,  # strictly for unit testing
+) -> PromptSession:
     bindings = KeyBindings()
 
     @bindings.add("\\", "enter")
@@ -176,6 +179,8 @@ def get_session_prompter() -> PromptSession:
         key_bindings=bindings,
         prompt_continuation=lambda width, line_number, is_soft_wrap: "...",
         multiline=True,
+        input=input,
+        output=output,
     )
 
     return session
