@@ -5,7 +5,12 @@ import pytest
 from pydantic import SecretStr
 
 from openhands.integrations.forgejo.forgejo_service import ForgejoService
-from openhands.integrations.service_types import ProviderType, Repository, User
+from openhands.integrations.service_types import (
+    ProviderType,
+    Repository,
+    RequestMethod,
+    User,
+)
 from openhands.server.types import AppMode
 
 
@@ -228,3 +233,41 @@ async def test_make_request_other_error(forgejo_service):
 
     # Verify the exception
     assert 'Unknown error' in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_create_pull_request(forgejo_service):
+    mock_response = {'index': 42, 'html_url': 'https://example/pr/42'}
+    forgejo_service._make_request = AsyncMock(return_value=(mock_response, {}))
+
+    data = {'owner': 'org', 'repo': 'project', 'title': 'Add feature'}
+    result = await forgejo_service.create_pull_request(data.copy())
+
+    assert result['number'] == 42
+    forgejo_service._make_request.assert_awaited_once_with(
+        f'{forgejo_service.BASE_URL}/repos/org/project/pulls',
+        {'title': 'Add feature'},
+        method=RequestMethod.POST,
+    )
+
+
+@pytest.mark.asyncio
+async def test_request_reviewers(forgejo_service):
+    forgejo_service._make_request = AsyncMock(return_value=({}, {}))
+
+    await forgejo_service.request_reviewers('org/project', 5, ['alice'])
+
+    forgejo_service._make_request.assert_awaited_once_with(
+        f'{forgejo_service.BASE_URL}/repos/org/project/pulls/5/requested_reviewers',
+        {'reviewers': ['alice']},
+        method=RequestMethod.POST,
+    )
+
+
+@pytest.mark.asyncio
+async def test_request_reviewers_empty_list(forgejo_service):
+    forgejo_service._make_request = AsyncMock()
+
+    await forgejo_service.request_reviewers('org/project', 5, [])
+
+    forgejo_service._make_request.assert_not_called()
