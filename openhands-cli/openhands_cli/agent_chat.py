@@ -5,14 +5,15 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import logging
+import sys
 import uuid
 
 from openhands.sdk import (
     Message,
     TextContent,
-    AgentContext,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands_cli.user_actions.utils import get_session_prompter
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
@@ -20,14 +21,25 @@ from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_conversation, MissingAgentSpec
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.tui import (
-    CommandCompleter,
     display_help,
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-from openhands_cli.locations import WORK_DIR
+
 
 logger = logging.getLogger(__name__)
+
+def _restore_tty() -> None:
+    """
+    Ensure terminal modes are reset in case prompt_toolkit cleanup didn't run.
+    - Turn off application cursor keys (DECCKM): ESC[?1l
+    - Turn off bracketed paste: ESC[?2004l
+    """
+    try:
+        sys.stdout.write("\x1b[?1l\x1b[?2004l")
+        sys.stdout.flush()
+    except Exception:
+        pass
 
 
 def run_cli_entry() -> None:
@@ -53,11 +65,9 @@ def run_cli_entry() -> None:
 
     display_welcome(session_id)
 
-    # Create prompt session with command completer
-    session = PromptSession(completer=CommandCompleter())
-
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
+    session = get_session_prompter()
 
     # Main chat loop
     while True:
@@ -143,4 +153,9 @@ def run_cli_entry() -> None:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
-                break
+            break
+
+
+    # Clean up terminal state
+    _restore_tty()
+
