@@ -216,30 +216,54 @@ class SaasNestedConversationManager(ConversationManager):
                 f'parsed_status={status}'
             )
 
-        # Check if runtime is already running
-        if raw_runtime_status == 'running':
-            logger.info(
-                f'[TOKEN_DEBUG] Runtime already running for {sid}, returning RUNNING status'
-            )
-            return AgentLoopInfo(
-                conversation_id=sid,
-                url=nested_url,
-                session_api_key=session_api_key,
-                event_store=event_store,
-                status=ConversationStatus.RUNNING,
-            )
+        # Determine if we need to start/resume the conversation
+        # Key insight: We should only skip starting if:
+        # 1. Runtime is running AND
+        # 2. We're already starting (redis flag) OR conversation already exists
 
-        # For paused, we resume; for stopped or no runtime, we start new
-        if raw_runtime_status in ('paused', '') or raw_runtime_status == 'stopped':
+        should_schedule_work = False
+        is_resume = False
+
+        if raw_runtime_status == 'paused':
+            # Always resume paused conversations
+            should_schedule_work = True
+            is_resume = True
+            logger.info(f'[TOKEN_DEBUG] Will resume paused conversation {sid}')
+        elif raw_runtime_status in ('stopped', ''):
+            # Start new for stopped or non-existent runtimes
+            should_schedule_work = True
+            logger.info(f'[TOKEN_DEBUG] Will start new conversation {sid} (status={raw_runtime_status})')
+        elif raw_runtime_status == 'running':
+            # For running, only start if not already starting
+            if starting:
+                logger.info(f'[TOKEN_DEBUG] Already starting {sid} per Redis, returning STARTING')
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=nested_url,
+                    session_api_key=session_api_key,
+                    event_store=event_store,
+                    status=ConversationStatus.STARTING,
+                )
+            else:
+                # Runtime is running but we're not starting - this means conversation should exist
+                # Return RUNNING status
+                logger.info(f'[TOKEN_DEBUG] Runtime running and not starting, returning RUNNING')
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=nested_url,
+                    session_api_key=session_api_key,
+                    event_store=event_store,
+                    status=ConversationStatus.RUNNING,
+                )
+
+        if should_schedule_work:
             if not starting:
                 logger.info(
-                    f'[TOKEN_DEBUG] Scheduling {"resume" if raw_runtime_status == "paused" else "start"} '
+                    f'[TOKEN_DEBUG] Scheduling {"resume" if is_resume else "start"} '
                     f'for sid={sid} (raw_status={raw_runtime_status})'
                 )
                 await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
 
-                # Pass resume flag if we're resuming a paused runtime
-                is_resume = raw_runtime_status == 'paused'
                 asyncio.create_task(
                     self._start_agent_loop(
                         sid, settings, user_id, initial_user_msg, replay_json, is_resume
@@ -250,7 +274,7 @@ class SaasNestedConversationManager(ConversationManager):
                     f'[TOKEN_DEBUG] Already starting {sid} according to Redis, not scheduling again'
                 )
 
-            # Return STARTING immediately when scheduling work
+            # Return STARTING when work is scheduled or in progress
             return AgentLoopInfo(
                 conversation_id=sid,
                 url=nested_url,
