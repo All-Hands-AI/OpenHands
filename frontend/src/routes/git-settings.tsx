@@ -19,6 +19,12 @@ import { GitSettingInputsSkeleton } from "#/components/features/settings/git-set
 import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ProjectManagementIntegration } from "#/components/features/settings/project-management/project-management-integration";
+import type {
+  BitbucketMode,
+  Provider,
+  ProviderToken,
+  ProviderTokenSettings,
+} from "#/types/settings";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
@@ -37,6 +43,8 @@ function GitSettingsScreen() {
     React.useState(false);
   const [bitbucketTokenInputHasValue, setBitbucketTokenInputHasValue] =
     React.useState(false);
+  const [bitbucketModeInputHasValue, setBitbucketModeInputHasValue] =
+    React.useState(false);
 
   const [githubHostInputHasValue, setGithubHostInputHasValue] =
     React.useState(false);
@@ -45,9 +53,26 @@ function GitSettingsScreen() {
   const [bitbucketHostInputHasValue, setBitbucketHostInputHasValue] =
     React.useState(false);
 
-  const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
-  const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
-  const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
+  const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github?.host ?? null;
+  const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab?.host ?? null;
+  const existingBitbucketSettings =
+    (settings?.PROVIDER_TOKENS_SET.bitbucket as
+      | ProviderTokenSettings
+      | null
+      | undefined) ?? null;
+  const existingBitbucketHost = existingBitbucketSettings?.host ?? null;
+  const existingBitbucketMode: BitbucketMode =
+    existingBitbucketSettings?.bitbucket_mode ?? "cloud";
+
+  const [bitbucketMode, setBitbucketMode] = React.useState<BitbucketMode>(
+    existingBitbucketMode,
+  );
+
+  React.useEffect(() => {
+    if (!bitbucketModeInputHasValue) {
+      setBitbucketMode(existingBitbucketMode);
+    }
+  }, [existingBitbucketMode, bitbucketModeInputHasValue]);
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
@@ -71,17 +96,26 @@ function GitSettingsScreen() {
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
     const bitbucketHost =
       formData.get("bitbucket-host-input")?.toString() || "";
+    const bitbucketModeValue =
+      (formData
+        .get("bitbucket-mode-input")
+        ?.toString() as BitbucketMode | null) || "cloud";
 
     // Create providers object with all tokens
-    const providerTokens: Record<string, { token: string; host: string }> = {
+    const providersToSave: Record<Provider, ProviderToken> = {
       github: { token: githubToken, host: githubHost },
       gitlab: { token: gitlabToken, host: gitlabHost },
-      bitbucket: { token: bitbucketToken, host: bitbucketHost },
+      bitbucket: {
+        token: bitbucketToken,
+        host: bitbucketHost,
+        bitbucket_mode: bitbucketModeValue,
+      },
+      enterprise_sso: { token: "", host: "" },
     };
 
     saveGitProviders(
       {
-        providers: providerTokens,
+        providers: providersToSave,
       },
       {
         onSuccess: () => {
@@ -98,6 +132,7 @@ function GitSettingsScreen() {
           setGithubHostInputHasValue(false);
           setGitlabHostInputHasValue(false);
           setBitbucketHostInputHasValue(false);
+          setBitbucketModeInputHasValue(false);
         },
       },
     );
@@ -109,7 +144,8 @@ function GitSettingsScreen() {
     !bitbucketTokenInputHasValue &&
     !githubHostInputHasValue &&
     !gitlabHostInputHasValue &&
-    !bitbucketHostInputHasValue;
+    !bitbucketHostInputHasValue &&
+    !bitbucketModeInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
   const shouldRenderProjectManagementIntegrations =
     config?.FEATURE_FLAGS?.ENABLE_JIRA ||
@@ -194,6 +230,11 @@ function GitSettingsScreen() {
                   setBitbucketHostInputHasValue(!!value);
                 }}
                 bitbucketHostSet={existingBitbucketHost}
+                bitbucketMode={bitbucketMode}
+                onBitbucketModeChange={(value) => {
+                  setBitbucketMode(value);
+                  setBitbucketModeInputHasValue(true);
+                }}
               />
             )}
           </div>

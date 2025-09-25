@@ -37,11 +37,14 @@ from openhands.integrations.service_types import (
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 
+BitbucketMode = Literal['cloud', 'server']
+
 
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
     user_id: str | None = Field(default=None)
     host: str | None = Field(default=None)
+    bitbucket_mode: BitbucketMode | None = Field(default='cloud')
 
     model_config = ConfigDict(
         frozen=True,  # Makes the entire model immutable
@@ -61,7 +64,18 @@ class ProviderToken(BaseModel):
                 token_str = ''  # type: ignore[unreachable]
             user_id = token_value.get('user_id')
             host = token_value.get('host')
-            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
+            bitbucket_mode = token_value.get('bitbucket_mode')
+            if bitbucket_mode not in (None, 'cloud', 'server'):
+                raise ValueError('Invalid bitbucket_mode value')
+            resolved_mode: BitbucketMode = 'cloud'
+            if bitbucket_mode is not None:
+                resolved_mode = cast(BitbucketMode, bitbucket_mode)
+            return cls(
+                token=SecretStr(token_str),
+                user_id=user_id,
+                host=host,
+                bitbucket_mode=resolved_mode,
+            )
 
         else:
             raise ValueError('Unsupported Provider token type')
@@ -150,14 +164,22 @@ class ProviderHandler:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
-        return service_class(
-            user_id=token.user_id,
-            external_auth_id=self.external_auth_id,
-            external_auth_token=self.external_auth_token,
-            token=token.token,
-            external_token_manager=self.external_token_manager,
-            base_domain=token.host,
-        )
+        kwargs: dict[str, Any] = {
+            'user_id': token.user_id,
+            'external_auth_id': self.external_auth_id,
+            'external_auth_token': self.external_auth_token,
+            'token': token.token,
+            'external_token_manager': self.external_token_manager,
+            'base_domain': token.host,
+        }
+
+        if provider == ProviderType.BITBUCKET:
+            bitbucket_mode: BitbucketMode = (
+                token.bitbucket_mode if token.bitbucket_mode is not None else 'cloud'
+            )
+            kwargs['bitbucket_mode'] = bitbucket_mode
+
+        return service_class(**kwargs)
 
     async def get_user(self) -> User:
         """Get user information from the first available provider"""

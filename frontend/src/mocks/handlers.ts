@@ -3,7 +3,7 @@ import { GetConfigResponse } from "#/api/option-service/option.types";
 import { Conversation, ResultSet } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { Provider } from "#/types/settings";
+import { Provider, ProviderTokenSettings } from "#/types/settings";
 import {
   ApiSettings,
   PostApiSettings,
@@ -311,15 +311,41 @@ export const handlers = [
     if (typeof body === "object" && body?.provider_tokens) {
       const rawTokens = body.provider_tokens as Record<
         string,
-        { token?: string }
+        { token?: string; host?: string | null; bitbucket_mode?: string }
       >;
 
-      const providerTokensSet: Partial<Record<Provider, string | null>> =
-        Object.fromEntries(
-          Object.entries(rawTokens)
-            .filter(([, val]) => val && val.token)
-            .map(([provider]) => [provider as Provider, ""]),
-        );
+      const providerTokensSet: Partial<
+        Record<Provider, ProviderTokenSettings | null>
+      > = Object.fromEntries(
+        Object.entries(rawTokens)
+          .map(([provider, val]) => {
+            if (!val) {
+              return [provider as Provider, null];
+            }
+
+            const normalizedMode = val.bitbucket_mode as
+              | ProviderTokenSettings["bitbucket_mode"]
+              | undefined;
+
+            const shouldPersist =
+              (typeof val.token === "string" && val.token.trim() !== "") ||
+              (typeof val.host === "string" && val.host.trim() !== "") ||
+              normalizedMode === "server";
+
+            if (!shouldPersist) {
+              return [provider as Provider, null];
+            }
+
+            return [
+              provider as Provider,
+              {
+                host: val.host ?? null,
+                bitbucket_mode: normalizedMode,
+              },
+            ];
+          })
+          .filter(([, value]) => value !== null),
+      );
 
       const newSettings = {
         ...(MOCK_USER_PREFERENCES.settings ?? MOCK_DEFAULT_USER_SETTINGS),

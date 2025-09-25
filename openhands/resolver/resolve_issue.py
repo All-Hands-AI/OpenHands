@@ -124,6 +124,13 @@ def main() -> None:
         default=None,
         help='Base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)',
     )
+    parser.add_argument(
+        '--bit-bucket-mode',
+        type=str,
+        default='cloud',
+        choices=['cloud', 'server'],
+        help='Bitbucket API mode to use (cloud or server).',
+    )
 
     my_args = parser.parse_args()
 

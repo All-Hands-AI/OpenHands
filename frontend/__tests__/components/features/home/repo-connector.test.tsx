@@ -73,8 +73,9 @@ beforeEach(() => {
   getSettingsSpy.mockResolvedValue({
     ...MOCK_DEFAULT_USER_SETTINGS,
     provider_tokens_set: {
-      github: "some-token",
-      gitlab: null,
+      github: { host: "github.com" },
+      gitlab: { host: "gitlab.com" },
+      bitbucket: null,
     },
   });
 });
@@ -190,8 +191,8 @@ describe("RepoConnector", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: "some-token",
-        gitlab: null,
+        github: { host: "github.com" },
+        gitlab: { host: "gitlab.com" },
       },
     });
 
@@ -237,7 +238,7 @@ describe("RepoConnector", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        gitlab: "some-token",
+        gitlab: { host: "gitlab.com" },
         github: null,
       },
     });
@@ -253,17 +254,8 @@ describe("RepoConnector", () => {
 
     renderRepoConnector();
 
-    // First select the GitLab provider (not GitHub)
-    const providerDropdown = await waitFor(() =>
-      screen.getByTestId("git-provider-dropdown"),
-    );
-    await userEvent.click(providerDropdown);
-    await userEvent.click(screen.getByText("GitLab"));
-
-    // Then open the repository dropdown
-    const repoInput = await waitFor(() =>
-      screen.getByTestId("git-repo-dropdown"),
-    );
+    const repoInput = await screen.findByTestId("git-repo-dropdown");
+    expect(screen.queryByTestId("git-provider-dropdown")).not.toBeInTheDocument();
     await userEvent.click(repoInput);
 
     // The "Add GitHub repos" link should NOT be in the dropdown for GitLab
@@ -281,8 +273,8 @@ describe("RepoConnector", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: "some-token",
-        gitlab: null,
+        github: { host: "github.com" },
+        gitlab: { host: "gitlab.com" },
       },
     });
 

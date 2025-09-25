@@ -1,4 +1,4 @@
-import { Provider } from "#/types/settings";
+import { Provider, ProviderTokenSettings } from "#/types/settings";
 
 export type ApiSettings = {
   llm_model: string;
@@ -19,7 +19,7 @@ export type ApiSettings = {
   enable_solvability_analysis: boolean;
   user_consents_to_analytics: boolean | null;
   search_api_key?: string;
-  provider_tokens_set: Partial<Record<Provider, string | null>>;
+  provider_tokens_set: Partial<Record<Provider, ProviderTokenSettings | null>>;
   max_budget_per_task: number | null;
   mcp_config?: {
     sse_servers: (string | { url: string; api_key?: string })[];

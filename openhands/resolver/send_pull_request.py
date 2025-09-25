@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import subprocess
+from typing import Literal
 
 import jinja2
 from pydantic import SecretStr
@@ -245,13 +246,14 @@ def send_pull_request(
     base_domain: str | None = None,
     git_user_name: str = 'openhands',
     git_user_email: str = 'openhands@all-hands.dev',
+    bitbucket_mode: Literal['cloud', 'server'] = 'cloud',
 ) -> str:
     """Send a pull request to a GitHub, GitLab, or Bitbucket repository.
 
     Args:
         issue: The issue to send the pull request for
         token: The token to use for authentication
-        username: The username, if provided
+        username: The username, if provided. For Bitbucket this is treated as the user ID.
         platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
@@ -261,6 +263,7 @@ def send_pull_request(
         reviewer: The username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
         base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)
+        bitbucket_mode: Bitbucket API mode to use ("cloud" or "server").
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -289,7 +292,12 @@ def send_pull_request(
     elif platform == ProviderType.BITBUCKET:
         handler = ServiceContextIssue(
             BitbucketIssueHandler(
-                issue.owner, issue.repo, token, username, base_domain
+                issue.owner,
+                issue.repo,
+                token,
+                user_id=username,
+                base_domain=base_domain,
+                bitbucket_mode=bitbucket_mode,
             ),
             None,
         )
@@ -515,6 +523,7 @@ def process_single_issue(
     base_domain: str | None = None,
     git_user_name: str = 'openhands',
     git_user_email: str = 'openhands@all-hands.dev',
+    bitbucket_mode: Literal['cloud', 'server'] = 'cloud',
 ) -> None:
     # Determine default base_domain based on platform
     if base_domain is None:
@@ -581,6 +590,7 @@ def process_single_issue(
             base_domain=base_domain,
             git_user_name=git_user_name,
             git_user_email=git_user_email,
+            bitbucket_mode=bitbucket_mode,
         )
 
 
@@ -679,6 +689,15 @@ def main() -> None:
         help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
     )
     parser.add_argument(
+        '--bitbucket-mode',
+        '--bit-bucket-mode',
+        dest='bitbucket_mode',
+        type=str,
+        default='cloud',
+        choices=['cloud', 'server'],
+        help='Bitbucket API mode to use (cloud or server).',
+    )
+    parser.add_argument(
         '--git-user-name',
         type=str,
         default='openhands',
@@ -739,6 +758,7 @@ def main() -> None:
         my_args.base_domain,
         my_args.git_user_name,
         my_args.git_user_email,
+        my_args.bitbucket_mode,
     )
 
 
