@@ -338,6 +338,24 @@ class SaasNestedConversationManager(ConversationManager):
             # Emit an explicit READY state so the frontend can exit "initializing"
             await self._emit_agent_ready_event(sid, user_id)
 
+
+    async def _emit_agent_ready_event(self, sid: str, user_id: str | None) -> None:
+        try:
+            from openhands.events.event import EventSource
+            from openhands.events.observation.agent import AgentStateChangedObservation
+            from openhands.core.schema.agent import AgentState
+            from openhands.events.stream import EventStream
+
+            event_stream = EventStream(sid, self.file_store, user_id)
+            event_stream.add_event(
+                AgentStateChangedObservation('', AgentState.RUNNING),
+                EventSource.SERVER,
+            )
+            event_stream.close()
+            logger.info('[WEBSOCKET_DEBUG] Emitted AgentStateChangedObservation(READY/RUNNING)')
+        except Exception as e:
+            logger.exception(f'Error emitting agent READY event: {e}')
+
     async def _setup_experiment_config(
         self, client: httpx.AsyncClient, api_url: str, sid: str, user_id: str
     ):
