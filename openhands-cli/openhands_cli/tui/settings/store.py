@@ -1,6 +1,7 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 from pathlib import Path
+from typing import Any
 from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk import LocalFileStore, Agent, AgentContext
 from openhands.sdk.preset.default import get_default_tools
@@ -14,21 +15,12 @@ class AgentStore:
     def __init__(self) -> None:
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
 
-    def load_mcp_configuration(self):
-        """Load MCP configuration from ~/.openhands/mcp.json."""
+    def load_mcp_configuration(self) -> dict[str, Any]:
         try:
-            # Use the file store to get the full path and read the file
             mcp_config_path = Path(self.file_store.root) / MCP_CONFIG_FILE
             mcp_config = MCPConfig.from_file(mcp_config_path)
             return mcp_config.to_dict()['mcpServers']
-        except FileNotFoundError:
-            # File doesn't exist, that's okay - return empty config
-            return {}
-        except ValueError as e:
-            print_formatted_text(HTML(f"\n<red>Error loading MCP servers from ~/.openhands/{MCP_CONFIG_FILE}: {e}!</red>"))
-            return {}
         except Exception as e:
-            print_formatted_text(HTML(f"\n<red>Unexpected error loading MCP configuration from ~/.openhands/{MCP_CONFIG_FILE}: {e}!</red>"))
             return {}
 
     def load(self) -> Agent | None:
@@ -48,9 +40,9 @@ class AgentStore:
             )
 
 
-            mcp_config = self.load_mcp_configuration()
-            existing_config = agent.mcp_config.copy().get('mcpServers', {})
-            mcp_config.update(existing_config)
+            additional_mcp_config = self.load_mcp_configuration()
+            mcp_config: dict = agent.mcp_config.copy().get('mcpServers', {})
+            mcp_config.update(additional_mcp_config)
 
             agent = agent.model_copy(update={
                 "tools": updated_tools,
