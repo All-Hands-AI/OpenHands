@@ -73,6 +73,8 @@ async def run_controller(
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
+        memory: Optional memory implementation used to persist conversation state.
+        conversation_instructions: Optional instructions appended to each turn sent to the agent.
 
     Returns:
         The final state of the agent, or None if an error occurred.
@@ -238,7 +240,7 @@ async def run_controller(
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
-        with open(file_path, 'w') as f:  # noqa: ASYNC101
+        with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
 
     return state
@@ -250,6 +252,7 @@ def auto_continue_response(
     try_parse: Callable[[Action | None], str] | None = None,
 ) -> str:
     """Default function to generate user responses.
+
     Tell the agent to proceed without asking for more input, or finish the interaction.
     """
     message = (
@@ -261,10 +264,10 @@ def auto_continue_response(
 
 
 def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
-    """Load trajectory from given path, serialize it to a list of events, and return
-    two things:
-    1) A list of events except the first action
-    2) First action (user message, a.k.a. initial task)
+    """Load a trajectory file and return the events plus the initial action.
+
+    Returns a tuple containing (1) all events except the first action and (2) the initial
+    user action, which is treated as the initial task.
     """
     try:
         path = Path(trajectory_path).resolve()
