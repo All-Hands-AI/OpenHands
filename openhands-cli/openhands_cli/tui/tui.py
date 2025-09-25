@@ -21,6 +21,7 @@ COMMANDS = {
     "/confirm": "Toggle confirmation mode on/off",
     "/resume": "Resume a paused conversation",
     "/settings": "Display and modify current settings",
+    "/mcp": "View MCP (Model Context Protocol) server configuration",
 }
 
 

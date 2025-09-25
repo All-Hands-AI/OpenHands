@@ -4,7 +4,6 @@ from typing import Optional
 from pydantic import BaseModel
 from openhands.sdk.security.confirmation_policy import ConfirmationPolicyBase
 
-
 class UserConfirmation(Enum):
     ACCEPT = "accept"
     REJECT = "reject"

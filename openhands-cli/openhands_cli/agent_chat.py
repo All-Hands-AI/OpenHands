@@ -13,6 +13,7 @@ from openhands.sdk import (
     TextContent,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.user_actions.utils import get_session_prompter
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
@@ -95,6 +96,11 @@ def run_cli_entry() -> None:
             elif command == "/settings":
                 settings_screen = SettingsScreen(conversation)
                 settings_screen.display_settings()
+                continue
+
+            elif command == "/mcp":
+                mcp_screen = MCPScreen()
+                mcp_screen.display_mcp_info(conversation.agent)
                 continue
 
             elif command == "/clear":
