@@ -63,6 +63,7 @@ openai = "*"
 opencv-python = "*"
 pandas = "*"
 reportlab = "*"
+gevent = ">=24.2.1,<26.0.0"
 
 [tool.poetry-dynamic-versioning]
 enable = true
@@ -85,3 +86,7 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+relative_files = true
+omit = [ "tests/*" ]

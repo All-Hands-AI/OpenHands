@@ -30,19 +30,33 @@ export const useChatInputEvents = (
     ensureCursorVisible(chatInputRef.current);
   }, [smartResize, chatInputRef]);
 
-  // Handle paste events to clean up formatting
+  // Handle paste events to clean up formatting and handle files
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       e.preventDefault();
 
-      // Get plain text from clipboard
+      // Check if there are files in the clipboard
+      const files = Array.from(e.clipboardData.files);
+      const hasFiles = files.length > 0;
+
+      if (hasFiles) {
+        // Handle file paste - let the file handling system process the files
+        // We'll trigger a custom event that the file handling system can listen to
+        const customEvent = new CustomEvent("pasteFiles", {
+          detail: { files },
+        });
+        document.dispatchEvent(customEvent);
+        return;
+      }
+
+      // Handle text paste as before
       const text = e.clipboardData.getData("text/plain");
-
-      // Insert plain text
-      document.execCommand("insertText", false, text);
-
-      // Trigger resize
-      setTimeout(smartResize, 0);
+      if (text) {
+        // Insert plain text
+        document.execCommand("insertText", false, text);
+        // Trigger resize
+        setTimeout(smartResize, 0);
+      }
     },
     [smartResize],
   );
