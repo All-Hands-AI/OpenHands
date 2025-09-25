@@ -130,12 +130,16 @@ def cli_text_input(
 
         @kb.add('c-c')
         def _(event: KeyPressEvent) -> None:
-            raise KeyboardInterrupt()
+            event.app.exit(exception=KeyboardInterrupt())
 
         @kb.add('c-p')
         def _(event: KeyPressEvent) -> None:
-            raise KeyboardInterrupt()
+            event.app.exit(exception=KeyboardInterrupt())
 
+
+    @kb.add("enter")
+    def _handle_enter(event: KeyPressEvent):
+        event.app.exit(result=event.current_buffer.text)
 
     reason = str(
         prompt(
