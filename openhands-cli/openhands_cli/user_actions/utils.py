@@ -1,3 +1,5 @@
+from openhands_cli.tui.tui import CommandCompleter
+from prompt_toolkit import PromptSession
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
@@ -128,12 +130,16 @@ def cli_text_input(
 
         @kb.add('c-c')
         def _(event: KeyPressEvent) -> None:
-            raise KeyboardInterrupt()
+            event.app.exit(exception=KeyboardInterrupt())
 
         @kb.add('c-p')
         def _(event: KeyPressEvent) -> None:
-            raise KeyboardInterrupt()
+            event.app.exit(exception=KeyboardInterrupt())
 
+
+    @kb.add("enter")
+    def _handle_enter(event: KeyPressEvent):
+        event.app.exit(result=event.current_buffer.text)
 
     reason = str(
         prompt(
@@ -146,3 +152,23 @@ def cli_text_input(
         )
     )
     return reason.strip()
+
+
+
+def get_session_prompter() -> PromptSession:
+    bindings = KeyBindings()
+    # Create prompt session with command completer
+    @bindings.add("enter")
+    def _handle_enter(event: KeyPressEvent):
+        event.app.exit(result=event.current_buffer.text)
+
+    @bindings.add("c-c")
+    def _keyboard_interrupt(event: KeyPressEvent):
+        event.app.exit(exception=KeyboardInterrupt, style="class:aborting")
+
+    session = PromptSession(
+        completer=CommandCompleter(),
+        key_bindings=bindings
+    )
+
+    return session
