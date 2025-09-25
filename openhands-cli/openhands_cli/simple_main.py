@@ -12,6 +12,9 @@ import gc
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
+# Import logging configuration early to suppress initialization logs
+from openhands_cli.logging_config import setup_logging
+
 
 def cleanup_resources():
     """Attempt graceful cleanup with fallback to force exit."""
