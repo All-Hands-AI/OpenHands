@@ -107,8 +107,7 @@ class VSCodePlugin(Plugin):
                 + 'EOF'
             )
 
-        # Using asyncio.create_subprocess_shell instead of subprocess.Popen
-        # to avoid ASYNC101 linting error
+        # Use asyncio subprocess utilities to avoid blocking calls while launching VS Code
         self.gateway_process = await asyncio.create_subprocess_shell(
             cmd,
             stderr=asyncio.subprocess.STDOUT,
@@ -131,8 +130,10 @@ class VSCodePlugin(Plugin):
         )
 
     def _setup_vscode_settings(self) -> None:
-        """Set up VSCode settings by creating the .vscode directory in the workspace
-        and copying the settings.json file there.
+        """Set up VSCode settings in the workspace.
+
+        The method creates the `.vscode` directory (if needed) and copies the
+        bundled `settings.json` into it so the server starts with sensible defaults.
         """
         # Get the path to the settings.json file in the plugin directory
         current_dir = Path(__file__).parent
