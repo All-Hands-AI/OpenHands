@@ -10,6 +10,7 @@ import uuid
 from openhands.sdk import (
     Message,
     TextContent,
+    AgentContext,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
@@ -17,7 +18,7 @@ from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import setup_agent
+from openhands_cli.setup import setup_conversation, MissingAgentSpec
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.tui import (
     CommandCompleter,
@@ -25,6 +26,7 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands_cli.locations import WORK_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -38,12 +40,14 @@ def run_cli_entry() -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = setup_agent()
+    conversation = None
     settings_screen = SettingsScreen()
 
     while not conversation:
-        settings_screen.handle_basic_settings(escapable=False)
-        conversation = setup_agent()
+        try:
+            conversation = setup_conversation()
+        except MissingAgentSpec:
+            settings_screen.handle_basic_settings(escapable=False)
 
     # Generate session ID
     session_id = str(uuid.uuid4())[:8]
@@ -109,9 +113,8 @@ def run_cli_entry() -> None:
                 )
                 continue
             elif command == "/confirm":
-                current_mode = runner.confirmation_mode
-                runner.set_confirmation_mode(not current_mode)
-                new_status = "enabled" if not current_mode else "disabled"
+                runner.toggle_confirmation_mode()
+                new_status = "enabled" if runner.is_confirmation_mode_enabled else "disabled"
                 print_formatted_text(
                     HTML(f"<yellow>Confirmation mode {new_status}</yellow>")
                 )

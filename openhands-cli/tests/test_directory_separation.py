@@ -37,7 +37,7 @@ class TestToolSpecFix:
         # Create a mock agent with different tools and working directories
         original_working_dir = "/some/other/path"
         mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key"),
+            llm=LLM(model="test/model", api_key="test-key", service_id="test-service"),
             tools=[
                 ToolSpec(name="BashTool", params={"working_dir": original_working_dir}),
                 ToolSpec(name="FileEditorTool", params={"workspace_root": original_working_dir}),

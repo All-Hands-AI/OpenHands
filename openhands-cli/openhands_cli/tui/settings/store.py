@@ -2,6 +2,7 @@
 from __future__ import annotations
 from pathlib import Path
 from openhands.sdk import LocalFileStore, Agent
+from openhands.sdk import LocalFileStore, Agent, AgentContext
 from openhands.sdk.preset.default import get_default_tools
 from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_PATH, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
@@ -39,13 +40,19 @@ class AgentStore:
                 enable_browser=False
             )
 
+            agent_context = AgentContext(
+                system_message_suffix=f"You current working directory is: {WORK_DIR}",
+            )
+
+
             mcp_config = self.load_mcp_configuration()
             existing_config = agent.mcp_config.copy().get('mcpServers', {})
             mcp_config.update(existing_config)
 
             agent = agent.model_copy(update={
                 "tools": updated_tools,
-                "mcp_config": {'mcpServers': mcp_config} if mcp_config else {}
+                "mcp_config": {'mcpServers': mcp_config} if mcp_config else {},
+                "agent_context": agent_context
             })
 
             return agent

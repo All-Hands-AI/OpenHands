@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { useConfig } from "./use-config";
 import { useUserProviders } from "../use-user-providers";
 import { Provider } from "#/types/settings";
-import OpenHands from "#/api/open-hands";
+import GitService from "#/api/git-service/git-service.api";
 import { shouldUseInstallationRepos } from "#/utils/utils";
 
 export const useUserRepositories = (selectedProvider: Provider | null) => {
@@ -12,7 +12,7 @@ export const useUserRepositories = (selectedProvider: Provider | null) => {
   const repos = useInfiniteQuery({
     queryKey: ["repositories", providers || [], selectedProvider],
     queryFn: async ({ pageParam }) =>
-      OpenHands.retrieveUserGitRepositories(selectedProvider!, pageParam, 30),
+      GitService.retrieveUserGitRepositories(selectedProvider!, pageParam, 30),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled:

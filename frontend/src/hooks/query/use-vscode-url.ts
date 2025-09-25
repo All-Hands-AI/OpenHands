@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { I18nKey } from "#/i18n/declaration";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
@@ -21,7 +21,7 @@ export const useVSCodeUrl = () => {
     queryKey: ["vscode_url", conversationId],
     queryFn: async () => {
       if (!conversationId) throw new Error("No conversation ID");
-      const data = await OpenHands.getVSCodeUrl(conversationId);
+      const data = await ConversationService.getVSCodeUrl(conversationId);
       if (data.vscode_url) {
         return {
           url: transformVSCodeUrl(data.vscode_url),

@@ -57,7 +57,7 @@ class SettingsScreen:
             )
         labels_and_values.extend([
             ("   API Key", "********" if llm.api_key else "Not Set"),
-            ("   Confirmation Mode", "Enabled" if self.conversation.state.confirmation_policy else "Disabled"),
+            ("   Confirmation Mode", "Enabled" if self.conversation.confirmation_policy_active else "Disabled"),
             ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
             ("   Configuration File", os.path.join(PERSISTENCE_DIR, AGENT_SETTINGS_PATH))
         ])
@@ -162,7 +162,8 @@ class SettingsScreen:
         llm = LLM(
             model=model,
             api_key=api_key,
-            base_url=base_url
+            base_url=base_url,
+            service_id="agent"
         )
 
         agent = self.agent_store.load()
