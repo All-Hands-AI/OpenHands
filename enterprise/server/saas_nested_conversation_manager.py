@@ -179,7 +179,6 @@ class SaasNestedConversationManager(ConversationManager):
             f'sid={sid}, user_id={user_id}'
         )
 
-        # First we check redis to see if we are already starting - or the runtime will tell us the session is stopped
         redis = self._get_redis_client()
         key = self._get_redis_conversation_key(user_id, sid)
         starting = await redis.get(key)
@@ -195,15 +194,6 @@ class SaasNestedConversationManager(ConversationManager):
             f'session_api_key_exists={bool(runtime.get("session_api_key")) if runtime else False}'
         )
 
-        # Log runtime status for debugging
-        if runtime:
-            runtime_status = runtime.get('status', '').lower()
-            logger.info(
-                f'[TOKEN_DEBUG] Runtime status check: status="{runtime_status}"'
-            )
-        else:
-            logger.info(f'[TOKEN_DEBUG] No runtime found for {sid}')
-
         nested_url = None
         session_api_key = None
         status = ConversationStatus.STOPPED
@@ -212,73 +202,42 @@ class SaasNestedConversationManager(ConversationManager):
         if runtime:
             nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
             session_api_key = runtime.get('session_api_key')
+            status = self._parse_status(runtime)
             logger.info(
-                f'[TOKEN_DEBUG] Retrieved session_api_key from stored runtime: '
-                f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
-                f'runtime_id={runtime.get("runtime_id")}'
-            )
-            status_str = (runtime.get('status') or 'stopped').upper()
-            logger.info(
-                f'[TOKEN_DEBUG] Processing runtime: '
-                f'status_str="{status_str}", '
-                f'nested_url={nested_url[:50] if nested_url else None}..., '
-                f'has_api_key={bool(session_api_key)}'
+                f'[TOKEN_DEBUG] Parsed runtime status via _parse_status: {status}'
             )
 
-            # THIS IS THE BUG! We should use _parse_status instead of direct mapping
-            logger.warning(
-                f'[BUG_ALERT] Direct status mapping: "{status_str}" - should use _parse_status() '
-                f'which maps PAUSED->STOPPED, but we are not using it!'
+        # If the runtime is already running, reflect that immediately
+        if status is ConversationStatus.RUNNING:
+            logger.info(
+                f'[TOKEN_DEBUG] Runtime already RUNNING for sid={sid}, returning RUNNING'
+            )
+            return AgentLoopInfo(
+                conversation_id=sid,
+                url=nested_url,
+                session_api_key=session_api_key,
+                event_store=event_store,
+                status=ConversationStatus.RUNNING,
             )
 
-            if status_str in ConversationStatus:
-                status = ConversationStatus[status_str]
-                logger.info(f'[TOKEN_DEBUG] Mapped to ConversationStatus.{status_str}')
-            else:
-                logger.warning(
-                    f'[TOKEN_DEBUG] Unknown status "{status_str}", using STOPPED'
-                )
-
-            # Log what _parse_status would have returned
-            correct_status = self._parse_status(runtime)
-            if correct_status != status:
-                logger.error(
-                    f'[BUG_CONFIRMED] Status mismatch! Direct mapping gave {status}, '
-                    f'but _parse_status would give {correct_status}. '
-                    f'This is why resume appears as STOPPED!'
-                )
-
-        if status is ConversationStatus.STOPPED and starting:
+        # If a start is already in-flight, surface STARTING
+        if starting and status is ConversationStatus.STOPPED:
             logger.info(
-                '[TOKEN_DEBUG] Redis says already starting, changing status from STOPPED to STARTING'
+                '[TOKEN_DEBUG] Redis indicates STARTING; returning STARTING to client'
             )
             status = ConversationStatus.STARTING
 
-        logger.info(
-            f'[TOKEN_DEBUG] Final status decision: status={status}, '
-            f'will_start_new={status is ConversationStatus.STOPPED}'
-        )
-
-        if status is ConversationStatus.STOPPED:
-            logger.info(f'[TOKEN_DEBUG] Starting new agent loop: sid={sid}')
-            logger.info(
-                f'[CRITICAL_PATH] Status is STOPPED, so creating NEW runtime. '
-                f'Runtime exists={runtime is not None}, '
-                f'Runtime status={runtime.get("status") if runtime else None}. '
-                f'This is the problematic path for resume!'
-            )
-
-            # Mark the agentloop as starting in redis
+        # If stopped and not already starting, schedule start and return STARTING immediately
+        if status is ConversationStatus.STOPPED and not starting:
+            logger.info(f'[TOKEN_DEBUG] Scheduling agent loop start for sid={sid}')
             await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
-            logger.info(f'[TOKEN_DEBUG] Set Redis key {key} to mark as starting')
-
-            # Start the agent loop in the background
-            logger.info('[TOKEN_DEBUG] Creating background task to start agent loop')
+            logger.info(f'[TOKEN_DEBUG] Set Redis key {key} to mark as STARTING')
             asyncio.create_task(
                 self._start_agent_loop(
                     sid, settings, user_id, initial_user_msg, replay_json
                 )
             )
+            status = ConversationStatus.STARTING
 
         logger.info(
             f'[TOKEN_DEBUG] Returning from maybe_start_agent_loop: '
@@ -364,10 +323,20 @@ class SaasNestedConversationManager(ConversationManager):
             await self._setup_provider_tokens(client, api_url, settings)
             await self._setup_custom_secrets(client, api_url, settings.custom_secrets)  # type: ignore
             await self._setup_experiment_config(client, api_url, sid, user_id)
-            await self._create_nested_conversation(
-                client, api_url, sid, user_id, settings, initial_user_msg, replay_json
-            )
+            # Only create a nested conversation if one does not already exist (i.e., fresh start)
+            # On resume/attach, skip POST /api/conversations and just wait for events readiness.
+            try:
+                response = await client.get(f'{api_url}/api/conversations/{sid}')
+                exists = response.is_success
+            except Exception:
+                exists = False
+            if not exists:
+                await self._create_nested_conversation(
+                    client, api_url, sid, user_id, settings, initial_user_msg, replay_json
+                )
             await self._wait_for_conversation_ready(client, api_url, sid)
+            # Emit an explicit READY state so the frontend can exit "initializing"
+            await self._emit_agent_ready_event(sid, user_id)
 
     async def _setup_experiment_config(
         self, client: httpx.AsyncClient, api_url: str, sid: str, user_id: str
@@ -939,6 +908,12 @@ class SaasNestedConversationManager(ConversationManager):
         else:
             logger.info('[TOKEN_DEBUG] No provider tokens before runtime creation')
 
+        # Decide whether to attach to an existing runtime for resume scenarios
+        attach = bool(existing_runtime and existing_runtime.get('status') in ['paused', 'running'])
+        logger.info(
+            f'[ATTACH_DEBUG] RemoteRuntime attach_to_existing decision: sid={sid}, attach_to_existing={attach}'
+        )
+
         runtime = RemoteRuntime(
             config=config,
             event_stream=None,  # type: ignore[arg-type]
@@ -946,7 +921,7 @@ class SaasNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             # env_vars=env_vars,
             # status_callback: Callable[..., None] | None = None,
-            attach_to_existing=False,
+            attach_to_existing=attach,
             headless_mode=False,
             user_id=user_id,
             # git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
