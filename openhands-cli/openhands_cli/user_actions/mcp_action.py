@@ -16,7 +16,7 @@ class MCPActionType(enum.Enum):
 
 class MCPConfigValidator(Validator):
     def validate(self, document):
-        path = document.text
+        path = document.text.strip()
         if not path:
             raise ValidationError(
                 message="Path for MCP config cannot be empty. Please enter a valid path"

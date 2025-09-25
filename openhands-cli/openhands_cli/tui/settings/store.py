@@ -24,6 +24,7 @@ class AgentStore:
             mcp_config = MCPConfig.from_file(Path(mcp_json_location))
             return mcp_config.to_dict()['mcpServers']
         except ValueError as e:
+            print_formatted_text(HTML(f"\n<red>Error loading MCP servers from json file {mcp_json_location}: {e}!</red>"))
             return {}
 
     def load(self) -> Agent | None:
@@ -41,7 +42,6 @@ class AgentStore:
             mcp_config = self.load_mcp_configuration()
             existing_config = agent.mcp_config.copy().get('mcpServers', {})
             mcp_config.update(existing_config)
-
 
             agent = agent.model_copy(update={
                 "tools": updated_tools,
