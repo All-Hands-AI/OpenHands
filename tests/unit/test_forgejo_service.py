@@ -26,8 +26,8 @@ async def test_get_user(forgejo_service):
         'organization': 'Test Org',
     }
 
-    # Mock the _fetch_data method
-    forgejo_service._fetch_data = AsyncMock(return_value=(mock_user_data, {}))
+    # Mock the _make_request method
+    forgejo_service._make_request = AsyncMock(return_value=(mock_user_data, {}))
 
     # Call the method
     user = await forgejo_service.get_user()
@@ -42,8 +42,8 @@ async def test_get_user(forgejo_service):
     assert user.company == 'Test Org'
 
     # Verify the _fetch_data call
-    forgejo_service._fetch_data.assert_called_once_with(
-        f'{forgejo_service.base_url}/user'
+    forgejo_service._make_request.assert_called_once_with(
+        f'{forgejo_service.BASE_URL}/user'
     )
 
 
@@ -66,7 +66,7 @@ async def test_search_repositories(forgejo_service):
     }
 
     # Mock the _fetch_data method
-    forgejo_service._fetch_data = AsyncMock(return_value=(mock_repos_data, {}))
+    forgejo_service._make_request = AsyncMock(return_value=(mock_repos_data, {}))
 
     # Call the method
     repos = await forgejo_service.search_repositories(
@@ -86,8 +86,8 @@ async def test_search_repositories(forgejo_service):
     assert repos[1].git_provider == ProviderType.FORGEJO
 
     # Verify the _fetch_data call
-    forgejo_service._fetch_data.assert_called_once_with(
-        f'{forgejo_service.base_url}/repos/search',
+    forgejo_service._make_request.assert_called_once_with(
+        f'{forgejo_service.BASE_URL}/repos/search',
         {
             'q': 'test',
             'limit': 10,
@@ -124,8 +124,8 @@ async def test_get_all_repositories(forgejo_service):
     ]
 
     # Mock the _fetch_data method to return different data for different pages
-    forgejo_service._fetch_data = AsyncMock()
-    forgejo_service._fetch_data.side_effect = [
+    forgejo_service._make_request = AsyncMock()
+    forgejo_service._make_request.side_effect = [
         (
             mock_repos_data_page1,
             {'Link': '<https://codeberg.org/api/v1/user/repos?page=2>; rel="next"'},
@@ -153,32 +153,32 @@ async def test_get_all_repositories(forgejo_service):
     assert repos[2].git_provider == ProviderType.FORGEJO
 
     # Verify the _fetch_data calls
-    assert forgejo_service._fetch_data.call_count == 2
-    forgejo_service._fetch_data.assert_any_call(
-        f'{forgejo_service.base_url}/user/repos',
+    assert forgejo_service._make_request.call_count == 2
+    forgejo_service._make_request.assert_any_call(
+        f'{forgejo_service.BASE_URL}/user/repos',
         {'page': '1', 'limit': '100', 'sort': 'updated'},
     )
-    forgejo_service._fetch_data.assert_any_call(
-        f'{forgejo_service.base_url}/user/repos',
+    forgejo_service._make_request.assert_any_call(
+        f'{forgejo_service.BASE_URL}/user/repos',
         {'page': '2', 'limit': '100', 'sort': 'updated'},
     )
 
 
 @pytest.mark.asyncio
-async def test_fetch_data_success(forgejo_service):
+async def test_make_request_success(forgejo_service):
     # Mock httpx.AsyncClient
     mock_client = AsyncMock()
     mock_response = MagicMock()
     mock_response.status_code = 200
     mock_response.raise_for_status = MagicMock()
     mock_response.json.return_value = {'key': 'value'}
-    mock_response.headers = {'Link': 'next_link'}
+    mock_response.headers = {'Link': 'next_link', 'Content-Type': 'application/json'}
     mock_client.__aenter__.return_value.get.return_value = mock_response
 
     # Patch httpx.AsyncClient
     with patch('httpx.AsyncClient', return_value=mock_client):
         # Call the method
-        result, headers = await forgejo_service._fetch_data(
+        result, headers = await forgejo_service._make_request(
             'https://test.url', {'param': 'value'}
         )
 
@@ -189,7 +189,7 @@ async def test_fetch_data_success(forgejo_service):
 
 
 @pytest.mark.asyncio
-async def test_fetch_data_auth_error(forgejo_service):
+async def test_make_request_auth_error(forgejo_service):
     # Mock httpx.AsyncClient
     mock_client = AsyncMock()
     mock_response = MagicMock()
@@ -203,14 +203,14 @@ async def test_fetch_data_auth_error(forgejo_service):
     with patch('httpx.AsyncClient', return_value=mock_client):
         # Call the method and expect an exception
         with pytest.raises(Exception) as excinfo:
-            await forgejo_service._fetch_data('https://test.url', {'param': 'value'})
+            await forgejo_service._make_request('https://test.url', {'param': 'value'})
 
     # Verify the exception
-    assert 'Invalid Forgejo token' in str(excinfo.value)
+    assert 'Invalid forgejo token' in str(excinfo.value)
 
 
 @pytest.mark.asyncio
-async def test_fetch_data_other_error(forgejo_service):
+async def test_make_request_other_error(forgejo_service):
     # Mock httpx.AsyncClient
     mock_client = AsyncMock()
     mock_response = MagicMock()
@@ -224,7 +224,7 @@ async def test_fetch_data_other_error(forgejo_service):
     with patch('httpx.AsyncClient', return_value=mock_client):
         # Call the method and expect an exception
         with pytest.raises(Exception) as excinfo:
-            await forgejo_service._fetch_data('https://test.url', {'param': 'value'})
+            await forgejo_service._make_request('https://test.url', {'param': 'value'})
 
     # Verify the exception
     assert 'Unknown error' in str(excinfo.value)
