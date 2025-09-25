@@ -16,8 +16,8 @@ class MCPScreen:
 
     1. Display information about setting up MCP
     2. See existing servers that are setup
-    3. Debug supplementary mcp config json file passed by user
-    4. Display new servers which will be added on session restart
+    3. Debug additional servers passed via mcp.json
+    4. Identify servers waiting to sync on session restart
     """
 
     def __init__(self):
