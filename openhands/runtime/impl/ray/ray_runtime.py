@@ -200,6 +200,216 @@ class RayExecutionActor:
                 'success': False,
                 'error': str(e),
             }
+    
+    async def edit_file(self, file_path: str, new_str: str, old_str: str = None, start_line: int = None, end_line: int = None) -> dict[str, Any]:
+        """Edit a file with string replacement or line-based editing.
+        
+        Args:
+            file_path: Path to the file to edit
+            new_str: New content to insert/replace
+            old_str: Old content to replace (for string-based editing)
+            start_line: Start line for line-based editing (1-indexed)
+            end_line: End line for line-based editing (1-indexed)
+            
+        Returns:
+            Dict containing success status and updated content
+        """
+        try:
+            # Convert to absolute path if relative
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(self.workspace_path, file_path)
+            
+            # Read current file content
+            if os.path.exists(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+            else:
+                content = ''
+            
+            # Perform edit operation
+            if old_str is not None:
+                # String-based replacement
+                if old_str in content:
+                    new_content = content.replace(old_str, new_str)
+                else:
+                    return {
+                        'success': False,
+                        'error': f'String "{old_str}" not found in file',
+                    }
+            elif start_line is not None:
+                # Line-based editing
+                lines = content.splitlines(keepends=True)
+                start_idx = start_line - 1  # Convert to 0-indexed
+                end_idx = end_line if end_line else start_line
+                end_idx = min(end_idx, len(lines))  # Ensure we don't exceed file length
+                
+                # Replace lines
+                new_lines = new_str.splitlines(keepends=True)
+                lines[start_idx:end_idx] = new_lines
+                new_content = ''.join(lines)
+            else:
+                # Full file replacement
+                new_content = new_str
+            
+            # Write updated content
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            
+            return {
+                'success': True,
+                'content': new_content,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error editing file '{file_path}': {e}")
+            return {
+                'success': False,
+                'error': str(e),
+            }
+    
+    async def run_ipython(self, code: str, kernel_init_code: str = None) -> dict[str, Any]:
+        """Execute IPython/Jupyter code.
+        
+        Args:
+            code: Python code to execute
+            kernel_init_code: Optional initialization code
+            
+        Returns:
+            Dict containing execution result
+        """
+        try:
+            import io
+            import sys
+            from contextlib import redirect_stdout, redirect_stderr
+            
+            # Capture output
+            stdout_buffer = io.StringIO()
+            stderr_buffer = io.StringIO()
+            
+            # Create a clean execution environment
+            exec_globals = {
+                '__name__': '__main__',
+                '__builtins__': __builtins__,
+            }
+            
+            # Add current working directory to Python path
+            if self.current_dir not in sys.path:
+                sys.path.insert(0, self.current_dir)
+            
+            # Execute initialization code if provided
+            if kernel_init_code:
+                with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+                    exec(kernel_init_code, exec_globals)
+            
+            # Execute the main code
+            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
+                try:
+                    # Try to evaluate as expression first
+                    result = eval(code, exec_globals)
+                    if result is not None:
+                        stdout_buffer.write(repr(result))
+                except SyntaxError:
+                    # If it fails as expression, execute as statement
+                    exec(code, exec_globals)
+            
+            # Get output
+            stdout_content = stdout_buffer.getvalue()
+            stderr_content = stderr_buffer.getvalue()
+            
+            # Combine output
+            output = stdout_content
+            if stderr_content:
+                output += '\n' + stderr_content
+            
+            return {
+                'success': True,
+                'content': output,
+            }
+            
+        except Exception as e:
+            import traceback
+            error_msg = f"Error: {str(e)}\n{traceback.format_exc()}"
+            logger.error(f"IPython execution error: {error_msg}")
+            return {
+                'success': False,
+                'error': error_msg,
+            }
+    
+    async def browse_url(self, url: str) -> dict[str, Any]:
+        """Browse a URL and return content.
+        
+        Args:
+            url: URL to browse
+            
+        Returns:
+            Dict containing page content
+        """
+        try:
+            import httpx
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                
+                content_type = response.headers.get('content-type', '')
+                if 'text/html' in content_type:
+                    # For HTML content, try to extract readable text
+                    try:
+                        from bs4 import BeautifulSoup
+                        soup = BeautifulSoup(response.text, 'html.parser')
+                        # Remove script and style elements
+                        for script in soup(["script", "style"]):
+                            script.decompose()
+                        content = soup.get_text(separator='\n', strip=True)
+                    except ImportError:
+                        # Fallback to raw HTML if beautifulsoup is not available
+                        content = response.text[:10000]  # Limit content length
+                else:
+                    content = response.text[:10000]  # Limit content length
+            
+            return {
+                'success': True,
+                'content': content,
+                'url': url,
+            }
+            
+        except Exception as e:
+            logger.error(f"Error browsing URL '{url}': {e}")
+            return {
+                'success': False,
+                'error': str(e),
+            }
+    
+    async def browse_interactive(self, browser_actions: list) -> dict[str, Any]:
+        """Perform interactive browser actions.
+        
+        Args:
+            browser_actions: List of browser actions to perform
+            
+        Returns:
+            Dict containing interaction result
+        """
+        try:
+            # This is a simplified implementation
+            # In a full implementation, you would integrate with a browser automation library
+            # like Selenium or Playwright
+            
+            result_content = "Interactive browsing not fully implemented in Ray actor yet.\n"
+            result_content += f"Requested actions: {browser_actions}"
+            
+            return {
+                'success': True,
+                'content': result_content,
+                'url': 'about:blank',
+            }
+            
+        except Exception as e:
+            logger.error(f"Error with interactive browsing: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+            }
 
 
 class RayRuntime(ActionExecutionClient):
@@ -410,3 +620,194 @@ class RayRuntime(ActionExecutionClient):
                 'success': False,
                 'error': str(e),
             }
+    
+    # Override ActionExecutionClient methods to use Ray actors instead of HTTP
+    
+    def run(self, action) -> 'Observation':
+        """Execute a CmdRunAction using Ray actor."""
+        from openhands.events.observation import CmdOutputObservation, ErrorObservation
+        
+        try:
+            # Execute command via Ray actor
+            future = self.actor.execute_command.remote(action.command, action.timeout or 60)
+            result = ray.get(future)
+            
+            # Convert Ray result to CmdOutputObservation
+            return CmdOutputObservation(
+                content=result.get('stdout', ''),
+                exit_code=result.get('exit_code', 1),
+                command=action.command,
+                command_id=action.id,
+            )
+        except Exception as e:
+            logger.error(f"Error executing command action via Ray: {e}")
+            return ErrorObservation(
+                f"Ray execution failed: {str(e)}",
+                error_id='RAY_EXECUTION_ERROR'
+            )
+    
+    def read(self, action) -> 'Observation':
+        """Execute a FileReadAction using Ray actor."""
+        from openhands.events.observation import FileReadObservation, ErrorObservation
+        
+        try:
+            # Read file via Ray actor
+            future = self.actor.read_file.remote(action.path)
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return FileReadObservation(
+                    content=result.get('content', ''),
+                    path=action.path,
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to read file: {result.get('error', 'Unknown error')}",
+                    error_id='FILE_READ_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error reading file via Ray: {e}")
+            return ErrorObservation(
+                f"Ray file read failed: {str(e)}",
+                error_id='RAY_FILE_READ_ERROR'
+            )
+    
+    def write(self, action) -> 'Observation':
+        """Execute a FileWriteAction using Ray actor."""
+        from openhands.events.observation import FileWriteObservation, ErrorObservation
+        
+        try:
+            # Write file via Ray actor
+            future = self.actor.write_file.remote(action.path, action.content)
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return FileWriteObservation(
+                    content=action.content,
+                    path=action.path,
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to write file: {result.get('error', 'Unknown error')}",
+                    error_id='FILE_WRITE_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error writing file via Ray: {e}")
+            return ErrorObservation(
+                f"Ray file write failed: {str(e)}",
+                error_id='RAY_FILE_WRITE_ERROR'
+            )
+    
+    def edit(self, action) -> 'Observation':
+        """Execute a FileEditAction using Ray actor."""
+        from openhands.events.observation import FileEditObservation, ErrorObservation
+        
+        try:
+            # Use Ray actor to perform file edit
+            future = self.actor.edit_file.remote(
+                action.path, 
+                action.new_str, 
+                action.old_str if hasattr(action, 'old_str') else None,
+                action.start_line if hasattr(action, 'start_line') else None,
+                action.end_line if hasattr(action, 'end_line') else None
+            )
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return FileEditObservation(
+                    content=result.get('content', ''),
+                    path=action.path,
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to edit file: {result.get('error', 'Unknown error')}",
+                    error_id='FILE_EDIT_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error editing file via Ray: {e}")
+            return ErrorObservation(
+                f"Ray file edit failed: {str(e)}",
+                error_id='RAY_FILE_EDIT_ERROR'
+            )
+    
+    def run_ipython(self, action) -> 'Observation':
+        """Execute an IPythonRunCellAction using Ray actor."""
+        from openhands.events.observation import IPythonRunCellObservation, ErrorObservation
+        
+        try:
+            # Execute IPython code via Ray actor
+            future = self.actor.run_ipython.remote(action.code, action.kernel_init_code if hasattr(action, 'kernel_init_code') else None)
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return IPythonRunCellObservation(
+                    content=result.get('content', ''),
+                    code=action.code,
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to run IPython code: {result.get('error', 'Unknown error')}",
+                    error_id='IPYTHON_EXECUTION_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error executing IPython code via Ray: {e}")
+            return ErrorObservation(
+                f"Ray IPython execution failed: {str(e)}",
+                error_id='RAY_IPYTHON_ERROR'
+            )
+    
+    def browse(self, action) -> 'Observation':
+        """Execute a BrowseURLAction using Ray actor."""
+        from openhands.events.observation import BrowserOutputObservation, ErrorObservation
+        
+        try:
+            # Browse URL via Ray actor
+            future = self.actor.browse_url.remote(action.url)
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return BrowserOutputObservation(
+                    content=result.get('content', ''),
+                    url=action.url,
+                    screenshot=result.get('screenshot'),
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to browse URL: {result.get('error', 'Unknown error')}",
+                    error_id='BROWSER_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error browsing URL via Ray: {e}")
+            return ErrorObservation(
+                f"Ray browser failed: {str(e)}",
+                error_id='RAY_BROWSER_ERROR'
+            )
+    
+    def browse_interactive(self, action) -> 'Observation':
+        """Execute a BrowseInteractiveAction using Ray actor."""
+        from openhands.events.observation import BrowserOutputObservation, ErrorObservation
+        
+        try:
+            # Interactive browse via Ray actor
+            future = self.actor.browse_interactive.remote(
+                action.browser_actions if hasattr(action, 'browser_actions') else []
+            )
+            result = ray.get(future)
+            
+            if result.get('success', False):
+                return BrowserOutputObservation(
+                    content=result.get('content', ''),
+                    url=result.get('url', ''),
+                    screenshot=result.get('screenshot'),
+                )
+            else:
+                return ErrorObservation(
+                    f"Failed to perform interactive browsing: {result.get('error', 'Unknown error')}",
+                    error_id='INTERACTIVE_BROWSER_ERROR'
+                )
+        except Exception as e:
+            logger.error(f"Error with interactive browsing via Ray: {e}")
+            return ErrorObservation(
+                f"Ray interactive browser failed: {str(e)}",
+                error_id='RAY_INTERACTIVE_BROWSER_ERROR'
+            )
