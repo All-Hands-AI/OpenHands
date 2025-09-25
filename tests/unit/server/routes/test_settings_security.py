@@ -1,4 +1,5 @@
 """Security tests for settings API to ensure pro-only features are properly validated on backend."""
+
 import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -92,7 +93,9 @@ class MockUserAuthPro(UserAuth):
 def test_client_non_pro():
     """Test client for non-pro user"""
     with (
-        patch.dict(os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False),
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
         patch('openhands.server.dependencies._SESSION_API_KEY', None),
         patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
         patch(
@@ -112,7 +115,9 @@ def test_client_non_pro():
 def test_client_pro():
     """Test client for pro user"""
     with (
-        patch.dict(os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False),
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
         patch('openhands.server.dependencies._SESSION_API_KEY', None),
         patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
         patch(
@@ -148,6 +153,7 @@ USER_PROVIDED_MODELS = [
     'mistral/mistral-large',
 ]
 
+
 # Helper functions
 def create_base_settings(**overrides):
     """Create base settings data with optional overrides"""
@@ -159,43 +165,58 @@ def create_base_settings(**overrides):
     base_settings.update(overrides)
     return base_settings
 
-def assert_forbidden_response(response, model_or_setting_name=""):
+
+def assert_forbidden_response(response, model_or_setting_name=''):
     """Assert that response is 403 with subscription-related error"""
-    assert response.status_code == 403, f"{model_or_setting_name} should be forbidden for non-pro users"
+    assert response.status_code == 403, (
+        f'{model_or_setting_name} should be forbidden for non-pro users'
+    )
     response_data = response.json()
-    assert any(keyword in response_data.get('detail', '').lower() or keyword in response_data.get('error', '').lower()
-               for keyword in ['subscription', 'pro', 'upgrade'])
+    assert any(
+        keyword in response_data.get('detail', '').lower()
+        or keyword in response_data.get('error', '').lower()
+        for keyword in ['subscription', 'pro', 'upgrade']
+    )
 
 
-@pytest.mark.parametrize("model", [
-    'openhands/claude-sonnet-4-20250514',
-    'openhands/gpt-5-2025-08-07',
-    'openhands/claude-opus-4-20250514',
-    DEFAULT_MODEL,
-] + USER_PROVIDED_MODELS)
+@pytest.mark.parametrize(
+    'model',
+    [
+        'openhands/claude-sonnet-4-20250514',
+        'openhands/gpt-5-2025-08-07',
+        'openhands/claude-opus-4-20250514',
+        DEFAULT_MODEL,
+    ]
+    + USER_PROVIDED_MODELS,
+)
 @pytest.mark.asyncio
 async def test_non_pro_user_cannot_set_any_llm_model(test_client_non_pro, model):
     """SECURITY TEST: Non-pro user should not be able to set any LLM model"""
     settings_data = create_base_settings(llm_model=model, llm_api_key='test-key')
     response = test_client_non_pro.post('/api/settings', json=settings_data)
-    assert_forbidden_response(response, f"Model {model}")
+    assert_forbidden_response(response, f'Model {model}')
 
 
-@pytest.mark.parametrize("llm_setting,value", [
-    ('llm_api_key', 'new-api-key'),
-    ('llm_base_url', 'https://custom-api.example.com'),
-    ('llm_model', DEFAULT_MODEL),
-    ('confirmation_mode', True),
-    ('security_analyzer', 'llm'),
-    ('enable_default_condenser', False),
-    ('condenser_max_size', 50),
-])
+@pytest.mark.parametrize(
+    'llm_setting,value',
+    [
+        ('llm_api_key', 'new-api-key'),
+        ('llm_base_url', 'https://custom-api.example.com'),
+        ('llm_model', DEFAULT_MODEL),
+        ('confirmation_mode', True),
+        ('security_analyzer', 'llm'),
+        ('enable_default_condenser', False),
+        ('condenser_max_size', 50),
+    ],
+)
 @pytest.mark.asyncio
-async def test_non_pro_user_cannot_set_individual_llm_settings(test_client_non_pro, llm_setting, value):
+async def test_non_pro_user_cannot_set_individual_llm_settings(
+    test_client_non_pro, llm_setting, value
+):
     """SECURITY TEST: Non-pro user should not be able to set individual LLM settings"""
     settings_data = create_base_settings(**{llm_setting: value})
     response = test_client_non_pro.post('/api/settings', json=settings_data)
-    assert_forbidden_response(response, f"LLM setting {llm_setting}")
+    assert_forbidden_response(response, f'LLM setting {llm_setting}')
 
 
 @pytest.mark.asyncio
@@ -207,7 +228,7 @@ async def test_non_pro_user_can_set_non_llm_settings(test_client_non_pro):
         'max_iterations': 50,
         'user_consents_to_analytics': True,
         'git_user_name': 'test-user',
-        'git_user_email': 'test@example.com'
+        'git_user_email': 'test@example.com',
     }
     response = test_client_non_pro.post('/api/settings', json=settings_data)
     assert response.status_code == 200
@@ -216,14 +237,15 @@ async def test_non_pro_user_can_set_non_llm_settings(test_client_non_pro):
 @pytest.mark.asyncio
 async def test_pro_user_can_set_llm_models(test_client_pro):
     """Pro user should be able to set any LLM models"""
-    with patch('enterprise.server.routes.billing.get_subscription_access') as mock_get_access:
+    with patch(
+        'enterprise.server.routes.billing.get_subscription_access'
+    ) as mock_get_access:
         mock_subscription = MagicMock()
         mock_subscription.status = 'ACTIVE'
         mock_get_access.return_value = mock_subscription
 
         settings_data = create_base_settings(
-            llm_model='openhands/claude-sonnet-4-20250514',
-            llm_api_key='test-key'
+            llm_model='openhands/claude-sonnet-4-20250514', llm_api_key='test-key'
         )
         response = test_client_pro.post('/api/settings', json=settings_data)
         assert response.status_code == 200
@@ -232,15 +254,16 @@ async def test_pro_user_can_set_llm_models(test_client_pro):
 @pytest.mark.asyncio
 async def test_expired_subscription_cannot_access_llm_settings(test_client_pro):
     """SECURITY TEST: User with expired subscription should not access LLM settings"""
-    with patch('enterprise.server.routes.billing.get_subscription_access') as mock_get_access:
+    with patch(
+        'enterprise.server.routes.billing.get_subscription_access'
+    ) as mock_get_access:
         mock_get_access.return_value = None  # No active subscription
 
         settings_data = create_base_settings(
-            llm_model='openhands/claude-sonnet-4-20250514',
-            llm_api_key='test-key'
+            llm_model='openhands/claude-sonnet-4-20250514', llm_api_key='test-key'
         )
         response = test_client_pro.post('/api/settings', json=settings_data)
-        assert_forbidden_response(response, "Expired subscription")
+        assert_forbidden_response(response, 'Expired subscription')
 
 
 @pytest.mark.asyncio
@@ -250,26 +273,38 @@ async def test_direct_api_bypass_prevention(test_client_non_pro):
         llm_model='openhands/claude-sonnet-4-20250514',
         llm_api_key='fake-api-key',
         llm_base_url='https://api.anthropic.com',
-        remote_runtime_resource_factor=4
+        remote_runtime_resource_factor=4,
     )
 
     response = test_client_non_pro.post(
         '/api/settings',
         json=settings_data,
-        headers={'Content-Type': 'application/json', 'User-Agent': 'DirectAPIClient/1.0'}
+        headers={
+            'Content-Type': 'application/json',
+            'User-Agent': 'DirectAPIClient/1.0',
+        },
     )
-    assert_forbidden_response(response, "Direct API bypass attempt")
+    assert_forbidden_response(response, 'Direct API bypass attempt')
 
 
-@pytest.mark.parametrize("malicious_model", [
-    'openhands/claude-sonnet-4-20250514',  # Direct
-    'OPENHANDS/claude-sonnet-4-20250514',  # Case manipulation
-    ' openhands/claude-sonnet-4-20250514',  # Leading space
-    'openhands//claude-sonnet-4-20250514',  # Double slash
-])
+@pytest.mark.parametrize(
+    'malicious_model',
+    [
+        'openhands/claude-sonnet-4-20250514',  # Direct
+        'OPENHANDS/claude-sonnet-4-20250514',  # Case manipulation
+        ' openhands/claude-sonnet-4-20250514',  # Leading space
+        'openhands//claude-sonnet-4-20250514',  # Double slash
+    ],
+)
 @pytest.mark.asyncio
-async def test_model_prefix_bypass_attempts_blocked(test_client_non_pro, malicious_model):
+async def test_model_prefix_bypass_attempts_blocked(
+    test_client_non_pro, malicious_model
+):
     """SECURITY TEST: Various prefix bypass attempts should be blocked"""
-    settings_data = create_base_settings(llm_model=malicious_model, llm_api_key='test-key')
+    settings_data = create_base_settings(
+        llm_model=malicious_model, llm_api_key='test-key'
+    )
     response = test_client_non_pro.post('/api/settings', json=settings_data)
-    assert_forbidden_response(response, f"Bypass attempt with model '{malicious_model}'")
+    assert_forbidden_response(
+        response, f"Bypass attempt with model '{malicious_model}'"
+    )

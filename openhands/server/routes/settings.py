@@ -153,7 +153,9 @@ async def store_settings(
         existing_settings = await settings_store.load()
 
         # Check if any LLM-related settings are being changed
-        llm_settings_being_changed = check_llm_settings_changes(settings, existing_settings)
+        llm_settings_being_changed = check_llm_settings_changes(
+            settings, existing_settings
+        )
 
         if llm_settings_being_changed:
             has_access = await validate_llm_settings_access(user_id)
@@ -162,8 +164,8 @@ async def store_settings(
                     status_code=status.HTTP_403_FORBIDDEN,
                     content={
                         'error': 'Modifying LLM settings requires an active OpenHands Pro subscription. Please upgrade your account to access LLM configuration.',
-                        'detail': 'Subscription required for LLM settings modifications'
-                    }
+                        'detail': 'Subscription required for LLM settings modifications',
+                    },
                 )
 
         # Convert to Settings model and merge with existing settings
