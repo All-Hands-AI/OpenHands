@@ -222,7 +222,7 @@ class TestAgentStoreMCPConfiguration:
 
         # Save agent with existing mcp servers
         agent = Agent(
-            llm=LLM(model="test-model", api_key="test-key"),
+            llm=LLM(model="test-model", api_key="test-key", service_id='test-service'),
             tools=[],
             mcp_config={
                 'mcpServers': {
@@ -275,7 +275,7 @@ class TestAgentStoreMCPConfiguration:
         _write_mcp_config_pointer(store, str(mcp_json_file_name))
 
         agent = Agent(
-            llm=LLM(model='test-model', api_key='test-key'),
+            llm=LLM(model='test-model', api_key='test-key', service_id='test-service'),
             tools=[],
             mcp_config={}
         )
