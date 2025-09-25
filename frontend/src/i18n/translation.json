@@ -6528,7 +6528,7 @@
     "uk": "вкладці OpenHands Cloud."
   },
   "SETTINGS$LLM_BILLING_INFO": {
-    "en": "LLM usage is billed at the providers&apos; rates with no markup.",
+    "en": "LLM usage is billed at the providers' rates with no markup.",
     "ja": "LLMの使用料金は、プロバイダーの料金でマークアップなしで請求されます。",
     "zh-CN": "LLM使用费用按提供商费率计费，无加价。",
     "zh-TW": "LLM使用費用按提供商費率計費，無加價。",
@@ -6543,21 +6543,21 @@
     "de": "LLM-Nutzung wird zu Anbieterpreisen ohne Aufschlag abgerechnet.",
     "uk": "Використання LLM оплачується за тарифами провайдерів без надбавки."
   },
-  "SETTINGS$SEE_DETAILS": {
-    "en": "See Details",
-    "ja": "詳細を見る",
-    "zh-CN": "查看详情",
-    "zh-TW": "查看詳情",
-    "ko-KR": "자세히 보기",
-    "no": "Se detaljer",
-    "it": "Vedi dettagli",
-    "pt": "Ver detalhes",
-    "es": "Ver detalles",
-    "ar": "انظر التفاصيل",
-    "fr": "Voir les détails",
-    "tr": "Ayrıntıları gör",
-    "de": "Details anzeigen",
-    "uk": "Переглянути деталі"
+  "SETTINGS$SEE_PRICING_DETAILS": {
+    "en": "See pricing details",
+    "ja": "価格詳細を見る",
+    "zh-CN": "查看价格详情",
+    "zh-TW": "查看價格詳情",
+    "ko-KR": "가격 세부정보 보기",
+    "no": "Se prisdetaljer",
+    "it": "Vedi dettagli sui prezzi",
+    "pt": "Ver detalhes de preços",
+    "es": "Ver detalles de precios",
+    "ar": "انظر تفاصيل الأسعار",
+    "fr": "Voir les détails de prix",
+    "tr": "Fiyat ayrıntılarını gör",
+    "de": "Preisdetails anzeigen",
+    "uk": "Переглянути деталі цін"
   },
   "SETTINGS$CREATE_API_KEY": {
     "en": "Create API Key",

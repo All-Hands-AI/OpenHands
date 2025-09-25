@@ -58,7 +58,7 @@ function OpenHandsApiKeyHelp({ testId }: OpenHandsApiKeyHelpProps) {
           target="_blank"
           className="underline underline-offset-2"
         >
-          {t(I18nKey.SETTINGS$SEE_DETAILS)}
+          {t(I18nKey.SETTINGS$SEE_PRICING_DETAILS)}
         </a>
       </p>
     </>
