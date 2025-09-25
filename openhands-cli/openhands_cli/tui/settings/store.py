@@ -1,7 +1,7 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 import os
-from openhands.sdk import LocalFileStore, Agent
+from openhands.sdk import LocalFileStore, Agent, AgentContext
 from openhands.sdk.preset.default import get_default_tools
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
@@ -23,7 +23,16 @@ class AgentStore:
                 persistence_dir=PERSISTENCE_DIR,
                 enable_browser=False
             )
-            agent = agent.model_copy(update={"tools": updated_tools})
+            
+            # Create agent context with current working directory
+            agent_context = AgentContext(
+                system_message_suffix=f"You current working directory is: {WORK_DIR}",
+            )
+            
+            agent = agent.model_copy(update={
+                "tools": updated_tools,
+                "agent_context": agent_context
+            })
 
             return agent
         except FileNotFoundError:
