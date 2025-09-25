@@ -15,6 +15,9 @@ from openhands.sdk import (
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.key_binding import KeyBindings, merge_key_bindings
+from prompt_toolkit.key_binding.defaults import load_key_bindings
+from prompt_toolkit.keys import Keys
 
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_conversation, MissingAgentSpec
@@ -53,8 +56,23 @@ def run_cli_entry() -> None:
 
     display_welcome(session_id)
 
-    # Create prompt session with command completer
-    session = PromptSession(completer=CommandCompleter())
+    # Create key bindings that include default navigation keys
+    default_bindings = load_key_bindings()
+    custom_bindings = KeyBindings()
+    
+    @custom_bindings.add(Keys.ControlC)
+    def _(event):
+        """Handle Ctrl+C gracefully."""
+        raise KeyboardInterrupt()
+    
+    # Merge default and custom key bindings
+    all_bindings = merge_key_bindings([default_bindings, custom_bindings])
+    
+    # Create prompt session with command completer and proper key bindings
+    session = PromptSession(
+        completer=CommandCompleter(),
+        key_bindings=all_bindings,
+    )
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
