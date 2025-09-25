@@ -34,6 +34,7 @@ from .worker_pool import RayWorkerPool, WorkerSelectionStrategy
 from .session_manager import SessionManager, SessionType
 from .ray_actor import RayExecutionActor
 from .event_broadcaster import RayEventStream
+from .auto_scaler import AutoScalingManager, ScalingConfig, ScalingStrategy
 
 
 class RayRuntime(ActionExecutionClient):
@@ -140,6 +141,23 @@ class RayRuntime(ActionExecutionClient):
         )
         self._event_stream_initialized = False
         
+        # Initialize auto-scaling
+        scaling_config = ScalingConfig(
+            min_workers=getattr(config.sandbox, 'ray_min_workers', 2),
+            max_workers=getattr(config.sandbox, 'ray_max_workers', 20),
+            scale_up_queue_threshold=getattr(config.sandbox, 'ray_scale_up_queue_threshold', 10),
+            scale_down_queue_threshold=getattr(config.sandbox, 'ray_scale_down_queue_threshold', 2),
+            scale_up_response_time_threshold=getattr(config.sandbox, 'ray_scale_up_response_time_threshold', 5.0),
+            cpu_scale_up_threshold=getattr(config.sandbox, 'ray_cpu_scale_up_threshold', 0.8),
+            cpu_scale_down_threshold=getattr(config.sandbox, 'ray_cpu_scale_down_threshold', 0.3),
+            cooldown_period=getattr(config.sandbox, 'ray_scaling_cooldown_period', 60.0),
+            strategy=ScalingStrategy(getattr(config.sandbox, 'ray_scaling_strategy', 'hybrid'))
+        )
+        
+        self.auto_scaler = AutoScalingManager(scaling_config, self.worker_pool)
+        self._auto_scaling_enabled = getattr(config.sandbox, 'ray_auto_scaling_enabled', True)
+        self._auto_scaling_initialized = False
+        
         # Legacy compatibility: maintain reference for backward compatibility
         # This will be deprecated once all methods use worker pool
         self.actor = None
@@ -173,6 +191,14 @@ class RayRuntime(ActionExecutionClient):
             await self.distributed_event_stream.initialize()
             self._event_stream_initialized = True
             logger.info("Distributed event streaming initialized")
+            
+            # Initialize auto-scaling if enabled
+            if self._auto_scaling_enabled:
+                await self.auto_scaler.initialize()
+                self._auto_scaling_initialized = True
+                logger.info("Auto-scaling system initialized")
+            else:
+                logger.info("Auto-scaling disabled by configuration")
             
             # Test that the worker pool is responsive with a simple action
             test_action_data = {
@@ -213,6 +239,10 @@ class RayRuntime(ActionExecutionClient):
                     if hasattr(self, 'distributed_event_stream'):
                         self.distributed_event_stream.close()
                         logger.info("Distributed event stream closed")
+                    
+                    if hasattr(self, 'auto_scaler') and self._auto_scaling_initialized:
+                        await self.auto_scaler.shutdown()
+                        logger.info("Auto-scaling system shutdown")
                 
                 return shutdown()
             
@@ -591,3 +621,45 @@ class RayRuntime(ActionExecutionClient):
             return await self.distributed_event_stream.get_recent_events(limit)
         else:
             return []
+    
+    # Auto-Scaling Methods
+    
+    async def get_auto_scaling_stats(self) -> dict:
+        """Get auto-scaling statistics and configuration."""
+        if self._auto_scaling_initialized:
+            return await self.auto_scaler.get_stats()
+        else:
+            return {'error': 'Auto-scaling not initialized'}
+    
+    async def force_scaling_check(self) -> dict:
+        """Force an immediate scaling check and return the decision."""
+        if self._auto_scaling_initialized:
+            return await self.auto_scaler.force_scaling_check()
+        else:
+            return {'error': 'Auto-scaling not initialized'}
+    
+    def add_scaling_callback(self, callback: Callable) -> None:
+        """Add a callback to be notified of scaling events.
+        
+        Args:
+            callback: Callback function taking (direction, amount, success)
+        """
+        if self._auto_scaling_initialized:
+            self.auto_scaler.add_scaling_callback(callback)
+        else:
+            logger.warning("Cannot add scaling callback: auto-scaling not initialized")
+    
+    def remove_scaling_callback(self, callback: Callable) -> None:
+        """Remove a scaling callback.
+        
+        Args:
+            callback: Callback function to remove
+        """
+        if self._auto_scaling_initialized:
+            self.auto_scaler.remove_scaling_callback(callback)
+        else:
+            logger.warning("Cannot remove scaling callback: auto-scaling not initialized")
+    
+    def is_auto_scaling_enabled(self) -> bool:
+        """Check if auto-scaling is enabled and initialized."""
+        return self._auto_scaling_enabled and self._auto_scaling_initialized
