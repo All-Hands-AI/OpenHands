@@ -59,11 +59,6 @@ class MCPScreen:
     ) -> str:
         first_stringified_server_spec = json.dumps(first_server_spec, sort_keys=True)
         second_stringified_server_spec = json.dumps(second_server_spec, sort_keys=True)
-
-        print('first spec', first_stringified_server_spec)
-        print('second spec', second_stringified_server_spec)
-        print(second_stringified_server_spec== first_stringified_server_spec)
-
         return first_stringified_server_spec == second_stringified_server_spec
 
 
