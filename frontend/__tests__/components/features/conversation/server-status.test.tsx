@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { renderWithQueryAndI18n } from "test-utils";
+import { renderWithProviders } from "test-utils";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { ServerStatusContextMenu } from "#/components/features/controls/server-status-context-menu";
 import { ConversationStatus } from "#/types/conversation-status";
@@ -84,7 +84,7 @@ describe("ServerStatus", () => {
     mockAgentStore(AgentState.RUNNING);
 
     // Test RUNNING status
-    const { rerender } = renderWithQueryAndI18n(
+    const { rerender } = renderWithProviders(
       <ServerStatus conversationStatus="RUNNING" />,
     );
     expect(screen.getByText("Running")).toBeInTheDocument();
@@ -108,7 +108,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -128,7 +128,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="STARTING" />);
+    renderWithProviders(<ServerStatus conversationStatus="STARTING" />);
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -170,7 +170,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -192,7 +192,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -212,7 +212,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -232,7 +232,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -250,7 +250,7 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithQueryAndI18n(<ServerStatus conversationStatus={null} />);
+    renderWithProviders(<ServerStatus conversationStatus={null} />);
 
     const statusText = screen.getByText("Running");
     expect(statusText).toBeInTheDocument();
@@ -268,7 +268,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should render stop server button when status is RUNNING", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="RUNNING"
@@ -281,7 +281,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should render start server button when status is STOPPED", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="STOPPED"
@@ -294,7 +294,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should not render stop server button when onStopServer is not provided", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="RUNNING"
@@ -305,7 +305,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should not render start server button when onStartServer is not provided", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="STOPPED"
@@ -319,7 +319,7 @@ describe("ServerStatusContextMenu", () => {
     const user = userEvent.setup();
     const onStopServer = vi.fn();
 
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="RUNNING"
@@ -337,7 +337,7 @@ describe("ServerStatusContextMenu", () => {
     const user = userEvent.setup();
     const onStartServer = vi.fn();
 
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="STOPPED"
@@ -352,7 +352,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should render correct text content for stop server button", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="RUNNING"
@@ -366,7 +366,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should render correct text content for start server button", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="STOPPED"
@@ -382,7 +382,7 @@ describe("ServerStatusContextMenu", () => {
   it("should call onClose when context menu is closed", () => {
     const onClose = vi.fn();
 
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         onClose={onClose}
@@ -397,7 +397,7 @@ describe("ServerStatusContextMenu", () => {
   });
 
   it("should not render any buttons for other conversation statuses", () => {
-    renderWithQueryAndI18n(
+    renderWithProviders(
       <ServerStatusContextMenu
         {...defaultProps}
         conversationStatus="STARTING"
