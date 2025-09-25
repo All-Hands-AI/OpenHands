@@ -110,11 +110,12 @@ async def validate_llm_settings_access(user_id: str) -> bool:
         # so if we get a subscription back, it means it's active
         return subscription is not None
     except ImportError:
-        # Not in enterprise mode, allow the settings
-        logger.debug(
-            'Enterprise billing module not available, allowing LLM settings access'
+        # Enterprise billing module not available - in SaaS mode, this means
+        # we can't validate subscriptions, so deny access to be safe
+        logger.warning(
+            'Enterprise billing module not available in SaaS mode, denying LLM settings access'
         )
-        return True
+        return False
     except Exception as e:
         # On error, deny access to be safe
         logger.warning(f'Error checking subscription access for user {user_id}: {e}')

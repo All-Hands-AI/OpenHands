@@ -92,6 +92,9 @@ class MockUserAuthPro(UserAuth):
 @pytest.fixture
 def test_client_non_pro():
     """Test client for non-pro user"""
+    # Mock the enterprise billing to return no subscription (non-pro user)
+    mock_get_subscription = AsyncMock(return_value=None)
+    
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -106,6 +109,10 @@ def test_client_non_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
+        patch(
+            'enterprise.server.routes.billing.get_subscription_access',
+            mock_get_subscription,
+        ),
     ):
         client = TestClient(app)
         yield client
@@ -114,6 +121,11 @@ def test_client_non_pro():
 @pytest.fixture
 def test_client_pro():
     """Test client for pro user"""
+    # Mock the enterprise billing to return an active subscription (pro user)
+    mock_subscription = MagicMock()
+    mock_subscription.status = 'ACTIVE'
+    mock_get_subscription = AsyncMock(return_value=mock_subscription)
+    
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -127,6 +139,10 @@ def test_client_pro():
         patch(
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
+        ),
+        patch(
+            'enterprise.server.routes.billing.get_subscription_access',
+            mock_get_subscription,
         ),
     ):
         client = TestClient(app)
@@ -237,32 +253,43 @@ async def test_non_pro_user_can_set_non_llm_settings(test_client_non_pro):
 @pytest.mark.asyncio
 async def test_pro_user_can_set_llm_models(test_client_pro):
     """Pro user should be able to set any LLM models"""
-    with patch(
-        'enterprise.server.routes.billing.get_subscription_access'
-    ) as mock_get_access:
-        mock_subscription = MagicMock()
-        mock_subscription.status = 'ACTIVE'
-        mock_get_access.return_value = mock_subscription
-
-        settings_data = create_base_settings(
-            llm_model='openhands/claude-sonnet-4-20250514', llm_api_key='test-key'
-        )
-        response = test_client_pro.post('/api/settings', json=settings_data)
-        assert response.status_code == 200
+    settings_data = create_base_settings(
+        llm_model='openhands/claude-sonnet-4-20250514', llm_api_key='test-key'
+    )
+    response = test_client_pro.post('/api/settings', json=settings_data)
+    assert response.status_code == 200
 
 
 @pytest.mark.asyncio
-async def test_expired_subscription_cannot_access_llm_settings(test_client_pro):
+async def test_expired_subscription_cannot_access_llm_settings():
     """SECURITY TEST: User with expired subscription should not access LLM settings"""
-    with patch(
-        'enterprise.server.routes.billing.get_subscription_access'
-    ) as mock_get_access:
-        mock_get_access.return_value = None  # No active subscription
-
+    # Create a test client with expired subscription (no subscription returned)
+    mock_get_subscription = AsyncMock(return_value=None)
+    
+    with (
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuthPro(),
+        ),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
+        ),
+        patch(
+            'enterprise.server.routes.billing.get_subscription_access',
+            mock_get_subscription,
+        ),
+    ):
+        client = TestClient(app)
         settings_data = create_base_settings(
             llm_model='openhands/claude-sonnet-4-20250514', llm_api_key='test-key'
         )
-        response = test_client_pro.post('/api/settings', json=settings_data)
+        response = client.post('/api/settings', json=settings_data)
         assert_forbidden_response(response, 'Expired subscription')
 
 
