@@ -21,7 +21,7 @@ COMMANDS = {
     "/new": "Create a new conversation",
     "/resume": "Resume a paused conversation",
     "/settings": "Display and modify current settings",
-    "/mcp": "Configure MCP (Model Context Protocol) servers",
+    "/mcp": "View MCP (Model Context Protocol) server configuration",
 }
 
 

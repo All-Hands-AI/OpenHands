@@ -1,4 +1,4 @@
-"""Tests for MCP configuration validation and agent store functionality."""
+"""Tests for MCP configuration and agent store functionality."""
 
 import json
 import os
@@ -6,101 +6,57 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_POINTER_FILE
+from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE
 import pytest
-from prompt_toolkit.validation import ValidationError
 
 from openhands_cli.tui.settings.store import AgentStore
-from openhands_cli.user_actions.mcp_action import MCPConfigValidator
+from openhands_cli.user_actions.mcp_action import check_mcp_config_status
 from openhands.sdk import LocalFileStore, Agent, LLM
 
-class TestMCPConfigValidator:
-    """Test the MCPConfigValidator functionality."""
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.validator = MCPConfigValidator()
+class TestMCPConfigStatus:
+    """Test the MCP configuration status checking functionality."""
 
-    @pytest.mark.parametrize("text", [
-    (""),
-    ("   \t\n   "),
-    ])
-    def test_validator_rejects_emptyish(self, text):
-        doc = MagicMock()
-        doc.text = text
-        with pytest.raises(ValidationError) as exc:
-            MCPConfigValidator().validate(doc)
-        assert "Path for MCP config cannot be empty" in str(exc.value)
+    def test_check_mcp_config_status_file_not_found(self, tmp_path):
+        """Test that check_mcp_config_status handles missing config file."""
+        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
+            status = check_mcp_config_status()
+            assert not status['exists']
+            assert not status['valid']
+            assert status['servers'] == {}
+            assert "not found" in status['message']
 
-
-    def test_validator_rejects_nonexistent_file(self):
-        """Test that validator rejects non-existent file path."""
-        document = MagicMock()
-        document.text = "/path/that/does/not/exist.json"
-
-        with pytest.raises(ValidationError) as exc_info:
-            self.validator.validate(document)
-
-        # The actual error message from fastmcp for non-existent files
-        error_msg = str(exc_info.value)
-        assert "No MCP servers defined in the config" in error_msg
-
-    def test_validator_rejects_directory_path(self, tmp_path):
-        """Test that validator rejects directory path instead of file."""
-        document = MagicMock()
-        document.text = str(tmp_path)
-        with pytest.raises(ValidationError) as exc_info:
-            self.validator.validate(document)
-        assert "Is a directory" in str(exc_info.value)
-
-    def test_validator_rejects_non_json_file(self, tmp_path):
-        p = tmp_path / "not_json.txt"
-        p.write_text("This is not JSON content")
-
-        document = MagicMock()
-        document.text = str(p)
-
-        with pytest.raises(ValidationError) as exc:
-            MCPConfigValidator().validate(document)
-
-        assert "Invalid JSON" in str(exc.value)
-
-
-    def test_validator_rejects_invalid_json_format(self, tmp_path):
-        """Test that validator rejects invalid JSON format."""
-        p = tmp_path / "bad_mcp.json"
-        p.write_text(json.dumps({"mcpServers": {"server1": "not_a_dict"}}))
-        document = MagicMock()
-        document.text = str(p)
-        with pytest.raises(ValidationError) as exc_info:
-            self.validator.validate(document)
-        assert "validation error" in str(exc_info.value).lower()
-
-    def test_validator_rejects_invalid_mcp_config_format(self, tmp_path):
-        """Test that validator rejects JSON with invalid server configurations."""
-        # Test with invalid server configuration that should cause validation errors
-        p = tmp_path / "bad_mcp.json"
-        p.write_text(json.dumps({"mcpServers": {"server1": "not_a_dict"}}))
-        document = MagicMock()
-        document.text = str(p)
-        with pytest.raises(ValidationError) as exc_info:
-            self.validator.validate(document)
-        assert "validation error" in str(exc_info.value).lower()
-
-    def test_validator_accepts_valid_mcp_config(self, tmp_path):
-        """Test that validator accepts valid MCP configuration."""
-        p = tmp_path / "ok_mcp.json"
-        p.write_text(json.dumps({
+    def test_check_mcp_config_status_valid_config(self, tmp_path):
+        """Test that check_mcp_config_status handles valid config file."""
+        config_file = tmp_path / MCP_CONFIG_FILE
+        valid_config = {
             "mcpServers": {
-                "fetch": {"command": "uvx", "args": ["mcp-server-fetch"]},
-                "notion": {"url": "https://mcp.notion.com/mcp", "auth": "oauth"},
+                "fetch": {
+                    "command": "uvx",
+                    "args": ["mcp-server-fetch"]
+                }
             }
-        }))
-        document = MagicMock()
-        document.text = str(p)
-        # should not raise
-        self.validator.validate(document)
+        }
+        config_file.write_text(json.dumps(valid_config))
+        
+        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
+            status = check_mcp_config_status()
+            assert status['exists']
+            assert status['valid']
+            assert len(status['servers']) == 1
+            assert 'fetch' in status['servers']
 
+    def test_check_mcp_config_status_invalid_config(self, tmp_path):
+        """Test that check_mcp_config_status handles invalid config file."""
+        config_file = tmp_path / MCP_CONFIG_FILE
+        config_file.write_text('{"invalid": json content}')  # Invalid JSON
+        
+        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
+            status = check_mcp_config_status()
+            assert status['exists']
+            assert not status['valid']
+            assert status['servers'] == {}
+            assert "Invalid" in status['message']
 
 
 def _make_store(tmp_path: Path) -> AgentStore:
@@ -112,8 +68,9 @@ def _make_store(tmp_path: Path) -> AgentStore:
 def _write_agent_settings(store: AgentStore, agent: Agent) -> None:
     store.save(agent)
 
-def _write_mcp_config_pointer(store: AgentStore, user_mcp_config_path: str) -> None:
-    store.file_store.write(MCP_CONFIG_POINTER_FILE, user_mcp_config_path)
+def _write_mcp_config_file(store: AgentStore, mcp_config: dict) -> None:
+    """Write MCP configuration directly to mcp.json file."""
+    store.file_store.write(MCP_CONFIG_FILE, json.dumps(mcp_config))
 
 class TestAgentStoreMCPConfiguration:
     """Test the AgentStore MCP configuration loading functionality."""
@@ -121,41 +78,26 @@ class TestAgentStoreMCPConfiguration:
 
     def test_load_mcp_configuration_file_not_found(self, tmp_path):
         """
-        No MCP_CONFIG_POINTER_FILE file present under store root.
+        No mcp.json file present under store root.
         Should return {}.
         """
         store = _make_store(tmp_path)
         assert store.load_mcp_configuration() == {}
-
-    def test_load_mcp_configuration_path_not_exist(self, tmp_path):
-        """
-        MCP_CONFIG_POINTER_FILE file points to a non-existent absolute path.
-        Should return {}.
-        """
-        store = _make_store(tmp_path)
-        _write_mcp_config_pointer(store, 'does_not_exist.json')
-        assert store.load_mcp_configuration() == {}
-
 
     def test_load_mcp_configuration_corrupted_file(self, tmp_path):
+        """Test that load_mcp_configuration handles corrupted JSON file."""
         store = _make_store(tmp_path)
-        mcp_json_file_path = tmp_path / 'invalid.json'
-        _write_mcp_config_pointer(store, str(mcp_json_file_path))
-        mcp_json_file_path.write_text('{"invalid": json content}')  # invalid JSON
+        mcp_config_file = tmp_path / MCP_CONFIG_FILE
+        mcp_config_file.write_text('{"invalid": json content}')  # invalid JSON
         assert store.load_mcp_configuration() == {}
-
 
     def test_load_mcp_configuration_invalid_format(self, tmp_path):
         """Test that load_mcp_configuration handles invalid MCP config format."""
         store = _make_store(tmp_path)
-        mcp_json_file_path = tmp_path / 'invalid_format.json'
-        with open(mcp_json_file_path, 'w') as f:
-            json.dump({"someOtherKey": "value"}, f)  # Missing mcpServers
-
-        _write_mcp_config_pointer(store, str(mcp_json_file_path))
+        invalid_config = {"someOtherKey": "value"}  # Missing mcpServers
+        _write_mcp_config_file(store, invalid_config)
         result = store.load_mcp_configuration()
         assert result == {}
-
 
     def test_load_mcp_configuration_valid_config(self, tmp_path):
         """Test that load_mcp_configuration loads valid MCP configuration."""
@@ -174,12 +116,7 @@ class TestAgentStoreMCPConfiguration:
         }
 
         store = _make_store(tmp_path)
-
-        mcp_json_file_name = tmp_path / 'valid.json'
-        with open(mcp_json_file_name, 'w') as f:
-            json.dump(valid_config, f)
-
-        _write_mcp_config_pointer(store, str(mcp_json_file_name))
+        _write_mcp_config_file(store, valid_config)
 
         result = store.load_mcp_configuration()
 
@@ -212,13 +149,8 @@ class TestAgentStoreMCPConfiguration:
 
         store = _make_store(tmp_path)
 
-        # Create mcp config
-        mcp_json_file_name = tmp_path / 'mcp_config.json'
-        with open(mcp_json_file_name, 'w') as f:
-            json.dump(json_config, f)
-
-        # Save pointer to mcp config
-        _write_mcp_config_pointer(store, str(mcp_json_file_name))
+        # Create mcp config file directly
+        _write_mcp_config_file(store, json_config)
 
         # Save agent with existing mcp servers
         agent = Agent(
@@ -235,12 +167,10 @@ class TestAgentStoreMCPConfiguration:
         )
         store.save(agent)
 
-
         # Load agent
         agent = store.load()
         assert agent is not None
         combined_mcp_config = agent.mcp_config['mcpServers']
-
 
         # Should contain the new server from JSON file
         assert 'fetch' in combined_mcp_config
@@ -250,8 +180,6 @@ class TestAgentStoreMCPConfiguration:
         # Should also contain the existing server from agent
         assert 'existing_server' in combined_mcp_config
         assert combined_mcp_config['existing_server']['url'] == 'https://existing.com/mcp'
-
-
 
     def test_agent_store_load_handles_no_mcp_config_in_agent(self, tmp_path):
         """Test that AgentStore.load() handles agent with no existing MCP config."""
@@ -267,12 +195,8 @@ class TestAgentStoreMCPConfiguration:
 
         store = _make_store(tmp_path)
 
-        # Create mcp config
-        mcp_json_file_name = tmp_path / 'mcp_config.json'
-        with open(mcp_json_file_name, 'w') as f:
-            json.dump(json_config, f)
-
-        _write_mcp_config_pointer(store, str(mcp_json_file_name))
+        # Create mcp config file directly
+        _write_mcp_config_file(store, json_config)
 
         agent = Agent(
             llm=LLM(model='test-model', api_key='test-key', service_id='test-service'),

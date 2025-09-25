@@ -4,7 +4,7 @@ from pathlib import Path
 from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk import LocalFileStore, Agent, AgentContext
 from openhands.sdk.preset.default import get_default_tools
-from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_POINTER_FILE, PERSISTENCE_DIR, WORK_DIR
+from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
 from fastmcp.mcp_config import MCPConfig
 
@@ -15,17 +15,20 @@ class AgentStore:
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
 
     def load_mcp_configuration(self):
+        """Load MCP configuration from ~/.openhands/mcp.json."""
         try:
-            user_mcp_config_path = self.file_store.read(MCP_CONFIG_POINTER_FILE)
-        except FileNotFoundError:
-            return {}
-
-
-        try:
-            mcp_config = MCPConfig.from_file(Path(user_mcp_config_path))
+            # Use the file store to get the full path and read the file
+            mcp_config_path = Path(self.file_store.root) / MCP_CONFIG_FILE
+            mcp_config = MCPConfig.from_file(mcp_config_path)
             return mcp_config.to_dict()['mcpServers']
+        except FileNotFoundError:
+            # File doesn't exist, that's okay - return empty config
+            return {}
         except ValueError as e:
-            print_formatted_text(HTML(f"\n<red>Error loading MCP servers from json file {user_mcp_config_path}: {e}!</red>"))
+            print_formatted_text(HTML(f"\n<red>Error loading MCP servers from ~/.openhands/{MCP_CONFIG_FILE}: {e}!</red>"))
+            return {}
+        except Exception as e:
+            print_formatted_text(HTML(f"\n<red>Unexpected error loading MCP configuration from ~/.openhands/{MCP_CONFIG_FILE}: {e}!</red>"))
             return {}
 
     def load(self) -> Agent | None:

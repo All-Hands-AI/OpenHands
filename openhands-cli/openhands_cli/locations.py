@@ -8,4 +8,5 @@ WORK_DIR = os.getcwd()
 
 AGENT_SETTINGS_PATH = "agent_settings.json"
 
-MCP_CONFIG_POINTER_FILE = "mcp_config_pointer.txt"
+# MCP configuration file (relative to PERSISTENCE_DIR)
+MCP_CONFIG_FILE = "mcp.json"
