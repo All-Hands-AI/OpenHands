@@ -1,15 +1,14 @@
-from openhands.sdk import (
-    Conversation,
-    BaseConversation
-)
-from openhands_cli.tui.settings.store import AgentStore
-from prompt_toolkit import HTML, print_formatted_text
+import uuid
+
+from openhands.sdk import BaseConversation, Conversation, LocalFileStore, register_tool
 from openhands.tools.execute_bash import BashTool
 from openhands.tools.str_replace_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
-from openhands.sdk import register_tool, LocalFileStore
+from prompt_toolkit import HTML, print_formatted_text
+
+from openhands_cli.loading import LoadingContext
 from openhands_cli.locations import get_conversation_perisistence_path
-import uuid
+from openhands_cli.tui.settings.store import AgentStore
 
 register_tool("BashTool", BashTool)
 register_tool("FileEditorTool", FileEditorTool)
@@ -30,19 +29,20 @@ def setup_conversation() -> BaseConversation:
 
     conversation_id = uuid.uuid4()
 
-    agent_store = AgentStore()
-    agent = agent_store.load()
-    if not agent:
-        raise MissingAgentSpec("Agent specification not found. Please configure your agent settings.")
+    with LoadingContext("Initializing OpenHands agent..."):
+        agent_store = AgentStore()
+        agent = agent_store.load()
+        if not agent:
+            raise MissingAgentSpec("Agent specification not found. Please configure your agent settings.")
 
-    # Create conversation - agent context is now set in AgentStore.load()
-    conversation = Conversation(
-        agent=agent,
-        persist_filestore=LocalFileStore(
-            get_conversation_perisistence_path(conversation_id)
-        ),
-        conversation_id=conversation_id
-    )
+        # Create conversation - agent context is now set in AgentStore.load()
+        conversation = Conversation(
+            agent=agent,
+            persist_filestore=LocalFileStore(
+                get_conversation_perisistence_path(conversation_id)
+            ),
+            conversation_id=conversation_id
+        )
 
     print_formatted_text(
         HTML(f"<green>✓ Agent initialized with model: {agent.llm.model}</green>")
