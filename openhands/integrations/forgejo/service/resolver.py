@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from collections import defaultdict
+from typing import cast
 
 from openhands.integrations.forgejo.service.base import ForgejoMixinBase
 from openhands.integrations.service_types import Comment
@@ -38,11 +39,14 @@ class ForgejoResolverMixin(ForgejoMixinBase):
         }
 
         response, _ = await self._make_request(url, params)
-        if not isinstance(response, list):
-            return []
+        raw_comments = response if isinstance(response, list) else []
 
-        comments = [self._to_comment(comment) for comment in response]
-        comments = [comment for comment in comments if comment is not None]
+        comments: list[Comment] = []
+        for payload in raw_comments:
+            comment = self._to_comment(payload)
+            if comment is not None:
+                comments.append(comment)
+
         comments.sort(key=lambda c: c.created_at)
         return comments[-max_comments:]
 
@@ -62,11 +66,14 @@ class ForgejoResolverMixin(ForgejoMixinBase):
         }
 
         response, _ = await self._make_request(url, params)
-        if not isinstance(response, list):
-            return []
+        raw_comments = response if isinstance(response, list) else []
 
-        comments = [self._to_comment(comment) for comment in response]
-        comments = [comment for comment in comments if comment is not None]
+        comments: list[Comment] = []
+        for payload in raw_comments:
+            comment = self._to_comment(payload)
+            if comment is not None:
+                comments.append(comment)
+
         comments.sort(key=lambda c: c.created_at)
         return comments[-max_comments:]
 
@@ -81,28 +88,25 @@ class ForgejoResolverMixin(ForgejoMixinBase):
         params = {'page': '1', 'limit': '100', 'order': 'asc'}
 
         response, _ = await self._make_request(url, params)
-        if not isinstance(response, list):
-            return []
+        raw_comments = response if isinstance(response, list) else []
 
         grouped: dict[str, list[str]] = defaultdict(list)
         files: dict[str, set[str]] = defaultdict(set)
 
-        for payload in response:
-            path = payload.get('path') or 'general'
-            body = payload.get('body') or ''
+        for payload in raw_comments:
+            if not isinstance(payload, dict):
+                continue
+            path = cast(str, payload.get('path') or 'general')
+            body = cast(str, payload.get('body') or '')
             grouped[path].append(body)
             if payload.get('path'):
-                files[path].add(payload['path'])
+                files[path].add(cast(str, payload['path']))
 
         threads: list[ReviewThread] = []
         for path, messages in grouped.items():
             comment_text = '\n---\n'.join(messages)
-            threads.append(
-                ReviewThread(
-                    comment=comment_text,
-                    files=sorted(files.get(path, {path})),
-                )
-            )
+            file_list = sorted(files.get(path, {path}))
+            threads.append(ReviewThread(comment=comment_text, files=file_list))
 
         return threads[:max_threads]
 
