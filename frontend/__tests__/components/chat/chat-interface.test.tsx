@@ -61,7 +61,6 @@ vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
   }),
 }));
 
-// Redux mocking removed - using Zustand now
 
 // Helper function to render with Router context
 const renderChatInterfaceWithRouter = () =>
