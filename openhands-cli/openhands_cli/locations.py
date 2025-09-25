@@ -7,3 +7,4 @@ PERSISTENCE_DIR = os.path.expanduser("~/.openhands")
 WORK_DIR = os.getcwd()
 
 AGENT_SETTINGS_PATH = "agent_settings.json"
+CONVERSATION_PATH = "conversations/{}"

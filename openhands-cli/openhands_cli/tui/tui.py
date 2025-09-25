@@ -83,7 +83,7 @@ def display_help() -> None:
 def display_welcome(session_id: str = "chat") -> None:
     """Display welcome message."""
     clear()
-    display_banner(session_id)
+    display_banner(session_id[0:8])
     print_formatted_text(HTML("<gold>Let's start building!</gold>"))
     print_formatted_text(
         HTML(
