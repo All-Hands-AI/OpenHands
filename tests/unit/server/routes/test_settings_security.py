@@ -92,9 +92,6 @@ class MockUserAuthPro(UserAuth):
 @pytest.fixture
 def test_client_non_pro():
     """Test client for non-pro user"""
-    # Mock the enterprise billing to return no subscription (non-pro user)
-    mock_get_subscription = AsyncMock(return_value=None)
-
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -109,9 +106,10 @@ def test_client_non_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
+        # Mock the validation function at the routes level to return False (no access)
         patch(
-            'enterprise.server.routes.billing.get_subscription_access',
-            mock_get_subscription,
+            'openhands.server.routes.settings.validate_llm_settings_access',
+            AsyncMock(return_value=False),
         ),
     ):
         client = TestClient(app)
@@ -121,11 +119,6 @@ def test_client_non_pro():
 @pytest.fixture
 def test_client_pro():
     """Test client for pro user"""
-    # Mock the enterprise billing to return an active subscription (pro user)
-    mock_subscription = MagicMock()
-    mock_subscription.status = 'ACTIVE'
-    mock_get_subscription = AsyncMock(return_value=mock_subscription)
-
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -140,9 +133,10 @@ def test_client_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
+        # Mock the validation function at the routes level to return True (has access)
         patch(
-            'enterprise.server.routes.billing.get_subscription_access',
-            mock_get_subscription,
+            'openhands.server.routes.settings.validate_llm_settings_access',
+            AsyncMock(return_value=True),
         ),
     ):
         client = TestClient(app)
@@ -263,9 +257,6 @@ async def test_pro_user_can_set_llm_models(test_client_pro):
 @pytest.mark.asyncio
 async def test_expired_subscription_cannot_access_llm_settings():
     """SECURITY TEST: User with expired subscription should not access LLM settings"""
-    # Create a test client with expired subscription (no subscription returned)
-    mock_get_subscription = AsyncMock(return_value=None)
-
     with (
         patch.dict(
             os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
@@ -280,9 +271,10 @@ async def test_expired_subscription_cannot_access_llm_settings():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
+        # Mock validation to return False (expired subscription, no access)
         patch(
-            'enterprise.server.routes.billing.get_subscription_access',
-            mock_get_subscription,
+            'openhands.server.routes.settings.validate_llm_settings_access',
+            AsyncMock(return_value=False),
         ),
     ):
         client = TestClient(app)
