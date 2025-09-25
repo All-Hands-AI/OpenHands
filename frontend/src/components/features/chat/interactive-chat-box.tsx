@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import { isFileImage } from "#/utils/is-file-image";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { validateFiles } from "#/utils/file-validation";
@@ -7,8 +6,8 @@ import { AgentState } from "#/types/agent-state";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { GitControlBar } from "./git-control-bar";
 import { useConversationStore } from "#/state/conversation-store";
+import { useAgentStore } from "#/stores/agent-store";
 import { processFiles, processImages } from "#/utils/file-processing";
-import { RootState } from "#/store";
 
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
@@ -30,9 +29,7 @@ export function InteractiveChatBox({
     addImageLoading,
     removeImageLoading,
   } = useConversationStore();
-  const curAgentState = useSelector(
-    (state: RootState) => state.agent.curAgentState,
-  );
+  const { curAgentState } = useAgentStore();
   const { data: conversation } = useActiveConversation();
 
   // Helper function to validate and filter files

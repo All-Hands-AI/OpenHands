@@ -3,7 +3,8 @@ import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command, useCommandStore } from "#/state/command-store";
 import { AgentState } from "#/types/agent-state";
-import { renderWithProviders } from "../../test-utils";
+import { renderWithQueryAndI18n } from "../../test-utils";
+import { useAgentStore } from "#/stores/agent-store";
 
 // Mock the WsClient context
 vi.mock("#/context/ws-client-provider", () => ({
@@ -22,6 +23,8 @@ interface TestTerminalComponentProps {
 function TestTerminalComponent({ commands }: TestTerminalComponentProps) {
   // Set commands in Zustand store
   useCommandStore.setState({ commands });
+  // Set agent state in Zustand store
+  useAgentStore.setState({ curAgentState: AgentState.RUNNING });
   const ref = useTerminal();
   return <div ref={ref} />;
 }
@@ -57,11 +60,7 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    renderWithProviders(<TestTerminalComponent commands={[]} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-      },
-    });
+    renderWithQueryAndI18n(<TestTerminalComponent commands={[]} />);
   });
 
   it("should render the commands in the terminal", () => {
@@ -70,11 +69,7 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    renderWithProviders(<TestTerminalComponent commands={commands} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-      },
-    });
+    renderWithQueryAndI18n(<TestTerminalComponent commands={commands} />);
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
@@ -92,11 +87,7 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    renderWithProviders(<TestTerminalComponent commands={commands} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-      },
-    });
+    renderWithQueryAndI18n(<TestTerminalComponent commands={commands} />);
 
     // This test is no longer relevant as secrets filtering has been removed
   });

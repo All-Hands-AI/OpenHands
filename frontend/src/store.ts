@@ -1,9 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import agentReducer from "./state/agent-slice";
 
-export const rootReducer = combineReducers({
-  agent: agentReducer,
-});
+export const rootReducer = combineReducers({});
 
 const store = configureStore({
   reducer: rootReducer,
