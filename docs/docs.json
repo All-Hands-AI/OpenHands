@@ -118,7 +118,12 @@
           {
             "group": "Customizations & Settings",
             "pages": [
-              "usage/common-settings",
+              {
+                "group": "OpenHands Settings",
+                "pages": [
+                  "usage/settings/secrets-settings"
+                ]
+              },
               "usage/prompting/repository",
               {
                 "group": "Microagents",
