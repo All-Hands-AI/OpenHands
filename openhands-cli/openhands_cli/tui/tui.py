@@ -19,7 +19,6 @@ COMMANDS = {
     "/clear": "Clear the screen",
     "/status": "Display conversation details",
     "/confirm": "Toggle confirmation mode on/off",
-    "/new": "Create a new conversation",
     "/resume": "Resume a paused conversation",
     "/settings": "Display and modify current settings",
 }
