@@ -20,37 +20,9 @@ class MCPScreen:
     4. Identify servers waiting to sync on session restart
     """
 
-    def __init__(self):
-        self.store = AgentStore()
+    # ---------- server spec handlers ----------
 
-    # ---------- helpers ----------
 
-    def _render_server_summary(
-        self,
-        server_name: str | None,
-        server_spec: dict[str, Any],
-        indent: int = 2
-    ) -> None:
-        pad = " " * indent
-
-        if server_name:
-            print_formatted_text(HTML(f"{pad}<white>• {server_name}</white>"))
-
-        if isinstance(server_spec, dict):
-            if "command" in server_spec:
-                cmd = server_spec.get("command", "")
-                args = server_spec.get("args", [])
-                args_str = " ".join(args) if args else ""
-                print_formatted_text(HTML(f"{pad}  <grey>Type: Command-based</grey>"))
-                if cmd or args_str:
-                    print_formatted_text(HTML(f"{pad}  <grey>Command: {cmd} {args_str}</grey>"))
-            elif "url" in server_spec:
-                url = server_spec.get("url", "")
-                auth = server_spec.get("auth", "none")
-                print_formatted_text(HTML(f"{pad}  <grey>Type: URL-based</grey>"))
-                if url:
-                    print_formatted_text(HTML(f"{pad}  <grey>URL: {url}</grey>"))
-                print_formatted_text(HTML(f"{pad}  <grey>Auth: {auth}</grey>"))
 
     def _check_server_specs_are_equal(
         self,
@@ -62,9 +34,39 @@ class MCPScreen:
         return first_stringified_server_spec == second_stringified_server_spec
 
 
-    # ---------- diff view ----------
+    def _check_mcp_config_status(self) -> dict:
+        """Check the status of the MCP configuration file and return information about it."""
+        config_path = Path(PERSISTENCE_DIR) / MCP_CONFIG_FILE
 
-    def get_mcp_server_diff(
+        if not config_path.exists():
+            return {
+                "exists": False,
+                "valid": False,
+                "servers": {},
+                "message": f"MCP configuration file not found at ~/.openhands/{MCP_CONFIG_FILE}",
+            }
+
+        try:
+            mcp_config = MCPConfig.from_file(config_path)
+            servers = mcp_config.to_dict().get("mcpServers", {})
+            return {
+                "exists": True,
+                "valid": True,
+                "servers": servers,
+                "message": f"Valid MCP configuration found with {len(servers)} server(s)",
+            }
+        except Exception as e:
+            return {
+                "exists": True,
+                "valid": False,
+                "servers": {},
+                "message": f"Invalid MCP configuration file: {str(e)}",
+            }
+
+
+    # ---------- TUI helpers ----------
+
+    def _get_mcp_server_diff(
         self,
         current: dict[str, Any],
         incoming: dict[str, Any],
@@ -126,37 +128,33 @@ class MCPScreen:
 
         print_formatted_text("")
 
-    # ---------- status + display ----------
 
-    def _check_mcp_config_status(self) -> dict:
-        """Check the status of the MCP configuration file and return information about it."""
-        config_path = Path(PERSISTENCE_DIR) / MCP_CONFIG_FILE
+    def _render_server_summary(
+        self,
+        server_name: str | None,
+        server_spec: dict[str, Any],
+        indent: int = 2
+    ) -> None:
+        pad = " " * indent
 
-        if not config_path.exists():
-            return {
-                "exists": False,
-                "valid": False,
-                "servers": {},
-                "message": f"MCP configuration file not found at ~/.openhands/{MCP_CONFIG_FILE}",
-            }
+        if server_name:
+            print_formatted_text(HTML(f"{pad}<white>• {server_name}</white>"))
 
-        try:
-            mcp_config = MCPConfig.from_file(config_path)
-            servers = mcp_config.to_dict().get("mcpServers", {})
-            return {
-                "exists": True,
-                "valid": True,
-                "servers": servers,
-                "message": f"Valid MCP configuration found with {len(servers)} server(s)",
-            }
-        except Exception as e:
-            return {
-                "exists": True,
-                "valid": False,
-                "servers": {},
-                "message": f"Invalid MCP configuration file: {str(e)}",
-            }
-
+        if isinstance(server_spec, dict):
+            if "command" in server_spec:
+                cmd = server_spec.get("command", "")
+                args = server_spec.get("args", [])
+                args_str = " ".join(args) if args else ""
+                print_formatted_text(HTML(f"{pad}  <grey>Type: Command-based</grey>"))
+                if cmd or args_str:
+                    print_formatted_text(HTML(f"{pad}  <grey>Command: {cmd} {args_str}</grey>"))
+            elif "url" in server_spec:
+                url = server_spec.get("url", "")
+                auth = server_spec.get("auth", "none")
+                print_formatted_text(HTML(f"{pad}  <grey>Type: URL-based</grey>"))
+                if url:
+                    print_formatted_text(HTML(f"{pad}  <grey>URL: {url}</grey>"))
+                print_formatted_text(HTML(f"{pad}  <grey>Auth: {auth}</grey>"))
 
     def _display_information_header(self) -> None:
         print_formatted_text(HTML("<gold>MCP (Model Context Protocol) Configuration</gold>"))
@@ -171,6 +169,10 @@ class MCPScreen:
         )
         print_formatted_text(HTML("  3. Restart your OpenHands session to load the new configuration"))
         print_formatted_text("")
+
+
+
+    # ---------- status + display entrypoint ----------
 
     def display_mcp_info(self, existing_agent: Agent) -> None:
         """Display comprehensive MCP configuration information."""
@@ -197,4 +199,4 @@ class MCPScreen:
 
         # Always show the agent's current servers
         # Then show incoming (deduped and changes highlighted)
-        self.get_mcp_server_diff(current_servers, incoming_servers)
+        self._get_mcp_server_diff(current_servers, incoming_servers)
