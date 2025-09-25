@@ -56,7 +56,7 @@ class MCPScreen:
         self,
         first_server_spec,
         second_server_spec
-    ) -> str:
+    ) -> bool:
         first_stringified_server_spec = json.dumps(first_server_spec, sort_keys=True)
         second_stringified_server_spec = json.dumps(second_server_spec, sort_keys=True)
         return first_stringified_server_spec == second_stringified_server_spec
@@ -128,7 +128,7 @@ class MCPScreen:
 
     # ---------- status + display ----------
 
-    def check_mcp_config_status(self):
+    def _check_mcp_config_status(self) -> dict:
         """Check the status of the MCP configuration file and return information about it."""
         config_path = Path(PERSISTENCE_DIR) / MCP_CONFIG_FILE
 
@@ -157,29 +157,35 @@ class MCPScreen:
                 "message": f"Invalid MCP configuration file: {str(e)}",
             }
 
-    def display_mcp_info(self, existing_agent: Agent):
-        """Display comprehensive MCP configuration information."""
+
+    def _display_information_header(self) -> None:
         print_formatted_text(HTML("<gold>MCP (Model Context Protocol) Configuration</gold>"))
         print_formatted_text("")
+        print_formatted_text(HTML("<white>To get started:</white>"))
+        print_formatted_text(HTML("  1. Create the configuration file: <cyan>~/.openhands/mcp.json</cyan>"))
+        print_formatted_text(
+            HTML(
+                "  2. Add your MCP server configurations "
+                "<cyan>https://gofastmcp.com/clients/client#configuration-format</cyan>"
+            )
+        )
+        print_formatted_text(HTML("  3. Restart your OpenHands session to load the new configuration"))
+        print_formatted_text("")
+
+    def display_mcp_info(self, existing_agent: Agent) -> None:
+        """Display comprehensive MCP configuration information."""
+
+        self._display_information_header()
 
         # Always determine current & incoming first
-        status = self.check_mcp_config_status()
+        status = self._check_mcp_config_status()
         incoming_servers = status.get("servers", {}) if status.get("valid") else {}
         current_servers = existing_agent.mcp_config.get('mcpServers', {})
 
         # Show file status
         if not status["exists"]:
             print_formatted_text(HTML("<yellow>Status: Configuration file not found</yellow>"))
-            print_formatted_text("")
-            print_formatted_text(HTML("<white>To get started:</white>"))
-            print_formatted_text(HTML("  1. Create the configuration file: <cyan>~/.openhands/mcp.json</cyan>"))
-            print_formatted_text(
-                HTML(
-                    "  2. Add your MCP server configurations "
-                    "<cyan>https://gofastmcp.com/clients/client#configuration-format</cyan>"
-                )
-            )
-            print_formatted_text(HTML("  3. Restart your OpenHands session to load the new configuration"))
+
         elif not status["valid"]:
             print_formatted_text(HTML(f"<red>Status: {status['message']}</red>"))
             print_formatted_text("")
