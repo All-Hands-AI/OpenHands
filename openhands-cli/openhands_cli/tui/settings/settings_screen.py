@@ -163,7 +163,7 @@ class SettingsScreen:
             model=model,
             api_key=api_key,
             base_url=base_url,
-            service_id="openhands-cli"
+            service_id="agent"
         )
 
         agent = self.agent_store.load()
