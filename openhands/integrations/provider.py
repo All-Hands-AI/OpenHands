@@ -18,8 +18,8 @@ from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
-from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.forgejo.forgejo_service import ForgejoServiceImpl
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,

@@ -53,7 +53,7 @@ class ForgejoFeaturesMixin(ForgejoMixinBase):
         file_name = self._get_file_name_from_item(item)
         if not microagents_path:
             return file_name
-        return f"{microagents_path.strip('/')}/{file_name}"
+        return f'{microagents_path.strip("/")}/{file_name}'
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:  # type: ignore[override]
         microagents_path = self._determine_microagents_path(repository)
@@ -76,7 +76,9 @@ class ForgejoFeaturesMixin(ForgejoMixinBase):
                 if self._is_valid_microagent_file(item):
                     file_name = self._get_file_name_from_item(item)
                     file_path = self._get_file_path_from_item(item, microagents_path)
-                    microagents.append(self._create_microagent_response(file_name, file_path))
+                    microagents.append(
+                        self._create_microagent_response(file_name, file_path)
+                    )
 
         cursorrules = await self._check_cursorrules_file(repository)
         if cursorrules:
