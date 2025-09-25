@@ -341,9 +341,25 @@ async def get_conversation(
             filter_to_sids={conversation_id}
         )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+
+        # Add debug logging
+        logger.info(
+            f'[FRONTEND_DEBUG] GET /conversations/{conversation_id}: '
+            f'agent_loop_status={agent_loop_info.status if agent_loop_info else None}, '
+            f'num_connections={num_connections}, '
+            f'has_runtime={agent_loop_info is not None}'
+        )
+
         conversation_info = await _get_conversation_info(
             metadata, num_connections, agent_loop_info
         )
+
+        logger.info(
+            f'[FRONTEND_DEBUG] Returning conversation_info to frontend: '
+            f'status={conversation_info.status if conversation_info else None}, '
+            f'runtime_status={conversation_info.runtime_status if conversation_info else None}'
+        )
+
         return conversation_info
     except FileNotFoundError:
         return None
@@ -531,6 +547,13 @@ async def start_conversation(
         )
         logger.info(
             f'[TOKEN_DEBUG] maybe_start_agent_loop returned: status={agent_loop_info.status}'
+        )
+
+        logger.info(
+            f'[FRONTEND_DEBUG] Returning to frontend from /start endpoint: '
+            f'status=ok, conversation_status={agent_loop_info.status}, '
+            f'conversation_id={conversation_id}. '
+            f'Frontend will receive this status and should handle it appropriately.'
         )
 
         return ConversationResponse(
