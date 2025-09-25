@@ -346,9 +346,11 @@ class SaasNestedConversationManager(ConversationManager):
                         '[RESUME_DEBUG] Skipping conversation creation for resume '
                         '(using existing session_api_key)'
                     )
+                    # Use the EXISTING session_api_key for resume, not the new one
+                    existing_session_key = existing_runtime.get('session_api_key')
                     # Just wait for the runtime to be ready
                     async with httpx.AsyncClient(
-                        headers={'X-Session-API-Key': session_api_key}
+                        headers={'X-Session-API-Key': existing_session_key}
                     ) as client:
                         await self._wait_for_conversation_ready(
                             client, runtime.runtime_url, sid
