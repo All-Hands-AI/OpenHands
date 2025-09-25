@@ -3,12 +3,9 @@ from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.tui.utils import StepCounter
 from openhands_cli.user_actions.mcp_action import (
     MCPActionType,
-    MCPServerType,
-    choose_server_type,
+    load_mcp_config,
     mcp_action_menu,
-    prompt_command_config,
-    prompt_server_name,
-    prompt_url_config
+    propmt_mcp_json_config_file
 )
 from prompt_toolkit import HTML, print_formatted_text
 
@@ -16,15 +13,6 @@ from prompt_toolkit import HTML, print_formatted_text
 class MCPScreen:
     def __init__(self):
         self.agent_store = AgentStore()
-
-
-    def _list_mcp_servers(self) -> dict[str, Any]:
-        agent = self.agent_store.load()
-        if not agent:
-            return
-
-        return agent.mcp_config.get('mcpServers', {})
-
 
     def mcp_action_menu(self):
         try:
@@ -35,67 +23,39 @@ class MCPScreen:
         if settings_type == MCPActionType.LIST:
             self.list_mcp_servers()
 
-        elif settings_type == MCPActionType.ADD:
-            self.handle_add_mcp_server()
-
-        elif settings_type == MCPActionType.REMOVE:
-            self.handle_remove_mcp_server()
-
-
-    def handle_add_mcp_server(self):
-        step_counter = StepCounter(4)
-
-        try:
-            server_name = prompt_server_name(step_counter)
-            server_type = choose_server_type(step_counter)
-            if server_type == MCPServerType.STDIO:
-                config = prompt_command_config(step_counter)
-            else:
-                config = prompt_url_config(step_counter)
-
-            self.save_mcp_configuration(server_name, config)
-
-        except Exception:
-            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
-            return
-
-
-    def handle_remove_mcp_server(self):
-        pass
+        if settings_type == MCPActionType.ADD_JSON_CONFIG:
+            config_path = propmt_mcp_json_config_file()
+            self.save_mcp_configuration(config_path)
 
 
     def save_mcp_configuration(
         self,
-        server_name: str,
-        server_config: dict[str, Any]
+        config_path: str
     ):
+
+        mcp_config = load_mcp_config(config_path)
+
+
         agent = self.agent_store.load()
         if not agent:
             return
 
         mcp_config = agent.mcp_config.copy()
-        if not mcp_config:
-            mcp_config = {"mcpServers": {}}
-
-        mcp_config["mcpServers"][server_name] = server_config
-
         agent = agent.model_copy(update={"mcp_config": mcp_config})
         self.agent_store.save(agent)
 
-        print_formatted_text(HTML(f"<green>✓ MCP server '{server_name}' added successfully!</green>"))
-
-
-        print_formatted_text(HTML("<grey>Configuration:</grey>"))
-        for key, value in server_config.items():
-            if isinstance(value, list):
-                value = ' '.join(value)
-            print_formatted_text(HTML(f"<grey>  {key}: {value}</grey>"))
+        print_formatted_text(HTML(f"<green>✓ MCP config added successfully!</green>"))
 
 
     def list_mcp_servers(self) -> None:
         """Display all configured MCP servers."""
 
-        mcp_servers = self._list_mcp_servers()
+        agent = self.agent_store.load()
+        if not agent:
+            return
+
+        mcp_servers = agent.mcp_config.get('mcpServers', {})
+
         if not mcp_servers:
             print_formatted_text(HTML("<yellow>No MCP servers configured.</yellow>"))
             return
