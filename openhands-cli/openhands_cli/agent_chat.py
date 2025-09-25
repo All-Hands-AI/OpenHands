@@ -93,7 +93,7 @@ def run_cli_entry() -> None:
 
             elif command == "/mcp":
                 mcp_screen = MCPScreen()
-                mcp_screen.mcp_action_menu()
+                mcp_screen.display_mcp_info(conversation.agent)
                 continue
 
             elif command == "/clear":

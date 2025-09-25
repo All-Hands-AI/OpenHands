@@ -31,8 +31,16 @@ class MCPScreen:
         self.store = AgentStore()
 
 
-    def get_mcp_server_diff(self):
+    def get_mcp_server_diff(
+        self,
+        current_mcp_server: dict,
+        incoming_servers_on_restart: dict
+    ):
+        """
+        Display the diff between existing servers and incoming ones
+        """
         pass
+
 
 
 
@@ -71,17 +79,6 @@ class MCPScreen:
         print_formatted_text(HTML("<gold>MCP (Model Context Protocol) Configuration</gold>"))
         print_formatted_text("")
 
-        # Display configuration format information
-        print_formatted_text(HTML("<white>Configuration Format:</white>"))
-        print_formatted_text(HTML("  The expected configuration format comes from:"))
-        print_formatted_text(HTML("  <cyan>https://gofastmcp.com/clients/client#configuration-format</cyan>"))
-        print_formatted_text("")
-
-        # Display file location information
-        print_formatted_text(HTML("<white>Configuration File Location:</white>"))
-        print_formatted_text(HTML(f"  <cyan>~/.openhands/{MCP_CONFIG_FILE}</cyan>"))
-        print_formatted_text("")
-
         # Check current configuration status
         status = self.check_mcp_config_status()
 
@@ -89,10 +86,9 @@ class MCPScreen:
             print_formatted_text(HTML("<yellow>Status: Configuration file not found</yellow>"))
             print_formatted_text("")
             print_formatted_text(HTML("<white>To get started:</white>"))
-            print_formatted_text(HTML("  1. Create the directory: <cyan>mkdir -p ~/.openhands</cyan>"))
-            print_formatted_text(HTML("  2. Create the configuration file: <cyan>~/.openhands/mcp.json</cyan>"))
-            print_formatted_text(HTML("  3. Add your MCP server configurations"))
-            print_formatted_text(HTML("  4. Restart your OpenHands session to load the new configuration"))
+            print_formatted_text(HTML("  1. Create the configuration file: <cyan>~/.openhands/mcp.json</cyan>"))
+            print_formatted_text(HTML("  2. Add your MCP server configurations <cyan>https://gofastmcp.com/clients/client#configuration-format</cyan>"))
+            print_formatted_text(HTML("  3. Restart your OpenHands session to load the new configuration"))
         elif not status['valid']:
             print_formatted_text(HTML(f"<red>Status: {status['message']}</red>"))
             print_formatted_text("")
@@ -123,8 +119,6 @@ class MCPScreen:
                 print_formatted_text(HTML("<yellow>No MCP servers configured in the file.</yellow>"))
 
         print_formatted_text("")
-        print_formatted_text(HTML("<white>Important Notes:</white>"))
-        print_formatted_text(HTML("  • Changes to the configuration file will only take effect after restarting your session"))
-        print_formatted_text(HTML("  • Make sure the configuration file follows the expected JSON format"))
-        print_formatted_text(HTML("  • Server configurations will be merged with any existing agent MCP settings"))
-        print_formatted_text("")
+
+
+        self.get_mcp_server_diff(existing_agent.mcp_config, status['servers'])
