@@ -1,7 +1,6 @@
 import { trackError } from "#/utils/error-handler";
 import useMetricsStore from "#/stores/metrics-store";
 import { useStatusStore } from "#/state/status-store";
-import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -9,8 +8,8 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { useCommandStore } from "#/state/command-store";
-import { appendJupyterInput } from "#/state/jupyter-slice";
 import { queryClient } from "#/query-client-config";
 import {
   ActionSecurityRisk,
@@ -37,7 +36,7 @@ export function handleActionMessage(message: ActionMessage) {
   }
 
   if (message.action === ActionType.RUN_IPYTHON) {
-    store.dispatch(appendJupyterInput(message.args.code));
+    useJupyterStore.getState().appendJupyterInput(message.args.code);
   }
 
   if ("args" in message && "security_risk" in message.args) {

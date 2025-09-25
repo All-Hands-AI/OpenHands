@@ -14,16 +14,17 @@ Upon signing into OpenHands Cloud with a GitLab account, OpenHands will have acc
 
 ## Working With GitLab Repos in Openhands Cloud
 
-After signing in with a Gitlab account, use the `select a repo` and `select a branch` dropdowns to select the
-appropriate repository and branch you'd like OpenHands to work on. Then click on `Launch` to start the conversation!
+After signing in with a Gitlab account, use the `Open Repository` section to select the appropriate repository and
+branch you'd like OpenHands to work on. Then click on `Launch` to start the conversation!
 
-![Connect Repo](/static/img/connect-repo-no-github.png)
+![Connect Repo](/static/img/connect-repo.png)
 
 ## Using Tokens with Reduced Scopes
 
 OpenHands requests an API-scoped token during OAuth authentication. By default, this token is provided to the agent.
-To restrict the agent's permissions, you can define a custom secret `GITLAB_TOKEN`, which will override the default token assigned to the agent.
-While the high-permission API token is still requested and used for other components of the application (e.g. opening merge requests), the agent will not have access to it.
+To restrict the agent's permissions, you can define a custom secret `GITLAB_TOKEN`, which will override the default
+token assigned to the agent. While the high-permission API token is still requested and used for other components of
+the application (e.g. opening merge requests), the agent will not have access to it.
 
 ## Working on GitLab Issues and Merge Requests Using Openhands
 
@@ -32,7 +33,8 @@ This feature works for personal projects and is available for group projects wit
 [Premium or Ultimate tier subscription](https://docs.gitlab.com/user/project/integrations/webhooks/#group-webhooks).
 
 A webhook is automatically installed within a few minutes after the owner/maintainer of the project or group logs into
-OpenHands Cloud. If you decide to delete the webhook, then re-installing will require the support of All Hands AI but we are planning to improve this in a future release.
+OpenHands Cloud. If you decide to delete the webhook, then re-installing will require the support of All Hands AI but
+we are planning to improve this in a future release.
 </Note>
 
 Giving GitLab repository access to OpenHands also allows you to work on GitLab issues and merge requests directly.

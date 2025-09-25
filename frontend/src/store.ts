@@ -1,9 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
-import { jupyterReducer } from "./state/jupyter-slice";
 
-export const rootReducer = combineReducers({
-  jupyter: jupyterReducer,
-});
+export const rootReducer = combineReducers({});
 
 const store = configureStore({
   reducer: rootReducer,
