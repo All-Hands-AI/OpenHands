@@ -59,8 +59,7 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         }
 
     def get_base_url(self) -> str:
-        escaped_repo = quote(f'{self.owner}/{self.repo}', safe='')
-        return f'{self._api_root()}/repos/{escaped_repo}'
+        return f'{self._api_root()}/repos/{self.owner}/{self.repo}'
 
     def get_authorize_url(self) -> str:
         credential = f'{self.username}:{self.token}' if self.username else f'x-auth-token:{self.token}'
@@ -85,10 +84,11 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}'
 
     def download_issues(self) -> list[Any]:
-        params: dict[str, int | str] = {'state': 'open', 'limit': 50, 'page': 1}
+        page = 1
         all_issues: list[Any] = []
 
         while True:
+            params = {'state': 'open', 'limit': '50', 'page': str(page)}
             response = httpx.get(self.download_url, headers=self.headers, params=params)
             response.raise_for_status()
             issues = response.json()
@@ -102,7 +102,7 @@ class ForgejoIssueHandler(IssueHandlerInterface):
                 raise ValueError('Expected list of dictionaries from Forgejo issues API.')
 
             all_issues.extend(issues)
-            params['page'] += 1
+            page += 1
 
         return all_issues
 
@@ -110,7 +110,8 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:
         url = f'{self.get_download_url()}/{issue_number}/comments'
-        params = {'limit': 50, 'page': 1}
+        page = 1
+        params = {'limit': '50', 'page': str(page)}
         all_comments: list[str] = []
 
         while True:
@@ -137,7 +138,8 @@ class ForgejoIssueHandler(IssueHandlerInterface):
                     comment['body'] for comment in comments if comment.get('body')
                 )
 
-            params['page'] += 1
+            page += 1
+            params = {'limit': '50', 'page': str(page)}
 
         return all_comments if all_comments else None
 
@@ -344,7 +346,8 @@ class ForgejoPRHandler(ForgejoIssueHandler):
         self, pr_number: int, comment_id: int | None = None
     ) -> list[str] | None:
         url = f'{self.get_base_url()}/pulls/{pr_number}/comments'
-        params = {'limit': 50, 'page': 1}
+        page = 1
+        params = {'limit': '50', 'page': str(page)}
         collected: list[str] = []
 
         while True:
@@ -373,7 +376,8 @@ class ForgejoPRHandler(ForgejoIssueHandler):
                     comment['body'] for comment in filtered if comment.get('body')
                 )
 
-            params['page'] += 1
+            page += 1
+            params = {'limit': '50', 'page': str(page)}
 
         return collected if collected else None
 

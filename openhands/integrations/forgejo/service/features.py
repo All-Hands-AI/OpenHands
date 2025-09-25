@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import base64
+from typing import Any
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.forgejo.service.base import ForgejoMixinBase
 from openhands.integrations.service_types import (
@@ -29,19 +31,26 @@ class ForgejoFeaturesMixin(ForgejoMixinBase):
     def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
         return None
 
-    def _is_valid_microagent_file(self, item: dict) -> bool:
+    def _is_valid_microagent_file(self, item: dict[str, Any] | None) -> bool:
         if not isinstance(item, dict):
             return False
         if item.get('type') != 'file':
             return False
         name = item.get('name', '')
-        return name.endswith('.md') or name.endswith('.cursorrules')
+        return isinstance(name, str) and (
+            name.endswith('.md') or name.endswith('.cursorrules')
+        )
 
-    def _get_file_name_from_item(self, item: dict) -> str:
-        return item.get('name', '')
+    def _get_file_name_from_item(self, item: dict[str, Any] | None) -> str:
+        if not isinstance(item, dict):
+            return ''
+        name = item.get('name')
+        return name if isinstance(name, str) else ''
 
-    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
-        file_name = item.get('name', '')
+    def _get_file_path_from_item(
+        self, item: dict[str, Any] | None, microagents_path: str
+    ) -> str:
+        file_name = self._get_file_name_from_item(item)
         if not microagents_path:
             return file_name
         return f"{microagents_path.strip('/')}/{file_name}"
