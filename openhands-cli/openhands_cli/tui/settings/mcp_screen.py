@@ -1,18 +1,18 @@
-from typing import Any
+from openhands_cli.locations import MCP_CONFIG_PATH, PERSISTENCE_DIR
 from openhands_cli.tui.settings.store import AgentStore
-from openhands_cli.tui.utils import StepCounter
 from openhands_cli.user_actions.mcp_action import (
     MCPActionType,
-    load_mcp_config,
     mcp_action_menu,
     propmt_mcp_json_config_file
 )
 from prompt_toolkit import HTML, print_formatted_text
+from openhands.sdk import LocalFileStore
 
 
 class MCPScreen:
     def __init__(self):
         self.agent_store = AgentStore()
+        self.file_store = LocalFileStore(PERSISTENCE_DIR)
 
     def mcp_action_menu(self):
         try:
@@ -33,18 +33,8 @@ class MCPScreen:
         config_path: str
     ):
 
-        mcp_config = load_mcp_config(config_path)
-
-
-        agent = self.agent_store.load()
-        if not agent:
-            return
-
-        mcp_config = agent.mcp_config.copy()
-        agent = agent.model_copy(update={"mcp_config": mcp_config})
-        self.agent_store.save(agent)
-
-        print_formatted_text(HTML(f"<green>✓ MCP config added successfully!</green>"))
+        self.file_store.write(MCP_CONFIG_PATH, config_path)
+        print_formatted_text(HTML(f"<green>✓ MCP config path saved successfully!</green>"))
 
 
     def list_mcp_servers(self) -> None:
