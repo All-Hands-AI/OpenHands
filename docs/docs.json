@@ -31,6 +31,7 @@
             "group": "OpenHands Cloud",
             "pages": [
               "usage/cloud/openhands-cloud",
+              "usage/cloud/pro-subscription",
               {
                 "group": "Integrations",
                 "pages": [
