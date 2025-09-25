@@ -1,108 +1,104 @@
-"""Tests for MCP configuration and agent store functionality."""
+"""Tests for MCP configuration screen functionality."""
 
 import json
-import os
-import tempfile
+import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, call
+from io import StringIO
 
-from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE
 import pytest
 
-from openhands_cli.tui.settings.store import AgentStore
-from openhands_cli.user_actions.mcp_action import check_mcp_config_status
-from openhands.sdk import LocalFileStore, Agent, LLM
+from openhands_cli.locations import MCP_CONFIG_FILE
+from openhands_cli.tui.settings.mcp_screen import MCPScreen
+from openhands.sdk import Agent, LLM
 
+class TestMCPScreen:
+    """Test the MCP screen display functionality."""
 
-class TestMCPConfigStatus:
-    """Test the MCP configuration status checking functionality."""
+    def _create_agent(self, mcp_config=None):
+        """Helper to create an agent with optional MCP config."""
+        if mcp_config is None:
+            mcp_config = {}
+        return Agent(
+            llm=LLM(model="test-model", api_key="test-key", service_id='test-service'),
+            tools=[],
+            mcp_config=mcp_config
+        )
 
-    def test_check_mcp_config_status_file_not_found(self, tmp_path):
-        """Test that check_mcp_config_status handles missing config file."""
-        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
-            status = check_mcp_config_status()
-            assert not status['exists']
-            assert not status['valid']
-            assert status['servers'] == {}
-            assert "not found" in status['message']
-
-    def test_check_mcp_config_status_valid_config(self, tmp_path):
-        """Test that check_mcp_config_status handles valid config file."""
+    def _create_mcp_config_file(self, tmp_path, config):
+        """Helper to create an MCP config file."""
         config_file = tmp_path / MCP_CONFIG_FILE
-        valid_config = {
-            "mcpServers": {
-                "fetch": {
-                    "command": "uvx",
-                    "args": ["mcp-server-fetch"]
+        config_file.write_text(json.dumps(config))
+        return config_file
+
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_mcp_help_instruction_always_shown(self, mock_print, tmp_path):
+        """Test that the MCP help instruction is always shown."""
+        screen = MCPScreen()
+        agent = self._create_agent()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        # Check that help instructions are displayed
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        help_content = ' '.join(all_calls)
+        
+        assert "MCP (Model Context Protocol) Configuration" in help_content
+        assert "To get started:" in help_content
+        assert "~/.openhands/mcp.json" in help_content
+        assert "https://gofastmcp.com/clients/client#configuration-format" in help_content
+        assert "Restart your OpenHands session" in help_content
+
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_agent_current_mcp_servers_always_displayed(self, mock_print, tmp_path):
+        """Test that the agent's current MCP servers are always displayed."""
+        # Agent with existing MCP servers
+        agent = self._create_agent({
+            'mcpServers': {
+                'existing_server': {
+                    'command': 'python',
+                    'args': ['-m', 'existing_server']
                 }
             }
-        }
-        config_file.write_text(json.dumps(valid_config))
+        })
         
-        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
-            status = check_mcp_config_status()
-            assert status['exists']
-            assert status['valid']
-            assert len(status['servers']) == 1
-            assert 'fetch' in status['servers']
-
-    def test_check_mcp_config_status_invalid_config(self, tmp_path):
-        """Test that check_mcp_config_status handles invalid config file."""
-        config_file = tmp_path / MCP_CONFIG_FILE
-        config_file.write_text('{"invalid": json content}')  # Invalid JSON
+        screen = MCPScreen()
         
-        with patch('openhands_cli.user_actions.mcp_action.PERSISTENCE_DIR', str(tmp_path)):
-            status = check_mcp_config_status()
-            assert status['exists']
-            assert not status['valid']
-            assert status['servers'] == {}
-            assert "Invalid" in status['message']
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        # Check that current agent servers are displayed
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Current Agent MCP Servers:" in content
+        assert "existing_server" in content
 
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_agent_no_current_mcp_servers_displayed(self, mock_print, tmp_path):
+        """Test that when agent has no MCP servers, appropriate message is shown."""
+        agent = self._create_agent()  # No MCP config
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        # Check that "None configured" message is displayed
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Current Agent MCP Servers:" in content
+        assert "None configured on the current agent" in content
 
-def _make_store(tmp_path: Path) -> AgentStore:
-    store = AgentStore()
-    store.file_store = LocalFileStore(root=str(tmp_path))
-    return store
-
-
-def _write_agent_settings(store: AgentStore, agent: Agent) -> None:
-    store.save(agent)
-
-def _write_mcp_config_file(store: AgentStore, mcp_config: dict) -> None:
-    """Write MCP configuration directly to mcp.json file."""
-    store.file_store.write(MCP_CONFIG_FILE, json.dumps(mcp_config))
-
-class TestAgentStoreMCPConfiguration:
-    """Test the AgentStore MCP configuration loading functionality."""
-
-
-    def test_load_mcp_configuration_file_not_found(self, tmp_path):
-        """
-        No mcp.json file present under store root.
-        Should return {}.
-        """
-        store = _make_store(tmp_path)
-        assert store.load_mcp_configuration() == {}
-
-    def test_load_mcp_configuration_corrupted_file(self, tmp_path):
-        """Test that load_mcp_configuration handles corrupted JSON file."""
-        store = _make_store(tmp_path)
-        mcp_config_file = tmp_path / MCP_CONFIG_FILE
-        mcp_config_file.write_text('{"invalid": json content}')  # invalid JSON
-        assert store.load_mcp_configuration() == {}
-
-    def test_load_mcp_configuration_invalid_format(self, tmp_path):
-        """Test that load_mcp_configuration handles invalid MCP config format."""
-        store = _make_store(tmp_path)
-        invalid_config = {"someOtherKey": "value"}  # Missing mcpServers
-        _write_mcp_config_file(store, invalid_config)
-        result = store.load_mcp_configuration()
-        assert result == {}
-
-    def test_load_mcp_configuration_valid_config(self, tmp_path):
-        """Test that load_mcp_configuration loads valid MCP configuration."""
-        # Create a valid MCP config file
-        valid_config = {
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_show_new_servers_from_mcp_json(self, mock_print, tmp_path):
+        """Test that new servers from mcp.json are shown as requiring restart."""
+        # Agent with no existing servers
+        agent = self._create_agent()
+        
+        # Create mcp.json with new servers
+        mcp_config = {
             "mcpServers": {
                 "fetch": {
                     "command": "uvx",
@@ -114,77 +110,36 @@ class TestAgentStoreMCPConfiguration:
                 }
             }
         }
+        self._create_mcp_config_file(tmp_path, mcp_config)
+        
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Incoming Servers on Restart" in content
+        assert "New servers (will be added):" in content
+        assert "fetch" in content
+        assert "notion" in content
 
-        store = _make_store(tmp_path)
-        _write_mcp_config_file(store, valid_config)
-
-        result = store.load_mcp_configuration()
-
-        expected = {
-            "fetch": {
-                "command": "uvx",
-                "args": ["mcp-server-fetch"],
-                "env": {},
-                "transport": "stdio"
-            },
-            "notion": {
-                "url": "https://mcp.notion.com/mcp",
-                "auth": "oauth",
-                "headers": {}
-            }
-        }
-        assert result == expected
-
-    def test_agent_store_load_combines_mcp_configs(self, tmp_path):
-        """Test that AgentStore.load() combines existing MCP servers with new ones from JSON file."""
-        # Create a valid MCP config file
-        json_config = {
-            "mcpServers": {
-                "fetch": {
-                    "command": "uvx",
-                    "args": ["mcp-server-fetch"]
-                },
-            }
-        }
-
-        store = _make_store(tmp_path)
-
-        # Create mcp config file directly
-        _write_mcp_config_file(store, json_config)
-
-        # Save agent with existing mcp servers
-        agent = Agent(
-            llm=LLM(model="test-model", api_key="test-key", service_id='test-service'),
-            tools=[],
-            mcp_config={
-                'mcpServers': {
-                    "existing_server": {
-                        "url": "https://existing.com/mcp",
-                        "auth": "none"
-                    }
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_show_overriding_servers_from_mcp_json(self, mock_print, tmp_path):
+        """Test that overriding servers from mcp.json are shown as requiring restart."""
+        # Agent with existing server
+        agent = self._create_agent({
+            'mcpServers': {
+                'fetch': {
+                    'command': 'python',
+                    'args': ['-m', 'old_fetch_server']
                 }
             }
-        )
-        store.save(agent)
-
-        # Load agent
-        agent = store.load()
-        assert agent is not None
-        combined_mcp_config = agent.mcp_config['mcpServers']
-
-        # Should contain the new server from JSON file
-        assert 'fetch' in combined_mcp_config
-        assert combined_mcp_config['fetch']['command'] == 'uvx'
-        assert combined_mcp_config['fetch']['args'] == ['mcp-server-fetch']
-
-        # Should also contain the existing server from agent
-        assert 'existing_server' in combined_mcp_config
-        assert combined_mcp_config['existing_server']['url'] == 'https://existing.com/mcp'
-
-    def test_agent_store_load_handles_no_mcp_config_in_agent(self, tmp_path):
-        """Test that AgentStore.load() handles agent with no existing MCP config."""
-        # Create a valid MCP config file
-        json_config = {
+        })
+        
+        # Create mcp.json with updated server config
+        mcp_config = {
             "mcpServers": {
                 "fetch": {
                     "command": "uvx",
@@ -192,27 +147,90 @@ class TestAgentStoreMCPConfiguration:
                 }
             }
         }
+        self._create_mcp_config_file(tmp_path, mcp_config)
+        
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Incoming Servers on Restart" in content
+        assert "Updated servers (configuration will change):" in content
+        assert "fetch" in content
+        assert "Current:" in content
+        assert "Incoming:" in content
 
-        store = _make_store(tmp_path)
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_show_all_servers_already_synced_message(self, mock_print, tmp_path):
+        """Test that when all mcp.json servers are already in agent, no sync required message is shown."""
+        # Agent with existing server
+        agent = self._create_agent({
+            'mcpServers': {
+                'fetch': {
+                    'command': 'uvx',
+                    'args': ['mcp-server-fetch'],
+                    'env': {},
+                    'transport': 'stdio'
+                }
+            }
+        })
+        
+        # Create mcp.json with same server config
+        mcp_config = {
+            "mcpServers": {
+                "fetch": {
+                    "command": "uvx",
+                    "args": ["mcp-server-fetch"]
+                }
+            }
+        }
+        self._create_mcp_config_file(tmp_path, mcp_config)
+        
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Incoming Servers on Restart" in content
+        assert "All configured servers match the current agent configuration" in content
 
-        # Create mcp config file directly
-        _write_mcp_config_file(store, json_config)
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_invalid_mcp_json_file_handling(self, mock_print, tmp_path):
+        """Test that invalid mcp.json file is handled gracefully."""
+        agent = self._create_agent()
+        
+        # Create invalid JSON file
+        config_file = tmp_path / MCP_CONFIG_FILE
+        config_file.write_text('{"invalid": json content}')  # Invalid JSON
+        
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Invalid MCP configuration file" in content
+        assert "Please check your configuration file format" in content
 
-        agent = Agent(
-            llm=LLM(model='test-model', api_key='test-key', service_id='test-service'),
-            tools=[],
-            mcp_config={}
-        )
-
-        store.save(agent)
-        agent = store.load()
-
-        combined_mcp_config = agent.mcp_config['mcpServers']
-
-        # Should contain the new server from JSON file
-        assert 'fetch' in combined_mcp_config
-        assert combined_mcp_config['fetch']['command'] == 'uvx'
-        assert combined_mcp_config['fetch']['args'] == ['mcp-server-fetch']
-
-        # Should not contain any other servers
-        assert len(combined_mcp_config) == 1
+    @patch('openhands_cli.tui.settings.mcp_screen.print_formatted_text')
+    def test_missing_mcp_json_file_handling(self, mock_print, tmp_path):
+        """Test that missing mcp.json file is handled gracefully."""
+        agent = self._create_agent()
+        screen = MCPScreen()
+        
+        with patch('openhands_cli.tui.settings.mcp_screen.PERSISTENCE_DIR', str(tmp_path)):
+            screen.display_mcp_info(agent)
+        
+        all_calls = [str(call_args) for call_args in mock_print.call_args_list]
+        content = ' '.join(all_calls)
+        
+        assert "Configuration file not found" in content
+        assert "No incoming servers detected for next restart" in content
