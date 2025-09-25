@@ -110,8 +110,7 @@
                 },
                 "usage/configuration-options",
                 "usage/how-to/custom-sandbox-guide",
-                "usage/search-engine-setup",
-                "usage/mcp"
+                "usage/search-engine-setup"
                 ]
               }
             ]
@@ -122,7 +121,8 @@
               {
                 "group": "OpenHands Settings",
                 "pages": [
-                  "usage/settings/secrets-settings"
+                  "usage/settings/secrets-settings",
+                  "usage/settings/mcp-settings"
                 ]
               },
               "usage/prompting/repository",
