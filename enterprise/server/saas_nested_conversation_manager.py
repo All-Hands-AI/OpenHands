@@ -513,16 +513,35 @@ class SaasNestedConversationManager(ConversationManager):
     ):
         """Wait for the conversation to be ready by checking the events endpoint."""
         # TODO: Find out why /api/conversations/{sid} returns RUNNING when events are not available
-        for _ in range(5):
+        logger.info(
+            f'[WEBSOCKET_DEBUG] Starting _wait_for_conversation_ready for sid={sid}, '
+            f'will check events endpoint up to 5 times'
+        )
+        for attempt in range(5):
             try:
                 logger.info('checking_events_endpoint_running', extra={'sid': sid})
+                logger.info(
+                    f'[WEBSOCKET_DEBUG] Attempt {attempt+1}/5: Checking {api_url}/api/conversations/{sid}/events'
+                )
                 response = await client.get(f'{api_url}/api/conversations/{sid}/events')
                 if response.is_success:
                     logger.info('events_endpoint_is_running', extra={'sid': sid})
+                    logger.info(
+                        f'[WEBSOCKET_DEBUG] Events endpoint ready after {attempt+1} attempts. '
+                        f'Frontend should now be able to connect via websocket.'
+                    )
                     break
-            except Exception:
+            except Exception as e:
                 logger.warning('events_endpoint_not_ready', extra={'sid': sid})
+                logger.warning(
+                    f'[WEBSOCKET_DEBUG] Events endpoint not ready (attempt {attempt+1}/5): {e}'
+                )
             await asyncio.sleep(5)
+        else:
+            logger.error(
+                f'[WEBSOCKET_DEBUG] CRITICAL: Events endpoint never became ready after 5 attempts! '
+                f'Frontend will not receive events for sid={sid}'
+            )
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
