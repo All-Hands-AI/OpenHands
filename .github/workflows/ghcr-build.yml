@@ -138,6 +138,9 @@ jobs:
         if: github.event.pull_request.head.repo.fork != true
         shell: bash
         run: |
+          # This had a slash in it. Probably useless anyway?
+          unset DOCKER_IMAGE_SOURCE_TAG
+
           ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
 
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
