@@ -27,7 +27,7 @@ RUN apt-get update && \
         libasound2-plugins libatomic1 && \
         (apt-get install -y --no-install-recommends libgl1 || apt-get install -y --no-install-recommends libgl1-mesa-glx) && \
         # Install Docker dependencies
-        apt-transport-https ca-certificates curl gnupg lsb-release && \
+        apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl gnupg lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         {%- if ('mswebench' in base_image) -%}
