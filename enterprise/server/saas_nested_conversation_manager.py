@@ -998,13 +998,13 @@ class SaasNestedConversationManager(ConversationManager):
         # Log the attach_to_existing decision
         logger.info(
             f'[ATTACH_DEBUG] Making attach_to_existing decision: '
-            f'sid={sid}, hardcoded_value=False, '
-            f'should_it_be_true_for_resume={existing_runtime and existing_runtime.get("status") in ["paused", "stopped"]}'
+            f'sid={sid}, attach_to_existing={attach_to_existing}, '
+            f'reasoning={"attach to paused/running" if attach_to_existing else "create new"}'
         )
 
         logger.info(
             f'[TOKEN_DEBUG] Creating RemoteRuntime: '
-            f'sid={sid}, attach_to_existing=False, '
+            f'sid={sid}, attach_to_existing={attach_to_existing}, '
             f'user_id={user_id}, '
             f'has_provider_tokens={bool(provider_handler and provider_handler.provider_tokens)}'
         )
