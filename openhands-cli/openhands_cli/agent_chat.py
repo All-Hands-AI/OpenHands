@@ -153,7 +153,7 @@ def run_cli_entry() -> None:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
-            break
+                break
 
 
     # Clean up terminal state
