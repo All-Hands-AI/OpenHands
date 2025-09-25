@@ -22,6 +22,20 @@ function PosthogInit() {
     null,
   );
 
+  // If arriving from marketing with ph_did, store it as a short-lived cookie and clean the URL
+  React.useEffect(() => {
+    try {
+      const url = new URL(window.location.href);
+      const phDid = url.searchParams.get("ph_did");
+      if (phDid) {
+        const expires = new Date(Date.now() + 1000 * 60 * 60 * 24).toUTCString(); // 1 day
+        document.cookie = `ph_did=${encodeURIComponent(phDid)}; Path=/; Expires=${expires}; SameSite=Lax`;
+        url.searchParams.delete("ph_did");
+        window.history.replaceState({}, "", url.toString());
+      }
+    } catch {}
+  }, []);
+
   React.useEffect(() => {
     (async () => {
       try {
@@ -35,10 +49,19 @@ function PosthogInit() {
 
   React.useEffect(() => {
     if (posthogClientKey) {
-      posthog.init(posthogClientKey, {
+      const opts: any = {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
-      });
+      };
+      try {
+        const host = window.location.hostname;
+        if (host.endsWith("all-hands.dev")) {
+          opts.cookie_domain = ".all-hands.dev";
+        }
+      } catch {}
+      posthog.init(posthogClientKey, opts);
+      // tag events with site identifier for segmentation
+      posthog.register({ site: "app" });
     }
   }, [posthogClientKey]);
 

@@ -173,6 +173,33 @@ async def keycloak_callback(
     # If this is a feature environment, add "FEATURE_" prefix to user_id for PostHog
     posthog_user_id = f'FEATURE_{user_id}' if IS_FEATURE_ENV else user_id
 
+    # Attempt to merge any pre-login anonymous session from marketing via alias
+    try:
+        marketing_distinct_id = request.cookies.get('ph_did')
+        if marketing_distinct_id and marketing_distinct_id != posthog_user_id:
+            try:
+                # Merge anonymous marketing DID into the authenticated user ID
+                # previous_id: anonymous/web distinct id; distinct_id: stable app user id
+                posthog.alias(previous_id=marketing_distinct_id, distinct_id=posthog_user_id)
+                logger.info(
+                    'auth:posthog_alias:success',
+                    extra={
+                        'posthog_user_id': posthog_user_id,
+                        'marketing_distinct_id': marketing_distinct_id,
+                    },
+                )
+            except Exception as e:
+                logger.error(
+                    'auth:posthog_alias:failed',
+                    extra={
+                        'posthog_user_id': posthog_user_id,
+                        'marketing_distinct_id': marketing_distinct_id,
+                        'error': str(e),
+                    },
+                )
+    except Exception as e:
+        logger.error('auth:posthog_alias:unexpected_error', extra={'error': str(e)})
+
     try:
         posthog.identify(
             posthog_user_id,
