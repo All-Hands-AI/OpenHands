@@ -5078,14 +5078,14 @@ utils = ["numpydoc"]
 
 [[package]]
 name = "lmnr"
-version = "0.7.13"
+version = "0.7.14"
 description = "Python SDK for Laminar"
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-    {file = "lmnr-0.7.13-py3-none-any.whl", hash = "sha256:4d7ddbe846ed999b582d5945eea32ddaf7df273404d2878d03917c5262a68304"},
-    {file = "lmnr-0.7.13.tar.gz", hash = "sha256:01c5c2c89e1f32fdcdca3cee154adbbe091cb44e5d1cd9193c0a1060e258267e"},
+    {file = "lmnr-0.7.14-py3-none-any.whl", hash = "sha256:37f6be96ce8d3e1e9b4ec781aa53a45ad8073fc8f80d0488a932369b6787c160"},
+    {file = "lmnr-0.7.14.tar.gz", hash = "sha256:e2b65a1d99eabdc42df6baa484a6d2b408a94004469015e7d786708498fd6807"},
 ]
 
 [package.dependencies]
@@ -12086,4 +12086,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "fcf37e0e736df15397745f7c4bd0d6c4ef98931496397b6b0b1b5966b127b960"
+content-hash = "8a2fc6a69946737aa8a2179556d945b84231bd0cf10c60b05ebb1582f5023bbe"
