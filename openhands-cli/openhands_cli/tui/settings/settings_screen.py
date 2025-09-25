@@ -21,6 +21,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.pt_style import COLOR_GREY
 
+
 class SettingsScreen:
     def __init__(self, conversation: Conversation | None = None):
         self.file_store = LocalFileStore(PERSISTENCE_DIR)
@@ -39,7 +40,7 @@ class SettingsScreen:
         labels_and_values = []
         if not advanced_llm_settings:
             # Attempt to determine provider, fallback if not directly available
-            provider = llm.model.split('/')[0] if '/' in llm.model else 'Unknown'
+            provider = llm.model.split("/")[0] if "/" in llm.model else "Unknown"
 
             labels_and_values.extend(
                 [
@@ -52,15 +53,27 @@ class SettingsScreen:
                 [
                     ("   Custom Model", llm.model),
                     ("   Base URL", llm.base_url),
-
                 ]
             )
-        labels_and_values.extend([
-            ("   API Key", "********" if llm.api_key else "Not Set"),
-            ("   Confirmation Mode", "Enabled" if self.conversation.confirmation_policy_active else "Disabled"),
-            ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
-            ("   Configuration File", os.path.join(PERSISTENCE_DIR, AGENT_SETTINGS_PATH))
-        ])
+        labels_and_values.extend(
+            [
+                ("   API Key", "********" if llm.api_key else "Not Set"),
+                (
+                    "   Confirmation Mode",
+                    "Enabled"
+                    if self.conversation.confirmation_policy_active
+                    else "Disabled",
+                ),
+                (
+                    "   Memory Condensation",
+                    "Enabled" if agent_spec.condenser else "Disabled",
+                ),
+                (
+                    "   Configuration File",
+                    os.path.join(PERSISTENCE_DIR, AGENT_SETTINGS_PATH),
+                ),
+            ]
+        )
 
         # Calculate max widths for alignment
         # Ensure values are strings for len() calculation
@@ -115,11 +128,11 @@ class SettingsScreen:
                 step_counter,
                 provider,
                 self.conversation.agent.llm.api_key if self.conversation else None,
-                escapable=escapable
+                escapable=escapable,
             )
             save_settings_confirmation()
         except KeyboardInterrupt:
-            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+            print_formatted_text(HTML("\n<red>Cancelled settings change.</red>"))
             return
 
         # Store the collected settings for persistence
@@ -133,74 +146,43 @@ class SettingsScreen:
             base_url = prompt_base_url(step_counter)
             api_key = prompt_api_key(
                 step_counter,
-                custom_model.split('/')[0] if len(custom_model.split('/')) > 1 else '',
+                custom_model.split("/")[0] if len(custom_model.split("/")) > 1 else "",
                 self.conversation.agent.llm.api_key if self.conversation else None,
-                escapable=escapable
+                escapable=escapable,
             )
             memory_condensation = choose_memory_condensation(step_counter)
 
             # Confirm save
             save_settings_confirmation()
         except KeyboardInterrupt:
-            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+            print_formatted_text(HTML("\n<red>Cancelled settings change.</red>"))
             return
 
         # Store the collected settings for persistence
         self._save_advanced_settings(
-            custom_model,
-            base_url,
-            api_key,
-            memory_condensation
+            custom_model, base_url, api_key, memory_condensation
         )
 
-    def _save_llm_settings(
-        self,
-        model,
-        api_key,
-        base_url: str | None = None
-    ) -> None:
-        llm = LLM(
-            model=model,
-            api_key=api_key,
-            base_url=base_url,
-            service_id="agent"
-        )
+    def _save_llm_settings(self, model, api_key, base_url: str | None = None) -> None:
+        llm = LLM(model=model, api_key=api_key, base_url=base_url, service_id="agent")
 
         agent = self.agent_store.load()
         if not agent:
-            agent = get_default_agent(
-                llm=llm,
-                working_dir=WORK_DIR,
-                cli_mode=True
-            )
+            agent = get_default_agent(llm=llm, working_dir=WORK_DIR, cli_mode=True)
 
         agent = agent.model_copy(update={"llm": llm})
         self.agent_store.save(agent)
 
-
     def _save_advanced_settings(
-        self,
-        custom_model: str,
-        base_url: str,
-        api_key: str,
-        memory_condensation: bool
+        self, custom_model: str, base_url: str, api_key: str, memory_condensation: bool
     ):
-        self._save_llm_settings(
-            custom_model,
-            api_key,
-            base_url=base_url
-        )
+        self._save_llm_settings(custom_model, api_key, base_url=base_url)
 
         agent_spec = self.agent_store.load()
         if not agent_spec:
             return
 
-
         if not memory_condensation:
             agent_spec.model_copy(update={"condenser": None})
 
         self.agent_store.save(agent_spec)
-
-
-
-

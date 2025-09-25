@@ -3,7 +3,7 @@ from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     NeverConfirm,
     ConfirmRisky,
-    ConfirmationPolicyBase
+    ConfirmationPolicyBase,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.event.utils import get_unmatched_actions
@@ -30,10 +30,10 @@ class ConversationRunner:
         else:
             self.set_confirmation_policy(AlwaysConfirm())
 
-    def set_confirmation_policy(self, confirmation_policy: ConfirmationPolicyBase) -> None:
+    def set_confirmation_policy(
+        self, confirmation_policy: ConfirmationPolicyBase
+    ) -> None:
         self.conversation.set_confirmation_policy(confirmation_policy)
-
-
 
     def _start_listener(self) -> None:
         self.listener = PauseListener(on_pause=self.conversation.pause)
@@ -121,15 +121,12 @@ class ConversationRunner:
         if not pending_actions:
             return UserConfirmation.ACCEPT
 
-
-
         result = ask_user_confirmation(
             pending_actions,
-            isinstance(self.conversation.state.confirmation_policy, ConfirmRisky)
+            isinstance(self.conversation.state.confirmation_policy, ConfirmRisky),
         )
         decision = result.decision
         policy_change = result.policy_change
-
 
         if decision == UserConfirmation.REJECT:
             self.conversation.reject_pending_actions(
@@ -137,11 +134,9 @@ class ConversationRunner:
             )
             return decision
 
-
         if decision == UserConfirmation.DEFER:
             self.conversation.pause()
             return decision
-
 
         if isinstance(policy_change, NeverConfirm):
             print_formatted_text(
@@ -151,8 +146,6 @@ class ConversationRunner:
             )
             self.set_confirmation_policy(policy_change)
             return decision
-
-
 
         if isinstance(policy_change, ConfirmRisky):
             print_formatted_text(
@@ -164,8 +157,6 @@ class ConversationRunner:
             self.set_confirmation_policy(policy_change)
             return decision
 
-
         # Accept action without changing existing policies
         assert decision == UserConfirmation.ACCEPT
         return decision
-

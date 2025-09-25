@@ -2,7 +2,7 @@ from prompt_toolkit import HTML, print_formatted_text
 from openhands.sdk.security.confirmation_policy import (
     ConfirmRisky,
     SecurityRisk,
-    NeverConfirm
+    NeverConfirm,
 )
 
 from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
@@ -10,8 +10,7 @@ from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 def ask_user_confirmation(
-    pending_actions: list,
-    using_risk_based_policy: bool = False
+    pending_actions: list, using_risk_based_policy: bool = False
 ) -> ConfirmationResult:
     """Ask user to confirm pending actions.
 
@@ -65,7 +64,7 @@ def ask_user_confirmation(
     elif index == 2:
         try:
             reason_result = cli_text_input(
-                'Please enter your reason for rejecting these actions: '
+                "Please enter your reason for rejecting these actions: "
             )
         except Exception:
             return ConfirmationResult(decision=UserConfirmation.DEFER)
@@ -73,10 +72,10 @@ def ask_user_confirmation(
         # Support both string return and (reason, cancelled) tuple for tests
         cancelled = False
         if isinstance(reason_result, tuple) and len(reason_result) >= 1:
-            reason = reason_result[0] or ''
+            reason = reason_result[0] or ""
             cancelled = bool(reason_result[1]) if len(reason_result) > 1 else False
         else:
-            reason = str(reason_result or '').strip()
+            reason = str(reason_result or "").strip()
 
         if cancelled:
             return ConfirmationResult(decision=UserConfirmation.DEFER)
@@ -84,13 +83,12 @@ def ask_user_confirmation(
         return ConfirmationResult(decision=UserConfirmation.REJECT, reason=reason)
     elif index == 3:
         return ConfirmationResult(
-            decision=UserConfirmation.ACCEPT,
-            policy_change=NeverConfirm()
+            decision=UserConfirmation.ACCEPT, policy_change=NeverConfirm()
         )
     elif index == 4:
         return ConfirmationResult(
             decision=UserConfirmation.ACCEPT,
-            policy_change=ConfirmRisky(threshold=SecurityRisk.HIGH)
+            policy_change=ConfirmRisky(threshold=SecurityRisk.HIGH),
         )
 
     return ConfirmationResult(decision=UserConfirmation.REJECT)

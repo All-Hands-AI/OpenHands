@@ -9,6 +9,7 @@ from prompt_toolkit import HTML, print_formatted_text
 
 class AgentStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
+
     def __init__(self) -> None:
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
 
@@ -21,27 +22,27 @@ class AgentStore:
             updated_tools = get_default_tools(
                 working_dir=WORK_DIR,
                 persistence_dir=PERSISTENCE_DIR,
-                enable_browser=False
+                enable_browser=False,
             )
-            
+
             # Create agent context with current working directory
             agent_context = AgentContext(
                 system_message_suffix=f"You current working directory is: {WORK_DIR}",
             )
-            
-            agent = agent.model_copy(update={
-                "tools": updated_tools,
-                "agent_context": agent_context
-            })
+
+            agent = agent.model_copy(
+                update={"tools": updated_tools, "agent_context": agent_context}
+            )
 
             return agent
         except FileNotFoundError:
             return None
         except Exception:
-            print_formatted_text(HTML("\n<red>Agent configuration file is corrupted!</red>"))
+            print_formatted_text(
+                HTML("\n<red>Agent configuration file is corrupted!</red>")
+            )
             return None
 
     def save(self, agent: Agent) -> None:
         serialized_spec = agent.model_dump_json(context={"expose_secrets": True})
         self.file_store.write(AGENT_SETTINGS_PATH, serialized_spec)
-

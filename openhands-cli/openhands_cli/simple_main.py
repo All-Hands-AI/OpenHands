@@ -35,6 +35,7 @@ def main() -> None:
     except Exception as e:
         print_formatted_text(HTML(f"<red>Error starting agent chat: {e}</red>"))
         import traceback
+
         traceback.print_exc()
         raise
 

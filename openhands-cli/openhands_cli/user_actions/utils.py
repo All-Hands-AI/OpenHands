@@ -106,7 +106,7 @@ def cli_text_input(
     escapable: bool = True,
     completer: Completer | None = None,
     validator: Validator = None,
-    is_password: bool = False
+    is_password: bool = False,
 ) -> str:
     """Prompt user to enter text input with optional validation.
 
@@ -126,14 +126,13 @@ def cli_text_input(
 
     if escapable:
 
-        @kb.add('c-c')
+        @kb.add("c-c")
         def _(event: KeyPressEvent) -> None:
             raise KeyboardInterrupt()
 
-        @kb.add('c-p')
+        @kb.add("c-p")
         def _(event: KeyPressEvent) -> None:
             raise KeyboardInterrupt()
-
 
     reason = str(
         prompt(
@@ -142,7 +141,7 @@ def cli_text_input(
             key_bindings=kb,
             completer=completer,
             is_password=is_password,
-            validator=validator
+            validator=validator,
         )
     )
     return reason.strip()

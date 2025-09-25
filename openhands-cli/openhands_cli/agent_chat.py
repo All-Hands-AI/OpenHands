@@ -91,7 +91,22 @@ def run_cli_entry() -> None:
                 continue
 
             elif command == "/clear":
-                display_welcome(session_id)
+                print_formatted_text(
+                    HTML("<yellow>Starting new conversation...</yellow>")
+                )
+                # Create a new conversation to clear context
+                try:
+                    conversation = setup_conversation()
+                    runner = ConversationRunner(conversation)
+                    session_id = str(uuid.uuid4())[:8]
+                    display_welcome(session_id)
+                    print_formatted_text(
+                        HTML("<green>✓ New conversation started</green>")
+                    )
+                except Exception as e:
+                    print_formatted_text(
+                        HTML(f"<red>Error creating new conversation: {e}</red>")
+                    )
                 continue
             elif command == "/help":
                 display_help()
@@ -108,7 +123,9 @@ def run_cli_entry() -> None:
                 continue
             elif command == "/confirm":
                 runner.toggle_confirmation_mode()
-                new_status = "enabled" if runner.is_confirmation_mode_enabled else "disabled"
+                new_status = (
+                    "enabled" if runner.is_confirmation_mode_enabled else "disabled"
+                )
                 print_formatted_text(
                     HTML(f"<yellow>Confirmation mode {new_status}</yellow>")
                 )
@@ -117,8 +134,19 @@ def run_cli_entry() -> None:
                 print_formatted_text(
                     HTML("<yellow>Starting new conversation...</yellow>")
                 )
-                session_id = str(uuid.uuid4())[:8]
-                display_welcome(session_id)
+                # Create a new conversation to clear context
+                try:
+                    conversation = setup_conversation()
+                    runner = ConversationRunner(conversation)
+                    session_id = str(uuid.uuid4())[:8]
+                    display_welcome(session_id)
+                    print_formatted_text(
+                        HTML("<green>✓ New conversation started</green>")
+                    )
+                except Exception as e:
+                    print_formatted_text(
+                        HTML(f"<red>Error creating new conversation: {e}</red>")
+                    )
                 continue
             elif command == "/resume":
                 if not (

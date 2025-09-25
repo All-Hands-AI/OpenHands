@@ -92,3 +92,8 @@ def test_commands_dict() -> None:
         assert command.startswith('/')
         assert isinstance(description, str)
         assert len(description) > 0
+
+
+def test_clear_command_description() -> None:
+    """Test that /clear command has the correct description."""
+    assert COMMANDS['/clear'] == "Start a new conversation from scratch"
