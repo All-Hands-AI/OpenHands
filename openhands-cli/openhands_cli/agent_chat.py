@@ -18,6 +18,7 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.key_binding import KeyBindings, merge_key_bindings
 from prompt_toolkit.key_binding.defaults import load_key_bindings
 from prompt_toolkit.keys import Keys
+from prompt_toolkit.input import create_input
 
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_conversation, MissingAgentSpec
@@ -56,6 +57,10 @@ def run_cli_entry() -> None:
 
     display_welcome(session_id)
 
+    # Create a dedicated input instance for the prompt session
+    # This helps ensure terminal state is properly managed
+    prompt_input = create_input()
+    
     # Create key bindings that include default navigation keys
     default_bindings = load_key_bindings()
     custom_bindings = KeyBindings()
@@ -72,6 +77,7 @@ def run_cli_entry() -> None:
     session = PromptSession(
         completer=CommandCompleter(),
         key_bindings=all_bindings,
+        input=prompt_input,
     )
 
     # Create conversation runner to handle state machine logic
@@ -162,3 +168,9 @@ def run_cli_entry() -> None:
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
                 break
+    
+    # Ensure proper cleanup of input resources
+    try:
+        prompt_input.close()
+    except Exception:
+        pass

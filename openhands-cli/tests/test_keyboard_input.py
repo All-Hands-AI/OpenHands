@@ -2,7 +2,7 @@
 
 import pytest
 from prompt_toolkit import PromptSession
-from prompt_toolkit.input import create_pipe_input
+from prompt_toolkit.input import create_pipe_input, create_input
 from prompt_toolkit.output import DummyOutput
 from prompt_toolkit.key_binding import KeyBindings, merge_key_bindings
 from prompt_toolkit.key_binding.defaults import load_key_bindings
@@ -162,3 +162,41 @@ class TestKeyboardInput:
             
             # This test verifies that the original approach still works
             assert session is not None
+
+    def test_dedicated_input_instance(self) -> None:
+        """Test that using a dedicated input instance works correctly."""
+        # Create a dedicated input instance (like our enhanced fix)
+        prompt_input = create_input()
+        
+        try:
+            # Create key bindings that include default navigation keys
+            default_bindings = load_key_bindings()
+            custom_bindings = KeyBindings()
+
+            @custom_bindings.add(Keys.ControlC)
+            def _(event):
+                """Handle Ctrl+C gracefully."""
+                raise KeyboardInterrupt()
+
+            # Merge default and custom key bindings
+            all_bindings = merge_key_bindings([default_bindings, custom_bindings])
+
+            # Create a prompt session with dedicated input instance
+            session = PromptSession(
+                completer=CommandCompleter(),
+                key_bindings=all_bindings,
+                input=prompt_input,
+                output=DummyOutput(),
+            )
+
+            # Verify the session is properly configured
+            assert session is not None
+            assert session.key_bindings is not None
+            assert session.input is prompt_input
+            
+        finally:
+            # Ensure proper cleanup
+            try:
+                prompt_input.close()
+            except Exception:
+                pass
