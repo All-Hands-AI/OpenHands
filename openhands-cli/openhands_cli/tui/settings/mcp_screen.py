@@ -17,15 +17,19 @@ class MCPScreen:
     def mcp_action_menu(self):
         try:
             settings_type = mcp_action_menu()
+
+
+            if settings_type == MCPActionType.LIST:
+                self.list_mcp_servers()
+
+            if settings_type == MCPActionType.ADD_JSON_CONFIG:
+                config_path = propmt_mcp_json_config_file()
+                self.save_mcp_configuration(config_path)
+
+
         except KeyboardInterrupt:
             return
 
-        if settings_type == MCPActionType.LIST:
-            self.list_mcp_servers()
-
-        if settings_type == MCPActionType.ADD_JSON_CONFIG:
-            config_path = propmt_mcp_json_config_file()
-            self.save_mcp_configuration(config_path)
 
 
     def save_mcp_configuration(

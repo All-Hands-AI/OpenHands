@@ -1,17 +1,30 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
-import os
+from pathlib import Path
 from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk.preset.default import get_default_tools
 from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_PATH, PERSISTENCE_DIR, WORK_DIR
-from openhands_cli.user_actions.mcp_action import load_mcp_config
 from prompt_toolkit import HTML, print_formatted_text
+from fastmcp.mcp_config import MCPConfig
 
 
 class AgentStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
     def __init__(self) -> None:
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
+
+    def load_mcp_configuration(self):
+        try:
+            mcp_json_location = self.file_store.read(MCP_CONFIG_PATH)
+        except FileNotFoundError:
+            return {}
+
+
+        try:
+            mcp_config = MCPConfig.from_file(Path(mcp_json_location))
+            return mcp_config.to_dict()['mcpServers']
+        except ValueError as e:
+            return {}
 
     def load(self) -> Agent | None:
         try:
@@ -25,14 +38,14 @@ class AgentStore:
                 enable_browser=False
             )
 
-            mcp_config: dict = load_mcp_config(MCP_CONFIG_PATH)
-            existing_config = agent.mcp_config.copy()
+            mcp_config = self.load_mcp_configuration()
+            existing_config = agent.mcp_config.copy().get('mcpServers', {})
             mcp_config.update(existing_config)
 
 
             agent = agent.model_copy(update={
                 "tools": updated_tools,
-                "mcp_config": mcp_config
+                "mcp_config": {'mcpServers': mcp_config} if mcp_config else {}
             })
 
             return agent
