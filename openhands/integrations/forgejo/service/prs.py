@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from __future__ import annotations
-
 from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
@@ -26,7 +24,9 @@ class ForgejoPRsMixin(ForgejoMixinBase):
             repo_name = str(repo_name or '').strip()
 
         if not owner or not repo_name:
-            raise ValueError('Repository information is required to create a pull request')
+            raise ValueError(
+                'Repository information is required to create a pull request'
+            )
 
         url = self._build_repo_api_url(owner, repo_name, 'pulls')
         response, _ = await self._make_request(
@@ -53,7 +53,9 @@ class ForgejoPRsMixin(ForgejoMixinBase):
             return
 
         owner, repo = self._split_repo(repository)
-        url = self._build_repo_api_url(owner, repo, 'pulls', str(pr_number), 'requested_reviewers')
+        url = self._build_repo_api_url(
+            owner, repo, 'pulls', str(pr_number), 'requested_reviewers'
+        )
 
         try:
             await self._make_request(

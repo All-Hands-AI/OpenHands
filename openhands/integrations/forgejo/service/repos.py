@@ -89,7 +89,11 @@ class ForgejoReposMixin(ForgejoMixinBase):
 
         if query:
             lowered = query.lower()
-            repos = [repo for repo in repos if lowered in (repo.get('full_name') or '').lower()]
+            repos = [
+                repo
+                for repo in repos
+                if lowered in (repo.get('full_name') or '').lower()
+            ]
 
         link_header = headers.get('Link')
         return [self._parse_repository(repo, link_header=link_header) for repo in repos]

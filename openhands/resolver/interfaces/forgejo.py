@@ -62,7 +62,11 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return f'{self._api_root()}/repos/{self.owner}/{self.repo}'
 
     def get_authorize_url(self) -> str:
-        credential = f'{self.username}:{self.token}' if self.username else f'x-auth-token:{self.token}'
+        credential = (
+            f'{self.username}:{self.token}'
+            if self.username
+            else f'x-auth-token:{self.token}'
+        )
         return f'https://{credential}@{self.base_domain}/'
 
     def get_branch_url(self, branch_name: str) -> str:
@@ -73,7 +77,11 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return f'{self.get_base_url()}/issues'
 
     def get_clone_url(self) -> str:
-        credential = f'{self.username}:{self.token}' if self.username else f'x-access-token:{self.token}'
+        credential = (
+            f'{self.username}:{self.token}'
+            if self.username
+            else f'x-access-token:{self.token}'
+        )
         return f'https://{credential}@{self.base_domain}/{self.owner}/{self.repo}.git'
 
     def get_graphql_url(self) -> str:
@@ -81,7 +89,9 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return ''
 
     def get_compare_url(self, branch_name: str) -> str:
-        return f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}'
+        return (
+            f'https://{self.base_domain}/{self.owner}/{self.repo}/compare/{branch_name}'
+        )
 
     def download_issues(self) -> list[Any]:
         page = 1
@@ -99,7 +109,9 @@ class ForgejoIssueHandler(IssueHandlerInterface):
             if not isinstance(issues, list) or any(
                 not isinstance(issue, dict) for issue in issues
             ):
-                raise ValueError('Expected list of dictionaries from Forgejo issues API.')
+                raise ValueError(
+                    'Expected list of dictionaries from Forgejo issues API.'
+                )
 
             all_issues.extend(issues)
             page += 1
@@ -257,7 +269,9 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         return closing_issues
 
     def get_pull_url_for_issue(self, issue_number: int) -> str:
-        return f'https://{self.base_domain}/{self.owner}/{self.repo}/issues/{issue_number}'
+        return (
+            f'https://{self.base_domain}/{self.owner}/{self.repo}/issues/{issue_number}'
+        )
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
@@ -276,7 +290,9 @@ class ForgejoIssueHandler(IssueHandlerInterface):
         converted: list[Issue] = []
         for issue in filtered:
             if any(issue.get(key) is None for key in ['number', 'title']):
-                logger.warning(f'Skipping issue {issue} as it is missing number or title.')
+                logger.warning(
+                    f'Skipping issue {issue} as it is missing number or title.'
+                )
                 continue
 
             issue_number = self._to_int(issue.get('number') or issue.get('index'))
@@ -358,7 +374,9 @@ class ForgejoPRHandler(ForgejoIssueHandler):
             if not comments:
                 break
 
-            filtered = [comment for comment in comments if not comment.get('is_system', False)]
+            filtered = [
+                comment for comment in comments if not comment.get('is_system', False)
+            ]
 
             if comment_id is not None:
                 matching = next(

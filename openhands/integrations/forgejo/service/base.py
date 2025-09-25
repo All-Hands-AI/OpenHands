@@ -23,10 +23,10 @@ from openhands.integrations.service_types import (
 class ForgejoMixinBase(BaseGitService, HTTPClient):
     """Common functionality shared by Forgejo service mixins."""
 
-    DEFAULT_BASE_URL = "https://codeberg.org/api/v1"
-    DEFAULT_DOMAIN = "codeberg.org"
+    DEFAULT_BASE_URL = 'https://codeberg.org/api/v1'
+    DEFAULT_DOMAIN = 'codeberg.org'
 
-    token: SecretStr = SecretStr("")
+    token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(
@@ -47,12 +47,12 @@ class ForgejoMixinBase(BaseGitService, HTTPClient):
         if token:
             self.token = token
 
-        env_base_url = os.environ.get("FORGEJO_BASE_URL")
+        env_base_url = os.environ.get('FORGEJO_BASE_URL')
         self.BASE_URL = self._resolve_base_url(base_url, base_domain, env_base_url)
         self.base_url = self.BASE_URL  # Backwards compatibility for existing usage
         parsed = urlparse(self.BASE_URL)
         self.base_domain = parsed.netloc or self.DEFAULT_DOMAIN
-        self.web_base_url = f"https://{self.base_domain}".rstrip("/")
+        self.web_base_url = f'https://{self.base_domain}'.rstrip('/')
 
     @property
     def provider(self) -> str:
@@ -68,8 +68,8 @@ class ForgejoMixinBase(BaseGitService, HTTPClient):
                 self.token = latest_token
 
         return {
-            "Authorization": f"token {self.token.get_secret_value() if self.token else ''}",
-            "Accept": "application/json",
+            'Authorization': f'token {self.token.get_secret_value() if self.token else ""}',
+            'Accept': 'application/json',
         }
 
     async def _make_request(
@@ -102,12 +102,12 @@ class ForgejoMixinBase(BaseGitService, HTTPClient):
 
                 response.raise_for_status()
                 headers_out: dict[str, str] = {}
-                for header in ("Link", "X-Total-Count", "X-Total"):
+                for header in ('Link', 'X-Total-Count', 'X-Total'):
                     if header in response.headers:
                         headers_out[header] = response.headers[header]
 
-                content_type = response.headers.get("Content-Type", "")
-                if "application/json" in content_type:
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/json' in content_type:
                     return response.json(), headers_out
                 return response.text, headers_out
 
@@ -131,84 +131,84 @@ class ForgejoMixinBase(BaseGitService, HTTPClient):
             if not candidate:
                 continue
 
-            normalized = candidate.strip().rstrip("/")
+            normalized = candidate.strip().rstrip('/')
             if not normalized:
                 continue
 
-            if normalized.startswith(("http://", "https://")):
+            if normalized.startswith(('http://', 'https://')):
                 url = normalized
             else:
-                url = f"https://{normalized}"
+                url = f'https://{normalized}'
 
-            if "/api/" in url:
+            if '/api/' in url:
                 return url
 
-            return f"{url}/api/v1"
+            return f'{url}/api/v1'
 
         return self.DEFAULT_BASE_URL
 
     async def get_user(self) -> User:  # type: ignore[override]
-        url = f"{self.BASE_URL}/user"
+        url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
 
         return User(
-            id=str(response.get("id", "")),
-            login=response.get("username", ""),
-            avatar_url=response.get("avatar_url", ""),
-            name=response.get("full_name"),
-            email=response.get("email"),
-            company=response.get("organization"),
+            id=str(response.get('id', '')),
+            login=response.get('username', ''),
+            avatar_url=response.get('avatar_url', ''),
+            name=response.get('full_name'),
+            email=response.get('email'),
+            company=response.get('organization'),
         )
 
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        owner = repo.get("owner") or {}
+        owner = repo.get('owner') or {}
         owner_type = (
             OwnerType.ORGANIZATION
-            if (owner.get("type") or "").lower() == "organization"
+            if (owner.get('type') or '').lower() == 'organization'
             else OwnerType.USER
         )
 
         return Repository(
-            id=str(repo.get("id", "")),
-            full_name=repo.get("full_name", ""),
-            stargazers_count=repo.get("stars_count"),
+            id=str(repo.get('id', '')),
+            full_name=repo.get('full_name', ''),
+            stargazers_count=repo.get('stars_count'),
             git_provider=ProviderType.FORGEJO,
-            is_public=not repo.get("private", False),
+            is_public=not repo.get('private', False),
             link_header=link_header,
-            pushed_at=repo.get("updated_at") or repo.get("pushed_at"),
+            pushed_at=repo.get('updated_at') or repo.get('pushed_at'),
             owner_type=owner_type,
-            main_branch=repo.get("default_branch"),
+            main_branch=repo.get('default_branch'),
         )
 
     def _split_repo(self, repository: str) -> tuple[str, str]:
         repo_path = repository.strip()
-        if repo_path.startswith(("http://", "https://")):
+        if repo_path.startswith(('http://', 'https://')):
             parsed = urlparse(repo_path)
-            repo_path = parsed.path.lstrip("/")
+            repo_path = parsed.path.lstrip('/')
 
-        parts = [part for part in repo_path.split("/") if part]
+        parts = [part for part in repo_path.split('/') if part]
         if len(parts) < 2:
-            raise ValueError(f"Invalid repository format: {repository}")
+            raise ValueError(f'Invalid repository format: {repository}')
 
         return parts[0], parts[1]
 
     def _build_repo_api_url(self, owner: str, repo: str, *segments: str) -> str:
-        base = f"{self.BASE_URL}/repos/{owner}/{repo}"
+        base = f'{self.BASE_URL}/repos/{owner}/{repo}'
         if segments:
-            base = f"{base}/{'/'.join(segments)}"
+            base = f'{base}/{"/".join(segments)}'
         return base
 
     def _map_sort(self, sort: str) -> str:
         sort_map = {
-            "pushed": "updated",
-            "updated": "updated",
-            "created": "created",
-            "full_name": "name",
+            'pushed': 'updated',
+            'updated': 'updated',
+            'created': 'created',
+            'full_name': 'name',
         }
-        return sort_map.get(sort, "updated")
+        return sort_map.get(sort, 'updated')
 
     def handle_http_error(self, e: httpx.HTTPError) -> UnknownException:  # type: ignore[override]
-        logger.warning(f"HTTP error on {self.provider} API: {type(e).__name__} : {e}")
-        return UnknownException(f"HTTP error {type(e).__name__} : {e}")
+        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')

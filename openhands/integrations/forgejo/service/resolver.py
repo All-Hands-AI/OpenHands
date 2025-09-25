@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from collections import defaultdict
+from datetime import datetime
 from typing import cast
 
 from openhands.integrations.forgejo.service.base import ForgejoMixinBase
@@ -30,7 +29,9 @@ class ForgejoResolverMixin(ForgejoMixinBase):
         max_comments: int = 20,
     ) -> list[Comment]:
         owner, repo = self._split_repo(repository)
-        url = self._build_repo_api_url(owner, repo, 'issues', str(issue_number), 'comments')
+        url = self._build_repo_api_url(
+            owner, repo, 'issues', str(issue_number), 'comments'
+        )
         per_page = min(max_comments, 50)
         params = {
             'page': '1',
