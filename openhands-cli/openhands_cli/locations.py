@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 
 # Configuration directory for storing agent settings and CLI configuration
 PERSISTENCE_DIR = os.path.expanduser("~/.openhands")
@@ -7,4 +8,7 @@ PERSISTENCE_DIR = os.path.expanduser("~/.openhands")
 WORK_DIR = os.getcwd()
 
 AGENT_SETTINGS_PATH = "agent_settings.json"
-CONVERSATION_PATH = "conversations/{}"
+
+def get_conversation_perisistence_path(conversation_id: UUID):
+    return os.path.join(PERSISTENCE_DIR, f"conversation/{conversation_id}")
+

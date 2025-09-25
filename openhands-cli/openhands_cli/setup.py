@@ -8,7 +8,7 @@ from openhands.tools.execute_bash import BashTool
 from openhands.tools.str_replace_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands.sdk import register_tool, LocalFileStore
-from openhands_cli.locations import CONVERSATION_PATH
+from openhands_cli.locations import get_conversation_perisistence_path
 import uuid
 
 register_tool("BashTool", BashTool)
@@ -28,7 +28,7 @@ def setup_conversation() -> BaseConversation:
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    conversation_id = str(uuid.uuid4())
+    conversation_id = uuid.uuid4()
 
     agent_store = AgentStore()
     agent = agent_store.load()
@@ -38,8 +38,11 @@ def setup_conversation() -> BaseConversation:
     # Create conversation - agent context is now set in AgentStore.load()
     conversation = Conversation(
         agent=agent,
-        persist_filestore=LocalFileStore(CONVERSATION_PATH.format(conversation_id)),
-        conversation_id=conversation_id)
+        persist_filestore=LocalFileStore(
+            get_conversation_perisistence_path(conversation_id)
+        ),
+        conversation_id=conversation_id
+    )
 
     print_formatted_text(
         HTML(f"<green>✓ Agent initialized with model: {agent.llm.model}</green>")

@@ -8,6 +8,7 @@ from prompt_toolkit.shortcuts import clear
 
 from openhands_cli import __version__
 from openhands_cli.pt_style import get_cli_style
+from uuid import UUID
 
 DEFAULT_STYLE = get_cli_style()
 
@@ -42,7 +43,7 @@ class CommandCompleter(Completer):
                     )
 
 
-def display_banner(session_id: str) -> None:
+def display_banner(conversation_id: str) -> None:
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -58,7 +59,7 @@ def display_banner(session_id: str) -> None:
     print_formatted_text(HTML(f"<grey>OpenHands CLI v{__version__}</grey>"))
 
     print_formatted_text("")
-    print_formatted_text(HTML(f"<grey>Initialized conversation {session_id}</grey>"))
+    print_formatted_text(HTML(f"<grey>Initialized conversation {conversation_id}</grey>"))
     print_formatted_text("")
 
 
@@ -80,10 +81,10 @@ def display_help() -> None:
     print_formatted_text("")
 
 
-def display_welcome(session_id: str = "chat") -> None:
+def display_welcome(conversation_id: UUID) -> None:
     """Display welcome message."""
     clear()
-    display_banner(session_id[0:8])
+    display_banner(str(conversation_id)[0:8])
     print_formatted_text(HTML("<gold>Let's start building!</gold>"))
     print_formatted_text(
         HTML(
