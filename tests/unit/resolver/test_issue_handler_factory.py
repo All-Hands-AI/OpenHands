@@ -3,6 +3,10 @@ from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.integrations.provider import ProviderType
+from openhands.resolver.interfaces.forgejo import (
+    ForgejoIssueHandler,
+    ForgejoPRHandler,
+)
 from openhands.resolver.interfaces.github import GithubIssueHandler, GithubPRHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler, GitlabPRHandler
 from openhands.resolver.interfaces.issue_definitions import (
@@ -27,32 +31,35 @@ def factory_params(llm_config):
         'repo': 'test-repo',
         'token': 'test-token',
         'username': 'test-user',
-        'base_domain': 'github.com',
         'llm_config': llm_config,
     }
 
 
 test_cases = [
-    # platform, issue_type, expected_context_type, expected_handler_type
-    (ProviderType.GITHUB, 'issue', ServiceContextIssue, GithubIssueHandler),
-    (ProviderType.GITHUB, 'pr', ServiceContextPR, GithubPRHandler),
-    (ProviderType.GITLAB, 'issue', ServiceContextIssue, GitlabIssueHandler),
-    (ProviderType.GITLAB, 'pr', ServiceContextPR, GitlabPRHandler),
+    # platform, issue_type, base_domain, expected_context_type, expected_handler_type
+    (ProviderType.GITHUB, 'issue', 'github.com', ServiceContextIssue, GithubIssueHandler),
+    (ProviderType.GITHUB, 'pr', 'github.com', ServiceContextPR, GithubPRHandler),
+    (ProviderType.GITLAB, 'issue', 'gitlab.com', ServiceContextIssue, GitlabIssueHandler),
+    (ProviderType.GITLAB, 'pr', 'gitlab.com', ServiceContextPR, GitlabPRHandler),
+    (ProviderType.FORGEJO, 'issue', 'codeberg.org', ServiceContextIssue, ForgejoIssueHandler),
+    (ProviderType.FORGEJO, 'pr', 'codeberg.org', ServiceContextPR, ForgejoPRHandler),
 ]
 
 
 @pytest.mark.parametrize(
-    'platform,issue_type,expected_context_type,expected_handler_type', test_cases
+    'platform,issue_type,base_domain,expected_context_type,expected_handler_type',
+    test_cases,
 )
 def test_handler_creation(
     factory_params,
     platform: ProviderType,
     issue_type: str,
+    base_domain: str,
     expected_context_type: type,
     expected_handler_type: type,
 ):
     factory = IssueHandlerFactory(
-        **factory_params, platform=platform, issue_type=issue_type
+        **factory_params, platform=platform, issue_type=issue_type, base_domain=base_domain
     )
 
     handler = factory.create()
@@ -63,7 +70,10 @@ def test_handler_creation(
 
 def test_invalid_issue_type(factory_params):
     factory = IssueHandlerFactory(
-        **factory_params, platform=ProviderType.GITHUB, issue_type='invalid'
+        **factory_params,
+        platform=ProviderType.GITHUB,
+        issue_type='invalid',
+        base_domain='github.com',
     )
 
     with pytest.raises(ValueError, match='Invalid issue type: invalid'):
