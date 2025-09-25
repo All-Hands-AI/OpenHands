@@ -84,6 +84,7 @@ COMMANDS = {
     '/help': 'Display available commands',
     '/init': 'Initialize a new repository',
     '/status': 'Display conversation details and usage metrics',
+    '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
