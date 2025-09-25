@@ -80,7 +80,6 @@ def test_commands_dict() -> None:
         '/clear',
         '/status',
         '/confirm',
-        '/new',
         '/resume',
         '/settings',
     }
