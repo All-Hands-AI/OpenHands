@@ -19,6 +19,7 @@ class ConversationRunner:
 
     def __init__(self, conversation: BaseConversation):
         self.conversation = conversation
+        self.listener = None
 
     @property
     def is_confirmation_mode_enabled(self):
@@ -32,6 +33,24 @@ class ConversationRunner:
 
     def set_confirmation_policy(self, confirmation_policy: ConfirmationPolicyBase) -> None:
         self.conversation.set_confirmation_policy(confirmation_policy)
+    
+    def close(self) -> None:
+        """Clean up resources to prevent slow shutdown."""
+        try:
+            # Stop any active listeners
+            if hasattr(self, 'listener') and self.listener is not None:
+                if hasattr(self.listener, 'stop'):
+                    self.listener.stop()
+                self.listener = None
+            
+            # Close conversation if it has a close method
+            if hasattr(self.conversation, 'close'):
+                self.conversation.close()
+                
+        except Exception as e:
+            # Don't let cleanup errors prevent shutdown
+            import logging
+            logging.debug(f"Error during ConversationRunner cleanup: {e}")
 
 
 

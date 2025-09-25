@@ -181,3 +181,42 @@ def run_cli_entry() -> None:
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
                 break
+    
+    # Explicit cleanup to prevent slow shutdown
+    if conversation is not None:
+        try:
+            # Close conversation resources
+            if hasattr(conversation, 'close'):
+                conversation.close()
+            del conversation
+        except Exception as e:
+            logger.debug(f"Error during conversation cleanup: {e}")
+    
+    if runner is not None:
+        try:
+            # Close runner resources
+            if hasattr(runner, 'close'):
+                runner.close()
+            del runner
+        except Exception as e:
+            logger.debug(f"Error during runner cleanup: {e}")
+    
+    # Force garbage collection to clean up any remaining references
+    import gc
+    gc.collect()
+    
+    # Add a timeout mechanism to prevent hanging on exit
+    import threading
+    import os
+    import signal
+    
+    def force_exit():
+        """Force exit if cleanup takes too long."""
+        import time
+        time.sleep(3)  # Give 3 seconds for normal cleanup
+        logger.debug("Forcing exit due to slow cleanup")
+        os._exit(0)  # Force immediate exit
+    
+    # Start the force exit timer
+    exit_timer = threading.Thread(target=force_exit, daemon=True)
+    exit_timer.start()
