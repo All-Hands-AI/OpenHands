@@ -949,9 +949,7 @@ class SaasNestedConversationManager(ConversationManager):
             attach_to_existing=False,
             headless_mode=False,
             user_id=user_id,
-            git_provider_tokens=provider_handler.provider_tokens
-            if provider_handler
-            else None,
+            # git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
             main_module='openhands.server',
             llm_registry=llm_registry,
         )
