@@ -1,16 +1,27 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
-import os
+from pathlib import Path
+from typing import Any
+from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk import LocalFileStore, Agent, AgentContext
 from openhands.sdk.preset.default import get_default_tools
-from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
+from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
+from fastmcp.mcp_config import MCPConfig
 
 
 class AgentStore:
     """Single source of truth for persisting/retrieving AgentSpec."""
     def __init__(self) -> None:
         self.file_store = LocalFileStore(root=PERSISTENCE_DIR)
+
+    def load_mcp_configuration(self) -> dict[str, Any]:
+        try:
+            mcp_config_path = Path(self.file_store.root) / MCP_CONFIG_FILE
+            mcp_config = MCPConfig.from_file(mcp_config_path)
+            return mcp_config.to_dict()['mcpServers']
+        except Exception as e:
+            return {}
 
     def load(self) -> Agent | None:
         try:
@@ -23,14 +34,19 @@ class AgentStore:
                 persistence_dir=PERSISTENCE_DIR,
                 enable_browser=False
             )
-            
-            # Create agent context with current working directory
+
             agent_context = AgentContext(
                 system_message_suffix=f"You current working directory is: {WORK_DIR}",
             )
-            
+
+
+            additional_mcp_config = self.load_mcp_configuration()
+            mcp_config: dict = agent.mcp_config.copy().get('mcpServers', {})
+            mcp_config.update(additional_mcp_config)
+
             agent = agent.model_copy(update={
                 "tools": updated_tools,
+                "mcp_config": {'mcpServers': mcp_config} if mcp_config else {},
                 "agent_context": agent_context
             })
 
