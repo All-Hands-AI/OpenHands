@@ -399,6 +399,19 @@ export function WsClientProvider({
       return () => undefined; // conversation not ready for WebSocket connection
     }
 
+    // Check if session_api_key is available - required for WebSocket authentication
+    if (!conversation.session_api_key) {
+      console.log('[WS_DEBUG] No session_api_key yet, skipping WebSocket connection', {
+        conversationId,
+        status: conversation.status,
+        hasUrl: !!conversation.url,
+      });
+      // This effect runs whenever conversation object changes. Since we're not setting any state that
+      // would cause re-renders, we rely on the existing polling to refetch conversation and trigger this
+      // effect again when session_api_key becomes available.
+      return () => undefined; // Wait for session_api_key to become available
+    }
+
     console.log('[WS_DEBUG] ESTABLISHING WebSocket connection for conversation with status:', conversation.status);
 
     let sio = sioRef.current;
