@@ -34,6 +34,37 @@ import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/us
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { cn } from "#/utils/utils";
 
+interface OpenHandsApiKeyHelpProps {
+  testId: string;
+}
+
+function OpenHandsApiKeyHelp({ testId }: OpenHandsApiKeyHelpProps) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <HelpLink
+        testId={testId}
+        text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+        linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+        href="https://app.all-hands.dev/settings/api-keys"
+        suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
+      />
+      <p className="text-xs">
+        {t(I18nKey.SETTINGS$LLM_BILLING_INFO)}{" "}
+        <a
+          href="https://docs.all-hands.dev/usage/llms/openhands-llms"
+          rel="noreferrer noopener"
+          target="_blank"
+          className="underline underline-offset-2"
+        >
+          {t(I18nKey.SETTINGS$SEE_PRICING_DETAILS)}
+        </a>
+      </p>
+    </>
+  );
+}
+
 function LlmSettingsScreen() {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -445,7 +476,7 @@ function LlmSettingsScreen() {
         )}
         inert={shouldShowUpgradeBanner}
       >
-        <div className="p-9 flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
@@ -473,13 +504,7 @@ function LlmSettingsScreen() {
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
-                    <HelpLink
-                      testId="openhands-api-key-help"
-                      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-                      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                      href="https://app.all-hands.dev/settings/api-keys"
-                      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
-                    />
+                    <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
                   )}
                 </>
               )}
@@ -554,13 +579,7 @@ function LlmSettingsScreen() {
               />
               {(settings.LLM_MODEL?.startsWith("openhands/") ||
                 currentSelectedModel?.startsWith("openhands/")) && (
-                <HelpLink
-                  testId="openhands-api-key-help-2"
-                  text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-                  linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                  href="https://app.all-hands.dev/settings/api-keys"
-                  suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
-                />
+                <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
               )}
 
               <SettingsInput
@@ -732,7 +751,7 @@ function LlmSettingsScreen() {
           )}
         </div>
 
-        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        <div className="flex gap-6 p-6 justify-end">
           <BrandButton
             testId="submit-button"
             type="submit"

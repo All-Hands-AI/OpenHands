@@ -1,8 +1,6 @@
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
-import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
@@ -43,11 +41,9 @@ const renderNewConversation = () => {
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };
