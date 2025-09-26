@@ -355,19 +355,6 @@ class SaasNestedConversationManager(ConversationManager):
                         await self._wait_for_conversation_ready(
                             client, runtime.runtime_url, sid
                         )
-
-                        # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
-                        await self.send_event_to_conversation(
-                            sid,
-                            {
-                                'observation': 'agent_state_changed',
-                                'content': '',
-                                'extras': {'agent_state': 'READY'},
-                            },
-                        )
-                        logger.info(
-                            f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for resume sid={sid}'
-                        )
                 else:
                     # Resume but no existing session, create new conversation
                     await self._start_conversation(
@@ -425,19 +412,6 @@ class SaasNestedConversationManager(ConversationManager):
                 client, api_url, sid, user_id, settings, initial_user_msg, replay_json
             )
             await self._wait_for_conversation_ready(client, api_url, sid)
-
-            # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
-            await self.send_event_to_conversation(
-                sid,
-                {
-                    'observation': 'agent_state_changed',
-                    'content': '',
-                    'extras': {'agent_state': 'READY'},
-                },
-            )
-            logger.info(
-                f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for sid={sid}'
-            )
 
     async def _setup_experiment_config(
         self, client: httpx.AsyncClient, api_url: str, sid: str, user_id: str
