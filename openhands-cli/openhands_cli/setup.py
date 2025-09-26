@@ -19,7 +19,7 @@ class MissingAgentSpec(Exception):
     """Raised when agent specification is not found or invalid."""
     pass
 
-def setup_conversation() -> BaseConversation:
+def setup_conversation(conversation_id) -> BaseConversation:
     """
     Setup the conversation with agent.
 
@@ -27,7 +27,7 @@ def setup_conversation() -> BaseConversation:
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    conversation_id = uuid.uuid4()
+    print("creating conversation", conversation_id)
 
     with LoadingContext("Initializing OpenHands agent..."):
         agent_store = AgentStore()

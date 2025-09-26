@@ -1,3 +1,4 @@
+from typing import Callable
 from openhands.sdk import BaseConversation, Message
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
@@ -10,7 +11,7 @@ from openhands.sdk.event.utils import get_unmatched_actions
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
-from openhands_cli.threaded_agent import ThreadAgentRunner
+from openhands_cli.threaded_agent import ProcessAgentRunner
 from openhands_cli.user_actions import ask_user_confirmation
 from openhands_cli.user_actions.types import UserConfirmation
 
@@ -18,9 +19,9 @@ from openhands_cli.user_actions.types import UserConfirmation
 class ConversationRunner:
     """Handles the conversation state machine logic cleanly."""
 
-    def __init__(self, conversation: BaseConversation):
-        self.conversation = conversation
-        self._runner = ThreadAgentRunner(conversation)
+    def __init__(self, get_conversation: Callable):
+        self._runner = ProcessAgentRunner(get_conversation)
+        self.conversation = get_conversation()
 
     @property
     def is_confirmation_mode_enabled(self):
@@ -105,14 +106,14 @@ class ConversationRunner:
 
         while True:
             # Start the agent in a separate thread
-            self.threaded_agent.run_agent()
+            self._runner.run_agent()
 
             with pause_listener(
                 self.conversation,
-                on_terminate=self.threaded_agent.terminate_immediately
+                on_terminate=self._runner.terminate_immediately
             ) as listener:
                 try:
-                    self.threaded_agent.wait_for_completion()
+                    self._runner.wait_for_completion()
                 except Exception as e:
                     if not listener.is_terminated():
                         # Re-raise exception if it wasn't due to termination

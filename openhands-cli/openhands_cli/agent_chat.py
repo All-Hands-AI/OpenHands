@@ -4,7 +4,9 @@ Agent chat functionality for OpenHands CLI.
 Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
+from functools import partial
 import sys
+import uuid
 from openhands.sdk import (
     Message,
     TextContent,
@@ -38,6 +40,17 @@ def _restore_tty() -> None:
         pass
 
 
+def create_callable(conversation):
+    def get_conversation():
+        return conversation
+
+    return get_conversation
+
+def make_conversation_from_id(conversation_id: uuid.UUID):
+    return setup_conversation(conversation_id)
+
+
+
 def run_cli_entry() -> None:
     """Run the agent chat session using the agent SDK.
 
@@ -49,17 +62,19 @@ def run_cli_entry() -> None:
 
     conversation = None
     settings_screen = SettingsScreen()
+    conversation_id = uuid.uuid4()
 
-    while not conversation:
-        try:
-            conversation = setup_conversation()
-        except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
+    # while not conversation:
+    #     try:
+    #         conversation = setup_conversation(conversation_id)
+    #     except MissingAgentSpec:
+    #         settings_screen.handle_basic_settings(escapable=False)
 
-    display_welcome(conversation.id)
+    display_welcome(conversation_id)
 
     # Create conversation runner to handle state machine logic
-    runner = ConversationRunner(conversation)
+    factory = partial(make_conversation_from_id, conversation_id)
+    runner = ConversationRunner(factory)
     session = get_session_prompter()
 
     # Main chat loop

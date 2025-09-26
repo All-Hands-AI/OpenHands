@@ -1,68 +1,109 @@
-# thread_agent_runner.py
+# process_agent_runner.py
 from __future__ import annotations
-import threading
-import ctypes
-import time
-from typing import Optional, Callable
 
-from openhands.sdk import BaseConversation
+import multiprocessing as mp
+import os
+import signal
+import sys
+from typing import Callable, Optional
 
-class ThreadAgentRunner:
+
+class ProcessAgentRunner:
     """
-    Run conversation.run() in a thread and *attempt* to terminate by injecting
-    KeyboardInterrupt into that thread. WARNING: unsafe; prefer processes.
+    Run conversation.run() in a *separate process* so we can terminate immediately
+    (even mid-step) without unsafe thread hacks.
+
+    Usage:
+        runner = ProcessAgentRunner(conversation_factory)
+        runner.run_agent()
+        runner.wait_for_completion()
+        # on double Ctrl-C:
+        runner.terminate_immediately()
     """
 
-    def __init__(self, conversation_factory: BaseConversation):
-        # Use a factory so a fresh conversation can be made per run if needed
-        self._conversation_factory = conversation_factory
-        self._thread: Optional[threading.Thread] = None
-        self._done = threading.Event()
+    def __init__(
+        self,
+        conversation_factory: Callable[[], object],   # must be picklable
+        start_method: Optional[str] = None,           # default "spawn" cross-platform
+        kill_grace_seconds: float = 1.5,              # SIGTERM grace before SIGKILL (POSIX)
+    ):
+        self._ctx = mp.get_context(start_method or "spawn")
+        self._factory = conversation_factory
+        self._proc: Optional[mp.Process] = None
+        self._done = self._ctx.Event()
+        self._kill_grace_seconds = kill_grace_seconds
 
     def run_agent(self) -> None:
-        if self._thread and self._thread.is_alive():
+        if self._proc and self._proc.is_alive():
             return
         self._done.clear()
-
-        def _target():
-            conv = self._conversation_factory
-            try:
-                conv.run()  # synchronous, blocking
-            except (KeyboardInterrupt, SystemExit):
-                # Let termination be clean from our perspective
-                pass
-            finally:
-                self._done.set()
-
-        self._thread = threading.Thread(target=_target, daemon=True)
-        self._thread.start()
+        self._proc = self._ctx.Process(
+            target=_child_entry,
+            args=(self._factory, self._done),
+            daemon=True,
+        )
+        self._proc.start()
 
     def wait_for_completion(self, timeout: float | None = None) -> None:
-        self._done.wait(timeout=timeout)
+        if not self._proc:
+            return
+        self._proc.join(timeout)
 
     def is_running(self) -> bool:
-        return bool(self._thread and self._thread.is_alive())
+        return bool(self._proc and self._proc.is_alive())
 
     def terminate_immediately(self) -> None:
-        """
-        Try to stop the running thread by injecting KeyboardInterrupt.
-        DANGEROUS: may leave program in bad state. Use at your own risk.
-        """
-        if not self._thread or not self._thread.is_alive():
+        """Kill the agent process right now (and its children on POSIX)."""
+        if not self._proc or not self._proc.is_alive():
             return
-        tid = self._thread_id(self._thread)
-        if tid is None:
-            return
-        # Inject KeyboardInterrupt into the target thread
-        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
-            ctypes.c_long(tid),
-            ctypes.py_object(KeyboardInterrupt),
-        )
-        if res > 1:
-            # Undo if it affected more than one thread
-            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
 
-    @staticmethod
-    def _thread_id(thr: threading.Thread) -> Optional[int]:
-        # Thread.ident is the CPython thread id usable by PyThreadState_SetAsyncExc
-        return thr.ident
+        pid = self._proc.pid
+        if pid is None:
+            return
+
+        try:
+            if os.name == "posix":
+                # Kill whole process group (child calls setsid()).
+                pgid = os.getpgid(pid)
+                os.killpg(pgid, signal.SIGTERM)
+                self._proc.join(self._kill_grace_seconds)
+                if self._proc.is_alive():
+                    os.killpg(pgid, signal.SIGKILL)
+            else:
+                # Windows: terminate the process (children may persist unless using Job Objects).
+                self._proc.terminate()
+        except Exception:
+            # Last resort
+            try:
+                self._proc.kill()
+            except Exception:
+                pass
+
+    def close(self) -> None:
+        if self._proc and self._proc.is_alive():
+            self.terminate_immediately()
+        self._proc = None
+
+
+def _child_entry(conversation_factory: Callable[[], object], done_event: mp.Event) -> None:
+    """Child process: build conversation and run synchronously."""
+    # New process group so parent can kill the entire tree on POSIX.
+    if os.name == "posix":
+        os.setsid()
+
+    try:
+        conv = conversation_factory()
+        conv.run()  # blocking, synchronous; safe to kill via signals
+    except KeyboardInterrupt:
+        pass
+    except Exception:
+        # Log to child stderr so you can see failures
+        import traceback
+        traceback.print_exc()
+    finally:
+        done_event.set()
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        except Exception:
+            pass
