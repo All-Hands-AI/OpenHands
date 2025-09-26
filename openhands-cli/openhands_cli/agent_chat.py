@@ -4,10 +4,7 @@ Agent chat functionality for OpenHands CLI.
 Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
-import logging
 import sys
-import uuid
-
 from openhands.sdk import (
     Message,
     TextContent,
@@ -15,7 +12,7 @@ from openhands.sdk import (
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.user_actions.utils import get_session_prompter
-from prompt_toolkit import PromptSession, print_formatted_text
+from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
@@ -27,8 +24,6 @@ from openhands_cli.tui.tui import (
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 
-
-logger = logging.getLogger(__name__)
 
 def _restore_tty() -> None:
     """
