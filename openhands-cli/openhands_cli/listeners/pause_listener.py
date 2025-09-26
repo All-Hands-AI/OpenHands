@@ -20,7 +20,6 @@ class PauseListener(threading.Thread):
         on_pause: Callable,
         on_terminate: Callable | None = None,  # called on double Ctrl+C
         input_source: Input | None = None,  # used to pipe inputs for unit tests
-        double_ctrl_c_timeout: float = 2.0,  # seconds to wait for second Ctrl+C
     ):
         super().__init__(daemon=True)
         self.on_pause = on_pause
@@ -29,12 +28,11 @@ class PauseListener(threading.Thread):
         self._pause_event = threading.Event()
         self._terminate_event = threading.Event()
         self._input = input_source or create_input()
-        self._double_ctrl_c_timeout = double_ctrl_c_timeout
-        self._last_ctrl_c_time = None
+        self.interrupt_count = 0
 
     def _detect_pause_key_presses(self) -> tuple[bool, bool]:
         """Detect pause key presses and double Ctrl+C.
-        
+
         Returns:
             tuple: (pause_detected, terminate_detected)
         """
@@ -42,20 +40,15 @@ class PauseListener(threading.Thread):
         terminate_detected = False
 
         for key_press in self._input.read_keys():
+            if key_press.key == Keys.ControlC:
+                self.interrupt_count += 1
+                pause_detected = True
+
             if key_press.key == Keys.ControlP or key_press.key == Keys.ControlD:
                 pause_detected = True
-            elif key_press.key == Keys.ControlC:
-                current_time = time.time()
-                
-                # Check if this is a double Ctrl+C
-                if (self._last_ctrl_c_time is not None and 
-                    current_time - self._last_ctrl_c_time <= self._double_ctrl_c_timeout):
-                    terminate_detected = True
-                    self._last_ctrl_c_time = None  # Reset
-                else:
-                    # First Ctrl+C or too much time has passed
-                    self._last_ctrl_c_time = current_time
-                    pause_detected = True
+
+            if self.interrupt_count >= 2:
+                terminate_detected = True
 
         return pause_detected, terminate_detected
 
@@ -88,7 +81,7 @@ class PauseListener(threading.Thread):
                 # User hasn't paused/terminated and pause listener hasn't been shut down
                 while not (self.is_paused() or self.is_terminated() or self.is_stopped()):
                     pause_detected, terminate_detected = self._detect_pause_key_presses()
-                    
+
                     if terminate_detected:
                         self._execute_terminate()
                         break
@@ -115,13 +108,13 @@ class PauseListener(threading.Thread):
 
 @contextmanager
 def pause_listener(
-    conversation: Conversation, 
+    conversation: Conversation,
     on_terminate: Callable | None = None,
     input_source: Input | None = None
 ) -> Iterator[PauseListener]:
     """Ensure PauseListener always starts/stops cleanly."""
     listener = PauseListener(
-        on_pause=conversation.pause, 
+        on_pause=conversation.pause,
         on_terminate=on_terminate,
         input_source=input_source
     )

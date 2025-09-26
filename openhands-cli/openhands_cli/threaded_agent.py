@@ -1,94 +1,68 @@
-"""
-Threaded agent execution for immediate termination support.
-"""
-
+# thread_agent_runner.py
+from __future__ import annotations
 import threading
+import ctypes
 import time
-from typing import Optional
+from typing import Optional, Callable
 
-from openhands.sdk import BaseConversation, Message
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from prompt_toolkit import HTML, print_formatted_text
+from openhands.sdk import BaseConversation
 
+class ThreadAgentRunner:
+    """
+    Run conversation.run() in a thread and *attempt* to terminate by injecting
+    KeyboardInterrupt into that thread. WARNING: unsafe; prefer processes.
+    """
 
-class ThreadedAgentRunner:
-    """Runs agent in a separate thread that can be terminated immediately."""
-    
-    def __init__(self, conversation: BaseConversation):
-        self.conversation = conversation
-        self._agent_thread: Optional[threading.Thread] = None
-        self._terminate_event = threading.Event()
-        self._exception: Optional[Exception] = None
-        
-    def run_agent(self, message: Optional[Message] = None) -> None:
-        """Run the agent in a separate thread.
-        
-        Args:
-            message: Optional message to send before running
-        """
-        if self._agent_thread and self._agent_thread.is_alive():
-            # If agent is already running, just return
+    def __init__(self, conversation_factory: BaseConversation):
+        # Use a factory so a fresh conversation can be made per run if needed
+        self._conversation_factory = conversation_factory
+        self._thread: Optional[threading.Thread] = None
+        self._done = threading.Event()
+
+    def run_agent(self) -> None:
+        if self._thread and self._thread.is_alive():
             return
-            
-        self._terminate_event.clear()
-        self._exception = None
-        
-        self._agent_thread = threading.Thread(
-            target=self._agent_worker,
-            args=(message,),
-            daemon=True
-        )
-        self._agent_thread.start()
-        
-    def _agent_worker(self, message: Optional[Message]) -> None:
-        """Worker function that runs in the agent thread."""
-        try:
-            # Send message if provided
-            if message:
-                self.conversation.send_message(message)
-                
-            # Run the agent
-            self.conversation.run()
-            
-        except Exception as e:
-            self._exception = e
-            
-    def wait_for_completion(self, check_interval: float = 0.1) -> None:
-        """Wait for agent to complete or be terminated.
-        
-        Args:
-            check_interval: How often to check for termination (seconds)
-        """
-        if not self._agent_thread:
-            return
-            
-        while self._agent_thread.is_alive():
-            if self._terminate_event.is_set():
-                # Agent was terminated, don't wait for thread to finish naturally
-                break
-                
-            time.sleep(check_interval)
-            
-        # Check if there was an exception
-        if self._exception:
-            raise self._exception
-            
-    def terminate_immediately(self) -> None:
-        """Terminate the agent thread immediately."""
-        self._terminate_event.set()
-        
-        if self._agent_thread and self._agent_thread.is_alive():
-            # Note: Python doesn't have a clean way to forcefully terminate threads
-            # The thread will continue running but we mark it as terminated
-            # The conversation state should be persistent so we can resume later
-            print_formatted_text(
-                HTML("<red>Agent thread marked for termination. Conversation state is preserved.</red>")
-            )
-            
+        self._done.clear()
+
+        def _target():
+            conv = self._conversation_factory
+            try:
+                conv.run()  # synchronous, blocking
+            except (KeyboardInterrupt, SystemExit):
+                # Let termination be clean from our perspective
+                pass
+            finally:
+                self._done.set()
+
+        self._thread = threading.Thread(target=_target, daemon=True)
+        self._thread.start()
+
+    def wait_for_completion(self, timeout: float | None = None) -> None:
+        self._done.wait(timeout=timeout)
+
     def is_running(self) -> bool:
-        """Check if agent is currently running."""
-        return self._agent_thread is not None and self._agent_thread.is_alive()
-        
-    def is_terminated(self) -> bool:
-        """Check if agent was terminated."""
-        return self._terminate_event.is_set()
+        return bool(self._thread and self._thread.is_alive())
+
+    def terminate_immediately(self) -> None:
+        """
+        Try to stop the running thread by injecting KeyboardInterrupt.
+        DANGEROUS: may leave program in bad state. Use at your own risk.
+        """
+        if not self._thread or not self._thread.is_alive():
+            return
+        tid = self._thread_id(self._thread)
+        if tid is None:
+            return
+        # Inject KeyboardInterrupt into the target thread
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(
+            ctypes.c_long(tid),
+            ctypes.py_object(KeyboardInterrupt),
+        )
+        if res > 1:
+            # Undo if it affected more than one thread
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(tid), None)
+
+    @staticmethod
+    def _thread_id(thr: threading.Thread) -> Optional[int]:
+        # Thread.ident is the CPython thread id usable by PyThreadState_SetAsyncExc
+        return thr.ident
