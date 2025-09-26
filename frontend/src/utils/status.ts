@@ -145,13 +145,20 @@ export function getStatusCode(
     return runtimeStatus;
   }
 
+  // Handle conversation starting state BEFORE WebSocket states
+  // This ensures users see "Initializing agent..." instead of "Connecting..."
+  if (conversationStatus === "STARTING") {
+    console.log('[STATUS_DEBUG] Conversation STARTING, showing initializing status');
+    return I18nKey.AGENT_STATUS$INITIALIZING;
+  }
+
   // Handle WebSocket connection states
   if (webSocketStatus === "DISCONNECTED") {
     console.log('[STATUS_DEBUG] WebSocket DISCONNECTED, returning disconnected status');
     return I18nKey.CHAT_INTERFACE$DISCONNECTED;
   }
   if (webSocketStatus === "CONNECTING") {
-    console.log('[STATUS_DEBUG] WebSocket CONNECTING - this causes "Connecting..." message!', {
+    console.log('[STATUS_DEBUG] WebSocket CONNECTING - now only shown if conversation not STARTING', {
       conversationStatus,
       runtimeStatus,
       agentState
