@@ -191,9 +191,7 @@ class SaasNestedConversationManager(ConversationManager):
             status_str = (runtime.get('status') or 'stopped').upper()
             if status_str in ConversationStatus:
                 status = ConversationStatus[status_str]
-
-        # If Redis flag exists, we're starting/resuming regardless of runtime status
-        if starting:
+        if status is ConversationStatus.STOPPED and starting:
             status = ConversationStatus.STARTING
 
         if status is ConversationStatus.STOPPED:
