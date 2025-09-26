@@ -4,9 +4,17 @@ Simple main entry point for OpenHands CLI.
 This is a simplified version that demonstrates the TUI functionality.
 """
 
+import logging
+import os
+
+debug_env = os.getenv('DEBUG', 'false').lower()
+if debug_env != '1' and debug_env != 'true':
+    logging.disable(logging.WARNING)
+
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 from openhands_cli.agent_chat import run_cli_entry
+
 
 
 def main() -> None:
@@ -16,6 +24,7 @@ def main() -> None:
         ImportError: If agent chat dependencies are missing
         Exception: On other error conditions
     """
+
     try:
         # Start agent chat directly by default
         run_cli_entry()
@@ -35,6 +44,7 @@ def main() -> None:
     except Exception as e:
         print_formatted_text(HTML(f"<red>Error starting agent chat: {e}</red>"))
         import traceback
+
         traceback.print_exc()
         raise
 
