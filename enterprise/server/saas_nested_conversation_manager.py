@@ -174,36 +174,120 @@ class SaasNestedConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
+        logger.info(
+            f'[TOKEN_DEBUG] SaasNestedConversationManager.maybe_start_agent_loop ENTRY: '
+            f'sid={sid}, user_id={user_id}'
+        )
+
         # First we check redis to see if we are already starting - or the runtime will tell us the session is stopped
         redis = self._get_redis_client()
         key = self._get_redis_conversation_key(user_id, sid)
         starting = await redis.get(key)
 
+        logger.info(f'[TOKEN_DEBUG] Getting runtime for sid={sid}...')
         runtime = await self._get_runtime(sid)
+
+        logger.info(
+            f'[TOKEN_DEBUG] Runtime info for {sid}: '
+            f'exists={runtime is not None}, '
+            f'runtime_id={runtime.get("runtime_id") if runtime else None}, '
+            f'status={runtime.get("status") if runtime else None}, '
+            f'session_api_key_exists={bool(runtime.get("session_api_key")) if runtime else False}'
+        )
+
+        # Get raw runtime status for branching decisions
+        raw_runtime_status = (runtime.get('status') or '').lower() if runtime else ''
+
+        # Use _parse_status() only to compute the UI-facing ConversationStatus
+        status = self._parse_status(runtime) if runtime else ConversationStatus.STOPPED
 
         nested_url = None
         session_api_key = None
-        status = ConversationStatus.STOPPED
         event_store = EventStore(sid, self.file_store, user_id)
+
         if runtime:
             nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
             session_api_key = runtime.get('session_api_key')
-            status_str = (runtime.get('status') or 'stopped').upper()
-            if status_str in ConversationStatus:
-                status = ConversationStatus[status_str]
-        if status is ConversationStatus.STOPPED and starting:
-            status = ConversationStatus.STARTING
-
-        if status is ConversationStatus.STOPPED:
-            # Mark the agentloop as starting in redis
-            await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
-
-            # Start the agent loop in the background
-            asyncio.create_task(
-                self._start_agent_loop(
-                    sid, settings, user_id, initial_user_msg, replay_json
-                )
+            logger.info(
+                f'[TOKEN_DEBUG] Retrieved from runtime: '
+                f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
+                f'runtime_id={runtime.get("runtime_id")}, '
+                f'raw_status={raw_runtime_status}, '
+                f'parsed_status={status}'
             )
+
+        # Determine if we need to start/resume the conversation
+        # Key insight: We should only skip starting if:
+        # 1. Runtime is running AND
+        # 2. We're already starting (redis flag) OR conversation already exists
+
+        should_schedule_work = False
+        is_resume = False
+
+        if raw_runtime_status == 'paused':
+            # Always resume paused conversations
+            should_schedule_work = True
+            is_resume = True
+            logger.info(f'[TOKEN_DEBUG] Will resume paused conversation {sid}')
+        elif raw_runtime_status in ('stopped', ''):
+            # Start new for stopped or non-existent runtimes
+            should_schedule_work = True
+            logger.info(f'[TOKEN_DEBUG] Will start new conversation {sid} (status={raw_runtime_status})')
+        elif raw_runtime_status == 'running':
+            # For running, only start if not already starting
+            if starting:
+                logger.info(f'[TOKEN_DEBUG] Already starting {sid} per Redis, returning STARTING')
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=nested_url,
+                    session_api_key=session_api_key,
+                    event_store=event_store,
+                    status=ConversationStatus.STARTING,
+                )
+            else:
+                # Runtime is running but we're not starting - this means conversation should exist
+                # Return RUNNING status
+                logger.info(f'[TOKEN_DEBUG] Runtime running and not starting, returning RUNNING')
+                return AgentLoopInfo(
+                    conversation_id=sid,
+                    url=nested_url,
+                    session_api_key=session_api_key,
+                    event_store=event_store,
+                    status=ConversationStatus.RUNNING,
+                )
+
+        if should_schedule_work:
+            if not starting:
+                logger.info(
+                    f'[TOKEN_DEBUG] Scheduling {"resume" if is_resume else "start"} '
+                    f'for sid={sid} (raw_status={raw_runtime_status})'
+                )
+                await redis.set(key, 1, ex=_REDIS_ENTRY_TIMEOUT_SECONDS)
+
+                asyncio.create_task(
+                    self._start_agent_loop(
+                        sid, settings, user_id, initial_user_msg, replay_json, is_resume
+                    )
+                )
+            else:
+                logger.info(
+                    f'[TOKEN_DEBUG] Already starting {sid} according to Redis, not scheduling again'
+                )
+
+            # Return STARTING when work is scheduled or in progress
+            return AgentLoopInfo(
+                conversation_id=sid,
+                url=nested_url,
+                session_api_key=session_api_key,
+                event_store=event_store,
+                status=ConversationStatus.STARTING,
+            )
+
+        logger.info(
+            f'[TOKEN_DEBUG] Returning from maybe_start_agent_loop: '
+            f'sid={sid}, status={status}, '
+            f'has_url={bool(nested_url)}, has_api_key={bool(session_api_key)}'
+        )
 
         return AgentLoopInfo(
             conversation_id=sid,
@@ -214,18 +298,29 @@ class SaasNestedConversationManager(ConversationManager):
         )
 
     async def _start_agent_loop(
-        self, sid, settings, user_id, initial_user_msg=None, replay_json=None
+        self,
+        sid,
+        settings,
+        user_id,
+        initial_user_msg=None,
+        replay_json=None,
+        is_resume=False,
     ):
-        # Get Redis client and key at the start for use in multiple places
-        redis = self._get_redis_client()
-        key = self._get_redis_conversation_key(user_id, sid)
-
         try:
             logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+            logger.info(
+                f'[TOKEN_DEBUG] SaaS _start_agent_loop: sid={sid}, is_resume={is_resume}'
+            )
+
+            if is_resume:
+                logger.info(f'[RESUME_DEBUG] Resuming existing runtime for sid={sid}')
+            else:
+                logger.info(f'[RESUME_DEBUG] Creating new runtime for sid={sid}')
+
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
             runtime = await self._create_runtime(
-                sid, user_id, settings, provider_handler
+                sid, user_id, settings, provider_handler, is_resume
             )
             await runtime.connect()
 
@@ -237,33 +332,69 @@ class SaasNestedConversationManager(ConversationManager):
                 )
 
             session_api_key = runtime.session.headers['X-Session-API-Key']
-
-            await self._start_conversation(
-                sid,
-                user_id,
-                settings,
-                initial_user_msg,
-                replay_json,
-                runtime.runtime_url,
-                session_api_key,
+            logger.info(
+                f'[TOKEN_DEBUG] Got session_api_key from runtime: '
+                f'key_preview={session_api_key[:10] if session_api_key else "None"}...'
             )
 
-            # NEW: Wait for agent to be truly ready before removing Redis flag
-            logger.info(f'[AGENT_READY] Checking if agent is truly ready for sid={sid}')
-            async with httpx.AsyncClient(
-                headers={'X-Session-API-Key': session_api_key}
-            ) as client:
-                await self._wait_for_agent_truly_ready(client, runtime.runtime_url, sid)
+            # Check if we should skip conversation creation on resume
+            if is_resume:
+                # Get the existing runtime to check if we already have a session_api_key
+                existing_runtime = await self._get_runtime(sid)
+                if existing_runtime and existing_runtime.get('session_api_key'):
+                    logger.info(
+                        '[RESUME_DEBUG] Skipping conversation creation for resume '
+                        '(using existing session_api_key)'
+                    )
+                    # Use the EXISTING session_api_key for resume, not the new one
+                    existing_session_key = existing_runtime.get('session_api_key')
+                    # Just wait for the runtime to be ready
+                    async with httpx.AsyncClient(
+                        headers={'X-Session-API-Key': existing_session_key}
+                    ) as client:
+                        await self._wait_for_conversation_ready(
+                            client, runtime.runtime_url, sid
+                        )
 
-            # NOW remove the starting entry from Redis (agent is ready)
-            logger.info(f'[AGENT_READY] Agent ready, removing Redis flag for sid={sid}')
+                        # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
+                        await self.send_event_to_conversation(
+                            sid,
+                            {
+                                'observation': 'agent_state_changed',
+                                'content': '',
+                                'extras': {'agent_state': 'READY'},
+                            },
+                        )
+                        logger.info(
+                            f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for resume sid={sid}'
+                        )
+                else:
+                    # Resume but no existing session, create new conversation
+                    await self._start_conversation(
+                        sid,
+                        user_id,
+                        settings,
+                        initial_user_msg,
+                        replay_json,
+                        runtime.runtime_url,
+                        session_api_key,
+                    )
+            else:
+                # Not a resume, normal start
+                await self._start_conversation(
+                    sid,
+                    user_id,
+                    settings,
+                    initial_user_msg,
+                    replay_json,
+                    runtime.runtime_url,
+                    session_api_key,
+                )
+        finally:
+            # remove the starting entry from redis
+            redis = self._get_redis_client()
+            key = self._get_redis_conversation_key(user_id, sid)
             await redis.delete(key)
-
-        except Exception as e:
-            # If there's an error, still remove the Redis flag to prevent getting stuck
-            logger.error(f'Error in _start_agent_loop for sid={sid}: {e}')
-            await redis.delete(key)
-            raise
 
     async def _start_conversation(
         self,
@@ -276,6 +407,11 @@ class SaasNestedConversationManager(ConversationManager):
         session_api_key: str,
     ):
         logger.info('starting_nested_conversation', extra={'sid': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] _start_conversation with session_api_key: '
+            f'key_preview={session_api_key[:10] if session_api_key else "None"}..., '
+            f'api_url={api_url[:50] if api_url else "None"}...'
+        )
         async with httpx.AsyncClient(
             headers={
                 'X-Session-API-Key': session_api_key,
@@ -289,6 +425,19 @@ class SaasNestedConversationManager(ConversationManager):
                 client, api_url, sid, user_id, settings, initial_user_msg, replay_json
             )
             await self._wait_for_conversation_ready(client, api_url, sid)
+
+            # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
+            await self.send_event_to_conversation(
+                sid,
+                {
+                    'observation': 'agent_state_changed',
+                    'content': '',
+                    'extras': {'agent_state': 'READY'},
+                },
+            )
+            logger.info(
+                f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for sid={sid}'
+            )
 
     async def _setup_experiment_config(
         self, client: httpx.AsyncClient, api_url: str, sid: str, user_id: str
@@ -434,68 +583,35 @@ class SaasNestedConversationManager(ConversationManager):
     ):
         """Wait for the conversation to be ready by checking the events endpoint."""
         # TODO: Find out why /api/conversations/{sid} returns RUNNING when events are not available
-        for _ in range(5):
+        logger.info(
+            f'[WEBSOCKET_DEBUG] Starting _wait_for_conversation_ready for sid={sid}, '
+            f'will check events endpoint up to 5 times'
+        )
+        for attempt in range(5):
             try:
                 logger.info('checking_events_endpoint_running', extra={'sid': sid})
+                logger.info(
+                    f'[WEBSOCKET_DEBUG] Attempt {attempt+1}/5: Checking {api_url}/api/conversations/{sid}/events'
+                )
                 response = await client.get(f'{api_url}/api/conversations/{sid}/events')
                 if response.is_success:
                     logger.info('events_endpoint_is_running', extra={'sid': sid})
+                    logger.info(
+                        f'[WEBSOCKET_DEBUG] Events endpoint ready after {attempt+1} attempts. '
+                        f'Frontend should now be able to connect via websocket.'
+                    )
                     break
-            except Exception:
-                logger.warning('events_endpoint_not_ready', extra={'sid': sid})
-            await asyncio.sleep(5)
-
-    async def _wait_for_agent_truly_ready(
-        self, client: httpx.AsyncClient, api_url: str, sid: str
-    ):
-        """Wait for agent to reach AWAITING_USER_INPUT state.
-
-        This ensures the agent has completed setup.sh and is ready to process messages.
-        Based on the existing _wait_for_conversation_ready pattern.
-        """
-        logger.info(f'[AGENT_READY] Waiting for agent to be truly ready for sid={sid}')
-
-        for attempt in range(30):  # 60 seconds max (30 * 2s)
-            try:
-                response = await client.get(f'{api_url}/api/conversations/{sid}/events')
-                if response.is_success:
-                    events = response.json()
-
-                    # Check last 20 events for AWAITING_USER_INPUT state
-                    recent_events = events[-20:] if isinstance(events, list) else []
-                    for event in recent_events:
-                        if isinstance(event, dict):
-                            # Check for agent state in extras
-                            extras = event.get('extras', {})
-                            agent_state = extras.get('agent_state')
-
-                            # Check for states that indicate agent is ready (past initialization)
-                            # - AWAITING_USER_INPUT: Agent ready, waiting for input
-                            # - RUNNING: Agent processing (e.g., initial message)
-                            # - FINISHED: Agent completed task (e.g., simple initial message)
-                            ready_states = {'AWAITING_USER_INPUT', 'RUNNING', 'FINISHED'}
-
-                            # Also check for the state change action
-                            if (agent_state in ready_states or
-                                (event.get('action') == 'change_agent_state' and
-                                 event.get('args', {}).get('agent_state') in ready_states)):
-                                logger.info(
-                                    f'[AGENT_READY] Agent truly ready after {attempt+1} attempts '
-                                    f'({(attempt+1)*2} seconds) for sid={sid}'
-                                )
-                                return True
             except Exception as e:
-                logger.debug(
-                    f'[AGENT_READY] Attempt {attempt+1} failed while waiting for agent ready: {e}'
+                logger.warning('events_endpoint_not_ready', extra={'sid': sid})
+                logger.warning(
+                    f'[WEBSOCKET_DEBUG] Events endpoint not ready (attempt {attempt+1}/5): {e}'
                 )
-
-            await asyncio.sleep(2)
-
-        logger.warning(
-            f'[AGENT_READY] Timeout waiting for agent ready after 60s for sid={sid}, '
-            f'proceeding anyway'
-        )
-        return False
+            await asyncio.sleep(5)
+        else:
+            logger.error(
+                f'[WEBSOCKET_DEBUG] CRITICAL: Events endpoint never became ready after 5 attempts! '
+                f'Frontend will not receive events for sid={sid}'
+            )
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
@@ -530,10 +646,17 @@ class SaasNestedConversationManager(ConversationManager):
 
     async def close_session(self, sid: str):
         logger.info('close_session', extra={'sid': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] close_session called for {sid}, about to pause runtime'
+        )
         runtime = await self._get_runtime(sid)
         if runtime is None:
             logger.info('no_session_to_close', extra={'sid': sid})
+            logger.info(f'[TOKEN_DEBUG] No runtime found to close for {sid}')
             return
+        logger.info(
+            f'[TOKEN_DEBUG] Pausing runtime {runtime.get("runtime_id")} for session {sid}'
+        )
         async with self._httpx_client() as client:
             response = await client.post(
                 f'{self.remote_runtime_api_url}/pause',
@@ -759,6 +882,15 @@ class SaasNestedConversationManager(ConversationManager):
         provider_tokens = None
         if isinstance(settings, ConversationInitData):
             provider_tokens = settings.git_provider_tokens
+
+        logger.info(
+            f'[TOKEN_DEBUG] Getting provider handler: '
+            f'has_settings={settings is not None}, '
+            f'is_ConversationInitData={isinstance(settings, ConversationInitData)}, '
+            f'has_provider_tokens={bool(provider_tokens)}, '
+            f'token_count={len(provider_tokens) if provider_tokens else 0}'
+        )
+
         provider_handler = ProviderHandler(
             provider_tokens=provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({}))
@@ -771,7 +903,40 @@ class SaasNestedConversationManager(ConversationManager):
         user_id: str,
         settings: Settings,
         provider_handler: ProviderHandler,
+        is_resume: bool = False,
     ):
+        # Check if we have an existing runtime to understand the context
+        logger.info(
+            f'[RESUME_DEBUG] _create_runtime called for sid={sid}, is_resume={is_resume}'
+        )
+        existing_runtime = await self._get_runtime(sid)
+
+        # Determine if we should attach to existing runtime
+        attach_to_existing = False
+        if existing_runtime:
+            raw_status = (existing_runtime.get('status') or '').lower()
+            logger.info(
+                f'[RESUME_DEBUG] Found existing runtime: '
+                f'runtime_id={existing_runtime.get("runtime_id")}, '
+                f'status={raw_status}, '
+                f'has_api_key={bool(existing_runtime.get("session_api_key"))}'
+            )
+
+            # Attach to existing runtime if it's paused or running
+            if raw_status in ('paused', 'running'):
+                attach_to_existing = True
+                logger.info(
+                    f'[RESUME_DEBUG] Will attach to existing {raw_status} runtime'
+                )
+            else:
+                logger.info(
+                    f'[RESUME_DEBUG] Will create new runtime (existing is {raw_status})'
+                )
+        else:
+            logger.info(
+                '[RESUME_DEBUG] No existing runtime found, creating fresh runtime'
+            )
+
         llm_registry, conversation_stats, config = (
             create_registry_and_conversation_stats(self.config, sid, user_id, settings)
         )
@@ -832,6 +997,29 @@ class SaasNestedConversationManager(ConversationManager):
         if self._runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
 
+        # Log the attach_to_existing decision
+        logger.info(
+            f'[ATTACH_DEBUG] Making attach_to_existing decision: '
+            f'sid={sid}, attach_to_existing={attach_to_existing}, '
+            f'reasoning={"attach to paused/running" if attach_to_existing else "create new"}'
+        )
+
+        logger.info(
+            f'[TOKEN_DEBUG] Creating RemoteRuntime: '
+            f'sid={sid}, attach_to_existing={attach_to_existing}, '
+            f'user_id={user_id}, '
+            f'has_provider_tokens={bool(provider_handler and provider_handler.provider_tokens)}'
+        )
+
+        # Log the state of tokens before runtime creation
+        if provider_handler and provider_handler.provider_tokens:
+            logger.info(
+                f'[TOKEN_DEBUG] Provider tokens before runtime creation: '
+                f'{list(provider_handler.provider_tokens.keys())}'
+            )
+        else:
+            logger.info('[TOKEN_DEBUG] No provider tokens before runtime creation')
+
         runtime = RemoteRuntime(
             config=config,
             event_stream=None,  # type: ignore[arg-type]
@@ -839,12 +1027,16 @@ class SaasNestedConversationManager(ConversationManager):
             plugins=agent.sandbox_plugins,
             # env_vars=env_vars,
             # status_callback: Callable[..., None] | None = None,
-            attach_to_existing=False,
+            attach_to_existing=attach_to_existing,
             headless_mode=False,
             user_id=user_id,
             # git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
             main_module='openhands.server',
             llm_registry=llm_registry,
+        )
+
+        logger.info(
+            f'[TOKEN_DEBUG] RemoteRuntime created: runtime_id={runtime.runtime_id if hasattr(runtime, "runtime_id") else "N/A"}'
         )
 
         # TODO: This is a hack. The setup_initial_env method directly calls the methods on the action
@@ -894,10 +1086,27 @@ class SaasNestedConversationManager(ConversationManager):
 
     async def _get_runtime(self, sid: str) -> dict | None:
         async with self._httpx_client() as client:
-            response = await client.get(f'{self.remote_runtime_api_url}/sessions/{sid}')
+            url = f'{self.remote_runtime_api_url}/sessions/{sid}'
+            logger.info(f'[TOKEN_DEBUG] Fetching runtime from: {url}')
+
+            response = await client.get(url)
+
             if not response.is_success:
+                logger.info(
+                    f'[TOKEN_DEBUG] Runtime fetch failed: '
+                    f'status_code={response.status_code}, '
+                    f'sid={sid}'
+                )
                 return None
+
             response_json = response.json()
+            logger.info(
+                f'[TOKEN_DEBUG] Runtime fetched successfully: '
+                f'sid={sid}, '
+                f'runtime_id={response_json.get("runtime_id")}, '
+                f'status={response_json.get("status")}, '
+                f'has_api_key={bool(response_json.get("session_api_key"))}'
+            )
 
             # Hack: This endpoint doesn't return the session_id
             response_json['session_id'] = sid
@@ -907,12 +1116,26 @@ class SaasNestedConversationManager(ConversationManager):
     def _parse_status(self, runtime: dict):
         # status is one of running, stoppped, paused, error, starting
         status = (runtime.get('status') or '').upper()
+
+        logger.info(
+            f'[TOKEN_DEBUG] _parse_status: input_status="{runtime.get("status")}", '
+            f'uppercase_status="{status}", '
+            f'is_paused={status == "PAUSED"}, '
+            f'is_stopped={status == "STOPPED"}'
+        )
+
         if status == 'PAUSED':
+            logger.info('[TOKEN_DEBUG] Mapping PAUSED -> ConversationStatus.STOPPED')
             return ConversationStatus.STOPPED
         elif status == 'STOPPED':
+            logger.info('[TOKEN_DEBUG] Mapping STOPPED -> ConversationStatus.ARCHIVED')
             return ConversationStatus.ARCHIVED
         if status in ConversationStatus:
+            logger.info(f'[TOKEN_DEBUG] Direct mapping to ConversationStatus.{status}')
             return ConversationStatus[status]
+        logger.info(
+            f'[TOKEN_DEBUG] Unknown status "{status}", defaulting to ConversationStatus.STOPPED'
+        )
         return ConversationStatus.STOPPED
 
     def _get_nested_url_for_runtime(self, runtime_id: str, conversation_id: str):
