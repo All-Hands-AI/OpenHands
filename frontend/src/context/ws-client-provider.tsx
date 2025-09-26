@@ -166,6 +166,27 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    // Log important message events for debugging
+    if (event.event_type === "message" || event.action === "message") {
+      const sender = (event as any).sender || "unknown";
+      const content = (event as any).content || (event as any).message || "";
+      console.log('[MESSAGE_DEBUG] Message received:', {
+        sender,
+        content: content.substring(0, 100),
+        eventId: (event as any).id,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Log agent state changes
+    if (isAgentStateChangeObservation(event)) {
+      console.log('[AGENT_DEBUG] Agent state changed:', {
+        newState: event.extras.agent_state,
+        eventId: event.id,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     handleAssistantMessage(event);
 
     if (isOpenHandsEvent(event)) {
@@ -206,6 +227,11 @@ export function WsClientProvider({
       }
 
       if (isUserMessage(event)) {
+        console.log('[MESSAGE_DEBUG] User message confirmed:', {
+          content: (event as any).content?.substring(0, 100),
+          eventId: (event as any).id,
+          timestamp: new Date().toISOString(),
+        });
         removeOptimisticUserMessage();
       }
 
