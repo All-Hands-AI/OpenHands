@@ -51,7 +51,7 @@ export function SettingsNavigation({
         )}
       >
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 ml-1.5">
+          <div className="flex items-center gap-2 ml-1 sm:ml-4.5">
             <SettingsIcon width={16} height={16} />
             <Typography.H2>{t(I18nKey.SETTINGS$TITLE)}</Typography.H2>
           </div>
@@ -81,10 +81,12 @@ export function SettingsNavigation({
               }
             >
               {icon}
-              <Typography.Text className="text-[#A3A3A3]">
-                {t(text as I18nKey)}
-              </Typography.Text>
-              {isSaas && to === "/settings" && <ProPill className="ml-2" />}
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                <Typography.Text className="text-[#A3A3A3] whitespace-nowrap">
+                  {t(text as I18nKey)}
+                </Typography.Text>
+                {isSaas && to === "/settings" && <ProPill />}
+              </div>
             </NavLink>
           ))}
         </div>
