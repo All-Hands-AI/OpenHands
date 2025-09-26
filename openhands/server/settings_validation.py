@@ -1,5 +1,7 @@
 """Settings validation utilities for LLM settings access control."""
 
+from server.routes.billing import get_subscription_access
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import server_config
 from openhands.server.types import AppMode
@@ -102,20 +104,10 @@ async def validate_llm_settings_access(user_id: str) -> bool:
 
     # In SaaS mode, check for active subscription for ANY LLM settings changes
     try:
-        # Import here to avoid circular imports and handle enterprise mode gracefully
-        from enterprise.server.routes.billing import get_subscription_access
-
         subscription = await get_subscription_access(user_id)
         # The get_subscription_access function already filters for ACTIVE status,
         # so if we get a subscription back, it means it's active
         return subscription is not None
-    except ImportError:
-        # Enterprise billing module not available - in SaaS mode, this means
-        # we can't validate subscriptions, so deny access to be safe
-        logger.warning(
-            'Enterprise billing module not available in SaaS mode, denying LLM settings access'
-        )
-        return False
     except Exception as e:
         # On error, deny access to be safe
         logger.warning(f'Error checking subscription access for user {user_id}: {e}')
