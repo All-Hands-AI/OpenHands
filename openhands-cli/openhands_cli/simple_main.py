@@ -9,7 +9,7 @@ import os
 
 debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
-    logging.disable(logging.CRITICAL)
+    logging.disable(logging.WARNING)
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
