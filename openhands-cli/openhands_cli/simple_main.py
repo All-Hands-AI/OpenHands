@@ -24,8 +24,6 @@ def main() -> None:
         ImportError: If agent chat dependencies are missing
         Exception: On other error conditions
     """
-    # Configure logging before any other imports or operations
-    # configure_logging()
 
     try:
         # Start agent chat directly by default
