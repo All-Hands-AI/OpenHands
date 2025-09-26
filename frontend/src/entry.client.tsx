@@ -6,10 +6,11 @@
  */
 
 import { HydratedRouter } from "react-router/dom";
+import { useSearchParams } from "react-router";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import posthog from "posthog-js";
+import posthog, { PostHogConfig } from "posthog-js";
 import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
@@ -21,20 +22,26 @@ function PosthogInit() {
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
     null,
   );
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // If arriving from marketing with ph_did, store it as a short-lived cookie and clean the URL
   React.useEffect(() => {
     try {
-      const url = new URL(window.location.href);
-      const phDid = url.searchParams.get("ph_did");
+      const phDid = searchParams.get("ph_did");
       if (phDid) {
-        const expires = new Date(Date.now() + 1000 * 60 * 60 * 24).toUTCString(); // 1 day
+        const expires = new Date(
+          Date.now() + 1000 * 60 * 60 * 24,
+        ).toUTCString(); // 1 day
         document.cookie = `ph_did=${encodeURIComponent(phDid)}; Path=/; Expires=${expires}; SameSite=Lax`;
-        url.searchParams.delete("ph_did");
-        window.history.replaceState({}, "", url.toString());
+        setSearchParams((prevParams) => {
+          prevParams.delete("ph_did");
+          return prevParams;
+        });
       }
-    } catch {}
-  }, []);
+    } catch {
+      // Ignore errors when parsing search params
+    }
+  }, [searchParams, setSearchParams]);
 
   React.useEffect(() => {
     (async () => {
@@ -49,16 +56,11 @@ function PosthogInit() {
 
   React.useEffect(() => {
     if (posthogClientKey) {
-      const opts: any = {
+      const opts: Partial<PostHogConfig> = {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
+        cross_subdomain_cookie: true,
       };
-      try {
-        const host = window.location.hostname;
-        if (host.endsWith("all-hands.dev")) {
-          opts.cookie_domain = ".all-hands.dev";
-        }
-      } catch {}
       posthog.init(posthogClientKey, opts);
       // tag events with site identifier for segmentation
       posthog.register({ site: "app" });
