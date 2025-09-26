@@ -362,6 +362,17 @@ export function WsClientProvider({
       session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
+    // Debug: Check critical connection parameters
+    console.log('[WS_DEBUG] WebSocket connection parameters:', {
+      hasUrl: !!conversation.url,
+      url: conversation.url,
+      hasSessionApiKey: !!conversation.session_api_key,
+      sessionApiKeyLength: conversation.session_api_key?.length,
+      conversationStatus: conversation.status,
+      runtimeStatus: conversation.runtime_status,
+      query,
+    });
+
     let baseUrl: string | null = null;
     let socketPath: string;
     if (conversation.url && !conversation.url.startsWith("/")) {
@@ -383,15 +394,35 @@ export function WsClientProvider({
       query,
     });
 
-    console.log('[WS_DEBUG] Connecting to WebSocket at:', baseUrl, 'with path:', socketPath);
+    console.log('[WS_DEBUG] Attempting WebSocket connection:', {
+      baseUrl,
+      socketPath,
+      fullUrl: `ws://${baseUrl}${socketPath}`,
+      hasSessionApiKey: !!query.session_api_key,
+      conversationId: query.conversation_id,
+      timestamp: new Date().toISOString(),
+    });
 
     sio.on("connect", () => {
-      console.log('[WS_DEBUG] WebSocket CONNECTED successfully!');
+      console.log('[WS_DEBUG] ✅ WebSocket CONNECTED successfully!', {
+        socketId: sio.id,
+        connected: sio.connected,
+        conversationStatus: conversation.status,
+        timestamp: new Date().toISOString(),
+      });
       handleConnect();
     });
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", (error) => {
-      console.log('[WS_DEBUG] WebSocket connect_error:', error);
+      console.log('[WS_DEBUG] ❌ WebSocket connect_error:', {
+        errorMessage: error.message,
+        errorType: error.type,
+        errorData: error.data,
+        conversationStatus: conversation.status,
+        hasUrl: !!conversation.url,
+        hasSessionApiKey: !!conversation.session_api_key,
+        timestamp: new Date().toISOString(),
+      });
       handleError(error);
     });
     sio.on("connect_failed", (error) => {
@@ -399,7 +430,12 @@ export function WsClientProvider({
       handleError(error);
     });
     sio.on("disconnect", (reason) => {
-      console.log('[WS_DEBUG] WebSocket disconnected:', reason);
+      console.log('[WS_DEBUG] ⚠️ WebSocket disconnected:', {
+        reason,
+        wasConnected: sio.connected,
+        conversationStatus: conversation.status,
+        timestamp: new Date().toISOString(),
+      });
       handleDisconnect(reason);
     });
 
