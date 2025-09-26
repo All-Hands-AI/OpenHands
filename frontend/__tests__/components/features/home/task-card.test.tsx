@@ -2,9 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
-import { setupStore } from "test-utils";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import UserService from "#/api/user-service/user-service.api";
 import GitService from "#/api/git-service/git-service.api";
@@ -41,11 +39,9 @@ const renderTaskCard = (task = MOCK_TASK_1) => {
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };
