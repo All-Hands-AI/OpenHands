@@ -176,11 +176,6 @@ def get_session_prompter(
     def _keyboard_interrupt(event: KeyPressEvent):
         event.app.exit(exception=KeyboardInterrupt())
 
-    placeholder_style = Style.from_dict({
-        "placeholder": "#888888 italic",
-    })
-    combined_style = merge_styles([DEFAULT_STYLE, placeholder_style])
-
 
     session = PromptSession(
         completer=CommandCompleter(),
@@ -189,7 +184,7 @@ def get_session_prompter(
         multiline=True,
         input=input,
         output=output,
-        style=combined_style,
+        style=DEFAULT_STYLE,
         placeholder=HTML(
             "<placeholder>"
             "Type your message… (tip: press <b>\\</b> + <b>Enter</b> to insert a newline)"
