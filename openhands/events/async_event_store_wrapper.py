@@ -2,11 +2,11 @@ import asyncio
 from typing import Any, AsyncIterator
 
 from openhands.events.event import Event
-from openhands.events.event_store import EventStore
+from openhands.events.event_store import EventStoreABC
 
 
 class AsyncEventStoreWrapper:
-    def __init__(self, event_store: EventStore, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, event_store: EventStoreABC, *args: Any, **kwargs: Any) -> None:
         self.event_store = event_store
         self.args = args
         self.kwargs = kwargs
