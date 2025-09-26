@@ -356,8 +356,7 @@ class SaasNestedConversationManager(ConversationManager):
                             client, runtime.runtime_url, sid
                         )
 
-                        # After waiting for agent to be ready, emit AGENT_STATE_CHANGED event
-                        # The agent should now be in AWAITING_USER_INPUT state
+                        # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
                         await self.send_event_to_conversation(
                             sid,
                             {
@@ -367,8 +366,7 @@ class SaasNestedConversationManager(ConversationManager):
                             },
                         )
                         logger.info(
-                            f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for resume sid={sid} '
-                            f'(agent should be in AWAITING_USER_INPUT state)'
+                            f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for resume sid={sid}'
                         )
                 else:
                     # Resume but no existing session, create new conversation
@@ -428,8 +426,7 @@ class SaasNestedConversationManager(ConversationManager):
             )
             await self._wait_for_conversation_ready(client, api_url, sid)
 
-            # After waiting for agent to be ready, emit AGENT_STATE_CHANGED event
-            # The agent should now be in AWAITING_USER_INPUT state
+            # Emit AGENT_STATE_CHANGED event to signal frontend that agent is ready
             await self.send_event_to_conversation(
                 sid,
                 {
@@ -439,8 +436,7 @@ class SaasNestedConversationManager(ConversationManager):
                 },
             )
             logger.info(
-                f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for sid={sid} '
-                f'(agent should be in AWAITING_USER_INPUT state)'
+                f'[AGENT_READY] Emitted AGENT_STATE_CHANGED(READY) for sid={sid}'
             )
 
     async def _setup_experiment_config(
@@ -585,14 +581,12 @@ class SaasNestedConversationManager(ConversationManager):
     async def _wait_for_conversation_ready(
         self, client: httpx.AsyncClient, api_url: str, sid: str
     ):
-        """Wait for the conversation to be ready by checking the events endpoint and agent state."""
+        """Wait for the conversation to be ready by checking the events endpoint."""
         # TODO: Find out why /api/conversations/{sid} returns RUNNING when events are not available
         logger.info(
             f'[WEBSOCKET_DEBUG] Starting _wait_for_conversation_ready for sid={sid}, '
-            f'will check events endpoint and agent state'
+            f'will check events endpoint up to 5 times'
         )
-
-        # First, ensure events endpoint is available
         for attempt in range(5):
             try:
                 logger.info('checking_events_endpoint_running', extra={'sid': sid})
@@ -603,7 +597,8 @@ class SaasNestedConversationManager(ConversationManager):
                 if response.is_success:
                     logger.info('events_endpoint_is_running', extra={'sid': sid})
                     logger.info(
-                        f'[WEBSOCKET_DEBUG] Events endpoint ready after {attempt+1} attempts.'
+                        f'[WEBSOCKET_DEBUG] Events endpoint ready after {attempt+1} attempts. '
+                        f'Frontend should now be able to connect via websocket.'
                     )
                     break
             except Exception as e:
@@ -617,46 +612,6 @@ class SaasNestedConversationManager(ConversationManager):
                 f'[WEBSOCKET_DEBUG] CRITICAL: Events endpoint never became ready after 5 attempts! '
                 f'Frontend will not receive events for sid={sid}'
             )
-            return
-
-        # Now wait for agent to be in AWAITING_USER_INPUT state
-        logger.info(f'[AGENT_READY] Waiting for agent to reach AWAITING_USER_INPUT state for sid={sid}')
-        max_wait_time = 120  # Wait up to 2 minutes for agent to be ready
-        start_time = asyncio.get_event_loop().time()
-
-        while (asyncio.get_event_loop().time() - start_time) < max_wait_time:
-            try:
-                # Get the latest events to check agent state
-                response = await client.get(f'{api_url}/api/conversations/{sid}/events')
-                if response.is_success:
-                    events = response.json()
-
-                    # Look for agent state in events (from newest to oldest)
-                    for event in reversed(events[-50:] if isinstance(events, list) else []):
-                        if isinstance(event, dict):
-                            # Check for agent state changed observation
-                            if event.get('observation') == 'agent_state_changed':
-                                agent_state = event.get('extras', {}).get('agent_state')
-                                logger.info(f'[AGENT_READY] Found agent state: {agent_state} for sid={sid}')
-
-                                if agent_state in ['awaiting_user_input', 'AWAITING_USER_INPUT']:
-                                    logger.info(
-                                        f'[AGENT_READY] Agent is ready (AWAITING_USER_INPUT) for sid={sid}'
-                                    )
-                                    return  # Agent is ready!
-                                elif agent_state in ['finished', 'FINISHED', 'error', 'ERROR']:
-                                    logger.warning(
-                                        f'[AGENT_READY] Agent ended in state {agent_state} for sid={sid}'
-                                    )
-                                    return  # Agent won't become ready
-            except Exception as e:
-                logger.warning(f'[AGENT_READY] Error checking agent state: {e}')
-
-            await asyncio.sleep(2)  # Check every 2 seconds
-
-        logger.warning(
-            f'[AGENT_READY] Timeout waiting for agent to reach AWAITING_USER_INPUT state for sid={sid}'
-        )
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
