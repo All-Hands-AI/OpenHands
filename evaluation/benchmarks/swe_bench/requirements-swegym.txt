@@ -1,0 +1,3 @@
+# SWE-bench with SWE-Gym support
+# This is a fork of SWE-bench that includes test specifications for SWE-Gym repositories
+git+https://github.com/neubig/SWE-bench.git@d9d72c2
