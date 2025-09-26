@@ -318,19 +318,18 @@ export function WsClientProvider({
       return () => undefined; // conversation intentionally stopped
     }
 
-    // Set connecting status when conversation is starting
+    // Allow WebSocket connection during STARTING status to receive real-time updates
     if (conversation && conversation.status === "STARTING") {
-      console.log('[WS_DEBUG] Conversation STARTING, setting CONNECTING but NOT establishing connection!');
+      console.log('[WS_DEBUG] Conversation STARTING, will attempt WebSocket connection');
       removeErrorMessage();
       setWebSocketStatus("CONNECTING");
-      return () => undefined; // conversation is starting, will connect when ready
+      // Don't return early - let it continue to establish connection
     }
 
-    // Only connect when conversation is fully loaded and running
+    // Only connect when conversation exists and is not stopped
     if (
       !conversation ||
-      conversation.status !== "RUNNING" ||
-      !conversation.runtime_status ||
+      (conversation.status !== "RUNNING" && conversation.status !== "STARTING") ||
       conversation.runtime_status === "STATUS$STOPPED"
     ) {
       console.log('[WS_DEBUG] NOT connecting WebSocket because:', {
@@ -338,14 +337,13 @@ export function WsClientProvider({
         status: conversation?.status,
         runtime_status: conversation?.runtime_status,
         reason: !conversation ? 'no conversation' :
-                conversation.status !== "RUNNING" ? `status is ${conversation.status}, not RUNNING` :
-                !conversation.runtime_status ? 'no runtime_status' :
+                (conversation.status !== "RUNNING" && conversation.status !== "STARTING") ? `status is ${conversation.status}, not RUNNING/STARTING` :
                 'runtime is stopped'
       });
       return () => undefined; // conversation not ready for WebSocket connection
     }
 
-    console.log('[WS_DEBUG] ESTABLISHING WebSocket connection for RUNNING conversation');
+    console.log('[WS_DEBUG] ESTABLISHING WebSocket connection for conversation with status:', conversation.status);
 
     let sio = sioRef.current;
 
