@@ -13,9 +13,9 @@ class TestMainEntryPoint:
 
     @patch('openhands_cli.agent_chat.setup_conversation')
     @patch('openhands_cli.agent_chat.ConversationRunner')
-    @patch('openhands_cli.agent_chat.PromptSession')
+    @patch('openhands_cli.agent_chat.get_session_prompter')
     def test_main_starts_agent_chat_directly(
-        self, mock_prompt_session: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
+        self, mock_get_session_prompter: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
     ) -> None:
         """Test that main() starts agent chat directly when setup succeeds."""
         # Mock setup_conversation to return a valid conversation
@@ -24,7 +24,9 @@ class TestMainEntryPoint:
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise KeyboardInterrupt to exit the loop
-        mock_prompt_session.return_value.prompt.side_effect = KeyboardInterrupt()
+        mock_session = MagicMock()
+        mock_session.prompt.side_effect = KeyboardInterrupt()
+        mock_get_session_prompter.return_value = mock_session
 
         # Should complete without raising an exception (graceful exit)
         simple_main.main()
@@ -45,9 +47,9 @@ class TestMainEntryPoint:
 
     @patch('openhands_cli.agent_chat.setup_conversation')
     @patch('openhands_cli.agent_chat.ConversationRunner')
-    @patch('openhands_cli.agent_chat.PromptSession')
+    @patch('openhands_cli.agent_chat.get_session_prompter')
     def test_main_handles_keyboard_interrupt(
-        self, mock_prompt_session: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
+        self, mock_get_session_prompter: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
     ) -> None:
         """Test that main() handles KeyboardInterrupt gracefully."""
         # Mock setup_conversation to return a valid conversation
@@ -56,16 +58,18 @@ class TestMainEntryPoint:
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise KeyboardInterrupt
-        mock_prompt_session.return_value.prompt.side_effect = KeyboardInterrupt()
+        mock_session = MagicMock()
+        mock_session.prompt.side_effect = KeyboardInterrupt()
+        mock_get_session_prompter.return_value = mock_session
 
         # Should complete without raising an exception (graceful exit)
         simple_main.main()
 
     @patch('openhands_cli.agent_chat.setup_conversation')
     @patch('openhands_cli.agent_chat.ConversationRunner')
-    @patch('openhands_cli.agent_chat.PromptSession')
+    @patch('openhands_cli.agent_chat.get_session_prompter')
     def test_main_handles_eof_error(
-        self, mock_prompt_session: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
+        self, mock_get_session_prompter: MagicMock, mock_runner: MagicMock, mock_setup_conversation: MagicMock
     ) -> None:
         """Test that main() handles EOFError gracefully."""
         # Mock setup_conversation to return a valid conversation
@@ -74,7 +78,9 @@ class TestMainEntryPoint:
         mock_setup_conversation.return_value = mock_conversation
         
         # Mock prompt session to raise EOFError
-        mock_prompt_session.return_value.prompt.side_effect = EOFError()
+        mock_session = MagicMock()
+        mock_session.prompt.side_effect = EOFError()
+        mock_get_session_prompter.return_value = mock_session
 
         # Should complete without raising an exception (graceful exit)
         simple_main.main()
