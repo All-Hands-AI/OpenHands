@@ -3,7 +3,7 @@ import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command, useCommandStore } from "#/state/command-store";
 import { AgentState } from "#/types/agent-state";
-import { renderWithQueryAndI18n } from "../../test-utils";
+import { renderWithProviders } from "../../test-utils";
 import { useAgentStore } from "#/stores/agent-store";
 
 // Mock the WsClient context
@@ -60,7 +60,7 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    renderWithQueryAndI18n(<TestTerminalComponent commands={[]} />);
+    renderWithProviders(<TestTerminalComponent commands={[]} />);
   });
 
   it("should render the commands in the terminal", () => {
@@ -69,7 +69,7 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    renderWithQueryAndI18n(<TestTerminalComponent commands={commands} />);
+    renderWithProviders(<TestTerminalComponent commands={commands} />);
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
@@ -87,7 +87,7 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    renderWithQueryAndI18n(<TestTerminalComponent commands={commands} />);
+    renderWithProviders(<TestTerminalComponent commands={commands} />);
 
     // This test is no longer relevant as secrets filtering has been removed
   });
