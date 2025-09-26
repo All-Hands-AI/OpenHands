@@ -28,6 +28,14 @@ def configure_logging() -> None:
     # Also silence specific loggers that were observed to be noisy
     logging.getLogger("mcp.server.lowlevel.server").setLevel(logging.CRITICAL)
     logging.getLogger("fastmcp").setLevel(logging.CRITICAL)
+    
+    # Silence MCP tool manager warnings about failed server connections
+    logging.getLogger("fastmcp.tools.tool_manager").setLevel(logging.CRITICAL)
+    
+    # Try to catch the specific logger that's causing the MCP warning
+    # The warning shows "tool_manager.py:86" so let's try different variations
+    logging.getLogger("mcp.server.fastmcp.tools.tool_manager").setLevel(logging.CRITICAL)
+    logging.getLogger("mcp").setLevel(logging.CRITICAL)
 
 
 def main() -> None:
