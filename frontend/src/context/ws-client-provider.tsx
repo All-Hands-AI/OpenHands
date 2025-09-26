@@ -135,6 +135,7 @@ export function WsClientProvider({
   const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
+  const connectErrorCountRef = React.useRef<number>(0);
   const [webSocketStatus, setWebSocketStatus] =
     React.useState<WebSocketStatus>("DISCONNECTED");
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
@@ -159,6 +160,9 @@ export function WsClientProvider({
   function handleConnect() {
     setWebSocketStatus("CONNECTED");
     removeErrorMessage();
+    // Reset error count on successful connection
+    connectErrorCountRef.current = 0;
+    console.log('[WS_DEBUG] Connection error count reset to 0');
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -268,16 +272,41 @@ export function WsClientProvider({
     setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
-  function handleError(data: unknown) {
+  function handleError(data: unknown, isConnectionError = false) {
     // set status
     setWebSocketStatus("DISCONNECTED");
     updateStatusWhenErrorMessagePresent(data);
 
-    setErrorMessage(
-      hasValidMessageProperty(data)
-        ? data.message
-        : "An unknown error occurred on the WebSocket connection.",
-    );
+    // For connection errors during STARTING, use retry logic
+    if (isConnectionError) {
+      connectErrorCountRef.current += 1;
+      const errorCount = connectErrorCountRef.current;
+      const conversationStatus = conversation?.status;
+
+      console.log('[WS_DEBUG] Connection error handling:', {
+        errorCount,
+        conversationStatus,
+        willShowError: errorCount > 3 && conversationStatus !== "STARTING",
+      });
+
+      // Only show error banner if:
+      // 1. We've failed more than 3 times (persistent failure)
+      // 2. AND we're not in STARTING state (where failures are expected)
+      if (errorCount > 3 && conversationStatus !== "STARTING") {
+        setErrorMessage(
+          hasValidMessageProperty(data)
+            ? data.message
+            : "Unable to establish WebSocket connection. Messages will be sent via HTTP.",
+        );
+      }
+    } else {
+      // Non-connection errors always show immediately
+      setErrorMessage(
+        hasValidMessageProperty(data)
+          ? data.message
+          : "An unknown error occurred on the WebSocket connection.",
+      );
+    }
 
     // check if something went wrong with the conversation.
     refetchConversation();
@@ -286,6 +315,7 @@ export function WsClientProvider({
   React.useEffect(() => {
     console.log('[WS_DEBUG] Conversation ID changed:', conversationId);
     lastEventRef.current = null;
+    connectErrorCountRef.current = 0; // Reset error count for new conversation
 
     // reset events when conversationId changes
     setEvents([]);
@@ -421,13 +451,14 @@ export function WsClientProvider({
         conversationStatus: conversation.status,
         hasUrl: !!conversation.url,
         hasSessionApiKey: !!conversation.session_api_key,
+        errorCount: connectErrorCountRef.current + 1,
         timestamp: new Date().toISOString(),
       });
-      handleError(error);
+      handleError(error, true); // true = isConnectionError
     });
     sio.on("connect_failed", (error) => {
       console.log('[WS_DEBUG] WebSocket connect_failed:', error);
-      handleError(error);
+      handleError(error, true); // true = isConnectionError
     });
     sio.on("disconnect", (reason) => {
       console.log('[WS_DEBUG] ⚠️ WebSocket disconnected:', {
