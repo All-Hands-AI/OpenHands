@@ -31,35 +31,11 @@ class TestLoadingAnimation(unittest.TestCase):
         time.sleep(0.1)
         self.assertFalse(ctx.loading_thread.is_alive())
 
-    def test_display_initialization_animation_stops_when_loaded(self):
-        """Test that animation stops when is_loaded event is set."""
-        is_loaded = threading.Event()
-
-        # Start animation in a separate thread
-        animation_thread = threading.Thread(
-            target=display_initialization_animation,
-            args=("Test animation", is_loaded),
-            daemon=True
-        )
-        animation_thread.start()
-
-        # Let it run for a short time
-        time.sleep(0.2)
-        self.assertTrue(animation_thread.is_alive())
-
-        # Signal that loading is complete
-        is_loaded.set()
-
-        # Wait for thread to finish
-        animation_thread.join(timeout=1.0)
-        self.assertFalse(animation_thread.is_alive())
-
     @patch('sys.stdout')
-    def test_animation_writes_to_stdout(self, mock_stdout):
-        """Test that animation writes to stdout."""
+    def test_animation_writes_while_running_and_stops_after(self, mock_stdout):
+        """Ensure stdout is written while animation runs and stops after it ends."""
         is_loaded = threading.Event()
 
-        # Start animation
         animation_thread = threading.Thread(
             target=display_initialization_animation,
             args=("Test output", is_loaded),
@@ -67,16 +43,26 @@ class TestLoadingAnimation(unittest.TestCase):
         )
         animation_thread.start()
 
-        # Let it run briefly
-        time.sleep(0.15)
+        # Let it run a bit and check calls
+        time.sleep(0.2)
+        calls_while_running = mock_stdout.write.call_count
+        self.assertGreater(calls_while_running, 0, "Expected writes while spinner runs")
 
         # Stop animation
         is_loaded.set()
-        animation_thread.join(timeout=1.0)
+        time.sleep(0.2)
 
-        # Verify stdout.write was called
-        self.assertTrue(mock_stdout.write.called)
-        self.assertTrue(mock_stdout.flush.called)
+        animation_thread.join(timeout=1.0)
+        calls_after_stop = mock_stdout.write.call_count
+
+        # Wait a moment to detect any stray writes after thread finished
+        time.sleep(0.2)
+        self.assertEqual(
+            calls_after_stop,
+            mock_stdout.write.call_count,
+            "No extra writes should occur after animation stops"
+        )
+
 
 
 if __name__ == "__main__":
