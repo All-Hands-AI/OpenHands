@@ -8,8 +8,10 @@ import time
 import unittest
 from unittest.mock import patch
 
-from openhands_cli.loading import LoadingContext, display_initialization_animation
-
+from openhands_cli.listeners.loading_listener import (
+    LoadingContext,
+    display_initialization_animation
+)
 
 class TestLoadingAnimation(unittest.TestCase):
     """Test cases for loading animation functionality."""

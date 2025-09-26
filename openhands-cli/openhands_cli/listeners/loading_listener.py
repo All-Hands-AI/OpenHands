@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Loading animation utilities for OpenHands CLI.
 Provides animated loading screens during agent initialization.
@@ -7,7 +6,6 @@ Provides animated loading screens during agent initialization.
 import sys
 import threading
 import time
-
 
 def display_initialization_animation(text: str, is_loaded: threading.Event) -> None:
     """Display a spinning animation while agent is being initialized.
@@ -30,6 +28,7 @@ def display_initialization_animation(text: str, is_loaded: threading.Event) -> N
 
     sys.stdout.write('\r' + ' ' * (len(text) + 10) + '\r')
     sys.stdout.flush()
+
 
 
 class LoadingContext:

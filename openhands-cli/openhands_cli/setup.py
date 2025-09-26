@@ -6,7 +6,7 @@ from openhands.tools.str_replace_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from prompt_toolkit import HTML, print_formatted_text
 
-from openhands_cli.loading import LoadingContext
+from openhands_cli.listeners import LoadingContext
 from openhands_cli.locations import get_conversation_perisistence_path
 from openhands_cli.tui.settings.store import AgentStore
 
