@@ -13,17 +13,22 @@ import subprocess
 import sys
 from pathlib import Path
 from openhands_cli.locations import PERSISTENCE_DIR, WORK_DIR, AGENT_SETTINGS_PATH
-from openhands.sdk.preset.default import get_default_agent
-from openhands.sdk import LLM
 import time
 import select
 
-dummy_agent = get_default_agent(
-    llm=LLM(model='dummy-model', api_key='dummy-key'),
-    working_dir=WORK_DIR,
-    persistence_dir=PERSISTENCE_DIR,
-    cli_mode=True
-)
+# Try to import SDK components for testing, but don't fail if not available
+dummy_agent = None
+try:
+    from openhands.sdk.preset.default import get_default_agent
+    from openhands.sdk import LLM
+    dummy_agent = get_default_agent(
+        llm=LLM(model='dummy-model', api_key='dummy-key'),
+        working_dir=WORK_DIR,
+        persistence_dir=PERSISTENCE_DIR,
+        cli_mode=True
+    )
+except ImportError:
+    print("⚠️  SDK not available during build - testing will be limited")
 
 # =================================================
 # SECTION: Build Binary
@@ -129,10 +134,12 @@ def test_executable() -> bool:
     specs_path = Path(os.path.expanduser(spec_path))
     if specs_path.exists():
         print(f"⚠️  Using existing settings at {specs_path}")
-    else:
+    elif dummy_agent is not None:
         print(f"💾 Creating dummy settings at {specs_path}")
         specs_path.parent.mkdir(parents=True, exist_ok=True)
         specs_path.write_text(dummy_agent.model_dump_json())
+    else:
+        print("⚠️  Cannot create dummy settings - SDK not available")
 
     exe_path = Path('dist/openhands-cli')
     if not exe_path.exists():

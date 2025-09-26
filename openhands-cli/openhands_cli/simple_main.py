@@ -26,6 +26,22 @@ def main() -> None:
     """
 
     try:
+        # Close splash screen if running as PyInstaller executable
+        try:
+            import pyi_splash
+            # Update splash screen text before closing
+            pyi_splash.update_text("Initializing OpenHands CLI...")
+            # Give a moment for the splash to be visible
+            import time
+            time.sleep(1)
+            pyi_splash.close()
+        except ImportError:
+            # Not running as PyInstaller executable, splash screen not available
+            pass
+        except Exception as e:
+            # Handle any splash screen errors gracefully
+            print(f"Splash screen error: {e}")
+        
         # Start agent chat directly by default
         run_cli_entry()
 
