@@ -172,7 +172,7 @@ def get_session_prompter(
 
     @bindings.add("c-c")
     def _keyboard_interrupt(event: KeyPressEvent):
-        event.app.exit(exception=KeyboardInterrupt)
+        event.app.exit(exception=KeyboardInterrupt())
 
     session = PromptSession(
         completer=CommandCompleter(),
