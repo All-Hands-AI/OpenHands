@@ -1,5 +1,5 @@
 from openhands_cli.tui.tui import CommandCompleter
-from prompt_toolkit import PromptSession
+from prompt_toolkit import HTML, PromptSession
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import Completer
 from prompt_toolkit.input.base import Input
@@ -12,6 +12,8 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.output.base import Output
 from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.validation import Validator, ValidationError
+from prompt_toolkit.styles import Style
+from prompt_toolkit.styles import merge_styles
 
 
 from openhands_cli.tui import DEFAULT_STYLE
@@ -174,6 +176,12 @@ def get_session_prompter(
     def _keyboard_interrupt(event: KeyPressEvent):
         event.app.exit(exception=KeyboardInterrupt())
 
+    placeholder_style = Style.from_dict({
+        "placeholder": "#888888 italic",
+    })
+    combined_style = merge_styles([DEFAULT_STYLE, placeholder_style])
+
+
     session = PromptSession(
         completer=CommandCompleter(),
         key_bindings=bindings,
@@ -181,6 +189,13 @@ def get_session_prompter(
         multiline=True,
         input=input,
         output=output,
+        style=combined_style,
+        placeholder=HTML(
+            "<placeholder>"
+            "Type your message… (tip: press <b>\\</b> + <b>Enter</b> to insert a newline)"
+            "</placeholder>"
+        ),
+
     )
 
     return session
