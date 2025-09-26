@@ -75,8 +75,6 @@ export function ChatInterface() {
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
 
-  console.log("errorMessage", errorMessage);
-
   const events = parsedEvents.filter(shouldRenderEvent);
 
   // Check if there are any substantive agent actions (not just system messages)
