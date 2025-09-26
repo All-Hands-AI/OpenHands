@@ -455,22 +455,11 @@ class SaasNestedConversationManager(ConversationManager):
         This ensures the agent has completed setup.sh and is ready to process messages.
         Based on the existing _wait_for_conversation_ready pattern.
         """
-        logger.info(f'[AGENT_READY] Waiting for agent to be truly ready for sid={sid}, api_url={api_url}')
+        logger.info(f'[AGENT_READY] Waiting for agent to be truly ready for sid={sid}')
 
         for attempt in range(30):  # 60 seconds max (30 * 2s)
             try:
-                # Convert WebSocket URL to HTTP if needed
-                if api_url.startswith('wss://'):
-                    http_url = api_url.replace('wss://', 'https://')
-                elif api_url.startswith('ws://'):
-                    http_url = api_url.replace('ws://', 'http://')
-                else:
-                    http_url = api_url
-
-                events_url = f'{http_url}/api/conversations/{sid}/events'
-                logger.debug(f'[AGENT_READY] Attempt {attempt+1}: Checking events at {events_url}')
-
-                response = await client.get(events_url)
+                response = await client.get(f'{api_url}/api/conversations/{sid}/events')
                 if response.is_success:
                     events = response.json()
 
@@ -497,16 +486,8 @@ class SaasNestedConversationManager(ConversationManager):
                                     f'({(attempt+1)*2} seconds) for sid={sid}'
                                 )
                                 return True
-
-                    logger.debug(
-                        f'[AGENT_READY] Attempt {attempt+1}: No ready state found in {len(recent_events)} recent events'
-                    )
-                else:
-                    logger.warning(
-                        f'[AGENT_READY] Attempt {attempt+1}: Failed to get events - status={response.status_code}'
-                    )
             except Exception as e:
-                logger.warning(
+                logger.debug(
                     f'[AGENT_READY] Attempt {attempt+1} failed while waiting for agent ready: {e}'
                 )
 
