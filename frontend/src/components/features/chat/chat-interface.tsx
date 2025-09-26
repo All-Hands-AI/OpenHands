@@ -23,7 +23,7 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
   hasUserEvent,
@@ -46,7 +46,7 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
-  const { getErrorMessage } = useWSErrorMessage();
+  const { getErrorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessage();
@@ -74,6 +74,8 @@ export function ChatInterface() {
 
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
+
+  console.log("errorMessage", errorMessage);
 
   const events = parsedEvents.filter(shouldRenderEvent);
 
