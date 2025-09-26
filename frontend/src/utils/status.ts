@@ -104,8 +104,19 @@ export function getStatusCode(
   runtimeStatus: RuntimeStatus | null,
   agentState: AgentState | null,
 ) {
+  // Debug logging for status determination
+  console.log('[STATUS_DEBUG] getStatusCode called:', {
+    statusMessage,
+    webSocketStatus,
+    conversationStatus,
+    runtimeStatus,
+    agentState,
+    timestamp: new Date().toISOString()
+  });
+
   // Handle conversation and runtime stopped states
   if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
+    console.log('[STATUS_DEBUG] Returning STOPPED status');
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
 
@@ -136,9 +147,15 @@ export function getStatusCode(
 
   // Handle WebSocket connection states
   if (webSocketStatus === "DISCONNECTED") {
+    console.log('[STATUS_DEBUG] WebSocket DISCONNECTED, returning disconnected status');
     return I18nKey.CHAT_INTERFACE$DISCONNECTED;
   }
   if (webSocketStatus === "CONNECTING") {
+    console.log('[STATUS_DEBUG] WebSocket CONNECTING - this causes "Connecting..." message!', {
+      conversationStatus,
+      runtimeStatus,
+      agentState
+    });
     return I18nKey.CHAT_INTERFACE$CONNECTING;
   }
 

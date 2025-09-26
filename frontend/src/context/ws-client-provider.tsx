@@ -284,6 +284,7 @@ export function WsClientProvider({
   }
 
   React.useEffect(() => {
+    console.log('[WS_DEBUG] Conversation ID changed:', conversationId);
     lastEventRef.current = null;
 
     // reset events when conversationId changes
@@ -293,12 +294,25 @@ export function WsClientProvider({
   }, [conversationId]);
 
   React.useEffect(() => {
+    console.log('[WS_DEBUG] WebSocket connection effect triggered:', {
+      conversationId,
+      conversation: conversation ? {
+        id: conversation.id,
+        status: conversation.status,
+        runtime_status: conversation.runtime_status,
+        session_api_key: conversation.session_api_key ? 'present' : 'missing',
+        url: conversation.url
+      } : 'null',
+      timestamp: new Date().toISOString()
+    });
+
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
 
     // Clear error messages when conversation is intentionally stopped
     if (conversation && conversation.status === "STOPPED") {
+      console.log('[WS_DEBUG] Conversation STOPPED, disconnecting WebSocket');
       removeErrorMessage();
       setWebSocketStatus("DISCONNECTED");
       return () => undefined; // conversation intentionally stopped
@@ -306,6 +320,7 @@ export function WsClientProvider({
 
     // Set connecting status when conversation is starting
     if (conversation && conversation.status === "STARTING") {
+      console.log('[WS_DEBUG] Conversation STARTING, setting CONNECTING but NOT establishing connection!');
       removeErrorMessage();
       setWebSocketStatus("CONNECTING");
       return () => undefined; // conversation is starting, will connect when ready
@@ -318,8 +333,19 @@ export function WsClientProvider({
       !conversation.runtime_status ||
       conversation.runtime_status === "STATUS$STOPPED"
     ) {
+      console.log('[WS_DEBUG] NOT connecting WebSocket because:', {
+        hasConversation: !!conversation,
+        status: conversation?.status,
+        runtime_status: conversation?.runtime_status,
+        reason: !conversation ? 'no conversation' :
+                conversation.status !== "RUNNING" ? `status is ${conversation.status}, not RUNNING` :
+                !conversation.runtime_status ? 'no runtime_status' :
+                'runtime is stopped'
+      });
       return () => undefined; // conversation not ready for WebSocket connection
     }
+
+    console.log('[WS_DEBUG] ESTABLISHING WebSocket connection for RUNNING conversation');
 
     let sio = sioRef.current;
 
@@ -359,11 +385,25 @@ export function WsClientProvider({
       query,
     });
 
-    sio.on("connect", handleConnect);
+    console.log('[WS_DEBUG] Connecting to WebSocket at:', baseUrl, 'with path:', socketPath);
+
+    sio.on("connect", () => {
+      console.log('[WS_DEBUG] WebSocket CONNECTED successfully!');
+      handleConnect();
+    });
     sio.on("oh_event", handleMessage);
-    sio.on("connect_error", handleError);
-    sio.on("connect_failed", handleError);
-    sio.on("disconnect", handleDisconnect);
+    sio.on("connect_error", (error) => {
+      console.log('[WS_DEBUG] WebSocket connect_error:', error);
+      handleError(error);
+    });
+    sio.on("connect_failed", (error) => {
+      console.log('[WS_DEBUG] WebSocket connect_failed:', error);
+      handleError(error);
+    });
+    sio.on("disconnect", (reason) => {
+      console.log('[WS_DEBUG] WebSocket disconnected:', reason);
+      handleDisconnect(reason);
+    });
 
     sioRef.current = sio;
 
