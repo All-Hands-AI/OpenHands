@@ -12,6 +12,31 @@ class BitBucketReposMixin(BitBucketMixinBase):
     Mixin for BitBucket repository-related operations
     """
 
+    def _get_bitbucket_sort_param(self, sort: str, order: str = 'desc') -> str:
+        """Map sort parameter to Bitbucket API compatible values with order.
+
+        Args:
+            sort: The sort field ('pushed', 'updated', 'created', 'full_name')
+            order: The sort order ('asc' or 'desc', defaults to 'desc')
+
+        Returns:
+            Bitbucket API compatible sort parameter with order prefix
+        """
+        # Map sort parameter to Bitbucket API compatible values
+        if sort == 'pushed':
+            bitbucket_sort = 'updated_on'  # Bitbucket doesn't support 'pushed'
+        elif sort == 'updated':
+            bitbucket_sort = 'updated_on'
+        elif sort == 'created':
+            bitbucket_sort = 'created_on'
+        elif sort == 'full_name':
+            bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
+        else:
+            bitbucket_sort = 'updated_on'  # Default to most recently updated
+
+        # Apply order - Bitbucket uses '-' prefix for descending order
+        return f'-{bitbucket_sort}' if order.lower() == 'desc' else bitbucket_sort
+
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
@@ -48,7 +73,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         if '/' in query:
             workspace_slug, repo_query = query.split('/', 1)
             return await self.get_paginated_repos(
-                1, per_page, sort, workspace_slug, repo_query
+                1, per_page, sort, workspace_slug, repo_query, order
             )
 
         all_installations = await self.get_installations()
@@ -61,7 +86,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories where query matches workspace name
             try:
                 repos = await self.get_paginated_repos(
-                    1, per_page, sort, workspace_slug
+                    1, per_page, sort, workspace_slug, None, order
                 )
                 repositories.extend(repos)
             except Exception:
@@ -71,7 +96,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories in all workspaces where query matches repo name
             try:
                 repos = await self.get_paginated_repos(
-                    1, per_page, sort, workspace_slug, query
+                    1, per_page, sort, workspace_slug, query, order
                 )
                 repositories.extend(repos)
             except Exception:
@@ -108,6 +133,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ) -> list[Repository]:
         """Get paginated repositories for a specific workspace.
 
@@ -116,6 +142,8 @@ class BitBucketReposMixin(BitBucketMixinBase):
             per_page: The number of repositories per page
             sort: The sort field ('pushed', 'updated', 'created', 'full_name')
             installation_id: The workspace slug to fetch repositories from (as int, will be converted to string)
+            query: Optional query string to filter repositories by name
+            order: The sort order ('asc' or 'desc', defaults to 'desc')
 
         Returns:
             A list of Repository objects
@@ -127,20 +155,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         workspace_slug = installation_id
         workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
-        # Map sort parameter to Bitbucket API compatible values
-        bitbucket_sort = sort
-        if sort == 'pushed':
-            # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-            bitbucket_sort = '-updated_on'  # Use negative prefix for descending order
-        elif sort == 'updated':
-            bitbucket_sort = '-updated_on'
-        elif sort == 'created':
-            bitbucket_sort = '-created_on'
-        elif sort == 'full_name':
-            bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
-        else:
-            # Default to most recently updated first
-            bitbucket_sort = '-updated_on'
+        bitbucket_sort = self._get_bitbucket_sort_param(sort, order)
 
         params = {
             'pagelen': per_page,
@@ -184,7 +199,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         return repositories
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         """Get repositories for the authenticated user using workspaces endpoint.
 
@@ -209,23 +224,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories for this workspace with pagination
             workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
-            # Map sort parameter to Bitbucket API compatible values and ensure descending order
-            # to show most recently changed repos at the top
-            bitbucket_sort = sort
-            if sort == 'pushed':
-                # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-                bitbucket_sort = (
-                    '-updated_on'  # Use negative prefix for descending order
-                )
-            elif sort == 'updated':
-                bitbucket_sort = '-updated_on'
-            elif sort == 'created':
-                bitbucket_sort = '-created_on'
-            elif sort == 'full_name':
-                bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
-            else:
-                # Default to most recently updated first
-                bitbucket_sort = '-updated_on'
+            bitbucket_sort = self._get_bitbucket_sort_param(sort, order)
 
             params = {
                 'pagelen': PER_PAGE,
