@@ -33,7 +33,9 @@ from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
+from openhands.utils.laminar import maybe_init_laminar
 
+maybe_init_laminar()
 mcp_app = mcp_server.http_app(path='/mcp')
 
 
