@@ -20,6 +20,16 @@ from openhands.events.observation.commands import (
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+SU_TO_USER = os.getenv('SU_TO_USER', 'true').lower() in (
+    '1',
+    'true',
+    't',
+    'yes',
+    'y',
+    'on',
+)
+
 
 def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
@@ -193,7 +203,9 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
-        if self.username in ['root', 'openhands']:
+        if SU_TO_USER and self.username in list(
+            filter(None, [RUNTIME_USERNAME, 'root', 'openhands'])
+        ):
             # This starts a non-login (new) shell for the given user
             _shell_command = f'su {self.username} -'
 

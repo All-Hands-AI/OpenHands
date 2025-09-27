@@ -13,6 +13,15 @@ from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.utils.shutdown_listener import should_continue
 
+SU_TO_USER = os.getenv('SU_TO_USER', 'true').lower() in (
+    '1',
+    'true',
+    't',
+    'yes',
+    'y',
+    'on',
+)
+
 
 @dataclass
 class JupyterRequirement(PluginRequirement):
@@ -36,7 +45,7 @@ class JupyterPlugin(Plugin):
 
         if not is_local_runtime:
             # Non-LocalRuntime
-            prefix = f'su - {username} -s '
+            prefix = f'su - {username} -s ' if SU_TO_USER else ''
             # cd to code repo, setup all env vars and run micromamba
             poetry_prefix = (
                 'cd /openhands/code\n'
