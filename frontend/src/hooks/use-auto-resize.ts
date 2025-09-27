@@ -7,6 +7,7 @@ const DEFAULT_MIN_HEIGHT = 20;
 const DEFAULT_MAX_HEIGHT = 120;
 const HEIGHT_INCREMENT = 20;
 const MANUAL_OVERSIZE_THRESHOLD = 50;
+const SHRINK_THRESHOLD = 60; // Allow shrinking if height exceeds content by this much
 
 interface UseAutoResizeOptions {
   minHeight?: number;
@@ -118,8 +119,21 @@ const determineResizeStrategy = (
 ): ResizeStrategy => {
   const { currentHeight, contentHeight } = measurements;
 
-  // If content fits in current height, just manage overflow
+  // If content fits in current height, decide whether to shrink or preserve
   if (contentHeight <= currentHeight) {
+    const heightExcess = currentHeight - contentHeight;
+    const isAtMaxHeight = currentHeight >= maxHeight - 10; // Allow small tolerance
+
+    // If height significantly exceeds content AND we're at max height, shrink (fixes paste-delete bug)
+    // This indicates the input was auto-expanded due to large content, not manually resized
+    if (heightExcess > SHRINK_THRESHOLD && isAtMaxHeight) {
+      return {
+        finalHeight: Math.max(contentHeight, minHeight),
+        overflowY: "hidden",
+      };
+    }
+
+    // Otherwise preserve current height (manual resize or reasonable auto-size)
     return {
       finalHeight: currentHeight,
       overflowY: "hidden",
