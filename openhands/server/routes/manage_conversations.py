@@ -341,9 +341,25 @@ async def get_conversation(
             filter_to_sids={conversation_id}
         )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+
+        # Add debug logging
+        logger.info(
+            f'[FRONTEND_DEBUG] GET /conversations/{conversation_id}: '
+            f'agent_loop_status={agent_loop_info.status if agent_loop_info else None}, '
+            f'num_connections={num_connections}, '
+            f'has_runtime={agent_loop_info is not None}'
+        )
+
         conversation_info = await _get_conversation_info(
             metadata, num_connections, agent_loop_info
         )
+
+        logger.info(
+            f'[FRONTEND_DEBUG] Returning conversation_info to frontend: '
+            f'status={conversation_info.status if conversation_info else None}, '
+            f'runtime_status={conversation_info.runtime_status if conversation_info else None}'
+        )
+
         return conversation_info
     except FileNotFoundError:
         return None
@@ -485,6 +501,13 @@ async def start_conversation(
     return the existing agent loop info.
     """
     logger.info(f'Starting conversation: {conversation_id}')
+    logger.info(
+        f'[TOKEN_DEBUG] REST API /start endpoint: '
+        f'conversation_id={conversation_id}, '
+        f'user_id={user_id}, '
+        f'has_providers={providers_set.providers_set is not None and len(providers_set.providers_set) > 0}, '
+        f'SOURCE=manage_conversations.py (REST API start)'
+    )
 
     try:
         # Check that the conversation exists
@@ -505,10 +528,32 @@ async def start_conversation(
         )
 
         # Start the agent loop
+        # Log the actual conversation manager type
+        manager_class = type(conversation_manager).__name__
+        manager_module = type(conversation_manager).__module__
+        logger.info(
+            f'[TOKEN_DEBUG] Conversation manager type: class={manager_class}, '
+            f'module={manager_module}, SOURCE=manage_conversations.py'
+        )
+
+        logger.info(
+            f'[TOKEN_DEBUG] About to call maybe_start_agent_loop from REST API: '
+            f'conversation_id={conversation_id}'
+        )
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
             sid=conversation_id,
             settings=conversation_init_data,
             user_id=user_id,
+        )
+        logger.info(
+            f'[TOKEN_DEBUG] maybe_start_agent_loop returned: status={agent_loop_info.status}'
+        )
+
+        logger.info(
+            f'[FRONTEND_DEBUG] Returning to frontend from /start endpoint: '
+            f'status=ok, conversation_status={agent_loop_info.status}, '
+            f'conversation_id={conversation_id}. '
+            f'Frontend will receive this status and should handle it appropriately.'
         )
 
         return ConversationResponse(
