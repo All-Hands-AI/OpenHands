@@ -156,6 +156,16 @@
             "pages": [
               "usage/how-to/development-overview",
               {
+                "group":"Contribute",
+                "pages": [
+                  "usage/contributing/start-contributing",
+                  "usage/contributing/development-setup",
+                  "usage/contributing/pull-request-guidelines",
+                  "usage/contributing/community-guidelines",
+                  "usage/contributing/code-of-conduct"
+                ]
+              },
+              {
                 "group": "Architecture",
                 "pages": [
                   "usage/architecture/backend",
