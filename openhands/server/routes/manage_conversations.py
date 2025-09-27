@@ -28,6 +28,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
+    AuthenticationError,
     CreateMicroagent,
     ProviderType,
     SuggestedTask,
@@ -243,7 +244,19 @@ async def new_conversation(
         if repository:
             provider_handler = ProviderHandler(provider_tokens)
             # Check against git_provider, otherwise check all provider apis
-            await provider_handler.verify_repo_provider(repository, git_provider)
+            # Only verify if we have valid provider tokens and can connect
+            try:
+                await provider_handler.verify_repo_provider(repository, git_provider)
+            except AuthenticationError:
+                # Re-raise authentication errors as they indicate invalid tokens
+                raise
+            except Exception as e:
+                # Log network/connection errors but allow conversation to proceed
+                # This enables offline usage when no network connectivity is available
+                logger.warning(
+                    f'Repository verification failed (possibly offline): {e}. '
+                    f'Proceeding with conversation creation for repository: {repository}'
+                )
 
         conversation_id = getattr(data, 'conversation_id', None) or uuid.uuid4().hex
         agent_loop_info = await create_new_conversation(
