@@ -8,6 +8,7 @@ from server.clustered_conversation_manager import ClusteredConversationManager
 from server.saas_nested_conversation_manager import SaasNestedConversationManager
 
 from openhands.core.config import LLMConfig, OpenHandsConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -33,8 +34,8 @@ class LegacyCacheEntry:
 
 @dataclass
 class LegacyConversationManager(ConversationManager):
-    """
-    Conversation manager for use while migrating - since existing conversations are not nested!
+    """Conversation manager for use while migrating - since existing conversations are not nested.
+
     Separate class from SaasNestedConversationManager so it can be easliy removed in a few weeks.
     (As of 2025-07-23)
     """
@@ -187,10 +188,33 @@ class LegacyConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
+        try:
+            has_tokens = bool(
+                settings
+                and hasattr(settings, 'provider_tokens')
+                and settings.provider_tokens
+            )
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: '
+                f'sid={sid}, user_id={user_id}, has_provider_tokens={has_tokens}'
+            )
+        except Exception as e:
+            logger.error(f'[TOKEN_DEBUG] Error logging entry: {e}')
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager.maybe_start_agent_loop ENTRY: sid={sid}, user_id={user_id}'
+            )
+
         if await self.should_start_in_legacy_mode(sid):
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to ClusteredConversationManager (legacy mode)'
+            )
             return await self.legacy_conversation_manager.maybe_start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
             )
+
+        logger.info(
+            f'[TOKEN_DEBUG] LegacyManager: Routing {sid} to SaasNestedConversationManager (new mode)'
+        )
         return await self.conversation_manager.maybe_start_agent_loop(
             sid, settings, user_id, initial_user_msg, replay_json
         )
@@ -270,8 +294,8 @@ class LegacyConversationManager(ConversationManager):
             del self._legacy_cache[key]
 
     async def should_start_in_legacy_mode(self, conversation_id: str) -> bool:
-        """
-        Check if a conversation should run in legacy mode by directly checking the runtime.
+        """Check if a conversation should run in legacy mode by directly checking the runtime.
+
         The /list method does not include stopped conversations even though the PVC for these
         may not yet have been deleted, so we need to check /sessions/{session_id} directly.
         """
@@ -283,11 +307,32 @@ class LegacyConversationManager(ConversationManager):
             cached_entry = self._legacy_cache[conversation_id]
             # Check if the cached value is still valid
             if time.time() - cached_entry.timestamp <= _LEGACY_ENTRY_TIMEOUT_SECONDS:
+                logger.info(
+                    f'[TOKEN_DEBUG] LegacyManager: Using cached legacy status for {conversation_id}: '
+                    f'is_legacy={cached_entry.is_legacy}'
+                )
                 return cached_entry.is_legacy
 
         # If not in cache or expired, check the runtime directly
         runtime = await self.conversation_manager._get_runtime(conversation_id)
+
+        # Log runtime details for debugging
+        if runtime:
+            logger.info(
+                f"[TOKEN_DEBUG] LegacyManager: Runtime check for {conversation_id}: "
+                f"status={runtime.get('status')}, has_command={bool(runtime.get('command'))}, "
+                f"command_preview={str(runtime.get('command', ''))[:100]}"
+            )
+        else:
+            logger.info(
+                f'[TOKEN_DEBUG] LegacyManager: No runtime found for {conversation_id}'
+            )
+
         is_legacy = self.is_legacy_runtime(runtime)
+        logger.info(
+            f"[TOKEN_DEBUG] LegacyManager: Determined legacy status for {conversation_id}: "
+            f"is_legacy={is_legacy}, will use {'ClusteredConversationManager' if is_legacy else 'SaasNestedConversationManager'}"
+        )
 
         # Cache the result with current timestamp
         self._legacy_cache[conversation_id] = LegacyCacheEntry(is_legacy, time.time())
@@ -295,8 +340,7 @@ class LegacyConversationManager(ConversationManager):
         return is_legacy
 
     def is_legacy_runtime(self, runtime: dict | None) -> bool:
-        """
-        Determine if a runtime is a legacy runtime based on its command.
+        """Determine if a runtime is a legacy runtime based on its command.
 
         Args:
             runtime: The runtime dictionary or None if not found
@@ -304,9 +348,25 @@ class LegacyConversationManager(ConversationManager):
         Returns:
             bool: True if this is a legacy runtime, False otherwise
         """
-        if runtime is None:
+        # Ensure runtime is actually a dict (not None, mock, or other object)
+        if not isinstance(runtime, dict):
             return False
-        return 'openhands.server' not in runtime['command']
+
+        # Handle case where command field might not exist (e.g., paused runtimes)
+        command = runtime.get('command', '')
+        if not command:
+            # If no command field, check if this is a paused runtime
+            # Paused runtimes should use the new conversation manager
+            if runtime.get('status', '').lower() == 'paused':
+                return False
+            # Unknown state - default to False (use new manager)
+            return False
+
+        # Ensure command is a string before checking substring
+        if not isinstance(command, str):
+            return False
+
+        return 'openhands.server' not in command
 
     @classmethod
     def get_instance(

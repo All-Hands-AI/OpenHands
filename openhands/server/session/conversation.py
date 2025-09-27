@@ -26,6 +26,15 @@ class ServerConversation:
         event_stream: EventStream | None = None,
         runtime: Runtime | None = None,
     ):
+        import logging
+
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f'[TOKEN_DEBUG] ServerConversation.__init__ called: '
+            f'sid={sid}, '
+            f'has_runtime={runtime is not None}, '
+            f'SOURCE=conversation.py (REST API)'
+        )
         self.sid = sid
         self.config = config
         self.file_store = file_store
@@ -37,8 +46,17 @@ class ServerConversation:
 
         if runtime:
             self._attach_to_existing = True
+            logger.info(
+                '[TOKEN_DEBUG] ServerConversation using provided runtime, _attach_to_existing=True'
+            )
         else:
             runtime_cls = get_runtime_cls(self.config.runtime)
+            logger.info(
+                f'[TOKEN_DEBUG] ServerConversation creating runtime: '
+                f'runtime_cls={runtime_cls.__name__ if runtime_cls else None}, '
+                f'attach_to_existing=True (HARDCODED in conversation.py!), '
+                f'sid={self.sid}'
+            )
             runtime = runtime_cls(
                 llm_registry=LLMRegistry(self.config),
                 config=config,
