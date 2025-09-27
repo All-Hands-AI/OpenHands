@@ -9,7 +9,8 @@ services:
     environment:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.all-hands.dev/all-hands-ai/runtime:0.57-nikolaik}
       #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of ~/.openhands for this user
-      - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE}
+      - SANDBOX_VOLUMES=${SANDBOX_VOLUMES}
     ports:
       - "3000:3000"
     extra_hosts:
