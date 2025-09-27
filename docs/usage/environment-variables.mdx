@@ -15,6 +15,12 @@ OpenHands follows a consistent naming pattern for environment variables:
 - **Sandbox settings**: Prefixed with `SANDBOX_` (e.g., `timeout` → `SANDBOX_TIMEOUT`)
 - **Security settings**: Prefixed with `SECURITY_` (e.g., `confirmation_mode` → `SECURITY_CONFIRMATION_MODE`)
 
+## Configuration File Selection
+
+| Environment Variable | Type | Default | Description |
+|---------------------|------|---------|-------------|
+| `CONFIG_FILE` | string | `config.toml` | Overrides the default TOML configuration file path used by the GUI server (and other entry points that do not specify `--config-file`). |
+
 ## Core Configuration Variables
 
 These variables correspond to the `[core]` section in `config.toml`:
