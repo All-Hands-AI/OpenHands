@@ -78,8 +78,16 @@ class ConversationManager(ABC):
 
     async def is_agent_loop_running(self, sid: str) -> bool:
         """Check if an agent loop is running for the given session ID."""
+        from openhands.core.logger import openhands_logger as logger
+
         sids = await self.get_running_agent_loops(filter_to_sids={sid})
-        return bool(sids)
+        is_running = bool(sids)
+        logger.info(
+            f'[TOKEN_DEBUG] is_agent_loop_running check: '
+            f'sid={sid}, result={is_running}, '
+            f'found_sids={sids}'
+        )
+        return is_running
 
     @abstractmethod
     async def get_running_agent_loops(
