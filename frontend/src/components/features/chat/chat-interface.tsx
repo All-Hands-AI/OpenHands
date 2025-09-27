@@ -22,7 +22,7 @@ import { useAgentStore } from "#/stores/agent-store";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
@@ -49,7 +49,7 @@ export function ChatInterface() {
   const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
-    useOptimisticUserMessage();
+    useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
