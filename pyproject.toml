@@ -42,6 +42,7 @@ uvicorn = "*"
 numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
+playwright = "^1.55.0"
 html2text = "*"
 deprecated = "*"
 pexpect = "*"
