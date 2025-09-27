@@ -1,5 +1,7 @@
 """Settings validation utilities for LLM settings access control."""
 
+from pydantic import SecretStr
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import server_config
 from openhands.server.types import AppMode
@@ -50,14 +52,41 @@ def check_llm_settings_changes(settings: Settings, existing_settings) -> bool:
     Returns:
         bool: True if any LLM settings are being changed, False otherwise
     """
-    # Core LLM settings - always validate if provided
-    core_llm_changes = any(
-        [
-            settings.llm_model is not None,
-            settings.llm_api_key is not None,
-            settings.llm_base_url is not None,
-        ]
+
+    # Core LLM settings - validate only if actually changing compared to existing
+    # Handle SecretStr safely by comparing raw values if both present
+    def _secret_equals(a: SecretStr | None, b: SecretStr | None) -> bool:
+        if a is None and b is None:
+            return True
+        if a is None or b is None:
+            return False
+        try:
+            return a.get_secret_value() == b.get_secret_value()
+        except Exception:
+            # If any issue, fall back to object equality (best effort)
+            return a == b
+
+    existing_model = (
+        getattr(existing_settings, 'llm_model', None) if existing_settings else None
     )
+    existing_base_url = (
+        getattr(existing_settings, 'llm_base_url', None) if existing_settings else None
+    )
+    existing_api_key = (
+        getattr(existing_settings, 'llm_api_key', None) if existing_settings else None
+    )
+
+    core_llm_changes = False
+    if settings.llm_model is not None:
+        core_llm_changes = core_llm_changes or (settings.llm_model != existing_model)
+    if settings.llm_base_url is not None:
+        core_llm_changes = core_llm_changes or (
+            settings.llm_base_url != existing_base_url
+        )
+    if settings.llm_api_key is not None:
+        core_llm_changes = core_llm_changes or (
+            not _secret_equals(settings.llm_api_key, existing_api_key)
+        )
 
     if core_llm_changes:
         return True

@@ -106,7 +106,6 @@ def test_client_non_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
-        # Mock the validation function at the routes level to return False (no access)
         patch(
             'openhands.server.routes.settings.validate_llm_settings_access',
             AsyncMock(return_value=False),
@@ -133,7 +132,6 @@ def test_client_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
-        # Mock the validation function at the routes level to return True (has access)
         patch(
             'openhands.server.routes.settings.validate_llm_settings_access',
             AsyncMock(return_value=True),
@@ -273,7 +271,7 @@ async def test_expired_subscription_cannot_access_llm_settings():
         ),
         # Mock validation to return False (expired subscription, no access)
         patch(
-            'openhands.server.routes.settings.validate_llm_settings_access',
+            'openhands.server.settings_validation.validate_llm_settings_access',
             AsyncMock(return_value=False),
         ),
     ):
@@ -327,3 +325,79 @@ async def test_model_prefix_bypass_attempts_blocked(
     assert_forbidden_response(
         response, f"Bypass attempt with model '{malicious_model}'"
     )
+
+
+@pytest.mark.asyncio
+async def test_non_pro_user_can_save_language_only_with_full_payload():
+    """Regression test: Non-pro users changing only non-LLM settings should not be blocked
+    even when the frontend sends the full settings payload including unchanged LLM fields.
+    """
+    # Shared in-memory settings store used across pro and non-pro clients
+    shared_store = FileSettingsStore(InMemoryFileStore())
+
+    # Step 1: Initialize settings as a pro user (simulates existing saved settings)
+    with (
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        patch('openhands.server.shared.server_config.app_mode', AppMode.OSS),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=shared_store),
+        ),
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuthPro(),
+        ),
+    ):
+        pro_client = TestClient(app)
+        initial_settings = {
+            'language': 'en',
+            'agent': 'CodeActAgent',
+            'max_iterations': 100,
+            # LLM fields as the frontend would send
+            'llm_model': 'openhands/claude-sonnet-4-20250514',
+            'llm_base_url': '',
+            'confirmation_mode': False,
+            'security_analyzer': 'llm',
+            'enable_default_condenser': True,
+            'condenser_max_size': 120,
+            'remote_runtime_resource_factor': 1,
+            # Frontend typically does NOT resend llm_api_key unless changed
+        }
+        resp = pro_client.post('/api/settings', json=initial_settings)
+        assert resp.status_code == 200
+
+    # Step 2: As a non-pro user, change only language but send full payload
+    with (
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=shared_store),
+        ),
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuthNonPro(),
+        ),
+    ):
+        nonpro_client = TestClient(app)
+        # Same payload as initial, except language changed
+        payload = {
+            'language': 'fr',
+            'agent': 'CodeActAgent',
+            'max_iterations': 100,
+            'llm_model': 'openhands/claude-sonnet-4-20250514',
+            'llm_base_url': '',
+            'confirmation_mode': False,
+            'security_analyzer': 'llm',
+            'enable_default_condenser': True,
+            'condenser_max_size': 120,
+            'remote_runtime_resource_factor': 1,
+        }
+        response = nonpro_client.post('/api/settings', json=payload)
+        assert response.status_code == 200, response.text
