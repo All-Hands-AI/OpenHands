@@ -475,6 +475,7 @@ async def start_conversation(
     providers_set: ProvidersSetModel,
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationResponse:
@@ -503,6 +504,10 @@ async def start_conversation(
         conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
+
+        # Override with real provider tokens
+        if provider_tokens:
+            conversation_init_data.git_provider_tokens = provider_tokens
 
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
