@@ -8,11 +8,7 @@ from openhands.events.event_filter import EventFilter
 from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.serialization.event import event_from_dict
 from openhands.storage.files import FileStore
-from openhands.storage.locations import (
-    get_conversation_dir,
-    get_conversation_event_filename,
-    get_conversation_events_dir,
-)
+from openhands.storage.paths import ConversationPaths
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -44,11 +40,19 @@ _DUMMY_PAGE = _CachePage(None, 1, -1)
 class EventStore(EventStoreABC):
     """A stored list of events backing a conversation"""
 
-    sid: str
+    paths: ConversationPaths
     file_store: FileStore
-    user_id: str | None
     cache_size: int = 25
     _cur_id: int | None = None  # Private field to cache the calculated value
+
+    # Back-compat for code that reads these attributes directly
+    @property
+    def sid(self) -> str:  # type: ignore[override]
+        return self.paths.sid
+
+    @property
+    def user_id(self) -> str | None:  # type: ignore[override]
+        return self.paths.user_id
 
     @property
     def cur_id(self) -> int:
@@ -66,10 +70,12 @@ class EventStore(EventStoreABC):
         """Calculate the current event ID based on file system content."""
         events = []
         try:
-            events_dir = get_conversation_events_dir(self.sid, self.user_id)
+            events_dir = self.paths.events_dir()
             events = self.file_store.list(events_dir)
         except FileNotFoundError:
-            logger.debug(f'No events found for session {self.sid} at {events_dir}')
+            logger.debug(
+                f'No events found for session {self.paths.sid} at {events_dir}'
+            )
 
         if not events:
             return 0
@@ -136,7 +142,7 @@ class EventStore(EventStoreABC):
                         return
 
     def get_event(self, id: int) -> Event:
-        filename = self._get_filename_for_id(id, self.user_id)
+        filename = self.paths.event_filename(id)
         content = self.file_store.read(filename)
         data = json.loads(content)
         return event_from_dict(data)
@@ -153,10 +159,10 @@ class EventStore(EventStoreABC):
                 yield event
 
     def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
-        return get_conversation_event_filename(self.sid, id, user_id)
+        return self.paths.event_filename(id)
 
     def _get_filename_for_cache(self, start: int, end: int) -> str:
-        return f'{get_conversation_dir(self.sid, self.user_id)}event_cache/{start}-{end}.json'
+        return self.paths.event_cache_filename(start, end)
 
     def _load_cache_page(self, start: int, end: int) -> _CachePage:
         """Read a page from the cache. Reading individual events is slow when there are a lot of them, so we use pages."""
