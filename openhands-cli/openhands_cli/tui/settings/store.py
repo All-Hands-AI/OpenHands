@@ -2,9 +2,9 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
-from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk import LocalFileStore, Agent, AgentContext
-from openhands.sdk.preset.default import get_default_tools
+from openhands.tools.preset.default import get_default_tools
+from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
 from fastmcp.mcp_config import MCPConfig
@@ -23,7 +23,7 @@ class AgentStore:
         except Exception as e:
             return {}
 
-    def load(self) -> Agent | None:
+    def load(self, session_id: str | None = None) -> Agent | None:
         try:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
@@ -44,7 +44,16 @@ class AgentStore:
             mcp_config: dict = agent.mcp_config.copy().get('mcpServers', {})
             mcp_config.update(additional_mcp_config)
 
+            # Update LLM metadata with current information
+            updated_metadata = get_llm_metadata(
+                model_name=agent.llm.model,
+                agent_name='openhands-cli',
+                session_id=session_id
+            )
+            updated_llm = agent.llm.model_copy(update={"metadata": updated_metadata})
+
             agent = agent.model_copy(update={
+                "llm": updated_llm,
                 "tools": updated_tools,
                 "mcp_config": {'mcpServers': mcp_config} if mcp_config else {},
                 "agent_context": agent_context

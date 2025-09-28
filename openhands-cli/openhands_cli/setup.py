@@ -31,7 +31,7 @@ def setup_conversation() -> BaseConversation:
 
     with LoadingContext("Initializing OpenHands agent..."):
         agent_store = AgentStore()
-        agent = agent_store.load()
+        agent = agent_store.load(session_id=str(conversation_id))
         if not agent:
             raise MissingAgentSpec("Agent specification not found. Please configure your agent settings.")
 
