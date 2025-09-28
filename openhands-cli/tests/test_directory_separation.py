@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 from openhands.sdk import Agent, LLM, ToolSpec
 from openhands_cli.locations import WORK_DIR, PERSISTENCE_DIR
 from openhands_cli.tui.settings.store import AgentStore
-from openhands.sdk.preset.default import get_default_tools
+from openhands.tools.preset.default import get_default_tools
 
 
 class TestDirectorySeparation:
