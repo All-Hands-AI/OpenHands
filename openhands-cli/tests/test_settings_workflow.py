@@ -4,7 +4,7 @@ from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from pathlib import Path
 
 from openhands.sdk import LLM, Conversation, LocalFileStore
-from openhands.tools.preset.default import get_default_agent
+from openhands.sdk.preset.default import get_default_agent
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import SettingsType
 from pydantic import SecretStr

@@ -1,6 +1,5 @@
 import os
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
-from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import (
     SettingsType,
@@ -16,7 +15,7 @@ from openhands_cli.user_actions.settings_action import (
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
 from openhands.sdk import Conversation, LLM, LocalFileStore
-from openhands.tools.preset.default import get_default_agent
+from openhands.sdk.preset.default import get_default_agent
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
@@ -164,8 +163,7 @@ class SettingsScreen:
             model=model,
             api_key=api_key,
             base_url=base_url,
-            service_id="agent",
-            metadata=get_llm_metadata(model_name=model, agent_name='openhands-cli')
+            service_id="agent"
         )
 
         agent = self.agent_store.load()
