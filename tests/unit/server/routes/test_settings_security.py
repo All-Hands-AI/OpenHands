@@ -321,10 +321,14 @@ async def test_expired_subscription_cannot_access_llm_settings():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
-        # Mock validation to return False (expired subscription, no access)
+        # Mock validation to raise HTTPException (expired subscription, no access)
         patch(
             'openhands.server.routes.settings.validate_llm_settings_access',
-            AsyncMock(return_value=False),
+            MagicMock(
+                side_effect=lambda *args: exec(
+                    'from fastapi import HTTPException; raise HTTPException(status_code=403, detail="Expired subscription")'
+                )
+            ),
         ),
     ):
         client = TestClient(app)
@@ -377,3 +381,103 @@ async def test_model_prefix_bypass_attempts_blocked(
     assert_forbidden_response(
         response, f"Bypass attempt with model '{malicious_model}'"
     )
+
+
+@pytest.mark.asyncio
+async def test_condenser_settings_validation_with_existing_settings():
+    """Test that condenser settings are properly validated against existing settings"""
+    # This test demonstrates the issue: when no existing settings exist,
+    # any LLM settings are treated as changes and blocked for non-PRO users
+
+    with (
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuthNonPro(),
+        ),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
+        ),
+        # Don't mock the validation function - use the real one to test the actual behavior
+    ):
+        client = TestClient(app)
+
+        # First, try to save settings with condenser values when no existing settings exist
+        # This should fail because validation treats all LLM settings as changes
+        settings_data = {
+            'language': 'fr',
+            'enable_default_condenser': True,  # This will be treated as a change
+            'condenser_max_size': None,  # This will be treated as a change
+            'max_iterations': 50,
+        }
+
+        response = client.post('/api/settings', json=settings_data)
+        print(f'Response status: {response.status_code}')
+        print(f'Response content: {response.json()}')
+
+        # This should fail because there are no existing settings to compare against
+        assert response.status_code == 403
+        assert 'enable_default_condenser' in response.json()['detail']
+        assert 'condenser_max_size' in response.json()['detail']
+
+
+@pytest.mark.asyncio
+async def test_condenser_settings_unchanged_should_pass():
+    """Test that non-PRO users can save settings when condenser values are unchanged"""
+    from openhands.storage.data_models.settings import Settings
+
+    # Create existing settings with condenser values
+    existing_settings = Settings(
+        language='en',
+        enable_default_condenser=True,
+        condenser_max_size=100,
+        max_iterations=100,
+    )
+
+    # Mock settings store to return existing settings
+    mock_settings_store = AsyncMock()
+    mock_settings_store.load.return_value = existing_settings
+    mock_settings_store.store = AsyncMock()
+
+    with (
+        patch.dict(
+            os.environ, {'SESSION_API_KEY': '', 'APP_MODE': 'saas'}, clear=False
+        ),
+        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        patch('openhands.server.shared.server_config.app_mode', AppMode.SAAS),
+        patch(
+            'openhands.server.user_auth.user_auth.UserAuth.get_instance',
+            return_value=MockUserAuthNonPro(),
+        ),
+        patch(
+            'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
+            AsyncMock(return_value=mock_settings_store),
+        ),
+        patch(
+            'openhands.server.routes.settings.get_user_settings_store',
+            return_value=mock_settings_store,
+        ),
+    ):
+        client = TestClient(app)
+
+        # Try to save settings with the same condenser values
+        # This should pass because the condenser values are not actually changing
+        settings_data = {
+            'language': 'fr',  # This is allowed to change
+            'enable_default_condenser': True,  # Same as existing - should not trigger validation
+            'condenser_max_size': 100,  # Same as existing - should not trigger validation
+            'max_iterations': 50,  # This is allowed to change
+        }
+
+        response = client.post('/api/settings', json=settings_data)
+        print(f'Response status: {response.status_code}')
+        if response.status_code != 200:
+            print(f'Response content: {response.json()}')
+
+        # This should pass because condenser values are not actually changing
+        assert response.status_code == 200
