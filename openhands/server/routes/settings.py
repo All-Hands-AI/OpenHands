@@ -150,7 +150,7 @@ async def store_settings(
         existing_settings = await settings_store.load()
 
         # Validate LLM settings access for non-PRO users in SaaS mode
-        validate_llm_settings_access(settings, user_id)
+        validate_llm_settings_access(settings, user_id, existing_settings)
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:

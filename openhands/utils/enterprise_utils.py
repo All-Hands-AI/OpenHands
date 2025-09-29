@@ -79,20 +79,23 @@ def is_pro_user(user_id: str | None) -> bool:
         return False
 
 
-def validate_llm_settings_access(settings: Settings, user_id: str | None) -> None:
+def validate_llm_settings_access(
+    settings: Settings, user_id: str | None, existing_settings: Settings | None = None
+) -> None:
     """
-    Validate that non-PRO users in SaaS mode cannot include LLM settings in their requests.
+    Validate that non-PRO users in SaaS mode cannot modify LLM settings.
 
     This enforces a strict security policy where non-PRO users in SaaS mode
-    are not allowed to include ANY LLM settings in their requests, regardless
-    of whether they are changing the values or not.
+    are not allowed to change LLM settings. If existing_settings is provided,
+    only validates fields that are actually being changed.
 
     Args:
         settings: The settings object containing the user's requested settings
         user_id: The user ID to check for PRO status
+        existing_settings: The current settings to compare against (optional)
 
     Raises:
-        HTTPException: 403 Forbidden if non-PRO user tries to include LLM settings in SaaS mode
+        HTTPException: 403 Forbidden if non-PRO user tries to modify LLM settings in SaaS mode
     """
     # Only enforce in SaaS mode
     if server_config.app_mode != AppMode.SAAS:
@@ -102,20 +105,39 @@ def validate_llm_settings_access(settings: Settings, user_id: str | None) -> Non
     if is_pro_user(user_id):
         return
 
-    # Non-PRO user in SaaS mode - check if request includes any LLM settings
+    # Non-PRO user in SaaS mode - check which LLM settings are being changed
     settings_dict = settings.model_dump(exclude_unset=True)
-    included_llm_settings = [
-        setting for setting in settings_dict.keys() if setting in LLM_ONLY_SETTINGS
-    ]
 
-    if included_llm_settings:
+    if existing_settings:
+        # Compare against existing settings to find what's actually being changed
+        existing_dict = existing_settings.model_dump(exclude_unset=True)
+        changed_llm_settings = []
+
+        for setting in settings_dict.keys():
+            if setting in LLM_ONLY_SETTINGS:
+                # Check if this LLM setting is actually being changed
+                new_value = settings_dict.get(setting)
+                existing_value = existing_dict.get(setting)
+
+                # Consider it changed if:
+                # 1. The values are different
+                # 2. The setting didn't exist before (new setting)
+                if new_value != existing_value:
+                    changed_llm_settings.append(setting)
+    else:
+        # No existing settings to compare against - treat all LLM settings as changes
+        changed_llm_settings = [
+            setting for setting in settings_dict.keys() if setting in LLM_ONLY_SETTINGS
+        ]
+
+    if changed_llm_settings:
         from fastapi import HTTPException
 
         logger.warning(
-            f'Non-PRO user {user_id} attempted to include LLM settings in SaaS mode: {included_llm_settings}'
+            f'Non-PRO user {user_id} attempted to modify LLM settings in SaaS mode: {changed_llm_settings}'
         )
         raise HTTPException(
             status_code=403,
             detail=f'PRO subscription required to modify LLM settings in SaaS mode. '
-            f'Upgrade your account to access these features: {", ".join(included_llm_settings)}',
+            f'Upgrade your account to access these features: {", ".join(changed_llm_settings)}',
         )

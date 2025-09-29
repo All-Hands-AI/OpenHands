@@ -106,10 +106,10 @@ def test_client_non_pro():
             'openhands.storage.settings.file_settings_store.FileSettingsStore.get_instance',
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
-        # Mock the validation function at the routes level to return False (no access)
+        # Mock the validation function at the routes level to raise HTTPException only for LLM settings
         patch(
             'openhands.server.routes.settings.validate_llm_settings_access',
-            AsyncMock(return_value=False),
+            MagicMock(side_effect=mock_validate_llm_settings_access_non_pro),
         ),
     ):
         client = TestClient(app)
@@ -174,6 +174,56 @@ def create_base_settings(**overrides):
     }
     base_settings.update(overrides)
     return base_settings
+
+
+def mock_validate_llm_settings_access_non_pro(
+    settings, user_id, existing_settings=None
+):
+    """Mock validation function that raises HTTPException only for changed LLM settings"""
+    # LLM-only settings that require PRO subscription in SaaS mode
+    LLM_ONLY_SETTINGS = {
+        'llm_model',
+        'llm_api_key',
+        'llm_base_url',
+        'search_api_key',
+        'agent',
+        'confirmation_mode',
+        'security_analyzer',
+        'enable_default_condenser',
+        'condenser_max_size',
+    }
+
+    # Check which LLM settings are being changed
+    settings_dict = settings.model_dump(exclude_unset=True)
+
+    if existing_settings:
+        # Compare against existing settings to find what's actually being changed
+        existing_dict = existing_settings.model_dump(exclude_unset=True)
+        changed_llm_settings = []
+
+        for setting in settings_dict.keys():
+            if setting in LLM_ONLY_SETTINGS:
+                # Check if this LLM setting is actually being changed
+                new_value = settings_dict.get(setting)
+                existing_value = existing_dict.get(setting)
+
+                # Consider it changed if the values are different
+                if new_value != existing_value:
+                    changed_llm_settings.append(setting)
+    else:
+        # No existing settings to compare against - treat all LLM settings as changes
+        changed_llm_settings = [
+            setting for setting in settings_dict.keys() if setting in LLM_ONLY_SETTINGS
+        ]
+
+    if changed_llm_settings:
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=403,
+            detail=f'PRO subscription required to modify LLM settings in SaaS mode. '
+            f'Upgrade your account to access these features: {", ".join(changed_llm_settings)}',
+        )
 
 
 def assert_forbidden_response(response, model_or_setting_name=''):
