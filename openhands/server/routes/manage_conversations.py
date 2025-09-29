@@ -35,9 +35,9 @@ from openhands.integrations.service_types import (
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
-from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_info import StoredConversation
 from openhands.server.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
+    StoredConversationResultSet,
 )
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
@@ -111,8 +111,8 @@ def _filter_conversations_by_age(
 
 async def _build_conversation_result_set(
     filtered_conversations: list, next_page_id: str | None
-) -> ConversationInfoResultSet:
-    """Build a ConversationInfoResultSet from filtered conversations.
+) -> StoredConversationResultSet:
+    """Build a StoredConversationResultSet from filtered conversations.
 
     This function handles the common logic of getting conversation IDs, connections,
     agent loop info, and building the final result set.
@@ -122,7 +122,7 @@ async def _build_conversation_result_set(
         next_page_id: Next page ID for pagination
 
     Returns:
-        ConversationInfoResultSet with the processed conversations
+        StoredConversationResultSet with the processed conversations
     """
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_conversations
@@ -137,7 +137,7 @@ async def _build_conversation_result_set(
         info.conversation_id: info for info in agent_loop_info
     }
 
-    result = ConversationInfoResultSet(
+    result = StoredConversationResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
@@ -282,7 +282,7 @@ async def search_conversations(
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> ConversationInfoResultSet:
+) -> StoredConversationResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
     # Apply age filter first using common function
@@ -318,7 +318,7 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
-) -> ConversationInfo | None:
+) -> StoredConversation | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         num_connections = len(
@@ -428,12 +428,12 @@ async def _get_conversation_info(
     conversation: ConversationMetadata,
     num_connections: int,
     agent_loop_info: AgentLoopInfo | None,
-) -> ConversationInfo | None:
+) -> StoredConversation | None:
     try:
         title = conversation.title
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
-        return ConversationInfo(
+        return StoredConversation(
             trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
             title=title,
@@ -764,7 +764,7 @@ async def get_microagent_management_conversations(
     limit: int = 20,
     conversation_store: ConversationStore = Depends(get_conversation_store),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-) -> ConversationInfoResultSet:
+) -> StoredConversationResultSet:
     """Get conversations for the microagent management page with pagination support.
 
     This endpoint returns conversations with conversation_trigger = 'microagent_management'

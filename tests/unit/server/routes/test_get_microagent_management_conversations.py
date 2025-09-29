@@ -5,7 +5,7 @@ import pytest
 
 from openhands.integrations.provider import ProviderHandler
 from openhands.server.data_models.conversation_info_result_set import (
-    ConversationInfoResultSet,
+    StoredConversationResultSet,
 )
 from openhands.server.routes.manage_conversations import (
     get_microagent_management_conversations,
@@ -75,7 +75,7 @@ async def test_get_microagent_management_conversations_success():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[], next_page_id='next_page_456'
         )
 
@@ -92,7 +92,7 @@ async def test_get_microagent_management_conversations_success():
         )
 
         # Verify the result
-        assert isinstance(result, ConversationInfoResultSet)
+        assert isinstance(result, StoredConversationResultSet)
         assert result.next_page_id == 'next_page_456'
 
         # Verify conversation store was called correctly
@@ -122,7 +122,7 @@ async def test_get_microagent_management_conversations_no_results():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[], next_page_id=None
         )
 
@@ -137,7 +137,7 @@ async def test_get_microagent_management_conversations_no_results():
         )
 
         # Verify the result
-        assert isinstance(result, ConversationInfoResultSet)
+        assert isinstance(result, StoredConversationResultSet)
         assert result.next_page_id is None
         assert len(result.results) == 0
 
@@ -195,7 +195,7 @@ async def test_get_microagent_management_conversations_filter_by_repository():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function - only repo1 should be included
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[mock_conversations[0]], next_page_id=None
         )
 
@@ -268,7 +268,7 @@ async def test_get_microagent_management_conversations_filter_by_trigger():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function - only microagent_management should be included
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[mock_conversations[0]], next_page_id=None
         )
 
@@ -341,7 +341,7 @@ async def test_get_microagent_management_conversations_filter_inactive_pr():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function - only active PR should be included
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[mock_conversations[0]], next_page_id=None
         )
 
@@ -404,7 +404,7 @@ async def test_get_microagent_management_conversations_no_pr_number():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=mock_conversations, next_page_id=None
         )
 
@@ -467,7 +467,7 @@ async def test_get_microagent_management_conversations_no_repository():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function - conversation should be filtered out due to repository mismatch
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[], next_page_id=None
         )
 
@@ -543,7 +543,7 @@ async def test_get_microagent_management_conversations_age_filter():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function - only recent conversation should be included
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[recent_conversation], next_page_id=None
         )
 
@@ -582,7 +582,7 @@ async def test_get_microagent_management_conversations_pagination():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[], next_page_id='next_page_789'
         )
 
@@ -623,7 +623,7 @@ async def test_get_microagent_management_conversations_default_parameters():
         patch('openhands.server.routes.manage_conversations.config') as mock_config,
     ):
         # Mock the build result function
-        mock_build_result.return_value = ConversationInfoResultSet(
+        mock_build_result.return_value = StoredConversationResultSet(
             results=[], next_page_id=None
         )
 
@@ -639,4 +639,4 @@ async def test_get_microagent_management_conversations_default_parameters():
 
         # Verify default values were used
         mock_conversation_store.search.assert_called_once_with(None, 20)
-        assert isinstance(result, ConversationInfoResultSet)
+        assert isinstance(result, StoredConversationResultSet)
