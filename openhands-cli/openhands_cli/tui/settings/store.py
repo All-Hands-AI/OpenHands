@@ -48,7 +48,7 @@ class AgentStore:
             # Update LLM metadata with current information
             agent_llm_metadata = get_llm_metadata(
                 model_name=agent.llm.model,
-                llm_type=f"agent={agent.__class__.__name__}",
+                llm_type="agent",
                 session_id=session_id
             )
             updated_llm = agent.llm.model_copy(update={"metadata": agent_llm_metadata})
