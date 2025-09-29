@@ -14,14 +14,16 @@ from openhands.server.shared import server_config
 from openhands.server.types import AppMode
 from openhands.storage.data_models.settings import Settings
 
-# Enterprise imports - require Google Cloud SQL dependencies that may not be installed in development environments
+# Enterprise imports - conditionally import based on environment
 try:
     from enterprise.storage.database import session_maker
     from enterprise.storage.subscription_access import SubscriptionAccess
 
     ENTERPRISE_AVAILABLE = True
 except ImportError as e:
-    logger.warning(
+    # In development environments, enterprise modules may not be available
+    # Log at debug level instead of warning to reduce noise in development
+    logger.debug(
         f'Enterprise modules not available: {e}. '
         'This is expected in development environments without Google Cloud SQL dependencies.'
     )
@@ -58,7 +60,7 @@ def is_pro_user(user_id: str | None) -> bool:
 
     if not ENTERPRISE_AVAILABLE:
         # Enterprise modules not available, assume non-pro user (safe default)
-        logger.warning(
+        logger.debug(
             f'Enterprise modules not available, treating user {user_id} as non-pro'
         )
         return False
@@ -75,7 +77,12 @@ def is_pro_user(user_id: str | None) -> bool:
                 .filter(SubscriptionAccess.end_at >= now)
                 .first()
             )
-            return subscription_access is not None
+            is_pro = subscription_access is not None
+            logger.warning(
+                f'Subscription check for user {user_id}: is_pro={is_pro}, '
+                f'subscription_found={subscription_access is not None}'
+            )
+            return is_pro
 
     except Exception as e:
         # Log the error for debugging but don't fail
@@ -114,9 +121,17 @@ def validate_llm_settings_access(
     # Non-PRO user in SaaS mode - check which LLM settings are being changed
     settings_dict = settings.model_dump(exclude_unset=True)
 
+    logger.warning(
+        f'Validating LLM settings access for non-PRO user {user_id}. '
+        f'App mode: {server_config.app_mode}, '
+        f'Settings in request: {list(settings_dict.keys())}, '
+        f'Has existing settings: {existing_settings is not None}'
+    )
+
     if existing_settings:
         # Compare against existing settings to find what's actually being changed
-        existing_dict = existing_settings.model_dump(exclude_unset=True)
+        # Use regular model_dump() to include default values for proper comparison
+        existing_dict = existing_settings.model_dump()
         changed_llm_settings = []
 
         for setting in settings_dict.keys():
@@ -125,11 +140,23 @@ def validate_llm_settings_access(
                 new_value = settings_dict.get(setting)
                 existing_value = existing_dict.get(setting)
 
+                # Log detailed comparison for debugging
+                logger.warning(
+                    f'Comparing LLM setting "{setting}" for user {user_id}: '
+                    f'new_value={new_value} (type: {type(new_value)}), '
+                    f'existing_value={existing_value} (type: {type(existing_value)}), '
+                    f'are_equal={new_value == existing_value}'
+                )
+
                 # Consider it changed if:
                 # 1. The values are different
                 # 2. The setting didn't exist before (new setting)
                 if new_value != existing_value:
                     changed_llm_settings.append(setting)
+                    logger.warning(
+                        f'LLM setting "{setting}" detected as changed for user {user_id}: '
+                        f'{existing_value} -> {new_value}'
+                    )
     else:
         # No existing settings to compare against - compare against default values
         default_settings = Settings()
@@ -142,8 +169,20 @@ def validate_llm_settings_access(
                 new_value = settings_dict.get(setting)
                 default_value = default_dict.get(setting)
 
+                # Log detailed comparison for debugging
+                logger.warning(
+                    f'Comparing LLM setting "{setting}" against default for user {user_id}: '
+                    f'new_value={new_value} (type: {type(new_value)}), '
+                    f'default_value={default_value} (type: {type(default_value)}), '
+                    f'are_equal={new_value == default_value}'
+                )
+
                 if new_value != default_value:
                     changed_llm_settings.append(setting)
+                    logger.warning(
+                        f'LLM setting "{setting}" detected as different from default for user {user_id}: '
+                        f'default={default_value} -> new={new_value}'
+                    )
 
     if changed_llm_settings:
         logger.warning(

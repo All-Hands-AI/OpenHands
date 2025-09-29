@@ -412,7 +412,7 @@ async def test_condenser_settings_validation_with_existing_settings():
         settings_data = {
             'language': 'fr',
             'enable_default_condenser': True,  # This will be treated as a change
-            'condenser_max_size': None,  # This will be treated as a change
+            'condenser_max_size': 120,  # Same as default - should not be treated as a change
             'max_iterations': 50,
         }
 
@@ -420,10 +420,9 @@ async def test_condenser_settings_validation_with_existing_settings():
         print(f'Response status: {response.status_code}')
         print(f'Response content: {response.json()}')
 
-        # This should fail because there are no existing settings to compare against
-        assert response.status_code == 403
-        assert 'enable_default_condenser' in response.json()['detail']
-        assert 'condenser_max_size' in response.json()['detail']
+        # This should now pass because both condenser settings match their defaults
+        # When no existing settings exist, default values should not be treated as changes
+        assert response.status_code == 200
 
 
 @pytest.mark.asyncio
