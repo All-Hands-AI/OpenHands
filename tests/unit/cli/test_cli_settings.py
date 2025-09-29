@@ -615,7 +615,12 @@ class TestModifyLLMSettingsBasic:
     )
     @patch(
         'openhands.cli.settings.VERIFIED_OPENHANDS_MODELS',
-        ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'o3'],
+        [
+            'claude-sonnet-4-20250514',
+            'claude-sonnet-4-5',
+            'claude-opus-4-20250514',
+            'o3',
+        ],
     )
     @patch('openhands.cli.settings.get_supported_llm_models')
     @patch('openhands.cli.settings.organize_models_and_providers')
@@ -702,7 +707,7 @@ class TestModifyLLMSettingsBasic:
     )
     @patch(
         'openhands.cli.settings.VERIFIED_ANTHROPIC_MODELS',
-        ['claude-sonnet-4-20250514', 'claude-3-opus'],
+        ['claude-sonnet-4-20250514', 'claude-sonnet-4-5', 'claude-3-opus'],
     )
     @patch('openhands.cli.settings.get_supported_llm_models')
     @patch('openhands.cli.settings.organize_models_and_providers')
