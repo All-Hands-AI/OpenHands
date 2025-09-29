@@ -68,7 +68,7 @@ docker run -it --rm --pull=always \
 您将在[http://localhost:3000](http://localhost:3000)找到运行中的OpenHands！
 
 打开应用程序时，您将被要求选择一个LLM提供商并添加API密钥。
-[Anthropic的Claude 4-5](https://www.anthropic.com/api)（`anthropic/claude-sonnet-4-20250514` 或 `anthropic/claude-sonnet-4-5-20250929`）
+[Anthropic的Claude Sonnet 4.5](https://www.anthropic.com/api)（`anthropic/claude-sonnet-4-5-20250929`）
 效果最佳，但您还有[许多选择](https://docs.all-hands.dev/usage/llms)。
 
 ## 💡 运行OpenHands的其他方式
