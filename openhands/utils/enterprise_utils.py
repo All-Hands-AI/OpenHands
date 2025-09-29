@@ -151,7 +151,23 @@ def validate_llm_settings_access(
                 # Consider it changed if:
                 # 1. The values are different
                 # 2. The setting didn't exist before (new setting)
+                # BUT: If existing value is None and new value is the default, don't treat as change
                 if new_value != existing_value:
+                    # Check if this is just setting a default value when existing was None
+                    if existing_value is None:
+                        # Get the default value for this setting
+                        default_settings = Settings()
+                        default_dict = default_settings.model_dump()
+                        default_value = default_dict.get(setting)
+
+                        if new_value == default_value:
+                            logger.warning(
+                                f'LLM setting "{setting}" for user {user_id}: '
+                                f'existing=None, new={new_value}, default={default_value} - '
+                                f'treating as unchanged (setting to default)'
+                            )
+                            continue  # Skip this setting, don't treat as changed
+
                     changed_llm_settings.append(setting)
                     logger.warning(
                         f'LLM setting "{setting}" detected as changed for user {user_id}: '
