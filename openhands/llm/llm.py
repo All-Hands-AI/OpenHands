@@ -148,7 +148,10 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
-
+            elif 'claude-sonnet-4-5' in self.config.model:
+                kwargs.pop(
+                    'reasoning_effort', None
+                )  # don't send reasoning_effort to Claude Sonnet 4.5
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
