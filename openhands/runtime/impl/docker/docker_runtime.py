@@ -92,10 +92,22 @@ class DockerRuntime(ActionExecutionClient):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
-        if not DockerRuntime._shutdown_listener_id:
-            DockerRuntime._shutdown_listener_id = add_shutdown_listener(
-                lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
-            )
+        # Only register shutdown listener for non-multiprocessing contexts
+        # to prevent cascade container shutdowns in worker processes
+        if not DockerRuntime._shutdown_listener_id and not attach_to_existing:
+            # Check if we're in a multiprocessing worker by looking at the process name
+            import multiprocessing
+            current_process = multiprocessing.current_process()
+            if current_process.name == 'MainProcess':
+                DockerRuntime._shutdown_listener_id = add_shutdown_listener(
+                    lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
+                )
+            else:
+                # For worker processes, only clean up their own container
+                def cleanup_own():
+                    if hasattr(self, 'container_name'):
+                        self._cleanup_own_container_on_shutdown()
+                DockerRuntime._shutdown_listener_id = add_shutdown_listener(cleanup_own)
 
         self.config = config
         self.status_callback = status_callback
@@ -220,8 +232,12 @@ class DockerRuntime(ActionExecutionClient):
             )
 
     @staticmethod
-    @lru_cache(maxsize=1)
     def _init_docker_client() -> docker.DockerClient:
+        """Initialize Docker client without caching for multiprocessing safety.
+
+        Each worker process should have its own Docker client connection to avoid
+        shared state issues that can cause cascade failures when containers restart.
+        """
         try:
             return docker.from_env()
         except Exception as ex:
@@ -492,11 +508,136 @@ class DockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
-        stop_all_containers(close_prefix)
+
+        # For multiprocessing safety, only clean up own container unless explicitly requested
+        import multiprocessing
+        current_process = multiprocessing.current_process()
+        if current_process.name != 'MainProcess' and rm_all_containers:
+            # Worker process should only clean up its own container
+            logger.debug(f'Worker process {current_process.name} cleaning up only own container')
+            rm_all_containers = False
+
+        if rm_all_containers:
+            # Stop and remove all containers with the prefix
+            self._remove_containers_by_prefix(CONTAINER_NAME_PREFIX)
+        else:
+            # Only stop and remove this specific container
+            if hasattr(self, 'container_name'):
+                self._remove_single_container(self.container_name)
+
         self._release_port_locks()
+
+    def _safely_remove_image(self, docker_client: docker.DockerClient, image_id: str) -> None:
+        """Safely remove a Docker image if it's not being used by other containers or images.
+
+        Args:
+            docker_client: Docker client instance
+            image_id: The ID or name of the image to remove
+        """
+        try:
+            # Get all containers (running and stopped) to check if they use this image
+            all_containers = docker_client.containers.list(all=True)
+            for container in all_containers:
+                container_image_id = container.image.id
+                if container_image_id == image_id:
+                    logger.debug(f'Image {image_id} is still used by container {container.name or container.id}, skipping removal')
+                    return
+
+            # Get all images to check for parent-child relationships
+            all_images = docker_client.images.list()
+            for image in all_images:
+                # Check if this image depends on the one we want to remove
+                if hasattr(image, 'attrs') and 'Config' in image.attrs:
+                    parent_id = image.attrs.get('Parent', '')
+                    if parent_id == image_id and image.id != image_id:
+                        logger.debug(f'Image {image_id} is a parent of {image.id}, skipping removal')
+                        return
+
+            # Safe to remove the image
+            try:
+                docker_client.images.remove(image_id, force=False)
+                logger.debug(f'Successfully removed image: {image_id}')
+            except docker.errors.APIError as e:
+                if 'image is being used by' in str(e).lower() or 'conflict' in str(e).lower():
+                    logger.debug(f'Image {image_id} is still in use, skipping removal: {e}')
+                else:
+                    logger.debug(f'API error removing image {image_id}: {e}')
+            except Exception as e:
+                logger.debug(f'Error removing image {image_id}: {e}')
+
+        except Exception as e:
+            logger.debug(f'Error during safe image removal for {image_id}: {e}')
+
+    def _remove_containers_by_prefix(self, prefix: str) -> None:
+        """Remove all containers with the given prefix."""
+        try:
+            docker_client = self._init_docker_client()
+            try:
+                containers = docker_client.containers.list(all=True)
+                container_images_to_cleanup = []
+
+                for container in containers:
+                    try:
+                        if container.name and container.name.startswith(prefix):
+                            # Collect the image ID before removing the container
+                            try:
+                                container_image_id = container.image.id
+                                container_images_to_cleanup.append(container_image_id)
+                            except Exception as e:
+                                logger.debug(f'Could not get image ID for container {container.name}: {e}')
+
+                            logger.debug(f'Stopping and removing container: {container.name}')
+                            container.stop()
+                            container.remove(force=True)
+                    except docker.errors.APIError as e:
+                        logger.debug(f'API error removing container {container.name}: {e}')
+                    except docker.errors.NotFound:
+                        logger.debug(f'Container {container.name} not found (already removed)')
+                    except Exception as e:
+                        logger.warning(f'Unexpected error removing container {container.name}: {e}')
+
+                # Now safely remove images associated with the removed containers
+                for image_id in set(container_images_to_cleanup):  # Use set to avoid duplicates
+                    self._safely_remove_image(docker_client, image_id)
+
+            finally:
+                docker_client.close()
+        except Exception as e:
+            logger.warning(f'Error during container cleanup by prefix: {e}')
+
+    def _remove_single_container(self, container_name: str) -> None:
+        """Remove a single container by name."""
+        try:
+            docker_client = self._init_docker_client()
+            container_image_id = None
+
+            try:
+                container = docker_client.containers.get(container_name)
+
+                # Get the image ID before removing the container
+                try:
+                    container_image_id = container.image.id
+                except Exception as e:
+                    logger.debug(f'Could not get image ID for container {container_name}: {e}')
+
+                logger.debug(f'Stopping and removing container: {container_name}')
+                container.stop()
+                container.remove(force=True)
+
+                # Now safely remove the image associated with this container
+                if container_image_id:
+                    self._safely_remove_image(docker_client, container_image_id)
+
+            except docker.errors.NotFound:
+                logger.debug(f'Container {container_name} not found (already removed)')
+            except docker.errors.APIError as e:
+                logger.debug(f'API error removing container {container_name}: {e}')
+            except Exception as e:
+                logger.warning(f'Unexpected error removing container {container_name}: {e}')
+            finally:
+                docker_client.close()
+        except Exception as e:
+            logger.warning(f'Error during single container cleanup: {e}')
 
     def _release_port_locks(self) -> None:
         """Release all acquired port locks."""
@@ -518,6 +659,14 @@ class DockerRuntime(ActionExecutionClient):
                 )
 
         self._app_port_locks.clear()
+
+    def _cleanup_own_container_on_shutdown(self) -> None:
+        """Clean up only this instance's container, not all containers.
+
+        Used by worker processes to avoid interfering with other workers.
+        """
+        if hasattr(self, 'container_name'):
+            self._remove_single_container(self.container_name)
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
