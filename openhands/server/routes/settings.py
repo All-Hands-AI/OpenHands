@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -11,8 +11,7 @@ from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
-from openhands.server.shared import config, server_config
-from openhands.server.types import AppMode
+from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -23,66 +22,9 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
+from openhands.utils.enterprise_utils import validate_llm_settings_access
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
-
-
-# LLM-only settings that require PRO subscription in SaaS mode
-LLM_ONLY_SETTINGS = {
-    'agent',
-    'llm_model',
-    'llm_api_key',
-    'llm_base_url',
-    'search_api_key',
-    'confirmation_mode',
-    'security_analyzer',
-    'enable_default_condenser',
-    'condenser_max_size',
-}
-
-
-def is_pro_user(user_id: str | None) -> bool:
-    """
-    Determine if a user is a PRO user.
-
-    For now, this is a simple implementation based on user ID pattern.
-    In a real implementation, this would check against a subscription service.
-    """
-    # Simple pattern matching for testing - pro users have 'pro' in their user ID
-    return 'pro' in user_id.lower() if user_id else False
-
-
-def validate_llm_settings_access(settings: Settings, user_id: str | None) -> None:
-    """
-    Validate that non-PRO users in SaaS mode cannot include LLM settings in their requests.
-
-    Raises HTTPException with 403 status if validation fails.
-    """
-    # Only enforce restrictions in SaaS mode
-    if server_config.app_mode != AppMode.SAAS:
-        return
-
-    # PRO users can modify any settings
-    if is_pro_user(user_id):
-        return
-
-    # Check if any LLM settings are present in the request
-    settings_dict = settings.model_dump(exclude_unset=True)
-    llm_settings_in_request = []
-
-    for field_name in LLM_ONLY_SETTINGS:
-        if field_name in settings_dict and settings_dict[field_name] is not None:
-            llm_settings_in_request.append(field_name)
-
-    # If any LLM settings are present, reject the request
-    if llm_settings_in_request:
-        logger.warning(
-            f'Non-PRO user {user_id} attempted to modify LLM settings: {llm_settings_in_request}'
-        )
-        raise ValueError(
-            'PRO subscription required to modify LLM settings. '
-            'Please upgrade your subscription to access advanced LLM configuration options.'
-        )
 
 
 @app.get(
@@ -262,6 +204,9 @@ async def store_settings(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': str(e)},
         )
+    except HTTPException:
+        # Let HTTPException propagate (it will be handled by FastAPI)
+        raise
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
