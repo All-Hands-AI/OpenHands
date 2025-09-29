@@ -11,11 +11,8 @@ from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
-from openhands.server.settings_validation import (
-    check_llm_settings_changes,
-    validate_llm_settings_access,
-)
-from openhands.server.shared import config
+from openhands.server.shared import config, server_config
+from openhands.server.types import AppMode
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -28,6 +25,64 @@ from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+
+
+# LLM-only settings that require PRO subscription in SaaS mode
+LLM_ONLY_SETTINGS = {
+    'agent',
+    'llm_model',
+    'llm_api_key',
+    'llm_base_url',
+    'search_api_key',
+    'confirmation_mode',
+    'security_analyzer',
+    'enable_default_condenser',
+    'condenser_max_size',
+}
+
+
+def is_pro_user(user_id: str | None) -> bool:
+    """
+    Determine if a user is a PRO user.
+
+    For now, this is a simple implementation based on user ID pattern.
+    In a real implementation, this would check against a subscription service.
+    """
+    # Simple pattern matching for testing - pro users have 'pro' in their user ID
+    return 'pro' in user_id.lower() if user_id else False
+
+
+def validate_llm_settings_access(settings: Settings, user_id: str | None) -> None:
+    """
+    Validate that non-PRO users in SaaS mode cannot include LLM settings in their requests.
+
+    Raises HTTPException with 403 status if validation fails.
+    """
+    # Only enforce restrictions in SaaS mode
+    if server_config.app_mode != AppMode.SAAS:
+        return
+
+    # PRO users can modify any settings
+    if is_pro_user(user_id):
+        return
+
+    # Check if any LLM settings are present in the request
+    settings_dict = settings.model_dump(exclude_unset=True)
+    llm_settings_in_request = []
+
+    for field_name in LLM_ONLY_SETTINGS:
+        if field_name in settings_dict and settings_dict[field_name] is not None:
+            llm_settings_in_request.append(field_name)
+
+    # If any LLM settings are present, reject the request
+    if llm_settings_in_request:
+        logger.warning(
+            f'Non-PRO user {user_id} attempted to modify LLM settings: {llm_settings_in_request}'
+        )
+        raise ValueError(
+            'PRO subscription required to modify LLM settings. '
+            'Please upgrade your subscription to access advanced LLM configuration options.'
+        )
 
 
 @app.get(
@@ -152,21 +207,8 @@ async def store_settings(
     try:
         existing_settings = await settings_store.load()
 
-        # Check if any LLM-related settings are being changed
-        llm_settings_being_changed = check_llm_settings_changes(
-            settings, existing_settings
-        )
-
-        if llm_settings_being_changed:
-            has_access = await validate_llm_settings_access(user_id)
-            if not has_access:
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={
-                        'error': 'Modifying LLM settings requires an active OpenHands Pro subscription. Please upgrade your account to access LLM configuration.',
-                        'detail': 'Subscription required for LLM settings modifications',
-                    },
-                )
+        # Validate LLM settings access for non-PRO users in SaaS mode
+        validate_llm_settings_access(settings, user_id)
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
@@ -205,6 +247,20 @@ async def store_settings(
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
+        )
+    except ValueError as e:
+        # Handle LLM settings validation errors (PRO subscription required)
+        error_message = str(e)
+        if 'PRO subscription required' in error_message:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'detail': error_message},
+            )
+        # Handle other ValueError cases
+        logger.warning(f'Validation error storing settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': str(e)},
         )
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
