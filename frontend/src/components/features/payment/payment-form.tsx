@@ -51,7 +51,7 @@ export function PaymentForm() {
     <form
       action={billingFormAction}
       data-testid="billing-settings"
-      className="flex flex-col gap-6 px-11 py-9"
+      className="flex flex-col gap-6"
     >
       <div
         className={cn(

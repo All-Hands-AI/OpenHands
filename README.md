@@ -12,7 +12,6 @@
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
   <a href="https://dub.sh/openhands"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
-  <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
   <br/>
   <a href="https://docs.all-hands.dev/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
@@ -43,8 +42,6 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 > Using OpenHands for work? We'd love to chat! Fill out
 > [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
 > to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our product roadmap.
-
-![App screenshot](./docs/static/img/screenshot.png)
 
 ## ☁️ OpenHands Cloud
 The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
@@ -140,10 +137,9 @@ troubleshooting resources, and advanced configuration options.
 ## 🤝 How to Join the Community
 
 OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
-through Slack, so this is the best place to start, but we also are happy to have you contact us on Discord or Github:
+through Slack, so this is the best place to start, but we also are happy to have you contact us on Github:
 
 - [Join our Slack workspace](https://dub.sh/openhands) - Here we talk about research, architecture, and future development.
-- [Join our Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
 - [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
 
 See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).

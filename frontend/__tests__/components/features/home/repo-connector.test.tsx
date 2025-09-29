@@ -2,8 +2,6 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-import { setupStore } from "test-utils";
-import { Provider } from "react-redux";
 import { createRoutesStub, Outlet } from "react-router";
 import SettingsService from "#/settings-service/settings-service.api";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
@@ -42,11 +40,9 @@ const renderRepoConnector = () => {
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };

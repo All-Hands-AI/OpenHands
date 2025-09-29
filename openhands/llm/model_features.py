@@ -65,6 +65,7 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'claude-3.7-sonnet*',
     'claude-sonnet-3-7-latest',
     'claude-3-5-sonnet*',
+    'claude-3.5-sonnet*',  # Accept dot-notation for Sonnet 3.5 as well
     'claude-3.5-haiku*',
     'claude-3-5-haiku*',
     'claude-sonnet-4*',

@@ -8,11 +8,9 @@
 import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
-import store from "./store";
 import OptionService from "./api/option-service/option-service.api";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 import { queryClient } from "./query-client-config";
@@ -63,12 +61,10 @@ prepareApp().then(() =>
     hydrateRoot(
       document,
       <StrictMode>
-        <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <HydratedRouter />
-            <PosthogInit />
-          </QueryClientProvider>
-        </Provider>
+        <QueryClientProvider client={queryClient}>
+          <HydratedRouter />
+          <PosthogInit />
+        </QueryClientProvider>
         <div id="modal-portal-exit" />
       </StrictMode>,
     );
