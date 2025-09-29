@@ -1,4 +1,4 @@
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
 import {
   FileWriteAction,
   CommandAction,

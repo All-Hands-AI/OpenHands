@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useSelector, useDispatch } from "react-redux";
 import { useEffect } from "react";
-import { RootState } from "#/store";
 import { useStatusStore } from "#/state/status-store";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -12,8 +10,9 @@ import ClockIcon from "#/icons/u-clock-three.svg?react";
 import { ChatResumeAgentButton } from "../chat/chat-play-button";
 import { cn } from "#/utils/utils";
 import { AgentLoading } from "./agent-loading";
-import { setShouldShownAgentLoading } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
+import { useAgentStore } from "#/stores/agent-store";
 
 export interface AgentStatusProps {
   className?: string;
@@ -29,8 +28,8 @@ export function AgentStatus({
   disabled = false,
 }: AgentStatusProps) {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { setShouldShownAgentLoading } = useConversationStore();
+  const { curAgentState } = useAgentStore();
   const { curStatusMessage } = useStatusStore();
   const { webSocketStatus } = useWsClient();
   const { data: conversation } = useActiveConversation();
@@ -58,8 +57,8 @@ export function AgentStatus({
 
   // Update global state when agent loading condition changes
   useEffect(() => {
-    dispatch(setShouldShownAgentLoading(shouldShownAgentLoading));
-  }, [shouldShownAgentLoading, dispatch]);
+    setShouldShownAgentLoading(shouldShownAgentLoading);
+  }, [shouldShownAgentLoading, setShouldShownAgentLoading]);
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>

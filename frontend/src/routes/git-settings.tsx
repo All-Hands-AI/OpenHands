@@ -123,7 +123,7 @@ function GitSettingsScreen() {
       className="flex flex-col h-full justify-between"
     >
       {!isLoading && (
-        <div className="p-9 flex flex-col">
+        <div className="flex flex-col">
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <>
               <div className="pb-1 flex flex-col">
@@ -202,7 +202,7 @@ function GitSettingsScreen() {
 
       {isLoading && <GitSettingInputsSkeleton />}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-end">
         {!shouldRenderExternalConfigureButtons && (
           <>
             <BrandButton

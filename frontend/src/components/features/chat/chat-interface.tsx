@@ -1,4 +1,3 @@
-import { useSelector, useDispatch } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -7,7 +6,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
@@ -19,6 +17,7 @@ import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
+import { useAgentStore } from "#/stores/agent-store";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -33,7 +32,7 @@ import {
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
-import { setMessageToSend } from "#/state/conversation-slice";
+import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 
 function getEntryPoint(
@@ -46,7 +45,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const dispatch = useDispatch();
+  const { setMessageToSend } = useConversationStore();
   const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -63,7 +62,7 @@ export function ChatInterface() {
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
 
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -141,7 +140,7 @@ export function ChatInterface() {
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
     setOptimisticUserMessage(content);
-    dispatch(setMessageToSend(null));
+    setMessageToSend("");
   };
 
   const handleStop = () => {
@@ -155,10 +154,6 @@ export function ChatInterface() {
     setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
   };
-
-  const isWaitingForUserInput =
-    curAgentState === AgentState.AWAITING_USER_INPUT ||
-    curAgentState === AgentState.FINISHED;
 
   // Create a ScrollProvider with the scroll hook values
   const scrollProviderValue = {
@@ -180,9 +175,7 @@ export function ChatInterface() {
           !optimisticUserMessage &&
           !userEventsExist && (
             <ChatSuggestions
-              onSuggestionsClick={(message) =>
-                dispatch(setMessageToSend(message))
-              }
+              onSuggestionsClick={(message) => setMessageToSend(message)}
             />
           )}
         {/* Note: We only hide chat suggestions when there's a user message */}
@@ -237,9 +230,6 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            isWaitingForUserInput={isWaitingForUserInput}
-            hasSubstantiveAgentActions={hasSubstantiveAgentActions}
-            optimisticUserMessage={!!optimisticUserMessage}
           />
         </div>
 
