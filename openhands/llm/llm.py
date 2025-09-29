@@ -507,7 +507,7 @@ class LLM(RetryMixin, DebugMixin):
                 'claude-3-7-sonnet',
                 'claude-3.7-sonnet',
                 'claude-sonnet-4',
-                'claude-sonnet-4-5',
+                'claude-sonnet-4-5-20250929',
             ]
             if any(model in self.config.model for model in sonnet_models):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
@@ -818,7 +818,7 @@ class LLM(RetryMixin, DebugMixin):
                 message.force_string_serializer = True
             if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
                 message.force_string_serializer = True
-            if 'openrouter/anthropic/claude-sonnet-4-5' in self.config.model:
+            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
