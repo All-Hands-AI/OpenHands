@@ -662,7 +662,7 @@ async def test_add_message_success():
         # Verify the message data structure
         message_data = call_args[0][1]
         assert message_data['action'] == 'message'
-        assert message_data['content'] == 'Hello, this is a test message!'
+        assert message_data['args']['content'] == 'Hello, this is a test message!'
 
 
 @pytest.mark.asyncio
@@ -731,4 +731,4 @@ async def test_add_message_empty_message():
         mock_manager.send_event_to_conversation.assert_called_once()
         call_args = mock_manager.send_event_to_conversation.call_args
         message_data = call_args[0][1]
-        assert message_data['content'] == ''
+        assert message_data['args']['content'] == ''
