@@ -1484,8 +1484,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=693947c8aeb81991be677de4c30062161453ead4" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=693947c8aeb81991be677de4c30062161453ead4" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=b481346a9ad11ea8fb5b644851d143e60ffd08d8" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=b481346a9ad11ea8fb5b644851d143e60ffd08d8" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1505,7 +1505,7 @@ dev = [
 [[package]]
 name = "openhands-sdk"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=693947c8aeb81991be677de4c30062161453ead4#693947c8aeb81991be677de4c30062161453ead4" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=b481346a9ad11ea8fb5b644851d143e60ffd08d8#b481346a9ad11ea8fb5b644851d143e60ffd08d8" }
 dependencies = [
     { name = "fastmcp" },
     { name = "litellm" },
@@ -1519,7 +1519,7 @@ dependencies = [
 [[package]]
 name = "openhands-tools"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=693947c8aeb81991be677de4c30062161453ead4#693947c8aeb81991be677de4c30062161453ead4" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=b481346a9ad11ea8fb5b644851d143e60ffd08d8#b481346a9ad11ea8fb5b644851d143e60ffd08d8" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
