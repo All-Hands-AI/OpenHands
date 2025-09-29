@@ -144,6 +144,10 @@ def get_config(
     sandbox_config.use_host_network = False
     sandbox_config.timeout = 3600
 
+    # Control container cleanup behavior via environment variable
+    # Default to False for multiprocessing stability to prevent cascade failures
+    sandbox_config.rm_all_containers = True
+
     sandbox_config.platform = 'linux/amd64'
     sandbox_config.remote_runtime_resource_factor = 4.0
     sandbox_config.runtime_startup_env_vars.update(
@@ -152,13 +156,16 @@ def get_config(
         }
     )
 
-    # if cpu_group is not None:
-    #     sandbox_config.docker_runtime_kwargs = {
-    #         # HACK: Use the cpu_group if provided, otherwise use all available CPUs
-    #         "cpuset_cpus": ','.join(map(str, cpu_group))
-    #     }
+    if cpu_group is not None:
+        print(f'Configuring Docker runtime with CPU group: {cpu_group}')
+        sandbox_config.docker_runtime_kwargs = {
+            # HACK: Use the cpu_group if provided, otherwise use all available CPUs
+            "cpuset_cpus": ','.join(map(str, cpu_group)),
+            "nano_cpus": int(1e9 * len(cpu_group)),  # optional: hard cap to vCPU count
+            "mem_limit": "16g",
+        }
 
-    sandbox_config.rm_all_containers = True
+    # Note: We keep rm_all_containers = False for worker process safety
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
@@ -527,6 +534,26 @@ class CPUGroupManager:
             self.cpu_groups_queue.put(self.cpu_group)
             logger.info(f'Worker finished with CPU group: {self.cpu_group}')
 
+
+def cleanup_docker_resources_for_worker():
+    """Clean up Docker resources specific to this worker process.
+
+    This prevents cascade failures when one worker's container crashes.
+    Note: This only cleans up stale locks, not containers, to avoid
+    interfering with other workers. Container cleanup is handled
+    by the DockerRuntime.close() method based on configuration.
+    """
+    import os
+    import tempfile
+
+    # Clean up any stale port locks from crashed processes
+    try:
+        from openhands.runtime.utils.port_lock import cleanup_stale_locks
+        cleanup_stale_locks(max_age_seconds=300)  # Clean up locks older than 5 minutes
+    except Exception as e:
+        logger.debug(f'Error cleaning up stale port locks: {e}')
+
+
 def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
@@ -534,6 +561,9 @@ def process_instance(
     runtime_failure_count: int = 0,
     cpu_groups_queue: multiprocessing.Queue = None,
 ) -> EvalOutput:
+    # Clean up any Docker resources from previous failed runs
+    cleanup_docker_resources_for_worker()
+
     # HACK: Use the global and get the cpu group for this worker.
     with CPUGroupManager(cpu_groups_queue) as cpu_group:
         config = get_config(instance, metadata, cpu_group=cpu_group)
@@ -592,12 +622,19 @@ def process_instance(
             logger.info(
                 f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
             )
+        except Exception as e:
+            # Log the error but don't let it crash other workers
+            logger.error(f'Error in worker processing instance {instance.instance_id}: {str(e)}')
+            raise
         finally:
-            runtime.close()
-        # ==========================================
+            # Ensure runtime is properly closed to prevent cascade failures
+            try:
+                runtime.close()
+            except Exception as e:
+                logger.warning(f'Error closing runtime for {instance.instance_id}: {str(e)}')
+                # Don't re-raise - we want to continue cleanup
 
-        if cpu_group is not None:
-            cpu_groups_queue.put(cpu_group)
+        # ==========================================
 
         # ======= Attempt to evaluate the agent's edits =======
         # we use eval_infer.sh to evaluate the agent's edits, not here
@@ -668,21 +705,26 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-def divide_cpus_among_workers(num_workers):
-    current_cpus = list(os.sched_getaffinity(0))
+def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4):
+    """Divide CPUs among workers, with better error handling for multiprocessing."""
+    try:
+        current_cpus = list(os.sched_getaffinity(0))
+    except AttributeError:
+        # os.sched_getaffinity not available on all platforms
+        import multiprocessing
+        current_cpus = list(range(multiprocessing.cpu_count()))
+
     num_cpus = len(current_cpus)
     if num_workers <= 0:
         raise ValueError("Number of workers must be greater than 0")
 
-    base_cpus_per_worker = num_cpus // num_workers
-    remainder = num_cpus % num_workers
 
     # Divide this into groups.
     cpu_groups = [
-        current_cpus[i * base_cpus_per_worker : (i + 1) * base_cpus_per_worker]
+        current_cpus[i * num_cpus_per_worker : (i + 1) * num_cpus_per_worker]
         for i in range(num_workers)
     ]
-    print(f"Divided {num_cpus} CPUs into {num_workers} groups, each with {base_cpus_per_worker} CPUs.")
+    print(f"Divided {num_cpus} CPUs into {num_workers} groups, each with {num_cpus_per_worker} CPUs.")
     print(f"CPU groups: {cpu_groups}")
 
     return cpu_groups

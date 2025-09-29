@@ -89,6 +89,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4.1',
     'kimi-k2-0711-preview',
     'kimi-k2-instruct',
+    'kimi-k2-0905-preview',
     'Qwen3-Coder-480B-A35B-Instruct',
     'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
 ]
