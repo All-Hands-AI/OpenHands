@@ -14654,5 +14654,21 @@
     "tr": "Onay modu etkinleştirildi",
     "de": "Bestätigungsmodus aktiviert",
     "uk": "Режим підтвердження увімкнено"
+  },
+  "COMMON$MOST_RECENT": {
+    "en": "Most Recent",
+    "ja": "最新",
+    "zh-CN": "最新",
+    "zh-TW": "最新",
+    "ko-KR": "최신",
+    "no": "Nyeste",
+    "it": "Più recente",
+    "pt": "Mais recente",
+    "es": "Más reciente",
+    "ar": "الأحدث",
+    "fr": "Le plus récent",
+    "tr": "En Son",
+    "de": "Neueste",
+    "uk": "Найновіше"
   }
 }
