@@ -6,7 +6,12 @@ export interface ChatStopButtonProps {
 
 export function ChatStopButton({ handleStop }: ChatStopButtonProps) {
   return (
-    <button type="button" onClick={handleStop} data-testid="stop-button">
+    <button
+      type="button"
+      onClick={handleStop}
+      data-testid="stop-button"
+      className="cursor-pointer"
+    >
       <PauseIcon className="block max-w-none w-4 h-4" />
     </button>
   );
