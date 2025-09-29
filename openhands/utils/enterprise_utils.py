@@ -7,6 +7,8 @@ utilities for checking pro user status and validating LLM settings access.
 
 from datetime import UTC, datetime
 
+from fastapi import HTTPException
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import server_config
 from openhands.server.types import AppMode
@@ -18,7 +20,11 @@ try:
     from enterprise.storage.subscription_access import SubscriptionAccess
 
     ENTERPRISE_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    logger.warning(
+        f'Enterprise modules not available: {e}. '
+        'This is expected in development environments without Google Cloud SQL dependencies.'
+    )
     session_maker = None  # type: ignore
     SubscriptionAccess = None  # type: ignore
     ENTERPRISE_AVAILABLE = False
@@ -125,14 +131,21 @@ def validate_llm_settings_access(
                 if new_value != existing_value:
                     changed_llm_settings.append(setting)
     else:
-        # No existing settings to compare against - treat all LLM settings as changes
-        changed_llm_settings = [
-            setting for setting in settings_dict.keys() if setting in LLM_ONLY_SETTINGS
-        ]
+        # No existing settings to compare against - compare against default values
+        default_settings = Settings()
+        default_dict = default_settings.model_dump()
+        changed_llm_settings = []
+
+        for setting in settings_dict.keys():
+            if setting in LLM_ONLY_SETTINGS:
+                # Check if this LLM setting is different from the default
+                new_value = settings_dict.get(setting)
+                default_value = default_dict.get(setting)
+
+                if new_value != default_value:
+                    changed_llm_settings.append(setting)
 
     if changed_llm_settings:
-        from fastapi import HTTPException
-
         logger.warning(
             f'Non-PRO user {user_id} attempted to modify LLM settings in SaaS mode: {changed_llm_settings}'
         )
