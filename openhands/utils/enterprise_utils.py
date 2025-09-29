@@ -52,7 +52,7 @@ def is_pro_user(user_id: str | None) -> bool:
 
     if not ENTERPRISE_AVAILABLE:
         # Enterprise modules not available, assume non-pro user (safe default)
-        logger.debug(
+        logger.warning(
             f'Enterprise modules not available, treating user {user_id} as non-pro'
         )
         return False
@@ -73,7 +73,7 @@ def is_pro_user(user_id: str | None) -> bool:
 
     except Exception as e:
         # Log the error for debugging but don't fail
-        logger.debug(f'Could not check subscription status for user {user_id}: {e}')
+        logger.warning(f'Could not check subscription status for user {user_id}: {e}')
 
         # If there's an error, assume non-pro user (safe default)
         return False
