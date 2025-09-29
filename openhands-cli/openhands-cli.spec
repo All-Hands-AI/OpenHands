@@ -14,6 +14,7 @@ from PyInstaller.utils.hooks import (
     collect_data_files,
     copy_metadata
 )
+from PyInstaller.building.splash import Splash
 
 
 
@@ -87,9 +88,23 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# Create splash screen
+splash = Splash(
+    'splash.png',
+    binaries=a.binaries,
+    datas=a.datas,
+    text_pos=(10, 350),  # Position for loading text
+    text_size=12,
+    text_color='white',
+    minify_script=True,
+    always_on_top=True,
+)
+
 exe = EXE(
     pyz,
     a.scripts,
+    splash,  # Include splash screen
+    splash.binaries,  # Include splash binaries
     a.binaries,
     a.datas,
     [],
