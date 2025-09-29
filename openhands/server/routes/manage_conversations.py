@@ -489,12 +489,8 @@ async def start_conversation(
 
         # Set up conversation init data with provider information
         conversation_init_data = await setup_init_conversation_settings(
-            user_id, conversation_id, providers_set.providers_set or []
+            user_id, conversation_id, providers_set.providers_set or [], provider_tokens
         )
-
-        # Override with real provider tokens
-        if provider_tokens:
-            conversation_init_data.git_provider_tokens = provider_tokens
 
         # Start the agent loop
         agent_loop_info = await conversation_manager.maybe_start_agent_loop(
