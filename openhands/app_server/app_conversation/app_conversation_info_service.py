@@ -60,9 +60,7 @@ class AppConversationInfoService(ABC):
     # Mutators
 
     @abstractmethod
-    async def save_app_conversation_info(
-        self, info: AppConversationInfo
-    ) -> bool:
+    async def save_app_conversation_info(self, info: AppConversationInfo) -> bool:
         """Store the sandboxed conversation info object given.
 
         Return true if it was stored, false otherwise.

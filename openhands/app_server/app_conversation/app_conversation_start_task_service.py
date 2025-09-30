@@ -1,12 +1,9 @@
 import asyncio
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import Callable
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
-    AppConversationInfo,
-    AppConversationInfoPage,
     AppConversationStartTask,
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
@@ -18,10 +15,18 @@ class AppConversationStartTaskService(ABC):
     # TODO: We can add the standard search, count, and batch methods later
 
     @abstractmethod
+    async def get_app_conversation_start_task(
+        self, task_id: UUID
+    ) -> AppConversationStartTask | None:
+        """Get a single start task, returning None if missing."""
+
     async def batch_get_app_conversation_start_tasks(
         self, task_ids: list[UUID]
-    ) -> AppConversationInfo | None:
-        """Get a single start task, returning None if missing."""
+    ) -> list[AppConversationStartTask | None]:
+        """Get a batch of start tasks, return None for any missing."""
+        return await asyncio.gather(
+            *[self.get_app_conversation_start_task(task_id) for task_id in task_ids]
+        )
 
     # Mutators
 
@@ -36,7 +41,6 @@ class AppConversationStartTaskService(ABC):
 
 
 class AppConversationStartTaskServiceResolver(DiscriminatedUnionMixin, ABC):
-
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
         """Get a resolver for an instance of app conversation start task service."""

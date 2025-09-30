@@ -40,12 +40,12 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
 
 
 class AppConversationSortOrder(str, Enum):
-    CREATED_AT = "CREATED_AT"
-    CREATED_AT_DESC = "CREATED_AT_DESC"
-    UPDATED_AT = "UPDATED_AT"
-    UPDATED_AT_DESC = "UPDATED_AT_DESC"
-    TITLE = "TITLE"
-    TITLE_DESC = "TITLE_DESC"
+    CREATED_AT = 'CREATED_AT'
+    CREATED_AT_DESC = 'CREATED_AT_DESC'
+    UPDATED_AT = 'UPDATED_AT'
+    UPDATED_AT_DESC = 'UPDATED_AT_DESC'
+    TITLE = 'TITLE'
+    TITLE_DESC = 'TITLE_DESC'
 
 
 class AppConversationInfoPage(BaseModel):
@@ -54,8 +54,14 @@ class AppConversationInfoPage(BaseModel):
 
 
 class AppConversation(AppConversationInfo):  # type: ignore
-    sandbox_status: SandboxStatus = Field(default=SandboxStatus.MISSING, description="Current sandbox status. Will be MISSING if the sandbox does not exist.")
-    agent_status: AgentExecutionStatus | None = Field(default=None, description="Current agent status. Will be None if the sandbox_status is not RUNNING")
+    sandbox_status: SandboxStatus = Field(
+        default=SandboxStatus.MISSING,
+        description='Current sandbox status. Will be MISSING if the sandbox does not exist.',
+    )
+    agent_status: AgentExecutionStatus | None = Field(
+        default=None,
+        description='Current agent status. Will be None if the sandbox_status is not RUNNING',
+    )
 
     # Have to redefine these due to a bug in SQLModel :(
     pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
@@ -89,7 +95,9 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
 
     id: UUID = SQLField(default=uuid4, primary_key=True)
     user_id: str = SQLField(index=True)
-    app_conversation_id: UUID | None = SQLField(default=None, description="The id of the app_conversation, if started")
+    app_conversation_id: UUID | None = SQLField(
+        default=None, description='The id of the app_conversation, if started'
+    )
     error: bool = False
     request: AppConversationStartRequest = SQLField(sa_column=Column(JSON))
     created_at: datetime = SQLField(default_factory=utc_now, index=True)

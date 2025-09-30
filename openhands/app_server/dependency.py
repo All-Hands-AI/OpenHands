@@ -9,6 +9,9 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationServiceResolver,
 )
+from openhands.app_server.app_conversation.app_conversation_start_task_service import (
+    AppConversationStartTaskServiceResolver,
+)
 from openhands.app_server.config import get_global_config
 from openhands.app_server.event.event_service import EventServiceResolver
 from openhands.app_server.event_callback.event_callback_service import (
@@ -30,6 +33,7 @@ class DependencyResolver:
     sandbox: SandboxServiceResolver
     sandbox_spec: SandboxSpecServiceResolver
     app_conversation_info: AppConversationInfoServiceResolver
+    app_conversation_start_task: AppConversationStartTaskServiceResolver
     app_conversation: AppConversationServiceResolver
     user: UserServiceResolver
 
@@ -50,6 +54,8 @@ def get_dependency_resolver():
             sandbox_spec=config.sandbox_spec or _get_sandbox_spec_service_resolver(),
             app_conversation_info=config.app_conversation_info
             or _get_app_conversation_info_service_resolver(),
+            app_conversation_start_task=config.app_conversation_start_task
+            or _get_app_conversation_start_task_service_resolver(),
             app_conversation=config.app_conversation
             or _get_app_conversation_service_resolver(),
             user=config.user or _get_user_service_resolver(),
@@ -106,6 +112,14 @@ def _get_app_conversation_info_service_resolver():
     )
 
     return SQLAppConversationServiceResolver()
+
+
+def _get_app_conversation_start_task_service_resolver():
+    from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
+        SQLAppConversationStartTaskServiceResolver,
+    )
+
+    return SQLAppConversationStartTaskServiceResolver()
 
 
 def _get_app_conversation_service_resolver():

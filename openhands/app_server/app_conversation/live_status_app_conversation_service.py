@@ -1,8 +1,8 @@
 import asyncio
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-import logging
 from time import time
 from typing import Callable
 from uuid import UUID
@@ -17,6 +17,9 @@ from openhands.agent_server.models import (
     SendMessageRequest,
     StartConversationRequest,
 )
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
     AppConversationInfo,
@@ -25,14 +28,13 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
     AppConversationStartTask,
 )
-from openhands.app_server.app_conversation.app_conversation_info_service import (
-    AppConversationInfoService,
-)
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceResolver,
 )
-from openhands.app_server.app_conversation.app_conversation_start_task_service import AppConversationStartTaskService
+from openhands.app_server.app_conversation.app_conversation_start_task_service import (
+    AppConversationStartTaskService,
+)
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
@@ -42,7 +44,6 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.user.user_service import UserService
-from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import LLM
 from openhands.tools.preset.default import get_default_agent
 
@@ -124,16 +125,17 @@ class LiveStatusAppConversationService(AppConversationService):
     async def start_app_conversation(
         self, request: AppConversationStartRequest
     ) -> AppConversationStartTask:
-
         # Create and store the start task
         user = await self.user_service.get_current_user()
         task = AppConversationStartTask(
             user_id=user.id,
             request=request,
         )
-        await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+        await self.app_conversation_start_task_service.save_app_conversation_start_task(
+            task
+        )
 
-        #Run the task in the background
+        # Run the task in the background
         asyncio.create_task(self._start_app_conversation_task(task))
 
         return task
@@ -170,15 +172,23 @@ class LiveStatusAppConversationService(AppConversationService):
 
             # Update the start task
             task.app_conversation_id = info.id
-            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(
+                task
+            )
 
-        except Exception as exc:
-            _logger.exception("Error starting conversation", stack_info=True)
+        except Exception:
+            _logger.exception('Error starting conversation', stack_info=True)
             task.error = True
-            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(
+                task
+            )
 
-    async def batch_get_app_conversation_start_tasks(self, app_conversation_start_task_id):
-        return self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(app_conversation_start_task_id)
+    async def batch_get_app_conversation_start_tasks(
+        self, app_conversation_start_task_id
+    ):
+        return self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(
+            app_conversation_start_task_id
+        )
 
     async def _build_app_conversations(
         self, app_conversation_infos: list[AppConversationInfo | None]
@@ -340,9 +350,7 @@ class LiveStatusAppConversationService(AppConversationService):
         return start_conversation_request
 
 
-class LiveStatusAppConversationServiceResolver(
-    AppConversationServiceResolver
-):
+class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
     sandbox_startup_timeout: int = Field(
         default=120, description='The max timeout time for sandbox startup'
     )
@@ -358,9 +366,7 @@ class LiveStatusAppConversationServiceResolver(
         sandbox_conversation_info_service_resolver = (
             get_dependency_resolver().app_conversation_info.get_resolver_for_user()
         )
-        sandbox_conversation_start_task_service_resolver = (
-            get_dependency_resolver().app_conversation_start_task.get_resolver_for_user()
-        )
+        sandbox_conversation_start_task_service_resolver = get_dependency_resolver().app_conversation_start_task.get_resolver_for_user()
 
         def _resolve_for_user(
             user_service: UserService = Depends(user_service_resolver),

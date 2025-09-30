@@ -22,6 +22,9 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationServiceResolver,
 )
+from openhands.app_server.app_conversation.app_conversation_start_task_service import (
+    AppConversationStartTaskServiceResolver,
+)
 from openhands.app_server.event.event_service import EventServiceResolver
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackServiceResolver,
@@ -157,6 +160,7 @@ class AppServerConfig(OpenHandsModel):
     sandbox: SandboxServiceResolver | None = None
     sandbox_spec: SandboxSpecServiceResolver | None = None
     app_conversation_info: AppConversationInfoServiceResolver | None = None
+    app_conversation_start_task: AppConversationStartTaskServiceResolver | None = None
     app_conversation: AppConversationServiceResolver | None = None
     user: UserServiceResolver | None = None
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)

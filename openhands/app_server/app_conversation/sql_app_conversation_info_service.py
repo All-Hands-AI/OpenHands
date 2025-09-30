@@ -28,14 +28,14 @@ from fastapi import Depends
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+    AppConversationInfoServiceResolver,
+)
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
     AppConversationInfoPage,
     AppConversationSortOrder,
-)
-from openhands.app_server.app_conversation.app_conversation_info_service import (
-    AppConversationInfoService,
-    AppConversationInfoServiceResolver,
 )
 from openhands.app_server.database import async_session_dependency
 from openhands.app_server.errors import AuthError

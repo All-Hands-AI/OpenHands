@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
@@ -122,9 +122,7 @@ async def batch_get_app_conversations(
 ) -> list[AppConversation | None]:
     """Get a batch of sandboxed conversations given their ids. Return None for any missing."""
     assert len(ids) < 100
-    app_conversations = (
-        await app_conversation_service.batch_get_app_conversations(ids)
-    )
+    app_conversations = await app_conversation_service.batch_get_app_conversations(ids)
     return app_conversations
 
 
@@ -147,7 +145,7 @@ async def batch_get_app_conversation_start_tasks(
 ) -> list[AppConversationStartTask | None]:
     """Get a batch of start app conversation tasks given their ids. Return None for any missing."""
     assert len(ids) < 100
-    start_tasks = (
-        await app_conversation_service.batch_get_app_conversation_start_tasks(ids)
+    start_tasks = await app_conversation_service.batch_get_app_conversation_start_tasks(
+        ids
     )
     return start_tasks

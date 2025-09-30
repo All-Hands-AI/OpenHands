@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.dependency import get_dependency_resolver
