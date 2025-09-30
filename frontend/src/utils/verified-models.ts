@@ -13,6 +13,7 @@ export const VERIFIED_MODELS = [
   "claude-3-5-sonnet-20241022",
   "claude-3-7-sonnet-20250219",
   "claude-sonnet-4-20250514",
+  "claude-sonnet-4-5-20250929",
   "claude-opus-4-20250514",
   "gemini-2.5-pro",
   "o4-mini",
@@ -46,6 +47,7 @@ export const VERIFIED_ANTHROPIC_MODELS = [
   "claude-3-5-haiku-20241022",
   "claude-3-7-sonnet-20250219",
   "claude-sonnet-4-20250514",
+  "claude-sonnet-4-5-20250929",
   "claude-opus-4-20250514",
 ];
 
@@ -61,6 +63,9 @@ export const VERIFIED_MISTRAL_MODELS = [
 // (e.g., they return `claude-sonnet-4-20250514` instead of `openhands/claude-sonnet-4-20250514`)
 export const VERIFIED_OPENHANDS_MODELS = [
   "claude-sonnet-4-20250514",
+  "claude-sonnet-4-5-20250929",
+  "gpt-5-2025-08-07",
+  "gpt-5-mini-2025-08-07",
   "claude-opus-4-20250514",
   "gemini-2.5-pro",
   "o3",

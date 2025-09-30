@@ -828,6 +828,8 @@ class LLM(RetryMixin, DebugMixin):
                 )
             ):
                 message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]

@@ -78,12 +78,16 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'o3*',
     'o4-mini*',
     # Google Gemini
+    'gemini-2.5-flash*',
     'gemini-2.5-pro*',
     # Others
     'kimi-k2-0711-preview',
     'kimi-k2-instruct',
+    'kimi-k2-*',
     'qwen3-coder*',
     'qwen3-coder-480b-a35b-instruct',
+    'MiniMax-M2',
+    'glm-4.6',
 ]
 
 REASONING_EFFORT_PATTERNS: list[str] = [
@@ -103,6 +107,7 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'claude-opus-4-1-20250805',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
+    'claude-sonnet-4-5*',
 ]
 
 PROMPT_CACHE_PATTERNS: list[str] = [

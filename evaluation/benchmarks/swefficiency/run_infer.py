@@ -705,7 +705,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=8):
+def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=0):
     """Divide CPUs among workers, with better error handling for multiprocessing."""
     try:
         current_cpus = list(os.sched_getaffinity(0))
@@ -741,7 +741,7 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=8)
 
 
 if __name__ == '__main__':
-    parser = get_evaluation_parser()
+    parser = get_parser()
     parser.add_argument(
         '--dataset',
         type=str,
@@ -842,7 +842,7 @@ if __name__ == '__main__':
 
     # Get all CPUs and divide into groups of num_workers and put them into a multiprocessing.Queue.
     cpu_groups_queue = None
-    cpu_groups_list = divide_cpus_among_workers(args.eval_num_workers)
+    cpu_groups_list = divide_cpus_among_workers(args.eval_num_workers, num_to_skip=8)
     cpu_groups_queue = multiprocessing.Manager().Queue()
     for cpu_group in cpu_groups_list:
         cpu_groups_queue.put(cpu_group)
@@ -890,7 +890,7 @@ if __name__ == '__main__':
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough
-            max_retries=2,
+            max_retries=3,
         )
     else:
         critic = AgentFinishedCritic()

@@ -163,6 +163,7 @@ VERIFIED_OPENAI_MODELS = [
 
 VERIFIED_ANTHROPIC_MODELS = [
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4-5-20250929',
     'claude-opus-4-20250514',
     'claude-3-7-sonnet-20250219',
     'claude-3-sonnet-20240229',
@@ -183,6 +184,9 @@ VERIFIED_MISTRAL_MODELS = [
 
 VERIFIED_OPENHANDS_MODELS = [
     'claude-sonnet-4-20250514',
+    'claude-sonnet-4-5-20250929',
+    'gpt-5-2025-08-07',
+    'gpt-5-mini-2025-08-07',
     'claude-opus-4-20250514',
     'devstral-small-2507',
     'devstral-medium-2507',
