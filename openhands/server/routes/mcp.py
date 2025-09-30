@@ -91,7 +91,10 @@ async def create_pr(
     body: Annotated[str | None, Field(description='PR body')],
     draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
     labels: Annotated[
-        list[str] | None, Field(description='Labels to apply to the PR')
+        list[str] | None,
+        Field(
+            description='Optional labels to apply to the PR. If labels are provided, they must be selected from the repository’s existing labels. Do not invent new ones. If the repository’s labels are not known, fetch them first.'
+        ),
     ] = None,
 ) -> str:
     """Open a PR in GitHub"""
@@ -161,7 +164,10 @@ async def create_mr(
     ],
     description: Annotated[str | None, Field(description='MR description')],
     labels: Annotated[
-        list[str] | None, Field(description='Labels to apply to the MR')
+        list[str] | None,
+        Field(
+            description='Optional labels to apply to the MR. If labels are provided, they must be selected from the repository’s existing labels. Do not invent new ones. If the repository’s labels are not known, fetch them first.'
+        ),
     ] = None,
 ) -> str:
     """Open a MR in GitLab"""
@@ -206,7 +212,7 @@ async def create_mr(
             labels=labels,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
@@ -272,7 +278,7 @@ async def create_bitbucket_pr(
             body=description,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:

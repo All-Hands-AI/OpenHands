@@ -54,7 +54,7 @@ else
       fi
     fi
   fi
-  usermod -aG app enduser
+  usermod -aG openhands enduser
   # get the user group of /var/run/docker.sock and set openhands to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
   echo "Docker socket group id: $DOCKER_SOCKET_GID"

@@ -328,7 +328,12 @@ class ActionExecutor:
 
     async def _init_plugin(self, plugin: Plugin):
         assert self.bash_session is not None
-        await plugin.initialize(self.username)
+        # VSCode plugin needs runtime_id for path-based routing when using Gateway API
+        if isinstance(plugin, VSCodePlugin):
+            runtime_id = os.environ.get('RUNTIME_ID')
+            await plugin.initialize(self.username, runtime_id=runtime_id)
+        else:
+            await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
 
@@ -352,6 +357,11 @@ class ActionExecutor:
             no_pager_cmd = 'alias git="git --no-pager"'
 
         INIT_COMMANDS.append(no_pager_cmd)
+
+        # Hack: for some reason when you set the openhands user to anything but root, tmux changes out
+        # of the mount directory on the first invocation.
+        if self.user_id != 0:
+            INIT_COMMANDS.append(f'cd {self._initial_cwd}')
 
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
@@ -642,7 +652,6 @@ class ActionExecutor:
 
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
@@ -876,7 +885,9 @@ if __name__ == '__main__':
 
     @app.post('/upload_file')
     async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
+        file: UploadFile,
+        destination: str = '/',
+        recursive: bool = False,
     ):
         assert client is not None
 

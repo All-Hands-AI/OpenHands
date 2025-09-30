@@ -399,7 +399,10 @@ def test_security_config_from_dict():
     from openhands.core.config.security_config import SecurityConfig
 
     # Test with all fields
-    config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
+    config_dict = {
+        'confirmation_mode': True,
+        'security_analyzer': 'some_analyzer',
+    }
 
     security_config = SecurityConfig(**config_dict)
 
@@ -440,6 +443,8 @@ def test_sandbox_volumes(monkeypatch, default_config):
         'SANDBOX_VOLUMES',
         '/host/path1:/container/path1,/host/path2:/container/path2:ro',
     )
+    # Clear any existing workspace mount path to test default behavior
+    monkeypatch.delenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', raising=False)
 
     load_from_env(default_config, os.environ)
     finalize_config(default_config)
@@ -462,6 +467,8 @@ def test_sandbox_volumes(monkeypatch, default_config):
 def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     # Test SANDBOX_VOLUMES with read-only mode (no explicit /workspace mount)
     monkeypatch.setenv('SANDBOX_VOLUMES', '/host/path1:/container/path1:ro')
+    # Clear any existing workspace mount path to test default behavior
+    monkeypatch.delenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', raising=False)
 
     load_from_env(default_config, os.environ)
     finalize_config(default_config)

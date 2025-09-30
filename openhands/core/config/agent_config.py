@@ -7,11 +7,14 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
 )
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
 
 
 class AgentConfig(BaseModel):
+    cli_mode: bool = Field(default=False)
+    """Whether the agent is running in CLI mode. This can be used to disable certain tools that are not supported in CLI mode."""
     llm_config: str | None = Field(default=None)
     """The name of the llm config to use. If specified, this will override global llm config."""
     classpath: str | None = Field(default=None)
@@ -55,8 +58,12 @@ class AgentConfig(BaseModel):
         # handled.
         default_factory=lambda: ConversationWindowCondenserConfig()
     )
+    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
+    """Model routing configuration settings."""
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
+    runtime: str | None = Field(default=None)
+    """Runtime type (e.g., 'docker', 'local', 'cli') used for runtime-specific tool behavior."""
 
     model_config = ConfigDict(extra='forbid')
 

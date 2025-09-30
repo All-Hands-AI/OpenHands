@@ -92,6 +92,9 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
+        # Override with router if needed
+        self.llm = self.llm_registry.get_router(self.config)
+
     @property
     def prompt_manager(self) -> PromptManager:
         if self._prompt_manager is None:
@@ -143,7 +146,8 @@ class CodeActAgent(Agent):
         elif self.config.enable_editor:
             tools.append(
                 create_str_replace_editor_tool(
-                    use_short_description=use_short_tool_desc
+                    use_short_description=use_short_tool_desc,
+                    runtime_type=self.config.runtime,
                 )
             )
         return tools
@@ -204,7 +208,7 @@ class CodeActAgent(Agent):
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': self.llm.format_messages_for_llm(messages),
+            'messages': messages,
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
         params['extra_body'] = {

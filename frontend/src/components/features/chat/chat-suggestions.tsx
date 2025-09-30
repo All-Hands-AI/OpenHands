@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { motion, AnimatePresence } from "framer-motion";
 import { Suggestions } from "#/components/features/suggestions/suggestions";
 import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
 import { SUGGESTIONS } from "#/utils/suggestions";
+import { useConversationStore } from "#/state/conversation-store";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -10,27 +12,36 @@ interface ChatSuggestionsProps {
 
 export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   const { t } = useTranslation();
+  const { shouldHideSuggestions } = useConversationStore();
 
   return (
-    <div
-      data-testid="chat-suggestions"
-      className="flex flex-col gap-6 h-full px-4 items-center justify-center"
-    >
-      <div className="flex flex-col items-center p-4 bg-tertiary rounded-xl w-full">
-        <BuildIt width={45} height={54} />
-        <span className="font-semibold text-[20px] leading-6 -tracking-[0.01em] gap-1">
-          {t(I18nKey.LANDING$TITLE)}
-        </span>
-      </div>
-      <Suggestions
-        suggestions={Object.entries(SUGGESTIONS.repo)
-          .slice(0, 4)
-          .map(([label, value]) => ({
-            label,
-            value,
-          }))}
-        onSuggestionClick={onSuggestionsClick}
-      />
-    </div>
+    <AnimatePresence>
+      {!shouldHideSuggestions && (
+        <motion.div
+          data-testid="chat-suggestions"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          className="absolute top-0 left-0 right-0 bottom-[151px] flex flex-col items-center justify-center pointer-events-auto"
+        >
+          <div className="flex flex-col items-center p-4 rounded-xl w-full">
+            <BuildIt width={86} height={103} />
+            <span className="text-[32px] font-bold leading-5 text-white pt-4 pb-6">
+              {t(I18nKey.LANDING$TITLE)}
+            </span>
+          </div>
+          <Suggestions
+            suggestions={Object.entries(SUGGESTIONS.repo)
+              .slice(0, 4)
+              .map(([label, value]) => ({
+                label,
+                value,
+              }))}
+            onSuggestionClick={onSuggestionsClick}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

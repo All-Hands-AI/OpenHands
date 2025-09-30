@@ -10,14 +10,14 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: true
-        default: ''
+        default: ""
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -46,6 +46,7 @@ jobs:
           else
             json=$(jq -n -c '[
                 { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
+                { image: "ghcr.io/all-hands-ai/python-nodejs:python3.13-nodejs22-trixie", tag: "trixie" },
                 { image: "ubuntu:24.04", tag: "ubuntu" }
               ]')
           fi
@@ -120,7 +121,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
@@ -136,6 +137,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork != true
         shell: bash
         run: |
+
           ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
 
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
@@ -165,6 +167,92 @@ jobs:
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
+
+  ghcr_build_enterprise:
+    name: Push Enterprise Image
+    runs-on: blacksmith-8vcpu-ubuntu-2204
+    permissions:
+      contents: read
+      packages: write
+    needs: [define-matrix, ghcr_build_app]
+    # Do not build enterprise in forks
+    if: github.event.pull_request.head.repo.fork != true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Set up Docker Buildx for better performance
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/all-hands-ai/enterprise-server
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
+      - name: Determine app image tag
+        shell: bash
+        run: |
+          # Duplicated with build.sh
+          sanitized_ref_name=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+          OPENHANDS_BUILD_VERSION=$sanitized_ref_name
+          sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
+          echo "OPENHANDS_DOCKER_TAG=${sanitized_ref_name}" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        uses: useblacksmith/build-push-action@v1
+        with:
+          context: .
+          file: enterprise/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OPENHANDS_VERSION=${{ env.OPENHANDS_DOCKER_TAG }}
+          platforms: linux/amd64
+          # Add build provenance
+          provenance: true
+          # Add build attestations for better security
+          sbom: true
+
+  enterprise-preview:
+    name: Enterprise preview
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    needs: [ghcr_build_enterprise]
+    steps:
+      # This should match the version in enterprise-preview.yml
+      - name: Trigger remote job
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -d "{\"ref\": \"main\", \"inputs\": {\"openhandsPrNumber\": \"${{ github.event.pull_request.number }}\", \"deployEnvironment\": \"feature\", \"enterpriseImageTag\": \"pr-${{ github.event.pull_request.number }}\" }}" \
+            https://api.github.com/repos/All-Hands-AI/deploy/actions/workflows/deploy.yaml/dispatches
 
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
@@ -202,7 +290,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
@@ -225,7 +313,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          poetry run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -264,7 +352,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
@@ -284,7 +372,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          poetry run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 

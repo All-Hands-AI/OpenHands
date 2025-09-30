@@ -1574,8 +1574,12 @@ def test_process_ipython_observation_with_vision_disabled(
         vision_is_active=False,
     )
 
-    # Check that the message contains only text content
+    # Check that the message contains both text and image content
+    # (ImageContent is always included, filtering happens at Message serialization level)
     assert len(messages) == 1
     message = messages[0]
-    assert len(message.content) == 1
+    assert len(message.content) == 2
     assert isinstance(message.content[0], TextContent)
+    assert isinstance(message.content[1], ImageContent)
+    # Check that NO explanatory text about filtered images was added when vision is disabled
+    assert 'invalid or empty image(s) were filtered' not in message.content[0].text

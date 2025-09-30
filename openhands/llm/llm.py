@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import httpx
 
@@ -148,7 +148,10 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
-
+            elif 'claude-sonnet-4-5' in self.config.model:
+                kwargs.pop(
+                    'reasoning_effort', None
+                )  # don't send reasoning_effort to Claude Sonnet 4.5
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
@@ -165,6 +168,17 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['safety_settings'] = self.config.safety_settings
         elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
             kwargs['safety_settings'] = self.config.safety_settings
+
+        # support AWS Bedrock provider
+        kwargs['aws_region_name'] = self.config.aws_region_name
+        if self.config.aws_access_key_id:
+            kwargs['aws_access_key_id'] = (
+                self.config.aws_access_key_id.get_secret_value()
+            )
+        if self.config.aws_secret_access_key:
+            kwargs['aws_secret_access_key'] = (
+                self.config.aws_secret_access_key.get_secret_value()
+            )
 
         # Explicitly disable Anthropic extended thinking for Opus 4.1 to avoid
         # requiring 'thinking' content blocks. See issue #10510.
@@ -209,7 +223,9 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
-            messages_kwarg: list[dict[str, Any]] | dict[str, Any] = []
+            messages_kwarg: (
+                dict[str, Any] | Message | list[dict[str, Any]] | list[Message]
+            ) = []
             mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
@@ -228,9 +244,19 @@ class LLM(RetryMixin, DebugMixin):
                 messages_kwarg = kwargs['messages']
 
             # ensure we work with a list of messages
-            messages: list[dict[str, Any]] = (
+            messages_list = (
                 messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
             )
+            # Format Message objects to dict format if needed
+            messages: list[dict] = []
+            if messages_list and isinstance(messages_list[0], Message):
+                messages = self.format_messages_for_llm(
+                    cast(list[Message], messages_list)
+                )
+            else:
+                messages = cast(list[dict[str, Any]], messages_list)
+
+            kwargs['messages'] = messages
 
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
@@ -479,11 +505,14 @@ class LLM(RetryMixin, DebugMixin):
 
         # Set max_output_tokens from model info if not explicitly set
         if self.config.max_output_tokens is None:
-            # Special case for Claude 3.7 Sonnet models
-            if any(
-                model in self.config.model
-                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
-            ):
+            # Special case for Claude Sonnet models
+            sonnet_models = [
+                'claude-3-7-sonnet',
+                'claude-3.7-sonnet',
+                'claude-sonnet-4',
+                'claude-sonnet-4-5-20250929',
+            ]
+            if any(model in self.config.model for model in sonnet_models):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
             # Try to get from model info
             elif self.model_info is not None:
@@ -515,6 +544,16 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             bool: True if model is vision capable. Return False if model not supported by litellm.
         """
+
+        # Allow manual override via environment variable
+        if os.getenv('OPENHANDS_FORCE_VISION', '').lower() in (
+            '1',
+            'true',
+            'yes',
+            'on',
+        ):
+            return True
+
         # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
         # but model_info will have the correct value for some reason.
         # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
@@ -781,6 +820,8 @@ class LLM(RetryMixin, DebugMixin):
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
                 message.force_string_serializer = True
             if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
+                message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

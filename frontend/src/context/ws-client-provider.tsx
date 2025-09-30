@@ -26,8 +26,8 @@ import {
   isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 
 export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
@@ -131,8 +131,8 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
-  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
-  const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
+  const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
+  const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [webSocketStatus, setWebSocketStatus] =
@@ -263,8 +263,8 @@ export function WsClientProvider({
     }
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
-    updateStatusWhenErrorMessagePresent(data);
 
+    updateStatusWhenErrorMessagePresent(data);
     setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
@@ -296,8 +296,29 @@ export function WsClientProvider({
     if (!conversationId) {
       throw new Error("No conversation ID provided");
     }
-    if (conversation?.status !== "RUNNING" && !conversation?.runtime_status) {
-      return () => undefined; // conversation not yet loaded
+
+    // Clear error messages when conversation is intentionally stopped
+    if (conversation && conversation.status === "STOPPED") {
+      removeErrorMessage();
+      setWebSocketStatus("DISCONNECTED");
+      return () => undefined; // conversation intentionally stopped
+    }
+
+    // Set connecting status when conversation is starting
+    if (conversation && conversation.status === "STARTING") {
+      removeErrorMessage();
+      setWebSocketStatus("CONNECTING");
+      return () => undefined; // conversation is starting, will connect when ready
+    }
+
+    // Only connect when conversation is fully loaded and running
+    if (
+      !conversation ||
+      conversation.status !== "RUNNING" ||
+      !conversation.runtime_status ||
+      conversation.runtime_status === "STATUS$STOPPED"
+    ) {
+      return () => undefined; // conversation not ready for WebSocket connection
     }
 
     let sio = sioRef.current;
@@ -317,15 +338,24 @@ export function WsClientProvider({
       session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
-    let baseUrl = null;
+    let baseUrl: string | null = null;
+    let socketPath: string;
     if (conversation.url && !conversation.url.startsWith("/")) {
-      baseUrl = new URL(conversation.url).host;
+      const u = new URL(conversation.url);
+      baseUrl = u.host;
+      const pathBeforeApi = u.pathname.split("/api/conversations")[0] || "/";
+      // Socket.IO server default path is /socket.io; prefix with pathBeforeApi for path mode
+      socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
     } else {
-      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      baseUrl =
+        (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
+        window?.location.host;
+      socketPath = "/socket.io";
     }
 
     sio = io(baseUrl, {
       transports: ["websocket"],
+      path: socketPath,
       query,
     });
 

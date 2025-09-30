@@ -1,24 +1,17 @@
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { FaCircleInfo } from "react-icons/fa6";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import XIcon from "#/icons/x.svg?react";
 import { cn, extractRepositoryInfo } from "#/utils/utils";
 import { BadgeInput } from "#/components/shared/inputs/badge-input";
 import { MicroagentFormData } from "#/types/microagent-management";
-import { Branch, GitRepository } from "#/types/git";
-import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
+import { GitRepository } from "#/types/git";
 import { useRepositoryMicroagentContent } from "#/hooks/query/use-repository-microagent-content";
-import {
-  BranchDropdown,
-  BranchLoadingState,
-  BranchErrorState,
-} from "../home/repository-selection";
 
 interface MicroagentManagementUpsertMicroagentModalProps {
   onConfirm: (formData: MicroagentFormData) => void;
@@ -37,20 +30,11 @@ export function MicroagentManagementUpsertMicroagentModal({
 
   const [triggers, setTriggers] = useState<string[]>([]);
   const [query, setQuery] = useState<string>("");
-  const [selectedBranch, setSelectedBranch] = useState<Branch | null>(null);
 
-  const { selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedRepository, selectedMicroagentItem } =
+    useMicroagentManagementStore();
 
   const { microagent } = selectedMicroagentItem ?? {};
-
-  // Add a ref to track if the branch was manually cleared by the user
-  const branchManuallyClearedRef = useRef<boolean>(false);
 
   // Extract owner and repo from full_name for content API
   const { owner, repo, filePath } = extractRepositoryInfo(
@@ -69,38 +53,6 @@ export function MicroagentManagementUpsertMicroagentModal({
       setTriggers(microagentContentData.triggers || []);
     }
   }, [isUpdate, microagentContentData]);
-
-  const {
-    data: branches,
-    isLoading: isLoadingBranches,
-    isError: isBranchesError,
-  } = useRepositoryBranches(selectedRepository?.full_name || null);
-
-  const branchesItems = branches?.map((branch) => ({
-    key: branch.name,
-    label: branch.name,
-  }));
-
-  // Auto-select main or master branch if it exists.
-  useEffect(() => {
-    if (
-      branches &&
-      branches.length > 0 &&
-      !selectedBranch &&
-      !isLoadingBranches
-    ) {
-      // Look for main or master branch
-      const mainBranch = branches.find((branch) => branch.name === "main");
-      const masterBranch = branches.find((branch) => branch.name === "master");
-
-      // Select main if it exists, otherwise select master if it exists
-      if (mainBranch) {
-        setSelectedBranch(mainBranch);
-      } else if (masterBranch) {
-        setSelectedBranch(masterBranch);
-      }
-    }
-  }, [branches, isLoadingBranches, selectedBranch]);
 
   const modalTitle = useMemo(() => {
     if (isUpdate) {
@@ -134,7 +86,6 @@ export function MicroagentManagementUpsertMicroagentModal({
     onConfirm({
       query: query.trim(),
       triggers,
-      selectedBranch: selectedBranch?.name || "",
       microagentPath: microagent?.path || "",
     });
   };
@@ -147,65 +98,8 @@ export function MicroagentManagementUpsertMicroagentModal({
     onConfirm({
       query: query.trim(),
       triggers,
-      selectedBranch: selectedBranch?.name || "",
       microagentPath: microagent?.path || "",
     });
-  };
-
-  const handleBranchSelection = (key: React.Key | null) => {
-    const selectedBranchObj = branches?.find((branch) => branch.name === key);
-    setSelectedBranch(selectedBranchObj || null);
-    // Reset the manually cleared flag when a branch is explicitly selected
-    branchManuallyClearedRef.current = false;
-  };
-
-  const handleBranchInputChange = (value: string) => {
-    // Clear the selected branch if the input is empty or contains only whitespace
-    // This fixes the issue where users can't delete the entire default branch name
-    if (value === "" || value.trim() === "") {
-      setSelectedBranch(null);
-      // Set the flag to indicate that the branch was manually cleared
-      branchManuallyClearedRef.current = true;
-    } else {
-      // Reset the flag when the user starts typing again
-      branchManuallyClearedRef.current = false;
-    }
-  };
-
-  // Render the appropriate UI for branch selector based on the loading/error state
-  const renderBranchSelector = () => {
-    if (!selectedRepository) {
-      return (
-        <BranchDropdown
-          items={[]}
-          onSelectionChange={() => {}}
-          onInputChange={() => {}}
-          isDisabled
-          wrapperClassName="max-w-full w-full"
-          label={t(I18nKey.REPOSITORY$SELECT_BRANCH)}
-        />
-      );
-    }
-
-    if (isLoadingBranches) {
-      return <BranchLoadingState wrapperClassName="max-w-full w-full" />;
-    }
-
-    if (isBranchesError) {
-      return <BranchErrorState wrapperClassName="max-w-full w-full" />;
-    }
-
-    return (
-      <BranchDropdown
-        items={branchesItems || []}
-        onSelectionChange={handleBranchSelection}
-        onInputChange={handleBranchInputChange}
-        isDisabled={false}
-        selectedKey={selectedBranch?.name}
-        wrapperClassName="max-w-full w-full"
-        label={t(I18nKey.REPOSITORY$SELECT_BRANCH)}
-      />
-    );
   };
 
   return (
@@ -236,7 +130,6 @@ export function MicroagentManagementUpsertMicroagentModal({
           onSubmit={onSubmit}
           className="flex flex-col gap-6 w-full"
         >
-          {renderBranchSelector()}
           <label
             htmlFor="query-input"
             className="flex flex-col gap-2 w-full text-sm font-normal"
@@ -301,15 +194,10 @@ export function MicroagentManagementUpsertMicroagentModal({
             onClick={handleConfirm}
             testId="confirm-button"
             isDisabled={
-              !query.trim() ||
-              isLoading ||
-              isLoadingBranches ||
-              !selectedBranch ||
-              isBranchesError ||
-              (isUpdate && isLoadingContent) // Disable while loading content for updates
+              !query.trim() || isLoading || (isUpdate && isLoadingContent) // Disable while loading content for updates
             }
           >
-            {isLoading || isLoadingBranches || (isUpdate && isLoadingContent)
+            {isLoading || (isUpdate && isLoadingContent)
               ? t(I18nKey.HOME$LOADING)
               : t(I18nKey.MICROAGENT$LAUNCH)}
           </BrandButton>

@@ -4,7 +4,9 @@ from urllib.parse import quote
 
 import pytest
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
+from httpcore import Request
 from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderToken, ProviderType
@@ -27,6 +29,13 @@ def test_client():
     """Create a test client for the git API."""
     app = FastAPI()
     app.include_router(git_app)
+
+    @app.exception_handler(AuthenticationError)
+    async def authentication_error_handler(request: Request, exc: AuthenticationError):
+        return JSONResponse(
+            status_code=401,
+            content=str(exc),
+        )
 
     # Override the FastAPI dependencies directly
     def mock_get_provider_tokens():
