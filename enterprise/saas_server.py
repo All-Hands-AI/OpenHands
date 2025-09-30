@@ -19,7 +19,7 @@ from server.auth.constants import (  # noqa: E402
 from server.constants import PERMITTED_CORS_ORIGINS  # noqa: E402
 from server.logger import logger  # noqa: E402
 from server.metrics import metrics_app  # noqa: E402
-from server.middleware import SetAuthCookieMiddleware  # noqa: E402
+from server.middleware import LLMSettingsValidationMiddleware, SetAuthCookieMiddleware  # noqa: E402
 from server.rate_limit import setup_rate_limit_handler  # noqa: E402
 from server.routes.api_keys import api_router as api_keys_router  # noqa: E402
 from server.routes.auth import api_router, oauth_router  # noqa: E402
@@ -105,6 +105,7 @@ base_app.add_middleware(
     allow_headers=['*'],
 )
 base_app.add_middleware(CacheControlMiddleware)
+base_app.add_middleware(LLMSettingsValidationMiddleware)
 base_app.middleware('http')(SetAuthCookieMiddleware())
 
 base_app.mount('/', SPAStaticFiles(directory=directory, html=True), name='dist')

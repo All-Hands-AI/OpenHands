@@ -1,3 +1,4 @@
+import json
 from typing import Callable
 
 import jwt
@@ -17,10 +18,18 @@ from server.routes.auth import (
     get_cookie_samesite,
     set_response_cookie,
 )
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.types import AppMode
 from openhands.server.user_auth.user_auth import AuthType, get_user_auth
-from openhands.server.utils import config
+from openhands.server.shared import config, server_config
+
+from enterprise.server.utils import (
+    ProSubscriptionRequiredError,
+    is_pro_user,
+    validate_llm_settings_changes,
+)
 
 
 class SetAuthCookieMiddleware:
@@ -172,3 +181,78 @@ class SetAuthCookieMiddleware:
                 await token_manager.logout(user_auth.refresh_token.get_secret_value())
         except Exception:
             logger.debug('Error logging out')
+
+
+class LLMSettingsValidationMiddleware(BaseHTTPMiddleware):
+    """
+    Enterprise middleware that validates LLM settings access for non-PRO users in SaaS mode.
+
+    This middleware intercepts POST requests to /api/settings and validates that non-PRO users
+    cannot modify LLM-related settings. If validation fails, it returns a 403 response
+    before the request reaches the OSS settings route.
+    """
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        # Only validate POST requests to /api/settings
+        if request.method == 'POST' and request.url.path == '/api/settings':
+            try:
+                user_auth = getattr(request.state, 'user_auth', None)
+                user_id = None
+                if user_auth:
+                    user_id = await user_auth.get_user_id()
+
+                # Only enforce validation in SaaS mode
+                if server_config.app_mode == AppMode.SAAS:
+                    if not is_pro_user(user_id):
+                        # Non-PRO user in SaaS mode - validate LLM settings
+                        await self._validate_llm_settings_access(request, user_id)
+
+            except ProSubscriptionRequiredError as e:
+                return JSONResponse(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    content={'detail': str(e)},
+                )
+            except Exception as e:
+                logger.warning(f'Error in LLM settings validation middleware: {e}')
+
+        # Continue with the request
+        return await call_next(request)
+
+    async def _validate_llm_settings_access(self, request: Request, user_id: str | None):
+        """
+        Validate that non-PRO users cannot modify LLM settings.
+
+        Raises an exception if validation fails.
+        """
+        try:
+            body = await request.body()
+            if not body:
+                return  # No body to validate
+
+            try:
+                settings_dict = json.loads(body.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+                logger.warning(f'Failed to parse settings request body: {e}')
+                return  # Can't parse, let the main route handle it
+
+            # We'll compare against defaults
+            existing_settings = None
+
+            # Check which LLM settings are being changed
+            changed_llm_settings = validate_llm_settings_changes(settings_dict, existing_settings)
+
+            if changed_llm_settings:
+                logger.warning(
+                    f'Non-PRO user {user_id} attempted to modify LLM settings in SaaS mode: {changed_llm_settings}'
+                )
+                raise ProSubscriptionRequiredError(changed_llm_settings, user_id)
+
+        except ProSubscriptionRequiredError:
+            # Re-raise PRO subscription validation errors
+            raise
+        except Exception as e:
+            logger.warning(f'Error validating LLM settings: {e}')
+
+

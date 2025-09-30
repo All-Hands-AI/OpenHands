@@ -140,7 +140,7 @@ def test_client_non_pro_with_existing_llm():
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
         patch(
-            'openhands.utils.enterprise_utils.is_pro_user',
+            'enterprise.server.utils.is_pro_user',
             lambda user_id: user_id == 'test-user-pro',
         ),
     ):
@@ -177,7 +177,7 @@ def test_client_pro_with_existing_llm():
             AsyncMock(return_value=FileSettingsStore(InMemoryFileStore())),
         ),
         patch(
-            'openhands.utils.enterprise_utils.is_pro_user',
+            'enterprise.server.utils.is_pro_user',
             lambda user_id: user_id == 'test-user-pro',
         ),
         # Note: Pro user validation will be handled by the actual implementation

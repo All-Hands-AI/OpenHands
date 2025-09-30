@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
@@ -15,14 +15,12 @@ from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
-    get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
-from openhands.utils.enterprise_utils import validate_llm_settings_access
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
@@ -144,13 +142,9 @@ async def store_llm_settings(
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),
-    user_id: str = Depends(get_user_id),
 ) -> JSONResponse:
     try:
         existing_settings = await settings_store.load()
-
-        # Validate LLM settings access for non-PRO users in SaaS mode
-        validate_llm_settings_access(settings, user_id, existing_settings)
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
@@ -191,22 +185,12 @@ async def store_settings(
             content={'message': 'Settings stored'},
         )
     except ValueError as e:
-        # Handle LLM settings validation errors (PRO subscription required)
-        error_message = str(e)
-        if 'PRO subscription required' in error_message:
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content={'detail': error_message},
-            )
-        # Handle other ValueError cases
+        # Handle validation errors
         logger.warning(f'Validation error storing settings: {e}')
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': str(e)},
         )
-    except HTTPException:
-        # Let HTTPException propagate (it will be handled by FastAPI)
-        raise
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
