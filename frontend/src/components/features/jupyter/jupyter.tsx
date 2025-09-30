@@ -1,21 +1,23 @@
 import React from "react";
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { RootState } from "#/store";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { JupyterCell } from "./jupyter-cell";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { I18nKey } from "#/i18n/declaration";
 import JupyterLargeIcon from "#/icons/jupyter-large.svg?react";
+import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
+import { useAgentStore } from "#/stores/agent-store";
+import { useJupyterStore } from "#/state/jupyter-store";
 
 interface JupyterEditorProps {
   maxWidth: number;
 }
 
 export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
-  const cells = useSelector((state: RootState) => state.jupyter?.cells ?? []);
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
+
+  const cells = useJupyterStore((state) => state.cells);
 
   const jupyterRef = React.useRef<HTMLDivElement>(null);
 
@@ -28,11 +30,7 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
 
   return (
     <>
-      {isRuntimeInactive && (
-        <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-        </div>
-      )}
+      {isRuntimeInactive && <WaitingForRuntimeMessage />}
       {!isRuntimeInactive && cells.length > 0 && (
         <div className="flex-1 h-full flex flex-col" style={{ maxWidth }}>
           <div

@@ -474,3 +474,38 @@ export const getConversationStatusLabel = (
       return "COMMON$UNKNOWN";
   }
 };
+
+// Task Tracking Utility Functions
+
+/**
+ * Get the status icon for a task status
+ * @param status The task status
+ * @returns The emoji icon for the status
+ */
+export const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "todo":
+      return "⏳";
+    case "in_progress":
+      return "🔄";
+    case "done":
+      return "✅";
+    default:
+      return "❓";
+  }
+};
+
+/**
+ * Get the CSS class names for a task status badge
+ * @param status The task status
+ * @returns The CSS class names for styling the status badge
+ */
+export const getStatusClassName = (status: string) => {
+  if (status === "done") {
+    return "bg-green-800 text-green-200";
+  }
+  if (status === "in_progress") {
+    return "bg-yellow-800 text-yellow-200";
+  }
+  return "bg-gray-700 text-gray-300";
+};

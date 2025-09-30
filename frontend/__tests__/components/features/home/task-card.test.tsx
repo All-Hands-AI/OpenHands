@@ -2,10 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
-import { setupStore } from "test-utils";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import UserService from "#/api/user-service/user-service.api";
+import GitService from "#/api/git-service/git-service.api";
 import { TaskCard } from "#/components/features/home/tasks/task-card";
 import { GitRepository } from "#/types/git";
 import { SuggestedTask } from "#/utils/types";
@@ -39,11 +39,9 @@ const renderTaskCard = (task = MOCK_TASK_1) => {
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };
@@ -57,7 +55,10 @@ describe("TaskCard", () => {
   });
 
   it("should call createConversation when clicking the launch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
 
     renderTaskCard();
 
@@ -70,7 +71,7 @@ describe("TaskCard", () => {
   describe("creating suggested task conversation", () => {
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        OpenHands,
+        GitService,
         "retrieveUserGitRepositories",
       );
       retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -80,7 +81,10 @@ describe("TaskCard", () => {
     });
 
     it("should call create conversation with suggest task trigger and selected suggested task", async () => {
-      const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+      const createConversationSpy = vi.spyOn(
+        ConversationService,
+        "createConversation",
+      );
 
       renderTaskCard(MOCK_TASK_1);
 
@@ -106,7 +110,10 @@ describe("TaskCard", () => {
   });
 
   it("should navigate to the conversation page after creating a conversation", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
     createConversationSpy.mockResolvedValue({
       conversation_id: "test-conversation-id",
       title: "Test Conversation",

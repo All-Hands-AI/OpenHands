@@ -1,12 +1,11 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClientConfig } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
 import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
 
 describe("ConversationPanel", () => {
@@ -18,16 +17,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = (config?: QueryClientConfig) =>
-    renderWithProviders(<RouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
-      },
-    });
+  const renderConversationPanel = () => renderWithProviders(<RouterStub />);
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
@@ -85,7 +75,7 @@ describe("ConversationPanel", () => {
     vi.clearAllMocks();
     vi.restoreAllMocks();
     // Setup default mock for getUserConversations
-    vi.spyOn(OpenHands, "getUserConversations").mockResolvedValue({
+    vi.spyOn(ConversationService, "getUserConversations").mockResolvedValue({
       results: [...mockConversations],
       next_page_id: null,
     });
@@ -101,7 +91,10 @@ describe("ConversationPanel", () => {
   });
 
   it("should display an empty state when there are no conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockResolvedValue({
       results: [],
       next_page_id: null,
@@ -114,7 +107,10 @@ describe("ConversationPanel", () => {
   });
 
   it("should handle an error when fetching conversations", async () => {
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockRejectedValue(
       new Error("Failed to fetch conversations"),
     );
@@ -203,14 +199,17 @@ describe("ConversationPanel", () => {
       },
     ];
 
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockImplementation(async () => ({
       results: mockData,
       next_page_id: null,
     }));
 
     const deleteUserConversationSpy = vi.spyOn(
-      OpenHands,
+      ConversationService,
       "deleteUserConversation",
     );
     deleteUserConversationSpy.mockImplementation(async (id: string) => {
@@ -260,7 +259,10 @@ describe("ConversationPanel", () => {
 
   it("should refetch data on rerenders", async () => {
     const user = userEvent.setup();
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockResolvedValue({
       results: [...mockConversations],
       next_page_id: null,
@@ -285,15 +287,7 @@ describe("ConversationPanel", () => {
       },
     ]);
 
-    renderWithProviders(<MyRouterStub />, {
-      preloadedState: {
-        metrics: {
-          cost: null,
-          max_budget_per_task: null,
-          usage: null,
-        },
-      },
-    });
+    renderWithProviders(<MyRouterStub />);
 
     const toggleButton = screen.getByText("Toggle");
 
@@ -357,7 +351,10 @@ describe("ConversationPanel", () => {
       },
     ];
 
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockResolvedValue({
       results: mockRunningConversations,
       next_page_id: null,
@@ -424,13 +421,19 @@ describe("ConversationPanel", () => {
       },
     ];
 
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockImplementation(async () => ({
       results: mockData,
       next_page_id: null,
     }));
 
-    const stopConversationSpy = vi.spyOn(OpenHands, "stopConversation");
+    const stopConversationSpy = vi.spyOn(
+      ConversationService,
+      "stopConversation",
+    );
     stopConversationSpy.mockImplementation(async (id: string) => {
       const conversation = mockData.find((conv) => conv.conversation_id === id);
       if (conversation) {
@@ -512,7 +515,10 @@ describe("ConversationPanel", () => {
       },
     ];
 
-    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    const getUserConversationsSpy = vi.spyOn(
+      ConversationService,
+      "getUserConversations",
+    );
     getUserConversationsSpy.mockResolvedValue({
       results: mockMixedStatusConversations,
       next_page_id: null,
@@ -619,7 +625,10 @@ describe("ConversationPanel", () => {
     const user = userEvent.setup();
 
     // Mock the updateConversation API call
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     // Mock the toast function
@@ -656,7 +665,10 @@ describe("ConversationPanel", () => {
   it("should save title when Enter key is pressed", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     renderConversationPanel();
@@ -685,7 +697,10 @@ describe("ConversationPanel", () => {
   it("should trim whitespace from title", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     renderConversationPanel();
@@ -714,7 +729,10 @@ describe("ConversationPanel", () => {
   it("should revert to original title when empty", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     renderConversationPanel();
@@ -740,7 +758,10 @@ describe("ConversationPanel", () => {
   it("should handle API error when updating title", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockRejectedValue(new Error("API Error"));
 
     vi.mock("#/utils/custom-toast-handlers", () => ({
@@ -807,7 +828,10 @@ describe("ConversationPanel", () => {
   it("should not call API when title is unchanged", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     renderConversationPanel();
@@ -833,7 +857,10 @@ describe("ConversationPanel", () => {
   it("should handle special characters in title", async () => {
     const user = userEvent.setup();
 
-    const updateConversationSpy = vi.spyOn(OpenHands, "updateConversation");
+    const updateConversationSpy = vi.spyOn(
+      ConversationService,
+      "updateConversation",
+    );
     updateConversationSpy.mockResolvedValue(true);
 
     renderConversationPanel();

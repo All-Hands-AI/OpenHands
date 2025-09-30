@@ -1,15 +1,14 @@
-import { useSelector } from "react-redux";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import OpenHands from "#/api/open-hands";
-import { RootState } from "#/store";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { useAgentStore } from "#/stores/agent-store";
 
 export function VSCodeTooltipContent() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
 
   const { t } = useTranslation();
   const { conversationId } = useConversationId();
@@ -20,7 +19,7 @@ export function VSCodeTooltipContent() {
 
     if (conversationId) {
       try {
-        const data = await OpenHands.getVSCodeUrl(conversationId);
+        const data = await ConversationService.getVSCodeUrl(conversationId);
         if (data.vscode_url) {
           const transformedUrl = transformVSCodeUrl(data.vscode_url);
           if (transformedUrl) {

@@ -1,5 +1,5 @@
 import { generateAuthUrl } from "#/utils/generate-auth-url";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
 
 interface UseAuthUrlConfig {
   appMode: GetConfigResponse["APP_MODE"] | null;

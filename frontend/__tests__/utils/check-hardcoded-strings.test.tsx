@@ -60,13 +60,7 @@ describe("Check for hardcoded English strings", () => {
   test("InteractiveChatBox should not have hardcoded English strings", () => {
     const { container } = renderWithProviders(
       <MemoryRouter>
-        <InteractiveChatBox
-          onSubmit={() => {}}
-          onStop={() => {}}
-          isWaitingForUserInput={false}
-          hasSubstantiveAgentActions={false}
-          optimisticUserMessage={false}
-        />
+        <InteractiveChatBox onSubmit={() => {}} onStop={() => {}} />
       </MemoryRouter>,
     );
 

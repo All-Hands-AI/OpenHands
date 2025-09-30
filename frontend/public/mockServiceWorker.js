@@ -7,7 +7,7 @@
  * - Please do NOT modify this file.
  */
 
-const PACKAGE_VERSION = '2.10.5'
+const PACKAGE_VERSION = '2.11.1'
 const INTEGRITY_CHECKSUM = 'f5825c521429caf22a4dd13b66e243af'
 const IS_MOCKED_RESPONSE = Symbol('isMockedResponse')
 const activeClientIds = new Set()

@@ -1,9 +1,7 @@
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { Provider } from "react-redux";
-import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
-import { HomeHeader } from "#/components/features/home/home-header";
+import { HomeHeader } from "#/components/features/home/home-header/home-header";
 
 // Mock the translation function
 vi.mock("react-i18next", async () => {
@@ -26,11 +24,9 @@ vi.mock("react-i18next", async () => {
 const renderHomeHeader = () => {
   return render(<HomeHeader />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };

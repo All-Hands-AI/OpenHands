@@ -1,12 +1,10 @@
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { Provider } from "react-redux";
 import { createRoutesStub } from "react-router";
-import { setupStore } from "test-utils";
 import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
-import { NewConversation } from "#/components/features/home/new-conversation";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
 
 // Mock the translation function
 vi.mock("react-i18next", async () => {
@@ -43,18 +41,19 @@ const renderNewConversation = () => {
 
   return render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 };
 
 describe("NewConversation", () => {
   it("should create an empty conversation and redirect when pressing the launch from scratch button", async () => {
-    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    const createConversationSpy = vi.spyOn(
+      ConversationService,
+      "createConversation",
+    );
 
     renderNewConversation();
 

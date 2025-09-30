@@ -3,11 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
-import { Provider } from "react-redux";
-import { createAxiosNotFoundErrorObject, setupStore } from "test-utils";
+import { createAxiosNotFoundErrorObject } from "test-utils";
 import HomeScreen from "#/routes/home";
 import { GitRepository } from "#/types/git";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
+import GitService from "#/api/git-service/git-service.api";
+import OptionService from "#/api/option-service/option-service.api";
 import MainApp from "#/routes/root-layout";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
 
@@ -64,11 +65,9 @@ const selectRepository = async (repoName: string) => {
 const renderHomeScreen = () =>
   render(<RouterStub />, {
     wrapper: ({ children }) => (
-      <Provider store={setupStore()}>
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      </Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        {children}
+      </QueryClientProvider>
     ),
   });
 
@@ -91,7 +90,7 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
 
 describe("HomeScreen", () => {
   beforeEach(() => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
@@ -139,7 +138,7 @@ describe("HomeScreen", () => {
 
   it("should filter the suggested tasks based on the selected repository", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -148,7 +147,7 @@ describe("HomeScreen", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -183,7 +182,7 @@ describe("HomeScreen", () => {
 
   it("should filter tasks when different repositories are selected", async () => {
     const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
+      GitService,
       "retrieveUserGitRepositories",
     );
     retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -192,7 +191,7 @@ describe("HomeScreen", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+    vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
       branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
@@ -246,7 +245,7 @@ describe("HomeScreen", () => {
         await screen.findAllByTestId("task-launch-button");
 
       // Mock the repository branches API call
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
+      vi.spyOn(GitService, "getRepositoryBranches").mockResolvedValue({
         branches: [
           { name: "main", commit_sha: "123", protected: false },
           { name: "develop", commit_sha: "456", protected: false },
@@ -282,7 +281,7 @@ describe("HomeScreen", () => {
 
     beforeEach(() => {
       const retrieveUserGitRepositoriesSpy = vi.spyOn(
-        OpenHands,
+        GitService,
         "retrieveUserGitRepositories",
       );
       retrieveUserGitRepositoriesSpy.mockResolvedValue({
@@ -358,8 +357,8 @@ describe("Settings 404", () => {
     vi.resetAllMocks();
   });
 
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
   it("should open the settings modal if GET /settings fails with a 404", async () => {
     const error = createAxiosNotFoundErrorObject();
@@ -417,8 +416,8 @@ describe("Settings 404", () => {
 });
 
 describe("Setup Payment modal", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
   it("should only render if SaaS mode and is new user", async () => {
     // @ts-expect-error - we only need the APP_MODE for this test
