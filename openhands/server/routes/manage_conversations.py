@@ -334,6 +334,10 @@ async def get_conversation(
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
+        logger.info(
+            f'get_conversation conversation_store type: {type(conversation_store)}'
+        )
+        logger.info(f'get_conversation metadata: {metadata}')
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
         )
@@ -341,9 +345,11 @@ async def get_conversation(
             filter_to_sids={conversation_id}
         )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+        logger.info(f'get_conversation agent_loop_info: {agent_loop_info}')
         conversation_info = await _get_conversation_info(
             metadata, num_connections, agent_loop_info
         )
+        logger.info(f'get_conversation conversation_info: {conversation_info}')
         return conversation_info
     except FileNotFoundError:
         return None
