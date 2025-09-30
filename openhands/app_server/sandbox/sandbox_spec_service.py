@@ -62,3 +62,8 @@ class SandboxSpecServiceResolver(DiscriminatedUnionMixin, ABC):
         """Get a resolver which may be used to resolve an instance of sandbox spec service
         limited to the current user.
         """
+
+    @abstractmethod
+    def get_unsecured_resolver(self) -> Callable:
+        """Get a resolver for all available sandbox specs
+        """

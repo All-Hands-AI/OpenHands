@@ -75,7 +75,6 @@ class SandboxedConversationInfoService(ABC):
         """Start using this sandbox context"""
         return self
 
-    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this sandbox context"""
 

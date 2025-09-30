@@ -1,0 +1,220 @@
+# pyright: reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
+"""SQL implementation of SandboxedConversationService.
+
+This implementation provides CRUD operations for sandboxed conversations focused purely
+on SQL operations:
+- Direct database access without permission checks
+- Batch operations for efficient data retrieval
+- Integration with SandboxService for sandbox information
+- HTTP client integration for agent status retrieval
+- Full async/await support using SQL async sessions
+
+Security and permission checks are handled by wrapper services.
+
+Key components:
+- SQLSandboxedConversationService: Main service class implementing all operations
+- SQLSandboxedConversationServiceResolver: Dependency injection resolver for FastAPI
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from dataclasses import dataclass
+from datetime import datetime
+from time import time
+from typing import Callable
+from uuid import UUID
+
+import httpx
+from fastapi import Depends
+from pydantic import Field, TypeAdapter
+from sqlalchemy import Select, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from openhands.agent_server.models import ConversationInfo
+from openhands.app_server.conversation.conversation_models import SandboxedConversationInfo, SandboxedConversationInfoPage
+from openhands.app_server.conversation.sandboxed_conversation_info_service import SandboxedConversationInfoService, SandboxedConversationInfoServiceResolver
+from openhands.app_server.database import async_session_dependency
+from openhands.app_server.errors import AuthError
+from openhands.app_server.user.user_service import UserService
+from openhands.server.user_auth import get_user_id
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
+    """SQL implementation of SandboxedConversationInfoService focused on db operations."""
+    session: AsyncSession
+    user_id: str | None = None
+
+    async def search_sandboxed_conversation_info(
+        self,
+        title__contains: str | None = None,
+        created_at__gte: datetime | None = None,
+        created_at__lt: datetime | None = None,
+        updated_at__gte: datetime | None = None,
+        updated_at__lt: datetime | None = None,
+        page_id: str | None = None,
+        limit: int = 100,
+    ) -> SandboxedConversationInfoPage:
+        """Search for sandboxed conversations without permission checks."""
+        query = select(SandboxedConversationInfo)
+
+        query = self._apply_filters(
+            query=query,
+            title__contains=title__contains,
+            created_at__gte=created_at__gte,
+            created_at__lt=created_at__lt,
+            updated_at__gte=updated_at__gte,
+            updated_at__lt=updated_at__lt,
+        )
+
+        # Apply pagination
+        if page_id is not None:
+            try:
+                offset = int(page_id)
+                query = query.offset(offset)
+            except ValueError:
+                # If page_id is not a valid integer, start from beginning
+                offset = 0
+        else:
+            offset = 0
+
+        # Apply sorting (default to created_at desc)
+        query = query.order_by(SandboxedConversationInfo.created_at.desc())  # type: ignore
+
+        # Apply limit and get one extra to check if there are more results
+        query = query.limit(limit + 1)
+
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+
+        # Check if there are more results
+        has_more = len(items) > limit
+        if has_more:
+            items = items[:limit]
+
+        # Calculate next page ID
+        next_page_id = None
+        if has_more:
+            next_page_id = str(offset + limit)
+
+        return SandboxedConversationInfoPage(
+            items=items, next_page_id=next_page_id
+        )
+
+    async def count_sandboxed_conversation_info(
+        self,
+        title__contains: str | None = None,
+        created_at__gte: datetime | None = None,
+        created_at__lt: datetime | None = None,
+        updated_at__gte: datetime | None = None,
+        updated_at__lt: datetime | None = None,
+    ) -> int:
+        """Count sandboxed conversations matching the given filters."""
+        query = select(func.count(SandboxedConversationInfo.id))
+
+        query = self._apply_filters(
+            query=query,
+            title__contains=title__contains,
+            created_at__gte=created_at__gte,
+            created_at__lt=created_at__lt,
+            updated_at__gte=updated_at__gte,
+            updated_at__lt=updated_at__lt,
+        )
+
+        result = await self.session.execute(query)
+        count = result.scalar()
+        return count or 0
+
+    def _apply_filters(
+        self,
+        query: Select,
+        title__contains: str | None = None,
+        created_at__gte: datetime | None = None,
+        created_at__lt: datetime | None = None,
+        updated_at__gte: datetime | None = None,
+        updated_at__lt: datetime | None = None,
+    ) -> Select:
+        # Apply the same filters as search_sandboxed_conversations
+        conditions = []
+        if title__contains is not None:
+            conditions.append(SandboxedConversationInfo.title.like(f"%{title__contains}%"))  # type: ignore
+
+        if created_at__gte is not None:
+            conditions.append(SandboxedConversationInfo.created_at >= created_at__gte)  # type: ignore
+
+        if created_at__lt is not None:
+            conditions.append(SandboxedConversationInfo.created_at < created_at__lt)  # type: ignore
+
+        if updated_at__gte is not None:
+            conditions.append(SandboxedConversationInfo.updated_at >= updated_at__gte)  # type: ignore
+
+        if updated_at__lt is not None:
+            conditions.append(SandboxedConversationInfo.updated_at < updated_at__lt)  # type: ignore
+
+        if conditions:
+            query = query.where(*conditions)
+        return query
+
+    async def get_sandboxed_conversation_info(
+        self, conversation_id: UUID
+    ) -> SandboxedConversationInfo | None:
+        query = select(SandboxedConversationInfo).where(
+            SandboxedConversationInfo.id == conversation_id
+        )
+        result_set = await self.session.execute(query)
+        result = result_set.scalar_one_or_none()
+        return result
+
+    async def batch_get_sandboxed_conversation_info(self, conversation_ids: list[UUID]) -> list[SandboxedConversationInfo | None]:
+        query = select(SandboxedConversationInfo).where(SandboxedConversationInfo.id.in_(conversation_ids))  # type: ignore
+        rows = await self.session.execute(query)
+        info_by_id = {info.id: info for info in rows}
+        results = [
+            info_by_id.get(conversation_id) for conversation_id in conversation_ids
+        ]
+        return results
+
+    async def save_sandboxed_conversation_info(self, info: SandboxedConversationInfo) -> SandboxedConversationInfo:
+        self.session.add(info)
+        await self.session.commit()
+        await self.session.refresh(info)
+        return info
+
+
+class SQLSandboxedConversationServiceResolver(SandboxedConversationInfoServiceResolver):
+
+    def get_unsecured_resolver(self) -> Callable:
+        # Define inline to prevent circular lookup
+        def resolve_sandboxed_conversation_service(
+            session: AsyncSession = Depends(async_session_dependency),
+        ) -> SandboxedConversationInfoService:
+            return SQLSandboxedConversationInfoService(session=session)
+
+        return resolve_sandboxed_conversation_service
+
+    def get_resolver_for_user(self) -> Callable:
+        # Define inline to prevent circular lookup
+
+        from openhands.app_server.dependency import get_dependency_resolver
+
+        user_service_resolver = (
+            get_dependency_resolver().user.get_resolver_for_user()
+        )
+
+
+        def resolve_sandboxed_conversation_service(
+            user_service: UserService = Depends(user_service_resolver),
+            session: AsyncSession = Depends(async_session_dependency),
+        ) -> SandboxedConversationInfoService:
+            current_user = user_service.get_current_user()
+            if current_user is None:
+                raise AuthError('Not logged in!')
+            service = SQLSandboxedConversationInfoService(session=session)
+            return service
+
+        return resolve_sandboxed_conversation_service

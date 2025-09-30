@@ -30,7 +30,7 @@ from openhands.app_server.conversation.sandboxed_conversation_service import (
     SandboxedConversationServiceResolver,
 )
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
-from openhands.app_server.errors import SandboxError
+from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     SandboxInfo,
@@ -296,6 +296,8 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         self, initial_message: SendMessageRequest | None
     ) -> StartConversationRequest:
         user = await self.user_service.get_current_user()
+        if user is None:
+            raise AuthError()
 
         llm = LLM(
             model=user.llm_model,

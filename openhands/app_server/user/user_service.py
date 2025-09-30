@@ -14,7 +14,7 @@ class UserService(ABC):
 
     @abstractmethod
     async def get_current_user(self) -> UserInfo:
-        """Get the current user"""
+        """Get the current user. Raises an auth error if not logged in."""
 
 
 class UserServiceResolver(DiscriminatedUnionMixin, ABC):

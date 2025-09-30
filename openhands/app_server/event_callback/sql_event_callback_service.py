@@ -191,7 +191,7 @@ class SQLEventCallbackServiceResolver(EventCallbackServiceResolver):
     def get_resolver_for_user(self) -> Callable:
         _logger.warning(
             'Using secured EventCallbackService resolver - '
-            'returning unsecured resolver for now'
+            'returning unsecured resolver for now. Eventually filter by conversation'
         )
         return self.resolve
 
