@@ -7,7 +7,7 @@ import json
 import os
 import tempfile
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -29,7 +29,8 @@ class TestConversationInfo:
     def test_format_date_minutes(self):
         """Test date formatting for recent times."""
         now = datetime.now(timezone.utc)
-        created_at = datetime(now.year, now.month, now.day, now.hour, now.minute - 5, tzinfo=timezone.utc)
+        # Use timedelta to avoid minute underflow
+        created_at = now - timedelta(minutes=5)
         info = ConversationInfo("test-id", created_at)
         formatted = info.format_date(created_at)
         assert "m ago" in formatted
@@ -271,3 +272,167 @@ class TestConversationManager:
         conversations = manager.discover_conversations()
         assert len(conversations) == 1
         assert conversations[0].title is None  # No user message found
+
+    # Tests for conversation viewing functionality
+
+    @patch('openhands_cli.conversation_manager.PERSISTENCE_DIR')
+    def test_load_conversation_events_nonexistent(self, mock_persistence_dir):
+        """Test loading events from non-existent conversation."""
+        mock_persistence_dir.return_value = self.temp_dir
+        
+        manager = ConversationManager()
+        manager.conversations_dir = self.conversations_dir
+        
+        events = manager._load_conversation_events("nonexistent-id")
+        assert events == []
+
+    @patch('openhands_cli.conversation_manager.PERSISTENCE_DIR')
+    def test_load_conversation_events_no_events_file(self, mock_persistence_dir):
+        """Test loading events when events.jsonl doesn't exist."""
+        mock_persistence_dir.return_value = self.temp_dir
+        
+        # Create conversation directory without events file
+        conv_id = "test-conv-id"
+        conv_dir = os.path.join(self.conversations_dir, conv_id)
+        os.makedirs(conv_dir, exist_ok=True)
+        
+        manager = ConversationManager()
+        manager.conversations_dir = self.conversations_dir
+        
+        events = manager._load_conversation_events(conv_id)
+        assert events == []
+
+    @patch('openhands_cli.conversation_manager.PERSISTENCE_DIR')
+    def test_load_conversation_events_with_data(self, mock_persistence_dir):
+        """Test loading events from valid events.jsonl file."""
+        mock_persistence_dir.return_value = self.temp_dir
+        
+        # Create conversation directory with events file
+        conv_id = "test-conv-id"
+        conv_dir = os.path.join(self.conversations_dir, conv_id)
+        os.makedirs(conv_dir, exist_ok=True)
+        
+        events_file = os.path.join(conv_dir, "events.jsonl")
+        sample_events = [
+            {"event_type": "MessageAction", "source": "user", "content": "Hello", "timestamp": 1234567890},
+            {"event_type": "CmdRunAction", "source": "agent", "command": "ls", "timestamp": 1234567891},
+            {"event_type": "CmdOutputObservation", "source": "environment", "output": "file1.txt", "timestamp": 1234567892}
+        ]
+        
+        with open(events_file, 'w') as f:
+            for event in sample_events:
+                f.write(json.dumps(event) + '\n')
+        
+        manager = ConversationManager()
+        manager.conversations_dir = self.conversations_dir
+        
+        events = manager._load_conversation_events(conv_id)
+        
+        assert len(events) == 3
+        assert events[0]["event_type"] == "MessageAction"
+        assert events[1]["event_type"] == "CmdRunAction"
+        assert events[2]["event_type"] == "CmdOutputObservation"
+
+    def test_filter_events_by_source(self):
+        """Test filtering events by source."""
+        manager = ConversationManager()
+        
+        events = [
+            {"event_type": "MessageAction", "source": "user", "content": "Hello"},
+            {"event_type": "CmdRunAction", "source": "agent", "command": "ls"},
+            {"event_type": "CmdOutputObservation", "source": "environment", "output": "file1.txt"}
+        ]
+        
+        # Filter by user
+        user_events = manager._filter_events(events, "user")
+        assert len(user_events) == 1
+        assert user_events[0]["source"] == "user"
+        
+        # Filter by agent
+        agent_events = manager._filter_events(events, "agent")
+        assert len(agent_events) == 1
+        assert agent_events[0]["source"] == "agent"
+
+    def test_filter_events_by_category(self):
+        """Test filtering events by category."""
+        manager = ConversationManager()
+        
+        events = [
+            {"event_type": "MessageAction", "source": "user", "content": "Hello"},
+            {"event_type": "CmdRunAction", "source": "agent", "command": "ls"},
+            {"event_type": "CmdOutputObservation", "source": "environment", "output": "file1.txt"},
+            {"event_type": "FileEditAction", "source": "agent", "path": "test.py"},
+            {"event_type": "AgentThinkAction", "source": "agent", "thought": "I need to..."}
+        ]
+        
+        # Filter by action category
+        action_events = manager._filter_events(events, "action")
+        assert len(action_events) == 4  # MessageAction, CmdRunAction, FileEditAction, AgentThinkAction
+        
+        # Filter by observation category
+        obs_events = manager._filter_events(events, "observation")
+        assert len(obs_events) == 1  # CmdOutputObservation
+        
+        # Filter by command category
+        cmd_events = manager._filter_events(events, "command")
+        assert len(cmd_events) == 1  # CmdRunAction
+        
+        # Filter by file category
+        file_events = manager._filter_events(events, "file")
+        assert len(file_events) == 1  # FileEditAction
+        
+        # Filter by think category
+        think_events = manager._filter_events(events, "think")
+        assert len(think_events) == 1  # AgentThinkAction
+
+    def test_matches_event_category(self):
+        """Test event category matching logic."""
+        manager = ConversationManager()
+        
+        # Test action matching
+        action_event = {"event_type": "CmdRunAction", "source": "agent"}
+        assert manager._matches_event_category(action_event, "action")
+        assert manager._matches_event_category(action_event, "command")
+        assert not manager._matches_event_category(action_event, "observation")
+        
+        # Test observation matching
+        obs_event = {"event_type": "CmdOutputObservation", "source": "environment"}
+        assert manager._matches_event_category(obs_event, "observation")
+        assert not manager._matches_event_category(obs_event, "action")
+        
+        # Test file operations
+        file_event = {"event_type": "FileEditAction", "source": "agent"}
+        assert manager._matches_event_category(file_event, "file")
+        assert manager._matches_event_category(file_event, "action")
+
+    def test_extract_event_content(self):
+        """Test extracting content from different event types."""
+        manager = ConversationManager()
+        
+        # Test direct content field
+        event1 = {"event_type": "MessageAction", "content": "Hello world"}
+        assert manager._extract_event_content(event1) == "Hello world"
+        
+        # Test command field
+        event2 = {"event_type": "CmdRunAction", "command": "ls -la"}
+        assert manager._extract_event_content(event2) == "ls -la"
+        
+        # Test args structure
+        event3 = {"event_type": "FileEditAction", "args": {"path": "/test/file.py", "content": "print('hello')"}}
+        content = manager._extract_event_content(event3)
+        assert content in ["/test/file.py", "print('hello')"]  # Either could be returned first
+        
+        # Test empty event
+        event4 = {"event_type": "UnknownAction"}
+        assert manager._extract_event_content(event4) == ""
+
+    def test_get_available_filters(self):
+        """Test getting list of available filters."""
+        manager = ConversationManager()
+        
+        filters = manager.get_available_filters()
+        expected_filters = ['action', 'observation', 'user', 'agent', 'command', 'file', 'browse', 'message', 'think']
+        
+        assert len(filters) == len(expected_filters)
+        for filter_name in expected_filters:
+            assert filter_name in filters

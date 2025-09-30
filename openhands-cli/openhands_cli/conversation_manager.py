@@ -8,7 +8,7 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 from uuid import UUID
 
 try:
@@ -237,3 +237,228 @@ class ConversationManager:
                 suggestions.append(conv.short_id)
         
         return suggestions[:10]  # Limit to 10 suggestions
+    
+    def view_conversation(
+        self, 
+        conversation_id: str, 
+        event_filter: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0
+    ) -> None:
+        """View conversation content with optional event filtering.
+        
+        Args:
+            conversation_id: Full or short conversation ID
+            event_filter: Filter events by type (action, observation, user, agent, etc.)
+            limit: Maximum number of events to display
+            offset: Number of events to skip (for pagination)
+        """
+        conversations = self.discover_conversations()
+        
+        # Find matching conversation
+        target_conv = None
+        for conv in conversations:
+            if (conv.conversation_id == conversation_id or 
+                conv.short_id == conversation_id or
+                conv.conversation_id.startswith(conversation_id)):
+                target_conv = conv
+                break
+        
+        if not target_conv:
+            print_formatted_text(HTML(f"<red>Conversation '{conversation_id}' not found</red>"))
+            return
+        
+        # Load conversation events
+        events = self._load_conversation_events(target_conv.conversation_id)
+        if not events:
+            print_formatted_text(HTML(f"<yellow>No events found in conversation {target_conv.short_id}</yellow>"))
+            return
+        
+        # Apply filtering
+        if event_filter:
+            events = self._filter_events(events, event_filter)
+        
+        # Apply pagination
+        total_events = len(events)
+        paginated_events = events[offset:offset + limit]
+        
+        # Display conversation header
+        self._display_conversation_header(target_conv, total_events, len(paginated_events), offset, event_filter)
+        
+        # Display events
+        for i, event in enumerate(paginated_events, start=offset + 1):
+            self._display_event(event, i)
+        
+        # Display pagination info
+        if total_events > offset + limit:
+            remaining = total_events - (offset + limit)
+            print_formatted_text(HTML(f"<grey>... and {remaining} more events. Use '/view {conversation_id} --offset {offset + limit}' to see more</grey>"))
+    
+    def _load_conversation_events(self, conversation_id: str) -> List[Dict]:
+        """Load events from conversation storage."""
+        conversation_dir = Path(self.conversations_dir) / conversation_id
+        events_file = conversation_dir / "events.jsonl"
+        
+        if not events_file.exists():
+            return []
+        
+        events = []
+        try:
+            with open(events_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            event = json.loads(line)
+                            events.append(event)
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            print_formatted_text(HTML(f"<red>Error loading events: {e}</red>"))
+            return []
+        
+        return events
+    
+    def _filter_events(self, events: List[Dict], event_filter: str) -> List[Dict]:
+        """Filter events by type or source."""
+        filtered = []
+        filter_lower = event_filter.lower()
+        
+        for event in events:
+            event_type = event.get('event_type', '').lower()
+            source = event.get('source', '').lower()
+            
+            # Check various filter criteria
+            if (filter_lower in event_type or 
+                filter_lower in source or
+                self._matches_event_category(event, filter_lower)):
+                filtered.append(event)
+        
+        return filtered
+    
+    def _matches_event_category(self, event: Dict, filter_term: str) -> bool:
+        """Check if event matches category filters."""
+        event_type = event.get('event_type', '').lower()
+        
+        # Category mappings
+        action_types = ['cmdrunaction', 'fileeditaction', 'filereadaction', 'filewriteaction', 
+                       'browseinteractiveaction', 'browseurlaction', 'messageaction', 
+                       'agentthinkaction', 'ipythonruncellaction', 'mcpaction']
+        
+        observation_types = ['cmdoutputobservation', 'fileeditobservation', 'filereadobservation',
+                           'filewriteobservation', 'browseroutputobservation', 'errorobservation',
+                           'ipythonruncellobservation', 'mcpobservation']
+        
+        if filter_term == 'action' and any(action in event_type for action in action_types):
+            return True
+        elif filter_term == 'observation' and any(obs in event_type for obs in observation_types):
+            return True
+        elif filter_term == 'command' and 'cmdrun' in event_type:
+            return True
+        elif filter_term == 'file' and any(file_op in event_type for file_op in ['fileedit', 'fileread', 'filewrite']):
+            return True
+        elif filter_term == 'browse' and 'browse' in event_type:
+            return True
+        elif filter_term == 'message' and 'message' in event_type:
+            return True
+        elif filter_term == 'think' and 'think' in event_type:
+            return True
+        
+        return False
+    
+    def _display_conversation_header(self, conv: ConversationInfo, total: int, shown: int, offset: int, filter_type: Optional[str]):
+        """Display conversation header with metadata."""
+        print_formatted_text("")
+        print_formatted_text(HTML(f"<bold>Conversation: {conv.title}</bold>"))
+        print_formatted_text(HTML(f"<grey>ID: {conv.short_id} ({conv.conversation_id})</grey>"))
+        print_formatted_text(HTML(f"<grey>Modified: {conv.format_date()}</grey>"))
+        
+        if filter_type:
+            print_formatted_text(HTML(f"<grey>Filter: {filter_type} | Showing {shown} of {total} events (offset: {offset})</grey>"))
+        else:
+            print_formatted_text(HTML(f"<grey>Showing {shown} of {total} events (offset: {offset})</grey>"))
+        
+        print_formatted_text(HTML("<grey>" + "─" * 80 + "</grey>"))
+    
+    def _display_event(self, event: Dict, index: int):
+        """Display a single event with formatting."""
+        event_type = event.get('event_type', 'Unknown')
+        source = event.get('source', 'unknown')
+        timestamp = event.get('timestamp', '')
+        
+        # Format timestamp
+        time_str = ""
+        if timestamp:
+            try:
+                if isinstance(timestamp, (int, float)):
+                    dt = datetime.fromtimestamp(timestamp)
+                    time_str = dt.strftime("%H:%M:%S")
+                elif isinstance(timestamp, str):
+                    # Try to parse ISO format
+                    dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    time_str = dt.strftime("%H:%M:%S")
+            except:
+                time_str = str(timestamp)[:8]  # Fallback
+        
+        # Color coding by event type and source
+        if 'action' in event_type.lower():
+            type_color = 'blue'
+            icon = '→'
+        elif 'observation' in event_type.lower():
+            type_color = 'green'
+            icon = '←'
+        else:
+            type_color = 'white'
+            icon = '•'
+        
+        # Source color
+        source_color = 'cyan' if source == 'user' else 'yellow' if source == 'agent' else 'white'
+        
+        # Display event header
+        print_formatted_text(HTML(f"<grey>[{index:3d}]</grey> <{type_color}>{icon} {event_type}</{type_color}> <{source_color}>({source})</{source_color}> <grey>{time_str}</grey>"))
+        
+        # Display event content
+        content = self._extract_event_content(event)
+        if content:
+            # Truncate long content
+            if len(content) > 200:
+                content = content[:197] + "..."
+            
+            # Indent content
+            for line in content.split('\n'):
+                if line.strip():
+                    print_formatted_text(HTML(f"    <white>{line}</white>"))
+        
+        print_formatted_text("")  # Empty line between events
+    
+    def _extract_event_content(self, event: Dict) -> str:
+        """Extract meaningful content from an event."""
+        # Try different content fields
+        content_fields = ['content', 'message', 'command', 'path', 'text', 'output', 'thought']
+        
+        for field in content_fields:
+            if field in event and event[field]:
+                return str(event[field]).strip()
+        
+        # For complex events, try to extract key information
+        if 'args' in event and isinstance(event['args'], dict):
+            args = event['args']
+            for field in content_fields:
+                if field in args and args[field]:
+                    return str(args[field]).strip()
+        
+        return ""
+    
+    def get_available_filters(self) -> List[str]:
+        """Get list of available event filters."""
+        return [
+            'action',      # All action events
+            'observation', # All observation events  
+            'user',        # Events from user
+            'agent',       # Events from agent
+            'command',     # Command execution events
+            'file',        # File operation events
+            'browse',      # Browser events
+            'message',     # Message events
+            'think',       # Agent thinking events
+        ]

@@ -25,6 +25,7 @@ COMMANDS = {
     "/mcp": "View MCP (Model Context Protocol) server configuration",
     "/list": "List past conversations",
     "/load": "Load a past conversation by ID",
+    "/view": "View conversation content with optional filtering",
 }
 
 
@@ -50,6 +51,32 @@ class CommandCompleter(Completer):
                     display_meta="conversation ID",
                     style="bg:ansidarkgray fg:lightblue",
                 )
+        elif text.startswith("/view "):
+            # Handle /view command completion
+            parts = text[6:].split()  # Remove "/view "
+            if len(parts) == 1 and not text.endswith(" "):
+                # Complete conversation ID
+                partial_id = parts[0]
+                suggestions = self.conversation_manager.get_conversation_suggestions(partial_id)
+                for suggestion in suggestions:
+                    yield Completion(
+                        suggestion,
+                        start_position=-len(partial_id),
+                        display_meta="conversation ID",
+                        style="bg:ansidarkgray fg:lightblue",
+                    )
+            elif len(parts) >= 1 and (text.endswith(" ") or len(parts) > 1):
+                # Complete filter options
+                current_filter = parts[-1] if not text.endswith(" ") else ""
+                filters = self.conversation_manager.get_available_filters()
+                for filter_name in filters:
+                    if filter_name.startswith(current_filter):
+                        yield Completion(
+                            f"--filter {filter_name}",
+                            start_position=-len(current_filter) if current_filter else 0,
+                            display_meta=f"filter by {filter_name}",
+                            style="bg:ansidarkgray fg:lightgreen",
+                        )
         elif text.startswith("/"):
             # Handle command completion
             for command, description in COMMANDS.items():
