@@ -240,7 +240,7 @@ class DockerSandboxService(SandboxService):
         env_vars[SESSION_API_KEY_VARIABLE] = session_api_key
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
             f'http://host.docker.internal:{self.host_port}'
-            f'/event-webhooks/{container_name}'
+            f'/v1/api/event-webhooks/{container_name}'
         )
 
         # Prepare port mappings and add port environment variables
