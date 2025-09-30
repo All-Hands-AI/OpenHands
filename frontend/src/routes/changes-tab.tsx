@@ -88,13 +88,15 @@ function GitChanges() {
           </div>
         </div>
       ) : (
-        gitChanges.map((change) => (
-          <FileDiffViewer
-            key={change.path}
-            path={change.path}
-            type={change.status}
-          />
-        ))
+        gitChanges
+          .slice(0, 100)
+          .map((change) => (
+            <FileDiffViewer
+              key={change.path}
+              path={change.path}
+              type={change.status}
+            />
+          ))
       )}
     </main>
   );
