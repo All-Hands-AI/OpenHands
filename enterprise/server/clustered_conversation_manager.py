@@ -5,12 +5,6 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 import socketio
-from server.logger import logger
-from server.utils.conversation_callback_utils import invoke_conversation_callbacks
-from storage.database import session_maker
-from storage.saas_settings_store import SaasSettingsStore
-from storage.stored_conversation_metadata import StoredConversationMetadata
-
 from openhands.core.config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.utils import load_openhands_config
@@ -21,6 +15,7 @@ from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm_registry import LLMRegistry
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
@@ -36,6 +31,12 @@ from openhands.server.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 from openhands.utils.shutdown_listener import should_continue
+
+from server.logger import logger
+from server.utils.conversation_callback_utils import invoke_conversation_callbacks
+from storage.database import session_maker
+from storage.saas_settings_store import SaasSettingsStore
+from storage.stored_conversation_metadata import StoredConversationMetadata
 
 # Time in seconds between cleanup operations for stale conversations
 _CLEANUP_INTERVAL_SECONDS = 15
@@ -686,6 +687,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
                         url=self._get_conversation_url(conversation_id),
                         session_api_key=None,
                         event_store=EventStore(conversation_id, self.file_store, uid),
+                        runtime_status=RuntimeStatus.READY,
                     )
                 )
         return results
