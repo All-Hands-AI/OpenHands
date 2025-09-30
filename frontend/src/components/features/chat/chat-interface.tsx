@@ -22,8 +22,8 @@ import { useAgentStore } from "#/stores/agent-store";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
   hasUserEvent,
@@ -46,10 +46,10 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
-  const { getErrorMessage } = useWSErrorMessage();
+  const { errorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
-    useOptimisticUserMessage();
+    useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
@@ -73,7 +73,6 @@ export function ChatInterface() {
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
-  const errorMessage = getErrorMessage();
 
   const events = parsedEvents.filter(shouldRenderEvent);
 

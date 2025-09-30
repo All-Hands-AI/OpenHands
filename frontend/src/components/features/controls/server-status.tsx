@@ -34,8 +34,7 @@ export function ServerStatus({
   const isStartingStatus =
     curAgentState === AgentState.LOADING || curAgentState === AgentState.INIT;
 
-  const isStopStatus =
-    curAgentState === AgentState.STOPPED || conversationStatus === "STOPPED";
+  const isStopStatus = conversationStatus === "STOPPED";
 
   // Get the appropriate color based on agent status
   const getStatusColor = (): string => {

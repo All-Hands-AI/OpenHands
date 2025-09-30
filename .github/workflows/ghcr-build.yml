@@ -213,6 +213,8 @@ jobs:
             latest=auto
             prefix=
             suffix=
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
       - name: Determine app image tag
         shell: bash
         run: |
