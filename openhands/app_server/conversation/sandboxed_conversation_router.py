@@ -6,7 +6,6 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from openhands.app_server.dependency import get_dependency_resolver
 from openhands.app_server.conversation.conversation_models import (
     SandboxedConversation,
     SandboxedConversationPage,
@@ -15,9 +14,9 @@ from openhands.app_server.conversation.conversation_models import (
 from openhands.app_server.conversation.sandboxed_conversation_service import (
     SandboxedConversationService,
 )
+from openhands.app_server.dependency import get_dependency_resolver
 
-
-router = APIRouter(prefix="/sandboxed-conversations", tags=["Conversations"])
+router = APIRouter(prefix='/sandboxed-conversations', tags=['Conversations'])
 sandboxed_conversation_service_dependency = Depends(
     get_dependency_resolver().sandboxed_conversation.get_resolver_for_user()
 )
@@ -25,36 +24,36 @@ sandboxed_conversation_service_dependency = Depends(
 # Read methods
 
 
-@router.get("/search")
+@router.get('/search')
 async def search_sandboxed_conversations(
     title__contains: Annotated[
         str | None,
-        Query(title="Filter by title containing this string"),
+        Query(title='Filter by title containing this string'),
     ] = None,
     created_at__gte: Annotated[
         datetime | None,
-        Query(title="Filter by created_at greater than or equal to this datetime"),
+        Query(title='Filter by created_at greater than or equal to this datetime'),
     ] = None,
     created_at__lt: Annotated[
         datetime | None,
-        Query(title="Filter by created_at less than this datetime"),
+        Query(title='Filter by created_at less than this datetime'),
     ] = None,
     updated_at__gte: Annotated[
         datetime | None,
-        Query(title="Filter by updated_at greater than or equal to this datetime"),
+        Query(title='Filter by updated_at greater than or equal to this datetime'),
     ] = None,
     updated_at__lt: Annotated[
         datetime | None,
-        Query(title="Filter by updated_at less than this datetime"),
+        Query(title='Filter by updated_at less than this datetime'),
     ] = None,
     page_id: Annotated[
         str | None,
-        Query(title="Optional next_page_id from the previously returned page"),
+        Query(title='Optional next_page_id from the previously returned page'),
     ] = None,
     limit: Annotated[
         int,
         Query(
-            title="The max number of results in the page",
+            title='The max number of results in the page',
             gt=0,
             lte=100,
         ),
@@ -77,27 +76,27 @@ async def search_sandboxed_conversations(
     )
 
 
-@router.get("/count")
+@router.get('/count')
 async def count_sandboxed_conversations(
     title__contains: Annotated[
         str | None,
-        Query(title="Filter by title containing this string"),
+        Query(title='Filter by title containing this string'),
     ] = None,
     created_at__gte: Annotated[
         datetime | None,
-        Query(title="Filter by created_at greater than or equal to this datetime"),
+        Query(title='Filter by created_at greater than or equal to this datetime'),
     ] = None,
     created_at__lt: Annotated[
         datetime | None,
-        Query(title="Filter by created_at less than this datetime"),
+        Query(title='Filter by created_at less than this datetime'),
     ] = None,
     updated_at__gte: Annotated[
         datetime | None,
-        Query(title="Filter by updated_at greater than or equal to this datetime"),
+        Query(title='Filter by updated_at greater than or equal to this datetime'),
     ] = None,
     updated_at__lt: Annotated[
         datetime | None,
-        Query(title="Filter by updated_at less than this datetime"),
+        Query(title='Filter by updated_at less than this datetime'),
     ] = None,
     sandboxed_conversation_service: SandboxedConversationService = (
         sandboxed_conversation_service_dependency
@@ -113,7 +112,7 @@ async def count_sandboxed_conversations(
     )
 
 
-@router.get("/{id}", responses={404: {"description": "Item not found"}})
+@router.get('/{id}', responses={404: {'description': 'Item not found'}})
 async def get_sandboxed_conversation(
     id: UUID,
     sandboxed_conversation_service: SandboxedConversationService = (
@@ -129,7 +128,7 @@ async def get_sandboxed_conversation(
     return sandboxed_conversation
 
 
-@router.get("/")
+@router.get('/')
 async def batch_get_sandboxed_conversations(
     ids: Annotated[list[UUID], Query()],
     sandboxed_conversation_service: SandboxedConversationService = (
@@ -146,7 +145,7 @@ async def batch_get_sandboxed_conversations(
     return sandboxed_conversations
 
 
-@router.post("/")
+@router.post('/')
 async def start_sandboxed_conversation(
     request: StartSandboxedConversationRequest,
     sandboxed_conversation_service: SandboxedConversationService = (

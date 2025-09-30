@@ -3,23 +3,24 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlmodel import Field as SQLField, SQLModel
+from sqlmodel import Field as SQLField
+from sqlmodel import SQLModel
 
-from openhands.sdk.event.types import EventID
 from openhands.app_server.utils.date_utils import utc_now
+from openhands.sdk.event.types import EventID
 
 
 class EventCallbackResultStatus(Enum):
-    SUCCESS = "SUCCESS"
-    ERROR = "ERROR"
+    SUCCESS = 'SUCCESS'
+    ERROR = 'ERROR'
 
 
 class EventCallbackResultSortOrder(Enum):
-    CREATED_AT = "CREATED_AT"
-    CREATED_AT_DESC = "CREATED_AT_DESC"
+    CREATED_AT = 'CREATED_AT'
+    CREATED_AT_DESC = 'CREATED_AT_DESC'
 
 
-class EventCallbackResult(SQLModel, table=True): # type ignore
+class EventCallbackResult(SQLModel, table=True):  # type: ignore
     """Object representing the result of an event callback."""
 
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)

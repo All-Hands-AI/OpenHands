@@ -114,7 +114,7 @@ openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git"
 openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "774245d9d36b07f356e73868370d07d0a8bd5dd9" }
 openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "774245d9d36b07f356e73868370d07d0a8bd5dd9" }
 sqlmodel = "^0.0.25"
-python-jose = {version = ">=3.3", extras = ["cryptography"]}
+python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]

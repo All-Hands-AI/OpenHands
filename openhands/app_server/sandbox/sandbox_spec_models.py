@@ -5,10 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class SandboxSpecStatus(Enum):
-    BUILDING = "BUILDING"
-    READY = "READY"
-    ERROR = "ERROR"
-    DELETING = "DELETING"
+    BUILDING = 'BUILDING'
+    READY = 'READY'
+    ERROR = 'ERROR'
+    DELETING = 'DELETING'
 
 
 class SandboxSpecInfo(BaseModel):
@@ -20,9 +20,9 @@ class SandboxSpecInfo(BaseModel):
     command: str
     created_at: datetime
     initial_env: dict[str, str] = Field(
-        default_factory=dict, description="Initial Environment Variables"
+        default_factory=dict, description='Initial Environment Variables'
     )
-    working_dir: str = "/openhands/code"
+    working_dir: str = '/openhands/code'
 
 
 class SandboxSpecInfoPage(BaseModel):

@@ -1,15 +1,15 @@
-import asyncio
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from openhands.sdk.utils.models import DiscriminatedUnionMixin
 from openhands.app_server.user.user_models import (
     UserInfo,
 )
+from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class UserService(ABC):
     """Service for managing users."""
+
     # Read methods
 
     @abstractmethod

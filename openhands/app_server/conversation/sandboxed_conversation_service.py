@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import Callable
 from uuid import UUID
 
-from openhands.sdk.utils.models import DiscriminatedUnionMixin
 from openhands.app_server.conversation.conversation_models import (
     SandboxedConversation,
     SandboxedConversationPage,
     StartSandboxedConversationRequest,
 )
+from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class SandboxedConversationService(ABC):
@@ -79,6 +79,7 @@ class SandboxedConversationService(ABC):
         """Start using this sandbox context"""
         return self
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this sandbox context"""
 

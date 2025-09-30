@@ -11,8 +11,8 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.app_server.dependency import get_dependency_resolver
-from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
 from openhands.app_server.errors import SandboxError
+from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     VSCODE,
@@ -28,9 +28,8 @@ from openhands.app_server.sandbox.sandbox_service import (
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.utils.date_utils import utc_now
 
-
-SESSION_API_KEY_VARIABLE = "OH_SESSION_API_KEYS_0"
-WEBHOOK_CALLBACK_VARIABLE = "OH_WEBHOOKS_0_BASE_URL"
+SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
+WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 
 
 class VolumeMount(BaseModel):
@@ -38,7 +37,7 @@ class VolumeMount(BaseModel):
 
     host_path: str
     container_path: str
-    mode: str = "rw"
+    mode: str = 'rw'
 
     model_config = ConfigDict(frozen=True)
 
@@ -68,7 +67,7 @@ class DockerSandboxService(SandboxService):
     def _find_unused_port(self) -> int:
         """Find an unused port on the host machine"""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("", 0))
+            s.bind(('', 0))
             s.listen(1)
             port = s.getsockname()[1]
         return port
@@ -76,22 +75,22 @@ class DockerSandboxService(SandboxService):
     def _docker_status_to_sandbox_status(self, docker_status: str) -> SandboxStatus:
         """Convert Docker container status to SandboxStatus"""
         status_mapping = {
-            "running": SandboxStatus.RUNNING,
-            "paused": SandboxStatus.PAUSED,
-            "exited": SandboxStatus.DELETED,
-            "created": SandboxStatus.STARTING,
-            "restarting": SandboxStatus.STARTING,
-            "removing": SandboxStatus.DELETED,
-            "dead": SandboxStatus.ERROR,
+            'running': SandboxStatus.RUNNING,
+            'paused': SandboxStatus.PAUSED,
+            'exited': SandboxStatus.DELETED,
+            'created': SandboxStatus.STARTING,
+            'restarting': SandboxStatus.STARTING,
+            'removing': SandboxStatus.DELETED,
+            'dead': SandboxStatus.ERROR,
         }
         return status_mapping.get(docker_status.lower(), SandboxStatus.ERROR)
 
     def _get_container_env_vars(self, container) -> dict[str, str | None]:
-        env_vars_list = container.attrs["Config"]["Env"]
+        env_vars_list = container.attrs['Config']['Env']
         result = {}
         for env_var in env_vars_list:
-            if "=" in env_var:
-                key, value = env_var.split("=", 1)
+            if '=' in env_var:
+                key, value = env_var.split('=', 1)
                 result[key] = value
             else:
                 # Handle cases where an environment variable might not have a value
@@ -102,8 +101,8 @@ class DockerSandboxService(SandboxService):
         """Convert Docker container to SandboxInfo"""
         # Get user_id and sandbox_spec_id from labels
         labels = container.labels or {}
-        created_by_user_id = labels.get("created_by_user_id")
-        sandbox_spec_id = labels.get("sandbox_spec_id")
+        created_by_user_id = labels.get('created_by_user_id')
+        sandbox_spec_id = labels.get('sandbox_spec_id')
 
         if not created_by_user_id or not sandbox_spec_id:
             return None
@@ -112,9 +111,9 @@ class DockerSandboxService(SandboxService):
         status = self._docker_status_to_sandbox_status(container.status)
 
         # Parse creation time
-        created_str = container.attrs.get("Created", "")
+        created_str = container.attrs.get('Created', '')
         try:
-            created_at = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
         except (ValueError, AttributeError):
             created_at = utc_now()
 
@@ -125,17 +124,17 @@ class DockerSandboxService(SandboxService):
         if status == SandboxStatus.RUNNING:
             # Get the first exposed port mapping
             exposed_urls = []
-            port_bindings = container.attrs.get("NetworkSettings", {}).get("Ports", {})
+            port_bindings = container.attrs.get('NetworkSettings', {}).get('Ports', {})
             if port_bindings:
                 for container_port, host_bindings in port_bindings.items():
                     if host_bindings:
-                        host_port = host_bindings[0]["HostPort"]
+                        host_port = host_bindings[0]['HostPort']
                         exposed_port = next(
                             (
                                 exposed_port
                                 for exposed_port in self.exposed_ports
                                 if container_port
-                                == f"{exposed_port.container_port}/tcp"
+                                == f'{exposed_port.container_port}/tcp'
                             ),
                             None,
                         )
@@ -225,16 +224,16 @@ class DockerSandboxService(SandboxService):
         if sandbox_spec_id is None:
             sandbox_spec = await self.sandbox_spec_service.get_default_sandbox_spec()
         else:
-            sandbox_spec = await self.sandbox_spec_service.get_sandbox_spec(
+            sandbox_spec_maybe = await self.sandbox_spec_service.get_sandbox_spec(
                 sandbox_spec_id
             )
-
-        if sandbox_spec is None:
-            raise ValueError("Sandbox Spec not found")
+            if sandbox_spec_maybe is None:
+                raise ValueError('Sandbox Spec not found')
+            sandbox_spec = sandbox_spec_maybe
 
         # Generate container ID and session api key
         container_name = (
-            f"{self.container_name_prefix}{base62.encodebytes(os.urandom(16))}"
+            f'{self.container_name_prefix}{base62.encodebytes(os.urandom(16))}'
         )
         session_api_key = base62.encodebytes(os.urandom(32))
 
@@ -242,8 +241,8 @@ class DockerSandboxService(SandboxService):
         env_vars = sandbox_spec.initial_env.copy()
         env_vars[SESSION_API_KEY_VARIABLE] = session_api_key
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
-            f"http://host.docker.internal:{self.host_port}"
-            f"/event-webhooks/{container_name}"
+            f'http://host.docker.internal:{self.host_port}'
+            f'/event-webhooks/{container_name}'
         )
 
         # Prepare port mappings and add port environment variables
@@ -256,24 +255,25 @@ class DockerSandboxService(SandboxService):
 
         # Prepare labels
         labels = {
-            "created_by_user_id": "NO_USER",  # TODO: Integrate auth service
-            "sandbox_spec_id": sandbox_spec.id,
+            'created_by_user_id': 'NO_USER',  # TODO: Integrate auth service
+            'sandbox_spec_id': sandbox_spec.id,
         }
 
         # Prepare volumes
         volumes = {
             mount.host_path: {
-                "bind": mount.container_path,
-                "mode": mount.mode,
+                'bind': mount.container_path,
+                'mode': mount.mode,
             }
             for mount in self.mounts
         }
 
         try:
             # Create and start the container
-            container = self.docker_client.containers.run(
+            container = self.docker_client.containers.run(  # type: ignore[call-overload]
                 image=sandbox_spec.id,
-                # command=sandbox_spec.command,  # TODO: Re-enable this later
+                command=None,  # Use default command from image
+                remove=False,
                 name=container_name,
                 environment=env_vars,
                 ports=port_mappings,
@@ -281,7 +281,6 @@ class DockerSandboxService(SandboxService):
                 working_dir=sandbox_spec.working_dir,
                 labels=labels,
                 detach=True,
-                remove=False,
             )
 
             sandbox_info = self._container_to_sandbox_info(container)
@@ -289,7 +288,7 @@ class DockerSandboxService(SandboxService):
             return sandbox_info
 
         except APIError as e:
-            raise SandboxError(f"Failed to start container: {e}")
+            raise SandboxError(f'Failed to start container: {e}')
 
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox"""
@@ -298,9 +297,9 @@ class DockerSandboxService(SandboxService):
                 return False
             container = self.docker_client.containers.get(sandbox_id)
 
-            if container.status == "paused":
+            if container.status == 'paused':
                 container.unpause()
-            elif container.status == "exited":
+            elif container.status == 'exited':
                 container.start()
 
             return True
@@ -314,7 +313,7 @@ class DockerSandboxService(SandboxService):
                 return False
             container = self.docker_client.containers.get(sandbox_id)
 
-            if container.status == "running":
+            if container.status == 'running':
                 container.pause()
 
             return True
@@ -329,7 +328,7 @@ class DockerSandboxService(SandboxService):
             container = self.docker_client.containers.get(sandbox_id)
 
             # Stop the container if it's running
-            if container.status in ["running", "paused"]:
+            if container.status in ['running', 'paused']:
                 container.stop(timeout=10)
 
             # Remove the container
@@ -337,7 +336,7 @@ class DockerSandboxService(SandboxService):
 
             # Remove associated volume
             try:
-                volume_name = f"openhands-workspace-{sandbox_id}"
+                volume_name = f'openhands-workspace-{sandbox_id}'
                 volume = self.docker_client.volumes.get(volume_name)
                 volume.remove()
             except (NotFound, APIError):
@@ -348,27 +347,31 @@ class DockerSandboxService(SandboxService):
         except (NotFound, APIError):
             return False
 
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Stop using this sandbox service"""
+        pass
+
 
 class DockerSandboxServiceResolver(SandboxServiceResolver):
     """Resolver / Configuration for docker sandbox services"""
 
-    container_url_pattern: str = "http://localhost:{port}"
+    container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000
-    container_name_prefix: str = "oh-agent-server-"
+    container_name_prefix: str = 'oh-agent-server-'
     mounts: list[VolumeMount] = Field(default_factory=list)
     exposed_ports: list[ExposedPort] = Field(
         default_factory=lambda: [
             ExposedPort(
                 name=AGENT_SERVER,
                 description=(
-                    "The port on which the agent server runs within the container"
+                    'The port on which the agent server runs within the container'
                 ),
                 container_port=8000,
             ),
             ExposedPort(
                 name=VSCODE,
                 description=(
-                    "The port on which the VSCode server runs within the container"
+                    'The port on which the VSCode server runs within the container'
                 ),
                 container_port=8001,
             ),

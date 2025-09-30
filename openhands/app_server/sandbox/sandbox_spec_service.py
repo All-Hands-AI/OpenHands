@@ -2,11 +2,11 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Callable
 
-from openhands.sdk.utils.models import DiscriminatedUnionMixin
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
 )
+from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class SandboxSpecService(ABC):
@@ -51,6 +51,7 @@ class SandboxSpecService(ABC):
         """Start using this sandbox spec service"""
         return self
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this sandbox spec service"""
 

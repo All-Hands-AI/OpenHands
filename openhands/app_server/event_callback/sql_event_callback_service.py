@@ -12,7 +12,6 @@ from fastapi import Depends
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from openhands.sdk import EventBase
 from openhands.app_server.database import async_session_dependency
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
@@ -28,7 +27,7 @@ from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
     EventCallbackServiceResolver,
 )
-
+from openhands.sdk import EventBase
 
 _logger = logging.getLogger(__name__)
 
@@ -169,7 +168,7 @@ class SQLEventCallbackService(EventCallbackService):
         try:
             result = await callback.processor(conversation_id, callback, event)
         except Exception as exc:
-            _logger.exception(f"Exception in callback {callback.id}", stack_info=True)
+            _logger.exception(f'Exception in callback {callback.id}', stack_info=True)
             result = EventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
@@ -180,6 +179,10 @@ class SQLEventCallbackService(EventCallbackService):
         self.session.add(result)
         await self.session.commit()
 
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Stop using this event callback service"""
+        pass
+
 
 class SQLEventCallbackServiceResolver(EventCallbackServiceResolver):
     def get_unsecured_resolver(self) -> Callable:
@@ -187,8 +190,8 @@ class SQLEventCallbackServiceResolver(EventCallbackServiceResolver):
 
     def get_resolver_for_user(self) -> Callable:
         _logger.warning(
-            "Using secured EventCallbackService resolver - "
-            "returning unsecured resolver for now"
+            'Using secured EventCallbackService resolver - '
+            'returning unsecured resolver for now'
         )
         return self.resolve
 

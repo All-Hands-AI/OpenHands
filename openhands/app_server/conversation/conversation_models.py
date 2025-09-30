@@ -1,22 +1,25 @@
 from datetime import datetime
-from enum import Enum
 from uuid import UUID, uuid4
 
-from openhands.sdk.llm import MetricsSnapshot
 from pydantic import BaseModel, Field
-from sqlmodel import Field as SQLField, SQLModel
+from sqlmodel import Field as SQLField
+from sqlmodel import SQLModel
 
 from openhands.agent_server.models import SendMessageRequest
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from openhands.app_server.event_callback.event_callback_models import EventCallbackProcessor
+from openhands.app_server.event_callback.event_callback_models import (
+    EventCallbackProcessor,
+)
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 from openhands.app_server.utils.date_utils import utc_now
 from openhands.integrations.service_types import ProviderType
+from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 
-class SandboxedConversationInfo(SQLModel, table=True):
+class SandboxedConversationInfo(SQLModel, table=True):  # type: ignore
     """Conversation info which does not contain status"""
+
     id: UUID = SQLField(default=uuid4, primary_key=True)
 
     selected_repository: str | None

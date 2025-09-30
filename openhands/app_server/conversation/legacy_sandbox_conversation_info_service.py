@@ -5,18 +5,23 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from openhands.sdk.llm import MetricsSnapshot
-from openhands.app_server.conversation.sandboxed_conversation_info_service import SandboxedConversationInfoService, SandboxedConversationInfoServiceResolver
+
 from openhands.app_server.conversation.conversation_models import (
     SandboxedConversationInfo,
     SandboxedConversationInfoPage,
 )
+from openhands.app_server.conversation.sandboxed_conversation_info_service import (
+    SandboxedConversationInfoService,
+    SandboxedConversationInfoServiceResolver,
+)
 from openhands.llm.metrics import TokenUsage
+from openhands.sdk.llm import MetricsSnapshot
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
-CONVERSATION_VERSION = "V1"
+CONVERSATION_VERSION = 'V1'
+
 
 @dataclass
 class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
@@ -25,6 +30,7 @@ class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
     use SQL. As it is, what we have is not really async (As the db connection
     in ConversationStore is not async), but I doubt it will cause issues.
     """
+
     conversation_store: ConversationStore
 
     async def search_sandboxed_conversation_info(
@@ -36,29 +42,43 @@ class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
         updated_at__lt: datetime | None = None,
         page_id: str | None = None,
         limit: int = 20,
-    ) -> SandboxedConversationInfo:
+    ) -> SandboxedConversationInfoPage:
         """Search for sandboxed conversations."""
         result_set = await self.conversation_store.search(page_id=page_id, limit=limit)
         results = result_set.results
 
-        #Apply Filters... (This will be pure sql when we stop using legacy...)
+        # Apply Filters... (This will be pure sql when we stop using legacy...)
         items = []
         for meta in results:
-            if title__contains and title__contains not in meta.title or "":
+            if title__contains and title__contains not in (meta.title or ''):
                 continue
-            if created_at__gte and created_at__gte > meta.created_at:
+            if (
+                created_at__gte
+                and meta.created_at
+                and created_at__gte > meta.created_at
+            ):
                 continue
-            if created_at__lt and created_at__lt <= meta.created_at:
+            if created_at__lt and meta.created_at and created_at__lt <= meta.created_at:
                 continue
-            if updated_at__gte and updated_at__gte > meta.last_updated_at:
+            if (
+                updated_at__gte
+                and meta.last_updated_at
+                and updated_at__gte > meta.last_updated_at
+            ):
                 continue
-            if updated_at__lt and updated_at__lt <= meta.last_updated_at:
+            if (
+                updated_at__lt
+                and meta.last_updated_at
+                and updated_at__lt <= meta.last_updated_at
+            ):
                 continue
             if meta.conversation_version != CONVERSATION_VERSION:
                 continue
             items.append(self._to_conversation_info(meta))
 
-        return SandboxedConversationInfoPage(items=items, next_page_id=result_set.next_page_id)
+        return SandboxedConversationInfoPage(
+            items=items, next_page_id=result_set.next_page_id
+        )
 
     async def count_sandboxed_conversation_info(
         self,
@@ -71,7 +91,14 @@ class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
         count = 0
         page_id = None
         while True:
-            result_set = await self.search_sandboxed_conversation_info(title__contains=title__contains, created_at__gte=created_at__gte, created_at__lt=created_at__lt, updated_at__gte=updated_at__gte, updated_at__lt=updated_at__lt, page_id=page_id)
+            result_set = await self.search_sandboxed_conversation_info(
+                title__contains=title__contains,
+                created_at__gte=created_at__gte,
+                created_at__lt=created_at__lt,
+                updated_at__gte=updated_at__gte,
+                updated_at__lt=updated_at__lt,
+                page_id=page_id,
+            )
             count += len(result_set.items)
             page_id = result_set.next_page_id
             if not page_id:
@@ -116,17 +143,15 @@ class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
             trigger=info.trigger,
             pr_number=info.pr_number,
             llm_model=info.llm_model,
-
             accumulated_cost=metrics.accumulated_cost,
             prompt_tokens=token_usage.prompt_tokens,
             completion_tokens=token_usage.completion_tokens,
             total_tokens=(
-                token_usage.prompt_tokens+
-                token_usage.completion_tokens+
-                token_usage.cache_read_tokens+
-                token_usage.cache_write_tokens
+                token_usage.prompt_tokens
+                + token_usage.completion_tokens
+                + token_usage.cache_read_tokens
+                + token_usage.cache_write_tokens
             ),
-
             sandbox_id=info.sandbox_id,
             created_at=info.created_at,
             last_updated_at=info.updated_at,
@@ -151,17 +176,22 @@ class LegacySandboxedConversationInfoService(SandboxedConversationInfoService):
                     model=meta.llm_model or '',
                     prompt_tokens=meta.prompt_tokens,
                     completion_tokens=meta.completion_tokens,
-                    #TODO: This is incomplete because we calculate tokens differently in agent sdk
-                )
+                    # TODO: This is incomplete because we calculate tokens differently in agent sdk
+                ),
             ),
             sandbox_id=meta.sandbox_id,
             created_at=meta.created_at,
             updated_at=meta.last_updated_at,
         )
 
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Stop using this sandboxed conversation info service"""
+        pass
 
-class LegacySandboxedConversationInfoServiceResolver(SandboxedConversationInfoServiceResolver):
 
+class LegacySandboxedConversationInfoServiceResolver(
+    SandboxedConversationInfoServiceResolver
+):
     def get_resolver_for_user(self) -> Callable:
         return self._resolve_for_user
 

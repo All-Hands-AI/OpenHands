@@ -16,7 +16,6 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
 )
 from openhands.app_server.utils.date_utils import utc_now
 
-
 _global_docker_client: docker.DockerClient | None = None
 _logger = logging.getLogger(__name__)
 
@@ -36,15 +35,15 @@ class DockerSandboxSpecService(SandboxSpecService):
     """
 
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
-    repository: str = "ghcr.io/all-hands-ai/agent-server"
-    command: str = "/usr/local/bin/openhands-agent-server"
+    repository: str = 'ghcr.io/all-hands-ai/agent-server'
+    command: str = '/usr/local/bin/openhands-agent-server'
     initial_env: dict[str, str] = field(
         default_factory=lambda: {
-            "OPENVSCODE_SERVER_ROOT": "/openhands/.openvscode-server",
-            "LOG_JSON": "true",
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
         }
     )
-    working_dir: str = "/home/openhands"
+    working_dir: str = '/home/openhands'
 
     def _docker_image_to_sandbox_specs(self, image) -> SandboxSpecInfo:
         """Convert a Docker image to SandboxSpecInfo"""
@@ -56,10 +55,10 @@ class DockerSandboxSpecService(SandboxSpecService):
             image_id = image.id[:12]  # Use short image ID if no tags
 
         # Parse creation time from image attributes
-        created_str = image.attrs.get("Created", "")
+        created_str = image.attrs.get('Created', '')
         try:
             # Docker timestamps are in ISO format
-            created_at = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+            created_at = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
         except (ValueError, AttributeError):
             created_at = utc_now()
 
@@ -124,6 +123,10 @@ class DockerSandboxSpecService(SandboxSpecService):
             return self._docker_image_to_sandbox_specs(image)
         except (NotFound, APIError):
             return None
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        """Stop using this sandbox spec service"""
+        pass
 
 
 class DockerSandboxSpecServiceResolver(SandboxSpecServiceResolver):

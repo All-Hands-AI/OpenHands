@@ -4,14 +4,15 @@ from datetime import datetime
 from typing import Callable
 from uuid import UUID
 
+from openhands.app_server.conversation.conversation_models import (
+    SandboxedConversationInfo,
+    SandboxedConversationInfoPage,
+)
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
-
-from openhands.app_server.conversation.conversation_models import SandboxedConversationInfo, SandboxedConversationInfoPage
 
 
 class SandboxedConversationInfoService(ABC):
-    """Service for accessing info on conversations without their current status
-    """
+    """Service for accessing info on conversations without their current status"""
 
     @abstractmethod
     async def search_sandboxed_conversation_info(
@@ -74,6 +75,7 @@ class SandboxedConversationInfoService(ABC):
         """Start using this sandbox context"""
         return self
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this sandbox context"""
 

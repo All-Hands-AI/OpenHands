@@ -7,11 +7,11 @@ from openhands.app_server.utils.date_utils import utc_now
 
 
 class SandboxStatus(Enum):
-    STARTING = "STARTING"
-    RUNNING = "RUNNING"
-    PAUSED = "PAUSED"
-    DELETED = "DELETED"
-    ERROR = "ERROR"
+    STARTING = 'STARTING'
+    RUNNING = 'RUNNING'
+    PAUSED = 'PAUSED'
+    DELETED = 'DELETED'
+    ERROR = 'ERROR'
 
 
 class ExposedUrl(BaseModel):
@@ -22,8 +22,8 @@ class ExposedUrl(BaseModel):
 
 
 # Standard names
-AGENT_SERVER = "AGENT_SERVER"
-VSCODE = "VSCODE"
+AGENT_SERVER = 'AGENT_SERVER'
+VSCODE = 'VSCODE'
 
 
 class SandboxInfo(BaseModel):
@@ -35,18 +35,18 @@ class SandboxInfo(BaseModel):
     status: SandboxStatus
     session_api_key: str | None = Field(
         description=(
-            "Key to access sandbox, to be added as an `X-Session-API-Key` header "
-            "in each request. In cases where the sandbox statues is STARTING, "
-            "PAUSED or DELETED, or the current user does not have full access "
-            "the session_api_key will be None."
+            'Key to access sandbox, to be added as an `X-Session-API-Key` header '
+            'in each request. In cases where the sandbox statues is STARTING, '
+            'PAUSED or DELETED, or the current user does not have full access '
+            'the session_api_key will be None.'
         )
     )
     exposed_urls: list[ExposedUrl] | None = Field(
-        default_factory=list,
+        default_factory=lambda: [],
         description=(
-            "URLs exposed by the sandbox (App server, Vscode, etc...)"
-            "Sandboxes with a status STARTING / PAUSED / DELETED / ERROR may "
-            "not return urls."
+            'URLs exposed by the sandbox (App server, Vscode, etc...)'
+            'Sandboxes with a status STARTING / PAUSED / DELETED / ERROR may '
+            'not return urls.'
         ),
     )
     created_at: datetime = Field(default_factory=utc_now)

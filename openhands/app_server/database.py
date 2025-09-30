@@ -174,14 +174,14 @@ async def create_tables() -> None:
         await conn.run_sync(SQLModel.metadata.create_all)
 
     # TODO: Find a better way to add this fixture
-    from openhands.app_server.user.user_models import UserInfo, UserScope
+    from openhands.app_server.user.user_models import UserInfo
 
     async with get_async_session_local()() as session:
         query = select(UserInfo).where(UserInfo.id == 'root')  # pyright: ignore
         result = await session.execute(query)
         user_info = result.scalar_one_or_none()
         if not user_info:
-            user_info = UserInfo(id='root', user_scopes=[UserScope.SUPER_ADMIN])  # pyright: ignore
+            user_info = UserInfo(id='root')  # pyright: ignore
             session.add(user_info)
             await session.commit()
 

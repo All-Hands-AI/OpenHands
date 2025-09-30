@@ -6,10 +6,9 @@ from typing import Callable
 from uuid import UUID
 
 from openhands.agent_server.models import EventPage, EventSortOrder
+from openhands.app_server.event_callback.event_callback_models import EventKind
 from openhands.sdk import EventBase
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
-from openhands.app_server.event_callback.event_callback_models import EventKind
-
 
 _logger = logging.getLogger(__name__)
 
@@ -45,6 +44,7 @@ class EventService(ABC):
     ) -> int:
         """Count events matching the given filters."""
 
+    @abstractmethod
     async def save_event(self, conversation_id: UUID, event: EventBase):
         """Save an event. Internal method intended not be part of the REST api"""
 
@@ -54,16 +54,16 @@ class EventService(ABC):
             *[self.get_event(event_id) for event_id in event_ids]
         )
 
-    async def __aenter__(self) -> "EventService":
+    async def __aenter__(self) -> 'EventService':
         """Start using this service"""
         return self
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this service"""
 
 
 class EventServiceResolver(DiscriminatedUnionMixin, ABC):
-
     @abstractmethod
     def get_resolver_for_user(self) -> Callable:
         """Get a resolver which may be used to resolve an instance of event service

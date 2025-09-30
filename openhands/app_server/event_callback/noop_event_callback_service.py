@@ -1,10 +1,15 @@
-
-
 from uuid import UUID
 
+from openhands.app_server.event_callback.event_callback_models import (
+    CreateEventCallbackRequest,
+    EventCallback,
+    EventCallbackPage,
+    EventKind,
+)
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
 from openhands.sdk import EventBase
-from openhands.app_server.event_callback.event_callback_models import CreateEventCallbackRequest, EventCallback, EventCallbackPage, EventKind
-from openhands.app_server.event_callback.event_callback_service import EventCallbackService
 
 
 class NoopEventCallbackService(EventCallbackService):
@@ -16,6 +21,7 @@ class NoopEventCallbackService(EventCallbackService):
         self, request: CreateEventCallbackRequest
     ) -> EventCallback:
         """Create a new event callback"""
+        raise NotImplementedError('Event callbacks are not supported in OSS')
 
     async def get_event_callback(self, id: UUID) -> EventCallback | None:
         """Get a single event callback, returning None if not found."""
@@ -38,4 +44,3 @@ class NoopEventCallbackService(EventCallbackService):
     async def execute_callbacks(self, conversation_id: UUID, event: EventBase) -> None:
         """Execute any applicable callbacks for the event and store the results."""
         return None
-

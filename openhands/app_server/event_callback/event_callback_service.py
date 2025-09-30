@@ -3,14 +3,14 @@ from abc import ABC, abstractmethod
 from typing import Callable
 from uuid import UUID
 
-from openhands.sdk import EventBase
-from openhands.sdk.utils.models import DiscriminatedUnionMixin
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
     EventCallback,
     EventCallbackPage,
     EventKind,
 )
+from openhands.sdk import EventBase
+from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class EventCallbackService(ABC):
@@ -68,6 +68,7 @@ class EventCallbackService(ABC):
         """Start using this event callback service"""
         return self
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service"""
 
