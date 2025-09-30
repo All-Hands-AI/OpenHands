@@ -54,14 +54,6 @@ class EventService(ABC):
             *[self.get_event(event_id) for event_id in event_ids]
         )
 
-    async def __aenter__(self) -> 'EventService':
-        """Start using this service."""
-        return self
-
-    @abstractmethod
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this service."""
-
 
 class EventServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod

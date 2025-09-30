@@ -7,6 +7,7 @@ from uuid import UUID
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
     AppConversationInfoPage,
+    AppConversationSortOrder,
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -22,6 +23,7 @@ class AppConversationInfoService(ABC):
         created_at__lt: datetime | None = None,
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
+        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,  # type: ignore
         page_id: str | None = None,
         limit: int = 100,
     ) -> AppConversationInfoPage:
@@ -65,15 +67,6 @@ class AppConversationInfoService(ABC):
 
         Return true if it was stored, false otherwise.
         """
-
-    # Lifecycle methods
-
-    async def __aenter__(self):
-        """Start using this sandbox context."""
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox context."""
 
 
 class AppConversationInfoServiceResolver(DiscriminatedUnionMixin, ABC):

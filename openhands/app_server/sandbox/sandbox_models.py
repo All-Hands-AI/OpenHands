@@ -10,8 +10,9 @@ class SandboxStatus(Enum):
     STARTING = 'STARTING'
     RUNNING = 'RUNNING'
     PAUSED = 'PAUSED'
-    DELETED = 'DELETED'
     ERROR = 'ERROR'
+    MISSING = 'MISSING'
+    """Missing - possibly deleted"""
 
 
 class ExposedUrl(BaseModel):
@@ -36,8 +37,8 @@ class SandboxInfo(BaseModel):
     session_api_key: str | None = Field(
         description=(
             'Key to access sandbox, to be added as an `X-Session-API-Key` header '
-            'in each request. In cases where the sandbox statues is STARTING, '
-            'PAUSED or DELETED, or the current user does not have full access '
+            'in each request. In cases where the sandbox statues is STARTING or '
+            'PAUSED, or the current user does not have full access '
             'the session_api_key will be None.'
         )
     )
@@ -45,7 +46,7 @@ class SandboxInfo(BaseModel):
         default_factory=lambda: [],
         description=(
             'URLs exposed by the sandbox (App server, Vscode, etc...)'
-            'Sandboxes with a status STARTING / PAUSED / DELETED / ERROR may '
+            'Sandboxes with a status STARTING / PAUSED / ERROR may '
             'not return urls.'
         ),
     )

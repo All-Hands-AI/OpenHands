@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, Enum
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
@@ -39,14 +39,23 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
     updated_at: datetime = SQLField(default_factory=utc_now, index=True)
 
 
+class AppConversationSortOrder(str, Enum):
+    CREATED_AT = "CREATED_AT"
+    CREATED_AT_DESC = "CREATED_AT_DESC"
+    UPDATED_AT = "UPDATED_AT"
+    UPDATED_AT_DESC = "UPDATED_AT_DESC"
+    TITLE = "TITLE"
+    TITLE_DESC = "TITLE_DESC"
+
+
 class AppConversationInfoPage(BaseModel):
     items: list[AppConversationInfo]
     next_page_id: str | None = None
 
 
 class AppConversation(AppConversationInfo):  # type: ignore
-    sandbox_status: SandboxStatus
-    agent_status: AgentExecutionStatus | None
+    sandbox_status: SandboxStatus = Field(default=SandboxStatus.MISSING, description="Current sandbox status. Will be MISSING if the sandbox does not exist.")
+    agent_status: AgentExecutionStatus | None = Field(default=None, description="Current agent status. Will be None if the sandbox_status is not RUNNING")
 
     # Have to redefine these due to a bug in SQLModel :(
     pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
@@ -58,7 +67,7 @@ class AppConversationPage(BaseModel):
     next_page_id: str | None = None
 
 
-class StartAppConversationRequest(BaseModel):
+class AppConversationStartRequest(BaseModel):
     """Start conversation request object.
 
     Although a user can go directly to the sandbox and start conversations, they
@@ -69,3 +78,19 @@ class StartAppConversationRequest(BaseModel):
     sandbox_id: str | None = Field(default=None)
     initial_message: SendMessageRequest | None = None
     processors: list[EventCallbackProcessor] = Field(default_factory=list)
+
+
+class AppConversationStartTask(SQLModel, table=True):  # type: ignore
+    """Object describing the start process for an app conversation.
+
+    Because starting an app conversation can be slow (And can involve starting a sandbox),
+    we kick off a background task for it. Once the conversation is started, the app_conversation_id
+    is populated."""
+
+    id: UUID = SQLField(default=uuid4, primary_key=True)
+    user_id: str = SQLField(index=True)
+    app_conversation_id: UUID | None = SQLField(default=None, description="The id of the app_conversation, if started")
+    error: bool = False
+    request: AppConversationStartRequest = SQLField(sa_column=Column(JSON))
+    created_at: datetime = SQLField(default_factory=utc_now, index=True)
+    updated_at: datetime = SQLField(default_factory=utc_now, index=True)

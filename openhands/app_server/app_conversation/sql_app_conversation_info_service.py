@@ -31,6 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
     AppConversationInfoPage,
+    AppConversationSortOrder,
 )
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -45,7 +46,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SQLAppConversationInfoService(AppConversationInfoService):
-    """SQL implementation of AppConversationInfoService focused on db operations."""
+    """SQL implementation of AppConversationInfoService focused on db operations.
+
+    This allows storing a record of a conversation even after its sandbox ceases to exist"""
 
     session: AsyncSession
     user_id: str | None = None
@@ -57,6 +60,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         created_at__lt: datetime | None = None,
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
+        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,  # type: ignore
         page_id: str | None = None,
         limit: int = 100,
     ) -> AppConversationInfoPage:
@@ -71,6 +75,20 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             updated_at__gte=updated_at__gte,
             updated_at__lt=updated_at__lt,
         )
+
+        # Add sort order
+        if sort_order == AppConversationSortOrder.CREATED_AT:
+            query = query.order_by(AppConversationInfo.created_at)
+        elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
+            query = query.order_by(AppConversationInfo.created_at.desc())  # type: ignore
+        elif sort_order == AppConversationSortOrder.UPDATED_AT:
+            query = query.order_by(AppConversationInfo.updated_at)
+        elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
+            query = query.order_by(AppConversationInfo.updated_at.desc())  # type: ignore
+        elif sort_order == AppConversationSortOrder.TITLE:
+            query = query.order_by(AppConversationInfo.title)
+        elif sort_order == AppConversationSortOrder.TITLE:
+            query = query.order_by(AppConversationInfo.title.desc())  # type: ignore
 
         # Apply pagination
         if page_id is not None:

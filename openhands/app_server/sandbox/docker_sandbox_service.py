@@ -80,10 +80,10 @@ class DockerSandboxService(SandboxService):
         status_mapping = {
             'running': SandboxStatus.RUNNING,
             'paused': SandboxStatus.PAUSED,
-            'exited': SandboxStatus.DELETED,
+            'exited': SandboxStatus.MISSING,
             'created': SandboxStatus.STARTING,
             'restarting': SandboxStatus.STARTING,
-            'removing': SandboxStatus.DELETED,
+            'removing': SandboxStatus.MISSING,
             'dead': SandboxStatus.ERROR,
         }
         return status_mapping.get(docker_status.lower(), SandboxStatus.ERROR)
@@ -349,10 +349,6 @@ class DockerSandboxService(SandboxService):
             return True
         except (NotFound, APIError):
             return False
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox service."""
-        pass
 
 
 class DockerSandboxServiceResolver(SandboxServiceResolver):

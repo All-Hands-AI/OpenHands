@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
     AppConversationPage,
-    StartAppConversationRequest,
+    AppConversationStartRequest,
+    AppConversationStartTask,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
@@ -129,9 +130,24 @@ async def batch_get_app_conversations(
 
 @router.post('/')
 async def start_app_conversation(
-    request: StartAppConversationRequest,
+    request: AppConversationStartRequest,
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
-) -> AppConversation:
+) -> AppConversationStartTask:
     return await app_conversation_service.start_app_conversation(request)
+
+
+@router.get('/start-tasks')
+async def batch_get_app_conversation_start_tasks(
+    ids: Annotated[list[UUID], Query()],
+    app_conversation_service: AppConversationService = (
+        app_conversation_service_dependency
+    ),
+) -> list[AppConversationStartTask | None]:
+    """Get a batch of start app conversation tasks given their ids. Return None for any missing."""
+    assert len(ids) < 100
+    start_tasks = (
+        await app_conversation_service.batch_get_app_conversation_start_tasks(ids)
+    )
+    return start_tasks

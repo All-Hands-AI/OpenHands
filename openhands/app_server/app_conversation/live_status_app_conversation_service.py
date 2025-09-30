@@ -2,6 +2,7 @@ import asyncio
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+import logging
 from time import time
 from typing import Callable
 from uuid import UUID
@@ -20,7 +21,9 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
     AppConversationInfo,
     AppConversationPage,
-    StartAppConversationRequest,
+    AppConversationSortOrder,
+    AppConversationStartRequest,
+    AppConversationStartTask,
 )
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -29,6 +32,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceResolver,
 )
+from openhands.app_server.app_conversation.app_conversation_start_task_service import AppConversationStartTaskService
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
@@ -43,14 +47,16 @@ from openhands.sdk.llm import LLM
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
 class LiveStatusAppConversationService(AppConversationService):
-    """AppConversationService which combines live status info with stored data."""
+    """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_service: UserService
     app_conversation_info_service: AppConversationInfoService
+    app_conversation_start_task_service: AppConversationStartTaskService
     sandbox_service: SandboxService
     sandbox_startup_timeout: int
     sandbox_startup_poll_frequency: int
@@ -63,6 +69,7 @@ class LiveStatusAppConversationService(AppConversationService):
         created_at__lt: datetime | None = None,
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
+        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,  # type: ignore
         page_id: str | None = None,
         limit: int = 20,
     ) -> AppConversationPage:
@@ -73,6 +80,7 @@ class LiveStatusAppConversationService(AppConversationService):
             created_at__lt=created_at__lt,
             updated_at__gte=updated_at__gte,
             updated_at__lt=updated_at__lt,
+            sort_order=sort_order,
             page_id=page_id,
             limit=limit,
         )
@@ -114,39 +122,63 @@ class LiveStatusAppConversationService(AppConversationService):
         return conversations
 
     async def start_app_conversation(
-        self, request: StartAppConversationRequest
-    ) -> AppConversation:
-        sandbox = await self._wait_for_sandbox_start(request.sandbox_id)
-        agent_server_url = self._get_agent_server_url(sandbox)
-        start_conversation_request = (
-            await self._build_start_conversation_request_for_user(
-                request.initial_message
+        self, request: AppConversationStartRequest
+    ) -> AppConversationStartTask:
+
+        # Create and store the start task
+        user = await self.user_service.get_current_user()
+        task = AppConversationStartTask(
+            user_id=user.id,
+            request=request,
+        )
+        await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+
+        #Run the task in the background
+        asyncio.create_task(self._start_app_conversation_task(task))
+
+        return task
+
+    async def _start_app_conversation_task(self, task: AppConversationStartTask):
+        request = task.request
+        try:
+            sandbox = await self._wait_for_sandbox_start(request.sandbox_id)
+
+            agent_server_url = self._get_agent_server_url(sandbox)
+            start_conversation_request = (
+                await self._build_start_conversation_request_for_user(
+                    request.initial_message
+                )
             )
-        )
 
-        # Start conversation...
-        response = await self.httpx_client.post(
-            f'{agent_server_url}/conversations',
-            json=start_conversation_request.model_dump(),
-            headers={'X-Session-API-Key': sandbox.session_api_key},
-        )
-        response.raise_for_status()
-        info = ConversationInfo.model_validate(response.json())
+            # Start conversation...
+            response = await self.httpx_client.post(
+                f'{agent_server_url}/conversations',
+                json=start_conversation_request.model_dump(),
+                headers={'X-Session-API-Key': sandbox.session_api_key},
+            )
+            response.raise_for_status()
+            info = ConversationInfo.model_validate(response.json())
 
-        # Store info...
-        # TODO: many fields to fill in here...
-        app_conversation_info = AppConversationInfo(
-            id=info.id, title=f'Conversation {info.id}', sandbox_id=sandbox.id
-        )
-        await self.app_conversation_info_service.save_app_conversation_info(
-            app_conversation_info
-        )
+            # Store info...
+            # TODO: many fields to fill in here...
+            app_conversation_info = AppConversationInfo(
+                id=info.id, title=f'Conversation {info.id}', sandbox_id=sandbox.id
+            )
+            await self.app_conversation_info_service.save_app_conversation_info(
+                app_conversation_info
+            )
 
-        return AppConversation(
-            **app_conversation_info.model_dump(),
-            sandbox_status=sandbox.status,
-            agent_status=AgentExecutionStatus.RUNNING,  # TODO: We don't seem to have a STARTING status yet
-        )
+            # Update the start task
+            task.app_conversation_id = info.id
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+
+        except Exception as exc:
+            _logger.exception("Error starting conversation", stack_info=True)
+            task.error = True
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+
+    async def batch_get_app_conversation_start_tasks(self, app_conversation_start_task_id):
+        return self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(app_conversation_start_task_id)
 
     async def _build_app_conversations(
         self, app_conversation_infos: list[AppConversationInfo | None]
@@ -260,7 +292,7 @@ class LiveStatusAppConversationService(AppConversationService):
 
         if sandbox.status == SandboxStatus.PAUSED:
             await sandbox_service.resume_sandbox(sandbox_id)
-        if sandbox.status in (SandboxStatus.DELETED, SandboxStatus.ERROR):
+        if sandbox.status in (None, SandboxStatus.ERROR):
             raise SandboxError(f'Sandbox status: {sandbox.status}')
         if sandbox.status == SandboxStatus.RUNNING:
             return sandbox
@@ -307,10 +339,6 @@ class LiveStatusAppConversationService(AppConversationService):
         )
         return start_conversation_request
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandboxed conversation service."""
-        pass
-
 
 class LiveStatusAppConversationServiceResolver(
     AppConversationServiceResolver
@@ -330,6 +358,9 @@ class LiveStatusAppConversationServiceResolver(
         sandbox_conversation_info_service_resolver = (
             get_dependency_resolver().app_conversation_info.get_resolver_for_user()
         )
+        sandbox_conversation_start_task_service_resolver = (
+            get_dependency_resolver().app_conversation_start_task.get_resolver_for_user()
+        )
 
         def _resolve_for_user(
             user_service: UserService = Depends(user_service_resolver),
@@ -337,12 +368,16 @@ class LiveStatusAppConversationServiceResolver(
             app_conversation_info_service=Depends(
                 sandbox_conversation_info_service_resolver
             ),
+            app_conversation_start_task_service=Depends(
+                sandbox_conversation_start_task_service_resolver
+            ),
             httpx_client: httpx.AsyncClient = Depends(get_httpx_client),
         ) -> AppConversationService:
             return LiveStatusAppConversationService(
                 user_service=user_service,
                 sandbox_service=sandbox_service,
                 app_conversation_info_service=app_conversation_info_service,
+                app_conversation_start_task_service=app_conversation_start_task_service,
                 sandbox_startup_timeout=self.sandbox_startup_timeout,
                 sandbox_startup_poll_frequency=self.sandbox_startup_poll_frequency,
                 httpx_client=httpx_client,

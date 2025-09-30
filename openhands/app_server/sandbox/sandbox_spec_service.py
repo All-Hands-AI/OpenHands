@@ -45,16 +45,6 @@ class SandboxSpecService(ABC):
         )
         return results
 
-    # Lifecycle methods
-
-    async def __aenter__(self):
-        """Start using this sandbox spec service."""
-        return self
-
-    @abstractmethod
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox spec service."""
-
 
 class SandboxSpecServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod

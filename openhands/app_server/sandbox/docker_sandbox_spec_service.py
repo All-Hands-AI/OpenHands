@@ -126,10 +126,6 @@ class DockerSandboxSpecService(SandboxSpecService):
         except (NotFound, APIError):
             return None
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox spec service."""
-        pass
-
 
 class DockerSandboxSpecServiceResolver(SandboxSpecServiceResolver):
     def get_resolver_for_user(self) -> Callable:

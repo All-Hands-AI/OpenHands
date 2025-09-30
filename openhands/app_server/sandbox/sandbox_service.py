@@ -61,16 +61,6 @@ class SandboxService(ABC):
         Return False if the sandbox did not exist.
         """
 
-    # Lifecycle methods
-
-    async def __aenter__(self):
-        """Start using this sandbox service."""
-        return self
-
-    @abstractmethod
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox service."""
-
 
 class SandboxServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod

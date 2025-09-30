@@ -232,10 +232,6 @@ class FilesystemEventService(EventService):
         """Save an event. Internal method intended not be part of the REST api."""
         self._save_event_to_file(conversation_id, event)
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this event service."""
-        pass
-
 
 class FilesystemEventServiceResolver(EventServiceResolver):
     def get_resolver_for_user(self) -> Callable:
