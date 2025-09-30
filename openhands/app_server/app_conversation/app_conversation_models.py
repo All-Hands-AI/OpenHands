@@ -18,10 +18,10 @@ from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 
-class SandboxedConversationInfo(SQLModel, table=True):  # type: ignore
+class AppConversationInfo(SQLModel, table=True):  # type: ignore
     """Conversation info which does not contain status."""
 
-    id: UUID = SQLField(default=uuid4, primary_key=True)
+    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
 
     selected_repository: str | None
     user_id: str
@@ -39,12 +39,12 @@ class SandboxedConversationInfo(SQLModel, table=True):  # type: ignore
     updated_at: datetime = SQLField(default_factory=utc_now, index=True)
 
 
-class SandboxedConversationInfoPage(BaseModel):
-    items: list[SandboxedConversationInfo]
+class AppConversationInfoPage(BaseModel):
+    items: list[AppConversationInfo]
     next_page_id: str | None = None
 
 
-class SandboxedConversation(SandboxedConversationInfo):  # type: ignore
+class AppConversation(AppConversationInfo):  # type: ignore
     sandbox_status: SandboxStatus
     agent_status: AgentExecutionStatus | None
 
@@ -53,12 +53,12 @@ class SandboxedConversation(SandboxedConversationInfo):  # type: ignore
     metrics: MetricsSnapshot | None = SQLField(default=None, sa_column=Column(JSON))
 
 
-class SandboxedConversationPage(BaseModel):
-    items: list[SandboxedConversation]
+class AppConversationPage(BaseModel):
+    items: list[AppConversation]
     next_page_id: str | None = None
 
 
-class StartSandboxedConversationRequest(BaseModel):
+class StartAppConversationRequest(BaseModel):
     """Start conversation request object.
 
     Although a user can go directly to the sandbox and start conversations, they

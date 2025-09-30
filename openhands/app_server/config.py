@@ -16,11 +16,11 @@ from pydantic import (
 )
 
 from openhands.agent_server.env_parser import from_env
-from openhands.app_server.conversation.sandboxed_conversation_info_service import (
-    SandboxedConversationInfoServiceResolver,
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoServiceResolver,
 )
-from openhands.app_server.conversation.sandboxed_conversation_service import (
-    SandboxedConversationServiceResolver,
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationServiceResolver,
 )
 from openhands.app_server.event.event_service import EventServiceResolver
 from openhands.app_server.event_callback.event_callback_service import (
@@ -156,16 +156,9 @@ class AppServerConfig(OpenHandsModel):
     event_callback: EventCallbackServiceResolver | None = None
     sandbox: SandboxServiceResolver | None = None
     sandbox_spec: SandboxSpecServiceResolver | None = None
-    sandboxed_conversation_info: SandboxedConversationInfoServiceResolver | None = None
-    sandboxed_conversation: SandboxedConversationServiceResolver | None = None
+    app_conversation_info: AppConversationInfoServiceResolver | None = None
+    app_conversation: AppConversationServiceResolver | None = None
     user: UserServiceResolver | None = None
-    allow_cors_origins: list[str] = Field(
-        default_factory=list,
-        description=(
-            'Set of CORS origins permitted by this server (Anything from localhost is '
-            "always accepted regardless of what's in here)."
-        ),
-    )
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     gcp: GCPConfig = Field(default_factory=GCPConfig)
 

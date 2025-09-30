@@ -16,18 +16,18 @@ from openhands.agent_server.models import (
     SendMessageRequest,
     StartConversationRequest,
 )
-from openhands.app_server.conversation.conversation_models import (
-    SandboxedConversation,
-    SandboxedConversationInfo,
-    SandboxedConversationPage,
-    StartSandboxedConversationRequest,
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversation,
+    AppConversationInfo,
+    AppConversationPage,
+    StartAppConversationRequest,
 )
-from openhands.app_server.conversation.sandboxed_conversation_info_service import (
-    SandboxedConversationInfoService,
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
 )
-from openhands.app_server.conversation.sandboxed_conversation_service import (
-    SandboxedConversationService,
-    SandboxedConversationServiceResolver,
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationService,
+    AppConversationServiceResolver,
 )
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
@@ -46,17 +46,17 @@ _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 
 
 @dataclass
-class LiveStatusSandboxedConversationService(SandboxedConversationService):
-    """SandboxedConversationService which combines live status info with stored data."""
+class LiveStatusAppConversationService(AppConversationService):
+    """AppConversationService which combines live status info with stored data."""
 
     user_service: UserService
-    sandboxed_conversation_info_service: SandboxedConversationInfoService
+    app_conversation_info_service: AppConversationInfoService
     sandbox_service: SandboxService
     sandbox_startup_timeout: int
     sandbox_startup_poll_frequency: int
     httpx_client: httpx.AsyncClient
 
-    async def search_sandboxed_conversations(
+    async def search_app_conversations(
         self,
         title__contains: str | None = None,
         created_at__gte: datetime | None = None,
@@ -65,9 +65,9 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         updated_at__lt: datetime | None = None,
         page_id: str | None = None,
         limit: int = 20,
-    ) -> SandboxedConversationPage:
+    ) -> AppConversationPage:
         """Search for sandboxed conversations."""
-        page = await self.sandboxed_conversation_info_service.search_sandboxed_conversation_info(
+        page = await self.app_conversation_info_service.search_app_conversation_info(
             title__contains=title__contains,
             created_at__gte=created_at__gte,
             created_at__lt=created_at__lt,
@@ -76,10 +76,10 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
             page_id=page_id,
             limit=limit,
         )
-        conversations = await self._build_sandboxed_conversations(page.items)  # type: ignore
+        conversations = await self._build_app_conversations(page.items)  # type: ignore
         return ConversationPage(conversations, page.next_page_id)
 
-    async def count_sandboxed_conversations(
+    async def count_app_conversations(
         self,
         title__contains: str | None = None,
         created_at__gte: datetime | None = None,
@@ -87,7 +87,7 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
     ) -> int:
-        return await self.sandboxed_conversation_info_service.count_sandboxed_conversation_info(
+        return await self.app_conversation_info_service.count_app_conversation_info(
             title__contains=title__contains,
             created_at__gte=created_at__gte,
             created_at__lt=created_at__lt,
@@ -95,27 +95,27 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
             updated_at__lt=updated_at__lt,
         )
 
-    async def get_sandboxed_conversation(
+    async def get_app_conversation(
         self, conversation_id: UUID
-    ) -> SandboxedConversation | None:
-        info = await self.sandboxed_conversation_info_service.get_sandboxed_conversation_info(
+    ) -> AppConversation | None:
+        info = await self.app_conversation_info_service.get_app_conversation_info(
             conversation_id
         )
-        result = await self._build_sandboxed_conversations([info])
+        result = await self._build_app_conversations([info])
         return result[0]
 
-    async def batch_get_sandboxed_conversations(
+    async def batch_get_app_conversations(
         self, conversation_ids: list[UUID]
-    ) -> list[SandboxedConversation | None]:
-        info = await self.sandboxed_conversation_info_service.batch_get_sandboxed_conversation_info(
+    ) -> list[AppConversation | None]:
+        info = await self.app_conversation_info_service.batch_get_app_conversation_info(
             conversation_ids
         )
-        conversations = await self._build_sandboxed_conversations(info)
+        conversations = await self._build_app_conversations(info)
         return conversations
 
-    async def start_sandboxed_conversation(
-        self, request: StartSandboxedConversationRequest
-    ) -> SandboxedConversation:
+    async def start_app_conversation(
+        self, request: StartAppConversationRequest
+    ) -> AppConversation:
         sandbox = await self._wait_for_sandbox_start(request.sandbox_id)
         agent_server_url = self._get_agent_server_url(sandbox)
         start_conversation_request = (
@@ -135,24 +135,24 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
 
         # Store info...
         # TODO: many fields to fill in here...
-        sandboxed_conversation_info = SandboxedConversationInfo(
+        app_conversation_info = AppConversationInfo(
             id=info.id, title=f'Conversation {info.id}', sandbox_id=sandbox.id
         )
-        await self.sandboxed_conversation_info_service.save_sandboxed_conversation_info(
-            sandboxed_conversation_info
+        await self.app_conversation_info_service.save_app_conversation_info(
+            app_conversation_info
         )
 
-        return SandboxedConversation(
-            **sandboxed_conversation_info.model_dump(),
+        return AppConversation(
+            **app_conversation_info.model_dump(),
             sandbox_status=sandbox.status,
             agent_status=AgentExecutionStatus.RUNNING,  # TODO: We don't seem to have a STARTING status yet
         )
 
-    async def _build_sandboxed_conversations(
-        self, sandboxed_conversation_infos: list[SandboxedConversationInfo | None]
-    ) -> list[SandboxedConversation | None]:
+    async def _build_app_conversations(
+        self, app_conversation_infos: list[AppConversationInfo | None]
+    ) -> list[AppConversation | None]:
         sandbox_id_to_conversation_ids = self._get_sandbox_id_to_conversation_ids(
-            sandboxed_conversation_infos
+            app_conversation_infos
         )
 
         # Get referenced sandboxes in a single batch operation...
@@ -180,16 +180,16 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
             for conversation_info in conversation_infos:
                 conversation_info_by_id[conversation_info.id] = conversation_info
 
-        # Build sandboxed_conversation from info
+        # Build app_conversation from info
         result = [
             self._build_conversation(
-                sandboxed_conversation_info,
-                sandboxes_by_id.get(sandboxed_conversation_info.sandbox_id),
-                conversation_info_by_id.get(sandboxed_conversation_info.id),
+                app_conversation_info,
+                sandboxes_by_id.get(app_conversation_info.sandbox_id),
+                conversation_info_by_id.get(app_conversation_info.id),
             )
-            if sandboxed_conversation_info
+            if app_conversation_info
             else None
-            for sandboxed_conversation_info in sandboxed_conversation_infos
+            for app_conversation_info in app_conversation_infos
         ]
 
         return result
@@ -221,24 +221,24 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
 
     def _build_conversation(
         self,
-        sandboxed_conversation_info: SandboxedConversationInfo | None,
+        app_conversation_info: AppConversationInfo | None,
         sandbox: SandboxInfo | None,
         conversation_info: ConversationInfo | None,
-    ) -> SandboxedConversation | None:
-        if sandboxed_conversation_info is None:
+    ) -> AppConversation | None:
+        if app_conversation_info is None:
             return None
         sandbox_status = (
             sandbox.status if sandbox else SandboxStatus.ERROR
         )  # TODO: Maybe it was deleted?
         agent_status = conversation_info.agent_status if conversation_info else None
-        return SandboxedConversation(
-            **sandboxed_conversation_info.model_dump(),
+        return AppConversation(
+            **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
             agent_status=agent_status,
         )
 
     def _get_sandbox_id_to_conversation_ids(
-        self, stored_conversations: list[SandboxedConversationInfo | None]
+        self, stored_conversations: list[AppConversationInfo | None]
     ):
         result = defaultdict(list)
         for stored_conversation in stored_conversations:
@@ -312,8 +312,8 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         pass
 
 
-class LiveStatusSandboxedConversationServiceResolver(
-    SandboxedConversationServiceResolver
+class LiveStatusAppConversationServiceResolver(
+    AppConversationServiceResolver
 ):
     sandbox_startup_timeout: int = Field(
         default=120, description='The max timeout time for sandbox startup'
@@ -328,21 +328,21 @@ class LiveStatusSandboxedConversationServiceResolver(
             get_dependency_resolver().sandbox.get_resolver_for_user()
         )
         sandbox_conversation_info_service_resolver = (
-            get_dependency_resolver().sandbox_conversation_info.get_resolver_for_user()
+            get_dependency_resolver().app_conversation_info.get_resolver_for_user()
         )
 
         def _resolve_for_user(
             user_service: UserService = Depends(user_service_resolver),
             sandbox_service: SandboxService = Depends(sandbox_service_resolver),
-            sandboxed_conversation_info_service=Depends(
+            app_conversation_info_service=Depends(
                 sandbox_conversation_info_service_resolver
             ),
             httpx_client: httpx.AsyncClient = Depends(get_httpx_client),
-        ) -> SandboxedConversationService:
-            return LiveStatusSandboxedConversationService(
+        ) -> AppConversationService:
+            return LiveStatusAppConversationService(
                 user_service=user_service,
                 sandbox_service=sandbox_service,
-                sandboxed_conversation_info_service=sandboxed_conversation_info_service,
+                app_conversation_info_service=app_conversation_info_service,
                 sandbox_startup_timeout=self.sandbox_startup_timeout,
                 sandbox_startup_poll_frequency=self.sandbox_startup_poll_frequency,
                 httpx_client=httpx_client,

@@ -1,6 +1,6 @@
 # Conversation Management
 
-Manages sandboxed conversations and their lifecycle within the OpenHands app server.
+Manages app conversations and their lifecycle within the OpenHands app server.
 
 ## Overview
 
@@ -8,9 +8,9 @@ This module provides services and models for managing conversations that run wit
 
 ## Key Components
 
-- **SandboxedConversationService**: Abstract service for conversation CRUD operations
-- **LiveStatusSandboxedConversationService**: Real-time conversation status tracking
-- **SandboxedConversationRouter**: FastAPI router for conversation endpoints
+- **AppConversationService**: Abstract service for conversation CRUD operations
+- **LiveStatusAppConversationService**: Real-time conversation status tracking
+- **AppConversationRouter**: FastAPI router for conversation endpoints
 
 ## Features
 

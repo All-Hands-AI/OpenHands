@@ -4,19 +4,18 @@ from datetime import datetime
 from typing import Callable
 from uuid import UUID
 
-from openhands.app_server.conversation.conversation_models import (
-    SandboxedConversation,
-    SandboxedConversationPage,
-    StartSandboxedConversationRequest,
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
+    AppConversationInfoPage,
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
-class SandboxedConversationService(ABC):
-    """Service for managing conversations running in sandboxes."""
+class AppConversationInfoService(ABC):
+    """Service for accessing info on conversations without their current status."""
 
     @abstractmethod
-    async def search_sandboxed_conversations(
+    async def search_app_conversation_info(
         self,
         title__contains: str | None = None,
         created_at__gte: datetime | None = None,
@@ -25,11 +24,11 @@ class SandboxedConversationService(ABC):
         updated_at__lt: datetime | None = None,
         page_id: str | None = None,
         limit: int = 100,
-    ) -> SandboxedConversationPage:
+    ) -> AppConversationInfoPage:
         """Search for sandboxed conversations."""
 
     @abstractmethod
-    async def count_sandboxed_conversations(
+    async def count_app_conversation_info(
         self,
         title__contains: str | None = None,
         created_at__gte: datetime | None = None,
@@ -40,32 +39,31 @@ class SandboxedConversationService(ABC):
         """Count sandboxed conversations."""
 
     @abstractmethod
-    async def get_sandboxed_conversation(
+    async def get_app_conversation_info(
         self, conversation_id: UUID
-    ) -> SandboxedConversation | None:
-        """Get a single sandboxed conversation info. Return None if missing."""
+    ) -> AppConversationInfo | None:
+        """Get a single conversation info, returning None if missing."""
 
-    async def batch_get_sandboxed_conversations(
+    async def batch_get_app_conversation_info(
         self, conversation_ids: list[UUID]
-    ) -> list[SandboxedConversation | None]:
-        """Get a batch of sandboxed conversations, returning None for any missing."""
+    ) -> list[AppConversationInfo | None]:
+        """Get a batch of conversation info, return None for any missing."""
         return await asyncio.gather(
             *[
-                self.get_sandboxed_conversation(conversation_id)
+                self.get_app_conversation_info(conversation_id)
                 for conversation_id in conversation_ids
             ]
         )
 
-    @abstractmethod
-    async def start_sandboxed_conversation(
-        self, request: StartSandboxedConversationRequest
-    ) -> SandboxedConversation:
-        """Start a conversation, optionally specifying a sandbox in which to start.
+    # Mutators
 
-        If no sandbox is specified a default may be used or started. This is a convenience
-        method - the same effect should be achievable by creating / getting a sandbox
-        id, starting a conversation, attaching a callback, and then running the
-        conversation.
+    @abstractmethod
+    async def save_app_conversation_info(
+        self, info: AppConversationInfo
+    ) -> bool:
+        """Store the sandboxed conversation info object given.
+
+        Return true if it was stored, false otherwise.
         """
 
     # Lifecycle methods
@@ -74,12 +72,11 @@ class SandboxedConversationService(ABC):
         """Start using this sandbox context."""
         return self
 
-    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this sandbox context."""
 
 
-class SandboxedConversationServiceResolver(DiscriminatedUnionMixin, ABC):
+class AppConversationInfoServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_user(self) -> Callable:
         """Get a resolver for an instance of sandbox spec service limited to the current user."""

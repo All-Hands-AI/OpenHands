@@ -3,13 +3,13 @@ from dataclasses import dataclass
 
 import httpx
 
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoServiceResolver,
+)
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationServiceResolver,
+)
 from openhands.app_server.config import get_global_config
-from openhands.app_server.conversation.sandboxed_conversation_info_service import (
-    SandboxedConversationInfoServiceResolver,
-)
-from openhands.app_server.conversation.sandboxed_conversation_service import (
-    SandboxedConversationServiceResolver,
-)
 from openhands.app_server.event.event_service import EventServiceResolver
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackServiceResolver,
@@ -29,8 +29,8 @@ class DependencyResolver:
     event_callback: EventCallbackServiceResolver
     sandbox: SandboxServiceResolver
     sandbox_spec: SandboxSpecServiceResolver
-    sandboxed_conversation_info: SandboxedConversationInfoServiceResolver
-    sandboxed_conversation: SandboxedConversationServiceResolver
+    app_conversation_info: AppConversationInfoServiceResolver
+    app_conversation: AppConversationServiceResolver
     user: UserServiceResolver
 
 
@@ -48,10 +48,10 @@ def get_dependency_resolver():
             or _get_event_callback_service_resolver(),
             sandbox=config.sandbox or _get_sandbox_service_resolver(),
             sandbox_spec=config.sandbox_spec or _get_sandbox_spec_service_resolver(),
-            sandboxed_conversation_info=config.sandboxed_conversation_info
-            or _get_sandboxed_conversation_info_service_resolver(),
-            sandboxed_conversation=config.sandboxed_conversation
-            or _get_sandboxed_conversation_service_resolver(),
+            app_conversation_info=config.app_conversation_info
+            or _get_app_conversation_info_service_resolver(),
+            app_conversation=config.app_conversation
+            or _get_app_conversation_service_resolver(),
             user=config.user or _get_user_service_resolver(),
         )
     return _dependency_resolver
@@ -100,20 +100,20 @@ def _get_sandbox_spec_service_resolver():
     return ctx.DockerSandboxSpecServiceResolver()
 
 
-def _get_sandboxed_conversation_info_service_resolver():
-    from openhands.app_server.conversation.sql_sandboxed_conversation_info_service import (  # noqa: E501
-        SQLSandboxedConversationServiceResolver,
+def _get_app_conversation_info_service_resolver():
+    from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
+        SQLAppConversationServiceResolver,
     )
 
-    return SQLSandboxedConversationServiceResolver()
+    return SQLAppConversationServiceResolver()
 
 
-def _get_sandboxed_conversation_service_resolver():
-    from openhands.app_server.conversation.live_status_sandboxed_conversation_service import (  # noqa: E501
-        LiveStatusSandboxedConversationServiceResolver,
+def _get_app_conversation_service_resolver():
+    from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
+        LiveStatusAppConversationServiceResolver,
     )
 
-    return LiveStatusSandboxedConversationServiceResolver()
+    return LiveStatusAppConversationServiceResolver()
 
 
 def _get_user_service_resolver():
