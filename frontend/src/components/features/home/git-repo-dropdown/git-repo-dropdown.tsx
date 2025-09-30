@@ -47,7 +47,7 @@ export function GitRepoDropdown({
 }: GitRepoDropdownProps) {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { getRecentRepositories } = useHomeStore();
+  const { recentRepositories: storedRecentRepositories } = useHomeStore();
   const [inputValue, setInputValue] = useState("");
   const [localSelectedItem, setLocalSelectedItem] =
     useState<GitRepository | null>(null);
@@ -93,7 +93,7 @@ export function GitRepoDropdown({
 
   // Get recent repositories filtered by provider and input keyword
   const recentRepositories = useMemo(() => {
-    const allRecentRepos = getRecentRepositories();
+    const allRecentRepos = storedRecentRepositories;
     const providerFilteredRepos = allRecentRepos.filter(
       (repo) => repo.git_provider === provider,
     );
@@ -111,7 +111,7 @@ export function GitRepoDropdown({
     return providerFilteredRepos.filter((repo) =>
       repo.full_name.toLowerCase().includes(filterText.toLowerCase()),
     );
-  }, [getRecentRepositories, provider, inputValue, processedSearchInput]);
+  }, [storedRecentRepositories, provider, inputValue, processedSearchInput]);
 
   // Helper function to prioritize recent repositories at the top
   const prioritizeRecentRepositories = useCallback(
