@@ -60,9 +60,14 @@ from storage.stored_conversation_metadata import StoredConversationMetadata
 RUNTIME_URL_PATTERN = os.getenv(
     'RUNTIME_URL_PATTERN', 'https://{runtime_id}.prod-runtime.all-hands.dev'
 )
+RUNTIME_ROUTING_MODE = os.getenv('RUNTIME_ROUTING_MODE', 'subdomain').lower()
 
 # Pattern for base URL for the runtime
-RUNTIME_CONVERSATION_URL = RUNTIME_URL_PATTERN + '/api/conversations/{conversation_id}'
+RUNTIME_CONVERSATION_URL = RUNTIME_URL_PATTERN + (
+    '/runtime/api/conversations/{conversation_id}'
+    if RUNTIME_ROUTING_MODE == 'path'
+    else '/api/conversations/{conversation_id}'
+)
 
 # Time in seconds before a Redis entry is considered expired if not refreshed
 _REDIS_ENTRY_TIMEOUT_SECONDS = 300
@@ -516,7 +521,6 @@ class SaasNestedConversationManager(ConversationManager):
                 return None
 
             async with httpx.AsyncClient(
-                follow_redirects=True,
                 headers={
                     'X-Session-API-Key': session_api_key,
                 },
