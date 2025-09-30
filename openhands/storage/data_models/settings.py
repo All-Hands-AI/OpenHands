@@ -44,7 +44,7 @@ class Settings(BaseModel):
     sandbox_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
     # Maximum number of events in the conversation view before condensation runs
-    condenser_max_size: int | None = None
+    condenser_max_size: int | None = 120
     email: str | None = None
     email_verified: bool | None = None
     git_user_name: str | None = None
