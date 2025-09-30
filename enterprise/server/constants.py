@@ -70,8 +70,7 @@ PERMITTED_CORS_ORIGINS = [
 
 
 def build_litellm_proxy_model_path(model_name: str) -> str:
-    """
-    Build the LiteLLM proxy model path based on environment and model name.
+    """Build the LiteLLM proxy model path based on environment and model name.
 
     This utility constructs the full model path for LiteLLM proxy based on:
     - Environment type (staging vs prod)
@@ -83,7 +82,6 @@ def build_litellm_proxy_model_path(model_name: str) -> str:
     Returns:
         The full LiteLLM proxy model path (e.g., 'litellm_proxy/prod/claude-3-7-sonnet-20250219')
     """
-
     if 'prod' in model_name or 'litellm' in model_name or 'proxy' in model_name:
         raise ValueError("Only include model name, don't include prefix")
 
@@ -96,8 +94,7 @@ def build_litellm_proxy_model_path(model_name: str) -> str:
 
 
 def get_default_litellm_model():
-    """
-    Construct proxy for litellm model based on user settings and environment type (staging vs prod)
+    """Construct proxy for litellm model based on user settings and environment type (staging vs prod)
     if not set explicitly
     """
     if LITELLM_DEFAULT_MODEL:

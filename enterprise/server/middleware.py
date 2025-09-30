@@ -29,9 +29,9 @@ from openhands.storage.data_models.settings import Settings
 
 
 class SetAuthCookieMiddleware:
-    """
-    Update the auth cookie with the current authentication state if it was refreshed before sending response to user.
-    Deleting invalid cookies is handled by CookieError using FastAPIs standard error handling mechanism
+    """Update the auth cookie with the current authentication state if it was refreshed before sending response to user.
+    
+    Deleting invalid cookies is handled by CookieError using FastAPIs standard error handling mechanism.
     """
 
     async def __call__(self, request: Request, call_next: Callable):
@@ -180,8 +180,8 @@ class SetAuthCookieMiddleware:
 
 
 class LLMSettingsMiddleware:
-    """
-    Middleware to validate LLM settings access for enterprise users.
+    """Middleware to validate LLM settings access for enterprise users.
+    
     Intercepts POST requests to /api/settings and validates that non-pro users
     cannot modify LLM-related settings.
     """
@@ -273,7 +273,6 @@ def _get_saas_default_settings() -> Settings:
 
 def has_llm_settings_changes(user_settings: Settings, saas_defaults: Settings) -> bool:
     """Check if user settings contain changes to LLM-related settings from SaaS defaults."""
-    
     logger.info(f"Checking LLM settings changes - User settings: {user_settings.model_dump(exclude={'secrets_store'})}")
     logger.info(f"Checking LLM settings changes - SaaS defaults: {saas_defaults.model_dump(exclude={'secrets_store'})}")
     

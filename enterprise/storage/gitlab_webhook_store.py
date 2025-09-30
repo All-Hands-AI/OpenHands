@@ -86,7 +86,6 @@ class GitlabWebhookStore:
         Raises:
             ValueError: If neither project_id nor group_id is provided, or if both are provided.
         """
-
         resource_type, resource_id = GitlabWebhookStore.determine_resource_type(webhook)
         async with self.a_session_maker() as session:
             async with session.begin():
@@ -110,7 +109,6 @@ class GitlabWebhookStore:
         Raises:
             ValueError: If neither project_id nor group_id is provided, or if both are provided.
         """
-
         resource_type, resource_id = GitlabWebhookStore.determine_resource_type(webhook)
 
         logger.info(
@@ -184,7 +182,6 @@ class GitlabWebhookStore:
         Returns:
             List of GitlabWebhook objects that need processing
         """
-
         async with self.a_session_maker() as session:
             query = (
                 select(GitlabWebhook)
@@ -198,8 +195,7 @@ class GitlabWebhookStore:
             return list(webhooks)
 
     async def get_webhook_secret(self, webhook_uuid: str, user_id: str) -> str | None:
-        """
-        Get's webhook secret given the webhook uuid and admin keycloak user id
+        """Get's webhook secret given the webhook uuid and admin keycloak user id
         """
         async with self.a_session_maker() as session:
             query = (

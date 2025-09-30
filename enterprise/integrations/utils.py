@@ -215,8 +215,7 @@ def get_last_user_msg(event_store: EventStoreABC) -> list[MessageAction]:
 def extract_summary_from_event_store(
     event_store: EventStoreABC, conversation_id: str
 ) -> str:
-    """
-    Get agent summary or alternative message depending on current AgentState
+    """Get agent summary or alternative message depending on current AgentState
     """
     conversation_link = CONVERSATION_URL.format(conversation_id)
     summary_instruction = get_summary_instruction()
@@ -293,10 +292,8 @@ async def get_last_user_msg_from_conversation_manager(
 async def extract_summary_from_conversation_manager(
     conversation_manager: ConversationManager, conversation_id: str
 ) -> str:
+    """Get agent summary or alternative message depending on current AgentState
     """
-    Get agent summary or alternative message depending on current AgentState
-    """
-
     event_store = await get_event_store_from_conversation_manager(
         conversation_manager, conversation_id
     )
@@ -305,8 +302,7 @@ async def extract_summary_from_conversation_manager(
 
 
 def append_conversation_footer(message: str, conversation_id: str) -> str:
-    """
-    Append a small footer with the conversation URL to a message.
+    """Append a small footer with the conversation URL to a message.
 
     Args:
         message: The original message content
@@ -321,14 +317,12 @@ def append_conversation_footer(message: str, conversation_id: str) -> str:
 
 
 async def store_repositories_in_db(repos: list[Repository], user_id: str) -> None:
-    """
-    Store repositories in DB and create user-repository mappings
+    """Store repositories in DB and create user-repository mappings
 
     Args:
         repos: List of Repository objects to store
         user_id: User ID associated with these repositories
     """
-
     # Convert Repository objects to StoredRepository objects
     # Convert Repository objects to UserRepositoryMap objects
     stored_repos = []
@@ -366,9 +360,9 @@ async def store_repositories_in_db(repos: list[Repository], user_id: str) -> Non
 
 
 def infer_repo_from_message(user_msg: str) -> list[str]:
-    """
-    Extract all repository names in the format 'owner/repo' from various Git provider URLs
+    """Extract all repository names in the format 'owner/repo' from various Git provider URLs
     and direct mentions in text. Supports GitHub, GitLab, and BitBucket.
+
     Args:
         user_msg: Input message that may contain repository references
     Returns:
@@ -451,10 +445,10 @@ def filter_potential_repos_by_user_msg(
 
 
 def markdown_to_jira_markup(markdown_text: str) -> str:
-    """
-    Convert markdown text to Jira Wiki Markup format.
+    """Convert markdown text to Jira Wiki Markup format.
     This function handles common markdown elements and converts them to their
     Jira Wiki Markup equivalents. It's designed to be exception-safe.
+
     Args:
         markdown_text: The markdown text to convert
     Returns:

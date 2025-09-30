@@ -39,13 +39,13 @@ class ResolverViewInterface(SummaryExtractionTracker):
     raw_payload: dict
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        "Instructions passed when conversation is first initialized"
+        """Instructions passed when conversation is first initialized"""
         raise NotImplementedError()
 
     async def create_new_conversation(self, jinja_env: Environment, token: str):
-        "Create a new conversation"
+        """Create a new conversation"""
         raise NotImplementedError()
 
     def get_callback_id(self) -> str:
-        "Unique callback id for subscribription made to EventStream for fetching agent summary"
+        """Unique callback id for subscribription made to EventStream for fetching agent summary"""
         raise NotImplementedError()

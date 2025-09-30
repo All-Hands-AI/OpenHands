@@ -55,7 +55,6 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
         This function checks both the global environment variable kill switch AND
         the user's individual setting. Both must be true for the function to return true.
     """
-
     # If no user ID is provided, we can't check user settings
     if not user_id:
         return False

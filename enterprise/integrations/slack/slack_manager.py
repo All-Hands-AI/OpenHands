@@ -244,13 +244,11 @@ class SlackManager(Manager):
     async def is_job_requested(
         self, message: Message, slack_view: SlackViewInterface
     ) -> bool:
-        """
-        A job is always request we only receive webhooks for events associated with the slack bot
+        """A job is always request we only receive webhooks for events associated with the slack bot
         This method really just checks
             1. Is the user is authenticated
             2. Do we have the necessary information to start a job (either by inferring the selected repo, otherwise asking the user)
         """
-
         # Infer repo from user message is not needed; user selected repo from the form or is updating existing convo
         if isinstance(slack_view, SlackUpdateExistingConversationView):
             return True

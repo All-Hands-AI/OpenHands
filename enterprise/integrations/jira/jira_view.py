@@ -35,7 +35,6 @@ class JiraNewConversationView(JiraViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
         instructions_template = jinja_env.get_template('jira_instructions.j2')
         instructions = instructions_template.render()
 
@@ -52,7 +51,6 @@ class JiraNewConversationView(JiraViewInterface):
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Create a new Jira conversation"""
-
         if not self.selected_repo:
             raise StartingConvoException('No repository selected for this conversation')
 
@@ -112,7 +110,6 @@ class JiraExistingConversationView(JiraViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
         user_msg_template = jinja_env.get_template('jira_existing_conversation.j2')
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
@@ -125,7 +122,6 @@ class JiraExistingConversationView(JiraViewInterface):
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Update an existing Jira conversation"""
-
         user_id = self.jira_user.keycloak_user_id
 
         try:
@@ -191,7 +187,6 @@ class JiraFactory:
         jira_workspace: JiraWorkspace,
     ) -> JiraViewInterface:
         """Create appropriate Jira view based on the message and user state"""
-
         if not jira_user or not saas_user_auth or not jira_workspace:
             raise StartingConvoException('User not authenticated with Jira integration')
 

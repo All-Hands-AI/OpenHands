@@ -26,8 +26,7 @@ slack_manager = SlackManager(token_manager)
 
 
 class SlackCallbackProcessor(ConversationCallbackProcessor):
-    """
-    Processor for sending conversation summaries to Slack.
+    """Processor for sending conversation summaries to Slack.
 
     This processor is used to send summaries of conversations to Slack channels
     when agent state changes occur.
@@ -41,8 +40,7 @@ class SlackCallbackProcessor(ConversationCallbackProcessor):
     last_user_msg_id: int | None = None
 
     async def _send_message_to_slack(self, message: str) -> None:
-        """
-        Send a message to Slack using the conversation_manager's send_to_event_stream method.
+        """Send a message to Slack using the conversation_manager's send_to_event_stream method.
 
         Args:
             message: The message content to send to Slack
@@ -83,8 +81,7 @@ class SlackCallbackProcessor(ConversationCallbackProcessor):
         callback: ConversationCallback,
         observation: AgentStateChangedObservation,
     ) -> None:
-        """
-        Process a conversation event by sending a summary to Slack.
+        """Process a conversation event by sending a summary to Slack.
 
         Args:
             conversation_id: The ID of the conversation to process

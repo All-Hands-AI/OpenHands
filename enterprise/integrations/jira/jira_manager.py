@@ -48,7 +48,6 @@ class JiraManager(Manager):
         self, jira_user_id: str, workspace_id: int
     ) -> tuple[JiraUser | None, UserAuth | None]:
         """Authenticate Jira user and get their OpenHands user auth."""
-
         # Find active Jira user by Keycloak user ID and workspace ID
         jira_user = await self.integration_store.get_active_user(
             jira_user_id, workspace_id
@@ -206,7 +205,6 @@ class JiraManager(Manager):
 
     async def receive_message(self, message: Message):
         """Process incoming Jira webhook message."""
-
         payload = message.message.get('payload', {})
         job_context = self.parse_webhook(payload)
 
@@ -299,10 +297,8 @@ class JiraManager(Manager):
     async def is_job_requested(
         self, message: Message, jira_view: JiraViewInterface
     ) -> bool:
+        """Check if a job is requested and handle repository selection.
         """
-        Check if a job is requested and handle repository selection.
-        """
-
         if isinstance(jira_view, JiraExistingConversationView):
             return True
 

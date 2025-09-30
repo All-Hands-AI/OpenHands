@@ -46,7 +46,6 @@ class LinearManager(Manager):
         self, linear_user_id: str, workspace_id: int
     ) -> tuple[LinearUser | None, UserAuth | None]:
         """Authenticate Linear user and get their OpenHands user auth."""
-
         # Find active Linear user by Linear user ID and workspace ID
         linear_user = await self.integration_store.get_active_user(
             linear_user_id, workspace_id
@@ -305,10 +304,8 @@ class LinearManager(Manager):
     async def is_job_requested(
         self, message: Message, linear_view: LinearViewInterface
     ) -> bool:
+        """Check if a job is requested and handle repository selection.
         """
-        Check if a job is requested and handle repository selection.
-        """
-
         if isinstance(linear_view, LinearExistingConversationView):
             return True
 
