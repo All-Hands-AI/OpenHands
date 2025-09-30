@@ -25,7 +25,7 @@ from openhands.server.types import AppMode
 from openhands.server.user_auth.user_auth import AuthType, get_user_auth
 from openhands.server.shared import config, server_config
 
-from enterprise.server.utils import (
+from server.utils import (
     ProSubscriptionRequiredError,
     is_pro_user,
     validate_llm_settings_changes,
