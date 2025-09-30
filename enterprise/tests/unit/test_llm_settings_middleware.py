@@ -311,3 +311,15 @@ class TestLLMSettingsMiddleware:
         result = await middleware(mock_request, mock_call_next)
         mock_call_next.assert_called_once_with(mock_request)
         assert result is not None
+
+        # Test POST /api/settings request without authentication passes through
+        mock_request = MagicMock()
+        mock_request.method = 'POST'
+        mock_request.url.path = '/api/settings'
+        mock_call_next = AsyncMock(return_value=MagicMock())
+
+        with patch('enterprise.server.middleware.get_user_auth') as mock_get_user_auth:
+            mock_get_user_auth.side_effect = Exception('No auth')
+            result = await middleware(mock_request, mock_call_next)
+            mock_call_next.assert_called_once_with(mock_request)
+            assert result is not None

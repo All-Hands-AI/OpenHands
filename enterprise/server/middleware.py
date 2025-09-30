@@ -217,10 +217,11 @@ class LLMSettingsMiddleware:
                 f"LLM settings middleware intercepting POST /api/settings from {request.client.host if request.client else 'unknown'}"
             )
 
-            # Get user_id from request state (set by auth middleware)
-            user_auth = getattr(request.state, 'user_auth', None)
-            if not user_auth:
-                logger.info('No user auth found, letting route handle request')
+            # Get user authentication - this will trigger authentication if not already done
+            try:
+                user_auth = await get_user_auth(request)
+            except Exception as e:
+                logger.info(f'No valid user auth found ({e}), letting route handle request')
                 return  # No user auth, let the route handle it
 
             user_id = await user_auth.get_user_id()
