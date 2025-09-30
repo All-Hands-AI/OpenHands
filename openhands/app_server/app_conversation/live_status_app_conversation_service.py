@@ -9,6 +9,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import Depends
+from openhands.sdk import LocalWorkspace
 from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -345,9 +346,12 @@ class LiveStatusAppConversationService(AppConversationService):
             api_key=user.llm_api_key,
             service_id='agent',
         )
-        agent = get_default_agent(llm=llm, working_dir='/workspace')
+        agent = get_default_agent(llm=llm)
         start_conversation_request = StartConversationRequest(
             agent=agent,
+            workspace=LocalWorkspace(
+                working_dir="/home/openhands/workspace"
+            ),
             # confirmation_policy=NeverConfirm(), # TODO: Add this to user
             initial_message=initial_message,
         )
