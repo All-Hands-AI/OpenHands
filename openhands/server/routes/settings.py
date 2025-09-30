@@ -142,6 +142,7 @@ async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> JSONResponse:
+    # Check provider tokens are valid
     try:
         existing_settings = await settings_store.load()
 

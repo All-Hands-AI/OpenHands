@@ -12,7 +12,7 @@ import {
 } from "#/types/core/guards";
 import { EventMessage } from "./event-message";
 import { ChatMessage } from "./chat-message";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { LaunchMicroagentModal } from "./microagent/launch-microagent-modal";
 import { useUserConversation } from "#/hooks/query/use-user-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
@@ -48,7 +48,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
       isPending,
       unsubscribeFromConversation,
     } = useCreateConversationAndSubscribeMultiple();
-    const { getOptimisticUserMessage } = useOptimisticUserMessage();
+    const { getOptimisticUserMessage } = useOptimisticUserMessageStore();
     const { conversationId } = useConversationId();
     const { data: conversation } = useUserConversation(conversationId);
 

@@ -9728,20 +9728,20 @@
     "uk": "або перегляньте"
   },
   "AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_STOPPED": {
-    "en": "Stop button pressed. The action has not been executed.",
-    "ja": "停止ボタンが押されました。アクションは実行されていません。",
-    "zh-CN": "按下了停止按钮。操作尚未执行。",
-    "zh-TW": "按下了停止按鈕。操作尚未執行。",
-    "ko-KR": "중지 버튼이 눌렸습니다. 작업이 실행되지 않았습니다.",
-    "no": "Stoppknappen ble trykket. Handlingen har ikke blitt utført.",
-    "it": "Pulsante di arresto premuto. L'azione non è stata eseguita.",
-    "pt": "Botão de parar pressionado. A ação não foi executada.",
-    "es": "Botón de detener presionado. La acción no se ha ejecutado.",
-    "ar": "تم الضغط على زر التوقف. لم يتم تنفيذ الإجراء.",
-    "fr": "Bouton d'arrêt appuyé. L'action n'a pas été exécutée.",
-    "tr": "Durdurma düğmesine basıldı. Eylem yürütülmedi.",
-    "de": "Stopp-Taste gedrückt. Die Aktion wurde nicht ausgeführt.",
-    "uk": "Натиснуто кнопку зупинки. Дію не виконано."
+    "en": "Pause button pressed. Agent is stopped. The action has not been executed.",
+    "ja": "一時停止ボタンが押されました。エージェントは停止しています。アクションは実行されていません。",
+    "zh-CN": "已按下暂停按钮。代理已停止。该操作尚未执行。",
+    "zh-TW": "已按下暫停按鈕。代理已停止。該操作尚未執行。",
+    "ko-KR": "일시정지 버튼이 눌렸습니다. 에이전트가 중지되었습니다. 작업이 실행되지 않았습니다.",
+    "no": "Pauseknappen ble trykket. Agenten er stoppet. Handlingen har ikke blitt utført.",
+    "it": "Pulsante di pausa premuto. L'agente è fermo. L'azione non è stata eseguita.",
+    "pt": "Botão de pausa pressionado. O agente está parado. A ação não foi executada.",
+    "es": "Se presionó el botón de pausa. El agente está detenido. La acción no se ha ejecutado.",
+    "ar": "تم الضغط على زر الإيقاف المؤقت. تم إيقاف الوكيل. لم يتم تنفيذ الإجراء.",
+    "fr": "Bouton pause enfoncé. L'agent est arrêté. L'action n'a pas été exécutée.",
+    "tr": "Duraklat düğmesine basıldı. Ajan durduruldu. Eylem gerçekleştirilmedi.",
+    "de": "Pausentaste gedrückt. Agent ist gestoppt. Die Aktion wurde nicht ausgeführt.",
+    "uk": "Натиснуто кнопку паузи. Агент зупинений. Дію не виконано."
   },
   "AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_ERROR": {
     "en": "The action has not been executed due to a runtime error. The runtime system may have crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.",
@@ -14654,5 +14654,37 @@
     "tr": "Onay modu etkinleştirildi",
     "de": "Bestätigungsmodus aktiviert",
     "uk": "Режим підтвердження увімкнено"
+  },
+  "COMMON$MOST_RECENT": {
+    "en": "Most Recent",
+    "ja": "最新",
+    "zh-CN": "最新",
+    "zh-TW": "最新",
+    "ko-KR": "최신",
+    "no": "Nyeste",
+    "it": "Più recente",
+    "pt": "Mais recente",
+    "es": "Más reciente",
+    "ar": "الأحدث",
+    "fr": "Le plus récent",
+    "tr": "En Son",
+    "de": "Neueste",
+    "uk": "Найновіше"
+  },
+  "HOME$NO_REPOSITORY_FOUND": {
+    "en": "No repository found to launch conversation",
+    "ja": "会話を開始するためのリポジトリが見つかりません",
+    "zh-CN": "未找到用于启动会话的存储库",
+    "zh-TW": "未找到用於啟動對話的存儲庫",
+    "ko-KR": "대화를 시작할 저장소를 찾을 수 없습니다",
+    "no": "Ingen repository funnet for å starte samtale",
+    "it": "Nessun repository trovato per avviare la conversazione",
+    "pt": "Nenhum repositório encontrado para iniciar a conversa",
+    "es": "No se encontró ningún repositorio para iniciar la conversación",
+    "ar": "لم يتم العثور على مستودع لبدء المحادثة",
+    "fr": "Aucun dépôt trouvé pour lancer la conversation",
+    "tr": "Konuşma başlatmak için depo bulunamadı",
+    "de": "Kein Repository gefunden, um das Gespräch zu starten",
+    "uk": "Не знайдено репозиторій для запуску розмови"
   }
 }
