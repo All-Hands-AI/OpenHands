@@ -472,7 +472,22 @@ async def start_conversation(
     to start a conversation. If the conversation is already running, it will
     return the existing agent loop info.
     """
-    logger.info(f'Starting conversation: {conversation_id}')
+    logger.info(
+        f'Starting conversation: {conversation_id}',
+        extra={'session_id': conversation_id},
+    )
+
+    # Log token fetch status
+    if provider_tokens:
+        logger.info(
+            f'/start endpoint: Fetched provider tokens: {list(provider_tokens.keys())}',
+            extra={'session_id': conversation_id},
+        )
+    else:
+        logger.warning(
+            '/start endpoint: No provider tokens fetched (provider_tokens is None/empty)',
+            extra={'session_id': conversation_id},
+        )
 
     try:
         # Check that the conversation exists

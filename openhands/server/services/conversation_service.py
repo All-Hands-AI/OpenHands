@@ -249,12 +249,27 @@ async def setup_init_conversation_settings(
 
     # Use provided tokens if available (for SAAS resume), otherwise create scaffold
     if provider_tokens:
+        logger.info(
+            f'Using provided provider_tokens: {list(provider_tokens.keys())}',
+            extra={'session_id': conversation_id},
+        )
         git_provider_tokens = provider_tokens
     else:
+        logger.info(
+            f'No provider_tokens provided, creating scaffold for: {providers_set}',
+            extra={'session_id': conversation_id},
+        )
         git_provider_tokens = create_provider_tokens_object(providers_set)
-        logger.info(f'Git provider scaffold: {git_provider_tokens}')
+        logger.info(
+            f'Git provider scaffold: {git_provider_tokens}',
+            extra={'session_id': conversation_id},
+        )
 
         if server_config.app_mode != AppMode.SAAS and user_secrets:
+            logger.info(
+                f'Non-SaaS mode: Overriding with user_secrets provider tokens: {list(user_secrets.provider_tokens.keys())}',
+                extra={'session_id': conversation_id},
+            )
             git_provider_tokens = user_secrets.provider_tokens
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
