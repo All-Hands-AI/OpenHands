@@ -324,9 +324,6 @@ async def get_conversation(
         logger.info(
             f'get_conversation conversation_store type: {type(conversation_store)}'
         )
-        logger.info(
-            f'get_conversation conversation_manager type: {type(conversation_manager)}'
-        )
         logger.info(f'get_conversation metadata: {metadata}')
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
