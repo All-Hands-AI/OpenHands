@@ -188,8 +188,11 @@ class LLMSettingsMiddleware:
 
     async def __call__(self, request: Request, call_next: Callable):
         try:
+            logger.warning(f"LLM middleware called for {request.method} {request.url.path}")
+            
             # Check if this is a POST request to /api/settings
             if request.method == "POST" and request.url.path == "/api/settings":
+                logger.warning("LLM middleware intercepting POST /api/settings request")
                 await self._validate_llm_settings_request(request)
             
             # Continue with the request
