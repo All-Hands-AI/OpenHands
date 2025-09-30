@@ -12,6 +12,16 @@ from typing import Any, cast
 
 import httpx
 import socketio
+from server.constants import PERMITTED_CORS_ORIGINS, WEB_HOST
+from server.utils.conversation_callback_utils import (
+    process_event,
+    update_conversation_metadata,
+)
+from sqlalchemy import orm
+from storage.api_key_store import ApiKeyStore
+from storage.database import session_maker
+from storage.stored_conversation_metadata import StoredConversationMetadata
+
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPSHTTPServerConfig
@@ -45,16 +55,6 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 from openhands.utils.utils import create_registry_and_conversation_stats
-from sqlalchemy import orm
-
-from server.constants import PERMITTED_CORS_ORIGINS, WEB_HOST
-from server.utils.conversation_callback_utils import (
-    process_event,
-    update_conversation_metadata,
-)
-from storage.api_key_store import ApiKeyStore
-from storage.database import session_maker
-from storage.stored_conversation_metadata import StoredConversationMetadata
 
 # Pattern for accessing runtime pods externally
 RUNTIME_URL_PATTERN = os.getenv(
@@ -529,18 +529,12 @@ class SaasNestedConversationManager(ConversationManager):
                 response = await client.get(nested_url)
                 if response.status_code == 200:
                     conversation_data = response.json()
-                    logger.info(
-                        f'_get_runtime_status_from_nested_runtime conversation_data: {conversation_data}'
-                    )
                     runtime_status_str = conversation_data.get('runtime_status')
-                    logger.info(
-                        f'_get_runtime_status_from_nested_runtime runtime_status_str: {runtime_status_str}'
-                    )
                     if runtime_status_str:
                         # Convert string back to RuntimeStatus enum
                         return RuntimeStatus(runtime_status_str)
                 else:
-                    logger.info(
+                    logger.debug(
                         f'Failed to get conversation info for {conversation_id}: {response.status_code}'
                     )
         except ValueError:
@@ -609,10 +603,6 @@ class SaasNestedConversationManager(ConversationManager):
                 runtime['runtime_id'], conversation_id
             )
             session_api_key = runtime.get('session_api_key')
-
-            logger.info(
-                f'get_agent_loop_info: session_api_key: {session_api_key}, nested_url: {nested_url}, conversation_id: {conversation_id}'
-            )
 
             # Get runtime status from nested runtime
             runtime_status = await self._get_runtime_status_from_nested_runtime(
