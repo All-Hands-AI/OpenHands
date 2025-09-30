@@ -17,6 +17,7 @@ from fastapi.responses import JSONResponse
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.app_server import v1_router
+from openhands.app_server.lifespan import v1_lifespan
 from openhands.integrations.service_types import AuthenticationError
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
@@ -56,11 +57,15 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
 
 
+lifespans = [_lifespan, mcp_app.lifespan]
+if server_config.app_mode == AppMode.OSS:
+    lifespans.append(v1_lifespan)
+
 app = FastAPI(
     title='OpenHands',
     description='OpenHands: Code Less, Make More',
     version=__version__,
-    lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
+    lifespan=combine_lifespans(*lifespans),
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
@@ -83,6 +88,6 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 if server_config.app_mode == AppMode.OSS:
     app.include_router(git_api_router)
+    app.include_router(v1_router.router)
 app.include_router(trajectory_router)
-app.include_router(v1_router.router)
 add_health_endpoints(app)

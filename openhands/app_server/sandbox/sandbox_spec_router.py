@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query
 
 from openhands.app_server.dependency import get_dependency_resolver
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -40,24 +40,12 @@ async def search_sandbox_specs(
     return await sandbox_spec_service.search_sandbox_specs(page_id=page_id, limit=limit)
 
 
-@router.get('/{id}', responses={404: {'description': 'Item not found'}})
-async def get_sandbox_spec(
-    id: str,
-    sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,
-) -> SandboxSpecInfo:
-    """Get a single sandbox spec given its id."""
-    sandbox_spec = await sandbox_spec_service.get_sandbox_spec(id)
-    if sandbox_spec is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-    return sandbox_spec
-
-
 @router.get('/')
 async def batch_get_sandbox_specs(
-    ids: Annotated[list[str], Query()],
+    id: Annotated[list[str], Query()],
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,
 ) -> list[SandboxSpecInfo | None]:
     """Get a batch of sandbox specs given their ids, returning null for any missing."""
-    assert len(ids) <= 100
-    sandbox_specs = await sandbox_spec_service.batch_get_sandbox_specs(ids)
+    assert len(id) <= 100
+    sandbox_specs = await sandbox_spec_service.batch_get_sandbox_specs(id)
     return sandbox_specs

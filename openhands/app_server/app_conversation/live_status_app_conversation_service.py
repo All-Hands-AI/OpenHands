@@ -77,7 +77,7 @@ class LiveStatusAppConversationService(AppConversationService):
             limit=limit,
         )
         conversations = await self._build_app_conversations(page.items)  # type: ignore
-        return ConversationPage(conversations, page.next_page_id)
+        return ConversationPage(items=conversations, next_page_id=page.next_page_id)
 
     async def count_app_conversations(
         self,

@@ -5,7 +5,7 @@ from typing import AsyncGenerator
 
 from fastapi import Request
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.util import await_only
@@ -173,21 +173,10 @@ async def create_tables() -> None:
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(SQLModel.metadata.create_all)
 
-    # TODO: Find a better way to add this fixture
-    from openhands.app_server.user.user_models import UserInfo
-
-    async with get_async_session_local()() as session:
-        query = select(UserInfo).where(UserInfo.id == 'root')  # pyright: ignore
-        result = await session.execute(query)
-        user_info = result.scalar_one_or_none()
-        if not user_info:
-            user_info = UserInfo(id='root')  # pyright: ignore
-            session.add(user_info)
-            await session.commit()
-
 
 async def drop_tables() -> None:
     """Drop all database tables."""
     async with get_engine().begin() as conn:
+        # TODO: Really don't let this get into SAAS!
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.drop_all)

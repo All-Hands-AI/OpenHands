@@ -43,26 +43,14 @@ async def search_sandboxes(
     )
 
 
-@router.get('/{sandbox_id}', responses={404: {'description': 'Item not found'}})
-async def get_sandbox(
-    id: str,
-    sandbox_service: SandboxService = sandbox_service_dependency,
-) -> SandboxInfo:
-    """Get a single sandbox given an id."""
-    sandbox = await sandbox_service.get_sandbox(id)
-    if sandbox is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-    return sandbox
-
-
 @router.get('/')
 async def batch_get_sandboxes(
-    sandbox_ids: Annotated[list[str], Query()],
+    id: Annotated[list[str], Query()],
     sandbox_service: SandboxService = sandbox_service_dependency,
 ) -> list[SandboxInfo | None]:
     """Get a batch of sandboxes given their ids, returning null for any missing."""
-    assert len(sandbox_ids) < 100
-    sandboxes = await sandbox_service.batch_get_sandboxes(sandbox_ids)
+    assert len(id) < 100
+    sandboxes = await sandbox_service.batch_get_sandboxes(id)
     return sandboxes
 
 

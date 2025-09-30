@@ -101,24 +101,12 @@ async def count_events(
     )
 
 
-@router.get('/{event_id}', responses={404: {'description': 'Item not found'}})
-async def get_event(
-    event_id: str,
-    event_service: EventService = event_service_dependency,
-) -> EventBase:
-    """Get a single event given its id."""
-    event = await event_service.get_event(event_id)
-    if event is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-    return event
-
-
 @router.get('/')
 async def batch_get_events(
-    event_ids: Annotated[list[str], Query()],
+    id: Annotated[list[str], Query()],
     event_service: EventService = event_service_dependency,
 ) -> list[EventBase | None]:
     """Get a batch of events given their ids, returning null for any missing event."""
-    assert len(event_ids) <= 100
-    events = await event_service.batch_get_events(event_ids)
+    assert len(id) <= 100
+    events = await event_service.batch_get_events(id)
     return events

@@ -112,22 +112,6 @@ async def count_app_conversations(
     )
 
 
-@router.get('/{id}', responses={404: {'description': 'Item not found'}})
-async def get_app_conversation(
-    id: UUID,
-    app_conversation_service: AppConversationService = (
-        app_conversation_service_dependency
-    ),
-) -> AppConversation:
-    """Get a sandboxed conversation given an id."""
-    app_conversation = (
-        await app_conversation_service.get_app_conversation(id)
-    )
-    if app_conversation is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND)
-    return app_conversation
-
-
 @router.get('/')
 async def batch_get_app_conversations(
     ids: Annotated[list[UUID], Query()],
