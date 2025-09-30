@@ -297,8 +297,7 @@ class JiraManager(Manager):
     async def is_job_requested(
         self, message: Message, jira_view: JiraViewInterface
     ) -> bool:
-        """Check if a job is requested and handle repository selection.
-        """
+        """Check if a job is requested and handle repository selection."""
         if isinstance(jira_view, JiraExistingConversationView):
             return True
 

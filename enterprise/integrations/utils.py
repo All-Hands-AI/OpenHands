@@ -215,8 +215,7 @@ def get_last_user_msg(event_store: EventStoreABC) -> list[MessageAction]:
 def extract_summary_from_event_store(
     event_store: EventStoreABC, conversation_id: str
 ) -> str:
-    """Get agent summary or alternative message depending on current AgentState
-    """
+    """Get agent summary or alternative message depending on current AgentState"""
     conversation_link = CONVERSATION_URL.format(conversation_id)
     summary_instruction = get_summary_instruction()
 
@@ -292,8 +291,7 @@ async def get_last_user_msg_from_conversation_manager(
 async def extract_summary_from_conversation_manager(
     conversation_manager: ConversationManager, conversation_id: str
 ) -> str:
-    """Get agent summary or alternative message depending on current AgentState
-    """
+    """Get agent summary or alternative message depending on current AgentState"""
     event_store = await get_event_store_from_conversation_manager(
         conversation_manager, conversation_id
     )

@@ -488,8 +488,7 @@ class SaaSGitLabService(GitLabService):
     async def reply_to_issue(
         self, project_id: str, issue_number: str, discussion_id: str | None, body: str
     ):
-        """Either create new comment thread, or reply to comment thread (depending on discussion_id param)
-        """
+        """Either create new comment thread, or reply to comment thread (depending on discussion_id param)"""
         try:
             if discussion_id:
                 url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/discussions/{discussion_id}/notes'
@@ -504,8 +503,7 @@ class SaaSGitLabService(GitLabService):
     async def reply_to_mr(
         self, project_id: str, merge_request_iid: str, discussion_id: str, body: str
     ):
-        """Reply to comment thread on MR
-        """
+        """Reply to comment thread on MR"""
         try:
             url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{merge_request_iid}/discussions/{discussion_id}/notes'
             params = {'body': body}

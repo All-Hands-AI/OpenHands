@@ -86,8 +86,7 @@ class SolvabilityClassifier(BaseModel):
 
     @model_validator(mode='after')
     def validate_random_state(self) -> SolvabilityClassifier:
-        """Validate the random state configuration between this object and the classifier.
-        """
+        """Validate the random state configuration between this object and the classifier."""
         # If both random states are set, they definitely need to agree.
         if self.random_state is not None and self.classifier.random_state is not None:
             if self.random_state != self.classifier.random_state:
@@ -102,8 +101,7 @@ class SolvabilityClassifier(BaseModel):
 
     @property
     def features_(self) -> pd.DataFrame:
-        """Get the features used by the classifier for the most recent inputs.
-        """
+        """Get the features used by the classifier for the most recent inputs."""
         if 'features_' not in self._classifier_attrs:
             raise ValueError(
                 'SolvabilityClassifier.transform() has not yet been called.'
@@ -112,8 +110,7 @@ class SolvabilityClassifier(BaseModel):
 
     @property
     def cost_(self) -> pd.DataFrame:
-        """Get the cost of the classifier for the most recent inputs.
-        """
+        """Get the cost of the classifier for the most recent inputs."""
         if 'cost_' not in self._classifier_attrs:
             raise ValueError(
                 'SolvabilityClassifier.transform() has not yet been called.'
@@ -122,8 +119,7 @@ class SolvabilityClassifier(BaseModel):
 
     @property
     def feature_importances_(self) -> np.ndarray:
-        """Get the feature importances for the most recent inputs.
-        """
+        """Get the feature importances for the most recent inputs."""
         if 'feature_importances_' not in self._classifier_attrs:
             raise ValueError(
                 'No SolvabilityClassifier methods that produce feature importances (.fit(), .predict_proba(), and '
@@ -133,8 +129,7 @@ class SolvabilityClassifier(BaseModel):
 
     @property
     def is_fitted(self) -> bool:
-        """Check if the classifier is fitted.
-        """
+        """Check if the classifier is fitted."""
         try:
             check_is_fitted(self.classifier)
             return True
@@ -341,15 +336,13 @@ class SolvabilityClassifier(BaseModel):
     @field_serializer('classifier')
     @staticmethod
     def _rfc_to_json(rfc: RandomForestClassifier) -> str:
-        """Convert a RandomForestClassifier to a JSON-compatible value (a string).
-        """
+        """Convert a RandomForestClassifier to a JSON-compatible value (a string)."""
         return base64.b64encode(pickle.dumps(rfc)).decode('utf-8')
 
     @field_validator('classifier', mode='before')
     @staticmethod
     def _json_to_rfc(value: str | RandomForestClassifier) -> RandomForestClassifier:
-        """Convert a JSON-compatible value (a string) back to a RandomForestClassifier.
-        """
+        """Convert a JSON-compatible value (a string) back to a RandomForestClassifier."""
         if isinstance(value, RandomForestClassifier):
             return value
 
@@ -411,6 +404,5 @@ class SolvabilityClassifier(BaseModel):
     def __call__(
         self, issue: str, llm_config: LLMConfig, **kwargs: Any
     ) -> SolvabilityReport:
-        """Generate a solvability report for the given issue.
-        """
+        """Generate a solvability report for the given issue."""
         return self.solvability_report(issue, llm_config=llm_config, **kwargs)

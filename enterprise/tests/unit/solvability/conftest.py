@@ -1,5 +1,4 @@
-"""Shared fixtures for all tests.
-"""
+"""Shared fixtures for all tests."""
 
 from typing import Any
 from unittest.mock import MagicMock

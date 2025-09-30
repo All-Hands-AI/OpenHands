@@ -30,7 +30,7 @@ from openhands.storage.data_models.settings import Settings
 
 class SetAuthCookieMiddleware:
     """Update the auth cookie with the current authentication state if it was refreshed before sending response to user.
-    
+
     Deleting invalid cookies is handled by CookieError using FastAPIs standard error handling mechanism.
     """
 
@@ -181,24 +181,26 @@ class SetAuthCookieMiddleware:
 
 class LLMSettingsMiddleware:
     """Middleware to validate LLM settings access for enterprise users.
-    
+
     Intercepts POST requests to /api/settings and validates that non-pro users
     cannot modify LLM-related settings.
     """
 
     async def __call__(self, request: Request, call_next: Callable):
         try:
-            logger.warning(f"LLM middleware called for {request.method} {request.url.path}")
-            
+            logger.warning(
+                f'LLM middleware called for {request.method} {request.url.path}'
+            )
+
             # Check if this is a POST request to /api/settings
-            if request.method == "POST" and request.url.path == "/api/settings":
-                logger.warning("LLM middleware intercepting POST /api/settings request")
+            if request.method == 'POST' and request.url.path == '/api/settings':
+                logger.warning('LLM middleware intercepting POST /api/settings request')
                 await self._validate_llm_settings_request(request)
-            
+
             # Continue with the request
             response: Response = await call_next(request)
             return response
-            
+
         except HTTPException:
             # Re-raise HTTPException (our 403 response)
             raise
@@ -211,43 +213,47 @@ class LLMSettingsMiddleware:
     async def _validate_llm_settings_request(self, request: Request) -> None:
         """Validate LLM settings access for the current request."""
         try:
-            logger.info(f"LLM settings middleware intercepting POST /api/settings from {request.client.host if request.client else 'unknown'}")
-            
+            logger.info(
+                f"LLM settings middleware intercepting POST /api/settings from {request.client.host if request.client else 'unknown'}"
+            )
+
             # Get user_id from request state (set by auth middleware)
             user_auth = getattr(request.state, 'user_auth', None)
             if not user_auth:
-                logger.info("No user auth found, letting route handle request")
+                logger.info('No user auth found, letting route handle request')
                 return  # No user auth, let the route handle it
-            
+
             user_id = await user_auth.get_user_id()
             if not user_id:
-                logger.info("No user ID found, letting route handle request")
+                logger.info('No user ID found, letting route handle request')
                 return  # No user ID, let the route handle it
 
-            logger.info(f"Processing settings request for user: {user_id}")
+            logger.info(f'Processing settings request for user: {user_id}')
 
             # Parse the request JSON to get new settings
             try:
                 settings_data = await request.json()
-                logger.info(f"Parsed settings data keys: {list(settings_data.keys())}")
+                logger.info(f'Parsed settings data keys: {list(settings_data.keys())}')
             except Exception as e:
-                logger.warning(f"Invalid JSON in request body: {e}")
+                logger.warning(f'Invalid JSON in request body: {e}')
                 return  # Invalid JSON, let the route handle it
-            
+
             # Convert to Settings object for validation
             try:
                 new_settings = Settings(**settings_data)
-                logger.info("Successfully created Settings object from request data")
+                logger.info('Successfully created Settings object from request data')
             except Exception as e:
-                logger.warning(f"Invalid settings format: {e}")
+                logger.warning(f'Invalid settings format: {e}')
                 return  # Invalid settings format, let the route handle it
-            
+
             # Validate LLM settings access by comparing new settings against SaaS defaults
             await validate_llm_settings_access(user_id, new_settings)
-            logger.info(f"LLM settings validation passed for user {user_id}")
-            
+            logger.info(f'LLM settings validation passed for user {user_id}')
+
         except HTTPException as e:
-            logger.warning(f"LLM settings validation failed: HTTP {e.status_code} - {e.detail}")
+            logger.warning(
+                f'LLM settings validation failed: HTTP {e.status_code} - {e.detail}'
+            )
             # Re-raise our 403 response
             raise
         except Exception as e:
@@ -258,66 +264,100 @@ class LLMSettingsMiddleware:
 def _get_saas_default_settings() -> Settings:
     """Get the default SaaS settings for comparison."""
     return Settings(
-        language="en",
-        agent="CodeActAgent",
+        language='en',
+        agent='CodeActAgent',
         enable_proactive_conversation_starters=True,
         enable_default_condenser=True,
         condenser_max_size=120,
         llm_model=get_default_litellm_model(),  # litellm_proxy/prod/claude-sonnet-4-20250514
         confirmation_mode=False,
-        security_analyzer="llm",
-        # Note: llm_api_key and llm_base_url are auto-provisioned for SaaS users, 
+        security_analyzer='llm',
+        # Note: llm_api_key and llm_base_url are auto-provisioned for SaaS users,
         # so we don't include them in defaults - any custom values are changes
     )
 
 
 def has_llm_settings_changes(user_settings: Settings, saas_defaults: Settings) -> bool:
     """Check if user settings contain changes to LLM-related settings from SaaS defaults."""
-    logger.info(f"Checking LLM settings changes - User settings: {user_settings.model_dump(exclude={'secrets_store'})}")
-    logger.info(f"Checking LLM settings changes - SaaS defaults: {saas_defaults.model_dump(exclude={'secrets_store'})}")
-    
+    logger.info(
+        f"Checking LLM settings changes - User settings: {user_settings.model_dump(exclude={'secrets_store'})}"
+    )
+    logger.info(
+        f"Checking LLM settings changes - SaaS defaults: {saas_defaults.model_dump(exclude={'secrets_store'})}"
+    )
+
     # Core LLM settings - any custom values are changes since SaaS auto-provisions these
-    if user_settings.llm_model is not None and user_settings.llm_model != saas_defaults.llm_model:
-        logger.warning(f"LLM model change detected: user='{user_settings.llm_model}' vs default='{saas_defaults.llm_model}'")
+    if (
+        user_settings.llm_model is not None
+        and user_settings.llm_model != saas_defaults.llm_model
+    ):
+        logger.warning(
+            f"LLM model change detected: user='{user_settings.llm_model}' vs default='{saas_defaults.llm_model}'"
+        )
         return True
     if user_settings.llm_api_key is not None:
         # Any custom API key is a change (SaaS users get auto-provisioned keys)
-        logger.warning(f"LLM API key change detected: user has custom key (length={len(user_settings.llm_api_key.get_secret_value()) if user_settings.llm_api_key else 0})")
+        logger.warning(
+            f'LLM API key change detected: user has custom key (length={len(user_settings.llm_api_key.get_secret_value()) if user_settings.llm_api_key else 0})'
+        )
         return True
-    if user_settings.llm_base_url is not None and user_settings.llm_base_url != "":
+    if user_settings.llm_base_url is not None and user_settings.llm_base_url != '':
         # Any non-empty base URL is a change (SaaS users get auto-provisioned URL)
-        logger.warning(f"LLM base URL change detected: user='{user_settings.llm_base_url}' (non-empty)")
+        logger.warning(
+            f"LLM base URL change detected: user='{user_settings.llm_base_url}' (non-empty)"
+        )
         return True
-    
+
     # LLM-related configuration settings
     if user_settings.agent is not None and user_settings.agent != saas_defaults.agent:
-        logger.warning(f"Agent change detected: user='{user_settings.agent}' vs default='{saas_defaults.agent}'")
+        logger.warning(
+            f"Agent change detected: user='{user_settings.agent}' vs default='{saas_defaults.agent}'"
+        )
         return True
-    if user_settings.confirmation_mode is not None and user_settings.confirmation_mode != saas_defaults.confirmation_mode:
-        logger.warning(f"Confirmation mode change detected: user={user_settings.confirmation_mode} vs default={saas_defaults.confirmation_mode}")
+    if (
+        user_settings.confirmation_mode is not None
+        and user_settings.confirmation_mode != saas_defaults.confirmation_mode
+    ):
+        logger.warning(
+            f'Confirmation mode change detected: user={user_settings.confirmation_mode} vs default={saas_defaults.confirmation_mode}'
+        )
         return True
-    if (user_settings.security_analyzer is not None and 
-        user_settings.security_analyzer != saas_defaults.security_analyzer and
-        user_settings.security_analyzer != ""):  # Handle empty string as None
-        logger.warning(f"Security analyzer change detected: user='{user_settings.security_analyzer}' vs default='{saas_defaults.security_analyzer}'")
+    if (
+        user_settings.security_analyzer is not None
+        and user_settings.security_analyzer != saas_defaults.security_analyzer
+        and user_settings.security_analyzer != ''
+    ):  # Handle empty string as None
+        logger.warning(
+            f"Security analyzer change detected: user='{user_settings.security_analyzer}' vs default='{saas_defaults.security_analyzer}'"
+        )
         return True
     if user_settings.max_budget_per_task is not None:
-        logger.warning(f"Max budget per task change detected: user={user_settings.max_budget_per_task}")
+        logger.warning(
+            f'Max budget per task change detected: user={user_settings.max_budget_per_task}'
+        )
         return True
     if user_settings.max_iterations is not None:
-        logger.warning(f"Max iterations change detected: user={user_settings.max_iterations}")
+        logger.warning(
+            f'Max iterations change detected: user={user_settings.max_iterations}'
+        )
         return True
-    
+
     # Memory/context management settings
     if user_settings.enable_default_condenser != saas_defaults.enable_default_condenser:
-        logger.warning(f"Enable default condenser change detected: user={user_settings.enable_default_condenser} vs default={saas_defaults.enable_default_condenser}")
+        logger.warning(
+            f'Enable default condenser change detected: user={user_settings.enable_default_condenser} vs default={saas_defaults.enable_default_condenser}'
+        )
         return True
-    if (user_settings.condenser_max_size is not None and 
-        user_settings.condenser_max_size != saas_defaults.condenser_max_size):
-        logger.warning(f"Condenser max size change detected: user={user_settings.condenser_max_size} vs default={saas_defaults.condenser_max_size}")
+    if (
+        user_settings.condenser_max_size is not None
+        and user_settings.condenser_max_size != saas_defaults.condenser_max_size
+    ):
+        logger.warning(
+            f'Condenser max size change detected: user={user_settings.condenser_max_size} vs default={saas_defaults.condenser_max_size}'
+        )
         return True
-    
-    logger.info("No LLM settings changes detected")
+
+    logger.info('No LLM settings changes detected')
     return False
 
 
@@ -325,8 +365,8 @@ def _has_active_subscription(user_id: str) -> bool:
     """Check if user has an active subscription (pro user)."""
     with session_maker() as session:
         now = datetime.now(UTC)
-        logger.info(f"Checking subscription for user {user_id} at time {now}")
-        
+        logger.info(f'Checking subscription for user {user_id} at time {now}')
+
         subscription_access = (
             session.query(SubscriptionAccess)
             .filter(SubscriptionAccess.status == 'ACTIVE')
@@ -335,44 +375,48 @@ def _has_active_subscription(user_id: str) -> bool:
             .filter(SubscriptionAccess.end_at >= now)
             .first()
         )
-        
+
         if subscription_access:
-            logger.info(f"Found active subscription for user {user_id}: starts={subscription_access.start_at}, ends={subscription_access.end_at}")
+            logger.info(
+                f'Found active subscription for user {user_id}: starts={subscription_access.start_at}, ends={subscription_access.end_at}'
+            )
         else:
-            logger.info(f"No active subscription found for user {user_id}")
-            
+            logger.info(f'No active subscription found for user {user_id}')
+
         return subscription_access is not None
 
 
 async def validate_llm_settings_access(
-    user_id: str, 
-    user_settings: Settings, 
-    saas_defaults: Settings | None = None
+    user_id: str, user_settings: Settings, saas_defaults: Settings | None = None
 ) -> None:
     """Validate that user has permission to change LLM settings.
-    
+
     Raises HTTPException with 403 status if non-pro user tries to change LLM settings.
     """
     if saas_defaults is None:
         saas_defaults = _get_saas_default_settings()
-    
-    logger.info(f"Validating LLM settings access for user: {user_id}")
-    
+
+    logger.info(f'Validating LLM settings access for user: {user_id}')
+
     # Check if user is trying to change LLM settings
     if has_llm_settings_changes(user_settings, saas_defaults):
-        logger.warning(f"User {user_id} attempting to change LLM settings")
-        
+        logger.warning(f'User {user_id} attempting to change LLM settings')
+
         # Check if user has active subscription (is pro user)
         has_subscription = _has_active_subscription(user_id)
-        logger.info(f"User {user_id} subscription status: {'active' if has_subscription else 'none'}")
-        
+        logger.info(
+            f"User {user_id} subscription status: {'active' if has_subscription else 'none'}"
+        )
+
         if not has_subscription:
-            logger.warning(f"Blocking non-pro user {user_id} from changing LLM settings")
+            logger.warning(
+                f'Blocking non-pro user {user_id} from changing LLM settings'
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="LLM settings can only be modified by pro users"
+                detail='LLM settings can only be modified by pro users',
             )
         else:
-            logger.info(f"Allowing pro user {user_id} to change LLM settings")
+            logger.info(f'Allowing pro user {user_id} to change LLM settings')
     else:
-        logger.info(f"User {user_id} making non-LLM settings changes only - allowing")
+        logger.info(f'User {user_id} making non-LLM settings changes only - allowing')

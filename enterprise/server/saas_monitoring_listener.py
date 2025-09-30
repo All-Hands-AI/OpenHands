@@ -23,12 +23,10 @@ AGENT_SESSION_START_HISTOGRAM = Histogram(
 
 
 class SaaSMonitoringListener(MonitoringListener):
-    """Forward app signals to Prometheus.
-    """
+    """Forward app signals to Prometheus."""
 
     def on_session_event(self, event: Event) -> None:
-        """Track metrics about events being added to a Session's EventStream.
-        """
+        """Track metrics about events being added to a Session's EventStream."""
         if (
             isinstance(event, AgentStateChangedObservation)
             and event.agent_state == AgentState.ERROR

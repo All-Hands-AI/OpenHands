@@ -51,8 +51,7 @@ class MaintenanceTaskStatus(Enum):
 
 
 class MaintenanceTask(Base):  # type: ignore
-    """Model for storing maintenance tasks that perform background operations.
-    """
+    """Model for storing maintenance tasks that perform background operations."""
 
     __tablename__ = 'maintenance_tasks'
 

@@ -52,8 +52,7 @@ class CallbackStatus(Enum):
 
 
 class ConversationCallback(Base):  # type: ignore
-    """Model for storing conversation callbacks that process conversation events.
-    """
+    """Model for storing conversation callbacks that process conversation events."""
 
     __tablename__ = 'conversation_callbacks'
 

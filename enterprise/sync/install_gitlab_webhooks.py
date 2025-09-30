@@ -49,8 +49,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """Check if the GitLab resource still exists
-        """
+        """Check if the GitLab resource still exists"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -82,8 +81,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """Check is user still has permission to resource
-        """
+        """Check is user still has permission to resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -118,8 +116,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """Check whether webhook already exists on resource
-        """
+        """Check whether webhook already exists on resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -189,8 +186,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """Install webhook on resource
-        """
+        """Install webhook on resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)

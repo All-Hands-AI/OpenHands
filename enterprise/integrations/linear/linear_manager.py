@@ -304,8 +304,7 @@ class LinearManager(Manager):
     async def is_job_requested(
         self, message: Message, linear_view: LinearViewInterface
     ) -> bool:
-        """Check if a job is requested and handle repository selection.
-        """
+        """Check if a job is requested and handle repository selection."""
         if isinstance(linear_view, LinearExistingConversationView):
             return True
 

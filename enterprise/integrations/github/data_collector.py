@@ -134,8 +134,7 @@ class GitHubDataCollector:
     def _get_issue_comments(
         self, installation_id: str, repo_name: str, issue_number: int, conversation_id
     ) -> list[dict[str, Any]]:
-        """Retrieve all comments from an issue until a comment with conversation_id is found
-        """
+        """Retrieve all comments from an issue until a comment with conversation_id is found"""
         try:
             installation_token = self._get_installation_access_token(installation_id)
 
@@ -598,14 +597,12 @@ class GitHubDataCollector:
         return None
 
     def _is_pr_closed_or_merged(self, payload):
-        """Check if PR was closed (regardless of conversation URL)
-        """
+        """Check if PR was closed (regardless of conversation URL)"""
         action = payload.get('action', '')
         return action == 'closed' and 'pull_request' in payload
 
     def _track_closed_or_merged_pr(self, payload):
-        """Track PR closed/merged event
-        """
+        """Track PR closed/merged event"""
         repo_id = str(payload['repository']['id'])
         pr_number = payload['number']
         installation_id = str(payload['installation']['id'])

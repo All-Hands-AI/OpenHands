@@ -15,8 +15,7 @@ class OpenhandsPRStore:
     session_maker: sessionmaker
 
     def insert_pr(self, pr: OpenhandsPR) -> None:
-        """Insert a new PR or delete and recreate if repo_id and pr_number already exist.
-        """
+        """Insert a new PR or delete and recreate if repo_id and pr_number already exist."""
         with self.session_maker() as session:
             # Check if PR already exists
             existing_pr = (
