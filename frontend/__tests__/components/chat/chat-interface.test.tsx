@@ -116,7 +116,6 @@ describe("ChatInterface - Chat Suggestions", () => {
     (
       useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({
-      getErrorMessage: vi.fn(() => null),
       setErrorMessage: vi.fn(),
       removeErrorMessage: vi.fn(),
     });
@@ -255,7 +254,6 @@ describe("ChatInterface - Empty state", () => {
     (
       useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({
-      getErrorMessage: vi.fn(() => null),
       setErrorMessage: vi.fn(),
       removeErrorMessage: vi.fn(),
     });

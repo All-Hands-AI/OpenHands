@@ -46,7 +46,7 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
-  const { getErrorMessage } = useErrorMessageStore();
+  const { errorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
@@ -73,7 +73,6 @@ export function ChatInterface() {
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
-  const errorMessage = getErrorMessage();
 
   const events = parsedEvents.filter(shouldRenderEvent);
 

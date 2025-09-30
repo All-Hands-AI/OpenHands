@@ -6,7 +6,6 @@ interface ErrorMessageState {
 
 interface ErrorMessageActions {
   setErrorMessage: (message: string) => void;
-  getErrorMessage: () => string | null;
   removeErrorMessage: () => void;
 }
 
@@ -16,15 +15,13 @@ const initialState: ErrorMessageState = {
   errorMessage: null,
 };
 
-export const useErrorMessageStore = create<ErrorMessageStore>((set, get) => ({
+export const useErrorMessageStore = create<ErrorMessageStore>((set) => ({
   ...initialState,
 
   setErrorMessage: (message: string) =>
     set(() => ({
       errorMessage: message,
     })),
-
-  getErrorMessage: () => get().errorMessage,
 
   removeErrorMessage: () =>
     set(() => ({
