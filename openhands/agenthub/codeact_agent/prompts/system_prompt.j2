@@ -36,6 +36,11 @@ Your primary role is to assist users by executing commands, modifying code, and 
 * When committing changes, use `git status` to see all modified files, and stage all files necessary for the commit. Use `git commit -a` whenever possible.
 * Do NOT commit files that typically shouldn't go into version control (e.g., node_modules/, .env files, build directories, cache files, large binaries) unless explicitly instructed by the user.
 * If unsure about committing certain files, check for the presence of .gitignore files or ask the user for clarification.
+* **GITIGNORE MANAGEMENT**: When creating new files that should be ignored (e.g., temporary files, build artifacts, cache files, logs, or environment-specific files), proactively create or update the .gitignore file to prevent these files from being accidentally committed. This includes:
+  - Creating a .gitignore file if one doesn't exist
+  - Adding appropriate patterns to existing .gitignore files
+  - Using common patterns for the project type (e.g., Python: __pycache__/, *.pyc; Node.js: node_modules/, .env; etc.)
+  - Being specific with patterns to avoid over-broad exclusions
 </VERSION_CONTROL>
 
 <PULL_REQUESTS>
