@@ -141,8 +141,8 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         conditions = []
         if title__contains is not None:
             conditions.append(
-                SandboxedConversationInfo.title.like(f'%{title__contains}%')
-            )  # type: ignore
+                SandboxedConversationInfo.title.like(f'%{title__contains}%')  # type: ignore
+            )
 
         if created_at__gte is not None:
             conditions.append(SandboxedConversationInfo.created_at >= created_at__gte)  # type: ignore
@@ -174,8 +174,8 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         self, conversation_ids: list[UUID]
     ) -> list[SandboxedConversationInfo | None]:
         query = select(SandboxedConversationInfo).where(
-            SandboxedConversationInfo.id.in_(conversation_ids)
-        )  # type: ignore
+            SandboxedConversationInfo.id.in_(conversation_ids)  # type: ignore
+        )
         rows = await self.session.execute(query)
         info_by_id = {info.id: info for info in rows}
         results = [
