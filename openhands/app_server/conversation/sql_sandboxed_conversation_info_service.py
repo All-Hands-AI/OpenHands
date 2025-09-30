@@ -18,28 +18,27 @@ Key components:
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from time import time
 from typing import Callable
 from uuid import UUID
 
-import httpx
 from fastapi import Depends
-from pydantic import Field, TypeAdapter
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from openhands.agent_server.models import ConversationInfo
-from openhands.app_server.conversation.conversation_models import SandboxedConversationInfo, SandboxedConversationInfoPage
-from openhands.app_server.conversation.sandboxed_conversation_info_service import SandboxedConversationInfoService, SandboxedConversationInfoServiceResolver
+from openhands.app_server.conversation.conversation_models import (
+    SandboxedConversationInfo,
+    SandboxedConversationInfoPage,
+)
+from openhands.app_server.conversation.sandboxed_conversation_info_service import (
+    SandboxedConversationInfoService,
+    SandboxedConversationInfoServiceResolver,
+)
 from openhands.app_server.database import async_session_dependency
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService
-from openhands.server.user_auth import get_user_id
-
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +46,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
     """SQL implementation of SandboxedConversationInfoService focused on db operations."""
+
     session: AsyncSession
     user_id: str | None = None
 
@@ -102,9 +102,7 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         if has_more:
             next_page_id = str(offset + limit)
 
-        return SandboxedConversationInfoPage(
-            items=items, next_page_id=next_page_id
-        )
+        return SandboxedConversationInfoPage(items=items, next_page_id=next_page_id)
 
     async def count_sandboxed_conversation_info(
         self,
@@ -142,7 +140,9 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         # Apply the same filters as search_sandboxed_conversations
         conditions = []
         if title__contains is not None:
-            conditions.append(SandboxedConversationInfo.title.like(f"%{title__contains}%"))  # type: ignore
+            conditions.append(
+                SandboxedConversationInfo.title.like(f'%{title__contains}%')
+            )  # type: ignore
 
         if created_at__gte is not None:
             conditions.append(SandboxedConversationInfo.created_at >= created_at__gte)  # type: ignore
@@ -170,8 +170,12 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         result = result_set.scalar_one_or_none()
         return result
 
-    async def batch_get_sandboxed_conversation_info(self, conversation_ids: list[UUID]) -> list[SandboxedConversationInfo | None]:
-        query = select(SandboxedConversationInfo).where(SandboxedConversationInfo.id.in_(conversation_ids))  # type: ignore
+    async def batch_get_sandboxed_conversation_info(
+        self, conversation_ids: list[UUID]
+    ) -> list[SandboxedConversationInfo | None]:
+        query = select(SandboxedConversationInfo).where(
+            SandboxedConversationInfo.id.in_(conversation_ids)
+        )  # type: ignore
         rows = await self.session.execute(query)
         info_by_id = {info.id: info for info in rows}
         results = [
@@ -179,7 +183,9 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
         ]
         return results
 
-    async def save_sandboxed_conversation_info(self, info: SandboxedConversationInfo) -> SandboxedConversationInfo:
+    async def save_sandboxed_conversation_info(
+        self, info: SandboxedConversationInfo
+    ) -> SandboxedConversationInfo:
         self.session.add(info)
         await self.session.commit()
         await self.session.refresh(info)
@@ -187,7 +193,6 @@ class SQLSandboxedConversationInfoService(SandboxedConversationInfoService):
 
 
 class SQLSandboxedConversationServiceResolver(SandboxedConversationInfoServiceResolver):
-
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         def resolve_sandboxed_conversation_service(
@@ -202,10 +207,7 @@ class SQLSandboxedConversationServiceResolver(SandboxedConversationInfoServiceRe
 
         from openhands.app_server.dependency import get_dependency_resolver
 
-        user_service_resolver = (
-            get_dependency_resolver().user.get_resolver_for_user()
-        )
-
+        user_service_resolver = get_dependency_resolver().user.get_resolver_for_user()
 
         def resolve_sandboxed_conversation_service(
             user_service: UserService = Depends(user_service_resolver),
