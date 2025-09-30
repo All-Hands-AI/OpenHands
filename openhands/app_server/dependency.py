@@ -101,11 +101,11 @@ def _get_sandbox_spec_service_resolver():
 
 
 def _get_sandboxed_conversation_info_service_resolver():
-    from openhands.app_server.conversation.legacy_sandbox_conversation_info_service import (  # noqa: E501
-        LegacySandboxedConversationInfoServiceResolver,
+    from openhands.app_server.conversation.sql_sandboxed_conversation_info_service import (  # noqa: E501
+        SQLSandboxedConversationServiceResolver,
     )
 
-    return LegacySandboxedConversationInfoServiceResolver()
+    return SQLSandboxedConversationServiceResolver()
 
 
 def _get_sandboxed_conversation_service_resolver():

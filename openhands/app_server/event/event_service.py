@@ -67,3 +67,7 @@ class EventServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_user(self) -> Callable:
         """Get a resolver for an instance of event service limited to the current user."""
+
+    @abstractmethod
+    def get_unsecured_resolver(self) -> Callable:
+        """Get a resolver for an instance of event service for all events."""

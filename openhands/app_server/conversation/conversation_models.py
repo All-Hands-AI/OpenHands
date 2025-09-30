@@ -2,6 +2,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
+from sqlalchemy import JSON, Column
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
@@ -28,10 +29,10 @@ class SandboxedConversationInfo(SQLModel, table=True):  # type: ignore
     git_provider: ProviderType | None = None
     title: str | None = None
     trigger: ConversationTrigger | None = None
-    pr_number: list[int] = Field(default_factory=list)
+    pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
     llm_model: str | None = None
 
-    metrics: MetricsSnapshot | None = None
+    metrics: MetricsSnapshot | None = SQLField(default=None, sa_column=Column(JSON))
 
     sandbox_id: str = SQLField(index=True)
     created_at: datetime = SQLField(default_factory=utc_now, index=True)
@@ -43,9 +44,13 @@ class SandboxedConversationInfoPage(BaseModel):
     next_page_id: str | None = None
 
 
-class SandboxedConversation(SandboxedConversationInfo):
+class SandboxedConversation(SandboxedConversationInfo):  # type: ignore
     sandbox_status: SandboxStatus
     agent_status: AgentExecutionStatus | None
+
+    # Have to redefine these due to a bug in SQLModel :(
+    pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
+    metrics: MetricsSnapshot | None = SQLField(default=None, sa_column=Column(JSON))
 
 
 class SandboxedConversationPage(BaseModel):

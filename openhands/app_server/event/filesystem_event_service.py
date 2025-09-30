@@ -245,6 +245,9 @@ class FilesystemEventServiceResolver(EventServiceResolver):
         )
         return self.resolve
 
+    def get_unsecured_resolver(self) -> Callable:
+        return self.resolve
+
     def resolve(self) -> EventService:
         from openhands.app_server.config import get_global_config
 
