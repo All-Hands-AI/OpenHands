@@ -139,7 +139,7 @@
   },
   "packageManager": "npm@10.5.0",
   "volta": {
-    "node": "18.20.1"
+    "node": "22.0.0"
   },
   "msw": {
     "workerDirectory": [

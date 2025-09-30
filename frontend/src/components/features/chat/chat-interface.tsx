@@ -22,8 +22,8 @@ import { useAgentStore } from "#/stores/agent-store";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
   hasUserEvent,
@@ -49,7 +49,7 @@ export function ChatInterface() {
   const { getErrorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
-    useOptimisticUserMessage();
+    useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
