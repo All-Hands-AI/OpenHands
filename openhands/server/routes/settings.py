@@ -11,15 +11,10 @@ from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
-from openhands.server.settings_validation import (
-    check_llm_settings_changes,
-    validate_llm_settings_access,
-)
 from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
-    get_user_id,
     get_user_settings,
     get_user_settings_store,
 )
@@ -140,33 +135,16 @@ async def store_llm_settings(
     response_model=None,
     responses={
         200: {'description': 'Settings stored successfully', 'model': dict},
-        403: {'description': 'Subscription required for pro models', 'model': dict},
         500: {'description': 'Error storing settings', 'model': dict},
     },
 )
 async def store_settings(
     settings: Settings,
     settings_store: SettingsStore = Depends(get_user_settings_store),
-    user_id: str = Depends(get_user_id),
 ) -> JSONResponse:
+    # Check provider tokens are valid
     try:
         existing_settings = await settings_store.load()
-
-        # Check if any LLM-related settings are being changed
-        llm_settings_being_changed = check_llm_settings_changes(
-            settings, existing_settings
-        )
-
-        if llm_settings_being_changed:
-            has_access = await validate_llm_settings_access(user_id)
-            if not has_access:
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={
-                        'error': 'Modifying LLM settings requires an active OpenHands Pro subscription. Please upgrade your account to access LLM configuration.',
-                        'detail': 'Subscription required for LLM settings modifications',
-                    },
-                )
 
         # Convert to Settings model and merge with existing settings
         if existing_settings:
