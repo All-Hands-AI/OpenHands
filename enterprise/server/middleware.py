@@ -237,11 +237,8 @@ class LLMSettingsValidationMiddleware(BaseHTTPMiddleware):
                 logger.warning(f'Failed to parse settings request body: {e}')
                 return  # Can't parse, let the main route handle it
 
-            # We'll compare against defaults
-            existing_settings = None
-
-            # Check which LLM settings are being changed
-            changed_llm_settings = validate_llm_settings_changes(settings_dict, existing_settings)
+            # Check which LLM settings are being changed from defaults
+            changed_llm_settings = validate_llm_settings_changes(settings_dict)
 
             if changed_llm_settings:
                 logger.warning(

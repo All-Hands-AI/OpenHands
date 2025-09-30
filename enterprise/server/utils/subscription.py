@@ -87,69 +87,33 @@ def is_pro_user(user_id: str | None) -> bool:
         return False
 
 
-def validate_llm_settings_changes(
-    settings_dict: dict, existing_settings: Settings | None = None
-) -> list[str]:
+def validate_llm_settings_changes(settings_dict: dict) -> list[str]:
     """
-    Check which LLM settings are being changed from their current or default values.
+    Check which LLM settings are being changed from their default values.
 
     Args:
         settings_dict: Dictionary of settings being requested
-        existing_settings: Current settings to compare against (optional)
 
     Returns:
-        List of LLM setting names that are being changed
+        List of LLM setting names that are different from defaults
     """
     changed_llm_settings = []
+    
+    # Always compare against default values
+    default_settings = Settings()
+    default_dict = default_settings.model_dump()
 
-    if existing_settings:
-        # Compare against existing settings to find what's actually being changed
-        existing_dict = existing_settings.model_dump()
+    for setting in settings_dict.keys():
+        if setting in LLM_ONLY_SETTINGS:
+            # Check if this LLM setting is different from the default
+            new_value = settings_dict.get(setting)
+            default_value = default_dict.get(setting)
 
-        for setting in settings_dict.keys():
-            if setting in LLM_ONLY_SETTINGS:
-                # Check if this LLM setting is actually being changed
-                new_value = settings_dict.get(setting)
-                existing_value = existing_dict.get(setting)
-
-                # Consider it changed if the values are different
-                if new_value != existing_value:
-                    # Check if this is just setting a default value when existing was None
-                    if existing_value is None:
-                        # Get the default value for this setting
-                        default_settings = Settings()
-                        default_dict = default_settings.model_dump()
-                        default_value = default_dict.get(setting)
-
-                        if new_value == default_value:
-                            logger.debug(
-                                f'LLM setting "{setting}": '
-                                f'existing=None, new={new_value}, default={default_value} - '
-                                f'treating as unchanged (setting to default)'
-                            )
-                            continue  # Skip this setting, don't treat as changed
-
-                    changed_llm_settings.append(setting)
-                    logger.debug(
-                        f'LLM setting "{setting}" detected as changed: '
-                        f'{existing_value} -> {new_value}'
-                    )
-    else:
-        # No existing settings to compare against - compare against default values
-        default_settings = Settings()
-        default_dict = default_settings.model_dump()
-
-        for setting in settings_dict.keys():
-            if setting in LLM_ONLY_SETTINGS:
-                # Check if this LLM setting is different from the default
-                new_value = settings_dict.get(setting)
-                default_value = default_dict.get(setting)
-
-                if new_value != default_value:
-                    changed_llm_settings.append(setting)
-                    logger.debug(
-                        f'LLM setting "{setting}" detected as different from default: '
-                        f'default={default_value} -> new={new_value}'
-                    )
+            if new_value != default_value:
+                changed_llm_settings.append(setting)
+                logger.debug(
+                    f'LLM setting "{setting}" detected as different from default: '
+                    f'default={default_value} -> new={new_value}'
+                )
 
     return changed_llm_settings
