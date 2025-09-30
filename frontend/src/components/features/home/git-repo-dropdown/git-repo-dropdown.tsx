@@ -251,7 +251,7 @@ export function GitRepoDropdown({
   const renderEmptyState = (emptyInputValue: string) => (
     <EmptyState
       inputValue={emptyInputValue}
-      searchMessage={t(I18nKey.MICROAGENT$NO_REPOSITORY_FOUND)}
+      searchMessage={t(I18nKey.HOME$NO_REPOSITORY_FOUND)}
       emptyMessage={t(I18nKey.COMMON$NO_REPOSITORY)}
       testId="git-repo-dropdown-empty"
     />

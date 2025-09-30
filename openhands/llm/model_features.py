@@ -103,6 +103,7 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'gpt-5*',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
+    'claude-sonnet-4-5*',
 ]
 
 PROMPT_CACHE_PATTERNS: list[str] = [

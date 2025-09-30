@@ -53,7 +53,7 @@ Set environment variables and run the Docker command:
 ```bash
 # Set required environment variables
 export SANDBOX_VOLUMES="/path/to/workspace:/workspace:rw"  # Format: host_path:container_path:mode
-export LLM_MODEL="anthropic/claude-sonnet-4-20250514"
+export LLM_MODEL="anthropic/claude-sonnet-4-20250514"  # or "anthropic/claude-sonnet-4-5-20250929"
 export LLM_API_KEY="your-api-key"
 export SANDBOX_SELECTED_REPO="owner/repo-name"  # Optional: requires GITHUB_TOKEN
 export GITHUB_TOKEN="your-token"  # Required for repository operations

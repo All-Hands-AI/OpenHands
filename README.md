@@ -43,8 +43,6 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 > [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
 > to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our product roadmap.
 
-![App screenshot](./docs/static/img/screenshot.png)
-
 ## ☁️ OpenHands Cloud
 The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
 which comes with $20 in free credits for new users.
@@ -102,7 +100,7 @@ docker run -it --rm --pull=always \
 ### Getting Started
 
 When you open the application, you'll be asked to choose an LLM provider and add an API key.
-[Anthropic's Claude Sonnet 4](https://www.anthropic.com/api) (`anthropic/claude-sonnet-4-20250514`)
+[Anthropic's Claude Sonnet 4.5](https://www.anthropic.com/api) (`anthropic/claude-sonnet-4-5-20250929`)
 works best, but you have [many options](https://docs.all-hands.dev/usage/llms).
 
 See the [Running OpenHands](https://docs.all-hands.dev/usage/installation) guide for
