@@ -38,6 +38,9 @@ def get_version():
     return 'unknown'
 
 
+def __call__():
+    return __version__
+
 try:
     __version__ = get_version()
 except Exception:

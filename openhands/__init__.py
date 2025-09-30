@@ -2,6 +2,6 @@
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
 # Import version information for backward compatibility
-from openhands._version import __version__
+from openhands.version import __version__, get_version
 
-__all__ = ['__version__']
+__all__ = ['__version__', 'get_version']

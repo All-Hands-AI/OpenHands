@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     if hasattr(args, 'version') and args.version:
-        from openhands._version import get_version
+        from openhands import get_version
 
         print(f'OpenHands CLI version: {get_version()}')
         sys.exit(0)
