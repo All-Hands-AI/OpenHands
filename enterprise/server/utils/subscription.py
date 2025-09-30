@@ -87,33 +87,34 @@ def is_pro_user(user_id: str | None) -> bool:
         return False
 
 
-def validate_llm_settings_changes(settings_dict: dict) -> list[str]:
+def validate_llm_settings_changes(settings_dict: dict, current_settings: dict | None = None) -> list[str]:
     """
-    Check which LLM settings are being changed from their default values.
+    Check which LLM settings are being changed from their current values.
 
     Args:
         settings_dict: Dictionary of settings being requested
+        current_settings: Dictionary of user's current settings (optional)
 
     Returns:
-        List of LLM setting names that are different from defaults
+        List of LLM setting names that are being changed
     """
     changed_llm_settings = []
     
-    # Always compare against default values
-    default_settings = Settings()
-    default_dict = default_settings.model_dump()
+    # If no current settings provided, compare against defaults
+    if current_settings is None:
+        current_settings = Settings().model_dump()
 
     for setting in settings_dict.keys():
         if setting in LLM_ONLY_SETTINGS:
-            # Check if this LLM setting is different from the default
+            # Check if this LLM setting is being changed from current value
             new_value = settings_dict.get(setting)
-            default_value = default_dict.get(setting)
+            current_value = current_settings.get(setting)
 
-            if new_value != default_value:
+            if new_value != current_value:
                 changed_llm_settings.append(setting)
                 logger.debug(
-                    f'LLM setting "{setting}" detected as different from default: '
-                    f'default={default_value} -> new={new_value}'
+                    f'LLM setting "{setting}" detected as being changed: '
+                    f'current={current_value} -> new={new_value}'
                 )
 
     return changed_llm_settings

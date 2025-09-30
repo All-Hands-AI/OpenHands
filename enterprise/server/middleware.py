@@ -237,8 +237,21 @@ class LLMSettingsValidationMiddleware(BaseHTTPMiddleware):
                 logger.warning(f'Failed to parse settings request body: {e}')
                 return  # Can't parse, let the main route handle it
 
-            # Check which LLM settings are being changed from defaults
-            changed_llm_settings = validate_llm_settings_changes(settings_dict)
+            # Get user's current settings to compare against
+            current_settings = None
+            try:
+                user_auth = getattr(request.state, 'user_auth', None)
+                if user_auth:
+                    settings_store = await user_auth.get_user_settings_store()
+                    existing_settings = await settings_store.load()
+                    if existing_settings:
+                        current_settings = existing_settings.model_dump()
+            except Exception as e:
+                logger.debug(f'Could not get current user settings for comparison: {e}')
+                # If we can't get current settings, validation will compare against defaults
+
+            # Check which LLM settings are being changed from current values
+            changed_llm_settings = validate_llm_settings_changes(settings_dict, current_settings)
 
             if changed_llm_settings:
                 logger.warning(
