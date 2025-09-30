@@ -643,6 +643,7 @@ class TestModifyLLMSettingsBasic:
         # Setup mocks
         mock_get_models.return_value = [
             'openhands/claude-sonnet-4-20250514',
+            'openhands/claude-sonnet-4-5-20250929',
             'openhands/claude-opus-4-20250514',
             'openhands/o3',
         ]
@@ -650,6 +651,7 @@ class TestModifyLLMSettingsBasic:
             'openhands': {
                 'models': [
                     'claude-sonnet-4-20250514',
+                    'claude-sonnet-4-5-20250929',
                     'claude-opus-4-20250514',
                     'o3',
                 ],
@@ -673,7 +675,7 @@ class TestModifyLLMSettingsBasic:
         # Change provider and model
         mock_confirm.side_effect = [
             0,  # Select openhands (index 0 in ['openhands', 'anthropic'])
-            2,  # Select o3 (index 2 in ['claude-sonnet-4-20250514', 'claude-opus-4-20250514', 'o3'])
+            3,  # Select o3 (index 3 in ['claude-sonnet-4-20250514', 'claude-sonnet-4-5-20250929', 'claude-opus-4-20250514', 'o3'])
             0,  # Save settings
         ]
 
