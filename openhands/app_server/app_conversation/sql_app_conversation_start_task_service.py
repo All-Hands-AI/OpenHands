@@ -33,7 +33,7 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
     AppConversationStartTaskServiceResolver,
 )
 
-# from openhands.app_server.database import async_session_dependency
+from openhands.app_server.database import async_session_dependency
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService
 
@@ -86,7 +86,6 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         try:
             self.session.add(task)
             await self.session.commit()
-            await self.session.refresh(task)
             return True
         except Exception as e:
             logger.error(f'Failed to save conversation start task {task.id}: {e}')
@@ -115,7 +114,7 @@ class SQLAppConversationStartTaskServiceResolver(
 
         def resolve_app_conversation_start_task_service(
             user_service: UserService = Depends(user_service_resolver),
-            session: AsyncSession = Depends(self._get_async_session_dependency),
+            session: AsyncSession = Depends(async_session_dependency),
         ) -> AppConversationStartTaskService:
             current_user = user_service.get_current_user()
             if current_user is None:
@@ -124,9 +123,3 @@ class SQLAppConversationStartTaskServiceResolver(
             return service
 
         return resolve_app_conversation_start_task_service
-
-    def _get_async_session_dependency(self):
-        """Get the async session dependency, importing it lazily to avoid circular imports."""
-        from openhands.app_server.database import async_session_dependency
-
-        return async_session_dependency

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_models import UserInfo
@@ -23,7 +23,7 @@ class LegacyUserService(UserService):
     async def get_current_user(self) -> UserInfo:
         if self.user_id is None:
             raise AuthError()
-        return UserInfo(id=self.user_id, **self.settings.model_dump())
+        return UserInfo(id=self.user_id, **self.settings.model_dump(context={"expose_secrets": True}))
 
 
 class LegacyUserServiceResolver(UserServiceResolver):
@@ -32,10 +32,17 @@ class LegacyUserServiceResolver(UserServiceResolver):
 
     def _resolve_for_user(
         self,
+        request: Request,
         user_id: str | None = Depends(get_user_id),
         settings: Settings = Depends(get_user_settings),
     ) -> UserService:
+        user_service = getattr(request.state, 'user_service', None)
+        if user_service:
+            return user_service
         # In the existing OSS, no user is permitted - but it is not in SAAS.
         if user_id is None and settings is not None:
             user_id = DEFAULT_USER
-        return LegacyUserService(user_id, settings)
+        user_service = LegacyUserService(user_id, settings)
+        setattr(request.state, 'user_service', user_service)
+        return user_service
+

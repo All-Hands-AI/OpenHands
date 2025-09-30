@@ -40,7 +40,7 @@ async def search_sandbox_specs(
     return await sandbox_spec_service.search_sandbox_specs(page_id=page_id, limit=limit)
 
 
-@router.get('/')
+@router.get('')
 async def batch_get_sandbox_specs(
     id: Annotated[list[str], Query()],
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,

@@ -27,6 +27,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationSortOrder,
     AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskStatus,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
@@ -70,7 +71,7 @@ class LiveStatusAppConversationService(AppConversationService):
         created_at__lt: datetime | None = None,
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
-        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,  # type: ignore
+        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 20,
     ) -> AppConversationPage:
@@ -154,8 +155,8 @@ class LiveStatusAppConversationService(AppConversationService):
 
             # Start conversation...
             response = await self.httpx_client.post(
-                f'{agent_server_url}/conversations',
-                json=start_conversation_request.model_dump(),
+                f'{agent_server_url}/api/conversations/',
+                json=start_conversation_request.model_dump(context={"expose_secrets": True}),
                 headers={'X-Session-API-Key': sandbox.session_api_key},
             )
             response.raise_for_status()
@@ -172,22 +173,25 @@ class LiveStatusAppConversationService(AppConversationService):
 
             # Update the start task
             task.app_conversation_id = info.id
+            task.status = AppConversationStartTaskStatus.READY
+            task.agent_server_url = agent_server_url
             await self.app_conversation_start_task_service.save_app_conversation_start_task(
                 task
             )
 
-        except Exception:
+        except Exception as exc:
             _logger.exception('Error starting conversation', stack_info=True)
-            task.error = True
+            task.status = AppConversationStartTaskStatus.ERROR
+            task.detail = str(exc)
             await self.app_conversation_start_task_service.save_app_conversation_start_task(
                 task
             )
 
     async def batch_get_app_conversation_start_tasks(
-        self, app_conversation_start_task_id
+        self, app_conversation_start_task_ids
     ):
-        return self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(
-            app_conversation_start_task_id
+        return await self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(
+            app_conversation_start_task_ids
         )
 
     async def _build_app_conversations(

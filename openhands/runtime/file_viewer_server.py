@@ -19,7 +19,7 @@ def create_app() -> FastAPI:
         title='File Viewer Server', openapi_url=None, docs_url=None, redoc_url=None
     )
 
-    @app.get('/')
+    @app.get('')
     async def root() -> dict[str, str]:
         """Root endpoint to check if the server is running."""
         return {'status': 'File viewer server is running'}

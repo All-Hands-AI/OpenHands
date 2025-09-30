@@ -1,9 +1,10 @@
 from datetime import datetime
+from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import JSON, Column, Enum
-from sqlmodel import Field as SQLField
+from sqlalchemy import Column
+from sqlmodel import Field as SQLField, JSON
 from sqlmodel import SQLModel
 
 from openhands.agent_server.models import SendMessageRequest
@@ -12,6 +13,7 @@ from openhands.app_server.event_callback.event_callback_models import (
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 from openhands.app_server.utils.date_utils import utc_now
+from openhands.app_server.utils.sql_utils import create_json_type_decorator
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import MetricsSnapshot
@@ -39,7 +41,7 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
     updated_at: datetime = SQLField(default_factory=utc_now, index=True)
 
 
-class AppConversationSortOrder(str, Enum):
+class AppConversationSortOrder(Enum):
     CREATED_AT = 'CREATED_AT'
     CREATED_AT_DESC = 'CREATED_AT_DESC'
     UPDATED_AT = 'UPDATED_AT'
@@ -86,6 +88,12 @@ class AppConversationStartRequest(BaseModel):
     processors: list[EventCallbackProcessor] = Field(default_factory=list)
 
 
+class AppConversationStartTaskStatus(Enum):
+    WORKING = "WORKING"
+    READY = "READY"
+    ERROR = "ERROR"
+
+
 class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     """Object describing the start process for an app conversation.
 
@@ -93,12 +101,19 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     we kick off a background task for it. Once the conversation is started, the app_conversation_id
     is populated."""
 
-    id: UUID = SQLField(default=uuid4, primary_key=True)
+    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
     user_id: str = SQLField(index=True)
+    status: AppConversationStartTaskStatus = AppConversationStartTaskStatus.WORKING
+    detail: str | None = None
     app_conversation_id: UUID | None = SQLField(
-        default=None, description='The id of the app_conversation, if started'
+        default=None, description='The id of the app_conversation, if READY'
     )
-    error: bool = False
-    request: AppConversationStartRequest = SQLField(sa_column=Column(JSON))
+    sandbox_id: str | None = SQLField(
+        default=None, description="The id of the sandbox, if READY"
+    )
+    agent_server_url: str | None = SQLField(
+        default=None, description="The agent server url, if READY"
+    )
+    request: AppConversationStartRequest = SQLField(sa_column=Column(create_json_type_decorator(AppConversationStartRequest)))
     created_at: datetime = SQLField(default_factory=utc_now, index=True)
     updated_at: datetime = SQLField(default_factory=utc_now, index=True)

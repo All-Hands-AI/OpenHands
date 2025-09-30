@@ -60,7 +60,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         created_at__lt: datetime | None = None,
         updated_at__gte: datetime | None = None,
         updated_at__lt: datetime | None = None,
-        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,  # type: ignore
+        sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 100,
     ) -> AppConversationInfoPage:

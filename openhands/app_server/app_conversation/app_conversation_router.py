@@ -113,7 +113,7 @@ async def count_app_conversations(
     )
 
 
-@router.get('/')
+@router.get('')
 async def batch_get_app_conversations(
     ids: Annotated[list[UUID], Query()],
     app_conversation_service: AppConversationService = (
@@ -126,7 +126,7 @@ async def batch_get_app_conversations(
     return app_conversations
 
 
-@router.post('/')
+@router.post('')
 async def start_app_conversation(
     request: AppConversationStartRequest,
     app_conversation_service: AppConversationService = (

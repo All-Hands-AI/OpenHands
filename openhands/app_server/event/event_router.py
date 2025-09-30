@@ -101,7 +101,7 @@ async def count_events(
     )
 
 
-@router.get('/')
+@router.get('')
 async def batch_get_events(
     id: Annotated[list[str], Query()],
     event_service: EventService = event_service_dependency,

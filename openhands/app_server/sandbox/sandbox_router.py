@@ -43,7 +43,7 @@ async def search_sandboxes(
     )
 
 
-@router.get('/')
+@router.get('')
 async def batch_get_sandboxes(
     id: Annotated[list[str], Query()],
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -57,7 +57,7 @@ async def batch_get_sandboxes(
 # Write Methods
 
 
-@router.post('/')
+@router.post('')
 async def start_sandbox(
     sandbox_spec_id: str | None = None,
     sandbox_service: SandboxService = sandbox_service_dependency,
