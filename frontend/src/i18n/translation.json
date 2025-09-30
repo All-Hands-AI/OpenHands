@@ -14654,5 +14654,21 @@
     "tr": "Onay modu etkinleştirildi",
     "de": "Bestätigungsmodus aktiviert",
     "uk": "Режим підтвердження увімкнено"
+  },
+  "HOME$NO_REPOSITORY_FOUND": {
+    "en": "No repository found to launch conversation",
+    "ja": "会話を開始するためのリポジトリが見つかりません",
+    "zh-CN": "未找到用于启动会话的存储库",
+    "zh-TW": "未找到用於啟動對話的存儲庫",
+    "ko-KR": "대화를 시작할 저장소를 찾을 수 없습니다",
+    "no": "Ingen repository funnet for å starte samtale",
+    "it": "Nessun repository trovato per avviare la conversazione",
+    "pt": "Nenhum repositório encontrado para iniciar a conversa",
+    "es": "No se encontró ningún repositorio para iniciar la conversación",
+    "ar": "لم يتم العثور على مستودع لبدء المحادثة",
+    "fr": "Aucun dépôt trouvé pour lancer la conversation",
+    "tr": "Konuşma başlatmak için depo bulunamadı",
+    "de": "Kein Repository gefunden, um das Gespräch zu starten",
+    "uk": "Не знайдено репозиторій для запуску розмови"
   }
 }
