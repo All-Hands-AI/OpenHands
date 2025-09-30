@@ -516,9 +516,10 @@ class SaasNestedConversationManager(ConversationManager):
                 return None
 
             async with httpx.AsyncClient(
+                follow_redirects=True,
                 headers={
                     'X-Session-API-Key': session_api_key,
-                }
+                },
             ) as client:
                 # Query the nested runtime for conversation info
                 response = await client.get(nested_url)
