@@ -2,14 +2,12 @@ import { useMemo } from "react";
 import { Outlet, redirect, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useConfig } from "#/hooks/query/use-config";
-import { I18nKey } from "#/i18n/declaration";
 import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/option-service/option.types";
 import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { SAAS_NAV_ITEMS, OSS_NAV_ITEMS } from "#/constants/settings-nav";
-import CircuitIcon from "#/icons/u-circuit.svg?react";
 import { Typography } from "#/ui/typography";
 import { SettingsLayout } from "#/components/features/settings/settings-layout";
 
@@ -52,13 +50,6 @@ function SettingsScreen() {
   const navItems = useMemo(() => {
     const items = [];
     if (isSaas) {
-      if (subscriptionAccess) {
-        items.push({
-          icon: <CircuitIcon width={22} height={22} />,
-          to: "/settings",
-          text: "SETTINGS$NAV_LLM" as I18nKey,
-        });
-      }
       items.push(...SAAS_NAV_ITEMS);
     } else {
       items.push(...OSS_NAV_ITEMS);
