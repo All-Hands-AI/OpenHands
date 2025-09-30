@@ -134,7 +134,6 @@ export function GitProviderDropdown({
       key={item}
       item={item}
       index={index}
-      isHighlighted={index === currentHighlightedIndex}
       isSelected={item === currentSelectedItem}
       getItemProps={currentGetItemProps}
       getDisplayText={formatProviderName}
