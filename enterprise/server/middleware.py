@@ -223,31 +223,24 @@ class LLMSettingsMiddleware:
 
             logger.info(f"Processing settings request for user: {user_id}")
 
-            # Parse the request body to get settings
-            body = await request.body()
-            if not body:
-                logger.info("No request body, nothing to validate")
-                return  # No body, nothing to validate
-            
-            # Parse JSON body
-            import json
+            # Parse the request JSON to get new settings
             try:
-                settings_data = json.loads(body.decode('utf-8'))
+                settings_data = await request.json()
                 logger.info(f"Parsed settings data keys: {list(settings_data.keys())}")
-            except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            except Exception as e:
                 logger.warning(f"Invalid JSON in request body: {e}")
                 return  # Invalid JSON, let the route handle it
             
             # Convert to Settings object for validation
             try:
-                settings = Settings(**settings_data)
+                new_settings = Settings(**settings_data)
                 logger.info("Successfully created Settings object from request data")
             except Exception as e:
                 logger.warning(f"Invalid settings format: {e}")
                 return  # Invalid settings format, let the route handle it
             
-            # Validate LLM settings access
-            await validate_llm_settings_access(user_id, settings)
+            # Validate LLM settings access by comparing new settings against SaaS defaults
+            await validate_llm_settings_access(user_id, new_settings)
             logger.info(f"LLM settings validation passed for user {user_id}")
             
         except HTTPException as e:
