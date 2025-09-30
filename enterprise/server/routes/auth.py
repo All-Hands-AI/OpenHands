@@ -417,12 +417,35 @@ async def refresh_tokens(
     x_session_api_key: Annotated[str | None, Header(alias='X-Session-API-Key')],
 ) -> TokenResponse:
     """Return the latest token for a given provider."""
+    logger.info(
+        f'[TOKEN_DEBUG] /api/refresh-tokens called: provider={provider}, sid={sid}, '
+        f'has_session_key={bool(x_session_api_key)}'
+    )
+
     user_id = _get_user_id(sid)
+    logger.info(
+        f'[TOKEN_DEBUG] Got user_id: {user_id[:8]}...' if user_id else 'No user_id'
+    )
+
     session_api_key = await _get_session_api_key(user_id, sid)
+    logger.info(
+        f'[TOKEN_DEBUG] Session key validation: '
+        f'expected={session_api_key[:8] if session_api_key else None}..., '
+        f'received={x_session_api_key[:8] if x_session_api_key else None}..., '
+        f'match={session_api_key == x_session_api_key}'
+    )
+
     if session_api_key != x_session_api_key:
+        logger.error(
+            f'[TOKEN_DEBUG] Session key mismatch! Returning 403. '
+            f'Expected: {session_api_key[:8] if session_api_key else "None"}..., '
+            f'Got: {x_session_api_key[:8] if x_session_api_key else "None"}...'
+        )
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Forbidden')
 
-    logger.info(f'Refreshing token for conversation {sid}')
+    logger.info(
+        f'[TOKEN_DEBUG] Session validated. Refreshing {provider} token for {sid}'
+    )
     provider_handler = ProviderHandler(
         create_provider_tokens_object([provider]), external_auth_id=user_id
     )

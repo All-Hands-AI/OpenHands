@@ -266,6 +266,10 @@ class TokenManager:
         user_id = user_info.get('sub')
         username = user_info.get('preferred_username')
         logger.info(f'Getting token for user {username} and IDP {idp}')
+        logger.info(
+            '[TOKEN_SOURCE_DEBUG] get_idp_token called with access_token '
+            '(from cookie/request), will check DB for stored tokens'
+        )
         token_store = await AuthTokenStore.get_instance(
             keycloak_user_id=user_id, idp=idp
         )
@@ -439,8 +443,16 @@ class TokenManager:
             0 if refresh_expires_in == 0 else current_time + refresh_expires_in
         )
 
+        # Log detailed expiration info for debugging
+        access_expires_hours = expires_in / 3600 if expires_in > 0 else 'Never'
+        refresh_expires_days = (
+            refresh_expires_in / 86400 if refresh_expires_in > 0 else 'Never'
+        )
+
         logger.info(
-            f'Token refresh successful. New access token expires at: {access_token_expires_at}, refresh token expires at: {refresh_token_expires_at}'
+            f'[TOKEN_DEBUG] Token refresh successful. Access token expires in: {access_expires_hours} hours, '
+            f'Refresh token expires in: {refresh_expires_days} days. '
+            f'Raw values - expires_in: {expires_in}s, refresh_expires_in: {refresh_expires_in}s'
         )
         return {
             'access_token': access_token,
@@ -457,15 +469,32 @@ class TokenManager:
     async def get_idp_token_from_offline_token(
         self, offline_token: str, idp: ProviderType
     ) -> str:
-        logger.info('Getting IDP token from offline token')
+        logger.info(
+            f'[TOKEN_DEBUG] Getting {idp} token from offline token. '
+            f'Token preview: {offline_token[:20] if offline_token else "None"}...'
+        )
+        logger.info(
+            f'[TOKEN_SOURCE_DEBUG] Using OFFLINE token (from DB) to refresh {idp} token, '
+            f'token_length={len(offline_token) if offline_token else 0}'
+        )
 
         try:
+            logger.info('[TOKEN_DEBUG] Calling Keycloak to refresh offline token...')
             tokens = await get_keycloak_openid(self.external).a_refresh_token(
                 offline_token
             )
+            logger.info('[TOKEN_DEBUG] Keycloak refresh successful!')
             return await self.get_idp_token(tokens['access_token'], idp)
-        except KeycloakConnectionError:
-            logger.exception('KeycloakConnectionError when refreshing token')
+        except KeycloakConnectionError as e:
+            logger.error(
+                f'[TOKEN_DEBUG] KeycloakConnectionError when refreshing token: {e}'
+            )
+            raise
+        except Exception as e:
+            logger.error(
+                f'[TOKEN_DEBUG] Unexpected error refreshing Keycloak token: '
+                f'{type(e).__name__}: {e}'
+            )
             raise
 
     @retry(

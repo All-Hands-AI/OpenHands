@@ -227,12 +227,23 @@ class SaasUserAuth(UserAuth):
 def get_api_key_from_header(request: Request):
     auth_header = request.headers.get('Authorization')
     if auth_header and auth_header.startswith('Bearer '):
-        return auth_header.replace('Bearer ', '')
+        api_key = auth_header.replace('Bearer ', '')
+        logger.info(
+            f'[TOKEN_DEBUG] Got API key from Authorization header: '
+            f'key_preview={api_key[:10] if api_key else "None"}...'
+        )
+        return api_key
 
     # This is a temp hack
     # Streamable HTTP MCP Client works via redirect requests, but drops the Authorization header for reason
     # We include `X-Session-API-Key` header by default due to nested runtimes, so it used as a drop in replacement here
-    return request.headers.get('X-Session-API-Key')
+    session_api_key = request.headers.get('X-Session-API-Key')
+    if session_api_key:
+        logger.info(
+            f'[TOKEN_DEBUG] Got API key from X-Session-API-Key header: '
+            f'key_preview={session_api_key[:10] if session_api_key else "None"}...'
+        )
+    return session_api_key
 
 
 async def saas_user_auth_from_bearer(request: Request) -> SaasUserAuth | None:
@@ -259,7 +270,11 @@ async def saas_user_auth_from_cookie(request: Request) -> SaasUserAuth | None:
     try:
         signed_token = request.cookies.get('keycloak_auth')
         if not signed_token:
+            logger.info('[TOKEN_DEBUG] No keycloak_auth cookie found in request')
             return None
+        logger.info(
+            f'[TOKEN_DEBUG] Found keycloak_auth cookie, size={len(signed_token)}'
+        )
         return await saas_user_auth_from_signed_token(signed_token)
     except Exception as exc:
         raise CookieError from exc
@@ -272,6 +287,10 @@ async def saas_user_auth_from_signed_token(signed_token: str) -> SaasUserAuth:
     logger.debug('saas_user_auth_from_signed_token:decoded')
     access_token = decoded['access_token']
     refresh_token = decoded['refresh_token']
+    logger.info(
+        f'[TOKEN_DEBUG] Cookie tokens: '
+        f'refresh_token_preview={refresh_token[:20] if refresh_token else "None"}...'
+    )
     logger.debug(
         'saas_user_auth_from_signed_token',
         extra={
@@ -287,6 +306,35 @@ async def saas_user_auth_from_signed_token(signed_token: str) -> SaasUserAuth:
     user_id = access_token_payload['sub']
     email = access_token_payload['email']
     email_verified = access_token_payload['email_verified']
+
+    # Check if we have an offline token in the database
+    logger.info(f'[TOKEN_DEBUG] Checking for offline token for user {user_id}')
+    try:
+        offline_token = await token_manager.load_offline_token(user_id)
+        if offline_token:
+            # Compare tokens definitively
+            tokens_match = offline_token == refresh_token
+            logger.info(
+                f'[TOKEN_DEBUG] Token comparison: '
+                f'TOKENS_ARE_{"SAME" if tokens_match else "DIFFERENT"}! '
+                f'Cookie len={len(refresh_token) if refresh_token else 0}, '
+                f'DB len={len(offline_token) if offline_token else 0}'
+            )
+            if not tokens_match:
+                # Log first 50 chars for better comparison
+                logger.info(
+                    f'[TOKEN_DEBUG] Cookie token: {refresh_token[:50] if refresh_token else "None"}...'
+                )
+                logger.info(
+                    f'[TOKEN_DEBUG] DB offline token: {offline_token[:50] if offline_token else "None"}...'
+                )
+            # TODO: Consider using offline_token instead of refresh_token
+            # refresh_token = offline_token
+        else:
+            logger.info('[TOKEN_DEBUG] No offline token in DB, using cookie token')
+    except Exception as e:
+        logger.error(f'[TOKEN_DEBUG] Error loading offline token: {e}')
+
     logger.debug('saas_user_auth_from_signed_token:return')
 
     return SaasUserAuth(
@@ -304,6 +352,11 @@ async def get_user_auth_from_keycloak_id(keycloak_user_id: str) -> UserAuth:
     offline_token = await token_manager.load_offline_token(keycloak_user_id)
     if offline_token is None:
         logger.info('no_offline_token_found')
+    else:
+        logger.info(
+            f'[TOKEN_DEBUG] Using offline token from DB for user {keycloak_user_id}: '
+            f'{offline_token[:20] if offline_token else "None"}...'
+        )
 
     user_auth = SaasUserAuth(
         user_id=keycloak_user_id,
