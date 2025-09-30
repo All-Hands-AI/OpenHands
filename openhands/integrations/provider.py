@@ -174,7 +174,17 @@ class ProviderHandler:
     ) -> SecretStr | None:
         """Get latest token from service"""
         try:
-            async with httpx.AsyncClient() as client:
+            logger.info(
+                f'[TOKEN_DEBUG] Attempting to fetch latest {provider} token from '
+                f'{self.REFRESH_TOKEN_URL} for session {self.sid}'
+            )
+            logger.info(
+                f'[TOKEN_DEBUG] Using session API key: '
+                f'{self.session_api_key[:10] if self.session_api_key else "None"}..., '
+                f'provider={provider.value}, sid={self.sid}'
+            )
+
+            async with httpx.AsyncClient(follow_redirects=False) as client:
                 resp = await client.get(
                     self.REFRESH_TOKEN_URL,
                     headers={
@@ -183,13 +193,72 @@ class ProviderHandler:
                     params={'provider': provider.value, 'sid': self.sid},
                 )
 
+            logger.info(
+                f'[TOKEN_DEBUG] Response status: {resp.status_code} for {provider}'
+            )
+
+            # Log response headers for debugging
+            logger.info(f'[TOKEN_DEBUG] Response headers: {dict(resp.headers)}')
+
+            # Check for redirect (expired Keycloak session)
+            if resp.status_code == 302:
+                redirect_url = resp.headers.get('Location', 'Unknown')
+                # Check if this is OAuth2 proxy CSRF issue vs actual token expiry
+                is_csrf_issue = '_oauth2_proxy_csrf' in resp.headers.get(
+                    'set-cookie', ''
+                )
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 302 redirect for {provider} token refresh. '
+                    f'{"OAuth2 Proxy CSRF validation failed" if is_csrf_issue else "Keycloak session expired"}. '
+                    f'Redirect URL: {redirect_url[:200]}... '
+                    f'User needs to re-authenticate.'
+                )
+                # Log OAuth2 proxy cookie details
+                set_cookie = resp.headers.get('set-cookie', 'N/A')
+                logger.info(
+                    f'[TOKEN_DEBUG] OAuth2 proxy CSRF cookie in redirect: {set_cookie[:150]}...'
+                )
+                logger.info(
+                    f'[TOKEN_DEBUG] This appears to be {"a CSRF validation issue (pod changed?)" if is_csrf_issue else "a token expiry issue"}'
+                )
+                # Don't try to parse JSON from a redirect response
+                return None
+
+            # Check for forbidden (wrong session key)
+            if resp.status_code == 403:
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 403 Forbidden for {provider} token refresh. '
+                    f'Session key mismatch or invalid. Session API key: '
+                    f'{self.session_api_key[:10] if self.session_api_key else "None"}... '
+                    f'Response body: {resp.text[:200]}'
+                )
+                return None
+
+            # Check for unauthorized
+            if resp.status_code == 401:
+                logger.error(
+                    f'[TOKEN_DEBUG] Got 401 Unauthorized for {provider} token refresh. '
+                    f'Authentication failed. Response body: {resp.text[:200]}'
+                )
+                return None
+
             resp.raise_for_status()
             data = TokenResponse.model_validate_json(resp.text)
+
+            # Log token info (safely)
+            token_str = data.token
+            logger.info(
+                f'[TOKEN_DEBUG] Successfully fetched {provider} token. '
+                f'Token prefix: {token_str[:10] if len(token_str) > 10 else "SHORT"}, '
+                f'Length: {len(token_str)}'
+            )
+
             return SecretStr(data.token)
 
         except Exception as e:
             logger.error(
-                f'Failed to fetch latest token for provider {provider}: {e}',
+                f'[TOKEN_DEBUG] Failed to fetch latest token for provider {provider}: '
+                f'{type(e).__name__}: {e}',
                 exc_info=True,
             )
 

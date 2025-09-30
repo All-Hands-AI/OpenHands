@@ -159,6 +159,12 @@ class StandaloneConversationManager(ConversationManager):
             f'join_conversation:{sid}:{connection_id}',
             extra={'session_id': sid, 'user_id': user_id},
         )
+        logger.info(
+            f'[TOKEN_DEBUG] ConversationManager.join_conversation: '
+            f'sid={sid}, connection_id={connection_id}, '
+            f'has_settings={settings is not None}, '
+            f'SOURCE=conversation_manager (entry point for joins)'
+        )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
         agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
@@ -251,6 +257,13 @@ class StandaloneConversationManager(ConversationManager):
         # Get all items and convert to list for sorting
         items: Iterable[tuple[str, Session]] = self._local_agent_loops_by_sid.items()
 
+        logger.info(
+            f'[TOKEN_DEBUG] Standalone.get_running_agent_loops: '
+            f'found {len(self._local_agent_loops_by_sid)} sessions, '
+            f'filter_to_sids={filter_to_sids}, '
+            f'session_ids={list(self._local_agent_loops_by_sid.keys())}'
+        )
+
         # Filter items if needed
         if filter_to_sids is not None:
             items = (item for item in items if item[0] in filter_to_sids)
@@ -286,10 +299,24 @@ class StandaloneConversationManager(ConversationManager):
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
         logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] StandaloneConversationManager.maybe_start_agent_loop ENTRY: '
+            f'sid={sid}, user_id={user_id}'
+        )
         session = self._local_agent_loops_by_sid.get(sid)
+        logger.info(
+            f'[TOKEN_DEBUG] maybe_start_agent_loop: '
+            f'sid={sid}, session_exists={session is not None}, '
+            f'will_start_new={session is None}'
+        )
         if not session:
+            logger.info(f'[TOKEN_DEBUG] Starting NEW agent loop for sid={sid}')
             session = await self._start_agent_loop(
                 sid, settings, user_id, initial_user_msg, replay_json
+            )
+        else:
+            logger.info(
+                f'[TOKEN_DEBUG] Using EXISTING agent loop for sid={sid} - THIS IS RESUME!'
             )
         return self._agent_loop_info_from_session(session)
 
@@ -302,6 +329,14 @@ class StandaloneConversationManager(ConversationManager):
         replay_json: str | None = None,
     ) -> Session:
         logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(
+            f'[TOKEN_DEBUG] StandaloneConversationManager._start_agent_loop CALLED: '
+            f'sid={sid}, user_id={user_id}, '
+            f'has_settings={settings is not None}, '
+            f'has_initial_msg={initial_user_msg is not None}, '
+            f'has_replay={replay_json is not None}, '
+            f'SOURCE=standalone._start_agent_loop'
+        )
 
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:

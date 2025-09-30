@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { isFileImage } from "#/utils/is-file-image";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { validateFiles } from "#/utils/file-validation";
@@ -31,6 +32,25 @@ export function InteractiveChatBox({
   } = useConversationStore();
   const { curAgentState } = useAgentStore();
   const { data: conversation } = useActiveConversation();
+
+  // Track if agent has reached AWAITING_USER_INPUT state for first time
+  const [hasSeenAwaitingUserInput, setHasSeenAwaitingUserInput] = useState(false);
+
+  // Reset the flag when conversation is STARTING (new or restart)
+  useEffect(() => {
+    if (conversation?.status === "STARTING") {
+      console.log("[CHAT_INPUT_DEBUG] Conversation STARTING - resetting hasSeenAwaitingUserInput to false");
+      setHasSeenAwaitingUserInput(false);
+    }
+  }, [conversation?.status]);
+
+  // Set flag when we see AWAITING_USER_INPUT for the first time
+  useEffect(() => {
+    if (curAgentState === AgentState.AWAITING_USER_INPUT && !hasSeenAwaitingUserInput) {
+      console.log("[CHAT_INPUT_DEBUG] Agent reached AWAITING_USER_INPUT - enabling input");
+      setHasSeenAwaitingUserInput(true);
+    }
+  }, [curAgentState, hasSeenAwaitingUserInput]);
 
   // Helper function to validate and filter files
   const validateAndFilterFiles = (selectedFiles: File[]) => {
@@ -137,8 +157,17 @@ export function InteractiveChatBox({
   };
 
   const isDisabled =
+    !hasSeenAwaitingUserInput ||  // Block until first AWAITING_USER_INPUT
     curAgentState === AgentState.LOADING ||
     curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
+
+  // Debug logging for disable state
+  console.log("[CHAT_INPUT_DEBUG] Input disabled state:", {
+    isDisabled,
+    hasSeenAwaitingUserInput,
+    curAgentState,
+    conversationStatus: conversation?.status
+  });
 
   return (
     <div data-testid="interactive-chat-box">
