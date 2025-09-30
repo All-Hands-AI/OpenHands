@@ -205,8 +205,8 @@ class LLMSettingsMiddleware:
         except Exception as e:
             logger.warning(f'Error in LLM settings middleware: {e}')
             # Let other errors pass through to be handled by the route
-            response: Response = await call_next(request)
-            return response
+            fallback_response: Response = await call_next(request)
+            return fallback_response
 
     async def _validate_llm_settings_request(self, request: Request) -> None:
         """Validate LLM settings access for the current request."""
