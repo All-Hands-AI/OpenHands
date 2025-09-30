@@ -180,7 +180,7 @@ class SQLEventCallbackService(EventCallbackService):
         await self.session.commit()
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this event callback service"""
+        """Stop using this event callback service."""
         pass
 
 

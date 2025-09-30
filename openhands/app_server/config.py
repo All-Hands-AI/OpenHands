@@ -1,4 +1,4 @@
-"""Configuration for the OpenHands App Server"""
+"""Configuration for the OpenHands App Server."""
 
 import os
 from datetime import datetime
@@ -122,7 +122,7 @@ class GCPConfig(BaseModel):
 
 
 class DatabaseConfig(BaseModel):
-    """Configuration specific to the database"""
+    """Configuration specific to the database."""
 
     url: SecretStr = _get_db_url()
     name: str | None = os.getenv('DB_NAME')
@@ -174,7 +174,7 @@ _global_config: AppServerConfig | None = None
 
 
 def get_global_config() -> AppServerConfig:
-    """Get the default local server config shared across the server"""
+    """Get the default local server config shared across the server."""
     global _global_config
     if _global_config is None:
         # Load configuration from environment...

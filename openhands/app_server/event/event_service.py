@@ -14,11 +14,11 @@ _logger = logging.getLogger(__name__)
 
 
 class EventService(ABC):
-    """Event Service for getting events"""
+    """Event Service for getting events."""
 
     @abstractmethod
     async def get_event(self, event_id: str) -> EventBase | None:
-        """Given an id, retrieve an event"""
+        """Given an id, retrieve an event."""
 
     @abstractmethod
     async def search_events(
@@ -46,26 +46,24 @@ class EventService(ABC):
 
     @abstractmethod
     async def save_event(self, conversation_id: UUID, event: EventBase):
-        """Save an event. Internal method intended not be part of the REST api"""
+        """Save an event. Internal method intended not be part of the REST api."""
 
     async def batch_get_events(self, event_ids: list[str]) -> list[EventBase | None]:
-        """Given a list of ids, get events (Or none for any which were not found)"""
+        """Given a list of ids, get events (Or none for any which were not found)."""
         return await asyncio.gather(
             *[self.get_event(event_id) for event_id in event_ids]
         )
 
     async def __aenter__(self) -> 'EventService':
-        """Start using this service"""
+        """Start using this service."""
         return self
 
     @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this service"""
+        """Stop using this service."""
 
 
 class EventServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_user(self) -> Callable:
-        """Get a resolver which may be used to resolve an instance of event service
-        limited to the current user.
-        """
+        """Get a resolver for an instance of event service limited to the current user."""

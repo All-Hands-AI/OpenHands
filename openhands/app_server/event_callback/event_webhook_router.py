@@ -46,7 +46,7 @@ async def on_conversation_update(
     conversation_info: StoredConversation,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
 ):
-    """Webhook callback for when a conversation starts, pauses, resumes, or deletes"""
+    """Webhook callback for when a conversation starts, pauses, resumes, or deletes."""
 
     # TODO: Make sure that we have an entry saved for the conversation info.
     #       (We will still go back to the sandbox to determine its status,
@@ -61,7 +61,7 @@ async def on_event(
     event_service: EventService = event_service_dependency,
     event_callback_service: EventCallbackService = event_callback_service_dependency,
 ):
-    """Webhook callback for when event stream events occur"""
+    """Webhook callback for when event stream events occur."""
     # TODO: Before saving events, we should guarantee that the conversation either
     # does not yet exist or is associated with the owner of the sandbox
 

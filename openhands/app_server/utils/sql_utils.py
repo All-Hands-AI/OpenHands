@@ -3,9 +3,7 @@ from sqlalchemy import JSON, String, TypeDecorator
 
 
 def create_json_type_decorator(object_type: type):
-    """Create a decorator for a particular type. Introduced because SQLAlchemy
-    could not process lists of enum values.
-    """
+    """Create a decorator for a particular type. Introduced because SQLAlchemy could not process lists of enum values."""
     type_adapter: TypeAdapter = TypeAdapter(object_type)
 
     class JsonTypeDecorator(TypeDecorator):
@@ -22,9 +20,7 @@ def create_json_type_decorator(object_type: type):
 
 
 class SecretStrDecorator(TypeDecorator):
-    """TypeDecorator for secret strings. Encrypts the value using the default key
-    before storing
-    """
+    """TypeDecorator for secret strings. Encrypts the value using the default key before storing."""
 
     impl = String
     cache_ok = True

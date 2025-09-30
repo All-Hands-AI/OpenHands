@@ -62,7 +62,7 @@ async def search_sandboxed_conversations(
         sandboxed_conversation_service_dependency
     ),
 ) -> SandboxedConversationPage:
-    """Search / List sandboxed conversations"""
+    """Search / List sandboxed conversations."""
     assert limit > 0
     assert limit <= 100
     return await sandboxed_conversation_service.search_sandboxed_conversations(
@@ -102,7 +102,7 @@ async def count_sandboxed_conversations(
         sandboxed_conversation_service_dependency
     ),
 ) -> int:
-    """Count sandboxed conversations matching the given filters"""
+    """Count sandboxed conversations matching the given filters."""
     return await sandboxed_conversation_service.count_sandboxed_conversations(
         title__contains=title__contains,
         created_at__gte=created_at__gte,
@@ -119,7 +119,7 @@ async def get_sandboxed_conversation(
         sandboxed_conversation_service_dependency
     ),
 ) -> SandboxedConversation:
-    """Get a sandboxed conversation given an id"""
+    """Get a sandboxed conversation given an id."""
     sandboxed_conversation = (
         await sandboxed_conversation_service.get_sandboxed_conversation(id)
     )
@@ -135,9 +135,7 @@ async def batch_get_sandboxed_conversations(
         sandboxed_conversation_service_dependency
     ),
 ) -> list[SandboxedConversation | None]:
-    """Get a batch of sandboxed conversations given their ids, returning null for
-    any missing spec.
-    """
+    """Get a batch of sandboxed conversations given their ids. Return None for any missing."""
     assert len(ids) < 100
     sandboxed_conversations = (
         await sandboxed_conversation_service.batch_get_sandboxed_conversations(ids)

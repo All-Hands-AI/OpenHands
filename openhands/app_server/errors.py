@@ -3,12 +3,12 @@ class OpenHandsError(Exception):
 
 
 class AuthError(OpenHandsError):
-    """Error in authentication"""
+    """Error in authentication."""
 
 
 class PermissionsError(OpenHandsError):
-    """Error in permissions"""
+    """Error in permissions."""
 
 
 class SandboxError(OpenHandsError):
-    """Error in Sandbox"""
+    """Error in Sandbox."""

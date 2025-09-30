@@ -7,9 +7,7 @@ from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class SandboxService(ABC):
-    """Service for accessing sandboxes available to the current user in which
-    conversations may be run.
-    """
+    """Service for accessing sandboxes in which conversations may be run."""
 
     @abstractmethod
     async def search_sandboxes(
@@ -18,7 +16,7 @@ class SandboxService(ABC):
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
-        """Search for sandboxes"""
+        """Search for sandboxes."""
 
     @abstractmethod
     async def get_sandbox(self, sandbox_id: str) -> SandboxInfo | None:
@@ -35,49 +33,50 @@ class SandboxService(ABC):
 
     @abstractmethod
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
-        """Begin the process of starting a sandbox. Return the info on the new
-        sandbox. If no spec is selected, use the default.
+        """Begin the process of starting a sandbox.
+
+        Return the info on the new sandbox. If no spec is selected, use the default.
         """
 
     @abstractmethod
     async def resume_sandbox(self, sandbox_id: str) -> bool:
-        """Begin the process of resuming a sandbox. Return True if the sandbox exists
-        and is being resumed or is already running. Return False if the sandbox did
-        not exist
+        """Begin the process of resuming a sandbox.
+
+        Return True if the sandbox exists and is being resumed or is already running.
+        Return False if the sandbox did not exist.
         """
 
     @abstractmethod
     async def pause_sandbox(self, sandbox_id: str) -> bool:
-        """Begin the process of deleting a sandbox. Return True if the sandbox exists
-        and is being paused or is already paused. Return False if the sandbox did
-        not exist
+        """Begin the process of pausing a sandbox.
+
+        Return True if the sandbox exists and is being paused or is already paused.
+        Return False if the sandbox did not exist.
         """
 
     @abstractmethod
     async def delete_sandbox(self, sandbox_id: str) -> bool:
-        """Begin the process of deleting a sandbox (self, Which may involve stopping
-        it first). Return False if the sandbox did not exist
+        """Begin the process of deleting a sandbox (which may involve stopping it).
+
+        Return False if the sandbox did not exist.
         """
 
     # Lifecycle methods
 
     async def __aenter__(self):
-        """Start using this sandbox service"""
+        """Start using this sandbox service."""
         return self
 
     @abstractmethod
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox service"""
+        """Stop using this sandbox service."""
 
 
 class SandboxServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_user(self) -> Callable:
-        """Get a resolver which may be used to resolve an instance of sandbox service
-        limited to the current user.
-        """
+        """Get a resolver for an instance of sandbox service limited to the current user."""
 
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
-        """Get a resolver for all available sandboxes
-        """
+        """Get a resolver for all available sandboxes."""

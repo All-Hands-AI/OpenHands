@@ -33,7 +33,7 @@ WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 
 
 class VolumeMount(BaseModel):
-    """Mounted volume within the container"""
+    """Mounted volume within the container."""
 
     host_path: str
     container_path: str
@@ -43,9 +43,7 @@ class VolumeMount(BaseModel):
 
 
 class ExposedPort(BaseModel):
-    """Exposed port. A free port will be found for this and an environment variable
-    set
-    """
+    """Exposed port within container to be matched to a free port on the host."""
 
     name: str
     description: str
@@ -65,7 +63,7 @@ class DockerSandboxService(SandboxService):
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
 
     def _find_unused_port(self) -> int:
-        """Find an unused port on the host machine"""
+        """Find an unused port on the host machine."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind(('', 0))
             s.listen(1)
@@ -73,7 +71,7 @@ class DockerSandboxService(SandboxService):
         return port
 
     def _docker_status_to_sandbox_status(self, docker_status: str) -> SandboxStatus:
-        """Convert Docker container status to SandboxStatus"""
+        """Convert Docker container status to SandboxStatus."""
         status_mapping = {
             'running': SandboxStatus.RUNNING,
             'paused': SandboxStatus.PAUSED,
@@ -98,7 +96,7 @@ class DockerSandboxService(SandboxService):
         return result
 
     def _container_to_sandbox_info(self, container) -> SandboxInfo | None:
-        """Convert Docker container to SandboxInfo"""
+        """Convert Docker container to SandboxInfo."""
         # Get user_id and sandbox_spec_id from labels
         labels = container.labels or {}
         created_by_user_id = labels.get('created_by_user_id')
@@ -168,7 +166,7 @@ class DockerSandboxService(SandboxService):
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
-        """Search for sandboxes"""
+        """Search for sandboxes."""
         try:
             # Get all containers with our prefix
             all_containers = self.docker_client.containers.list(all=True)
@@ -210,7 +208,7 @@ class DockerSandboxService(SandboxService):
             return SandboxPage(items=[], next_page_id=None)
 
     async def get_sandbox(self, sandbox_id: str) -> SandboxInfo | None:
-        """Get a single sandbox info"""
+        """Get a single sandbox info."""
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
                 return None
@@ -220,7 +218,7 @@ class DockerSandboxService(SandboxService):
             return None
 
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
-        """Start a new sandbox"""
+        """Start a new sandbox."""
         if sandbox_spec_id is None:
             sandbox_spec = await self.sandbox_spec_service.get_default_sandbox_spec()
         else:
@@ -291,7 +289,7 @@ class DockerSandboxService(SandboxService):
             raise SandboxError(f'Failed to start container: {e}')
 
     async def resume_sandbox(self, sandbox_id: str) -> bool:
-        """Resume a paused sandbox"""
+        """Resume a paused sandbox."""
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
                 return False
@@ -307,7 +305,7 @@ class DockerSandboxService(SandboxService):
             return False
 
     async def pause_sandbox(self, sandbox_id: str) -> bool:
-        """Pause a running sandbox"""
+        """Pause a running sandbox."""
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
                 return False
@@ -321,7 +319,7 @@ class DockerSandboxService(SandboxService):
             return False
 
     async def delete_sandbox(self, sandbox_id: str) -> bool:
-        """Delete a sandbox"""
+        """Delete a sandbox."""
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
                 return False
@@ -348,12 +346,12 @@ class DockerSandboxService(SandboxService):
             return False
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox service"""
+        """Stop using this sandbox service."""
         pass
 
 
 class DockerSandboxServiceResolver(SandboxServiceResolver):
-    """Resolver / Configuration for docker sandbox services"""
+    """Resolver / Configuration for docker sandbox services."""
 
     container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000

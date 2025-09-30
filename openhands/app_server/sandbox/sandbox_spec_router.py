@@ -57,9 +57,7 @@ async def batch_get_sandbox_specs(
     ids: Annotated[list[str], Query()],
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,
 ) -> list[SandboxSpecInfo | None]:
-    """Get a batch of sandbox specs given their ids, returning null for any missing
-    spec.
-    """
+    """Get a batch of sandbox specs given their ids, returning null for any missing."""
     assert len(ids) <= 100
     sandbox_specs = await sandbox_spec_service.batch_get_sandbox_specs(ids)
     return sandbox_specs

@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 
 @dataclass
 class DependencyResolver:
-    """Object for exposing dependencies and preventing circular imports and lookups"""
+    """Object for exposing dependencies and preventing circular imports and lookups."""
 
     event: EventServiceResolver
     event_callback: EventCallbackServiceResolver
@@ -38,9 +38,7 @@ _dependency_resolver: DependencyResolver | None = None
 
 
 def get_dependency_resolver():
-    """Get the dependency manager - lazily initializing it the first time
-    it is requested
-    """
+    """Get the dependency manager, lazily initializing on first invocation."""
     global _dependency_resolver
     if not _dependency_resolver:
         config = get_global_config()

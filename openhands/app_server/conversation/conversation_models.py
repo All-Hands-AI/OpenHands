@@ -18,7 +18,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationTrig
 
 
 class SandboxedConversationInfo(SQLModel, table=True):  # type: ignore
-    """Conversation info which does not contain status"""
+    """Conversation info which does not contain status."""
 
     id: UUID = SQLField(default=uuid4, primary_key=True)
 
@@ -54,9 +54,11 @@ class SandboxedConversationPage(BaseModel):
 
 
 class StartSandboxedConversationRequest(BaseModel):
-    """Although a user can go directly to the sandbox and start conversations, these
-    will lack any of the stored settings for a user. Starting a conversation in the
-    app server allows default parameters / secrets to be loaded from settings.
+    """Start conversation request object.
+
+    Although a user can go directly to the sandbox and start conversations, they
+    would need to manually supply required startup parameters such as LLM key. Starting
+    from the app server copies these from the user info.
     """
 
     sandbox_id: str | None = Field(default=None)

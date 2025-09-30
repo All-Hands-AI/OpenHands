@@ -12,9 +12,7 @@ class SandboxSpecStatus(Enum):
 
 
 class SandboxSpecInfo(BaseModel):
-    """A runtime image is a template for creating a runtime, analogous to a docker
-    image
-    """
+    """A template for creating a Sandbox (e.g: A Docker Image vs Container)."""
 
     id: str
     command: str

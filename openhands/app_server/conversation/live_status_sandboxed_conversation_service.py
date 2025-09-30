@@ -116,12 +116,6 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
     async def start_sandboxed_conversation(
         self, request: StartSandboxedConversationRequest
     ) -> SandboxedConversation:
-        """Start a conversation, optionally specifying a sandbox in which to start. If
-        no sandbox is specified a default may be used or started. This is a convenience
-        method - the same effect should be achievable by creating / getting a sandbox
-        id, starting a conversation, attaching a callback, and then running the
-        conversation.
-        """
         sandbox = await self._wait_for_sandbox_start(request.sandbox_id)
         agent_server_url = self._get_agent_server_url(sandbox)
         start_conversation_request = (
@@ -253,7 +247,7 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         return result
 
     async def _wait_for_sandbox_start(self, sandbox_id: str | None) -> SandboxInfo:
-        """Wait for sandbox to start and return info"""
+        """Wait for sandbox to start and return info."""
         sandbox_service = self.sandbox_service
         if not sandbox_id:
             sandbox = await sandbox_service.start_sandbox()
@@ -282,7 +276,7 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         raise SandboxError(f'Sandbox failed to start: {sandbox_id}')
 
     def _get_agent_server_url(self, sandbox: SandboxInfo) -> str:
-        """Get agent server url for running sandbox"""
+        """Get agent server url for running sandbox."""
         exposed_urls = sandbox.exposed_urls
         assert exposed_urls is not None
         agent_server_url = next(
@@ -314,7 +308,7 @@ class LiveStatusSandboxedConversationService(SandboxedConversationService):
         return start_conversation_request
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandboxed conversation service"""
+        """Stop using this sandboxed conversation service."""
         pass
 
 

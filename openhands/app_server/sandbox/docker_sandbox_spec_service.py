@@ -29,9 +29,11 @@ def get_docker_client() -> docker.DockerClient:
 
 @dataclass
 class DockerSandboxSpecService(SandboxSpecService):
-    """Sandbox spec service for docker images. By default, all images with the
-    repository given are loaded and returned (They may have different tag) The
-    combination of the repository and tag is treated as the id in the resulting image.
+    """Sandbox spec service for docker images.
+
+    By default, all images with the repository given are loaded and returned, though
+    they may have different tags. The combination of the repository and tag is treated
+    as the id in the resulting image.
     """
 
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
@@ -46,7 +48,7 @@ class DockerSandboxSpecService(SandboxSpecService):
     working_dir: str = '/home/openhands'
 
     def _docker_image_to_sandbox_specs(self, image) -> SandboxSpecInfo:
-        """Convert a Docker image to SandboxSpecInfo"""
+        """Convert a Docker image to SandboxSpecInfo."""
         # Extract repository and tag from image tags
         # Use the first tag if multiple tags exist, or use the image ID if no tags
         if image.tags:
@@ -73,7 +75,7 @@ class DockerSandboxSpecService(SandboxSpecService):
     async def search_sandbox_specs(
         self, page_id: str | None = None, limit: int = 100
     ) -> SandboxSpecInfoPage:
-        """Search for runtime images"""
+        """Search for runtime images."""
         try:
             # Get all images that match the repository
             images = self.docker_client.images.list(name=self.repository)
@@ -116,7 +118,7 @@ class DockerSandboxSpecService(SandboxSpecService):
             return SandboxSpecInfoPage(items=[], next_page_id=None)
 
     async def get_sandbox_spec(self, sandbox_spec_id: str) -> SandboxSpecInfo | None:
-        """Get a single runtime image info by ID"""
+        """Get a single runtime image info by ID."""
         try:
             # Try to get the image by ID (which should be repository:tag)
             image = self.docker_client.images.get(sandbox_spec_id)
@@ -125,7 +127,7 @@ class DockerSandboxSpecService(SandboxSpecService):
             return None
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this sandbox spec service"""
+        """Stop using this sandbox spec service."""
         pass
 
 

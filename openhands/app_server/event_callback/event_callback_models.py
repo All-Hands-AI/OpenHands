@@ -42,16 +42,11 @@ class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
         callback: EventCallback,
         event: EventBase,
     ) -> EventCallbackResult:
-        """Process an event.
-
-        Args:
-            callback: The event callback wrapping this processor
-            event: The triggering event
-        """
+        """Process an event."""
 
 
 class LoggingCallbackProcessor(EventCallbackProcessor):
-    """Example implementation which logs callbacks"""
+    """Example implementation which logs callbacks."""
 
     async def __call__(
         self,

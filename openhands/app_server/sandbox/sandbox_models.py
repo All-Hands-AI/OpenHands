@@ -27,7 +27,7 @@ VSCODE = 'VSCODE'
 
 
 class SandboxInfo(BaseModel):
-    """Information about a sandbox"""
+    """Information about a sandbox."""
 
     id: str
     created_by_user_id: str
