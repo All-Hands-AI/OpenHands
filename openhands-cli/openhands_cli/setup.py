@@ -38,12 +38,11 @@ def setup_conversation(conversation_id: str | None = None) -> BaseConversation:
         if isinstance(conversation_id, str):
             try:
                 conversation_id = uuid.UUID(conversation_id)
-            except ValueError:
-                # If it's not a valid UUID, generate a new one and warn
+            except ValueError as e:
                 print_formatted_text(
-                    HTML(f"<yellow>Warning: '{conversation_id}' is not a valid UUID. Generating a random one.</yellow>")
+                    HTML(f"<yellow>Warning: '{conversation_id}' is not a valid UUID.</yellow>")
                 )
-                conversation_id = uuid.uuid4()
+                raise e
 
     with LoadingContext("Initializing OpenHands agent..."):
         agent_store = AgentStore()
