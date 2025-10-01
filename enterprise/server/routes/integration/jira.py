@@ -393,23 +393,13 @@ async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
 
 @jira_integration_router.get('/callback')
 async def jira_callback(request: Request, code: str, state: str):
-    print('JIRA callback started - code:', code[:10] if code else None, 'state:', state[:10] if state else None)
+    integration_session_json = redis_client.get(state)
+    if not integration_session_json:
+        raise HTTPException(
+            status_code=400, detail='No active integration session found.'
+        )
 
-    try:
-        integration_session_json = redis_client.get(state)
-        print('Redis get result:', integration_session_json is not None)
-
-        if not integration_session_json:
-            print('No integration session found in Redis')
-            raise HTTPException(
-                status_code=400, detail='No active integration session found.'
-            )
-
-        integration_session = json.loads(integration_session_json)
-        print('session', integration_session)
-    except Exception as e:
-        print('Error in early callback processing:', str(e))
-        raise
+    integration_session = json.loads(integration_session_json)
 
     # Security check: verify the state parameter
     if integration_session.get('state') != state:
@@ -424,40 +414,22 @@ async def jira_callback(request: Request, code: str, state: str):
         'code': code,
         'redirect_uri': JIRA_REDIRECT_URI,
     }
-    print("payload made")
+    response = requests.post(JIRA_TOKEN_URL, json=token_payload)
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=400, detail=f'Error fetching token: {response.text}'
+        )
 
-    try:
-        response = requests.post(JIRA_TOKEN_URL, json=token_payload)
-        print('token url resp status:', response.status_code)
-
-        if response.status_code != 200:
-            print('Token exchange failed:', response.text)
-            raise HTTPException(
-                status_code=400, detail=f'Error fetching token: {response.text}'
-            )
-    except Exception as e:
-        print('Exception during token exchange:', str(e))
-        raise
-
-    print('getting token data')
     token_data = response.json()
     access_token = token_data['access_token']
 
     headers = {'Authorization': f'Bearer {access_token}'}
-    print('getting resources')
+    response = requests.get(JIRA_RESOURCES_URL, headers=headers)
 
-    try:
-        response = requests.get(JIRA_RESOURCES_URL, headers=headers)
-        print('resource rsp status:', response.status_code)
-
-        if response.status_code != 200:
-            print('Resources fetch failed:', response.text)
-            raise HTTPException(
-                status_code=400, detail=f'Error fetching resources: {response.text}'
-            )
-    except Exception as e:
-        print('Exception during resources fetch:', str(e))
-        raise
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=400, detail=f'Error fetching resources: {response.text}'
+        )
 
     workspaces = response.json()
 
@@ -474,48 +446,31 @@ async def jira_callback(request: Request, code: str, state: str):
         ),
         None,
     )
-
-    print('target workspace', target_workspace)
-
     if not target_workspace_data:
-        print('raising exception')
         raise HTTPException(
             status_code=401,
             detail=f'User is not authorized to access workspace: {target_workspace}',
         )
 
     jira_cloud_id = target_workspace_data.get('id', '')
-    print('Found target workspace, jira_cloud_id:', jira_cloud_id)
 
-    try:
-        jira_user_response = requests.get(JIRA_USER_INFO_URL, headers=headers)
-        print('User info response status:', jira_user_response.status_code)
+    jira_user_response = requests.get(JIRA_USER_INFO_URL, headers=headers)
+    if jira_user_response.status_code != 200:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Error fetching user info: {jira_user_response.text}',
+        )
 
-        if jira_user_response.status_code != 200:
-            print('User info fetch failed:', jira_user_response.text)
-            raise HTTPException(
-                status_code=400,
-                detail=f'Error fetching user info: {jira_user_response.text}',
-            )
+    jira_user_info = jira_user_response.json()
+    jira_user_id = jira_user_info.get('account_id')
 
-        jira_user_info = jira_user_response.json()
-        jira_user_id = jira_user_info.get('account_id')
-        print('Parsed jira_user_id:', jira_user_id)
-
-        user_id = integration_session['keycloak_user_id']
-        print('Got keycloak user_id:', user_id)
-
-        print('user info', user_id, jira_user_id)
-    except Exception as e:
-        print('Exception during user info fetch:', str(e))
-        raise
+    user_id = integration_session['keycloak_user_id']
 
     if integration_session.get('operation_type') == 'workspace_integration':
         workspace = await jira_manager.integration_store.get_workspace_by_name(
             target_workspace
         )
         if not workspace:
-            print('no workspace exists')
             # Create new workspace if it doesn't exist
             encrypted_webhook_secret = token_manager.encrypt_text(
                 integration_session['webhook_secret']
@@ -523,8 +478,6 @@ async def jira_callback(request: Request, code: str, state: str):
             encrypted_svc_acc_api_key = token_manager.encrypt_text(
                 integration_session['svc_acc_api_key']
             )
-
-            print('create workspace')
 
             await jira_manager.integration_store.create_workspace(
                 name=target_workspace,
@@ -565,7 +518,6 @@ async def jira_callback(request: Request, code: str, state: str):
                 user_id, jira_user_id, target_workspace
             )
 
-        print('redirecting')
         return RedirectResponse(
             url='/settings/integrations', status_code=status.HTTP_302_FOUND
         )
