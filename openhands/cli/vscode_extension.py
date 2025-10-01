@@ -543,14 +543,17 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
     Returns:
         bool: True if installation succeeded, False otherwise
     """
+    vsix_filename = 'openhands-vscode-0.0.1.vsix'
     try:
-        vsix_filename = 'openhands-vscode-0.0.1.vsix'
         with importlib.resources.as_file(
             importlib.resources.files('openhands').joinpath(
                 'integrations', 'vscode', vsix_filename
             )
         ) as vsix_path:
-            if vsix_path.exists():
+            if not vsix_path.exists():
+                logger.debug(f'Bundled .vsix not found at {vsix_path}.')
+                return False
+            try:
                 process = subprocess.run(
                     [
                         editor_command,
@@ -563,24 +566,26 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
                     check=False,
                     timeout=30,
                 )
-                if process.returncode == 0:
-                    print(
-                        f'INFO: Bundled {editor_name} extension installed successfully.'
-                    )
-                    return True
-                else:
-                    logger.debug(
-                        f'Bundled .vsix installation failed: {process.stderr.strip()}'
-                    )
+            except FileNotFoundError:
+                # Editor CLI missing; let caller handle as permanent failure
+                raise
+            if process.returncode == 0:
+                print(
+                    f'INFO: Bundled {editor_name} extension installed successfully.'
+                )
+                return True
             else:
-                logger.debug(f'Bundled .vsix not found at {vsix_path}.')
+                logger.debug(
+                    f'Bundled .vsix installation failed: {process.stderr.strip()}'
+                )
+                return False
     except FileNotFoundError:
-        # Propagate to caller so it can mark permanent failure and persist status
-        raise
+        # Bundled resource missing; skip to GitHub fallback
+        logger.debug('Bundled .vsix resource not found; skipping bundled install')
+        return False
     except Exception as e:
         logger.debug(f'Could not auto-install bundled extension: {e}')
-
-    return False
+        return False
 
 
 def _attempt_marketplace_install(
