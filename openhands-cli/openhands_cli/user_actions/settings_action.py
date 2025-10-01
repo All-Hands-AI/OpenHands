@@ -27,7 +27,7 @@ def settings_type_confirmation() -> SettingsType:
         'Go back',
     ]
 
-    index = cli_confirm(question, choices)
+    index = cli_confirm(question, choices, escapable=True)
 
     if choices[index] == 'Go back':
         raise KeyboardInterrupt
@@ -141,7 +141,7 @@ def save_settings_confirmation() -> bool:
     discard = 'No, discard'
     options = ['Yes, save', discard]
 
-    index = cli_confirm(question, options)
+    index = cli_confirm(question, options, escapable=True)
     if options[index] == discard:
         raise KeyboardInterrupt
 
