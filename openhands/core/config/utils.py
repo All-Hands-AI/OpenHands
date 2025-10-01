@@ -833,6 +833,7 @@ def load_openhands_config(
     logger.openhands_logger.info(
         f'Config from TOML file {config_file}: {config.model_dump_json()}'
     )
+    logger.openhands_logger.info(f'Env vars: {dict(os.environ)}')
     load_from_env(config, os.environ)
     logger.openhands_logger.info(f'Config from env: {config.model_dump_json()}')
     finalize_config(config)
