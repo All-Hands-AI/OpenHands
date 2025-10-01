@@ -297,7 +297,7 @@ async def test_github_search_repositories_with_organizations():
         # First call should be for user repositories
         user_call = calls[0]
         user_params = user_call[0][1]  # Second argument is params
-        assert user_params['q'] == 'openhands user:testuser'
+        assert user_params['q'] == 'in:name openhands user:testuser'
 
         # Second call should be for first organization
         org1_call = calls[1]
