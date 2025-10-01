@@ -400,7 +400,7 @@ async def jira_callback(request: Request, code: str, state: str):
         )
 
     integration_session = json.loads(integration_session_json)
-    print('created session')
+    print('session', integration_session)
 
     # Security check: verify the state parameter
     if integration_session.get('state') != state:
@@ -472,11 +472,14 @@ async def jira_callback(request: Request, code: str, state: str):
 
     user_id = integration_session['keycloak_user_id']
 
+    print('user info', user_id, jira_user_id)
+
     if integration_session.get('operation_type') == 'workspace_integration':
         workspace = await jira_manager.integration_store.get_workspace_by_name(
             target_workspace
         )
         if not workspace:
+            print('no workspace exists')
             # Create new workspace if it doesn't exist
             encrypted_webhook_secret = token_manager.encrypt_text(
                 integration_session['webhook_secret']
@@ -484,6 +487,8 @@ async def jira_callback(request: Request, code: str, state: str):
             encrypted_svc_acc_api_key = token_manager.encrypt_text(
                 integration_session['svc_acc_api_key']
             )
+
+            print('create workspace')
 
             await jira_manager.integration_store.create_workspace(
                 name=target_workspace,
@@ -524,6 +529,7 @@ async def jira_callback(request: Request, code: str, state: str):
                 user_id, jira_user_id, target_workspace
             )
 
+        print('redirecting')
         return RedirectResponse(
             url='/settings/integrations', status_code=status.HTTP_302_FOUND
         )
