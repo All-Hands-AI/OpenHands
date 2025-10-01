@@ -9,6 +9,13 @@ from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversation,
+)
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationService,
+)
+from openhands.app_server.dependency import get_dependency_resolver
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -76,6 +83,9 @@ from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+app_conversation_service_dependency = Depends(
+    get_dependency_resolver().app_conversation.get_resolver_for_user()
+)
 
 
 def _filter_conversations_by_age(
@@ -282,44 +292,135 @@ async def search_conversations(
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> StoredConversationResultSet:
-    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+    import json
+    from datetime import datetime, timezone
 
-    # Apply age filter first using common function
-    filtered_results = _filter_conversations_by_age(
-        conversation_metadata_result_set.results, config.conversation_max_age_seconds
+    # Parse combined page_id to extract separate page_ids for each source
+    v0_page_id = None
+    v1_page_id = None
+
+    if page_id:
+        try:
+            # Try to parse as JSON first
+            page_data = json.loads(page_id)
+            v0_page_id = page_data.get('v0')
+            v1_page_id = page_data.get('v1')
+        except (json.JSONDecodeError, TypeError):
+            # Fallback: treat as v0 page_id for backward compatibility
+            v0_page_id = page_id
+
+    # Split limit between both sources (roughly half each)
+    half_limit = max(1, limit // 2)
+
+    # Get results from old conversation store (V0)
+    conversation_metadata_result_set = await conversation_store.search(
+        v0_page_id, half_limit
     )
 
-    # Apply additional filters
-    final_filtered_results = []
-    for conversation in filtered_results:
-        # Apply repository filter
-        if (
-            selected_repository is not None
-            and conversation.selected_repository != selected_repository
-        ):
-            continue
+    # Get results from new app conversation service (V1)
+    max_age_seconds = getattr(
+        config, 'conversation_max_age_seconds', 86400 * 30
+    )  # Default 30 days
+    age_filter_date = None
+    if max_age_seconds:
+        from datetime import timedelta
 
-        # Apply conversation trigger filter
-        if (
-            conversation_trigger is not None
-            and conversation.trigger != conversation_trigger
-        ):
-            continue
+        age_filter_date = datetime.now(timezone.utc) - timedelta(
+            seconds=max_age_seconds
+        )
 
-        final_filtered_results.append(conversation)
-
-    return await _build_conversation_result_set(
-        final_filtered_results, conversation_metadata_result_set.next_page_id
+    app_conversation_page = await app_conversation_service.search_app_conversations(
+        page_id=v1_page_id,
+        limit=half_limit,
+        # Apply age filter at the service level if possible
+        created_at__gte=age_filter_date,
     )
+
+    # Convert V1 conversations to StoredConversation format
+    v1_conversations = [
+        _to_conversation_info(app_conv) for app_conv in app_conversation_page.items
+    ]
+
+    # Apply age filter to V0 conversations
+    v0_filtered_results = _filter_conversations_by_age(
+        conversation_metadata_result_set.results,
+        getattr(config, 'conversation_max_age_seconds', 86400 * 30),  # Default 30 days
+    )
+
+    # Apply additional filters to both V0 and V1 results
+    def apply_filters(conversations):
+        filtered = []
+        for conversation in conversations:
+            # Apply repository filter
+            if (
+                selected_repository is not None
+                and conversation.selected_repository != selected_repository
+            ):
+                continue
+
+            # Apply conversation trigger filter
+            if (
+                conversation_trigger is not None
+                and conversation.trigger != conversation_trigger
+            ):
+                continue
+
+            filtered.append(conversation)
+        return filtered
+
+    v0_final_filtered = apply_filters(v0_filtered_results)
+    v1_final_filtered = apply_filters(v1_conversations)
+
+    # Combine results from both sources
+    all_conversations = v0_final_filtered + v1_final_filtered
+
+    # Sort by created_at descending (most recent first)
+    all_conversations.sort(
+        key=lambda x: x.created_at or datetime.min.replace(tzinfo=timezone.utc),
+        reverse=True,
+    )
+
+    # Limit to requested number of results
+    final_results = all_conversations[:limit]
+
+    # Create combined page_id for next page
+    next_page_id = None
+    if (
+        conversation_metadata_result_set.next_page_id
+        or app_conversation_page.next_page_id
+    ):
+        next_page_data = {
+            'v0': conversation_metadata_result_set.next_page_id,
+            'v1': app_conversation_page.next_page_id,
+        }
+        # Only include page_id if at least one source has more pages
+        if next_page_data['v0'] or next_page_data['v1']:
+            next_page_id = json.dumps(next_page_data)
+
+    return StoredConversationResultSet(results=final_results, next_page_id=next_page_id)
 
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> StoredConversation | None:
     try:
+        # Shim to add V1 conversations
+        try:
+            conversation_uuid = uuid.UUID(conversation_id)
+            app_conversation = await app_conversation_service.get_app_conversation(
+                conversation_uuid
+            )
+            if app_conversation:
+                return _to_conversation_info(app_conversation)
+        except (ValueError, TypeError, Exception):
+            # Not a V1 conversation or service error
+            pass
+
         metadata = await conversation_store.get_metadata(conversation_id)
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
@@ -816,4 +917,45 @@ async def get_microagent_management_conversations(
 
     return await _build_conversation_result_set(
         final_filtered_results, conversation_metadata_result_set.next_page_id
+    )
+
+
+def _to_conversation_info(app_conversation: AppConversation) -> StoredConversation:
+    """Convert a V1 AppConversation into an old style StoredConversation"""
+    from openhands.app_server.sandbox.sandbox_models import SandboxStatus
+
+    # Map SandboxStatus to ConversationStatus
+    status_mapping = {
+        SandboxStatus.RUNNING: ConversationStatus.RUNNING,
+        SandboxStatus.STARTING: ConversationStatus.STARTING,
+        SandboxStatus.PAUSED: ConversationStatus.STOPPED,
+        SandboxStatus.ERROR: ConversationStatus.ERROR,
+        SandboxStatus.MISSING: ConversationStatus.ARCHIVED,
+    }
+
+    conversation_status = status_mapping.get(
+        app_conversation.sandbox_status, ConversationStatus.STOPPED
+    )
+
+    # Use title or generate a default one
+    title = app_conversation.title
+    if not title:
+        title = get_default_conversation_title(str(app_conversation.id))
+
+    return StoredConversation(
+        conversation_id=str(app_conversation.id),
+        title=title,
+        last_updated_at=app_conversation.updated_at,
+        status=conversation_status,
+        runtime_status=None,  # V1 conversations don't have runtime_status
+        selected_repository=app_conversation.selected_repository,
+        selected_branch=app_conversation.selected_branch,
+        git_provider=app_conversation.git_provider,
+        trigger=app_conversation.trigger,
+        num_connections=0,  # V1 conversations don't track connections the same way
+        url=None,  # V1 conversations don't have a direct URL mapping
+        session_api_key=None,  # V1 conversations handle auth differently
+        created_at=app_conversation.created_at,
+        pr_number=app_conversation.pr_number,
+        conversation_version='V1',
     )
