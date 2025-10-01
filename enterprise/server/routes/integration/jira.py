@@ -394,11 +394,11 @@ async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
 @jira_integration_router.get('/callback')
 async def jira_callback(request: Request, code: str, state: str):
     print('JIRA callback started - code:', code[:10] if code else None, 'state:', state[:10] if state else None)
-    
+
     try:
         integration_session_json = redis_client.get(state)
         print('Redis get result:', integration_session_json is not None)
-        
+
         if not integration_session_json:
             print('No integration session found in Redis')
             raise HTTPException(
@@ -425,11 +425,11 @@ async def jira_callback(request: Request, code: str, state: str):
         'redirect_uri': JIRA_REDIRECT_URI,
     }
     print("payload made")
-    
+
     try:
         response = requests.post(JIRA_TOKEN_URL, json=token_payload)
         print('token url resp status:', response.status_code)
-        
+
         if response.status_code != 200:
             print('Token exchange failed:', response.text)
             raise HTTPException(
@@ -445,7 +445,7 @@ async def jira_callback(request: Request, code: str, state: str):
 
     headers = {'Authorization': f'Bearer {access_token}'}
     print('getting resources')
-    
+
     try:
         response = requests.get(JIRA_RESOURCES_URL, headers=headers)
         print('resource rsp status:', response.status_code)
@@ -474,7 +474,11 @@ async def jira_callback(request: Request, code: str, state: str):
         ),
         None,
     )
+
+    print('target workspace', target_workspace)
+
     if not target_workspace_data:
+        print('raising exception')
         raise HTTPException(
             status_code=401,
             detail=f'User is not authorized to access workspace: {target_workspace}',
@@ -486,7 +490,7 @@ async def jira_callback(request: Request, code: str, state: str):
     try:
         jira_user_response = requests.get(JIRA_USER_INFO_URL, headers=headers)
         print('User info response status:', jira_user_response.status_code)
-        
+
         if jira_user_response.status_code != 200:
             print('User info fetch failed:', jira_user_response.text)
             raise HTTPException(
