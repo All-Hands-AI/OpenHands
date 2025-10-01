@@ -415,11 +415,19 @@ class RemoteRuntime(ActionExecutionClient):
 
     def _wait_until_alive_impl(self) -> None:
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
+        self.log(
+            'debug',
+            f'Sending request to: {self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+        )
         runtime_info_response = self._send_runtime_api_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         )
         runtime_data = runtime_info_response.json()
+        self.log(
+            'debug',
+            f'received response: {runtime_data}',
+        )
         assert 'runtime_id' in runtime_data
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
