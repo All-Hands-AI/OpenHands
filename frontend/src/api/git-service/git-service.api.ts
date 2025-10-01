@@ -23,7 +23,7 @@ class GitService {
    */
   static async searchGitRepositories(
     query: string,
-    per_page = 5,
+    per_page = 100,
     selected_provider?: Provider,
   ): Promise<GitRepository[]> {
     const response = await openHands.get<GitRepository[]>(
