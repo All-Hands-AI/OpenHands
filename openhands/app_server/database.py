@@ -1,6 +1,7 @@
 """Database configuration and session management for OpenHands Server."""
 
 import asyncio
+import logging
 from typing import AsyncGenerator
 
 from fastapi import Request
@@ -12,6 +13,8 @@ from sqlalchemy.util import await_only
 from sqlmodel import SQLModel
 
 from openhands.app_server.config import get_global_config
+
+_logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -157,6 +160,10 @@ async def managed_session_dependency(
             try:
                 request.state.db_session = session
                 yield session
+                await session.commit()
+            except Exception:
+                _logger.exception('Rolling back SQL due to error', stack_info=True)
+                await session.rollback()
             finally:
                 # Clean up the session from request state
                 if hasattr(request.state, 'db_session'):
@@ -164,9 +171,9 @@ async def managed_session_dependency(
                 await session.close()
 
 
-async def manual_close_session_dependency(request: Request) -> AsyncSession:
+async def unmanaged_session_dependency(request: Request) -> AsyncSession:
     """Using this dependency before others means that the database session used in
-    the request must be closed manually. This is useful in cases where processing
+    the request must be committed / closed manually. This is useful in cases where processing
     continues after the response is sent."""
     if hasattr(request.state, 'db_session'):
         # Return the existing session

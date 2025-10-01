@@ -29,6 +29,7 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceResolver,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
+from openhands.app_server.user.legacy_user_service import DEFAULT_USER
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -290,7 +291,7 @@ class DockerSandboxService(SandboxService):
 
         # Prepare labels
         labels = {
-            'created_by_user_id': 'NO_USER',  # TODO: Integrate auth service
+            'created_by_user_id': DEFAULT_USER,
             'sandbox_spec_id': sandbox_spec.id,
         }
 

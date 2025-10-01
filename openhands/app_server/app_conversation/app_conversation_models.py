@@ -25,7 +25,7 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
 
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
 
-    user_id: str
+    created_by_user_id: str
 
     selected_repository: str | None = None
     selected_branch: str | None = None
@@ -113,7 +113,7 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     is populated."""
 
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
-    user_id: str = SQLField(index=True)
+    created_by_user_id: str = SQLField(index=True)
     status: AppConversationStartTaskStatus = AppConversationStartTaskStatus.WORKING
     detail: str | None = None
     app_conversation_id: UUID | None = SQLField(

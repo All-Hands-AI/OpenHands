@@ -204,10 +204,13 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
-        self.session.add(info)
-        await self.session.commit()
-        await self.session.refresh(info)
-        return info
+        try:
+            await self.session.merge(info)
+            await self.session.commit()
+            return info
+        except Exception as exc:
+            logger.exception(f'Failed to save conversation info {info.id}', stack_info=True)
+            return False
 
 
 class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):

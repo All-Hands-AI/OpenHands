@@ -69,5 +69,9 @@ class AppConversationInfoService(ABC):
 
 class AppConversationInfoServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
+    def get_unsecured_resolver(self) -> Callable:
+         """Get an instance of app conversation info service."""
+
+    @abstractmethod
     def get_resolver_for_user(self) -> Callable:
-        """Get a resolver for an instance of sandbox spec service limited to the current user."""
+        """Get an instance of app conversation info service limited to the current user."""

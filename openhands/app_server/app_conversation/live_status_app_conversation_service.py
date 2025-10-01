@@ -143,7 +143,7 @@ class LiveStatusAppConversationService(AppConversationService):
         # Create and yield the start task
         user = await self.user_service.get_current_user()
         task = AppConversationStartTask(
-            user_id=user.id,
+            created_by_user_id=user.id,
             request=request,
         )
         yield task
@@ -187,7 +187,7 @@ class LiveStatusAppConversationService(AppConversationService):
                 id=info.id,
                 title=f'Conversation {info.id}',
                 sandbox_id=sandbox.id,
-                user_id=user.id,
+                created_by_user_id=user.id,
                 llm_model=start_conversation_request.agent.llm.model,
                 # TODO: Lots of git parameters required
             )
@@ -342,13 +342,13 @@ class LiveStatusAppConversationService(AppConversationService):
         """Wait for sandbox to start and return info."""
 
         # Get the sandbox
-        if not task.sandbox_id:
+        if not task.request.sandbox_id:
             sandbox = await self.sandbox_service.start_sandbox()
             task.sandbox_id = sandbox.id
         else:
-            sandbox_info = await self.sandbox_service.get_sandbox(task.sandbox_id)
+            sandbox_info = await self.sandbox_service.get_sandbox(task.request.sandbox_id)
             if sandbox_info is None:
-                raise SandboxError(f'Sandbox not found: {task.sandbox_id}')
+                raise SandboxError(f'Sandbox not found: {task.request.sandbox_id}')
             sandbox = sandbox_info
 
         # Update the listener
@@ -360,7 +360,9 @@ class LiveStatusAppConversationService(AppConversationService):
             await self.sandbox_service.resume_sandbox(sandbox.id)
         if sandbox.status in (None, SandboxStatus.ERROR):
             raise SandboxError(f'Sandbox status: {sandbox.status}')
-        if sandbox.status not in (SandboxStatus.STARTING, SandboxStatus.RUNNING):
+        if sandbox.status == SandboxStatus.RUNNING:
+            return
+        if sandbox.status != SandboxStatus.STARTING:
             raise SandboxError(f'Sandbox not startable: {sandbox.id}')
 
         start = time()

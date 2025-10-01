@@ -407,6 +407,7 @@ LOQUACIOUS_LOGGERS = [
     'socketio',
     'socketio.client',
     'socketio.server',
+    'aiosqlite',
 ]
 
 for logger_name in LOQUACIOUS_LOGGERS:

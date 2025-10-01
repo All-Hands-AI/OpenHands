@@ -85,12 +85,11 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         """
         try:
             task.updated_at = utc_now()
-            self.session.add(task)
+            await self.session.merge(task)
             await self.session.commit()
             return True
-        except Exception as e:
-            logger.error(f'Failed to save conversation start task {task.id}: {e}')
-            await self.session.rollback()
+        except Exception:
+            logger.exception(f'Failed to save conversation start task {task.id}', stack_info=True)
             return False
 
 

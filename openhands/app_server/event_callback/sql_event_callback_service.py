@@ -51,9 +51,7 @@ class SQLEventCallbackService(EventCallbackService):
         )
 
         # Add to session and commit
-        self.session.add(event_callback)
-        await self.session.commit()
-        await self.session.refresh(event_callback)
+        await self.session.add(event_callback)
         return event_callback
 
     async def get_event_callback(self, id: UUID) -> EventCallback | None:
@@ -73,7 +71,6 @@ class SQLEventCallbackService(EventCallbackService):
             return False
 
         await self.session.delete(stored_callback)
-        await self.session.commit()
         return True
 
     async def search_event_callbacks(
@@ -150,13 +147,14 @@ class SQLEventCallbackService(EventCallbackService):
                 )
             )
         )
-        callbacks = await self.session.execute(query)
-        await asyncio.gather(
-            *[
-                self.execute_callback(conversation_id, callback, event)
-                for callback in callbacks
-            ]
-        )
+        callbacks = list(await self.session.execute(query))
+        if callbacks:
+            await asyncio.gather(
+                *[
+                    self.execute_callback(conversation_id, callback, event)
+                    for callback in callbacks
+                ]
+            )
 
     async def execute_callback(
         self, conversation_id: UUID, callback: EventCallback, event: Event
@@ -172,8 +170,7 @@ class SQLEventCallbackService(EventCallbackService):
                 conversation_id=conversation_id,
                 detail=str(exc),
             )
-        self.session.add(result)
-        await self.session.commit()
+        await self.session.add(result)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service."""

@@ -19,7 +19,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.database import manual_close_session_dependency
+from openhands.app_server.database import unmanaged_session_dependency
 from openhands.app_server.dependency import get_dependency_resolver
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
@@ -134,7 +134,7 @@ async def batch_get_app_conversations(
 @router.post('')
 async def start_app_conversation(
     request: AppConversationStartRequest,
-    session: AsyncSession = Depends(manual_close_session_dependency),
+    session: AsyncSession = Depends(unmanaged_session_dependency),
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),

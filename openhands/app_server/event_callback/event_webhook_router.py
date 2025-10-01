@@ -10,8 +10,11 @@ from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import ConversationInfo, Success
-from openhands.app_server.database import manual_close_session_dependency
+from openhands.app_server.app_conversation.app_conversation_info_service import AppConversationInfoService
+from openhands.app_server.app_conversation.app_conversation_models import AppConversationInfo
+from openhands.app_server.database import unmanaged_session_dependency
 from openhands.app_server.dependency import get_dependency_resolver
+from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
@@ -29,6 +32,9 @@ event_service_dependency = Depends(
 )
 event_callback_service_dependency = Depends(
     get_dependency_resolver().event_callback.get_unsecured_resolver()
+)
+app_conversation_info_service_dependency = Depends(
+    get_dependency_resolver().app_conversation_info.get_unsecured_resolver()
 )
 _logger = logging.getLogger(__name__)
 
@@ -49,12 +55,24 @@ async def valid_sandbox(
 @router.post('/{sandbox_id}/conversations')
 async def on_conversation_update(
     conversation_info: ConversationInfo,
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
 ) -> Success:
     """Webhook callback for when a conversation starts, pauses, resumes, or deletes."""
-    # TODO: Make sure that we have an entry saved for the conversation info.
-    #       (We will still go back to the sandbox to determine its status,
-    #       but we want the metrics.)
+    app_conversation = await app_conversation_info_service.get_app_conversation_info(conversation_info.id)
+    if app_conversation:
+        if app_conversation.created_by_user_id != sandbox_info.created_by_user_id:
+            raise AuthError()
+    else:
+        app_conversation_info = AppConversationInfo(
+            id=conversation_info.id,
+            title=f'Conversation {conversation_info.id}',
+            sandbox_id=sandbox_info.id,
+            created_by_user_id=sandbox_info.created_by_user_id,
+            llm_model=conversation_info.agent.llm.model,
+            # TODO: Lots of git parameters required
+        )
+        await app_conversation_info_service.save_app_conversation_info(app_conversation_info)
 
     return Success()
 
@@ -63,14 +81,19 @@ async def on_conversation_update(
 async def on_event(
     events: list[Event],
     conversation_id: UUID,
-    session: AsyncSession = Depends(manual_close_session_dependency),
+    session: AsyncSession = Depends(unmanaged_session_dependency),
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
     event_service: EventService = event_service_dependency,
     event_callback_service: EventCallbackService = event_callback_service_dependency,
 ) -> Success:
     """Webhook callback for when event stream events occur."""
-    # TODO: Before saving events, we should guarantee that the conversation either
-    # does not yet exist or is associated with the owner of the sandbox
+
+    # Events can only be applied to an exsiting conversation with the correct owner
+    app_conversation = await app_conversation_info_service.get_app_conversation_info(conversation_id)
+    if not app_conversation or app_conversation.created_by_user_id != sandbox_info.created_by_user_id:
+        raise AuthError()
+
     try:
         # Save events...
         await asyncio.gather(
@@ -93,9 +116,8 @@ async def _run_callbacks_in_bg_and_close(
 ):
     """ Run all callbacks and close the session"""
     try:
-        await asyncio.gather(*[
-            event_callback_service.execute_callbacks(conversation_id, event)
-            for event in events
-        ])
+        # We don't use asynio.gather here because callbacks must be run in sequence.
+        for event in events:
+            await event_callback_service.execute_callbacks(conversation_id, event)
     finally:
         session.close()
