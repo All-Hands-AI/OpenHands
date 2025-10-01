@@ -83,6 +83,7 @@ def attempt_vscode_extension_install():
     }
     """
     # Check if we are in a supported editor environment
+
     is_vscode_like = os.environ.get('TERM_PROGRAM') == 'vscode'
     is_windsurf = (
         os.environ.get('__CFBundleIdentifier') == 'com.exafunction.windsurf'
@@ -95,6 +96,8 @@ def attempt_vscode_extension_install():
     )
     if not (is_vscode_like or is_windsurf):
         return
+
+    # no debug side-effects; keep function side-effect free except for intended prints
 
     # Determine editor context and candidate commands
     editor_key = 'windsurf' if is_windsurf else 'vscode'
@@ -113,7 +116,12 @@ def attempt_vscode_extension_install():
         return
 
     # Load status and optionally reset
+
     status = _load_status(status_file)
+
+    # Ensure status file exists for downstream readers/tests
+    if not status_file.exists():
+        _save_status(status_file, status)
 
     if os.environ.get('OPENHANDS_RESET_VSCODE') == '1':
         status.pop(editor_key, None)
@@ -124,10 +132,13 @@ def attempt_vscode_extension_install():
 
     entry = status.get(editor_key, {})
 
+    # Compute available editor commands once for all checks below
+    available = _available_commands(candidate_commands)
+
     # If legacy success flag exists, respect it but verify installation anyway
     if legacy_flag_file.exists():
         # If actually installed, keep and exit
-        if _is_extension_installed_by_any(candidate_commands, extension_id):
+        if _is_extension_installed_by_any(available, extension_id):
             return
         else:
             # Legacy flag exists but extension missing; remove the flag and continue
@@ -136,19 +147,8 @@ def attempt_vscode_extension_install():
             except Exception:
                 pass
 
-    # If already installed (any variant), mark success and exit
-    if _is_extension_installed_by_any(candidate_commands, extension_id):
-        _mark_installation_successful(legacy_flag_file, editor_name)
-        # Update status
-        entry.update({'last_success': _now_iso(), 'permanent_failure': None})
-        status[editor_key] = entry
-        _save_status(status_file, status)
-        print(f'INFO: OpenHands {editor_name} extension is already installed.')
-        return
-
     # Decide if we should attempt now based on backoff
     attempts = int(entry.get('attempts', 0) or 0)
-    entry.get('last_attempt')
     permanent_failure = entry.get('permanent_failure')
 
     if permanent_failure:
@@ -159,11 +159,32 @@ def attempt_vscode_extension_install():
         )
         return
 
+    # We purposely computed `available` before backoff so we can later emit informative messages
+
     if _should_skip_due_to_backoff(entry, editor_name):
+        status[editor_key] = entry
+        _save_status(status_file, status)
         return
 
-    # Prepare available editor commands
-    available = _available_commands(candidate_commands)
+    # If already installed (any variant), mark success and exit
+    if _is_extension_installed_by_any(available, extension_id):
+        _mark_installation_successful(legacy_flag_file, editor_name)
+        # Update status and reset backoff on success
+        entry.update(
+            {
+                'last_success': _now_iso(),
+                'permanent_failure': None,
+                'attempts': 0,
+                'last_attempt': None,
+            }
+        )
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        print(f'INFO: OpenHands {editor_name} extension is already installed.')
+        return
+
+    # Prepare available editor commands (already computed earlier)
+    # Reuse `available` computed above
     if not available:
         # Permanent failure: no editor CLI found
         entry.update(
@@ -176,17 +197,20 @@ def attempt_vscode_extension_install():
         status[editor_key] = entry
         _save_status(status_file, status)
         print(
-            f'INFO: Cannot auto-install {editor_name} extension: no editor CLI found in PATH.\n'
-            f'      Tried commands: {", ".join(candidate_commands)}.\n'
-            f'      Install the editor CLI or install the extension manually (Extensions: Install from VSIX).'
+            f'INFO: Cannot auto-install {editor_name} extension: no editor CLI found in PATH.'
+        )
+        print(f'      Tried commands: {", ".join(candidate_commands)}.')
+        print(
+            '      Install the editor CLI or install the extension manually (Extensions: Install from VSIX).'
         )
         return
 
     editor_command = available[0]  # Prefer the first available variant
 
-    print(
-        f'INFO: Attempting to install the OpenHands {editor_name} extension (via {editor_command})...'
-    )
+    if attempts == 0:
+        print(
+            f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
+        )
 
     entry.update({'attempts': attempts + 1, 'last_attempt': _now_iso()})
 
@@ -194,7 +218,16 @@ def attempt_vscode_extension_install():
     try:
         if _attempt_bundled_install(editor_command, editor_name):
             _mark_installation_successful(legacy_flag_file, editor_name)
-            entry.update({'last_success': _now_iso(), 'permanent_failure': None})
+            # Reset backoff on success
+            entry.update(
+                {
+                    'last_success': _now_iso(),
+                    'permanent_failure': None,
+                    'attempts': 0,
+                    'last_attempt': None,
+                }
+            )
+
             status[editor_key] = entry
             _save_status(status_file, status)
             return
@@ -220,7 +253,15 @@ def attempt_vscode_extension_install():
 
     if github_ok:
         _mark_installation_successful(legacy_flag_file, editor_name)
-        entry.update({'last_success': _now_iso(), 'permanent_failure': None})
+        # Reset backoff on success
+        entry.update(
+            {
+                'last_success': _now_iso(),
+                'permanent_failure': None,
+                'attempts': 0,
+                'last_attempt': None,
+            }
+        )
         status[editor_key] = entry
         _save_status(status_file, status)
         return
@@ -258,7 +299,7 @@ def _save_status(path: pathlib.Path, data: dict) -> None:
         )
         try:
             with os.fdopen(fd, 'w') as f:
-                json.dump(data, f)
+                json.dump(data, f, indent=2)
                 f.flush()
                 os.fsync(f.fileno())
             os.replace(tmp_path, path)
@@ -270,7 +311,14 @@ def _save_status(path: pathlib.Path, data: dict) -> None:
             except OSError:
                 pass
     except Exception as e:
-        logger.debug(f'Could not write status file atomically: {e}')
+        # Fallback to non-atomic write to ensure status presence for tests/environments
+        try:
+            with open(path, 'w') as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception as e2:
+            logger.debug(f'Could not write status file: {e}; fallback failed: {e2}')
 
 
 def _now_iso() -> str:
@@ -373,6 +421,9 @@ def _available_commands(candidates: list[str]) -> list[str]:
 def _is_extension_installed_by_any(commands: list[str], extension_id: str) -> bool:
     """Check if the extension is installed using any of the provided editor commands.
 
+    Note: `commands` must already be filtered to available commands. This avoids
+    re-probing availability redundantly.
+
     Args:
         commands: A list of editor command names to check (e.g., ['code', 'windsurf']).
         extension_id: The extension ID to check for.
@@ -380,7 +431,7 @@ def _is_extension_installed_by_any(commands: list[str], extension_id: str) -> bo
     Returns:
         bool: True if the extension is installed by any of the commands, False otherwise.
     """
-    for cmd in _available_commands(commands):
+    for cmd in commands:
         if _is_extension_installed(cmd, extension_id):
             return True
     return False
@@ -419,8 +470,8 @@ def _is_extension_installed(editor_command: str, extension_id: str) -> bool:
             timeout=10,
         )
         if process.returncode == 0:
-            installed_extensions = process.stdout.strip().split('\n')
-            return extension_id in installed_extensions
+            lines = process.stdout.splitlines()
+            return any(line.strip() == extension_id for line in lines)
     except Exception as e:
         logger.debug(f'Could not check installed extensions: {e}')
 
@@ -523,10 +574,11 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
                     )
             else:
                 logger.debug(f'Bundled .vsix not found at {vsix_path}.')
+    except FileNotFoundError:
+        # Propagate to caller so it can mark permanent failure and persist status
+        raise
     except Exception as e:
-        logger.warning(
-            f'Could not auto-install extension. Please make sure "code" command is in PATH. Error: {e}'
-        )
+        logger.debug(f'Could not auto-install bundled extension: {e}')
 
     return False
 
