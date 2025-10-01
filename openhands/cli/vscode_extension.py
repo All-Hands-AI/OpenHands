@@ -570,9 +570,7 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
                 # Editor CLI missing; let caller handle as permanent failure
                 raise
             if process.returncode == 0:
-                print(
-                    f'INFO: Bundled {editor_name} extension installed successfully.'
-                )
+                print(f'INFO: Bundled {editor_name} extension installed successfully.')
                 return True
             else:
                 logger.debug(
