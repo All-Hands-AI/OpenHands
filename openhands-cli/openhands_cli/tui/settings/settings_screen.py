@@ -15,7 +15,8 @@ from openhands_cli.user_actions.settings_action import (
 )
 from openhands_cli.tui.utils import StepCounter
 from prompt_toolkit import HTML, print_formatted_text
-from openhands.sdk import Conversation, LLM, LocalFileStore
+from openhands.sdk import BaseConversation, LLM, LocalFileStore
+from openhands.sdk.security.confirmation_policy import NeverConfirm
 from openhands.tools.preset.default import get_default_agent
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -23,7 +24,7 @@ from prompt_toolkit.widgets import Frame, TextArea
 from openhands_cli.pt_style import COLOR_GREY
 
 class SettingsScreen:
-    def __init__(self, conversation: Conversation | None = None):
+    def __init__(self, conversation: BaseConversation | None = None):
         self.file_store = LocalFileStore(PERSISTENCE_DIR)
         self.agent_store = AgentStore()
         self.conversation = conversation
@@ -32,6 +33,8 @@ class SettingsScreen:
         agent_spec = self.agent_store.load()
         if not agent_spec:
             return
+        assert self.conversation is not None, \
+            "Conversation must be set to display settings."
 
         llm = agent_spec.llm
         advanced_llm_settings = True if llm.base_url else False
@@ -58,7 +61,7 @@ class SettingsScreen:
             )
         labels_and_values.extend([
             ("   API Key", "********" if llm.api_key else "Not Set"),
-            ("   Confirmation Mode", "Enabled" if self.conversation.confirmation_policy_active else "Disabled"),
+            ("   Confirmation Mode", "Enabled" if not isinstance(self.conversation.state.confirmation_policy, NeverConfirm) else "Disabled"),
             ("   Memory Condensation", "Enabled" if agent_spec.condenser else "Disabled"),
             ("   Configuration File", os.path.join(PERSISTENCE_DIR, AGENT_SETTINGS_PATH))
         ])
@@ -115,7 +118,7 @@ class SettingsScreen:
             api_key = prompt_api_key(
                 step_counter,
                 provider,
-                self.conversation.agent.llm.api_key if self.conversation else None,
+                self.conversation.state.agent.llm.api_key if self.conversation else None,
                 escapable=escapable
             )
             save_settings_confirmation()
@@ -172,7 +175,6 @@ class SettingsScreen:
         if not agent:
             agent = get_default_agent(
                 llm=llm,
-                working_dir=WORK_DIR,
                 cli_mode=True
             )
 
