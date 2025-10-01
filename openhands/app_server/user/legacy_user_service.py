@@ -23,7 +23,10 @@ class LegacyUserService(UserService):
     async def get_current_user(self) -> UserInfo:
         if self.user_id is None:
             raise AuthError()
-        return UserInfo(id=self.user_id, **self.settings.model_dump(context={"expose_secrets": True}))
+        return UserInfo(
+            id=self.user_id,
+            **self.settings.model_dump(context={'expose_secrets': True}),
+        )
 
 
 class LegacyUserServiceResolver(UserServiceResolver):
@@ -45,4 +48,3 @@ class LegacyUserServiceResolver(UserServiceResolver):
         user_service = LegacyUserService(user_id, settings)
         setattr(request.state, 'user_service', user_service)
         return user_service
-

@@ -11,7 +11,9 @@ def create_json_type_decorator(object_type: type):
         cache_ok = True
 
         def process_bind_param(self, value, dialect):
-            return type_adapter.dump_python(value, mode='json', context={"expose_secrets": True})
+            return type_adapter.dump_python(
+                value, mode='json', context={'expose_secrets': True}
+            )
 
         def process_result_param(self, value, dialect):
             return type_adapter.validate_python(value)

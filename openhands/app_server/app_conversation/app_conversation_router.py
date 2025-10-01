@@ -135,7 +135,7 @@ async def start_app_conversation(
         app_conversation_service_dependency
     ),
 ) -> AppConversationStartTask:
-    """ Start an app conversation start task and return it."""
+    """Start an app conversation start task and return it."""
     async_iter = app_conversation_service.start_app_conversation(request)
     result = await anext(async_iter)
     asyncio.create_task(_consume_remaining(async_iter))
@@ -149,9 +149,12 @@ async def stream_app_conversation_start(
         app_conversation_service_dependency
     ),
 ) -> list[AppConversationStartTask]:
-    """ Start an app conversation start task and stream updates from it.
+    """Start an app conversation start task and stream updates from it.
     Leaves the connection open until either the conversation starts or there was an error"""
-    response = StreamingResponse(_stream_app_conversation_start(request, app_conversation_service), media_type="application/json")
+    response = StreamingResponse(
+        _stream_app_conversation_start(request, app_conversation_service),
+        media_type='application/json',
+    )
     return response
 
 
@@ -178,9 +181,10 @@ async def _consume_remaining(async_iter):
     except StopAsyncIteration:
         return
 
+
 async def _stream_app_conversation_start(
     request: AppConversationStartRequest,
-    app_conversation_service: AppConversationService
+    app_conversation_service: AppConversationService,
 ) -> AsyncGenerator[str, None]:
     """Stream a json list, item by item."""
     yield '[\n'

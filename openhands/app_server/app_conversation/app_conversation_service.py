@@ -1,7 +1,7 @@
 import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, AsyncGenerator, Callable, Coroutine
+from typing import AsyncGenerator, Callable
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -10,7 +10,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationSortOrder,
     AppConversationStartRequest,
     AppConversationStartTask,
-    AppConversationStartTaskStatus,
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 

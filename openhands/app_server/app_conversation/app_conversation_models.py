@@ -4,15 +4,15 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 from sqlalchemy import Column
-from sqlmodel import Field as SQLField, JSON
-from sqlmodel import SQLModel
+from sqlmodel import JSON, SQLModel
+from sqlmodel import Field as SQLField
 
 from openhands.agent_server.models import SendMessageRequest
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-from openhands.agent_server.utils import utc_now
 from openhands.app_server.utils.sql_utils import create_json_type_decorator
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.conversation.state import AgentExecutionStatus
@@ -90,11 +90,11 @@ class AppConversationStartRequest(BaseModel):
 
 
 class AppConversationStartTaskStatus(Enum):
-    WORKING = "WORKING"
-    WAITING_FOR_SANDBOX = "WAITING_FOR_SANDBOX"
-    STARTING_CONVERSATION = "STARTING_CONVERSATION"
-    READY = "READY"
-    ERROR = "ERROR"
+    WORKING = 'WORKING'
+    WAITING_FOR_SANDBOX = 'WAITING_FOR_SANDBOX'
+    STARTING_CONVERSATION = 'STARTING_CONVERSATION'
+    READY = 'READY'
+    ERROR = 'ERROR'
 
 
 class AppConversationStartTask(SQLModel, table=True):  # type: ignore
@@ -112,11 +112,13 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
         default=None, description='The id of the app_conversation, if READY'
     )
     sandbox_id: str | None = SQLField(
-        default=None, description="The id of the sandbox, if READY"
+        default=None, description='The id of the sandbox, if READY'
     )
     agent_server_url: str | None = SQLField(
-        default=None, description="The agent server url, if READY"
+        default=None, description='The agent server url, if READY'
     )
-    request: AppConversationStartRequest = SQLField(sa_column=Column(create_json_type_decorator(AppConversationStartRequest)))
+    request: AppConversationStartRequest = SQLField(
+        sa_column=Column(create_json_type_decorator(AppConversationStartRequest))
+    )
     created_at: datetime = SQLField(default_factory=utc_now, index=True)
     updated_at: datetime = SQLField(default_factory=utc_now, index=True)

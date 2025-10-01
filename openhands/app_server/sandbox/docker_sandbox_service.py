@@ -12,6 +12,7 @@ from docker.errors import APIError, NotFound
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
@@ -28,7 +29,6 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceResolver,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
-from openhands.agent_server.utils import utc_now
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -173,16 +173,23 @@ class DockerSandboxService(SandboxService):
 
     async def _container_to_checked_sandbox_info(self, container) -> SandboxInfo | None:
         sandbox_info = await self._container_to_sandbox_info(container)
-        if sandbox_info and self.health_check_path is not None and sandbox_info.exposed_urls:
+        if (
+            sandbox_info
+            and self.health_check_path is not None
+            and sandbox_info.exposed_urls
+        ):
             app_server_url = next(
-                exposed_url.url for exposed_url in sandbox_info.exposed_urls
+                exposed_url.url
+                for exposed_url in sandbox_info.exposed_urls
                 if exposed_url.name == AGENT_SERVER
             )
             try:
-                response = await self.httpx_client.get(f"{app_server_url}{self.health_check_path}")
+                response = await self.httpx_client.get(
+                    f'{app_server_url}{self.health_check_path}'
+                )
                 response.raise_for_status()
             except Exception as exc:
-                _logger.warning(f"Sandbox server not running: {exc}")
+                _logger.warning(f'Sandbox server not running: {exc}')
                 sandbox_info.status = SandboxStatus.ERROR
                 sandbox_info.exposed_urls = None
                 sandbox_info.session_api_key = None
@@ -202,7 +209,9 @@ class DockerSandboxService(SandboxService):
 
             for container in all_containers:
                 if container.name.startswith(self.container_name_prefix):
-                    sandbox_info = await self._container_to_checked_sandbox_info(container)
+                    sandbox_info = await self._container_to_checked_sandbox_info(
+                        container
+                    )
                     if sandbox_info:
                         # Filter by user_id if specified
                         if (
@@ -399,10 +408,13 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
             ),
         ]
     )
-    health_check_path: str | None = Field(default="/health", description=(
-        "The url path in the sandbox agent server to check to "
-        "determine whether the server is running"
-    ))
+    health_check_path: str | None = Field(
+        default='/health',
+        description=(
+            'The url path in the sandbox agent server to check to '
+            'determine whether the server is running'
+        ),
+    )
 
     def get_resolver_for_user(self) -> Callable:
         # Docker sandboxes are designed for a single user and

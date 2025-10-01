@@ -77,7 +77,7 @@ async def on_event(
             asyncio.create_task(
                 event_callback_service.execute_callbacks(conversation_id, event)
             )
-    except Exception as exc:
+    except Exception:
         _logger.exception('Error in webhook', stack_info=True)
 
     return Success()

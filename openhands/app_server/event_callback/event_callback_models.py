@@ -13,11 +13,11 @@ from sqlalchemy import JSON, Column, String
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
 )
-from openhands.agent_server.utils import utc_now
 from openhands.sdk import EventBase
 from openhands.sdk.utils.models import (
     DiscriminatedUnionMixin,

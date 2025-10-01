@@ -22,10 +22,10 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from openhands.agent_server.models import utc_now
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from openhands.agent_server.models import utc_now
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartTask,
 )
@@ -33,7 +33,6 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
     AppConversationStartTaskService,
     AppConversationStartTaskServiceResolver,
 )
-
 from openhands.app_server.database import async_session_dependency
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService

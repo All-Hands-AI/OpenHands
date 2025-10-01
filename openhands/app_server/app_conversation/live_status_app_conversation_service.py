@@ -10,8 +10,6 @@ from uuid import UUID
 
 import httpx
 from fastapi import Depends
-from openhands.sdk import LocalWorkspace
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -37,7 +35,9 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceResolver,
 )
-from openhands.app_server.app_conversation.app_conversation_start_task_service import AppConversationStartTaskService
+from openhands.app_server.app_conversation.app_conversation_start_task_service import (
+    AppConversationStartTaskService,
+)
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
@@ -47,7 +47,9 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.user.user_service import UserService
+from openhands.sdk import LocalWorkspace
 from openhands.sdk.llm import LLM
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -129,13 +131,14 @@ class LiveStatusAppConversationService(AppConversationService):
         self, request: AppConversationStartRequest
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         async for task in self._start_app_conversation(request):
-            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(
+                task
+            )
             yield task
 
     async def _start_app_conversation(
         self, request: AppConversationStartRequest
     ) -> AsyncGenerator[AppConversationStartTask, None]:
-
         # Create and yield the start task
         user = await self.user_service.get_current_user()
         task = AppConversationStartTask(
@@ -168,7 +171,9 @@ class LiveStatusAppConversationService(AppConversationService):
             # Start conversation...
             response = await self.httpx_client.post(
                 f'{agent_server_url}/api/conversations',
-                json=start_conversation_request.model_dump(context={"expose_secrets": True}),
+                json=start_conversation_request.model_dump(
+                    context={'expose_secrets': True}
+                ),
                 headers={'X-Session-API-Key': sandbox.session_api_key},
                 timeout=self.sandbox_startup_timeout,
             )
@@ -183,7 +188,7 @@ class LiveStatusAppConversationService(AppConversationService):
                 sandbox_id=sandbox.id,
                 user_id=user.id,
                 llm_model=start_conversation_request.agent.llm.model,
-                #TODO: Lots of git parameters required
+                # TODO: Lots of git parameters required
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
@@ -304,10 +309,12 @@ class LiveStatusAppConversationService(AppConversationService):
                 result[stored_conversation.sandbox_id].append(stored_conversation.id)
         return result
 
-    async def _wait_for_sandbox_start(self, task: AppConversationStartTask) -> AsyncGenerator[AppConversationStartTask, None]:
+    async def _wait_for_sandbox_start(
+        self, task: AppConversationStartTask
+    ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Wait for sandbox to start and return info."""
 
-        #Get the sandbox
+        # Get the sandbox
         if not task.sandbox_id:
             sandbox = await self.sandbox_service.start_sandbox()
             task.sandbox_id = sandbox.id
@@ -361,8 +368,8 @@ class LiveStatusAppConversationService(AppConversationService):
 
         # Hack - because the workspace tries to create the dir on post init
         # we create one in cwd then set it afterwards
-        workspace=LocalWorkspace(working_dir=os.getcwd())
-        workspace.working_dir="/home/openhands/workspace"
+        workspace = LocalWorkspace(working_dir=os.getcwd())
+        workspace.working_dir = '/home/openhands/workspace'
 
         llm = LLM(
             model=user.llm_model,
@@ -374,7 +381,9 @@ class LiveStatusAppConversationService(AppConversationService):
         start_conversation_request = StartConversationRequest(
             agent=agent,
             workspace=workspace,
-            confirmation_policy=AlwaysConfirm() if user.confirmation_mode else NeverConfirm(),
+            confirmation_policy=AlwaysConfirm()
+            if user.confirmation_mode
+            else NeverConfirm(),
             initial_message=initial_message,
         )
         return start_conversation_request

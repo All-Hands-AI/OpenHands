@@ -6,6 +6,7 @@ from typing import Callable
 import docker
 from docker.errors import APIError, NotFound
 
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -14,7 +15,6 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceResolver,
 )
-from openhands.agent_server.utils import utc_now
 
 _global_docker_client: docker.DockerClient | None = None
 _logger = logging.getLogger(__name__)
