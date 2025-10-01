@@ -3,6 +3,7 @@ import os
 import pathlib
 import platform
 import sys
+import traceback
 from ast import literal_eval
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin, get_type_hints
@@ -825,10 +826,17 @@ def load_openhands_config(
         set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
+    logger.openhands_logger.info('load_openhands_config stack trace:')
+    logger.openhands_logger.info(''.join(traceback.format_stack()))
     config = OpenHandsConfig()
     load_from_toml(config, config_file)
+    logger.openhands_logger.info(
+        f'Config from TOML file {config_file}: {config.model_dump_json()}'
+    )
     load_from_env(config, os.environ)
+    logger.openhands_logger.info(f'Config from env: {config.model_dump_json()}')
     finalize_config(config)
+    logger.openhands_logger.info(f'Config finalized: {config.model_dump_json()}')
     register_custom_agents(config)
     if set_logging_levels:
         logger.DEBUG = config.debug
