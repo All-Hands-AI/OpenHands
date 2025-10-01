@@ -142,7 +142,7 @@ async def start_app_conversation(
     return result
 
 
-@router.post('/stream')
+@router.post('/stream-start')
 async def stream_app_conversation_start(
     request: AppConversationStartRequest,
     app_conversation_service: AppConversationService = (
@@ -184,7 +184,10 @@ async def _stream_app_conversation_start(
 ) -> AsyncGenerator[str, None]:
     """Stream a json list, item by item."""
     yield '[\n'
+    comma = False
     async for task in app_conversation_service.start_app_conversation(request):
-        chunk = task.model_dump_json() + ',\n'
+        chunk = task.model_dump_json()
+        if comma:
+            chunk = ',\n' + chunk
         yield chunk
     yield ']'
