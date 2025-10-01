@@ -72,9 +72,8 @@ class AgentStore:
             return agent
         except FileNotFoundError:
             return None
-        except Exception as e:
+        except Exception:
             print_formatted_text(HTML("\n<red>Agent configuration file is corrupted!</red>"))
-            raise e
             return None
 
     def save(self, agent: Agent) -> None:
