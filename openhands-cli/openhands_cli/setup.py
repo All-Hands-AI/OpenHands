@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from openhands.sdk import BaseConversation, Conversation, Workspace, register_tool
 from openhands.tools.execute_bash import BashTool
@@ -20,12 +19,12 @@ class MissingAgentSpec(Exception):
     """Raised when agent specification is not found or invalid."""
     pass
 
-def setup_conversation(conversation_id: Optional[str] = None) -> BaseConversation:
+def setup_conversation(conversation_id: str | None = None) -> BaseConversation:
     """
     Setup the conversation with agent.
 
     Args:
-        conversation_id: Optional conversation ID to use. If not provided, a random UUID will be generated.
+        conversation_id: conversation ID to use. If not provided, a random UUID will be generated.
 
     Raises:
         MissingAgentSpec: If agent specification is not found or invalid.

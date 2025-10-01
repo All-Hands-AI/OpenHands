@@ -84,7 +84,7 @@ def display_help() -> None:
 def display_welcome(conversation_id: UUID) -> None:
     """Display welcome message."""
     clear()
-    display_banner(str(conversation_id)[0:8])
+    display_banner(str(conversation_id))
     print_formatted_text(HTML("<gold>Let's start building!</gold>"))
     print_formatted_text(
         HTML(

@@ -5,7 +5,6 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import sys
-from typing import Optional
 
 from openhands.sdk import (
     Message,
@@ -40,11 +39,9 @@ def _restore_tty() -> None:
         pass
 
 
-def run_cli_entry(conversation_id: Optional[str] = None) -> None:
+def run_cli_entry(conversation_id: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
 
-    Args:
-        conversation_id: Optional conversation ID to use for the session.
 
     Raises:
         AgentSetupError: If agent setup fails
