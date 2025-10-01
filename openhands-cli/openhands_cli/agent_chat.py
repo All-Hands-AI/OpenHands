@@ -58,7 +58,7 @@ def run_cli_entry(conversation_id: str | None = None) -> None:
         except MissingAgentSpec:
             settings_screen.handle_basic_settings(escapable=False)
 
-    display_welcome(conversation.id)
+    display_welcome(conversation.id, bool(conversation_id))
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
