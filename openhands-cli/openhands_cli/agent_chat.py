@@ -40,8 +40,6 @@ def _restore_tty() -> None:
 
 def _print_exit_hint(conversation_id: str) -> None:
     """Print a resume hint with the current conversation ID."""
-    if not conversation_id:
-        return
     print_formatted_text(HTML(f"<grey>Conversation ID:</grey> <yellow>{conversation_id}</yellow>"))
     print_formatted_text(
         HTML(
