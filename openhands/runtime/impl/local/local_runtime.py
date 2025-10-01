@@ -38,6 +38,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.plugins.vscode import VSCodeRequirement
+from openhands.utils.http_session import httpx_verify_option
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
@@ -760,7 +761,7 @@ def _create_warm_server(
         )
 
         # Wait for the server to be ready
-        session = httpx.Client(timeout=30)
+        session = httpx.Client(timeout=30, verify=httpx_verify_option())
 
         # Use tenacity to retry the connection
         @tenacity.retry(
