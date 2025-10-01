@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from time import time
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator, Callable, Sequence
 from uuid import UUID
 
 import httpx
@@ -89,7 +89,9 @@ class LiveStatusAppConversationService(AppConversationService):
             page_id=page_id,
             limit=limit,
         )
-        conversations: list[AppConversation] = await self._build_app_conversations(page.items)  # type: ignore
+        conversations: list[AppConversation] = await self._build_app_conversations(
+            page.items
+        )  # type: ignore
         return AppConversationPage(items=conversations, next_page_id=page.next_page_id)
 
     async def count_app_conversations(
@@ -147,8 +149,8 @@ class LiveStatusAppConversationService(AppConversationService):
         yield task
 
         try:
-            async for task in self._wait_for_sandbox_start(task):
-                yield task
+            async for updated_task in self._wait_for_sandbox_start(task):
+                yield updated_task
 
             # Build the start request
             sandbox_id = task.sandbox_id
@@ -212,7 +214,7 @@ class LiveStatusAppConversationService(AppConversationService):
         )
 
     async def _build_app_conversations(
-        self, app_conversation_infos: list[AppConversationInfo | None]
+        self, app_conversation_infos: Sequence[AppConversationInfo | None]
     ) -> list[AppConversation | None]:
         sandbox_id_to_conversation_ids = self._get_sandbox_id_to_conversation_ids(
             app_conversation_infos
@@ -279,12 +281,17 @@ class LiveStatusAppConversationService(AppConversationService):
                 response.raise_for_status()
 
                 data = response.json()
-                conversation_info = _conversation_info_type_adapter.validate_python(data)
+                conversation_info = _conversation_info_type_adapter.validate_python(
+                    data
+                )
                 conversation_info = [c for c in conversation_info if c]
                 return conversation_info
-        except Exception as exc:
+        except Exception:
             # Not getting a status is not a fatal error - we just mark the conversation as stopped
-            _logger.exception(f"Error getting conversation status from sandbox {sandbox.id}", stack_info=True)
+            _logger.exception(
+                f'Error getting conversation status from sandbox {sandbox.id}',
+                stack_info=True,
+            )
             return []
 
     def _build_conversation(
@@ -295,16 +302,21 @@ class LiveStatusAppConversationService(AppConversationService):
     ) -> AppConversation | None:
         if app_conversation_info is None:
             return None
-        sandbox_status = (
-            sandbox.status if sandbox else SandboxStatus.MISSING
-        )
+        sandbox_status = sandbox.status if sandbox else SandboxStatus.MISSING
         agent_status = conversation_info.agent_status if conversation_info else None
         conversation_url = None
         session_api_key = None
         if sandbox and sandbox.exposed_urls:
-            conversation_url = next((exposed_url.url for exposed_url in sandbox.exposed_urls if exposed_url.name == AGENT_SERVER), None)
+            conversation_url = next(
+                (
+                    exposed_url.url
+                    for exposed_url in sandbox.exposed_urls
+                    if exposed_url.name == AGENT_SERVER
+                ),
+                None,
+            )
             if conversation_url:
-                conversation_url += f"/api/conversations/{app_conversation_info.id.hex}"
+                conversation_url += f'/api/conversations/{app_conversation_info.id.hex}'
             session_api_key = sandbox.session_api_key
 
         return AppConversation(
@@ -316,7 +328,7 @@ class LiveStatusAppConversationService(AppConversationService):
         )
 
     def _get_sandbox_id_to_conversation_ids(
-        self, stored_conversations: list[AppConversationInfo | None]
+        self, stored_conversations: Sequence[AppConversationInfo | None]
     ):
         result = defaultdict(list)
         for stored_conversation in stored_conversations:
