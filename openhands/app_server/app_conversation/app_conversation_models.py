@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 from sqlalchemy import Column
 from sqlmodel import JSON, SQLModel
 from sqlmodel import Field as SQLField
@@ -64,6 +64,14 @@ class AppConversation(AppConversationInfo):  # type: ignore
     agent_status: AgentExecutionStatus | None = Field(
         default=None,
         description='Current agent status. Will be None if the sandbox_status is not RUNNING',
+    )
+    conversation_url: str | None = Field(
+        default=None,
+        description="The URL where the conversation may be accessed"
+    )
+    session_api_key: str | None = Field(
+        default=None,
+        description="The Session Api Key for REST operations."
     )
 
     # Have to redefine these due to a bug in SQLModel :(

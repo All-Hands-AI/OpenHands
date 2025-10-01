@@ -14,7 +14,6 @@ from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
-    ConversationPage,
     NeverConfirm,
     SendMessageRequest,
     StartConversationRequest,
@@ -90,8 +89,8 @@ class LiveStatusAppConversationService(AppConversationService):
             page_id=page_id,
             limit=limit,
         )
-        conversations = await self._build_app_conversations(page.items)  # type: ignore
-        return ConversationPage(items=conversations, next_page_id=page.next_page_id)
+        conversations: list[AppConversation] = await self._build_app_conversations(page.items)  # type: ignore
+        return AppConversationPage(items=conversations, next_page_id=page.next_page_id)
 
     async def count_app_conversations(
         self,
@@ -196,6 +195,7 @@ class LiveStatusAppConversationService(AppConversationService):
 
             # Update the start task
             task.status = AppConversationStartTaskStatus.READY
+            task.app_conversation_id = info.id
             yield task
 
         except Exception as exc:
@@ -227,7 +227,7 @@ class LiveStatusAppConversationService(AppConversationService):
         # Gather the running conversations
         tasks = [
             self._get_live_conversation_info(
-                sandbox, sandbox_id_to_conversation_ids[sandbox.id]
+                sandbox, sandbox_id_to_conversation_ids.get(sandbox.id)
             )
             for sandbox in sandboxes
             if sandbox and sandbox.status == SandboxStatus.RUNNING
@@ -263,24 +263,29 @@ class LiveStatusAppConversationService(AppConversationService):
         conversation_ids: list[str],
     ) -> list[ConversationInfo]:
         """Get agent status for multiple conversations from the Agent Server."""
-        # Build the URL with query parameters
-        agent_server_url = self._get_agent_server_url(sandbox)
-        url = f'{agent_server_url.rstrip("/")}/conversations'
-        params = {'ids': conversation_ids}
+        try:
+            # Build the URL with query parameters
+            agent_server_url = self._get_agent_server_url(sandbox)
+            url = f'{agent_server_url.rstrip("/")}/api/conversations'
+            params = {'ids': conversation_ids}
 
-        # Set up headers
-        headers = {}
-        if sandbox.session_api_key:
-            headers['X-Session-API-Key'] = sandbox.session_api_key
+            # Set up headers
+            headers = {}
+            if sandbox.session_api_key:
+                headers['X-Session-API-Key'] = sandbox.session_api_key
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(url, params=params, headers=headers)
-            response.raise_for_status()
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(url, params=params, headers=headers)
+                response.raise_for_status()
 
-            data = response.json()
-            conversation_info = _conversation_info_type_adapter.validate_python(data)
-            conversation_info = [c for c in conversation_info if c]
-            return conversation_info
+                data = response.json()
+                conversation_info = _conversation_info_type_adapter.validate_python(data)
+                conversation_info = [c for c in conversation_info if c]
+                return conversation_info
+        except Exception as exc:
+            # Not getting a status is not a fatal error - we just mark the conversation as stopped
+            _logger.exception(f"Error getting conversation status from sandbox {sandbox.id}", stack_info=True)
+            return []
 
     def _build_conversation(
         self,
@@ -291,13 +296,23 @@ class LiveStatusAppConversationService(AppConversationService):
         if app_conversation_info is None:
             return None
         sandbox_status = (
-            sandbox.status if sandbox else SandboxStatus.ERROR
-        )  # TODO: Maybe it was deleted?
+            sandbox.status if sandbox else SandboxStatus.MISSING
+        )
         agent_status = conversation_info.agent_status if conversation_info else None
+        conversation_url = None
+        session_api_key = None
+        if sandbox and sandbox.exposed_urls:
+            conversation_url = next((exposed_url.url for exposed_url in sandbox.exposed_urls if exposed_url.name == AGENT_SERVER), None)
+            if conversation_url:
+                conversation_url += f"/api/conversations/{app_conversation_info.id.hex}"
+            session_api_key = sandbox.session_api_key
+
         return AppConversation(
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
             agent_status=agent_status,
+            converation_url=conversation_url,
+            session_api_key=session_api_key,
         )
 
     def _get_sandbox_id_to_conversation_ids(

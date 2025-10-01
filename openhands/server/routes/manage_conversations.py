@@ -2,11 +2,13 @@ import itertools
 import os
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+import base62
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -16,6 +18,8 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
 from openhands.app_server.dependency import get_dependency_resolver
+from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxInfo
+from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -311,29 +315,21 @@ async def search_conversations(
             # Fallback: treat as v0 page_id for backward compatibility
             v0_page_id = page_id
 
-    # Split limit between both sources (roughly half each)
-    half_limit = max(1, limit // 2)
-
     # Get results from old conversation store (V0)
     conversation_metadata_result_set = await conversation_store.search(
-        v0_page_id, half_limit
+        v0_page_id, limit
     )
 
     # Get results from new app conversation service (V1)
-    max_age_seconds = getattr(
-        config, 'conversation_max_age_seconds', 86400 * 30
-    )  # Default 30 days
     age_filter_date = None
-    if max_age_seconds:
-        from datetime import timedelta
-
+    if config.conversation_max_age_seconds:
         age_filter_date = datetime.now(timezone.utc) - timedelta(
-            seconds=max_age_seconds
+            seconds=config.conversation_max_age_seconds
         )
 
     app_conversation_page = await app_conversation_service.search_app_conversations(
         page_id=v1_page_id,
-        limit=half_limit,
+        limit=limit,
         # Apply age filter at the service level if possible
         created_at__gte=age_filter_date,
     )
@@ -346,11 +342,11 @@ async def search_conversations(
     # Apply age filter to V0 conversations
     v0_filtered_results = _filter_conversations_by_age(
         conversation_metadata_result_set.results,
-        getattr(config, 'conversation_max_age_seconds', 86400 * 30),  # Default 30 days
+        config.conversation_max_age_seconds,
     )
 
     # Apply additional filters to both V0 and V1 results
-    def apply_filters(conversations):
+    def apply_filters(conversations: list[StoredConversation]) -> list[StoredConversation]:
         filtered = []
         for conversation in conversations:
             # Apply repository filter
@@ -925,7 +921,7 @@ def _to_conversation_info(app_conversation: AppConversation) -> StoredConversati
     from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 
     # Map SandboxStatus to ConversationStatus
-    status_mapping = {
+    conversation_status_mapping = {
         SandboxStatus.RUNNING: ConversationStatus.RUNNING,
         SandboxStatus.STARTING: ConversationStatus.STARTING,
         SandboxStatus.PAUSED: ConversationStatus.STOPPED,
@@ -933,28 +929,37 @@ def _to_conversation_info(app_conversation: AppConversation) -> StoredConversati
         SandboxStatus.MISSING: ConversationStatus.ARCHIVED,
     }
 
-    conversation_status = status_mapping.get(
+    conversation_status = conversation_status_mapping.get(
         app_conversation.sandbox_status, ConversationStatus.STOPPED
     )
 
-    # Use title or generate a default one
-    title = app_conversation.title
-    if not title:
-        title = get_default_conversation_title(str(app_conversation.id))
+    runtime_status_mapping = {
+        AgentExecutionStatus.ERROR: RuntimeStatus.ERROR,
+        AgentExecutionStatus.IDLE: RuntimeStatus.READY,
+        AgentExecutionStatus.RUNNING: RuntimeStatus.READY,
+        AgentExecutionStatus.PAUSED: RuntimeStatus.READY,
+        AgentExecutionStatus.WAITING_FOR_CONFIRMATION: RuntimeStatus.READY,
+        AgentExecutionStatus.FINISHED: RuntimeStatus.READY,
+        AgentExecutionStatus.STUCK: RuntimeStatus.ERROR,
+    }
+    runtime_status = runtime_status_mapping.get(
+        app_conversation.agent_status, RuntimeStatus.ERROR
+    )
+    title = app_conversation.title or f"Conversation {base62.encodebytes(app_conversation.id.bytes)}"
 
     return StoredConversation(
         conversation_id=str(app_conversation.id),
         title=title,
         last_updated_at=app_conversation.updated_at,
         status=conversation_status,
-        runtime_status=None,  # V1 conversations don't have runtime_status
+        runtime_status=runtime_status,
         selected_repository=app_conversation.selected_repository,
         selected_branch=app_conversation.selected_branch,
         git_provider=app_conversation.git_provider,
         trigger=app_conversation.trigger,
         num_connections=0,  # V1 conversations don't track connections the same way
-        url=None,  # V1 conversations don't have a direct URL mapping
-        session_api_key=None,  # V1 conversations handle auth differently
+        url=app_conversation.conversation_url,
+        session_api_key=app_conversation.session_api_key,
         created_at=app_conversation.created_at,
         pr_number=app_conversation.pr_number,
         conversation_version='V1',
