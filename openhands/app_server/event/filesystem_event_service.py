@@ -11,7 +11,7 @@ from uuid import UUID
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.event.event_service import EventService, EventServiceResolver
 from openhands.app_server.event_callback.event_callback_models import EventKind
-from openhands.sdk import EventBase
+from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class FilesystemEventService(EventService):
             return dt.strftime('%Y%m%d%H%M%S')
         return timestamp.strftime('%Y%m%d%H%M%S')
 
-    def _get_event_filename(self, conversation_id: UUID, event: EventBase) -> str:
+    def _get_event_filename(self, conversation_id: UUID, event: Event) -> str:
         """Generate filename using YYYYMMDDHHMMSS_kind_id.hex format."""
         timestamp_str = self._timestamp_to_str(event.timestamp)
         kind = event.__class__.__name__
@@ -54,7 +54,7 @@ class FilesystemEventService(EventService):
             id_hex = event.id.hex
         return f'{timestamp_str}_{kind}_{id_hex}'
 
-    def _save_event_to_file(self, conversation_id: UUID, event: EventBase) -> None:
+    def _save_event_to_file(self, conversation_id: UUID, event: Event) -> None:
         """Save an event to a file."""
         events_path = self._ensure_events_dir(conversation_id)
         filename = self._get_event_filename(conversation_id, event)
@@ -65,11 +65,11 @@ class FilesystemEventService(EventService):
             data = event.model_dump(mode='json')
             f.write(json.dumps(data, indent=2))
 
-    def _load_event_from_file(self, filepath: Path) -> EventBase | None:
+    def _load_event_from_file(self, filepath: Path) -> Event | None:
         """Load an event from a file."""
         try:
             json_data = filepath.read_text()
-            return EventBase.model_validate_json(json_data)
+            return Event.model_validate_json(json_data)
         except Exception:
             return None
 
@@ -141,7 +141,7 @@ class FilesystemEventService(EventService):
 
         return filtered_files
 
-    async def get_event(self, event_id: str) -> EventBase | None:
+    async def get_event(self, event_id: str) -> Event | None:
         """Get the event with the given id, or None if not found."""
         # Convert event_id to hex format (remove dashes) for filename matching
         if isinstance(event_id, str) and '-' in event_id:
@@ -228,7 +228,7 @@ class FilesystemEventService(EventService):
 
         return len(files)
 
-    async def save_event(self, conversation_id: UUID, event: EventBase):
+    async def save_event(self, conversation_id: UUID, event: Event):
         """Save an event. Internal method intended not be part of the REST api."""
         self._save_event_to_file(conversation_id, event)
 

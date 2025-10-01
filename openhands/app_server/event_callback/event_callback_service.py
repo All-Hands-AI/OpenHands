@@ -9,7 +9,7 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackPage,
     EventKind,
 )
-from openhands.sdk import EventBase
+from openhands.sdk import Event
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -54,7 +54,7 @@ class EventCallbackService(ABC):
         return results
 
     @abstractmethod
-    async def execute_callbacks(self, conversation_id: UUID, event: EventBase) -> None:
+    async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
         """Execute any applicable callbacks for the event and store the results."""
 
     # Lifecycle methods

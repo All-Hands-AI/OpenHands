@@ -18,7 +18,7 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
 )
-from openhands.sdk import EventBase
+from openhands.sdk import Event
 from openhands.sdk.utils.models import (
     DiscriminatedUnionMixin,
     OpenHandsModel,
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     EventKind = str
 else:
     EventKind = Literal[
-        tuple(c.__name__ for c in get_known_concrete_subclasses(EventBase))
+        tuple(c.__name__ for c in get_known_concrete_subclasses(Event))
     ]
 
 
@@ -40,7 +40,7 @@ class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
         self,
         conversation_id: UUID,
         callback: EventCallback,
-        event: EventBase,
+        event: Event,
     ) -> EventCallbackResult:
         """Process an event."""
 
@@ -52,7 +52,7 @@ class LoggingCallbackProcessor(EventCallbackProcessor):
         self,
         conversation_id: UUID,
         callback: EventCallback,
-        event: EventBase,
+        event: Event,
     ) -> EventCallbackResult:
         _logger.info(f'Callback {callback.id} Invoked for event {event}')
         return EventCallbackResult(

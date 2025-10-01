@@ -8,6 +8,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
     AppConversationPage,
@@ -17,6 +19,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
+from openhands.app_server.database import manual_close_session_dependency
 from openhands.app_server.dependency import get_dependency_resolver
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
@@ -131,6 +134,7 @@ async def batch_get_app_conversations(
 @router.post('')
 async def start_app_conversation(
     request: AppConversationStartRequest,
+    session: AsyncSession = Depends(manual_close_session_dependency),
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
@@ -138,7 +142,7 @@ async def start_app_conversation(
     """Start an app conversation start task and return it."""
     async_iter = app_conversation_service.start_app_conversation(request)
     result = await anext(async_iter)
-    asyncio.create_task(_consume_remaining(async_iter))
+    asyncio.create_task(_consume_remaining(async_iter, session))
     return result
 
 
@@ -173,13 +177,15 @@ async def batch_get_app_conversation_start_tasks(
     return start_tasks
 
 
-async def _consume_remaining(async_iter):
+async def _consume_remaining(async_iter, session: AsyncSession):
     """Consume the remaining items from an async iterator"""
     try:
         while True:
             await anext(async_iter)
     except StopAsyncIteration:
         return
+    finally:
+        await session.close()
 
 
 async def _stream_app_conversation_start(

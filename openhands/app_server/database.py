@@ -131,7 +131,7 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-async def async_session_dependency(
+async def managed_session_dependency(
     request: Request,
 ) -> AsyncGenerator[AsyncSession, None]:
     """Dependency function that manages database sessions through request state.
@@ -149,7 +149,7 @@ async def async_session_dependency(
     """
     # Check if a session already exists in the request state
     if hasattr(request.state, 'db_session'):
-        # Return the existing session
+        # Yield the existing session
         yield request.state.db_session
     else:
         # Create a new session and store it in request state
@@ -162,6 +162,20 @@ async def async_session_dependency(
                 if hasattr(request.state, 'db_session'):
                     delattr(request.state, 'db_session')
                 await session.close()
+
+
+async def manual_close_session_dependency(request: Request) -> AsyncSession:
+    """Using this dependency before others means that the database session used in
+    the request must be closed manually. This is useful in cases where processing
+    continues after the response is sent."""
+    if hasattr(request.state, 'db_session'):
+        # Return the existing session
+        return request.state.db_session
+    else:
+        # Create a new session and store it in request state
+        session = get_async_session_local()()
+        request.state.db_session = session
+        return session
 
 
 # TODO: We should delete the two methods below once we have alembic migrations set up

@@ -33,7 +33,7 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
     AppConversationStartTaskService,
     AppConversationStartTaskServiceResolver,
 )
-from openhands.app_server.database import async_session_dependency
+from openhands.app_server.database import managed_session_dependency
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService
 
@@ -100,7 +100,7 @@ class SQLAppConversationStartTaskServiceResolver(
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         def resolve_app_conversation_start_task_service(
-            session: AsyncSession = Depends(self._get_async_session_dependency),
+            session: AsyncSession = Depends(self._get_managed_session_dependency),
         ) -> AppConversationStartTaskService:
             return SQLAppConversationStartTaskService(session=session)
 
@@ -115,7 +115,7 @@ class SQLAppConversationStartTaskServiceResolver(
 
         def resolve_app_conversation_start_task_service(
             user_service: UserService = Depends(user_service_resolver),
-            session: AsyncSession = Depends(async_session_dependency),
+            session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationStartTaskService:
             current_user = user_service.get_current_user()
             if current_user is None:

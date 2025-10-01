@@ -37,7 +37,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfoPage,
     AppConversationSortOrder,
 )
-from openhands.app_server.database import async_session_dependency
+from openhands.app_server.database import managed_session_dependency
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService
 
@@ -214,7 +214,7 @@ class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         def resolve_app_conversation_service(
-            session: AsyncSession = Depends(async_session_dependency),
+            session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationInfoService:
             return SQLAppConversationInfoService(session=session)
 
@@ -229,7 +229,7 @@ class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
 
         def resolve_app_conversation_service(
             user_service: UserService = Depends(user_service_resolver),
-            session: AsyncSession = Depends(async_session_dependency),
+            session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationInfoService:
             current_user = user_service.get_current_user()
             if current_user is None:

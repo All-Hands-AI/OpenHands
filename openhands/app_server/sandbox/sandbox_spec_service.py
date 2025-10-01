@@ -2,6 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Callable
 
+from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -31,6 +32,8 @@ class SandboxSpecService(ABC):
     async def get_default_sandbox_spec(self) -> SandboxSpecInfo:
         """Get the default sandbox spec."""
         page = await self.search_sandbox_specs()
+        if not page:
+            raise SandboxError("No sandbox specs available!")
         return page.items[0]
 
     async def batch_get_sandbox_specs(

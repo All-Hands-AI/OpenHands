@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+from dataclasses import dataclass
 import logging
 from typing import Callable
 from uuid import UUID
@@ -12,7 +13,7 @@ from fastapi import Depends
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from openhands.app_server.database import async_session_dependency
+from openhands.app_server.database import managed_session_dependency
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
     EventCallback,
@@ -27,21 +28,16 @@ from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
     EventCallbackServiceResolver,
 )
-from openhands.sdk import EventBase
+from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
 
 
+@dataclass
 class SQLEventCallbackService(EventCallbackService):
     """SQL implementation of EventCallbackService."""
 
-    def __init__(self, session: AsyncSession):
-        """Initialize the SQL event callback service.
-
-        Args:
-            session: The async SQL session
-        """
-        self.session = session
+    session: AsyncSession
 
     async def create_event_callback(
         self, request: CreateEventCallbackRequest
@@ -138,7 +134,7 @@ class SQLEventCallbackService(EventCallbackService):
 
         return EventCallbackPage(items=stored_callbacks, next_page_id=next_page_id)
 
-    async def execute_callbacks(self, conversation_id: UUID, event: EventBase) -> None:
+    async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
         query = (
             select(EventCallback)
             .where(
@@ -163,7 +159,7 @@ class SQLEventCallbackService(EventCallbackService):
         )
 
     async def execute_callback(
-        self, conversation_id: UUID, callback: EventCallback, event: EventBase
+        self, conversation_id: UUID, callback: EventCallback, event: Event
     ):
         try:
             result = await callback.processor(conversation_id, callback, event)
@@ -196,6 +192,6 @@ class SQLEventCallbackServiceResolver(EventCallbackServiceResolver):
         return self.resolve
 
     def resolve(
-        self, session: AsyncSession = Depends(async_session_dependency)
+        self, session: AsyncSession = Depends(managed_session_dependency)
     ) -> EventCallbackService:
         return SQLEventCallbackService(session)

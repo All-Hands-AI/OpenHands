@@ -10,7 +10,7 @@ from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.dependency import get_dependency_resolver
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_models import EventKind
-from openhands.sdk import EventBase
+from openhands.sdk import Event
 
 router = APIRouter(prefix='/events', tags=['Events'])
 event_service_dependency = Depends(
@@ -105,7 +105,7 @@ async def count_events(
 async def batch_get_events(
     id: Annotated[list[str], Query()],
     event_service: EventService = event_service_dependency,
-) -> list[EventBase | None]:
+) -> list[Event | None]:
     """Get a batch of events given their ids, returning null for any missing event."""
     assert len(id) <= 100
     events = await event_service.batch_get_events(id)
