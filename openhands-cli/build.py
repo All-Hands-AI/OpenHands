@@ -13,13 +13,18 @@ import subprocess
 import sys
 from pathlib import Path
 from openhands_cli.locations import PERSISTENCE_DIR, WORK_DIR, AGENT_SETTINGS_PATH
-from openhands.sdk.preset.default import get_default_agent
+from openhands_cli.llm_utils import get_llm_metadata
+from openhands.tools.preset.default import get_default_agent
 from openhands.sdk import LLM
 import time
 import select
 
 dummy_agent = get_default_agent(
-    llm=LLM(model='dummy-model', api_key='dummy-key'),
+    llm=LLM(
+        model='dummy-model', 
+        api_key='dummy-key',
+        metadata=get_llm_metadata(model_name='dummy-model', agent_name='openhands-cli')
+    ),
     working_dir=WORK_DIR,
     persistence_dir=PERSISTENCE_DIR,
     cli_mode=True

@@ -4,7 +4,7 @@ from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from pathlib import Path
 
 from openhands.sdk import LLM, Conversation, LocalFileStore
-from openhands.sdk.preset.default import get_default_agent
+from openhands.tools.preset.default import get_default_agent
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.user_actions.settings_action import SettingsType
 from pydantic import SecretStr
@@ -26,8 +26,7 @@ def seed_file(path: Path, model: str = "openai/gpt-4o-mini", api_key: str = "sk-
     store = AgentStore()
     store.file_store = LocalFileStore(root=str(path))
     agent = get_default_agent(
-        llm=LLM(model=model, api_key=SecretStr(api_key), service_id="test-service"),
-        working_dir=str(path)
+        llm=LLM(model=model, api_key=SecretStr(api_key), service_id="test-service")
     )
     store.save(agent)
 

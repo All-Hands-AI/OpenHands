@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 from openhands.sdk import Agent, LLM, ToolSpec
 from openhands_cli.locations import WORK_DIR, PERSISTENCE_DIR
 from openhands_cli.tui.settings.store import AgentStore
-from openhands.sdk.preset.default import get_default_tools
+from openhands.tools.preset.default import get_default_tools
 
 
 class TestDirectorySeparation:
@@ -39,14 +39,14 @@ class TestToolSpecFix:
         mock_agent = Agent(
             llm=LLM(model="test/model", api_key="test-key", service_id="test-service"),
             tools=[
-                ToolSpec(name="BashTool", params={"working_dir": original_working_dir}),
-                ToolSpec(name="FileEditorTool", params={"workspace_root": original_working_dir}),
-                ToolSpec(name="TaskTrackerTool", params={"save_dir": "value"}),
+                ToolSpec(name="BashTool"),
+                ToolSpec(name="FileEditorTool"),
+                ToolSpec(name="TaskTrackerTool"),
             ]
         )
 
         # Mock the file store to return our test agent
-        with patch('openhands_cli.tui.settings.store.LocalFileStore') as mock_file_store:
+        with patch("openhands_cli.tui.settings.store.LocalFileStore") as mock_file_store:
             mock_store_instance = MagicMock()
             mock_file_store.return_value = mock_store_instance
             mock_store_instance.read.return_value = mock_agent.model_dump_json()
@@ -64,14 +64,3 @@ class TestToolSpecFix:
             assert "BashTool" in tool_names
             assert "FileEditorTool" in tool_names
             assert "TaskTrackerTool" in tool_names
-
-            for tool_spec in loaded_agent.tools:
-                if tool_spec.name == "BashTool":
-                    assert tool_spec.params["working_dir"] == WORK_DIR
-                    assert tool_spec.params["working_dir"] != original_working_dir
-                elif tool_spec.name == "FileEditorTool":
-                    assert tool_spec.params["workspace_root"] == WORK_DIR
-                    assert tool_spec.params["workspace_root"] != original_working_dir
-                elif tool_spec.name == "TaskTrackerTool":
-                    # TaskTrackerTool should use WORK_DIR/.openhands_tasks
-                    assert tool_spec.params["save_dir"] == PERSISTENCE_DIR

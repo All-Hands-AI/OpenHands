@@ -2,7 +2,7 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
-from openhands.sdk import Conversation
+from openhands.sdk import BaseConversation
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.input import Input, create_input
 from prompt_toolkit.keys import Keys
@@ -71,7 +71,7 @@ class PauseListener(threading.Thread):
 
 @contextmanager
 def pause_listener(
-    conversation: Conversation, input_source: Input | None = None
+    conversation: BaseConversation, input_source: Input | None = None
 ) -> Iterator[PauseListener]:
     """Ensure PauseListener always starts/stops cleanly."""
     listener = PauseListener(on_pause=conversation.pause, input_source=input_source)
