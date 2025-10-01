@@ -442,6 +442,7 @@ async def delete_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
+
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
         await conversation_store.get_metadata(conversation_id)
