@@ -9,6 +9,9 @@ from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
+from openhands.app_server.app_conversation.app_conversation_models import AppConversation
+from openhands.app_server.app_conversation.app_conversation_service import AppConversationService
+from openhands.app_server.dependency import get_dependency_resolver
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -76,6 +79,9 @@ from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+app_conversation_service_dependency = Depends(
+    get_dependency_resolver().app_conversation.get_resolver_for_user()
+)
 
 
 def _filter_conversations_by_age(
@@ -282,8 +288,11 @@ async def search_conversations(
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> StoredConversationResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+
+    logger.info(f"We need results from the {app_conversation_service} too!")
 
     # Apply age filter first using common function
     filtered_results = _filter_conversations_by_age(
@@ -318,8 +327,19 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> StoredConversation | None:
     try:
+        # Shim to add V1 conversations
+        try:
+            conversation_uuid = uuid.UUID(conversation_id)
+            app_conversation = await app_conversation_service.get_app_conversation(conversation_uuid)
+            if app_conversation:
+                return _to_conversation_info(app_conversation)
+        except:
+            # Not a V1 conversation
+            pass
+
         metadata = await conversation_store.get_metadata(conversation_id)
         num_connections = len(
             await conversation_manager.get_connections(filter_to_sids={conversation_id})
@@ -341,6 +361,7 @@ async def delete_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
+
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
         await conversation_store.get_metadata(conversation_id)
@@ -817,3 +838,8 @@ async def get_microagent_management_conversations(
     return await _build_conversation_result_set(
         final_filtered_results, conversation_metadata_result_set.next_page_id
     )
+
+
+def _to_conversation_info(app_conversation: AppConversation) -> StoredConversation:
+    """ Convert a V1 AppConversation into an old style StoredConversation"""
+    raise NotImplementedError()
