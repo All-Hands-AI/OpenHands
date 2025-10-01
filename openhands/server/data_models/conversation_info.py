@@ -8,7 +8,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 
 
 @dataclass
-class StoredConversation:
+class ConversationInfo:
     """Information about a conversation. This combines conversation metadata with
     information on whether a conversation is currently running
     """

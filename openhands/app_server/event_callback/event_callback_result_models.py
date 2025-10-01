@@ -2,7 +2,8 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+from sqlalchemy import Column, DateTime, func
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
@@ -29,7 +30,7 @@ class EventCallbackResult(SQLModel, table=True):  # type: ignore
     event_id: EventID = SQLField(index=True)
     conversation_id: UUID = SQLField(index=True)
     detail: str | None = None
-    created_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
 
 
 class EventCallbackResultPage(BaseModel):

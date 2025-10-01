@@ -7,6 +7,7 @@ import jwt
 from jose import jwe
 from jose.constants import ALGORITHMS
 
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.config import EncryptionKey, get_global_config
 
 
@@ -64,7 +65,7 @@ class JWTService:
             raise ValueError(f"Key ID '{key_id}' not found")
 
         # Add standard JWT claims
-        now = datetime.utcnow()
+        now = utc_now()
         if expires_in is None:
             expires_in = timedelta(hours=1)
 
@@ -140,7 +141,7 @@ class JWTService:
             raise ValueError(f"Key ID '{key_id}' not found")
 
         # Add standard JWT claims
-        now = datetime.utcnow()
+        now = utc_now()
         if expires_in is None:
             expires_in = timedelta(hours=1)
 

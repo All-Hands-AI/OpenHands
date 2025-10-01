@@ -2,8 +2,8 @@ from datetime import datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, SecretStr
-from sqlalchemy import Column
+from pydantic import BaseModel, Field
+from sqlalchemy import Column, DateTime, func
 from sqlmodel import JSON, SQLModel
 from sqlmodel import Field as SQLField
 
@@ -38,8 +38,8 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
     metrics: MetricsSnapshot | None = SQLField(default=None, sa_column=Column(JSON))
 
     sandbox_id: str = SQLField(index=True)
-    created_at: datetime = SQLField(default_factory=utc_now, index=True)
-    updated_at: datetime = SQLField(default_factory=utc_now, index=True)
+    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
+    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), onupdate=func.now(), index=True))
 
 
 class AppConversationSortOrder(Enum):
@@ -128,5 +128,5 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     request: AppConversationStartRequest = SQLField(
         sa_column=Column(create_json_type_decorator(AppConversationStartRequest))
     )
-    created_at: datetime = SQLField(default_factory=utc_now, index=True)
-    updated_at: datetime = SQLField(default_factory=utc_now, index=True)
+    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
+    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), onupdate=func.now(), index=True))

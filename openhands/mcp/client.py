@@ -1,5 +1,4 @@
 import asyncio
-from typing import Optional
 
 from fastmcp import Client
 from fastmcp.client.transports import (
@@ -26,11 +25,11 @@ class MCPClient(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    client: Optional[Client] = None
+    client: Client | None = None
     description: str = 'MCP client tools for server interaction'
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
-    server_timeout: Optional[float] = None  # Timeout from server config for tool calls
+    server_timeout: float | None = None  # Timeout from server config for tool calls
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""

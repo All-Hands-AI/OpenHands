@@ -51,7 +51,7 @@ class BaseMicroagent(BaseModel):
     @classmethod
     def load(
         cls,
-        path: Union[str, Path],
+        path: str | Path,
         microagent_dir: Path | None = None,
         file_content: str | None = None,
     ) -> 'BaseMicroagent':
@@ -275,7 +275,7 @@ class TaskMicroagent(KnowledgeMicroagent):
 
 
 def load_microagents_from_dir(
-    microagent_dir: Union[str, Path],
+    microagent_dir: str | Path,
 ) -> tuple[dict[str, RepoMicroagent], dict[str, KnowledgeMicroagent]]:
     """Load all microagents from the given directory.
 

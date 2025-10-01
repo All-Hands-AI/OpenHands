@@ -7,7 +7,6 @@ shell aliases across different shell types and platforms.
 import platform
 import re
 from pathlib import Path
-from typing import Optional
 
 from jinja2 import Template
 
@@ -90,7 +89,7 @@ function oh { {{ command }} $args }
         self.command = command
         self.is_windows = platform.system() == 'Windows'
 
-    def detect_shell(self) -> Optional[str]:
+    def detect_shell(self) -> str | None:
         """Detect the current shell using shellingham.
 
         Returns:
@@ -105,7 +104,7 @@ function oh { {{ command }} $args }
         except Exception:
             return None
 
-    def get_shell_config_path(self, shell: Optional[str] = None) -> Path:
+    def get_shell_config_path(self, shell: str | None = None) -> Path:
         """Get the path to the shell configuration file.
 
         Args:
@@ -165,7 +164,7 @@ function oh { {{ command }} $args }
         else:
             return 'bash'  # Default fallback
 
-    def aliases_exist(self, config_path: Optional[Path] = None) -> bool:
+    def aliases_exist(self, config_path: Path | None = None) -> bool:
         """Check if OpenHands aliases already exist in the shell config.
 
         Args:
@@ -195,7 +194,7 @@ function oh { {{ command }} $args }
         except Exception:
             return False
 
-    def add_aliases(self, config_path: Optional[Path] = None) -> bool:
+    def add_aliases(self, config_path: Path | None = None) -> bool:
         """Add OpenHands aliases to the shell configuration.
 
         Args:
@@ -233,7 +232,7 @@ function oh { {{ command }} $args }
             print(f'Error adding aliases: {e}')
             return False
 
-    def get_reload_command(self, config_path: Optional[Path] = None) -> str:
+    def get_reload_command(self, config_path: Path | None = None) -> str:
         """Get the command to reload the shell configuration.
 
         Args:

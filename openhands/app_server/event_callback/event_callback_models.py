@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
 from pydantic import Field
-from sqlalchemy import JSON, Column, String
+from sqlalchemy import JSON, Column, DateTime, String, func
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
@@ -82,7 +82,7 @@ class CreateEventCallbackRequest(OpenHandsModel):
 
 class EventCallback(SQLModel, CreateEventCallbackRequest, table=True):  # type: ignore
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
-    created_at: datetime = Field(default_factory=utc_now)
+    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
 
 
 class EventCallbackPage(OpenHandsModel):

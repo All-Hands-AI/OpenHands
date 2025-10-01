@@ -1,3 +1,4 @@
+import base64
 import itertools
 import os
 import re
@@ -46,9 +47,9 @@ from openhands.integrations.service_types import (
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
-from openhands.server.data_models.conversation_info import StoredConversation
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
-    StoredConversationResultSet,
+    ConversationInfoResultSet,
 )
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
@@ -125,8 +126,8 @@ def _filter_conversations_by_age(
 
 async def _build_conversation_result_set(
     filtered_conversations: list, next_page_id: str | None
-) -> StoredConversationResultSet:
-    """Build a StoredConversationResultSet from filtered conversations.
+) -> ConversationInfoResultSet:
+    """Build a ConversationInfoResultSet from filtered conversations.
 
     This function handles the common logic of getting conversation IDs, connections,
     agent loop info, and building the final result set.
@@ -136,7 +137,7 @@ async def _build_conversation_result_set(
         next_page_id: Next page ID for pagination
 
     Returns:
-        StoredConversationResultSet with the processed conversations
+        ConversationInfoResultSet with the processed conversations
     """
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_conversations
@@ -151,7 +152,7 @@ async def _build_conversation_result_set(
         info.conversation_id: info for info in agent_loop_info
     }
 
-    result = StoredConversationResultSet(
+    result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
                 conversation=conversation,
@@ -297,7 +298,7 @@ async def search_conversations(
     conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
-) -> StoredConversationResultSet:
+) -> ConversationInfoResultSet:
     import json
     from datetime import datetime, timezone
 
@@ -308,7 +309,7 @@ async def search_conversations(
     if page_id:
         try:
             # Try to parse as JSON first
-            page_data = json.loads(page_id)
+            page_data = json.loads(base64.b64decode(page_id))
             v0_page_id = page_data.get('v0')
             v1_page_id = page_data.get('v1')
         except (json.JSONDecodeError, TypeError):
@@ -334,7 +335,7 @@ async def search_conversations(
         created_at__gte=age_filter_date,
     )
 
-    # Convert V1 conversations to StoredConversation format
+    # Convert V1 conversations to ConversationInfo format
     v1_conversations = [
         _to_conversation_info(app_conv) for app_conv in app_conversation_page.items
     ]
@@ -346,7 +347,7 @@ async def search_conversations(
     )
 
     # Apply additional filters to both V0 and V1 results
-    def apply_filters(conversations: list[StoredConversation]) -> list[StoredConversation]:
+    def apply_filters(conversations: list[ConversationInfo]) -> list[ConversationInfo]:
         filtered = []
         for conversation in conversations:
             # Apply repository filter
@@ -393,9 +394,9 @@ async def search_conversations(
         }
         # Only include page_id if at least one source has more pages
         if next_page_data['v0'] or next_page_data['v1']:
-            next_page_id = json.dumps(next_page_data)
+            next_page_id = base64.b64encode(json.dumps(next_page_data).encode()).decode()
 
-    return StoredConversationResultSet(results=final_results, next_page_id=next_page_id)
+    return ConversationInfoResultSet(results=final_results, next_page_id=next_page_id)
 
 
 @app.get('/conversations/{conversation_id}')
@@ -403,7 +404,7 @@ async def get_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
-) -> StoredConversation | None:
+) -> ConversationInfo | None:
     try:
         # Shim to add V1 conversations
         try:
@@ -525,12 +526,12 @@ async def _get_conversation_info(
     conversation: ConversationMetadata,
     num_connections: int,
     agent_loop_info: AgentLoopInfo | None,
-) -> StoredConversation | None:
+) -> ConversationInfo | None:
     try:
         title = conversation.title
         if not title:
             title = get_default_conversation_title(conversation.conversation_id)
-        return StoredConversation(
+        return ConversationInfo(
             trigger=conversation.trigger,
             conversation_id=conversation.conversation_id,
             title=title,
@@ -861,7 +862,7 @@ async def get_microagent_management_conversations(
     limit: int = 20,
     conversation_store: ConversationStore = Depends(get_conversation_store),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
-) -> StoredConversationResultSet:
+) -> ConversationInfoResultSet:
     """Get conversations for the microagent management page with pagination support.
 
     This endpoint returns conversations with conversation_trigger = 'microagent_management'
@@ -916,8 +917,8 @@ async def get_microagent_management_conversations(
     )
 
 
-def _to_conversation_info(app_conversation: AppConversation) -> StoredConversation:
-    """Convert a V1 AppConversation into an old style StoredConversation"""
+def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo:
+    """Convert a V1 AppConversation into an old style ConversationInfo"""
     from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 
     # Map SandboxStatus to ConversationStatus
@@ -947,7 +948,7 @@ def _to_conversation_info(app_conversation: AppConversation) -> StoredConversati
     )
     title = app_conversation.title or f"Conversation {base62.encodebytes(app_conversation.id.bytes)}"
 
-    return StoredConversation(
+    return ConversationInfo(
         conversation_id=str(app_conversation.id),
         title=title,
         last_updated_at=app_conversation.updated_at,
