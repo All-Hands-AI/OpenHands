@@ -189,5 +189,6 @@ async def _stream_app_conversation_start(
         chunk = task.model_dump_json()
         if comma:
             chunk = ',\n' + chunk
+        comma = True
         yield chunk
     yield ']'
