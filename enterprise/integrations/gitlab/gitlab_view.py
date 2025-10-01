@@ -47,14 +47,14 @@ class GitlabIssue(ResolverViewInterface):
         )
 
         self.previous_comments = await gitlab_service.get_issue_or_mr_comments(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
         (
             self.title,
             self.description,
         ) = await gitlab_service.get_issue_or_mr_title_and_body(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
     async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
@@ -199,11 +199,11 @@ class GitlabInlineMRComment(GitlabMRComment):
             self.title,
             self.description,
         ) = await gitlab_service.get_issue_or_mr_title_and_body(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
         self.previous_comments = await gitlab_service.get_review_thread_comments(
-            self.project_id, self.issue_number, self.discussion_id
+            str(self.project_id), self.issue_number, self.discussion_id
         )
 
     async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:

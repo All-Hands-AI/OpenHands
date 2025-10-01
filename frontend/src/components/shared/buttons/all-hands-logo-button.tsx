@@ -12,7 +12,7 @@ export function AllHandsLogoButton() {
       ariaLabel={t(I18nKey.BRANDING$ALL_HANDS_LOGO)}
       navLinkTo="/"
     >
-      <AllHandsLogo width={34} height={34} />
+      <AllHandsLogo width={46} height={30} />
     </TooltipButton>
   );
 }
