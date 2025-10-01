@@ -345,6 +345,32 @@ async def search_conversations(
         conversation_metadata_result_set.results,
         config.conversation_max_age_seconds,
     )
+    v0_conversation_ids = set(
+        conversation.conversation_id for conversation in v0_filtered_results
+    )
+    v0_connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=v0_conversation_ids
+    )
+    v0_agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=v0_conversation_ids
+    )
+    v0_agent_loop_info_by_conversation_id = {
+        info.conversation_id: info for info in v0_agent_loop_info
+    }
+    v0_conversations = await wait_all(
+        _get_conversation_info(
+            conversation=conversation,
+            num_connections=sum(
+                1
+                for conversation_id in v0_agent_loop_info_by_conversation_id.values()
+                if conversation_id == conversation.conversation_id
+            ),
+            agent_loop_info=v0_agent_loop_info_by_conversation_id.get(
+                conversation.conversation_id
+            ),
+        )
+        for conversation in v0_filtered_results
+    )
 
     # Apply additional filters to both V0 and V1 results
     def apply_filters(conversations: list[ConversationInfo]) -> list[ConversationInfo]:
@@ -367,7 +393,7 @@ async def search_conversations(
             filtered.append(conversation)
         return filtered
 
-    v0_final_filtered = apply_filters(v0_filtered_results)
+    v0_final_filtered = apply_filters(v0_conversations)
     v1_final_filtered = apply_filters(v1_conversations)
 
     # Combine results from both sources
