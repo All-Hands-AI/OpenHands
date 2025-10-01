@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
@@ -10,11 +11,13 @@ from uuid import UUID
 import httpx
 from fastapi import Depends
 from openhands.sdk import LocalWorkspace
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
     ConversationPage,
+    NeverConfirm,
     SendMessageRequest,
     StartConversationRequest,
 )
@@ -340,6 +343,10 @@ class LiveStatusAppConversationService(AppConversationService):
         if user is None:
             raise AuthError()
 
+        # Hack - because the workspace tries to create the dir on post init
+        workspace=LocalWorkspace(working_dir=os.getcwd())
+        workspace.working_dir="/home/openhands/workspace"
+
         llm = LLM(
             model=user.llm_model,
             base_url=user.llm_base_url,
@@ -349,10 +356,8 @@ class LiveStatusAppConversationService(AppConversationService):
         agent = get_default_agent(llm=llm)
         start_conversation_request = StartConversationRequest(
             agent=agent,
-            workspace=LocalWorkspace(
-                working_dir="/home/openhands/workspace"
-            ),
-            # confirmation_policy=NeverConfirm(), # TODO: Add this to user
+            workspace=workspace,
+            confirmation_policy=AlwaysConfirm() if user.confirmation_mode else NeverConfirm(),
             initial_message=initial_message,
         )
         return start_conversation_request
