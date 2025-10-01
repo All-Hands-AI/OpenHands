@@ -27,6 +27,7 @@ class HttpSession:
         headers = kwargs.get('headers') or {}
         headers = {**self.headers, **headers}
         kwargs['headers'] = headers
+        logger.debug(f'HttpSession:request called with args {args} and kwargs {kwargs}')
         return CLIENT.request(*args, **kwargs)
 
     def stream(self, *args, **kwargs):
