@@ -39,7 +39,7 @@ def _restore_tty() -> None:
         pass
 
 
-def run_cli_entry(conversation_id: str | None = None) -> None:
+def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
 
 
@@ -54,11 +54,11 @@ def run_cli_entry(conversation_id: str | None = None) -> None:
 
     while not conversation:
         try:
-            conversation = setup_conversation(conversation_id)
+            conversation = setup_conversation(resume_conversation_id)
         except MissingAgentSpec:
             settings_screen.handle_basic_settings(escapable=False)
 
-    display_welcome(conversation.id, bool(conversation_id))
+    display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)

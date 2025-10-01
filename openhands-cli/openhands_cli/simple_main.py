@@ -32,12 +32,12 @@ def main() -> None:
         type=str,
         help="Conversation ID to use for the session. If not provided, a random UUID will be generated."
     )
-    
+
     args = parser.parse_args()
 
     try:
         # Start agent chat with optional conversation ID
-        run_cli_entry(conversation_id=args.id)
+        run_cli_entry(resume_conversation_id=args.id)
 
     except ImportError as e:
         print_formatted_text(
