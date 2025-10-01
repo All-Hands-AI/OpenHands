@@ -28,7 +28,7 @@ def main() -> None:
         description="OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
     )
     parser.add_argument(
-        "--id",
+        "--resume",
         type=str,
         help="Conversation ID to use for the session. If not provided, a random UUID will be generated."
     )
@@ -37,7 +37,7 @@ def main() -> None:
 
     try:
         # Start agent chat
-        run_cli_entry(resume_conversation_id=args.id)
+        run_cli_entry(resume_conversation_id=args.resume)
 
     except ImportError as e:
         print_formatted_text(

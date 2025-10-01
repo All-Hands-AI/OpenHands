@@ -38,6 +38,17 @@ def _restore_tty() -> None:
     except Exception:
         pass
 
+def _print_exit_hint(conversation_id: str) -> None:
+    """Print a resume hint with the current conversation ID."""
+    if not conversation_id:
+        return
+    print_formatted_text(HTML(f"<grey>Conversation ID:</grey> <yellow>{conversation_id}</yellow>"))
+    print_formatted_text(
+        HTML(
+            f"<grey>Hint:</grey> run <gold>openhands-cli --resume {conversation_id}</gold> "
+            "to resume this conversation."
+        )
+    )
 
 def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
@@ -88,6 +99,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                    _print_exit_hint(conversation.id)
                     break
 
             elif command == "/settings":
@@ -149,6 +161,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                _print_exit_hint(conversation.id)
                 break
 
 
