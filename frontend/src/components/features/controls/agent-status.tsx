@@ -62,7 +62,7 @@ export function AgentStatus({
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <span className="text-[11px] text-white font-normal leading-5">
+      <span className="text-[11px] text-white font-normal leading-5 lg:max-w-[200px] max-w-[32vw] whitespace-normal break-words">
         {t(statusCode)}
       </span>
       <div
