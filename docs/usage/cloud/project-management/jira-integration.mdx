@@ -5,7 +5,7 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 
 # Jira Cloud Integration
 
-<Accordion title="🛠️ Setup Instructions (Admin Only)">
+<Accordion title="Setup Instructions (Admin Only)">
   
 ## Platform Configuration
 
@@ -111,6 +111,25 @@ Here the workspace name is **all-hands**.
 - In the edit view, click **Unlink** next to the workspace name
 - This will deactivate your workspace link
 - **Important:** If the original user who configured the integration chooses to unlink their integration, any users currently linked to that workspace integration will also be unlinked, and the workspace integration will be deactivated. The integration can only be reactivated by the original user.
+
+</Accordion>
+
+<Accordion title="Setup Instructions (Regular Users)">
+  
+If your **admin has already completed the Jira Cloud integration** for your company, you only need to:
+
+1. **Log in to OpenHands Cloud**  
+   - Go to [OpenHands Cloud](https://app.all-hands.dev/)  
+   - Sign in with your Git provider (GitHub, GitLab, or BitBucket)
+
+2. **Connect to Your Company Jira Workspace**  
+   - Go to **Settings** > **Integrations**  
+   - Locate the **Jira Cloud** section  
+   - Click **Configure**  
+   - Enter your company’s Jira workspace URL (e.g., `yourcompany.atlassian.net`)  
+   - Complete the OAuth flow when prompted  
+
+That’s it — once connected, you’ll be able to use the OpenHands agent with your company’s Jira workspace.
 
 </Accordion>
 
