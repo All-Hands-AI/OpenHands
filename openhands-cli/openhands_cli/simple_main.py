@@ -36,7 +36,7 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        # Start agent chat with optional conversation ID
+        # Start agent chat
         run_cli_entry(resume_conversation_id=args.id)
 
     except ImportError as e:
