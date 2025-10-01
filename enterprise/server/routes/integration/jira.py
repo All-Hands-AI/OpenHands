@@ -400,6 +400,7 @@ async def jira_callback(request: Request, code: str, state: str):
         )
 
     integration_session = json.loads(integration_session_json)
+    print('created session')
 
     # Security check: verify the state parameter
     if integration_session.get('state') != state:
@@ -414,17 +415,22 @@ async def jira_callback(request: Request, code: str, state: str):
         'code': code,
         'redirect_uri': JIRA_REDIRECT_URI,
     }
+    print("payload made")
     response = requests.post(JIRA_TOKEN_URL, json=token_payload)
+    print('token url resp', response)
     if response.status_code != 200:
         raise HTTPException(
             status_code=400, detail=f'Error fetching token: {response.text}'
         )
 
+    print('getting token data')
     token_data = response.json()
     access_token = token_data['access_token']
 
     headers = {'Authorization': f'Bearer {access_token}'}
+    print('getting resources')
     response = requests.get(JIRA_RESOURCES_URL, headers=headers)
+    print('resource rsp', response)
 
     if response.status_code != 200:
         raise HTTPException(
