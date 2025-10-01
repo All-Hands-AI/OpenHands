@@ -28,7 +28,7 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceResolver,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'

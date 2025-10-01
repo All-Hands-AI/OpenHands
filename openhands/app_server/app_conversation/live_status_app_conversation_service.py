@@ -5,7 +5,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from time import time
-from typing import Callable
+from typing import AsyncGenerator, Callable
 from uuid import UUID
 
 import httpx
@@ -37,9 +37,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceResolver,
 )
-from openhands.app_server.app_conversation.app_conversation_start_task_service import (
-    AppConversationStartTaskService,
-)
+from openhands.app_server.app_conversation.app_conversation_start_task_service import AppConversationStartTaskService
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
@@ -129,33 +127,43 @@ class LiveStatusAppConversationService(AppConversationService):
 
     async def start_app_conversation(
         self, request: AppConversationStartRequest
-    ) -> AppConversationStartTask:
-        # Create and store the start task
+    ) -> AsyncGenerator[AppConversationStartTask, None]:
+        async for task in self._start_app_conversation(request):
+            await self.app_conversation_start_task_service.save_app_conversation_start_task(task)
+            yield task
+
+    async def _start_app_conversation(
+        self, request: AppConversationStartRequest
+    ) -> AsyncGenerator[AppConversationStartTask, None]:
+
+        # Create and yield the start task
         user = await self.user_service.get_current_user()
         task = AppConversationStartTask(
             user_id=user.id,
             request=request,
         )
-        await self.app_conversation_start_task_service.save_app_conversation_start_task(
-            task
-        )
+        yield task
 
-        # Run the task in the background
-        asyncio.create_task(self._start_app_conversation_task(task))
-
-        return task
-
-    async def _start_app_conversation_task(self, task: AppConversationStartTask):
-        request = task.request
         try:
-            sandbox = await self._wait_for_sandbox_start(request.sandbox_id)
+            async for task in self._wait_for_sandbox_start(task):
+                yield task
 
+            # Build the start request
+            sandbox_id = task.sandbox_id
+            assert sandbox_id is not None
+            sandbox = await self.sandbox_service.get_sandbox(sandbox_id)
+            assert sandbox is not None
             agent_server_url = self._get_agent_server_url(sandbox)
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
                     request.initial_message
                 )
             )
+
+            # update status
+            task.status = AppConversationStartTaskStatus.STARTING_CONVERSATION
+            task.agent_server_url = agent_server_url
+            yield task
 
             # Start conversation...
             response = await self.httpx_client.post(
@@ -182,20 +190,14 @@ class LiveStatusAppConversationService(AppConversationService):
             )
 
             # Update the start task
-            task.app_conversation_id = info.id
             task.status = AppConversationStartTaskStatus.READY
-            task.agent_server_url = agent_server_url
-            await self.app_conversation_start_task_service.save_app_conversation_start_task(
-                task
-            )
+            yield task
 
         except Exception as exc:
             _logger.exception('Error starting conversation', stack_info=True)
             task.status = AppConversationStartTaskStatus.ERROR
             task.detail = str(exc)
-            await self.app_conversation_start_task_service.save_app_conversation_start_task(
-                task
-            )
+            yield task
 
     async def batch_get_app_conversation_start_tasks(
         self, app_conversation_start_task_ids
@@ -302,34 +304,42 @@ class LiveStatusAppConversationService(AppConversationService):
                 result[stored_conversation.sandbox_id].append(stored_conversation.id)
         return result
 
-    async def _wait_for_sandbox_start(self, sandbox_id: str | None) -> SandboxInfo:
+    async def _wait_for_sandbox_start(self, task: AppConversationStartTask) -> AsyncGenerator[AppConversationStartTask, None]:
         """Wait for sandbox to start and return info."""
-        sandbox_service = self.sandbox_service
-        if not sandbox_id:
-            sandbox = await sandbox_service.start_sandbox()
-            sandbox_id = sandbox.id
+
+        #Get the sandbox
+        if not task.sandbox_id:
+            sandbox = await self.sandbox_service.start_sandbox()
+            task.sandbox_id = sandbox.id
         else:
-            sandbox_info = await sandbox_service.get_sandbox(sandbox_id)
+            sandbox_info = await self.sandbox_service.get_sandbox(task.sandbox_id)
             if sandbox_info is None:
-                raise SandboxError(f'Sandbox not found: {sandbox_id}')
+                raise SandboxError(f'Sandbox not found: {task.sandbox_id}')
             sandbox = sandbox_info
 
+        # Update the listener
+        task.status = AppConversationStartTaskStatus.WAITING_FOR_SANDBOX
+        task.sandbox_id = sandbox.id
+        yield task
+
         if sandbox.status == SandboxStatus.PAUSED:
-            await sandbox_service.resume_sandbox(sandbox_id)
+            await self.sandbox_service.resume_sandbox(sandbox.id)
         if sandbox.status in (None, SandboxStatus.ERROR):
             raise SandboxError(f'Sandbox status: {sandbox.status}')
-        if sandbox.status == SandboxStatus.RUNNING:
-            return sandbox
+        if sandbox.status not in (SandboxStatus.STARTING, SandboxStatus.RUNNING):
+            raise SandboxError(f'Sandbox not startable: {sandbox.id}')
 
         start = time()
         while time() - start <= self.sandbox_startup_timeout:
             await asyncio.sleep(self.sandbox_startup_poll_frequency)
-            sandbox_info = await sandbox_service.get_sandbox(sandbox_id)
+            sandbox_info = await self.sandbox_service.get_sandbox(sandbox.id)
             if sandbox_info is None:
-                raise SandboxError(f'Sandbox not found: {sandbox_id}')
+                raise SandboxError(f'Sandbox not found: {sandbox.id}')
+            if sandbox.status not in (SandboxStatus.STARTING, SandboxStatus.RUNNING):
+                raise SandboxError(f'Sandbox not startable: {sandbox.id}')
             if sandbox_info.status == SandboxStatus.RUNNING:
-                return sandbox_info
-        raise SandboxError(f'Sandbox failed to start: {sandbox_id}')
+                return
+        raise SandboxError(f'Sandbox failed to start: {sandbox.id}')
 
     def _get_agent_server_url(self, sandbox: SandboxInfo) -> str:
         """Get agent server url for running sandbox."""

@@ -22,6 +22,7 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
+from openhands.agent_server.models import utc_now
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,6 +85,7 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         Return true if it was stored, false otherwise.
         """
         try:
+            task.updated_at = utc_now()
             self.session.add(task)
             await self.session.commit()
             return True

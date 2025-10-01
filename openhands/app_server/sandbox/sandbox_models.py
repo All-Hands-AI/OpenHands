@@ -3,7 +3,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 
 
 class SandboxStatus(Enum):

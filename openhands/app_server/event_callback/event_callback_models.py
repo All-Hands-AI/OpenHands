@@ -17,7 +17,7 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
 )
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 from openhands.sdk import EventBase
 from openhands.sdk.utils.models import (
     DiscriminatedUnionMixin,

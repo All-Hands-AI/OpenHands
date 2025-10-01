@@ -14,7 +14,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceResolver,
 )
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 
 _global_docker_client: docker.DockerClient | None = None
 _logger = logging.getLogger(__name__)

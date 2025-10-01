@@ -1,7 +1,7 @@
 import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Callable
+from typing import Any, AsyncGenerator, Callable, Coroutine
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -10,6 +10,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationSortOrder,
     AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskStatus,
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -62,7 +63,7 @@ class AppConversationService(ABC):
     @abstractmethod
     async def start_app_conversation(
         self, request: AppConversationStartRequest
-    ) -> AppConversationStartTask:
+    ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Start a conversation, optionally specifying a sandbox in which to start.
 
         If no sandbox is specified a default may be used or started. This is a convenience
@@ -70,9 +71,10 @@ class AppConversationService(ABC):
         id, starting a conversation, attaching a callback, and then running the
         conversation.
 
-        Returns an instance of AppConversationStartTask. Polling the id from this can be used to determine when
-        a task has started.
+        Yields an instance of AppConversationStartTask as updates occur, which can be used to determine
+        the progress of the task.
         """
+        yield AppConversationStartTask()
 
     @abstractmethod
     async def batch_get_app_conversation_start_tasks(

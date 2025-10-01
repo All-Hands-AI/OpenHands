@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import Field as SQLField
 from sqlmodel import SQLModel
 
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 from openhands.sdk.event.types import EventID
 
 

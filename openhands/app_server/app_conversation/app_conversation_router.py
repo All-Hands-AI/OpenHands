@@ -1,10 +1,12 @@
 """Sandboxed Conversation router for OpenHands Server."""
 
+import asyncio
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, AsyncGenerator
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
@@ -133,7 +135,24 @@ async def start_app_conversation(
         app_conversation_service_dependency
     ),
 ) -> AppConversationStartTask:
-    return await app_conversation_service.start_app_conversation(request)
+    """ Start an app conversation start task and return it."""
+    async_iter = app_conversation_service.start_app_conversation(request)
+    result = await anext(async_iter)
+    asyncio.create_task(_consume_remaining(async_iter))
+    return result
+
+
+@router.post('/stream')
+async def stream_app_conversation_start(
+    request: AppConversationStartRequest,
+    app_conversation_service: AppConversationService = (
+        app_conversation_service_dependency
+    ),
+) -> list[AppConversationStartTask]:
+    """ Start an app conversation start task and stream updates from it.
+    Leaves the connection open until either the conversation starts or there was an error"""
+    response = StreamingResponse(_stream_app_conversation_start(request, app_conversation_service), media_type="application/json")
+    return response
 
 
 @router.get('/start-tasks')
@@ -149,3 +168,23 @@ async def batch_get_app_conversation_start_tasks(
         ids
     )
     return start_tasks
+
+
+async def _consume_remaining(async_iter):
+    """Consume the remaining items from an async iterator"""
+    try:
+        while True:
+            await anext(async_iter)
+    except StopAsyncIteration:
+        return
+
+async def _stream_app_conversation_start(
+    request: AppConversationStartRequest,
+    app_conversation_service: AppConversationService
+) -> AsyncGenerator[str, None]:
+    """Stream a json list, item by item."""
+    yield '[\n'
+    async for task in app_conversation_service.start_app_conversation(request):
+        chunk = task.model_dump_json() + ',\n'
+        yield chunk
+    yield ']'

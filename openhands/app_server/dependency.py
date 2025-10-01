@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 
 import httpx
@@ -20,8 +19,6 @@ from openhands.app_server.event_callback.event_callback_service import (
 from openhands.app_server.sandbox.sandbox_service import SandboxServiceResolver
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceResolver
 from openhands.app_server.user.user_service import UserServiceResolver
-
-_logger = logging.getLogger(__name__)
 
 
 @dataclass

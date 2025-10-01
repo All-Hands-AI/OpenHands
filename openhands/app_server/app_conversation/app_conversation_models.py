@@ -12,7 +12,7 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-from openhands.app_server.utils.date_utils import utc_now
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.utils.sql_utils import create_json_type_decorator
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.conversation.state import AgentExecutionStatus
@@ -91,6 +91,8 @@ class AppConversationStartRequest(BaseModel):
 
 class AppConversationStartTaskStatus(Enum):
     WORKING = "WORKING"
+    WAITING_FOR_SANDBOX = "WAITING_FOR_SANDBOX"
+    STARTING_CONVERSATION = "STARTING_CONVERSATION"
     READY = "READY"
     ERROR = "ERROR"
 
