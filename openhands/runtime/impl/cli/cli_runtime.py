@@ -25,7 +25,6 @@ from pydantic import SecretStr
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
@@ -45,6 +44,7 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
+from openhands.events.stream import EventStreamABC
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
@@ -93,7 +93,7 @@ class CLIRuntime(Runtime):
 
     Args:
         config (OpenHandsConfig): The application configuration.
-        event_stream (EventStream): The event stream to subscribe to.
+        event_stream (EventStreamABC): The event stream to subscribe to.
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
@@ -107,7 +107,7 @@ class CLIRuntime(Runtime):
     def __init__(
         self,
         config: OpenHandsConfig,
-        event_stream: EventStream,
+        event_stream: EventStreamABC,
         llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,

@@ -5,6 +5,7 @@ import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.action import MessageAction
+from openhands.events.stream import EventStream
 from openhands.llm.metrics import Metrics
 
 
@@ -86,8 +87,10 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
     m.add_cost(0.5)
     conv_stats.service_to_metrics['svc'] = m
 
+    event_stream = EventStream('sid', store)
+
     # Create a new tracker and initialize state
-    tracker = StateTracker(sid='sid', file_store=store, user_id=None)
+    tracker = StateTracker(event_stream)
     tracker.set_initial_state(
         id='sid',
         state=None,
