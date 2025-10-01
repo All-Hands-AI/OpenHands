@@ -21,6 +21,7 @@ from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm_registry import LLMRegistry
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
@@ -686,6 +687,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
                         url=self._get_conversation_url(conversation_id),
                         session_api_key=None,
                         event_store=EventStore(conversation_id, self.file_store, uid),
+                        runtime_status=RuntimeStatus.READY,
                     )
                 )
         return results
