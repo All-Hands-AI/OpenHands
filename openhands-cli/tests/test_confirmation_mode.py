@@ -6,10 +6,10 @@ Tests for confirmation mode functionality in OpenHands CLI.
 import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import ANY, MagicMock, patch
 
 import pytest
-from openhands.sdk import ActionBase
+from openhands.sdk import ActionBase, Workspace
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm, ConfirmRisky, SecurityRisk
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
@@ -38,17 +38,11 @@ class TestConfirmationMode:
                 patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
                 patch('openhands_cli.setup.print_formatted_text') as mock_print,
                 patch('openhands_cli.setup.HTML') as mock_html,
-                patch('openhands_cli.setup.LocalFileStore') as mock_filestore_class,
-                patch('openhands_cli.setup.get_conversation_perisistence_path') as mock_get_path,
                 patch('openhands_cli.setup.uuid') as mock_uuid,
             ):
                 # Mock dependencies
                 mock_conversation_id = MagicMock()
                 mock_uuid.uuid4.return_value = mock_conversation_id
-                mock_filestore_instance = MagicMock()
-                mock_filestore_class.return_value = mock_filestore_instance
-                mock_path = '/test/path'
-                mock_get_path.return_value = mock_path
 
                 # Mock AgentStore
                 mock_agent_store_instance = MagicMock()
@@ -67,11 +61,10 @@ class TestConfirmationMode:
                 assert result == mock_conversation_instance
                 mock_agent_store_class.assert_called_once()
                 mock_agent_store_instance.load.assert_called_once()
-                mock_get_path.assert_called_once_with(mock_conversation_id)
-                mock_filestore_class.assert_called_once_with(mock_path)
                 mock_conversation_class.assert_called_once_with(
                     agent=mock_agent_instance,
-                    persist_filestore=mock_filestore_instance,
+                    workspace=ANY,
+                    persistence_dir=ANY,
                     conversation_id=mock_conversation_id
                 )
                 # Verify print_formatted_text was called
@@ -90,7 +83,7 @@ class TestConfirmationMode:
             # Should raise MissingAgentSpec
             with pytest.raises(MissingAgentSpec) as exc_info:
                 setup_conversation()
-            
+
             assert "Agent specification not found" in str(exc_info.value)
             mock_agent_store_class.assert_called_once()
             mock_agent_store_instance.load.assert_called_once()
@@ -380,7 +373,7 @@ class TestConfirmationMode:
         assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
-        with patch('openhands_cli.runner.get_unmatched_actions') as mock_get_actions:
+        with patch('openhands_cli.runner.ConversationState.get_unmatched_actions') as mock_get_actions:
             mock_action = MagicMock()
             mock_action.tool_name = 'bash'
             mock_action.action = 'echo test'
@@ -431,7 +424,7 @@ class TestConfirmationMode:
         assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
-        with patch('openhands_cli.runner.get_unmatched_actions') as mock_get_actions:
+        with patch('openhands_cli.runner.ConversationState.get_unmatched_actions') as mock_get_actions:
             mock_action = MagicMock()
             mock_action.tool_name = 'bash'
             mock_action.action = 'echo test'

@@ -26,8 +26,7 @@ def seed_file(path: Path, model: str = "openai/gpt-4o-mini", api_key: str = "sk-
     store = AgentStore()
     store.file_store = LocalFileStore(root=str(path))
     agent = get_default_agent(
-        llm=LLM(model=model, api_key=SecretStr(api_key), service_id="test-service"),
-        working_dir=str(path)
+        llm=LLM(model=model, api_key=SecretStr(api_key), service_id="test-service")
     )
     store.save(agent)
 
