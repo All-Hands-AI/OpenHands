@@ -5,7 +5,7 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 
 # Jira Cloud Integration
 
-<Accordion title="Setup Instructions (Admin Only)">
+<Accordion title="🛠️ Setup Instructions (Admin Only)">
   
 ## Platform Configuration
 
@@ -62,6 +62,11 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 
 ## Workspace Integration
 
+> **Workspace name:**  
+> The workspace name is the host part of your Jira Cloud URL.  
+> For example, if your Jira URL is `https://all-hands.atlassian.net/browse/OH-55`,  
+> then your **workspace name** is **all-hands**.
+
 ### Step 1: Log in to OpenHands Cloud
 
 1. **Navigate and Authenticate**
@@ -78,20 +83,12 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 2. **Configure Workspace**
    - Click **Configure** button
    - Enter your workspace name and click **Connect**
-   - **Important:** Make sure you enter the full workspace name, eg: **yourcompany.atlassian.net**
+   - **Important:** Make sure you enter the full workspace name, e.g. **yourcompany.atlassian.net**
       - If no integration exists, you'll be prompted to enter additional credentials required for the workspace integration:
          - **Webhook Secret**: The webhook secret from Step 3 above
          - **Service Account Email**: The service account email from Step 1 above
          - **Service Account API Key**: The API token from Step 2 above
          - Ensure **Active** toggle is enabled
-
-<Note>
-Workspace name is the host name when accessing a resource in Jira Cloud.
-
-Eg: https://all-hands.atlassian.net/browse/OH-55
-
-Here the workspace name is **all-hands**.
-</Note>
 
 3. **Complete OAuth Flow**
    - You'll be redirected to Jira Cloud to complete OAuth verification
@@ -114,7 +111,7 @@ Here the workspace name is **all-hands**.
 
 </Accordion>
 
-<Accordion title="Setup Instructions (Regular Users)">
+<Accordion title="👥 Setup Instructions (Regular Users)">
   
 If your **admin has already completed the Jira Cloud integration** for your company, you only need to:
 
