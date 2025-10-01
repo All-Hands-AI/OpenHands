@@ -31,8 +31,6 @@ class AgentStore:
 
             # Update tools with most recent working directory
             updated_tools = get_default_tools(
-                working_dir=WORK_DIR,
-                persistence_dir=PERSISTENCE_DIR,
                 enable_browser=False
             )
 
@@ -74,8 +72,9 @@ class AgentStore:
             return agent
         except FileNotFoundError:
             return None
-        except Exception:
+        except Exception as e:
             print_formatted_text(HTML("\n<red>Agent configuration file is corrupted!</red>"))
+            raise e
             return None
 
     def save(self, agent: Agent) -> None:
