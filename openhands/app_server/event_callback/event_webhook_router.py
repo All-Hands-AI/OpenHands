@@ -1,12 +1,13 @@
 """Event Callback router for OpenHands Server."""
 
 import asyncio
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 
-from openhands.agent_server.models import StoredConversation
+from openhands.agent_server.models import StoredConversation, Success
 from openhands.app_server.dependency import get_dependency_resolver
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_service import (
@@ -26,6 +27,7 @@ event_service_dependency = Depends(
 event_callback_service_dependency = Depends(
     get_dependency_resolver().event_callback.get_unsecured_resolver()
 )
+_logger = logging.getLogger(__name__)
 
 
 async def valid_sandbox(
@@ -60,18 +62,22 @@ async def on_event(
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
     event_service: EventService = event_service_dependency,
     event_callback_service: EventCallbackService = event_callback_service_dependency,
-):
+) -> Success:
     """Webhook callback for when event stream events occur."""
     # TODO: Before saving events, we should guarantee that the conversation either
     # does not yet exist or is associated with the owner of the sandbox
-
-    # Save events...
-    await asyncio.gather(
-        *[event_service.save_event(conversation_id, event) for event in events]
-    )
-
-    # Run all callbacks in the background
-    for event in events:
-        asyncio.create_task(
-            event_callback_service.execute_callbacks(conversation_id, event)
+    try:
+        # Save events...
+        await asyncio.gather(
+            *[event_service.save_event(conversation_id, event) for event in events]
         )
+
+        # Run all callbacks in the background
+        for event in events:
+            asyncio.create_task(
+                event_callback_service.execute_callbacks(conversation_id, event)
+            )
+    except Exception as exc:
+        _logger.exception('Error in webhook', stack_info=True)
+
+    return Success()

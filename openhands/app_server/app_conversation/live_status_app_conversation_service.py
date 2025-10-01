@@ -159,17 +159,23 @@ class LiveStatusAppConversationService(AppConversationService):
 
             # Start conversation...
             response = await self.httpx_client.post(
-                f'{agent_server_url}/api/conversations/',
+                f'{agent_server_url}/api/conversations',
                 json=start_conversation_request.model_dump(context={"expose_secrets": True}),
                 headers={'X-Session-API-Key': sandbox.session_api_key},
+                timeout=self.sandbox_startup_timeout,
             )
             response.raise_for_status()
             info = ConversationInfo.model_validate(response.json())
 
             # Store info...
-            # TODO: many fields to fill in here...
+            user = await self.user_service.get_current_user()
             app_conversation_info = AppConversationInfo(
-                id=info.id, title=f'Conversation {info.id}', sandbox_id=sandbox.id
+                id=info.id,
+                title=f'Conversation {info.id}',
+                sandbox_id=sandbox.id,
+                user_id=user.id,
+                llm_model=start_conversation_request.agent.llm.model,
+                #TODO: Lots of git parameters required
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
@@ -344,6 +350,7 @@ class LiveStatusAppConversationService(AppConversationService):
             raise AuthError()
 
         # Hack - because the workspace tries to create the dir on post init
+        # we create one in cwd then set it afterwards
         workspace=LocalWorkspace(working_dir=os.getcwd())
         workspace.working_dir="/home/openhands/workspace"
 

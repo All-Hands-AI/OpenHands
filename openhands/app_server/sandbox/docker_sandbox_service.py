@@ -1,3 +1,4 @@
+import logging
 import os
 import socket
 from dataclasses import dataclass, field
@@ -6,11 +7,12 @@ from typing import Callable
 
 import base62
 import docker
+import httpx
 from docker.errors import APIError, NotFound
 from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
-from openhands.app_server.dependency import get_dependency_resolver
+from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
 from openhands.app_server.sandbox.sandbox_models import (
@@ -28,6 +30,7 @@ from openhands.app_server.sandbox.sandbox_service import (
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.utils.date_utils import utc_now
 
+_logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 
@@ -66,7 +69,9 @@ class DockerSandboxService(SandboxService):
     container_url_pattern: str
     mounts: list[VolumeMount]
     exposed_ports: list[ExposedPort]
+    health_check_path: str | None
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
+    httpx_client: httpx.AsyncClient = field(default_factory=get_httpx_client)
 
     def _find_unused_port(self) -> int:
         """Find an unused port on the host machine."""
@@ -101,7 +106,7 @@ class DockerSandboxService(SandboxService):
                 result[env_var] = None
         return result
 
-    def _container_to_sandbox_info(self, container) -> SandboxInfo | None:
+    async def _container_to_sandbox_info(self, container) -> SandboxInfo | None:
         """Convert Docker container to SandboxInfo."""
         # Get user_id and sandbox_spec_id from labels
         labels = container.labels or {}
@@ -166,6 +171,23 @@ class DockerSandboxService(SandboxService):
             created_at=created_at,
         )
 
+    async def _container_to_checked_sandbox_info(self, container) -> SandboxInfo | None:
+        sandbox_info = await self._container_to_sandbox_info(container)
+        if sandbox_info and self.health_check_path is not None and sandbox_info.exposed_urls:
+            app_server_url = next(
+                exposed_url.url for exposed_url in sandbox_info.exposed_urls
+                if exposed_url.name == AGENT_SERVER
+            )
+            try:
+                response = await self.httpx_client.get(f"{app_server_url}{self.health_check_path}")
+                response.raise_for_status()
+            except Exception as exc:
+                _logger.warning(f"Sandbox server not running: {exc}")
+                sandbox_info.status = SandboxStatus.ERROR
+                sandbox_info.exposed_urls = None
+                sandbox_info.session_api_key = None
+        return sandbox_info
+
     async def search_sandboxes(
         self,
         created_by_user_id__eq: str | None = None,
@@ -180,7 +202,7 @@ class DockerSandboxService(SandboxService):
 
             for container in all_containers:
                 if container.name.startswith(self.container_name_prefix):
-                    sandbox_info = self._container_to_sandbox_info(container)
+                    sandbox_info = await self._container_to_checked_sandbox_info(container)
                     if sandbox_info:
                         # Filter by user_id if specified
                         if (
@@ -219,7 +241,7 @@ class DockerSandboxService(SandboxService):
             if not sandbox_id.startswith(self.container_name_prefix):
                 return None
             container = self.docker_client.containers.get(sandbox_id)
-            return self._container_to_sandbox_info(container)
+            return await self._container_to_checked_sandbox_info(container)
         except (NotFound, APIError):
             return None
 
@@ -246,7 +268,7 @@ class DockerSandboxService(SandboxService):
         env_vars[SESSION_API_KEY_VARIABLE] = session_api_key
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
             f'http://host.docker.internal:{self.host_port}'
-            f'/v1/api/event-webhooks/{container_name}'
+            f'/api/v1/event-webhooks/{container_name}'
         )
 
         # Prepare port mappings and add port environment variables
@@ -287,7 +309,7 @@ class DockerSandboxService(SandboxService):
                 detach=True,
             )
 
-            sandbox_info = self._container_to_sandbox_info(container)
+            sandbox_info = await self._container_to_sandbox_info(container)
             assert sandbox_info is not None
             return sandbox_info
 
@@ -377,6 +399,10 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
             ),
         ]
     )
+    health_check_path: str | None = Field(default="/health", description=(
+        "The url path in the sandbox agent server to check to "
+        "determine whether the server is running"
+    ))
 
     def get_resolver_for_user(self) -> Callable:
         # Docker sandboxes are designed for a single user and
@@ -399,6 +425,7 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
                 container_url_pattern=self.container_url_pattern,
                 mounts=self.mounts,
                 exposed_ports=self.exposed_ports,
+                health_check_path=self.health_check_path,
             )
 
         return resolve_sandbox_service

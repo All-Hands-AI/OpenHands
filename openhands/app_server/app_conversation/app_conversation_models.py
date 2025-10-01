@@ -25,8 +25,9 @@ class AppConversationInfo(SQLModel, table=True):  # type: ignore
 
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
 
-    selected_repository: str | None
     user_id: str
+
+    selected_repository: str | None = None
     selected_branch: str | None = None
     git_provider: ProviderType | None = None
     title: str | None = None
