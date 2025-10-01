@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from uuid import uuid4
 
 import socketio
-
 from server.logger import logger
 from server.utils.conversation_callback_utils import invoke_conversation_callbacks
 from storage.database import session_maker
