@@ -1,6 +1,5 @@
 # Exclude third-party runtime directory from linting
 exclude = ["third_party/", "enterprise/"]
-target-version = "py312"
 
 [lint]
 select = [
