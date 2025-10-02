@@ -24,6 +24,7 @@ from openhands_cli.tui.tui import (
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+from openhands_cli.conversation_manager import ConversationManager
 
 
 def _restore_tty() -> None:
@@ -72,6 +73,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
     session = get_session_prompter()
+    conversation_manager = ConversationManager()
 
     # Main chat loop
     while True:
@@ -150,6 +152,66 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
                 # Resume without new message
                 message = None
+
+            elif command == "/list":
+                conversation_manager.list_conversations()
+                continue
+
+            elif command.startswith("/load "):
+                conversation_id = command[6:].strip()  # Remove "/load "
+                if not conversation_id:
+                    print_formatted_text(HTML("<red>Please specify a conversation ID.</red>"))
+                    print_formatted_text(HTML("<grey>Usage: /load <conversation_id></grey>"))
+                    continue
+                
+                # Attempt to load the conversation
+                loaded_conversation = conversation_manager.load_conversation(conversation_id)
+                if loaded_conversation:
+                    # If we successfully loaded a conversation, we would switch to it here
+                    # For now, this is a placeholder for future enhancement
+                    pass
+                continue
+
+            elif command.startswith("/view "):
+                # Parse /view command with optional parameters
+                args = command[6:].strip()  # Remove "/view "
+                if not args:
+                    print_formatted_text(HTML("<red>Please specify a conversation ID.</red>"))
+                    print_formatted_text(HTML("<grey>Usage: /view <conversation_id> [--filter <type>] [--limit <num>] [--offset <num>]</grey>"))
+                    print_formatted_text(HTML("<grey>Available filters: action, observation, user, agent, command, file, browse, message, think</grey>"))
+                    continue
+                
+                # Parse arguments
+                parts = args.split()
+                conversation_id = parts[0]
+                event_filter = None
+                limit = 50
+                offset = 0
+                
+                # Parse optional parameters
+                i = 1
+                while i < len(parts):
+                    if parts[i] == "--filter" and i + 1 < len(parts):
+                        event_filter = parts[i + 1]
+                        i += 2
+                    elif parts[i] == "--limit" and i + 1 < len(parts):
+                        try:
+                            limit = int(parts[i + 1])
+                        except ValueError:
+                            print_formatted_text(HTML("<red>Invalid limit value. Using default (50).</red>"))
+                        i += 2
+                    elif parts[i] == "--offset" and i + 1 < len(parts):
+                        try:
+                            offset = int(parts[i + 1])
+                        except ValueError:
+                            print_formatted_text(HTML("<red>Invalid offset value. Using default (0).</red>"))
+                        i += 2
+                    else:
+                        i += 1
+                
+                # View the conversation
+                conversation_manager.view_conversation(conversation_id, event_filter, limit, offset)
+                continue
 
             runner.process_message(message)
 
