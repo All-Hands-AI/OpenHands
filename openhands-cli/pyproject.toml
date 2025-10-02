@@ -78,6 +78,10 @@ lint.ignore = [
 profile = "black"
 line_length = 88
 
+[tool.coverage.run]
+relative_files = true
+omit = [ "tests/*", "**/test_*" ]
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
