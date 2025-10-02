@@ -157,17 +157,14 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        working-directory: ./openhands-cli
-        run: |
-          uv run pytest -v --cov=openhands_cli --cov-branch
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run --project=openhands-cli pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./openhands-cli/tests --cov=openhands-cli --cov-branch
         env:
-          COVERAGE_FILE: ".coverage.cli.${{ matrix.python_version }}"
-          PYTHONPATH: ""
+          COVERAGE_FILE: ".coverage.openhands-cli.${{ matrix.python_version }}"
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-cli-${{ matrix.python-version }}
-          path: "openhands-cli/.coverage.cli.${{ matrix.python_version }}"
+          name: coverage-openhands-cli
+          path: ".coverage.openhands-cli.${{ matrix.python_version }}"
           include-hidden-files: true
 
 
