@@ -120,4 +120,4 @@ async def _run_callbacks_in_bg_and_close(
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
     finally:
-        session.close()
+        await session.close()

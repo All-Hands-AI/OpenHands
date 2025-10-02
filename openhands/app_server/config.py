@@ -54,7 +54,7 @@ def _get_db_url() -> SecretStr:
         return SecretStr(f'postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}')
 
     # Default to sqlite
-    return SecretStr('sqlite+aiosqlite:///./openhands.db')
+    return SecretStr(f'sqlite+aiosqlite:///{_get_default_workspace_dir()}/openhands.db')
 
 
 def _get_default_workspace_dir() -> Path:
@@ -62,8 +62,7 @@ def _get_default_workspace_dir() -> Path:
     workspace_dir = os.getenv('OH_WORKSPACE_DIR')
 
     if not workspace_dir:
-        # TODO: I suppose Could also default this to ~home/.openhands
-        workspace_dir = 'workspace'
+        workspace_dir = Path.home() / '.openhands'
 
     result = Path(workspace_dir)
     result.mkdir(parents=True, exist_ok=True)
