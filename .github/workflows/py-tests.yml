@@ -192,6 +192,9 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
 
+      - name: Create symlink for CLI source files
+        run: ln -sf openhands-cli/openhands_cli openhands_cli
+
       - name: Coverage comment
         id: coverage_comment
         uses: py-cov-action/python-coverage-comment-action@v3
