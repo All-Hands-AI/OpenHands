@@ -149,6 +149,13 @@ async def on_batch_write(
     background_tasks: BackgroundTasks,
     x_session_api_key: Annotated[str | None, Header()],
 ):
+    logger.info(
+        'batch_write_webhook',
+        extra={
+            'batch_ops': batch_ops,
+            'x_session_api_key': x_session_api_key,
+        },
+    )
     """Handle batched webhook requests with multiple file operations in background"""
     # Add the batch processing to background tasks
     background_tasks.add_task(
