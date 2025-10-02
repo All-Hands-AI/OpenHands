@@ -5,6 +5,7 @@ import sys
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urlparse
 
 from openhands.core.logger import openhands_logger as logger
@@ -32,8 +33,8 @@ class VSCodeRequirement(PluginRequirement):
 
 class VSCodePlugin(Plugin):
     name: str = 'vscode'
-    vscode_port: int | None = None
-    vscode_connection_token: str | None = None
+    vscode_port: Optional[int] = None
+    vscode_connection_token: Optional[str] = None
     gateway_process: asyncio.subprocess.Process
 
     async def initialize(self, username: str, runtime_id: str | None = None) -> None:
