@@ -157,7 +157,7 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run --project=openhands-cli pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./openhands-cli/tests --cov=openhands-cli --cov-branch
+        run: PYTHONPATH=".:$PYTHONPATH" uv run --project=openhands-cli pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./openhands-cli/tests --cov=openhands-cli --cov-branch
         env:
           COVERAGE_FILE: ".coverage.openhands-cli.${{ matrix.python_version }}"
       - name: Store coverage file
