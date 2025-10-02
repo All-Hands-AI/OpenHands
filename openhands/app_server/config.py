@@ -61,10 +61,11 @@ def _get_default_workspace_dir() -> Path:
     # Recheck env because this function is also used to generate other defaults
     workspace_dir = os.getenv('OH_WORKSPACE_DIR')
 
-    if not workspace_dir:
-        workspace_dir = Path.home() / '.openhands'
+    if workspace_dir:
+        result = Path(workspace_dir)
+    else:
+        result = Path.home() / '.openhands'
 
-    result = Path(workspace_dir)
     result.mkdir(parents=True, exist_ok=True)
     return result
 

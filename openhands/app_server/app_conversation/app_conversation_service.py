@@ -11,7 +11,10 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
     AppConversationStartTask,
 )
+from openhands.sdk import Workspace
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
+
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 
 
 class AppConversationService(ABC):
@@ -82,6 +85,11 @@ class AppConversationService(ABC):
         """Get a batch AppConversationStartTask by id, returning none for those missing.
 
         Typically used to poll and determine if a conversation started."""
+
+    @abstractmethod
+    async def run_setup_scripts(self, task: AppConversationStartTask, workspace: Workspace, workspace_dir: str) -> AsyncGenerator[AppConversationStartTask, None]:
+        """Run the setup scripts for the project and yield status updates"""
+        yield task
 
 
 class AppConversationServiceResolver(DiscriminatedUnionMixin, ABC):

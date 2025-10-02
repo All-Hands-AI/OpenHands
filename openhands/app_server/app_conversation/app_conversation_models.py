@@ -95,11 +95,23 @@ class AppConversationStartRequest(BaseModel):
     sandbox_id: str | None = Field(default=None)
     initial_message: SendMessageRequest | None = None
     processors: list[EventCallbackProcessor] = Field(default_factory=list)
+    llm_model: str | None = None
+
+    # Git parameters
+    selected_repository: str | None = None
+    selected_branch: str | None = None
+    git_provider: ProviderType | None = None
+    title: str | None = None
+    trigger: ConversationTrigger | None = None
+    pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
 
 
 class AppConversationStartTaskStatus(Enum):
     WORKING = 'WORKING'
     WAITING_FOR_SANDBOX = 'WAITING_FOR_SANDBOX'
+    PREPARING_REPOSITORY = 'PREPARING_REPOSITORY'
+    RUNNING_SETUP_SCRIPT = 'RUNNING_SETUP_SCRIPT'
+    SETTING_UP_GIT_HOOKS = 'SETTING_UP_GIT_HOOKS'
     STARTING_CONVERSATION = 'STARTING_CONVERSATION'
     READY = 'READY'
     ERROR = 'ERROR'

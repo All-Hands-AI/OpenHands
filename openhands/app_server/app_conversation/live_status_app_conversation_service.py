@@ -4,6 +4,7 @@ import os
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from time import time
 from typing import AsyncGenerator, Callable, Sequence
 from uuid import UUID
@@ -37,6 +38,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
 )
+from openhands.app_server.app_conversation.git_app_conversation_service import GitAppConversationService
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import AuthError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
@@ -46,17 +48,18 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.user.user_service import UserService
-from openhands.sdk import LocalWorkspace
+from openhands.sdk import LocalWorkspace, RemoteWorkspace
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
+WORKSPACE_DIR = Path('/home/openhands/workspace')
 
 
 @dataclass
-class LiveStatusAppConversationService(AppConversationService):
+class LiveStatusAppConversationService(GitAppConversationService):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_service: UserService
@@ -152,12 +155,23 @@ class LiveStatusAppConversationService(AppConversationService):
             async for updated_task in self._wait_for_sandbox_start(task):
                 yield updated_task
 
-            # Build the start request
+            # Get the sandbox
             sandbox_id = task.sandbox_id
             assert sandbox_id is not None
             sandbox = await self.sandbox_service.get_sandbox(sandbox_id)
             assert sandbox is not None
             agent_server_url = self._get_agent_server_url(sandbox)
+
+            # Run setup scripts
+            workspace = RemoteWorkspace(
+                working_dir=WORKSPACE_DIR,
+                host=agent_server_url,
+                api_key=sandbox.session_api_key,
+            )
+            async for updated_task in self.run_setup_scripts(task, user, workspace):
+                yield updated_task
+
+            # Build the start request
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
                     request.initial_message
@@ -398,7 +412,7 @@ class LiveStatusAppConversationService(AppConversationService):
         # Hack - because the workspace tries to create the dir on post init
         # we create one in cwd then set it afterwards
         workspace = LocalWorkspace(working_dir=os.getcwd())
-        workspace.working_dir = '/home/openhands/workspace'
+        workspace.working_dir = str(WORKSPACE_DIR)
 
         llm = LLM(
             model=user.llm_model,
@@ -425,6 +439,10 @@ class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
     sandbox_startup_poll_frequency: int = Field(
         default=2, description='The frequency to poll for sandbox readiness'
     )
+    init_git_in_empty_workspace: bool = Field(
+        default=True,
+        description='Whether to initialize a git repo when the workspace is empty'
+    )
 
     def get_resolver_for_user(self) -> Callable:
         user_service_resolver = get_dependency_resolver().user.get_resolver_for_user()
@@ -448,6 +466,7 @@ class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
             httpx_client: httpx.AsyncClient = Depends(get_httpx_client),
         ) -> AppConversationService:
             return LiveStatusAppConversationService(
+                init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_service=user_service,
                 sandbox_service=sandbox_service,
                 app_conversation_info_service=app_conversation_info_service,
