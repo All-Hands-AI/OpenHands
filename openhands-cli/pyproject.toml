@@ -37,6 +37,8 @@ dev = [
   "pyinstaller>=6.15",
   "pytest>=8.4.1",
   "pytest-cov>=6",
+  "pytest-forked>=1.6",
+  "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
 
