@@ -10,6 +10,13 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.memory.memory import Memory
 from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
+from openhands.server.data_models.metrics_response import (
+    ConversationMetricsResponse,
+    CostResponse,
+    MetricsResponse,
+    ResponseLatencyResponse,
+    TokenUsageResponse,
+)
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager, file_store
@@ -315,4 +322,148 @@ async def get_microagents(
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={'error': f'Error getting microagents: {e}'},
+        )
+
+
+def _convert_token_usage_to_response(token_usage) -> TokenUsageResponse:
+    """Convert a TokenUsage object to TokenUsageResponse."""
+    if not token_usage:
+        return TokenUsageResponse()
+
+    return TokenUsageResponse(
+        model=getattr(token_usage, 'model', ''),
+        prompt_tokens=getattr(token_usage, 'prompt_tokens', 0),
+        completion_tokens=getattr(token_usage, 'completion_tokens', 0),
+        cache_read_tokens=getattr(token_usage, 'cache_read_tokens', 0),
+        cache_write_tokens=getattr(token_usage, 'cache_write_tokens', 0),
+        context_window=getattr(token_usage, 'context_window', 0),
+        per_turn_token=getattr(token_usage, 'per_turn_token', 0),
+    )
+
+
+def _convert_cost_to_response(cost) -> CostResponse:
+    """Convert a Cost object to CostResponse."""
+    return CostResponse(
+        model=getattr(cost, 'model', ''),
+        cost=getattr(cost, 'cost', 0.0),
+        timestamp=getattr(cost, 'timestamp', 0.0),
+    )
+
+
+def _convert_latency_to_response(latency) -> ResponseLatencyResponse:
+    """Convert a ResponseLatency object to ResponseLatencyResponse."""
+    return ResponseLatencyResponse(
+        model=getattr(latency, 'model', ''),
+        latency=getattr(latency, 'latency', 0.0),
+        response_id=getattr(latency, 'response_id', ''),
+    )
+
+
+def _convert_metrics_to_response(metrics) -> MetricsResponse:
+    """Convert a Metrics object to MetricsResponse."""
+    if not metrics:
+        return MetricsResponse(
+            accumulated_cost=0.0,
+            accumulated_token_usage=TokenUsageResponse(),
+            costs=[],
+            response_latencies=[],
+            token_usages=[],
+        )
+
+    return MetricsResponse(
+        accumulated_cost=getattr(metrics, 'accumulated_cost', 0.0),
+        max_budget_per_task=getattr(metrics, 'max_budget_per_task', None),
+        accumulated_token_usage=_convert_token_usage_to_response(
+            getattr(metrics, 'accumulated_token_usage', None)
+        ),
+        costs=[
+            _convert_cost_to_response(cost) for cost in getattr(metrics, 'costs', [])
+        ],
+        response_latencies=[
+            _convert_latency_to_response(latency)
+            for latency in getattr(metrics, 'response_latencies', [])
+        ],
+        token_usages=[
+            _convert_token_usage_to_response(usage)
+            for usage in getattr(metrics, 'token_usages', [])
+        ],
+    )
+
+
+@app.get('/stats')
+async def get_conversation_stats(
+    conversation_id: str,
+    request: Request,
+) -> ConversationMetricsResponse:
+    """Get conversation statistics from stored pickle data.
+
+    Returns metrics data from the conversation_stats pickle file.
+    """
+    try:
+        # Get the file store from the session manager
+        session_manager = request.app.state.session_manager
+        file_store = (
+            getattr(session_manager, 'file_store', None) if session_manager else None
+        )
+
+        if not file_store:
+            raise HTTPException(status_code=500, detail='File store not available')
+
+        # Get user_id from the conversation metadata
+        conversation_store = request.app.state.conversation_store
+        user_id = None
+        if conversation_store:
+            try:
+                conversation = await conversation_store.get_conversation_metadata(
+                    conversation_id
+                )
+                user_id = getattr(conversation, 'user_id', None)
+            except Exception:
+                pass  # Continue without user_id
+
+        # Create ConversationStats to load the pickle data
+        from openhands.llm.metrics import Metrics
+        from openhands.server.services.conversation_stats import ConversationStats
+
+        stats = ConversationStats(
+            file_store=file_store,
+            conversation_id=conversation_id,
+            user_id=user_id,
+        )
+
+        # Get combined metrics from restored data
+        combined_metrics = None
+        service_metrics = {}
+
+        # Check if we have any metrics data
+        if stats.restored_metrics or stats.service_to_metrics:
+            # Get combined metrics
+            if stats.service_to_metrics:
+                # If we have active service metrics, use those
+                combined_metrics = _convert_metrics_to_response(
+                    stats.get_combined_metrics()
+                )
+                for service_id, metrics in stats.service_to_metrics.items():
+                    service_metrics[service_id] = _convert_metrics_to_response(metrics)
+            elif stats.restored_metrics:
+                # If we only have restored metrics, combine those
+                total_metrics = Metrics()
+                for metrics in stats.restored_metrics.values():
+                    total_metrics.merge(metrics)
+                combined_metrics = _convert_metrics_to_response(total_metrics)
+                for service_id, metrics in stats.restored_metrics.items():
+                    service_metrics[service_id] = _convert_metrics_to_response(metrics)
+
+        return ConversationMetricsResponse(
+            conversation_id=conversation_id,
+            metrics=combined_metrics,
+            service_metrics=service_metrics,
+            has_active_session=conversation_id
+            in (session_manager.sessions if session_manager else {}),
+        )
+
+    except Exception as e:
+        logger.error(f'Error getting conversation stats: {e}')
+        raise HTTPException(
+            status_code=500, detail=f'Error getting conversation stats: {str(e)}'
         )
