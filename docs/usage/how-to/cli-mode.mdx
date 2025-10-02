@@ -32,7 +32,7 @@ We recommend using [uv](https://docs.astral.sh/uv/) for the best OpenHands exper
 
 2. **Launch OpenHands CLI**:
 ```bash
-uvx --python 3.12 openhands-cli
+uvx --python 3.12 --from openhands-ai openhands
 ```
 
 <AccordionGroup>
@@ -56,8 +56,8 @@ Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
 # Add OpenHands aliases (recommended)
-alias openhands="uvx --python 3.12 openhands-cli"
-alias oh="uvx --python 3.12 openhands-cli"
+alias openhands="uvx --python 3.12 --from openhands-ai openhands"
+alias oh="uvx --python 3.12 --from openhands-ai openhands"
 ```
 
 After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
@@ -88,9 +88,9 @@ source ~/.bashrc  # or source ~/.zshrc
 </AccordionGroup>
 
 <Note>
-  If you have cloned the repository, you can also run the CLI directly from the openhands-cli subdirectory:
+  If you have cloned the repository, you can also run the CLI directly using Poetry:
 
-  cd openhands-cli && uv run openhands-cli
+  poetry run openhands
 </Note>
 
 3. Set your model, API key, and other preferences using the UI (or alternatively environment variables, below).
@@ -123,7 +123,7 @@ docker run -it \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.58 \
-    openhands --cli
+    python -m openhands.cli.entry --override-cli-mode true
 ```
 
 <Note>
