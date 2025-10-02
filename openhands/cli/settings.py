@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
@@ -127,7 +128,7 @@ async def get_validated_input(
     error_message: str = 'Input cannot be empty',
     *,
     default_value: str = '',
-    enter_keeps_value: str | None = None,
+    enter_keeps_value: Optional[str] = None,
 ) -> str:
     """
     Get validated input from user.
