@@ -67,7 +67,6 @@ jobs:
             .coverage.${{ matrix.python_version }}
             .coverage.runtime.${{ matrix.python_version }}
           include-hidden-files: true
-
   # Run specific Windows python tests
   test-on-windows:
     name: Python Tests on Windows
@@ -128,11 +127,6 @@ jobs:
           name: coverage-enterprise
           path: ".coverage.enterprise.${{ matrix.python_version }}"
           include-hidden-files: true
-  coverage-comment:
-    name: Coverage Comment
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    needs: [test-on-linux, test-enterprise]
 
   # Run CLI unit tests
   test-cli-python:
@@ -163,3 +157,29 @@ jobs:
         working-directory: ./openhands-cli
         run: |
           uv run pytest -v
+
+
+  coverage-comment:
+    name: Coverage Comment
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [test-on-linux, test-enterprise]
+
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v5
+        id: download
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MERGE_COVERAGE_FILES: true
