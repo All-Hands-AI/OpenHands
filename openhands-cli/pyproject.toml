@@ -82,6 +82,12 @@ line_length = 88
 relative_files = true
 omit = [ "tests/*", "**/test_*" ]
 
+[tool.coverage.paths]
+source = [
+  "openhands_cli/",
+  "openhands-cli/openhands_cli/",
+]
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true

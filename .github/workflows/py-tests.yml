@@ -157,11 +157,12 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        # Use base working directory for coverage paths to line up.
+        working-directory: ./openhands-cli
         env:
+          # write coverage to repo root so the merge step finds it
           COVERAGE_FILE: "${{ github.workspace }}/.coverage.openhands-cli.${{ matrix.python-version }}"
         run: |
-          cd openhands-cli && uv run pytest --forked -n auto -s \
+          uv run pytest --forked -n auto -s \
             -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark \
             tests --cov=openhands_cli --cov-branch
 
