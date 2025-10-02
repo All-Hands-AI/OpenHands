@@ -1,5 +1,7 @@
 """Utility functions for generating conversation summaries."""
 
+from typing import Optional
+
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
@@ -15,7 +17,7 @@ async def generate_conversation_title(
     llm_config: LLMConfig,
     llm_registry: LLMRegistry,
     max_length: int = 50,
-) -> str | None:
+) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
     Args:

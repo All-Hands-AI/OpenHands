@@ -17,9 +17,9 @@ from openhands.integrations.service_types import (
     TaskType,
 )
 from openhands.runtime.runtime_status import RuntimeStatus
-from openhands.server.data_models.conversation_info import StoredConversation
+from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
-    StoredConversationResultSet,
+    ConversationInfoResultSet,
 )
 from openhands.server.routes.manage_conversations import (
     ConversationResponse,
@@ -138,7 +138,7 @@ async def test_search_conversations():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='some_conversation_id',
@@ -164,9 +164,9 @@ async def test_search_conversations():
                         conversation_store=mock_store,
                     )
 
-                    expected = StoredConversationResultSet(
+                    expected = ConversationInfoResultSet(
                         results=[
-                            StoredConversation(
+                            ConversationInfo(
                                 conversation_id='some_conversation_id',
                                 title='Some ServerConversation',
                                 created_at=datetime.fromisoformat(
@@ -222,7 +222,7 @@ async def test_search_conversations_with_repository_filter():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',
@@ -292,7 +292,7 @@ async def test_search_conversations_with_trigger_filter():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',
@@ -363,7 +363,7 @@ async def test_search_conversations_with_both_filters():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',
@@ -436,7 +436,7 @@ async def test_search_conversations_with_pagination():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',
@@ -506,7 +506,7 @@ async def test_search_conversations_with_filters_and_pagination():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',
@@ -581,7 +581,7 @@ async def test_search_conversations_empty_results():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[], next_page_id=None
                         )
                     )
@@ -630,7 +630,7 @@ async def test_get_conversation():
                 'some_conversation_id', conversation_store=mock_store
             )
 
-            expected = StoredConversation(
+            expected = ConversationInfo(
                 conversation_id='some_conversation_id',
                 title='Some ServerConversation',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
@@ -1230,7 +1230,7 @@ async def test_search_conversations_with_pr_number():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_with_pr',
@@ -1301,7 +1301,7 @@ async def test_search_conversations_with_empty_pr_number():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_no_pr',
@@ -1372,7 +1372,7 @@ async def test_search_conversations_with_single_pr_number():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_single_pr',
@@ -1437,7 +1437,7 @@ async def test_get_conversation_with_pr_number():
                 'conversation_with_pr', conversation_store=mock_store
             )
 
-            expected = StoredConversation(
+            expected = ConversationInfo(
                 conversation_id='conversation_with_pr',
                 title='Conversation with PR',
                 created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
@@ -1487,7 +1487,7 @@ async def test_search_conversations_multiple_with_pr_numbers():
                     # Mock the conversation store
                     mock_store = MagicMock()
                     mock_store.search = AsyncMock(
-                        return_value=StoredConversationResultSet(
+                        return_value=ConversationInfoResultSet(
                             results=[
                                 ConversationMetadata(
                                     conversation_id='conversation_1',

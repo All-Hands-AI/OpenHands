@@ -1,4 +1,5 @@
 import threading
+from typing import Optional
 
 import httpx
 import tenacity
@@ -39,16 +40,16 @@ class BatchedWebHookFileStore(FileStore):
     batch_size_limit_bytes: int
     _batch_lock: threading.Lock
     _batch: dict[str, tuple[str, str | bytes | None]]
-    _batch_timer: threading.Timer | None
+    _batch_timer: Optional[threading.Timer]
     _batch_size: int
 
     def __init__(
         self,
         file_store: FileStore,
         base_url: str,
-        client: httpx.Client | None = None,
-        batch_timeout_seconds: float | None = None,
-        batch_size_limit_bytes: int | None = None,
+        client: Optional[httpx.Client] = None,
+        batch_timeout_seconds: Optional[float] = None,
+        batch_size_limit_bytes: Optional[int] = None,
     ):
         """Initialize a BatchedWebHookFileStore.
 
