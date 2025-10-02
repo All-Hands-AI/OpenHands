@@ -9,7 +9,12 @@ import { GitProviderDropdown } from "#/components/features/home/git-provider-dro
 import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { GitRepository } from "#/types/git";
 import { Provider } from "#/types/settings";
-import { cn } from "#/utils/utils";
+import {
+  cn,
+  shouldIncludeRepository,
+  getOpenHandsQuery,
+  hasOpenHandsSuffix,
+} from "#/utils/utils";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { I18nKey } from "#/i18n/declaration";
 import { useDebounce } from "#/hooks/use-debounce";
@@ -54,6 +59,16 @@ export function MicroagentManagementSidebar({
   // Server-side search functionality
   const { data: searchResults, isLoading: isSearchLoading } =
     useSearchRepositories(debouncedSearchQuery, selectedProvider, false, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
+
+  const {
+    data: userAndOrgLevelRepositorySearchResults,
+    isLoading: isUserAndOrgLevelRepositoryLoading,
+  } = useSearchRepositories(
+    getOpenHandsQuery(selectedProvider),
+    selectedProvider,
+    false,
+    500,
+  );
 
   // Auto-select provider if there's only one
   useEffect(() => {
@@ -100,43 +115,61 @@ export function MicroagentManagementSidebar({
     return filterRepositoriesByQuery(allRepositories, debouncedSearchQuery);
   }, [repositories, debouncedSearchQuery, searchResults]);
 
+  // Process personal and organization repositories from search results
   useEffect(() => {
-    if (!filteredRepositories?.length) {
+    if (!userAndOrgLevelRepositorySearchResults?.length) {
       setPersonalRepositories([]);
       setOrganizationRepositories([]);
-      setRepositories([]);
       return;
     }
 
     const personalRepos: GitRepository[] = [];
     const organizationRepos: GitRepository[] = [];
+
+    // Process personal repositories with exact match filtering
+    if (userAndOrgLevelRepositorySearchResults?.length) {
+      userAndOrgLevelRepositorySearchResults.forEach((repo: GitRepository) => {
+        if (
+          hasOpenHandsSuffix(repo, selectedProvider) &&
+          shouldIncludeRepository(repo, debouncedSearchQuery)
+        ) {
+          if (repo.owner_type === "user") {
+            personalRepos.push(repo);
+          } else if (repo.owner_type === "organization") {
+            organizationRepos.push(repo);
+          }
+        }
+      });
+    }
+
+    setPersonalRepositories(personalRepos);
+    setOrganizationRepositories(organizationRepos);
+  }, [
+    userAndOrgLevelRepositorySearchResults,
+    selectedProvider,
+    debouncedSearchQuery,
+    setPersonalRepositories,
+    setOrganizationRepositories,
+  ]);
+
+  // Process other repositories (non-OpenHands repositories) from filteredRepositories
+  useEffect(() => {
+    if (!filteredRepositories?.length) {
+      setRepositories([]);
+      return;
+    }
+
     const otherRepos: GitRepository[] = [];
 
     filteredRepositories.forEach((repo: GitRepository) => {
-      const hasOpenHandsSuffix =
-        selectedProvider === "gitlab"
-          ? repo.full_name.endsWith("/openhands-config")
-          : repo.full_name.endsWith("/.openhands");
-
-      if (repo.owner_type === "user" && hasOpenHandsSuffix) {
-        personalRepos.push(repo);
-      } else if (repo.owner_type === "organization" && hasOpenHandsSuffix) {
-        organizationRepos.push(repo);
-      } else {
+      // Only include repositories that don't have the OpenHands suffix
+      if (!hasOpenHandsSuffix(repo, selectedProvider)) {
         otherRepos.push(repo);
       }
     });
 
-    setPersonalRepositories(personalRepos);
-    setOrganizationRepositories(organizationRepos);
     setRepositories(otherRepos);
-  }, [
-    filteredRepositories,
-    selectedProvider,
-    setPersonalRepositories,
-    setOrganizationRepositories,
-    setRepositories,
-  ]);
+  }, [filteredRepositories, selectedProvider, setRepositories]);
 
   // Handle scroll to bottom for pagination
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -206,7 +239,7 @@ export function MicroagentManagementSidebar({
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || isUserAndOrgLevelRepositoryLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">
           <Spinner size="sm" />
           <span className="text-sm text-white">
