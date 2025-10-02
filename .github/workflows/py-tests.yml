@@ -132,6 +132,9 @@ jobs:
   test-cli-python:
     name: CLI Unit Tests
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      matrix:
+        python-version: ["3.12"]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -141,7 +144,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
@@ -154,16 +157,24 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        working-directory: ./openhands-cli
+        # Use base working directory for coverage paths to line up.
         run: |
-          uv run pytest -v
+          uv run --directory ./openhands-cli pytest -v ./openhands-cli/tests --cov=openhands_cli --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.cli.${{ matrix.python_version }}"
+      - name: Store coverage file
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-cli
+          path: ".coverage.cli.${{ matrix.python_version }}"
+          include-hidden-files: true
 
 
   coverage-comment:
     name: Coverage Comment
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    needs: [test-on-linux, test-enterprise]
+    needs: [test-on-linux, test-enterprise, test-cli-python]
 
     permissions:
       pull-requests: write
