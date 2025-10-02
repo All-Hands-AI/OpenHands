@@ -1,0 +1,13 @@
+name = "PrayerHandsGenie"
+uuid = "fca8f8a0-63e9-4f9d-9da9-14318e403d30"
+authors = ["PrayerHands Contributors"]
+version = "0.1.0"
+
+[deps]
+Genie = "c7f686f2-ff18-58e9-b06a-1f7be6675a1a"
+PythonCall = "6099a3de-390e-11e9-1c5d-532679323890"
+
+[compat]
+Genie = "5"
+PythonCall = "0.9"
+julia = "1.10"
