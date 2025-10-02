@@ -67,11 +67,27 @@ export function MicroagentManagementSidebar({
     setSearchQuery("");
   };
 
+  // Helper function to filter repositories by search query
+  const filterRepositoriesByQuery = (
+    inputRepositories: GitRepository[],
+    query: string,
+  ): GitRepository[] => {
+    if (!query.trim()) {
+      return inputRepositories;
+    }
+
+    const sanitizedQuery = sanitizeQuery(query);
+    return inputRepositories.filter((repository: GitRepository) => {
+      const sanitizedRepoName = sanitizeQuery(repository.full_name);
+      return sanitizedRepoName.includes(sanitizedQuery);
+    });
+  };
+
   // Filter repositories based on search query and available data
   const filteredRepositories = useMemo(() => {
-    // If we have search results, use them directly (no filtering needed)
+    // If we have search results, apply client-side filtering for exact matches
     if (debouncedSearchQuery && searchResults && searchResults.length > 0) {
-      return searchResults;
+      return filterRepositoriesByQuery(searchResults, debouncedSearchQuery);
     }
 
     // If no search query or no search results, use paginated repositories
@@ -80,17 +96,8 @@ export function MicroagentManagementSidebar({
     // Flatten all pages to get all repositories
     const allRepositories = repositories.pages.flatMap((page) => page.data);
 
-    // If no search query, return all repositories
-    if (!debouncedSearchQuery.trim()) {
-      return allRepositories;
-    }
-
-    // Fallback to client-side filtering if search didn't return results
-    const sanitizedQuery = sanitizeQuery(debouncedSearchQuery);
-    return allRepositories.filter((repository: GitRepository) => {
-      const sanitizedRepoName = sanitizeQuery(repository.full_name);
-      return sanitizedRepoName.includes(sanitizedQuery);
-    });
+    // Apply filtering to paginated repositories
+    return filterRepositoriesByQuery(allRepositories, debouncedSearchQuery);
   }, [repositories, debouncedSearchQuery, searchResults]);
 
   useEffect(() => {
