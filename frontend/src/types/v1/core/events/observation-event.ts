@@ -1,6 +1,6 @@
-import { EventID, ToolCallID } from "./common";
-import { BaseEvent } from "./event";
-import { Observation } from "./observation";
+import { EventID, ToolCallID } from "../base/common";
+import { BaseEvent } from "../base/event";
+import { Observation } from "../base/observation";
 
 // Base interface for observation events
 export interface ObservationBaseEvent extends BaseEvent {

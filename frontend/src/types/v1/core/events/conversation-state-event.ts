@@ -1,4 +1,4 @@
-import { BaseEvent } from "./event";
+import { BaseEvent } from "../base/event";
 
 // Conversation state update event - contains conversation state updates
 export interface ConversationStateUpdateEvent extends BaseEvent {

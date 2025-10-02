@@ -1,5 +1,5 @@
-import { TextContent } from "./common";
-import { BaseEvent, Message } from "./event";
+import { TextContent } from "../base/common";
+import { BaseEvent, Message } from "../base/event";
 
 export interface MessageEvent extends BaseEvent {
   /**

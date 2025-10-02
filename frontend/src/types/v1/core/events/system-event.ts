@@ -1,5 +1,5 @@
-import { TextContent } from "./common";
-import { BaseEvent, ChatCompletionToolParam } from "./event";
+import { TextContent } from "../base/common";
+import { BaseEvent, ChatCompletionToolParam } from "../base/event";
 
 // System prompt event interface
 export interface SystemPromptEvent extends BaseEvent {

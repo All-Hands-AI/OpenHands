@@ -1,11 +1,11 @@
-import { Action } from "./action";
-import { EventID, ToolCallID, SecurityRisk, TextContent } from "./common";
+import { Action } from "../base/action";
+import { EventID, ToolCallID, SecurityRisk, TextContent } from "../base/common";
 import {
   BaseEvent,
   ChatCompletionMessageToolCall,
   ThinkingBlock,
   RedactedThinkingBlock,
-} from "./event";
+} from "../base/event";
 
 export interface ActionEvent extends BaseEvent {
   /**

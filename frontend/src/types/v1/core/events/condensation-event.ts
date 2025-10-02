@@ -1,5 +1,5 @@
-import { EventID } from "./common";
-import { BaseEvent } from "./event";
+import { EventID } from "../base/common";
+import { BaseEvent } from "../base/event";
 
 // Condensation event - indicates conversation history condensation is happening
 export interface CondensationEvent extends BaseEvent {
