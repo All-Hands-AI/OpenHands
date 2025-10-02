@@ -214,7 +214,7 @@ class GitHubReposMixin(GitHubMixinBase):
             all_repos = []
 
             # Search in user repositories
-            user_query = f'{query} user:{user.login}'
+            user_query = f'in:name {query} user:{user.login}'
             user_params = params.copy()
             user_params['q'] = user_query
 
