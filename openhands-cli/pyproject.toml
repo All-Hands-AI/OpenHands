@@ -30,6 +30,7 @@ scripts.openhands-cli = "openhands_cli.simple_main:main"
 dev = [
   "black>=23",
   "flake8>=6",
+  "gevent>=24.2.1,<26",
   "isort>=5",
   "mypy>=1",
   "pre-commit>=4.3",
