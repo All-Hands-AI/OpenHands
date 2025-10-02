@@ -29,7 +29,6 @@ def test_empty_image_url_handling():
     messages = conv_memory._process_observation(
         obs=browser_obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
         enable_som_visual_browsing=True,
         current_index=0,
@@ -91,7 +90,6 @@ def test_valid_image_url_handling():
     messages = conv_memory._process_observation(
         obs=browser_obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
         enable_som_visual_browsing=True,
         current_index=0,
@@ -139,7 +137,6 @@ def test_mixed_image_url_handling():
     messages = conv_memory._process_observation(
         obs=browser_obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
         enable_som_visual_browsing=True,
         current_index=0,
@@ -186,7 +183,6 @@ def test_ipython_empty_image_url_handling():
     messages = conv_memory._process_observation(
         obs=ipython_obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
         enable_som_visual_browsing=True,
         current_index=0,
@@ -233,7 +229,6 @@ def test_ipython_mixed_image_url_handling():
     messages = conv_memory._process_observation(
         obs=ipython_obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
         enable_som_visual_browsing=True,
         current_index=0,
