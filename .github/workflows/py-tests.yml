@@ -157,11 +157,12 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        # Use base working directory for coverage paths to line up.
+        working-directory: ./openhands-cli
         run: |
-          uv run --directory ./openhands-cli pytest -v ./openhands-cli/tests --cov=openhands_cli --cov-branch
+          uv run pytest -v --cov=openhands_cli --cov-branch
         env:
           COVERAGE_FILE: ".coverage.cli.${{ matrix.python_version }}"
+          PYTHONPATH: ""
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
