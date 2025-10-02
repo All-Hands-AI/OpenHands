@@ -170,7 +170,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-openhands-cli
-          path: ".coverage.openhands-cli.${{ matrix.python_version }}"
+          path: ".coverage.openhands-cli.${{ matrix.python-version }}"
           include-hidden-files: true
 
 
