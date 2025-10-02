@@ -488,7 +488,7 @@ class IssueResolver:
                     ]  # Use raw string as fallback
 
                 for success_indicator, explanation in zip(
-                    comment_success, explanations, strict=False
+                    comment_success, explanations
                 ):
                     status = (
                         colored('[X]', 'red')
