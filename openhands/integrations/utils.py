@@ -2,6 +2,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
+from openhands.integrations.forgejo.forgejo_service import ForgejoService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -45,6 +46,18 @@ async def validate_provider_token(
     except Exception as e:
         gitlab_error = e
 
+    # Try Forgejo if base_domain suggests it
+    forgejo_error = None
+    if base_domain and (
+        'codeberg' in base_domain.lower() or 'forgejo' in base_domain.lower()
+    ):
+        try:
+            forgejo_service = ForgejoService(token=token, base_domain=base_domain)
+            await forgejo_service.get_user()
+            return ProviderType.FORGEJO
+        except Exception as e:
+            forgejo_error = e
+
     # Try Bitbucket last
     bitbucket_error = None
     try:
@@ -55,7 +68,7 @@ async def validate_provider_token(
         bitbucket_error = e
 
     logger.debug(
-        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {forgejo_error} \n {bitbucket_error}'
     )
 
     return None
