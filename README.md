@@ -100,6 +100,25 @@ docker run -it --rm --pull=always \
 > On a public network? See our [Hardened Docker Installation Guide](https://docs.all-hands.dev/usage/runtimes/docker#hardened-docker-installation)
 > to secure your deployment by restricting network binding and implementing additional security measures.
 
+### Option 3: Julia Genie Server (Experimental)
+
+We are exploring a high-performance Julia implementation of the OpenHands server using
+[Genie.jl](https://genieframework.com/) and [PythonCall.jl](https://cjdoris.github.io/PythonCall.jl/stable/).
+This experimental path boots a Genie web application that reuses existing Python business logic and
+is a starting point for progressively porting server features to Julia.
+
+```bash
+julia --project=julia_genie julia_genie/start.jl
+```
+
+The script activates the Julia environment defined in `julia_genie/Project.toml`, installs the
+required packages on the first run, and serves the health endpoints on <http://0.0.0.0:8001>. Routes
+are backed by the same Python modules as the FastAPI server, so you can run both stacks side-by-side
+while comparing behaviour and performance.
+
+See [`julia_genie/README.md`](./julia_genie/README.md) for details on extending the Genie server and
+working with PythonCall.
+
 ### Getting Started
 
 When you open the application, you'll be asked to choose an LLM provider and add an API key.
