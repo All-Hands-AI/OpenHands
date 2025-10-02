@@ -157,9 +157,15 @@ jobs:
           uv sync --group dev
 
       - name: Run CLI unit tests
-        run: PYTHONPATH=".:$PYTHONPATH" uv run --project=openhands-cli pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./openhands-cli/tests --cov=openhands-cli --cov-branch
+        working-directory: ./openhands-cli
         env:
-          COVERAGE_FILE: ".coverage.openhands-cli.${{ matrix.python_version }}"
+          # write coverage to repo root so the merge step finds it
+          COVERAGE_FILE: "${{ github.workspace }}/.coverage.openhands-cli.${{ matrix.python-version }}"
+        run: |
+          uv run pytest --forked -n auto -s \
+            -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark \
+            tests --cov=openhands_cli --cov-branch
+
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
