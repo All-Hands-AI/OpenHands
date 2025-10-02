@@ -1,16 +1,10 @@
 import { ObservationBase } from "./base";
-import { CmdOutputMetadata, TaskItem } from "./common";
-
-interface TextContent {
-  type: "text";
-  text: string;
-  cache_prompt?: boolean;
-}
-
-interface ImageContent {
-  type: "image";
-  image_urls: string[];
-}
+import {
+  CmdOutputMetadata,
+  TaskItem,
+  TextContent,
+  ImageContent,
+} from "./common";
 
 interface MCPToolObservation extends ObservationBase<"MCPToolObservation"> {
   /**

@@ -47,3 +47,31 @@ export interface CmdOutputMetadata {
    */
   suffix: string;
 }
+
+// Type aliases for event and tool call IDs
+export type EventID = string;
+export type ToolCallID = string;
+
+// Source type for events
+export type SourceType = "agent" | "user" | "environment";
+
+// Security risk levels
+export enum SecurityRisk {
+  UNKNOWN = "UNKNOWN",
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+}
+
+// Content types for LLM messages
+export interface TextContent {
+  type: "text";
+  text: string;
+  cache_prompt?: boolean;
+}
+
+export interface ImageContent {
+  type: "image";
+  image_urls: string[];
+  cache_prompt?: boolean;
+}
