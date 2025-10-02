@@ -166,8 +166,8 @@ jobs:
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-cli
-          path: ".coverage.cli.${{ matrix.python_version }}"
+          name: coverage-cli-${{ matrix.python-version }}
+          path: "openhands-cli/.coverage.cli.${{ matrix.python_version }}"
           include-hidden-files: true
 
 
