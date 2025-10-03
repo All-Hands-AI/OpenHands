@@ -3,7 +3,7 @@ import logging
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from time import time
 from typing import AsyncGenerator, Callable, Sequence
@@ -11,7 +11,7 @@ from uuid import UUID
 
 import httpx
 from fastapi import Depends
-from pydantic import Field, TypeAdapter
+from pydantic import Field, SecretStr, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
@@ -39,23 +39,30 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
     AppConversationStartTaskService,
 )
 from openhands.app_server.app_conversation.git_app_conversation_service import GitAppConversationService
+from openhands.app_server.config import get_global_config
 from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
-from openhands.app_server.errors import AuthError, SandboxError
+from openhands.app_server.errors import SandboxError
+from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     SandboxInfo,
     SandboxStatus,
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
+from openhands.app_server.services.jwt_service import JWTService, get_default_jwt_service
 from openhands.app_server.user.user_service import UserService
 from openhands.sdk import LocalWorkspace, RemoteWorkspace
+from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.tools.preset.default import get_default_agent
 
+from openhands.integrations.provider import ProviderType
+
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
 WORKSPACE_DIR = Path('/home/openhands/workspace')
+GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
@@ -66,9 +73,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
     sandbox_service: SandboxService
+    jwt_service: JWTService
     sandbox_startup_timeout: int
     sandbox_startup_poll_frequency: int
     httpx_client: httpx.AsyncClient
+    web_url: str | None
+    access_token_hard_timeout: timedelta | None
 
     async def search_app_conversations(
         self,
@@ -174,7 +184,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             # Build the start request
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
-                    request.initial_message
+                    request.initial_message, request.git_provider
                 )
             )
 
@@ -403,14 +413,41 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return agent_server_url
 
     async def _build_start_conversation_request_for_user(
-        self, initial_message: SendMessageRequest | None
+        self,
+        initial_message: SendMessageRequest | None,
+        git_provider: ProviderType | None,
     ) -> StartConversationRequest:
         user = await self.user_service.get_user_info()
 
-        # Hack - because the workspace tries to create the dir on post init
-        # we create one in cwd then set it afterwards
-        workspace = LocalWorkspace(working_dir=os.getcwd())
-        workspace.working_dir = str(WORKSPACE_DIR)
+        # Set up a secret for the git token
+        secrets = await self.user_service.get_secrets()
+        if git_provider:
+            if self.web_url:
+                # If there is a web url, then we create an access token to access it.
+                # For security reasons, we are explicit here - only this user, and
+                # only this provider, with a timeout
+                access_token = self.jwt_service.create_jws_token(
+                    payload={
+                        'user_id': user.id,
+                        'provider_type': git_provider.value,
+                    },
+                    expires_in=self.access_token_hard_timeout,
+                )
+                secrets[GIT_TOKEN] = LookupSecret(
+                    url=self.web_url + "/ap/v1/webhooks/secrets",
+                    headers={
+                        'X-Access-Token': access_token
+                    },
+                )
+            else:
+                # If there is no URL specified where the sandbox can access the app server
+                # then we supply a static secret with the most recent value. Depending
+                # on the type, this may eventually expire.
+                static_token = await self.user_service.get_latest_token(git_provider)
+                if static_token:
+                    secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
+
+        workspace = LocalWorkspace(working_dir=WORKSPACE_DIR)
 
         llm = LLM(
             model=user.llm_model,
@@ -426,6 +463,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             if user.confirmation_mode
             else NeverConfirm(),
             initial_message=initial_message,
+            secrets=secrets
         )
         return start_conversation_request
 
@@ -440,6 +478,13 @@ class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
     init_git_in_empty_workspace: bool = Field(
         default=True,
         description='Whether to initialize a git repo when the workspace is empty'
+    )
+    access_token_hard_timeout: int | None = Field(
+        default=14*86400,
+        description=(
+            "A security measure - the time after which git tokens may no longer "
+            "be retrieved by a sandboxed conversation."
+        )
     )
 
     def get_resolver_for_current_user(self) -> Callable:
@@ -461,17 +506,32 @@ class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
             app_conversation_start_task_service=Depends(
                 sandbox_conversation_start_task_service_resolver
             ),
+            jwt_service: JWTService=Depends(get_default_jwt_service),
             httpx_client: httpx.AsyncClient = Depends(get_httpx_client),
         ) -> AppConversationService:
+            access_token_hard_timeout = None
+            if self.access_token_hard_timeout:
+                access_token_hard_timeout = timedelta(seconds=float(self.access_token_hard_timeout))
+            config = get_global_config()
+
+            # If no web url has been set and we are using docker, we can use host.docker.internal
+            web_url = config.web_url
+            if web_url is None:
+                if isinstance(sandbox_service, DockerSandboxService):
+                    web_url = f'http://host.docker.internal:{sandbox_service.host_port}'
+
             return LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_service=user_service,
                 sandbox_service=sandbox_service,
                 app_conversation_info_service=app_conversation_info_service,
                 app_conversation_start_task_service=app_conversation_start_task_service,
+                jwt_service=jwt_service,
                 sandbox_startup_timeout=self.sandbox_startup_timeout,
                 sandbox_startup_poll_frequency=self.sandbox_startup_poll_frequency,
                 httpx_client=httpx_client,
+                web_url=web_url,
+                access_token_hard_timeout=access_token_hard_timeout,
             )
 
         return _resolve_for_user

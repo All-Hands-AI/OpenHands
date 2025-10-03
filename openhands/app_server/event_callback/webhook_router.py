@@ -8,6 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import APIKeyHeader
 
+from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import ConversationInfo, Success
@@ -24,6 +25,7 @@ from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.sdk import Event
 
+from openhands.app_server.services.jwt_service import JWTService, get_default_jwt_service
 from openhands.app_server.user.user_admin_service import UserAdminService
 from openhands.integrations.provider import ProviderType
 
@@ -114,20 +116,31 @@ async def on_event(
 
     return Success()
 
+
 @router.get('/secrets')
 async def get_secret(
-    provider_type: ProviderType,
-    sandbox_info: SandboxInfo = Depends(valid_sandbox),
+    access_token: str = Depends(
+        APIKeyHeader(name='X-Access-Token', auto_error=False)
+    ),
+    jwt_service: JWTService = Depends(get_default_jwt_service),
     user_admin_service: UserAdminService = app_conversation_info_service_dependency,
 ) -> str:
-    # The sandbox has access to the secrets of the user who created it
-    user_service = await user_admin_service.get_user_service(sandbox_info.created_by_user_id)
-    secret = None
-    if user_service:
-        secret = await user_service.get_latest_token(provider_type)
-    if secret is None:
-        raise HTTPException(404, "No such provider")
-    return secret
+    """ Given an access token, retrieve a user secret. The access token
+    is limited by user and provider type, and may include a timeout, limiting
+    the damage in the event that a token is ever leaked """
+    try:
+        payload = jwt_service.verify_jws_token(access_token)
+        user_id = payload['user_id']
+        provider_type = ProviderType[payload['provider_type']]
+        user_service = await user_admin_service.get_user_service(user_id)
+        secret = None
+        if user_service:
+            secret = await user_service.get_latest_token(provider_type)
+        if secret is None:
+            raise HTTPException(404, "No such provider")
+        return secret
+    except InvalidTokenError:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
 
 async def _run_callbacks_in_bg_and_close(

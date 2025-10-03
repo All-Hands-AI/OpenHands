@@ -1,15 +1,15 @@
 from dataclasses import dataclass
 from typing import Callable
 
-from fastapi import Depends, Request
+from fastapi import Depends
 
-from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_models import UserInfo
 from openhands.app_server.user.user_service import UserService, UserServiceResolver
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
-from openhands.server.user_auth import get_provider_tokens, get_user_id, get_user_settings
+from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
+
+from openhands.integrations.provider import ProviderHandler, ProviderType
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
-from openhands.storage.data_models.settings import Settings
+
 
 # In legacy mode for OSS, there is only a single unconstrained user
 ROOT_USER = 'root'
@@ -64,6 +64,16 @@ class LegacyUserService(UserService):
         token = await service.get_latest_token()
         return token
 
+    async def get_secrets(self) -> dict[str, SecretSource]:
+        results = {}
+
+        # Include custom secrets...
+        secrets = await self.user_auth.get_user_secrets()
+        if secrets:
+            for name, value in secrets.custom_secrets.items():
+                results[name] = StaticSecret(value)
+
+        return results
 
 class LegacyUserServiceResolver(UserServiceResolver):
     def get_resolver_for_current_user(self) -> Callable:

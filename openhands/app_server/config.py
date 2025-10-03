@@ -152,8 +152,8 @@ class AppServerConfig(OpenHandsModel):
         default_factory=_get_default_encryption_keys
     )
     workspace_dir: Path = Field(default_factory=_get_default_workspace_dir)
-    web_url: str = Field(
-        default='http://localhost:3000',
+    web_url: str | None = Field(
+        default=None,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
     event: EventServiceResolver | None = None
