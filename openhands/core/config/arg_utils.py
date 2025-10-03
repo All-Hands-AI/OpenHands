@@ -147,7 +147,10 @@ def get_cli_parser() -> argparse.ArgumentParser:
     # Create a description with welcome message explaining available commands
     description = (
         'Welcome to OpenHands: Code Less, Make More\n\n'
+        'OpenHands supports two main commands:\n'
         '  serve - Launch the OpenHands GUI server (web interface)\n'
+        '  cli   - Run OpenHands in CLI mode (terminal interface)\n\n'
+        'Running "openhands" without a command is the same as "openhands cli"'
     )
 
     parser = argparse.ArgumentParser(
@@ -187,6 +190,21 @@ def get_cli_parser() -> argparse.ArgumentParser:
         'cli', help='Run OpenHands in CLI mode (terminal interface)'
     )
     add_common_arguments(cli_parser)
+
+    cli_parser.add_argument(
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
+        type=bool,
+        default=False,
+    )
+    parser.add_argument(
+        '--conversation',
+        help='The conversation id to continue',
+        type=str,
+        default=None,
+    )
+
+    return parser
 
 
 def get_headless_parser() -> argparse.ArgumentParser:
