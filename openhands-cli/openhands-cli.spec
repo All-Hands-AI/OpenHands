@@ -3,7 +3,12 @@
 PyInstaller spec file for OpenHands CLI.
 
 This spec file configures PyInstaller to create a standalone executable
-for the OpenHands CLI application.
+for the OpenHands CLI application, supporting both:
+- TUI mode (default): Interactive terminal interface
+- ACP mode (--acp flag): Agent Client Protocol for editor integration
+
+The binary includes the Agent Client Protocol SDK (acp package) which adds
+approximately 88KB to the binary size.
 """
 
 from pathlib import Path
@@ -34,8 +39,11 @@ a = Analysis(
         *collect_data_files('mcp'),
         # Include Jinja prompt templates required by the agent SDK
         *collect_data_files('openhands.sdk.agent', includes=['prompts/*.j2']),
+        *collect_data_files('openhands.sdk.context.condenser', includes=['prompts/*.j2']),
+        *collect_data_files('openhands.sdk.context.prompts', includes=['templates/*.j2']),
         # Include package metadata for importlib.metadata
         *copy_metadata('fastmcp'),
+        *copy_metadata('agent-client-protocol'),
     ],
     hiddenimports=[
         # Explicitly include modules that might not be detected automatically
@@ -48,6 +56,7 @@ a = Analysis(
         *collect_submodules('tiktoken_ext'),
         *collect_submodules('litellm'),
         *collect_submodules('fastmcp'),
+        *collect_submodules('acp'),  # Agent Client Protocol SDK for --acp mode
         # Include mcp but exclude CLI parts that require typer
         'mcp.types',
         'mcp.client',
