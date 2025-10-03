@@ -164,6 +164,7 @@ async def managed_session_dependency(
             except Exception:
                 _logger.exception('Rolling back SQL due to error', stack_info=True)
                 await session.rollback()
+                raise
             finally:
                 # Clean up the session from request state
                 if hasattr(request.state, 'db_session'):

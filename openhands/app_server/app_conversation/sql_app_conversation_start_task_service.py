@@ -84,7 +84,8 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         self, task: AppConversationStartTask
     ) -> AppConversationStartTask:
         if self.user_id:
-            result = await self.session.execute(AppConversationStartTask.id == task.id)
+            query = select(AppConversationStartTask).where(AppConversationStartTask.id == task.id)
+            result = await self.session.execute(query)
             existing: AppConversationStartTask = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
         task.updated_at = utc_now()

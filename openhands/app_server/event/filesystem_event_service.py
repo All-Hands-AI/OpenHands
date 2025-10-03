@@ -248,4 +248,4 @@ class FilesystemEventServiceManager(EventServiceManager):
         from openhands.app_server.config import get_global_config
 
         config = get_global_config()
-        return FilesystemEventService(events_dir=config.workspace_dir / 'v1' / 'events')
+        return FilesystemEventService(events_dir=config.persistence_dir / 'v1' / 'events')

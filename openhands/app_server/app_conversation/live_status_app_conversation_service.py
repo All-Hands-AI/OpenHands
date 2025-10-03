@@ -49,12 +49,13 @@ from openhands.app_server.sandbox.sandbox_models import (
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_service import UserService
-from openhands.sdk import LocalWorkspace, RemoteWorkspace
+from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.tools.preset.default import get_default_agent
 
+from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.integrations.provider import ProviderType
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -171,10 +172,10 @@ class LiveStatusAppConversationService(GitAppConversationService):
             agent_server_url = self._get_agent_server_url(sandbox)
 
             # Run setup scripts
-            workspace = RemoteWorkspace(
-                working_dir=WORKSPACE_DIR,
-                host=agent_server_url,
-                api_key=sandbox.session_api_key,
+            workspace = AsyncRemoteWorkspace(
+                working_dir=str(WORKSPACE_DIR),
+                server_url=agent_server_url,
+                session_api_key=sandbox.session_api_key,
             )
             async for updated_task in self.run_setup_scripts(task, workspace):
                 yield updated_task
@@ -298,16 +299,13 @@ class LiveStatusAppConversationService(GitAppConversationService):
             if sandbox.session_api_key:
                 headers['X-Session-API-Key'] = sandbox.session_api_key
 
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.get(url, params=params, headers=headers)
-                response.raise_for_status()
+            response = await self.httpx_client.get(url, params=params, headers=headers)
+            response.raise_for_status()
 
-                data = response.json()
-                conversation_info = _conversation_info_type_adapter.validate_python(
-                    data
-                )
-                conversation_info = [c for c in conversation_info if c]
-                return conversation_info
+            data = response.json()
+            conversation_info = _conversation_info_type_adapter.validate_python(data)
+            conversation_info = [c for c in conversation_info if c]
+            return conversation_info
         except Exception:
             # Not getting a status is not a fatal error - we just mark the conversation as stopped
             _logger.exception(
@@ -445,7 +443,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 if static_token:
                     secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
 
-        workspace = LocalWorkspace(working_dir=WORKSPACE_DIR)
+        workspace = LocalWorkspace(working_dir=str(WORKSPACE_DIR))
 
         llm = LLM(
             model=user.llm_model,
@@ -486,7 +484,7 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
     )
 
     def get_resolver_for_current_user(self) -> Callable:
-        from openhands.app_server.config import app_conversation_info_manager, app_conversation_start_task_manager, get_global_config, resolve_httpx_client, resolve_jwt_service, sandbox_manager, user_manager
+        from openhands.app_server.config import app_conversation_info_manager, app_conversation_start_task_manager, get_global_config, httpx_client_manager, resolve_jwt_service, sandbox_manager, user_manager
 
         def _resolve_for_user(
             user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
@@ -498,7 +496,7 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
                 app_conversation_start_task_manager().get_resolver_for_current_user()
             ),
             jwt_service: JwtService = Depends(resolve_jwt_service),
-            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client),
+            httpx_client: httpx.AsyncClient = Depends(httpx_client_manager().resolve),
         ) -> AppConversationService:
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:

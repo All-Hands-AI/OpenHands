@@ -1,14 +1,19 @@
+from typing import AsyncGenerator
+from fastapi import Request
 import httpx
-from pydantic import BaseModel, Field, PrivateAttr
+from pydantic import BaseModel, Field
 
 
 class HttpxClientManager(BaseModel):
     timeout: int = Field(default=15, description="Default timeout on all http requests")
-    _httpx_client: httpx.AsyncClient | None = PrivateAttr(default=None)
 
-    def get_httpx_client(self) -> httpx.AsyncClient:
-        httpx_client = self._httpx_client
-        if httpx_client is None:
+    async def resolve(self, request: Request) -> AsyncGenerator[httpx.AsyncClient, None]:
+        """ Sharing a single client in the system can save time on handshakes, but leave us
+        susceptible to leaks. Opening a different httpx connection for each operation is inefficient.
+        So the balance is a managed connection shared within a fastapi request
+        """
+        httpx_client = getattr(request.state, 'httpx_client', None)
+        if not httpx_client:
             httpx_client = httpx.AsyncClient(timeout=self.timeout)
-            self._httpx_client = httpx_client
-        return httpx_client
+            request.state.httpx_client = httpx_client
+        yield httpx_client

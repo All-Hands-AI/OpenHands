@@ -205,7 +205,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
         if self.user_id:
-            result = await self.session.execute(AppConversationInfo.id == info.id)
+            query = select(AppConversationInfo).where(AppConversationInfo.id == info.id)
+            result = await self.session.execute(query)
             existing: AppConversationInfo = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
         await self.session.merge(info)

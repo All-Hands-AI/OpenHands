@@ -9,13 +9,12 @@ import base62
 from dataclasses import dataclass
 import logging
 from typing import AsyncGenerator
+
 from openhands.app_server.app_conversation.app_conversation_models import AppConversationStartTask, AppConversationStartTaskStatus
 from openhands.app_server.app_conversation.app_conversation_service import AppConversationService
 
-from openhands.sdk import RemoteWorkspace
-
-from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.user.user_service import UserService
+from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
 PRE_COMMIT_HOOK = '.git/hooks/pre-commit'
@@ -34,24 +33,24 @@ class GitAppConversationService(AppConversationService, ABC):
     async def run_setup_scripts(
         self,
         task: AppConversationStartTask,
-        workspace: RemoteWorkspace,
+        workspace: AsyncRemoteWorkspace,
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         task.status = AppConversationStartTaskStatus.PREPARING_REPOSITORY
-        await self.clone_or_init_git_repo(task, workspace)
         yield task
+        await self.clone_or_init_git_repo(task, workspace)
 
         task.status = AppConversationStartTaskStatus.RUNNING_SETUP_SCRIPT
-        await self.maybe_run_setup_script(workspace)
         yield task
+        await self.maybe_run_setup_script(workspace)
 
         task.status = AppConversationStartTaskStatus.SETTING_UP_GIT_HOOKS
-        await self.maybe_setup_git_hooks(workspace)
         yield task
+        await self.maybe_setup_git_hooks(workspace)
 
     async def clone_or_init_git_repo(
         self,
         task: AppConversationStartTask,
-        workspace: RemoteWorkspace,
+        workspace: AsyncRemoteWorkspace,
     ):
         request = task.request
 
@@ -90,7 +89,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
     async def maybe_run_setup_script(
         self,
-        workspace: RemoteWorkspace,
+        workspace: AsyncRemoteWorkspace,
     ):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
         setup_script = workspace.working_dir + '/.openhands/setup.sh'
@@ -104,7 +103,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
     async def maybe_setup_git_hooks(
         self,
-        workspace: RemoteWorkspace,
+        workspace: AsyncRemoteWorkspace,
     ):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
         command = (
@@ -136,7 +135,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # write the pre-commit hook
         await workspace.file_upload(
-            src_path=Path(__file__).parent / "pre-commit.sh",
+            source_path=Path(__file__).parent / "pre-commit.sh",
             destination_path=PRE_COMMIT_HOOK,
         )
 

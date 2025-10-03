@@ -70,8 +70,8 @@ class LegacyUserService(UserService):
         # Include custom secrets...
         secrets = await self.user_auth.get_user_secrets()
         if secrets:
-            for name, value in secrets.custom_secrets.items():
-                results[name] = StaticSecret(value)
+            for name, custom_secret in secrets.custom_secrets.items():
+                results[name] = StaticSecret(value=custom_secret.secret)
 
         return results
 

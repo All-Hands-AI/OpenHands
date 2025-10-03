@@ -423,11 +423,11 @@ class DockerSandboxServiceManager(SandboxServiceManager):
 
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
-        from openhands.app_server.config import resolve_httpx_client, sandbox_spec_manager
+        from openhands.app_server.config import httpx_client_manager, sandbox_spec_manager
 
         def resolve_sandbox_service(
             sandbox_spec_service: SandboxSpecService = Depends(sandbox_spec_manager().get_unsecured_resolver()),
-            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client),
+            httpx_client: httpx.AsyncClient = Depends(httpx_client_manager().resolve),
         ) -> SandboxService:
             return DockerSandboxService(
                 sandbox_spec_service=sandbox_spec_service,

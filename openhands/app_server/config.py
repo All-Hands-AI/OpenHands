@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-import httpx
 from fastapi import Depends
 from pydantic import (
     BaseModel,
@@ -252,6 +251,11 @@ def user_admin_manager() -> UserAdminServiceManager:
     return user_admin
 
 
+def httpx_client_manager() -> HttpxClientManager:
+    config = get_global_config()
+    return config.httpx
+
+
 def resolve_jwt_service(
     config: AppServerConfig = Depends(get_global_config),
 ) -> JwtService:
@@ -260,9 +264,3 @@ def resolve_jwt_service(
         resolver = JwtServiceManager(persistence_dir=config.persistence_dir)
         config.jwt = resolver
     return resolver.get_jwt_service()
-
-
-def resolve_httpx_client(
-    config: AppServerConfig = Depends(get_global_config),
-) -> httpx.AsyncClient:
-    return config.httpx.get_httpx_client()
