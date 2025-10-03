@@ -547,15 +547,17 @@ class ActionExecutor:
 
         # Attempt to handle file permissions
         try:
-            if file_exists:
-                assert file_stat is not None
-                # restore the original file permissions if the file already exists
-                os.chmod(filepath, file_stat.st_mode)
-                os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
-            else:
-                # set the new file permissions if the file is new
-                os.chmod(filepath, 0o664)
-                os.chown(filepath, self.user_id, self.user_id)
+            # Only set permissions and ownership on Unix-like systems
+            if hasattr(os, 'chmod') and hasattr(os, 'chown'):
+                if file_exists:
+                    assert file_stat is not None
+                    # restore the original file permissions if the file already exists
+                    os.chmod(filepath, file_stat.st_mode)
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+                else:
+                    # set the new file permissions if the file is new
+                    os.chmod(filepath, 0o664)
+                    os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
                 f'File {filepath} written, but failed to change ownership and permissions: {e}'

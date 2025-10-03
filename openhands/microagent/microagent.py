@@ -72,7 +72,7 @@ class BaseMicroagent(BaseModel):
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
-            with open(path) as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 file_content = f.read()
 
         # Legacy repo instructions are stored in .openhands_instructions
