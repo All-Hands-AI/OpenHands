@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 
+
 def display_initialization_animation(text: str, is_loaded: threading.Event) -> None:
     """Display a spinning animation while agent is being initialized.
 
@@ -30,7 +31,6 @@ def display_initialization_animation(text: str, is_loaded: threading.Event) -> N
     sys.stdout.flush()
 
 
-
 class LoadingContext:
     """Context manager for displaying loading animations in a separate thread."""
 
@@ -49,7 +49,7 @@ class LoadingContext:
         self.loading_thread = threading.Thread(
             target=display_initialization_animation,
             args=(self.text, self.is_loaded),
-            daemon=True
+            daemon=True,
         )
         self.loading_thread.start()
         return self
@@ -58,4 +58,6 @@ class LoadingContext:
         """Stop the loading animation and clean up the thread."""
         self.is_loaded.set()
         if self.loading_thread:
-            self.loading_thread.join(timeout=1.0)  # Wait up to 1 second for thread to finish
+            self.loading_thread.join(
+                timeout=1.0
+            )  # Wait up to 1 second for thread to finish

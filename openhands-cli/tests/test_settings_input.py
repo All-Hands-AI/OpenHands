@@ -7,10 +7,6 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from prompt_toolkit.completion import FuzzyWordCompleter
-from prompt_toolkit.validation import ValidationError
-from pydantic import SecretStr
-
 from openhands_cli.user_actions.settings_action import (
     NonEmptyValueValidator,
     SettingsType,
@@ -19,11 +15,14 @@ from openhands_cli.user_actions.settings_action import (
     prompt_api_key,
     settings_type_confirmation,
 )
-
+from prompt_toolkit.completion import FuzzyWordCompleter
+from prompt_toolkit.validation import ValidationError
+from pydantic import SecretStr
 
 # -------------------------------
 # Settings type selection
 # -------------------------------
+
 
 def test_settings_type_selection(mock_cli_interactions: Any) -> None:
     mocks = mock_cli_interactions
@@ -42,8 +41,12 @@ def test_settings_type_selection(mock_cli_interactions: Any) -> None:
 # Provider selection flows
 # -------------------------------
 
-def test_provider_selection_with_predefined_options(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+
+def test_provider_selection_with_predefined_options(
+    mock_verified_models: Any, mock_cli_interactions: Any
+) -> None:
     from openhands_cli.tui.utils import StepCounter
+
     mocks = mock_cli_interactions
     # first option among display_options is index 0
     mocks.cli_confirm.return_value = 0
@@ -52,75 +55,86 @@ def test_provider_selection_with_predefined_options(mock_verified_models: Any, m
     assert result == 'openai'
 
 
-def test_provider_selection_with_custom_input(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+def test_provider_selection_with_custom_input(
+    mock_verified_models: Any, mock_cli_interactions: Any
+) -> None:
     from openhands_cli.tui.utils import StepCounter
+
     mocks = mock_cli_interactions
     # Due to overlapping provider keys between VERIFIED and UNVERIFIED in fixture,
     # display_options contains 4 providers (with duplicates) + alternate at index 4
     mocks.cli_confirm.return_value = 4
-    mocks.cli_text_input.return_value = "my-provider"
+    mocks.cli_text_input.return_value = 'my-provider'
     step_counter = StepCounter(1)
     result = choose_llm_provider(step_counter)
-    assert result == "my-provider"
+    assert result == 'my-provider'
 
     # Verify fuzzy completer passed
     _, kwargs = mocks.cli_text_input.call_args
-    assert isinstance(kwargs["completer"], FuzzyWordCompleter)
+    assert isinstance(kwargs['completer'], FuzzyWordCompleter)
 
 
 # -------------------------------
 # Model selection flows
 # -------------------------------
 
-def test_model_selection_flows(mock_verified_models: Any, mock_cli_interactions: Any) -> None:
+
+def test_model_selection_flows(
+    mock_verified_models: Any, mock_cli_interactions: Any
+) -> None:
     from openhands_cli.tui.utils import StepCounter
+
     mocks = mock_cli_interactions
 
     # Direct pick from predefined list
     mocks.cli_confirm.return_value = 0
     step_counter = StepCounter(1)
-    result = choose_llm_model(step_counter, "openai")
-    assert result in ["gpt-4o"]
+    result = choose_llm_model(step_counter, 'openai')
+    assert result in ['gpt-4o']
 
     # Choose custom model via input
     mocks.cli_confirm.return_value = 4  # for provider with >=4 models this would be alt; in our data openai has 3 -> alt index is 3
-    mocks.cli_text_input.return_value = "custom-model"
+    mocks.cli_text_input.return_value = 'custom-model'
     # Adjust to actual alt index produced by code (len(models[:4]) yields 3 + 1 alt -> index 3)
     mocks.cli_confirm.return_value = 3
     step_counter2 = StepCounter(1)
-    result2 = choose_llm_model(step_counter2, "openai")
-    assert result2 == "custom-model"
+    result2 = choose_llm_model(step_counter2, 'openai')
+    assert result2 == 'custom-model'
 
 
 # -------------------------------
 # API key validation and prompting
 # -------------------------------
 
+
 def test_api_key_validation_and_prompting(mock_cli_interactions: Any) -> None:
     # Validator standalone
     validator = NonEmptyValueValidator()
-    doc = MagicMock(); doc.text = "sk-abc"
+    doc = MagicMock()
+    doc.text = 'sk-abc'
     validator.validate(doc)
 
-    doc_empty = MagicMock(); doc_empty.text = ""
+    doc_empty = MagicMock()
+    doc_empty.text = ''
     with pytest.raises(ValidationError):
         validator.validate(doc_empty)
 
     # Prompting for new key enforces validator
     from openhands_cli.tui.utils import StepCounter
+
     mocks = mock_cli_interactions
-    mocks.cli_text_input.return_value = "sk-new"
+    mocks.cli_text_input.return_value = 'sk-new'
     step_counter = StepCounter(1)
     new_key = prompt_api_key(step_counter, 'provider')
-    assert new_key == "sk-new"
-    assert mocks.cli_text_input.call_args[1]["validator"] is not None
+    assert new_key == 'sk-new'
+    assert mocks.cli_text_input.call_args[1]['validator'] is not None
 
     # Prompting with existing key shows mask and no validator
     mocks.cli_text_input.reset_mock()
-    mocks.cli_text_input.return_value = "sk-updated"
-    existing = SecretStr("sk-existing-123")
+    mocks.cli_text_input.return_value = 'sk-updated'
+    existing = SecretStr('sk-existing-123')
     step_counter2 = StepCounter(1)
     updated = prompt_api_key(step_counter2, 'provider', existing)
-    assert updated == "sk-updated"
-    assert mocks.cli_text_input.call_args[1]["validator"] is None
-    assert "sk-***" in mocks.cli_text_input.call_args[0][0]
+    assert updated == 'sk-updated'
+    assert mocks.cli_text_input.call_args[1]['validator'] is None
+    assert 'sk-***' in mocks.cli_text_input.call_args[0][0]

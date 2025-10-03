@@ -2,31 +2,31 @@ from typing import Any, Self
 from unittest.mock import patch
 
 import pytest
+from openhands_cli.runner import ConversationRunner
+from openhands_cli.user_actions.types import UserConfirmation
+from pydantic import ConfigDict, SecretStr, model_validator
+
 from openhands.sdk import Conversation, ConversationCallbackType
 from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
-from pydantic import ConfigDict, SecretStr, model_validator
-from openhands.sdk.conversation.state import AgentExecutionStatus
-
-from openhands_cli.runner import ConversationRunner
-from openhands_cli.user_actions.types import UserConfirmation
 
 
 class FakeLLM(LLM):
-    @model_validator(mode="after")
+    @model_validator(mode='after')
     def _set_env_side_effects(self) -> Self:
         return self
 
 
 def default_config() -> dict[str, Any]:
     return {
-        "model": "gpt-4o",
-        "api_key": SecretStr("test_key"),
-        "num_retries": 2,
-        "retry_min_wait": 1,
-        "retry_max_wait": 2,
+        'model': 'gpt-4o',
+        'api_key': SecretStr('test_key'),
+        'num_retries': 2,
+        'retry_min_wait': 1,
+        'retry_max_wait': 2,
     }
 
 
@@ -50,13 +50,17 @@ class FakeAgent(AgentBase):
 
 @pytest.fixture()
 def agent() -> FakeAgent:
-    llm = LLM(**default_config(), service_id="test-service")
+    llm = LLM(**default_config(), service_id='test-service')
     return FakeAgent(llm=llm, tools=[])
 
 
 class TestConversationRunner:
-    @pytest.mark.parametrize('agent_status', [AgentExecutionStatus.RUNNING, AgentExecutionStatus.PAUSED])
-    def test_non_confirmation_mode_runs_once(self, agent: FakeAgent, agent_status: AgentExecutionStatus) -> None:
+    @pytest.mark.parametrize(
+        'agent_status', [AgentExecutionStatus.RUNNING, AgentExecutionStatus.PAUSED]
+    )
+    def test_non_confirmation_mode_runs_once(
+        self, agent: FakeAgent, agent_status: AgentExecutionStatus
+    ) -> None:
         """
         1. Confirmation mode is not on
         2. Process message resumes paused conversation or continues running conversation
@@ -103,7 +107,7 @@ class TestConversationRunner:
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
         with patch.object(
-            cr, "_handle_confirmation_request", return_value=confirmation
+            cr, '_handle_confirmation_request', return_value=confirmation
         ) as mock_confirmation_request:
             cr.process_message(message=None)
         mock_confirmation_request.assert_called_once()
@@ -125,7 +129,7 @@ class TestConversationRunner:
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
 
-        with patch.object(cr, "_handle_confirmation_request") as _mock_h:
+        with patch.object(cr, '_handle_confirmation_request') as _mock_h:
             cr.process_message(message=None)
 
         # No confirmation was needed up front; we still expect exactly one run.

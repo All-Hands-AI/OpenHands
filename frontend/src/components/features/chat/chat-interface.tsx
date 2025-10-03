@@ -1,4 +1,3 @@
-import { useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -7,7 +6,6 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
@@ -19,12 +17,13 @@ import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
+import { useAgentStore } from "#/stores/agent-store";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
   hasUserEvent,
@@ -47,10 +46,10 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
-  const { getErrorMessage } = useWSErrorMessage();
+  const { errorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
-    useOptimisticUserMessage();
+    useOptimisticUserMessageStore();
   const { t } = useTranslation();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
@@ -63,7 +62,7 @@ export function ChatInterface() {
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
 
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -74,7 +73,6 @@ export function ChatInterface() {
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
-  const errorMessage = getErrorMessage();
 
   const events = parsedEvents.filter(shouldRenderEvent);
 

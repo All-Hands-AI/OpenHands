@@ -1,4 +1,3 @@
-import { PayloadAction } from "@reduxjs/toolkit";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
@@ -30,8 +29,8 @@ interface ExpandableMessageProps {
   message: string;
   type: string;
   success?: boolean;
-  observation?: PayloadAction<OpenHandsObservation>;
-  action?: PayloadAction<OpenHandsAction>;
+  observation?: { payload: OpenHandsObservation };
+  action?: { payload: OpenHandsAction };
 }
 
 export function ExpandableMessage({

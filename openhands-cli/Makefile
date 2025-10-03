@@ -34,7 +34,7 @@ clean:
 
 # Run the CLI
 run:
-	uv run openhands-cli
+	uv run openhands
 
 # Install UV if not present
 install-uv:

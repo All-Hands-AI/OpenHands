@@ -26,8 +26,8 @@ import {
   isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 
 export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
@@ -131,8 +131,8 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
-  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
-  const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
+  const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
+  const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [webSocketStatus, setWebSocketStatus] =

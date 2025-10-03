@@ -2,10 +2,11 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
-from openhands.sdk import BaseConversation
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.input import Input, create_input
 from prompt_toolkit.keys import Keys
+
+from openhands.sdk import BaseConversation
 
 
 class PauseListener(threading.Thread):
@@ -37,9 +38,9 @@ class PauseListener(threading.Thread):
 
     def _execute_pause(self) -> None:
         self._pause_event.set()  # Mark pause event occurred
-        print_formatted_text(HTML(""))
+        print_formatted_text(HTML(''))
         print_formatted_text(
-            HTML("<gold>Pausing agent once step is completed...</gold>")
+            HTML('<gold>Pausing agent once step is completed...</gold>')
         )
         try:
             self.on_pause()

@@ -21,8 +21,20 @@ vi.mock("#/state/command-store", () => ({
   },
 }));
 
-vi.mock("#/state/jupyter-slice", () => ({
-  appendJupyterInput: mockAppendJupyterInput,
+vi.mock("#/state/jupyter-store", () => ({
+  useJupyterStore: {
+    getState: () => ({
+      appendJupyterInput: mockAppendJupyterInput,
+    }),
+  },
+}));
+
+vi.mock("#/state/metrics-slice", () => ({
+  setMetrics: vi.fn(),
+}));
+
+vi.mock("#/state/security-analyzer-slice", () => ({
+  appendSecurityAnalyzerInput: vi.fn(),
 }));
 
 vi.mock("#/state/metrics-slice", () => ({
@@ -81,8 +93,8 @@ describe("handleActionMessage", () => {
     handleActionMessage(ipythonAction);
 
     // Check that appendJupyterInput was called with the code
-    expect(mockDispatch).toHaveBeenCalledWith(
-      mockAppendJupyterInput("print('Hello from Jupyter!')"),
+    expect(mockAppendJupyterInput).toHaveBeenCalledWith(
+      "print('Hello from Jupyter!')",
     );
     expect(mockAppendInput).not.toHaveBeenCalled();
   });

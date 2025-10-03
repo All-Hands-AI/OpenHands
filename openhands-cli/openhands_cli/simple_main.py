@@ -12,10 +12,10 @@ debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
     logging.disable(logging.WARNING)
 
-from prompt_toolkit import print_formatted_text  # noqa: E402
-from prompt_toolkit.formatted_text import HTML  # noqa: E402
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
 
-from openhands_cli.agent_chat import run_cli_entry  # noqa: E402
+from openhands_cli.agent_chat import run_cli_entry
 
 
 def main() -> None:
@@ -26,43 +26,15 @@ def main() -> None:
         Exception: On other error conditions
     """
     parser = argparse.ArgumentParser(
-        description="OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
+        description='OpenHands CLI - Terminal User Interface for OpenHands AI Agent'
     )
     parser.add_argument(
-        "--resume",
+        '--resume',
         type=str,
-        help="Conversation ID to use for the session. If not provided, a random UUID will be generated."
-    )
-    parser.add_argument(
-        "--acp",
-        action="store_true",
-        help="Run in ACP (Agent Client Protocol) mode for editor integration. "
-        "Uses the same configuration and persistence directory as the CLI (~/.openhands/conversations)."
+        help='Conversation ID to use for the session. If not provided, a random UUID will be generated.',
     )
 
     args = parser.parse_args()
-
-    # Handle ACP mode
-    if args.acp:
-        import asyncio
-
-        from openhands_cli.acp.server import run_acp_server
-        from openhands_cli.locations import CONVERSATIONS_DIR
-
-        print_formatted_text(HTML("<green>Starting OpenHands in ACP mode...</green>"))
-        print_formatted_text(HTML(f"<grey>Using same persistence directory as CLI: {CONVERSATIONS_DIR}</grey>"))
-
-        try:
-            # Use same persistence directory as CLI
-            asyncio.run(run_acp_server(persistence_dir=None))
-        except KeyboardInterrupt:
-            print_formatted_text(HTML("\n<yellow>ACP server stopped.</yellow>"))
-        except Exception as e:
-            print_formatted_text(HTML(f"<red>Error running ACP server: {e}</red>"))
-            import traceback
-            traceback.print_exc()
-            raise
-        return
 
     try:
         # Start agent chat
@@ -70,23 +42,23 @@ def main() -> None:
 
     except ImportError as e:
         print_formatted_text(
-            HTML(f"<red>Error: Agent chat requires additional dependencies: {e}</red>")
+            HTML(f'<red>Error: Agent chat requires additional dependencies: {e}</red>')
         )
         print_formatted_text(
-            HTML("<yellow>Please ensure the agent SDK is properly installed.</yellow>")
+            HTML('<yellow>Please ensure the agent SDK is properly installed.</yellow>')
         )
         raise
     except KeyboardInterrupt:
-        print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except EOFError:
-        print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except Exception as e:
-        print_formatted_text(HTML(f"<red>Error starting agent chat: {e}</red>"))
+        print_formatted_text(HTML(f'<red>Error starting agent chat: {e}</red>'))
         import traceback
 
         traceback.print_exc()
         raise
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -5,6 +5,7 @@ const typographyVariants = cva("", {
   variants: {
     variant: {
       h1: "text-[32px] text-white font-bold leading-5",
+      h2: "text-xl font-semibold leading-6 -tracking-[0.02em] text-white",
       h3: "text-sm font-semibold text-gray-300",
       span: "text-sm font-normal text-white leading-5.5",
       codeBlock:
@@ -53,6 +54,18 @@ export function H1({
   );
 }
 
+export function H2({
+  className,
+  testId,
+  children,
+}: Omit<TypographyProps, "variant">) {
+  return (
+    <Typography variant="h2" className={className} testId={testId}>
+      {children}
+    </Typography>
+  );
+}
+
 export function H3({
   className,
   testId,
@@ -91,6 +104,7 @@ export function CodeBlock({
 
 // Attach components to Typography for the expected API
 Typography.H1 = H1;
+Typography.H2 = H2;
 Typography.H3 = H3;
 Typography.Text = Text;
 Typography.CodeBlock = CodeBlock;

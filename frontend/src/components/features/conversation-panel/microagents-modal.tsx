@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { I18nKey } from "#/i18n/declaration";
 import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { Typography } from "#/ui/typography";
 import { MicroagentsModalHeader } from "./microagents-modal-header";
 import { MicroagentsLoadingState } from "./microagents-loading-state";
 import { MicroagentsEmptyState } from "./microagents-empty-state";
 import { MicroagentItem } from "./microagent-item";
+import { useAgentStore } from "#/stores/agent-store";
 
 interface MicroagentsModalProps {
   onClose: () => void;
@@ -19,7 +18,7 @@ interface MicroagentsModalProps {
 
 export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );

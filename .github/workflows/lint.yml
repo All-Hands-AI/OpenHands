@@ -86,10 +86,10 @@ jobs:
           python-version: 3.12
           cache: "pip"
       - name: Install pre-commit
-        run: pip install pre-commit==3.7.0
+        run: pip install pre-commit==4.2.0
       - name: Run pre-commit hooks
         working-directory: ./openhands-cli
-        run: pre-commit run --all-files --config ../dev_config/python/.pre-commit-config.yaml
+        run: pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
 
   # Check version consistency across documentation
   check-version-consistency:

@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = [ "hatchling>=1.25" ]
 
 [project]
-name = "openhands-cli"
+name = "openhands"
 version = "0.1.0"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
@@ -18,24 +18,27 @@ classifiers = [
 dependencies = [
   "openhands-sdk",
   "openhands-tools",
-  "acp>=0.0.0",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
 
 # Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands-cli = "openhands_cli.simple_main:main"
+scripts.openhands = "openhands_cli.simple_main:main"
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory
 dev = [
   "black>=23",
   "flake8>=6",
+  "gevent>=24.2.1,<26",
   "isort>=5",
   "mypy>=1",
   "pre-commit>=4.3",
   "pyinstaller>=6.15",
   "pytest>=8.4.1",
+  "pytest-cov>=6",
+  "pytest-forked>=1.6",
+  "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
 
@@ -75,6 +78,16 @@ lint.ignore = [
 profile = "black"
 line_length = 88
 
+[tool.coverage.run]
+relative_files = true
+omit = [ "tests/*", "**/test_*" ]
+
+[tool.coverage.paths]
+source = [
+  "openhands_cli/",
+  "openhands-cli/openhands_cli/",
+]
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
@@ -83,5 +96,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "711efcbadaa78a0b6b20699976e495ddf995767f" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "711efcbadaa78a0b6b20699976e495ddf995767f" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }

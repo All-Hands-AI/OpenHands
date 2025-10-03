@@ -1,17 +1,16 @@
 from prompt_toolkit import HTML, print_formatted_text
+
 from openhands.sdk.security.confirmation_policy import (
     ConfirmRisky,
+    NeverConfirm,
     SecurityRisk,
-    NeverConfirm
 )
-
-from openhands_cli.user_actions.types import UserConfirmation, ConfirmationResult
+from openhands_cli.user_actions.types import ConfirmationResult, UserConfirmation
 from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 def ask_user_confirmation(
-    pending_actions: list,
-    using_risk_based_policy: bool = False
+    pending_actions: list, using_risk_based_policy: bool = False
 ) -> ConfirmationResult:
     """Ask user to confirm pending actions.
 
@@ -27,35 +26,35 @@ def ask_user_confirmation(
 
     print_formatted_text(
         HTML(
-            f"<yellow>🔍 Agent created {len(pending_actions)} action(s) and is waiting for confirmation:</yellow>"
+            f'<yellow>🔍 Agent created {len(pending_actions)} action(s) and is waiting for confirmation:</yellow>'
         )
     )
 
     for i, action in enumerate(pending_actions, 1):
-        tool_name = getattr(action, "tool_name", "[unknown tool]")
+        tool_name = getattr(action, 'tool_name', '[unknown tool]')
         action_content = (
-            str(getattr(action, "action", ""))[:100].replace("\n", " ")
-            or "[unknown action]"
+            str(getattr(action, 'action', ''))[:100].replace('\n', ' ')
+            or '[unknown action]'
         )
         print_formatted_text(
-            HTML(f"<grey>  {i}. {tool_name}: {action_content}...</grey>")
+            HTML(f'<grey>  {i}. {tool_name}: {action_content}...</grey>')
         )
 
-    question = "Choose an option:"
+    question = 'Choose an option:'
     options = [
-        "Yes, proceed",
-        "No, reject (w/o reason)",
-        "No, reject with reason",
+        'Yes, proceed',
+        'No, reject (w/o reason)',
+        'No, reject with reason',
         "Always proceed (don't ask again)",
     ]
 
     if not using_risk_based_policy:
-        options.append("Auto-confirm LOW/MEDIUM risk, ask for HIGH risk")
+        options.append('Auto-confirm LOW/MEDIUM risk, ask for HIGH risk')
 
     try:
         index = cli_confirm(question, options, escapable=True)
     except (EOFError, KeyboardInterrupt):
-        print_formatted_text(HTML("\n<red>No input received; pausing agent.</red>"))
+        print_formatted_text(HTML('\n<red>No input received; pausing agent.</red>'))
         return ConfirmationResult(decision=UserConfirmation.DEFER)
 
     if index == 0:
@@ -84,13 +83,12 @@ def ask_user_confirmation(
         return ConfirmationResult(decision=UserConfirmation.REJECT, reason=reason)
     elif index == 3:
         return ConfirmationResult(
-            decision=UserConfirmation.ACCEPT,
-            policy_change=NeverConfirm()
+            decision=UserConfirmation.ACCEPT, policy_change=NeverConfirm()
         )
     elif index == 4:
         return ConfirmationResult(
             decision=UserConfirmation.ACCEPT,
-            policy_change=ConfirmRisky(threshold=SecurityRisk.HIGH)
+            policy_change=ConfirmRisky(threshold=SecurityRisk.HIGH),
         )
 
     return ConfirmationResult(decision=UserConfirmation.REJECT)

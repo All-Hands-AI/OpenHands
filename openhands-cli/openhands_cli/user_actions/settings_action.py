@@ -1,17 +1,15 @@
 from enum import Enum
 
-from openhands_cli.tui.utils import StepCounter
-from openhands_cli.user_actions.utils import NonEmptyValueValidator
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
-
-from openhands.sdk.llm import (
-    VERIFIED_MODELS,
-    UNVERIFIED_MODELS_EXCLUDING_BEDROCK
+from openhands.sdk.llm import UNVERIFIED_MODELS_EXCLUDING_BEDROCK, VERIFIED_MODELS
+from openhands_cli.tui.utils import StepCounter
+from openhands_cli.user_actions.utils import (
+    NonEmptyValueValidator,
+    cli_confirm,
+    cli_text_input,
 )
-
-from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 class SettingsType(Enum):
@@ -32,17 +30,19 @@ def settings_type_confirmation() -> SettingsType:
     if choices[index] == 'Go back':
         raise KeyboardInterrupt
 
-    options_map = {
-        0: SettingsType.BASIC,
-        1: SettingsType.ADVANCED
-    }
+    options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
 
     return options_map.get(index)
 
 
 def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
-    question = step_counter.next_step('Select LLM Provider (TAB for options, CTRL-c to cancel): ')
-    options = list(VERIFIED_MODELS.keys()).copy() + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
+    question = step_counter.next_step(
+        'Select LLM Provider (TAB for options, CTRL-c to cancel): '
+    )
+    options = (
+        list(VERIFIED_MODELS.keys()).copy()
+        + list(UNVERIFIED_MODELS_EXCLUDING_BEDROCK.keys()).copy()
+    )
     alternate_option = 'Select another provider'
 
     display_options = options[:4] + [alternate_option]
@@ -52,7 +52,9 @@ def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
     if display_options[index] != alternate_option:
         return chosen_option
 
-    question = step_counter.existing_step('Type LLM Provider (TAB to complete, CTRL-c to cancel): ')
+    question = step_counter.existing_step(
+        'Type LLM Provider (TAB to complete, CTRL-c to cancel): '
+    )
     return cli_text_input(
         question, escapable=True, completer=FuzzyWordCompleter(options, WORD=True)
     )
@@ -61,7 +63,9 @@ def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:
 def choose_llm_model(step_counter: StepCounter, provider: str, escapable=True) -> str:
     """Choose LLM model using spec-driven approach. Return (model, deferred)."""
 
-    models = VERIFIED_MODELS.get(provider, []) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
+    models = VERIFIED_MODELS.get(
+        provider, []
+    ) + UNVERIFIED_MODELS_EXCLUDING_BEDROCK.get(provider, [])
 
     if provider == 'openhands':
         question = (
@@ -69,7 +73,9 @@ def choose_llm_model(step_counter: StepCounter, provider: str, escapable=True) -
             + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
         )
     else:
-        question = step_counter.next_step('Select LLM Model (TAB for options, CTRL-c to cancel): ')
+        question = step_counter.next_step(
+            'Select LLM Model (TAB for options, CTRL-c to cancel): '
+        )
     alternate_option = 'Select another model'
     display_options = models[:4] + [alternate_option]
     index = cli_confirm(question, display_options, escapable=escapable)
@@ -78,25 +84,26 @@ def choose_llm_model(step_counter: StepCounter, provider: str, escapable=True) -
     if chosen_option != alternate_option:
         return chosen_option
 
-    question = step_counter.existing_step('Type model id (TAB to complete, CTRL-c to cancel): ')
+    question = step_counter.existing_step(
+        'Type model id (TAB to complete, CTRL-c to cancel): '
+    )
 
     return cli_text_input(
         question, escapable=True, completer=FuzzyWordCompleter(models, WORD=True)
     )
 
 
-
 def prompt_api_key(
     step_counter: StepCounter,
     provider: str,
     existing_api_key: SecretStr | None = None,
-    escapable=True
+    escapable=True,
 ) -> str:
     helper_text = (
-        "\nYou can find your OpenHands LLM API Key in the API Keys tab of OpenHands Cloud: "
-        "https://app.all-hands.dev/settings/api-keys\n"
-        if provider == "openhands"
-        else ""
+        '\nYou can find your OpenHands LLM API Key in the API Keys tab of OpenHands Cloud: '
+        'https://app.all-hands.dev/settings/api-keys\n'
+        if provider == 'openhands'
+        else ''
     )
 
     if existing_api_key:
@@ -110,25 +117,29 @@ def prompt_api_key(
         validator = NonEmptyValueValidator()
 
     question = helper_text + step_counter.next_step(question)
-    return cli_text_input(question, escapable=escapable, validator=validator, is_password=True)
+    return cli_text_input(
+        question, escapable=escapable, validator=validator, is_password=True
+    )
 
 
 # Advanced settings functions
 def prompt_custom_model(step_counter: StepCounter, escapable=True) -> str:
     """Prompt for custom model name."""
-    question = step_counter.next_step("Custom Model (CTRL-c to cancel): ")
+    question = step_counter.next_step('Custom Model (CTRL-c to cancel): ')
     return cli_text_input(question, escapable=escapable)
 
 
 def prompt_base_url(step_counter: StepCounter, escapable=True) -> str:
     """Prompt for base URL."""
-    question = step_counter.next_step("Base URL (CTRL-c to cancel): ")
-    return cli_text_input(question, escapable=escapable, validator=NonEmptyValueValidator())
+    question = step_counter.next_step('Base URL (CTRL-c to cancel): ')
+    return cli_text_input(
+        question, escapable=escapable, validator=NonEmptyValueValidator()
+    )
 
 
 def choose_memory_condensation(step_counter: StepCounter, escapable=True) -> bool:
     """Choose memory condensation setting."""
-    question = step_counter.next_step("Memory Condensation (CTRL-c to cancel): ")
+    question = step_counter.next_step('Memory Condensation (CTRL-c to cancel): ')
     choices = ['Enable', 'Disable']
 
     index = cli_confirm(question, choices, escapable=escapable)

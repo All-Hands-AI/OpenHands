@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { handleStatusMessage } from "../actions";
 import { StatusMessage } from "#/types/message";
 import { queryClient } from "#/query-client-config";
-import store from "#/store";
 import { useStatusStore } from "#/state/status-store";
 import { trackError } from "#/utils/error-handler";
 
@@ -10,12 +9,6 @@ import { trackError } from "#/utils/error-handler";
 vi.mock("#/query-client-config", () => ({
   queryClient: {
     invalidateQueries: vi.fn(),
-  },
-}));
-
-vi.mock("#/store", () => ({
-  default: {
-    dispatch: vi.fn(),
   },
 }));
 
@@ -56,9 +49,6 @@ describe("handleStatusMessage", () => {
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["user", "conversation", "conversation-123"],
     });
-
-    // Verify that store.dispatch was not called
-    expect(store.dispatch).not.toHaveBeenCalled();
   });
 
   it("should call setCurStatusMessage for info messages without conversation_title", () => {

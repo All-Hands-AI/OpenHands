@@ -17,7 +17,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = () => renderWithQueryAndI18n(<RouterStub />);
+  const renderConversationPanel = () => renderWithProviders(<RouterStub />);
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
@@ -287,7 +287,7 @@ describe("ConversationPanel", () => {
       },
     ]);
 
-    renderWithQueryAndI18n(<MyRouterStub />);
+    renderWithProviders(<MyRouterStub />);
 
     const toggleButton = screen.getByText("Toggle");
 

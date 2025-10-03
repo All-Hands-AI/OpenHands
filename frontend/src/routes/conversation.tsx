@@ -1,14 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
 import { useEffectOnce } from "#/hooks/use-effect-once";
-import { clearJupyter } from "#/state/jupyter-slice";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { useConversationStore } from "#/state/conversation-store";
-import { setCurrentAgentState } from "#/state/agent-slice";
+import { useAgentStore } from "#/stores/agent-store";
 import { AgentState } from "#/types/agent-state";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
@@ -39,9 +38,12 @@ function AppContent() {
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
   const clearTerminal = useCommandStore((state) => state.clearTerminal);
+  const setCurrentAgentState = useAgentStore(
+    (state) => state.setCurrentAgentState,
+  );
+  const clearJupyter = useJupyterStore((state) => state.clearJupyter);
   const queryClient = useQueryClient();
 
   // Fetch batch feedback data when conversation is loaded
@@ -86,16 +88,21 @@ function AppContent() {
 
   React.useEffect(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    clearJupyter();
     resetConversationState();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
-  }, [conversationId, clearTerminal, resetConversationState]);
+    setCurrentAgentState(AgentState.LOADING);
+  }, [
+    conversationId,
+    clearTerminal,
+    setCurrentAgentState,
+    resetConversationState,
+  ]);
 
   useEffectOnce(() => {
     clearTerminal();
-    dispatch(clearJupyter());
+    clearJupyter();
     resetConversationState();
-    dispatch(setCurrentAgentState(AgentState.LOADING));
+    setCurrentAgentState(AgentState.LOADING);
   });
 
   return (
