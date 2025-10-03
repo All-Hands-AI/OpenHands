@@ -93,7 +93,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='openhands-cli',
+    name='openhands',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,  # Strip debug symbols to reduce size

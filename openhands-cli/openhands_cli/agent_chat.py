@@ -46,7 +46,7 @@ def _print_exit_hint(conversation_id: str) -> None:
     )
     print_formatted_text(
         HTML(
-            f'<grey>Hint:</grey> run <gold>openhands-cli --resume {conversation_id}</gold> '
+            f'<grey>Hint:</grey> run <gold>openhands --resume {conversation_id}</gold> '
             'to resume this conversation.'
         )
     )

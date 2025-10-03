@@ -1614,7 +1614,7 @@ wheels = [
 ]
 
 [[package]]
-name = "openhands-cli"
+name = "openhands"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
@@ -1659,7 +1659,7 @@ dev = [
     { name = "pyinstaller", specifier = ">=6.15" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-cov", specifier = ">=6" },
-    { name = "pytest-forked", specifier = ">=1.6.0" },
+    { name = "pytest-forked", specifier = ">=1.6" },
     { name = "pytest-xdist", specifier = ">=3.6.1" },
     { name = "ruff", specifier = ">=0.11.8" },
 ]

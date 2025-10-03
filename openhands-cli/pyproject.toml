@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = [ "hatchling>=1.25" ]
 
 [project]
-name = "openhands-cli"
+name = "openhands"
 version = "0.1.0"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 # Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands-cli = "openhands_cli.simple_main:main"
+scripts.openhands = "openhands_cli.simple_main:main"
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory

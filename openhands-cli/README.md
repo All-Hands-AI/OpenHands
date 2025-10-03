@@ -22,7 +22,7 @@ make install-pre-commit-hooks
 # Start the CLI
 make run
 # or
-uv run openhands-cli
+uv run openhands
 ```
 
 Tip: Set your model key (one of) so the agent can talk to an LLM:
@@ -38,8 +38,8 @@ export LITELLM_API_KEY=...
 ./build.sh --install-pyinstaller
 
 # The binary will be in dist/
-./dist/openhands-cli            # macOS/Linux
-# dist/openhands-cli.exe        # Windows
+./dist/openhands            # macOS/Linux
+# dist/openhands.exe        # Windows
 ```
 
 For advanced development (adding deps, updating the spec file, debugging builds), see Development.md.

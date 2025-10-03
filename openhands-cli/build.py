@@ -25,7 +25,7 @@ dummy_agent = get_default_agent(
     llm=LLM(
         model='dummy-model',
         api_key='dummy-key',
-        metadata=get_llm_metadata(model_name='dummy-model', agent_name='openhands-cli'),
+        metadata=get_llm_metadata(model_name='dummy-model', agent_name='openhands'),
     ),
     working_dir=WORK_DIR,
     persistence_dir=PERSISTENCE_DIR,
@@ -72,7 +72,7 @@ def check_pyinstaller() -> bool:
 
 
 def build_executable(
-    spec_file: str = 'openhands-cli.spec',
+    spec_file: str = 'openhands.spec',
     clean: bool = True,
 ) -> bool:
     """Build the executable using PyInstaller."""
@@ -143,9 +143,9 @@ def test_executable() -> bool:
         specs_path.parent.mkdir(parents=True, exist_ok=True)
         specs_path.write_text(dummy_agent.model_dump_json())
 
-    exe_path = Path('dist/openhands-cli')
+    exe_path = Path('dist/openhands')
     if not exe_path.exists():
-        exe_path = Path('dist/openhands-cli.exe')
+        exe_path = Path('dist/openhands.exe')
         if not exe_path.exists():
             print('❌ Executable not found!')
             return False
@@ -243,7 +243,7 @@ def main() -> int:
     """Main function."""
     parser = argparse.ArgumentParser(description='Build OpenHands CLI executable')
     parser.add_argument(
-        '--spec', default='openhands-cli.spec', help='PyInstaller spec file to use'
+        '--spec', default='openhands.spec', help='PyInstaller spec file to use'
     )
     parser.add_argument(
         '--no-clean', action='store_true', help='Skip cleaning build directories'
