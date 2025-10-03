@@ -65,11 +65,21 @@ export const useWebSocket = (
     };
   }, [url, options]);
 
+  const sendMessage = React.useCallback(
+    (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        wsRef.current.send(data);
+      }
+    },
+    [],
+  );
+
   return {
     isConnected,
     lastMessage,
     messages,
     error,
     socket: wsRef.current,
+    sendMessage,
   };
 };

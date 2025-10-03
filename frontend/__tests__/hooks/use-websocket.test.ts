@@ -270,4 +270,47 @@ describe("useWebSocket", () => {
     // onError handler should have been called
     expect(onErrorSpy).toHaveBeenCalledOnce();
   });
+
+  it("should provide sendMessage function to send messages to WebSocket", async () => {
+    const { result } = renderHook(() => useWebSocket("ws://acme.com/ws"));
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    // Should have a sendMessage function
+    expect(result.current.sendMessage).toBeDefined();
+    expect(typeof result.current.sendMessage).toBe("function");
+
+    // Mock the WebSocket send method
+    const sendSpy = vi.spyOn(result.current.socket!, "send");
+
+    // Send a message
+    result.current.sendMessage("Hello WebSocket!");
+
+    // Verify that WebSocket.send was called with the correct message
+    expect(sendSpy).toHaveBeenCalledOnce();
+    expect(sendSpy).toHaveBeenCalledWith("Hello WebSocket!");
+  });
+
+  it("should not send message when WebSocket is not connected", () => {
+    const { result } = renderHook(() => useWebSocket("ws://acme.com/ws"));
+
+    // Initially should not be connected
+    expect(result.current.isConnected).toBe(false);
+    expect(result.current.sendMessage).toBeDefined();
+
+    // Mock the WebSocket send method (even though socket might be null)
+    const sendSpy = vi.fn();
+    if (result.current.socket) {
+      vi.spyOn(result.current.socket, "send").mockImplementation(sendSpy);
+    }
+
+    // Try to send a message when not connected
+    result.current.sendMessage("Hello WebSocket!");
+
+    // Verify that WebSocket.send was not called
+    expect(sendSpy).not.toHaveBeenCalled();
+  });
 });
