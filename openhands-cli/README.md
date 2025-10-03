@@ -1,6 +1,10 @@
-# OpenHands CLI
+# OpenHands V1 CLI
 
-A lightweight CLI to interact with the OpenHands agent (powered by agent-sdk). Build and run locally or as a single executable.
+A **lightweight, modern CLI** to interact with the OpenHands agent (powered by [agent-sdk](https://github.com/All-Hands-AI/agent-sdk)). 
+
+The [OpenHands V0 CLI (legacy)](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/cli) is being deprecated.
+
+---
 
 ## Quickstart
 
