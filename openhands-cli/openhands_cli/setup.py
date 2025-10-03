@@ -4,7 +4,7 @@ from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import BaseConversation, Conversation, Workspace, register_tool
 from openhands.tools.execute_bash import BashTool
-from openhands.tools.str_replace_editor import FileEditorTool
+from openhands.tools.file_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands_cli.listeners import LoadingContext
 from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
