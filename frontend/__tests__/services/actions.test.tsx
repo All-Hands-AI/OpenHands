@@ -37,14 +37,6 @@ vi.mock("#/state/security-analyzer-slice", () => ({
   appendSecurityAnalyzerInput: vi.fn(),
 }));
 
-vi.mock("#/state/metrics-slice", () => ({
-  setMetrics: vi.fn(),
-}));
-
-vi.mock("#/state/security-analyzer-slice", () => ({
-  appendSecurityAnalyzerInput: vi.fn(),
-}));
-
 describe("handleActionMessage", () => {
   beforeEach(() => {
     // Clear all mocks before each test

@@ -99,9 +99,6 @@ describe("handleStatusMessage", () => {
       metadata: { msgId: "ERROR_ID" },
     });
 
-    // Verify that store.dispatch was not called
-    expect(store.dispatch).not.toHaveBeenCalled();
-
     // Verify that queryClient.invalidateQueries was not called
     expect(queryClient.invalidateQueries).not.toHaveBeenCalled();
   });

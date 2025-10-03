@@ -37,7 +37,7 @@ jobs:
           npm run make-i18n && tsc
           npm run check-translation-completeness
 
-  # Run lint on the python code (excluding CLI and enterprise)
+  # Run lint on the python code
   lint-python:
     name: Lint python
     runs-on: blacksmith-4vcpu-ubuntu-2204
