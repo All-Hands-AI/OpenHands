@@ -6,15 +6,11 @@ import sys
 # Other imports are deferred until they're actually needed
 import openhands
 import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.cli.deprecation_warning import display_deprecation_warning_with_delay
 from openhands.cli.fast_help import handle_fast_commands
 
 
 def main():
     """Main entry point with subcommand support and backward compatibility."""
-    # Display deprecation warning at the very beginning
-    display_deprecation_warning_with_delay()
-
     # Fast path for help and version commands
     if handle_fast_commands():
         sys.exit(0)

@@ -1,7 +1,6 @@
 """Deprecation warning utilities for the old OpenHands CLI."""
 
 import sys
-import time
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
@@ -15,9 +14,6 @@ def display_deprecation_warning() -> None:
         '',
         'This CLI interface is deprecated and will be removed in a future version.',
         'Please migrate to the new OpenHands CLI:',
-        '',
-        '  • Install: pip install openhands-cli',
-        '  • Run: openhands',
         '',
         'For more information, visit: https://docs.all-hands.dev/usage/how-to/cli-mode',
         '',
@@ -40,10 +36,3 @@ def display_deprecation_warning() -> None:
 
     # Flush to ensure immediate display
     sys.stdout.flush()
-
-
-def display_deprecation_warning_with_delay() -> None:
-    """Display deprecation warning with a brief pause to ensure visibility."""
-    display_deprecation_warning()
-    # Brief pause to ensure the warning is visible before any screen clearing
-    time.sleep(1.5)
