@@ -6,6 +6,8 @@ from openhands.app_server.user.user_models import (
 )
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
+
 
 class UserService(ABC):
     """Service for managing users."""
@@ -13,11 +15,23 @@ class UserService(ABC):
     # Read methods
 
     @abstractmethod
-    async def get_current_user(self) -> UserInfo:
-        """Get the current user. Raises an auth error if not logged in."""
+    async def get_user_id(self) -> str:
+        """Get the user id"""
+
+    @abstractmethod
+    async def get_user_info(self) -> UserInfo:
+        """Get the user info."""
+
+    @abstractmethod
+    async def get_authenticated_git_url(self, repository: str) -> str:
+        """Get the provider tokens for the user"""
+
+    @abstractmethod
+    async def get_latest_token(self, provider_type: ProviderType) -> str | None:
+        """ Get the latest token for the provider type given"""
 
 
 class UserServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_resolver_for_user(self) -> Callable:
-        """Get a resolver for instance of user service limited to the current user."""
+    def get_resolver_for_current_user(self) -> Callable:
+        """Get a resolver for instances of user service limited to the current user."""

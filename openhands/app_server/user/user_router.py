@@ -8,7 +8,7 @@ from openhands.app_server.user.user_service import UserService
 
 router = APIRouter(prefix='/users', tags=['User'])
 user_service_dependency = Depends(
-    get_dependency_resolver().user.get_resolver_for_user()
+    get_dependency_resolver().user.get_resolver_for_current_user()
 )
 
 # Read methods
@@ -19,7 +19,7 @@ async def get_current_user(
     user_service: UserService = user_service_dependency,
 ) -> UserInfo:
     """Get the current authenticated user."""
-    user = await user_service.get_current_user()
+    user = await user_service.get_user_info()
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail='Not authenticated')
     return user

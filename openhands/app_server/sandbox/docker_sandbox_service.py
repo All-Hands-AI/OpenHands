@@ -29,7 +29,7 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceResolver,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
-from openhands.app_server.user.legacy_user_service import DEFAULT_USER
+from openhands.app_server.user.legacy_user_service import ROOT_USER
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -278,7 +278,7 @@ class DockerSandboxService(SandboxService):
         env_vars[SESSION_API_KEY_VARIABLE] = session_api_key
         env_vars[WEBHOOK_CALLBACK_VARIABLE] = (
             f'http://host.docker.internal:{self.host_port}'
-            f'/api/v1/event-webhooks/{container_name}'
+            f'/api/v1/webhooks/{container_name}'
         )
 
         # Prepare port mappings and add port environment variables
@@ -291,7 +291,7 @@ class DockerSandboxService(SandboxService):
 
         # Prepare labels
         labels = {
-            'created_by_user_id': DEFAULT_USER,
+            'created_by_user_id': ROOT_USER,
             'sandbox_spec_id': sandbox_spec.id,
         }
 
@@ -417,7 +417,7 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
         ),
     )
 
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         # Docker sandboxes are designed for a single user and
         # don't have security constraints
         return self.get_unsecured_resolver()

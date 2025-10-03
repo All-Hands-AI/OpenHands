@@ -14,7 +14,7 @@ from openhands.sdk import Event
 
 router = APIRouter(prefix='/events', tags=['Events'])
 event_service_dependency = Depends(
-    get_dependency_resolver().event.get_resolver_for_user()
+    get_dependency_resolver().event.get_resolver_for_current_user()
 )
 
 

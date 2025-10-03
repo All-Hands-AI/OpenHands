@@ -33,10 +33,10 @@ class AppConversationStartTaskService(ABC):
     @abstractmethod
     async def save_app_conversation_start_task(
         self, info: AppConversationStartTask
-    ) -> bool:
+    ) -> AppConversationStartTask:
         """Store the start task object given.
 
-        Return true if it was stored, false otherwise.
+        Return the stored task
         """
 
 
@@ -46,5 +46,5 @@ class AppConversationStartTaskServiceResolver(DiscriminatedUnionMixin, ABC):
         """Get a resolver for an instance of app conversation start task service."""
 
     @abstractmethod
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for an instance of app conversation start task service limited to the current user."""

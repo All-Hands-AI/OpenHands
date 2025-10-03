@@ -87,12 +87,12 @@ class AppConversationService(ABC):
         Typically used to poll and determine if a conversation started."""
 
     @abstractmethod
-    async def run_setup_scripts(self, task: AppConversationStartTask, workspace: Workspace, workspace_dir: str) -> AsyncGenerator[AppConversationStartTask, None]:
+    async def run_setup_scripts(self, task: AppConversationStartTask, workspace: Workspace) -> AsyncGenerator[AppConversationStartTask, None]:
         """Run the setup scripts for the project and yield status updates"""
         yield task
 
 
 class AppConversationServiceResolver(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for an instance of sandbox spec service limited to the current user."""

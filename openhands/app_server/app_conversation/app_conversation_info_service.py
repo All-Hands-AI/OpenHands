@@ -60,10 +60,10 @@ class AppConversationInfoService(ABC):
     # Mutators
 
     @abstractmethod
-    async def save_app_conversation_info(self, info: AppConversationInfo) -> bool:
+    async def save_app_conversation_info(self, info: AppConversationInfo) -> AppConversationInfo:
         """Store the sandboxed conversation info object given.
 
-        Return true if it was stored, false otherwise.
+        Return the stored info
         """
 
 
@@ -73,5 +73,5 @@ class AppConversationInfoServiceResolver(DiscriminatedUnionMixin, ABC):
          """Get an instance of app conversation info service."""
 
     @abstractmethod
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         """Get an instance of app conversation info service limited to the current user."""

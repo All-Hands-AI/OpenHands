@@ -13,7 +13,7 @@ from openhands.app_server.sandbox.sandbox_service import (
 
 router = APIRouter(prefix='/sandboxes', tags=['Sandbox'])
 sandbox_service_dependency = Depends(
-    get_dependency_resolver().sandbox.get_resolver_for_user()
+    get_dependency_resolver().sandbox.get_resolver_for_current_user()
 )
 
 # Read methods

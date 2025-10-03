@@ -65,7 +65,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         limit: int = 100,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations without permission checks."""
-        query = select(AppConversationInfo)
+        query = self._secure_select()
 
         query = self._apply_filters(
             query=query,
@@ -131,7 +131,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         updated_at__lt: datetime | None = None,
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
-        query = select(func.count(AppConversationInfo.id))
+        query = self._secure_select()
 
         query = self._apply_filters(
             query=query,
@@ -181,7 +181,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def get_app_conversation_info(
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
-        query = select(AppConversationInfo).where(
+        query = self._secure_select().where(
             AppConversationInfo.id == conversation_id
         )
         result_set = await self.session.execute(query)
@@ -191,7 +191,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def batch_get_app_conversation_info(
         self, conversation_ids: list[UUID]
     ) -> list[AppConversationInfo | None]:
-        query = select(AppConversationInfo).where(
+        query = self._secure_select().where(
             AppConversationInfo.id.in_(conversation_ids)  # type: ignore
         )
         rows = await self.session.execute(query)
@@ -204,9 +204,19 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
+        if self.user_id:
+            result = await self.session.execute(AppConversationInfo.id == info.id)
+            existing: AppConversationInfo = result.scalar_one_or_none()
+            assert existing is None or existing.created_by_user_id == self.user_id
         await self.session.merge(info)
         await self.session.commit()
         return info
+
+    def _secure_select(self):
+        query = select(AppConversationInfo)
+        if self.user_id:
+            query = query.where(AppConversationInfo.created_by_user_id == self.user_id)
+        return query
 
 
 class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
@@ -219,20 +229,18 @@ class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
 
         return resolve_app_conversation_service
 
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
 
         from openhands.app_server.dependency import get_dependency_resolver
 
-        user_service_resolver = get_dependency_resolver().user.get_resolver_for_user()
+        user_service_resolver = get_dependency_resolver().user.get_resolver_for_current_user()
 
         def resolve_app_conversation_service(
             user_service: UserService = Depends(user_service_resolver),
             session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationInfoService:
-            current_user = user_service.get_current_user()
-            if current_user is None:
-                raise AuthError('Not logged in!')
+            current_user = user_service.get_user_info()
             service = SQLAppConversationInfoService(session=session)
             return service
 

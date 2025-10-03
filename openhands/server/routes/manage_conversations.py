@@ -89,7 +89,7 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = Depends(
-    get_dependency_resolver().app_conversation.get_resolver_for_user()
+    get_dependency_resolver().app_conversation.get_resolver_for_current_user()
 )
 
 

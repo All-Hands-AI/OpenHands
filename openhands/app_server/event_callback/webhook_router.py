@@ -2,9 +2,10 @@
 
 import asyncio
 import logging
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import APIKeyHeader
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,7 +24,10 @@ from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.sdk import Event
 
-router = APIRouter(prefix='/event-webhooks', tags=['Event Callbacks'])
+from openhands.app_server.user.user_admin_service import UserAdminService
+from openhands.integrations.provider import ProviderType
+
+router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
 sandbox_service_dependency = Depends(
     get_dependency_resolver().sandbox.get_unsecured_resolver()
 )
@@ -35,6 +39,9 @@ event_callback_service_dependency = Depends(
 )
 app_conversation_info_service_dependency = Depends(
     get_dependency_resolver().app_conversation_info.get_unsecured_resolver()
+)
+user_admin_service_dependency = Depends(
+    get_dependency_resolver().user_admin.get_unsecured_resolver()
 )
 _logger = logging.getLogger(__name__)
 
@@ -106,6 +113,21 @@ async def on_event(
         _logger.exception('Error in webhook', stack_info=True)
 
     return Success()
+
+@router.get('/secrets')
+async def get_secret(
+    provider_type: ProviderType,
+    sandbox_info: SandboxInfo = Depends(valid_sandbox),
+    user_admin_service: UserAdminService = app_conversation_info_service_dependency,
+) -> str:
+    # The sandbox has access to the secrets of the user who created it
+    user_service = await user_admin_service.get_user_service(sandbox_info.created_by_user_id)
+    secret = None
+    if user_service:
+        secret = await user_service.get_latest_token(provider_type)
+    if secret is None:
+        raise HTTPException(404, "No such provider")
+    return secret
 
 
 async def _run_callbacks_in_bg_and_close(

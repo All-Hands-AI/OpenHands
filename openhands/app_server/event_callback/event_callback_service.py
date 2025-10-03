@@ -74,5 +74,5 @@ class EventCallbackServiceResolver(DiscriminatedUnionMixin, ABC):
         """Get a resolver for an instance of event callback service."""
 
     @abstractmethod
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for an instance of event callback service limited to the current user."""

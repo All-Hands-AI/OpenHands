@@ -6,45 +6,71 @@ from fastapi import Depends, Request
 from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_models import UserInfo
 from openhands.app_server.user.user_service import UserService, UserServiceResolver
-from openhands.server.user_auth import get_user_id, get_user_settings
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler, ProviderType
+from openhands.server.user_auth import get_provider_tokens, get_user_id, get_user_settings
+from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
 from openhands.storage.data_models.settings import Settings
 
 # In legacy mode for OSS, there is only a single unconstrained user
-DEFAULT_USER = 'root'
+ROOT_USER = 'root'
 
 
 @dataclass
 class LegacyUserService(UserService):
-    """Interface to old user settings service."""
+    """Interface to old user settings service. Eventually we want to migrate
+    this to use true database asyncio. """
 
-    user_id: str | None
-    settings: Settings
+    user_auth: UserAuth
+    _user_info: UserInfo | None = None
+    _provider_handler: ProviderHandler | None = None
 
-    async def get_current_user(self) -> UserInfo:
-        if self.user_id is None:
-            raise AuthError()
-        return UserInfo(
-            id=self.user_id,
-            **self.settings.model_dump(context={'expose_secrets': True}),
-        )
+    async def get_user_id(self) -> str:
+        # If you have an auth object here you are logged in. If user_id is None
+        # it means we are in OSS mode.
+        user_id = (await self.user_auth.get_user_id()) or ROOT_USER
+        return user_id
+
+    async def get_user_info(self) -> UserInfo:
+        user_info = self._user_info
+        if user_info is None:
+            user_id = await self.get_user_id()
+            settings = await self.user_auth.get_user_settings()
+            assert settings is not None
+            user_info = UserInfo(
+                id=user_id,
+                **settings.model_dump(context={'expose_secrets': True}),
+            )
+            self._user_info = user_info
+        return user_info
+
+    async def get_provider_handler(self):
+        provider_handler = self._provider_handler
+        if not provider_handler:
+            provider_tokens = await self.user_auth.get_provider_tokens()
+            assert provider_tokens is not None
+            user_id = await self.get_user_id()
+            provider_handler = ProviderHandler(provider_tokens=provider_tokens, external_auth_id=user_id)
+            self._provider_handler = provider_handler
+        return provider_handler
+
+    async def get_authenticated_git_url(self, repository: str) -> str:
+        provider_handler = await self.get_provider_handler()
+        url = await provider_handler.get_authenticated_git_url(repository)
+        return url
+
+    async def get_latest_token(self, provider_type: ProviderType) -> str | None:
+        provider_handler = await self.get_provider_handler()
+        service = provider_handler.get_service(provider_type)
+        token = await service.get_latest_token()
+        return token
 
 
 class LegacyUserServiceResolver(UserServiceResolver):
-    def get_resolver_for_user(self) -> Callable:
-        return self._resolve_for_user
+    def get_resolver_for_current_user(self) -> Callable:
+        return resolve_for_user
 
-    def _resolve_for_user(
-        self,
-        request: Request,
-        user_id: str | None = Depends(get_user_id),
-        settings: Settings = Depends(get_user_settings),
-    ) -> UserService:
-        user_service = getattr(request.state, 'user_service', None)
-        if user_service:
-            return user_service
-        # In the existing OSS, no user is permitted - but it is not in SAAS.
-        if user_id is None and settings is not None:
-            user_id = DEFAULT_USER
-        user_service = LegacyUserService(user_id, settings)
-        setattr(request.state, 'user_service', user_service)
-        return user_service
+
+def resolve_for_user(
+    user_auth: UserAuth = Depends(get_user_auth),
+) -> UserService:
+    return LegacyUserService(user_auth=user_auth)

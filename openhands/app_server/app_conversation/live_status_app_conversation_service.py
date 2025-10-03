@@ -144,9 +144,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
         self, request: AppConversationStartRequest
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         # Create and yield the start task
-        user = await self.user_service.get_current_user()
+        user_id = await self.user_service.get_user_id()
         task = AppConversationStartTask(
-            created_by_user_id=user.id,
+            created_by_user_id=user_id,
             request=request,
         )
         yield task
@@ -168,7 +168,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 host=agent_server_url,
                 api_key=sandbox.session_api_key,
             )
-            async for updated_task in self.run_setup_scripts(task, user, workspace):
+            async for updated_task in self.run_setup_scripts(task, workspace):
                 yield updated_task
 
             # Build the start request
@@ -196,12 +196,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             info = ConversationInfo.model_validate(response.json())
 
             # Store info...
-            user = await self.user_service.get_current_user()
+            user_id = await self.user_service.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
                 title=f'Conversation {info.id}',
                 sandbox_id=sandbox.id,
-                created_by_user_id=user.id,
+                created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
                 # TODO: Lots of git parameters required
             )
@@ -405,9 +405,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
     async def _build_start_conversation_request_for_user(
         self, initial_message: SendMessageRequest | None
     ) -> StartConversationRequest:
-        user = await self.user_service.get_current_user()
-        if user is None:
-            raise AuthError()
+        user = await self.user_service.get_user_info()
 
         # Hack - because the workspace tries to create the dir on post init
         # we create one in cwd then set it afterwards
@@ -444,15 +442,15 @@ class LiveStatusAppConversationServiceResolver(AppConversationServiceResolver):
         description='Whether to initialize a git repo when the workspace is empty'
     )
 
-    def get_resolver_for_user(self) -> Callable:
-        user_service_resolver = get_dependency_resolver().user.get_resolver_for_user()
+    def get_resolver_for_current_user(self) -> Callable:
+        user_service_resolver = get_dependency_resolver().user.get_resolver_for_current_user()
         sandbox_service_resolver = (
-            get_dependency_resolver().sandbox.get_resolver_for_user()
+            get_dependency_resolver().sandbox.get_resolver_for_current_user()
         )
         sandbox_conversation_info_service_resolver = (
-            get_dependency_resolver().app_conversation_info.get_resolver_for_user()
+            get_dependency_resolver().app_conversation_info.get_resolver_for_current_user()
         )
-        sandbox_conversation_start_task_service_resolver = get_dependency_resolver().app_conversation_start_task.get_resolver_for_user()
+        sandbox_conversation_start_task_service_resolver = get_dependency_resolver().app_conversation_start_task.get_resolver_for_current_user()
 
         def _resolve_for_user(
             user_service: UserService = Depends(user_service_resolver),

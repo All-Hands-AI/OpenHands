@@ -128,7 +128,7 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 
 class DockerSandboxSpecServiceResolver(SandboxSpecServiceResolver):
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         # Docker sandboxes are designed for a single user and
         # don't have security constraints
         return self.get_unsecured_resolver()

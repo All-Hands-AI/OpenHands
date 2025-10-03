@@ -47,6 +47,7 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
     This allows storing and retrieving conversation start tasks from the database."""
 
     session: AsyncSession
+    user_id: str | None = None
 
     async def batch_get_app_conversation_start_tasks(
         self, task_ids: list[UUID]
@@ -58,6 +59,8 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         query = select(AppConversationStartTask).where(
             AppConversationStartTask.id.in_(task_ids)  # type: ignore
         )
+        if self.user_id:
+            query = query.where(AppConversationStartTask.created_by_user_id == self.user_id)
 
         result = await self.session.execute(query)
         tasks_by_id = {task.id: task for task in result.scalars().all()}
@@ -72,25 +75,23 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         query = select(AppConversationStartTask).where(
             AppConversationStartTask.id == task_id
         )
+        if self.user_id:
+            query = query.where(AppConversationStartTask.created_by_user_id == self.user_id)
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def save_app_conversation_start_task(
         self, task: AppConversationStartTask
-    ) -> bool:
-        """Store the start task object given.
-
-        Return true if it was stored, false otherwise.
-        """
-        try:
-            task.updated_at = utc_now()
-            await self.session.merge(task)
-            await self.session.commit()
-            return True
-        except Exception:
-            logger.exception(f'Failed to save conversation start task {task.id}', stack_info=True)
-            return False
+    ) -> AppConversationStartTask:
+        if self.user_id:
+            result = await self.session.execute(AppConversationStartTask.id == task.id)
+            existing: AppConversationStartTask = result.scalar_one_or_none()
+            assert existing is None or existing.created_by_user_id == self.user_id
+        task.updated_at = utc_now()
+        await self.session.merge(task)
+        await self.session.commit()
+        return task
 
 
 class SQLAppConversationStartTaskServiceResolver(
@@ -105,21 +106,19 @@ class SQLAppConversationStartTaskServiceResolver(
 
         return resolve_app_conversation_start_task_service
 
-    def get_resolver_for_user(self) -> Callable:
+    def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
 
         from openhands.app_server.dependency import get_dependency_resolver
 
-        user_service_resolver = get_dependency_resolver().user.get_resolver_for_user()
+        user_service_resolver = get_dependency_resolver().user.get_resolver_for_current_user()
 
-        def resolve_app_conversation_start_task_service(
+        async def resolve_app_conversation_start_task_service(
             user_service: UserService = Depends(user_service_resolver),
             session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationStartTaskService:
-            current_user = user_service.get_current_user()
-            if current_user is None:
-                raise AuthError('Not logged in!')
-            service = SQLAppConversationStartTaskService(session=session)
+            user_id = await user_service.get_user_id()
+            service = SQLAppConversationStartTaskService(session=session, user_id=user_id)
             return service
 
         return resolve_app_conversation_start_task_service

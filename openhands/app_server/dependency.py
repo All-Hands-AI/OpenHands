@@ -18,6 +18,7 @@ from openhands.app_server.event_callback.event_callback_service import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxServiceResolver
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceResolver
+from openhands.app_server.user.user_admin_service import UserAdminServiceResolver
 from openhands.app_server.user.user_service import UserServiceResolver
 
 
@@ -33,6 +34,7 @@ class DependencyResolver:
     app_conversation_start_task: AppConversationStartTaskServiceResolver
     app_conversation: AppConversationServiceResolver
     user: UserServiceResolver
+    user_admin: UserAdminServiceResolver
 
 
 _dependency_resolver: DependencyResolver | None = None
@@ -56,6 +58,7 @@ def get_dependency_resolver():
             app_conversation=config.app_conversation
             or _get_app_conversation_service_resolver(),
             user=config.user or _get_user_service_resolver(),
+            user_admin=config.user_admin or _get_user_admin_service_resolver(),
         )
     return _dependency_resolver
 
@@ -133,3 +136,11 @@ def _get_user_service_resolver():
     )
 
     return LegacyUserServiceResolver()
+
+
+def _get_user_admin_service_resolver():
+    from openhands.app_server.user.legacy_user_admin_service import (
+        LegacyUserAdminServiceResolver,
+    )
+
+    return LegacyUserAdminServiceResolver()
