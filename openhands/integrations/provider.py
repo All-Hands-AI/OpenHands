@@ -338,6 +338,26 @@ class ProviderHandler:
                 unique_repos.append(repo)
         return unique_repos
 
+    def _infer_provider_from_repo_name(self, repo_name: str) -> ProviderType:
+        """Infer the git provider from repository name or URL.
+
+        Args:
+            repo_name: Repository name or URL
+
+        Returns:
+            Inferred ProviderType, defaults to GitHub if cannot determine
+        """
+        repo_lower = repo_name.lower()
+
+        # Check for provider domains in the repo name/URL
+        if 'gitlab.com' in repo_lower or 'gitlab' in repo_lower:
+            return ProviderType.GITLAB
+        elif 'bitbucket.org' in repo_lower or 'bitbucket' in repo_lower:
+            return ProviderType.BITBUCKET
+        else:
+            # Default to GitHub for unknown or github.com
+            return ProviderType.GITHUB
+
     async def set_event_stream_secrets(
         self,
         event_stream: EventStream,
@@ -634,13 +654,24 @@ class ProviderHandler:
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
+        # Initialize variables with defaults
+        provider = self._infer_provider_from_repo_name(repo_name)
+        # Keep the original repo_name as provided by default
+
         try:
             repository = await self.verify_repo_provider(repo_name)
+            # Update with verified information if successful
+            provider = repository.git_provider
+            repo_name = repository.full_name
         except AuthenticationError:
             raise Exception('Git provider authentication issue when getting remote URL')
-
-        provider = repository.git_provider
-        repo_name = repository.full_name
+        except Exception as e:
+            # Handle network errors by falling back to public URL
+            logger.warning(
+                f'Repository verification failed (possibly offline): {e}. '
+                f'Using public HTTPS URL for repository: {repo_name}'
+            )
+            # Use the inferred provider and original repo_name (already set above)
 
         domain = self.PROVIDER_DOMAINS[provider]
 
