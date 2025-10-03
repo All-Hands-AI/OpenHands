@@ -33,8 +33,54 @@ def main() -> None:
         type=str,
         help='Conversation ID to use for the session. If not provided, a random UUID will be generated.',
     )
+    parser.add_argument(
+        '--acp',
+        action='store_true',
+        help=(
+            'Run in ACP (Agent Client Protocol) mode for editor integration. '
+            'Uses the same configuration and persistence directory as the CLI (~/.openhands/conversations).'
+        ),
+    )
 
     args = parser.parse_args()
+
+    # Handle ACP mode
+    if args.acp:
+        import asyncio
+        import sys
+
+        from openhands_cli.acp.server import run_acp_server
+        from openhands_cli.locations import CONVERSATIONS_DIR
+
+        # In ACP mode, all non-JSON-RPC output must go to stderr
+        # to avoid interfering with JSON-RPC communication on stdout
+        print_formatted_text(
+            HTML('<green>Starting OpenHands in ACP mode...</green>'),
+            file=sys.stderr,
+        )
+        print_formatted_text(
+            HTML(
+                f'<grey>Using same persistence directory as CLI: {CONVERSATIONS_DIR}</grey>'
+            ),
+            file=sys.stderr,
+        )
+
+        try:
+            # Use same persistence directory as CLI
+            asyncio.run(run_acp_server(persistence_dir=None))
+        except KeyboardInterrupt:
+            print_formatted_text(
+                HTML('\n<yellow>ACP server stopped.</yellow>'), file=sys.stderr
+            )
+        except Exception as e:
+            print_formatted_text(
+                HTML(f'<red>Error running ACP server: {e}</red>'), file=sys.stderr
+            )
+            import traceback
+
+            traceback.print_exc()
+            raise
+        return
 
     try:
         # Start agent chat

@@ -13,7 +13,6 @@ from acp.schema import (
     ToolCallContent1,
     ToolCallLocation,
 )
-
 from openhands.agent_server.pub_sub import Subscriber
 from openhands.sdk import ImageContent, TextContent
 from openhands.sdk.event.base import LLMConvertibleEvent
@@ -25,7 +24,6 @@ from openhands.sdk.event.llm_convertible.observation import (
 )
 
 from .utils import get_tool_kind
-
 
 if TYPE_CHECKING:
     from acp import AgentSideConnection
@@ -107,7 +105,7 @@ class EventSubscriber(Subscriber):
         if isinstance(event, ActionEvent):
             await self._handle_action_event(event)
         elif isinstance(
-            event, (ObservationEvent, UserRejectObservation, AgentErrorEvent)
+            event, ObservationEvent | UserRejectObservation | AgentErrorEvent
         ):
             await self._handle_observation_event(event)
         elif isinstance(event, LLMConvertibleEvent):
@@ -182,8 +180,8 @@ class EventSubscriber(Subscriber):
                         if action_viz.strip()
                         else None,
                         locations=locations,
-                        rawInput=event.tool_call.function.arguments
-                        if hasattr(event.tool_call.function, "arguments")
+                        rawInput=event.tool_call.arguments
+                        if hasattr(event.tool_call, "arguments")
                         else None,
                     ),
                 )
@@ -209,12 +207,19 @@ class EventSubscriber(Subscriber):
             raw_output = None
             if isinstance(event, ObservationEvent):
                 # Extract content from observation for raw output
+                # Use observation.content directly, not to_llm_content which includes
+                # prefix messages like "[Tool 'xyz' executed.]"
+                obs_content = (
+                    event.observation.content
+                    if hasattr(event.observation, "content")
+                    else event.observation.to_llm_content
+                )
                 content_parts = []
-                for item in event.observation.to_llm_content:
+                for item in obs_content:
                     if isinstance(item, TextContent):
                         content_parts.append(item.text)
                     elif hasattr(item, "text") and not isinstance(item, ImageContent):
-                        content_parts.append(getattr(item, "text"))
+                        content_parts.append(item.text)
                     else:
                         content_parts.append(str(item))
                 content_text = "".join(content_parts)

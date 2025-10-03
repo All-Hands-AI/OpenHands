@@ -7,6 +7,18 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "agent-client-protocol"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1b/0c/bdd2015359674b60166723eada707c1fc0dafa95dd635ba7ae63025a84f3/agent_client_protocol-0.3.0.tar.gz", hash = "sha256:d85a9580ff5b1dba5cc21a70d03e11c741e414d1c65f1f80b709b3329954cb55", size = 190670, upload-time = "2025-09-30T04:01:34.57Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/e6/3d3491da6337ecd17dd44f80029017b6b82a7a633e08e708b684942f4808/agent_client_protocol-0.3.0-py3-none-any.whl", hash = "sha256:c950d0498cdc091363afac82c2816af16f6e74b7cbfec464b3066948cb916243", size = 19309, upload-time = "2025-09-30T04:01:33.185Z" },
+]
+
+[[package]]
 name = "aiofiles"
 version = "24.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1618,6 +1630,7 @@ name = "openhands"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "agent-client-protocol" },
     { name = "openhands-sdk" },
     { name = "openhands-tools" },
     { name = "prompt-toolkit" },
@@ -1634,6 +1647,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pyinstaller" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-forked" },
     { name = "pytest-xdist" },
@@ -1642,8 +1656,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=3ce74a16565be0e3f7e7617174bd0323e866597f" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=3ce74a16565be0e3f7e7617174bd0323e866597f" },
+    { name = "agent-client-protocol", specifier = ">=0.1.0" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=d531c4b679f11c282be78d46022441afa967e5a5" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=d531c4b679f11c282be78d46022441afa967e5a5" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1658,6 +1673,7 @@ dev = [
     { name = "pre-commit", specifier = ">=4.3" },
     { name = "pyinstaller", specifier = ">=6.15" },
     { name = "pytest", specifier = ">=8.4.1" },
+    { name = "pytest-asyncio", specifier = ">=0.23" },
     { name = "pytest-cov", specifier = ">=6" },
     { name = "pytest-forked", specifier = ">=1.6" },
     { name = "pytest-xdist", specifier = ">=3.6.1" },
@@ -1667,7 +1683,7 @@ dev = [
 [[package]]
 name = "openhands-sdk"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=3ce74a16565be0e3f7e7617174bd0323e866597f#3ce74a16565be0e3f7e7617174bd0323e866597f" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=d531c4b679f11c282be78d46022441afa967e5a5#d531c4b679f11c282be78d46022441afa967e5a5" }
 dependencies = [
     { name = "fastmcp" },
     { name = "litellm" },
@@ -1681,7 +1697,7 @@ dependencies = [
 [[package]]
 name = "openhands-tools"
 version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=3ce74a16565be0e3f7e7617174bd0323e866597f#3ce74a16565be0e3f7e7617174bd0323e866597f" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=d531c4b679f11c282be78d46022441afa967e5a5#d531c4b679f11c282be78d46022441afa967e5a5" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
@@ -4856,6 +4872,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a3/5c/00a0e072241553e1a7496d638deababa67c5058571567b92a7eaa258397c/pytest-8.4.2.tar.gz", hash = "sha256:86c0d0b93306b961d58d62a4db4879f27fe25513d4b969df351abdddb3c30e01", size = 1519618, upload-time = "2025-09-04T14:34:22.711Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/a4/20da314d277121d6534b3a980b29035dcd51e6744bd79075a6ce8fa4eb8d/pytest-8.4.2-py3-none-any.whl", hash = "sha256:872f880de3fc3a5bdc88a11b39c9710c3497a547cfa9320bc3c5e62fbf272e79", size = 365750, upload-time = "2025-09-04T14:34:20.226Z" },
+]
+
+[[package]]
+name = "pytest-asyncio"
+version = "1.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/86/9e3c5f48f7b7b638b216e4b9e645f54d199d7abbbab7a64a13b4e12ba10f/pytest_asyncio-1.2.0.tar.gz", hash = "sha256:c609a64a2a8768462d0c99811ddb8bd2583c33fd33cf7f21af1c142e824ffb57", size = 50119, upload-time = "2025-09-12T07:33:53.816Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/93/2fa34714b7a4ae72f2f8dad66ba17dd9a2c793220719e736dda28b7aec27/pytest_asyncio-1.2.0-py3-none-any.whl", hash = "sha256:8e17ae5e46d8e7efe51ab6494dd2010f4ca8dae51652aa3c8d55acf50bfb2e99", size = 15095, upload-time = "2025-09-12T07:33:52.639Z" },
 ]
 
 [[package]]

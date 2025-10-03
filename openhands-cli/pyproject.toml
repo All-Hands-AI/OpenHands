@@ -18,6 +18,7 @@ classifiers = [
 dependencies = [
   "openhands-sdk",
   "openhands-tools",
+  "agent-client-protocol>=0.1.0",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
@@ -36,6 +37,7 @@ dev = [
   "pre-commit>=4.3",
   "pyinstaller>=6.15",
   "pytest>=8.4.1",
+  "pytest-asyncio>=0.23",
   "pytest-cov>=6",
   "pytest-forked>=1.6",
   "pytest-xdist>=3.6.1",
@@ -96,5 +98,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "d531c4b679f11c282be78d46022441afa967e5a5" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "d531c4b679f11c282be78d46022441afa967e5a5" }
