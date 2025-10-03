@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
@@ -8,7 +10,9 @@ from openhands.integrations.provider import ProviderType
 
 
 async def validate_provider_token(
-    token: SecretStr, base_domain: str | None = None
+    token: SecretStr,
+    base_domain: str | None = None,
+    bitbucket_mode: Literal['cloud', 'server'] | None = None,
 ) -> ProviderType | None:
     """Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
     from the services.
@@ -48,7 +52,18 @@ async def validate_provider_token(
     # Try Bitbucket last
     bitbucket_error = None
     try:
-        bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
+        if bitbucket_mode is not None:
+            resolved_mode = bitbucket_mode
+        elif base_domain and base_domain != 'bitbucket.org':
+            resolved_mode = 'server'
+        else:
+            resolved_mode = 'cloud'
+
+        bitbucket_service = BitBucketService(
+            token=token,
+            base_domain=base_domain,
+            bitbucket_mode=resolved_mode,
+        )
         await bitbucket_service.get_user()
         return ProviderType.BITBUCKET
     except Exception as e:

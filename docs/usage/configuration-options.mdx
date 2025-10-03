@@ -431,6 +431,41 @@ All security configuration options can be set as environment variables by prefix
   - Default: `""`
   - Description: The security analyzer to use
 
+## Secrets Store and Git Provider Tokens
+
+You can manage long-lived Git credentials in the `[secrets_store.provider_tokens]` section of `config.toml`.
+Each provider (`github`, `gitlab`, `bitbucket`) accepts a table with provider-specific options.
+
+### Bitbucket Provider Token Fields
+
+Configure Bitbucket access by adding a `[secrets_store.provider_tokens.bitbucket]` table.
+All keys are optional unless noted.
+
+- `token`
+  - Type: `str`
+  - Description: Bitbucket credential. Use `username:app_password` for Bitbucket Server or app passwords.
+- `host`
+  - Type: `str`
+  - Default: `"bitbucket.org"`
+  - Description: Custom Bitbucket domain for self-hosted/server instances.
+- `user_id`
+  - Type: `str`
+  - Description: Bitbucket account identifier. For server mode this should match the username or slug portion of your account. If the token is supplied in `username:app_password` format, the username portion is used automatically when `user_id` is omitted.
+- `bitbucket_mode`
+  - Type: `"cloud" | "server"`
+  - Default: `"cloud"`
+  - Description: Select the Bitbucket API to target. Use `"server"` for Bitbucket Data Center/Server deployments.
+
+Example configuration:
+
+```toml
+[secrets_store.provider_tokens.bitbucket]
+token = "username:app_password"
+host = "bitbucket.example.com"
+user_id = "username"
+bitbucket_mode = "server"
+```
+
 ---
 
 > **Note**: Adjust configurations carefully, especially for memory, security, and network-related settings to ensure optimal performance and security.
