@@ -25,6 +25,7 @@ export function ChatInputActions({
         <ServerStatus conversationStatus={conversationStatus} />
       </div>
       <AgentStatus
+        className="ml-2 md:ml-3"
         handleStop={() => handleStop(onStop)}
         handleResumeAgent={handleResumeAgent}
         disabled={disabled}
