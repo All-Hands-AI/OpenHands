@@ -7,6 +7,7 @@ This is a simplified version that demonstrates the TUI functionality.
 import argparse
 import logging
 import os
+from pathlib import Path
 
 debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
@@ -33,8 +34,41 @@ def main() -> None:
         type=str,
         help='Conversation ID to use for the session. If not provided, a random UUID will be generated.',
     )
+    parser.add_argument(
+        '--acp',
+        action='store_true',
+        help=(
+            'Run in ACP (Agent Client Protocol) mode for editor integration. '
+            'Uses the same configuration and persistence directory as the CLI (~/.openhands/conversations).'
+        ),
+    )
 
     args = parser.parse_args()
+
+    # Handle ACP mode
+    if args.acp:
+        import asyncio
+        import sys
+
+        from openhands_cli.acp.server import run_acp_server
+        from openhands_cli.locations import CONVERSATIONS_DIR
+
+        try:
+            # Use same persistence directory as CLI
+            asyncio.run(run_acp_server(persistence_dir=Path(CONVERSATIONS_DIR)))
+        except KeyboardInterrupt:
+            print_formatted_text(
+                HTML('\n<yellow>ACP server stopped.</yellow>'), file=sys.stderr
+            )
+        except Exception as e:
+            print_formatted_text(
+                HTML(f'<red>Error running ACP server: {e}</red>'), file=sys.stderr
+            )
+            import traceback
+
+            traceback.print_exc()
+            raise
+        return
 
     try:
         # Start agent chat
