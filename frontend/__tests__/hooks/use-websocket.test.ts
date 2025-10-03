@@ -29,7 +29,7 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-const useWebSocket = (url: string) => {
+const useWebSocket = (url: string, options?: { queryParams?: Record<string, string> }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
@@ -37,7 +37,14 @@ const useWebSocket = (url: string) => {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    const ws = new WebSocket(url);
+    // Build URL with query parameters if provided
+    let wsUrl = url;
+    if (options?.queryParams) {
+      const params = new URLSearchParams(options.queryParams);
+      wsUrl = `${url}?${params.toString()}`;
+    }
+    
+    const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -70,7 +77,7 @@ const useWebSocket = (url: string) => {
     return () => {
       ws.close();
     };
-  }, [url]);
+  }, [url, options]);
 
   return {
     isConnected,
@@ -187,5 +194,25 @@ describe("useWebSocket", () => {
 
     // Verify that WebSocket close was called during cleanup
     expect(closeSpy).toHaveBeenCalledOnce();
+  });
+
+  it("should support query parameters in WebSocket URL", async () => {
+    const baseUrl = "ws://acme.com/ws";
+    const queryParams = {
+      token: "abc123",
+      userId: "user456",
+      version: "v1"
+    };
+
+    const { result } = renderHook(() => useWebSocket(baseUrl, { queryParams }));
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    // Verify that the WebSocket was created with query parameters
+    expect(result.current.socket).toBeTruthy();
+    expect(result.current.socket!.url).toBe("ws://acme.com/ws?token=abc123&userId=user456&version=v1");
   });
 });
