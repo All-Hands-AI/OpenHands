@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -11,7 +12,7 @@ from openhands.utils.import_utils import get_impl
 
 
 class ExperimentConfig(BaseModel):
-    config: dict[str, str] | None = None
+    config: dict[str, Any] | None = None
 
 
 def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
