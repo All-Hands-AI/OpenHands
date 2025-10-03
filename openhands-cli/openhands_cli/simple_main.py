@@ -52,22 +52,9 @@ def main() -> None:
         from openhands_cli.acp.server import run_acp_server
         from openhands_cli.locations import CONVERSATIONS_DIR
 
-        # In ACP mode, all non-JSON-RPC output must go to stderr
-        # to avoid interfering with JSON-RPC communication on stdout
-        print_formatted_text(
-            HTML('<green>Starting OpenHands in ACP mode...</green>'),
-            file=sys.stderr,
-        )
-        print_formatted_text(
-            HTML(
-                f'<grey>Using same persistence directory as CLI: {CONVERSATIONS_DIR}</grey>'
-            ),
-            file=sys.stderr,
-        )
-
         try:
             # Use same persistence directory as CLI
-            asyncio.run(run_acp_server(persistence_dir=None))
+            asyncio.run(run_acp_server(persistence_dir=CONVERSATIONS_DIR))
         except KeyboardInterrupt:
             print_formatted_text(
                 HTML('\n<yellow>ACP server stopped.</yellow>'), file=sys.stderr
