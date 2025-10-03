@@ -128,12 +128,12 @@ def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
     """
     print(f'[Transcribing audio file from {file_path}]')
     try:
-        # TODO: record the COST of the API call
         with open(file_path, 'rb') as audio_file:
-            transcript = _get_openai_client().audio.translations.create(
+            transcript = _get_openai_client().audio.transcriptions.create(
                 model=model, file=audio_file
             )
         print(transcript.text)
+        print(f'Total usage tokens: {transcript.usage.total_tokens}')
 
     except Exception as e:
         print(f'Error transcribing audio file: {e}')
