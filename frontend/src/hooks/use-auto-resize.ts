@@ -8,6 +8,33 @@ const DEFAULT_MAX_HEIGHT = 120;
 const HEIGHT_INCREMENT = 20;
 const MANUAL_OVERSIZE_THRESHOLD = 50;
 
+// ------- Debug & helpers -------
+const DEBUG_RESIZE = false; // toggle to true while debugging
+const dbg = (...args: unknown[]) => {
+  if (DEBUG_RESIZE) console.log("[resize]", ...args);
+};
+
+const EPS = 1.5; // px tolerance for "near min"
+
+const getStyleHeightPx = (el: HTMLElement, fallback: number) => {
+  const h = parseFloat(el.style.height || "");
+  return Number.isFinite(h) ? h : fallback;
+};
+
+const setStyleHeightPx = (el: HTMLElement, h: number) => {
+  // eslint-disable-next-line no-param-reassign
+  el.style.height = `${h}px`;
+};
+
+// Track user's manual intent & exact height
+const useManualHeight = () => {
+  const hasUserResizedRef = useRef(false);
+  const manualHeightRef = useRef<number | null>(null);
+  return { hasUserResizedRef, manualHeightRef };
+};
+
+// -------------------------------
+
 interface UseAutoResizeOptions {
   minHeight?: number;
   maxHeight?: number;
@@ -76,11 +103,7 @@ const calculateOptimalHeight = (
   return maxHeight;
 };
 
-const getCurrentElementHeight = (
-  element: HTMLElement,
-  minHeight: number,
-): number =>
-  element.offsetHeight || parseInt(element.style.height || `${minHeight}`, 10);
+// Removed unused function
 
 const isManuallyOversized = (
   currentHeight: number,
@@ -92,18 +115,16 @@ const measureElementHeights = (
   element: HTMLElement,
   minHeight: number,
 ): HeightMeasurements => {
-  const currentHeight = getCurrentElementHeight(element, minHeight);
-  const currentStyleHeight = parseInt(
-    element.style.height || `${minHeight}`,
-    10,
-  );
+  // Use the previous explicit style height as the "current" for restore, not offsetHeight
+  const currentStyleHeight = getStyleHeightPx(element, minHeight);
+  const currentHeight = currentStyleHeight;
 
   // Temporarily reset to measure content
   element.style.setProperty("height", "auto");
   const contentHeight = element.scrollHeight;
 
   // Restore height
-  element.style.setProperty("height", `${currentStyleHeight}px`);
+  setStyleHeightPx(element, currentStyleHeight);
 
   return {
     currentHeight,
@@ -152,9 +173,25 @@ export const useAutoResize = (
   } = options;
 
   const constraints: HeightConstraints = { minHeight, maxHeight };
+  const { hasUserResizedRef, manualHeightRef } = useManualHeight();
 
-  // Tracks whether the user has manually resized via the drag grip
-  const hasUserResizedRef = useRef(false);
+  const resetManualResize = () => {
+    hasUserResizedRef.current = false;
+    manualHeightRef.current = null;
+    dbg("manual reset");
+  };
+
+  // Wrap onHeightChange so we can remember user-chosen manual height during drag
+  const handleExternalHeightChange = useCallback(
+    (h: number) => {
+      onHeightChange?.(h);
+      if (hasUserResizedRef.current) {
+        manualHeightRef.current = h;
+        dbg("manual height set", h);
+      }
+    },
+    [onHeightChange],
+  );
 
   // Use the drag resize hook for manual resizing functionality
   const { handleGripMouseDown, handleGripTouchStart } = useDragResize({
@@ -164,19 +201,29 @@ export const useAutoResize = (
     onGripDragStart: enableManualResize
       ? () => {
           hasUserResizedRef.current = true;
+          dbg("manual start");
           onGripDragStart?.();
         }
       : undefined,
     onGripDragEnd: enableManualResize
       ? () => {
+          // Check if we're at minimum height and clear manual mode if so
+          const element = elementRef.current;
+          if (element) {
+            const currentHeight = getStyleHeightPx(element, minHeight);
+            if (Math.abs(currentHeight - minHeight) <= EPS) {
+              hasUserResizedRef.current = false;
+              manualHeightRef.current = null;
+              dbg("manual cleared at min on drag end");
+            }
+          }
           onGripDragEnd?.();
         }
       : undefined,
-    onHeightChange,
+    onHeightChange: handleExternalHeightChange,
     onReachedMinHeight: () => {
-      // Reset manual resize when user drags to minimum height
-      // This allows normal auto-shrinking behavior when at minimum height
-      hasUserResizedRef.current = false;
+      // Don't clear manual mode during drag - only clear on drag end
+      dbg("reached min height during drag");
     },
   });
 
@@ -262,12 +309,35 @@ export const useAutoResize = (
     [maxHeight, onHeightChange],
   );
 
-  // Smart resize that respects manual height
-  const smartResize = useCallback(() => {
+  // Debounced smartResize body
+  const smartResizeBody = useCallback(() => {
     const element = elementRef.current;
     if (!element) return;
 
-    // Measure current and content heights
+    const textIsEmpty = (element.textContent ?? "").trim().length === 0;
+    const styleH = getStyleHeightPx(element, minHeight);
+    dbg("SMART start", {
+      manual: hasUserResizedRef.current,
+      manualHeight: manualHeightRef.current,
+      styleHeight: styleH,
+      textLen: (element.textContent ?? "").length,
+    });
+
+    // If empty content and we have a manual height above min, preserve it
+    if (
+      textIsEmpty &&
+      hasUserResizedRef.current &&
+      manualHeightRef.current &&
+      manualHeightRef.current > minHeight + EPS
+    ) {
+      setStyleHeightPx(element, manualHeightRef.current);
+      element.style.overflowY = "hidden";
+      executeHeightCallback(manualHeightRef.current, onHeightChange);
+      dbg("PRESERVE manual on empty", manualHeightRef.current);
+      return;
+    }
+
+    // Measure element heights
     const measurements = measureElementHeights(element, minHeight);
     const { currentHeight, contentHeight } = measurements;
 
@@ -285,26 +355,24 @@ export const useAutoResize = (
 
     // Content exceeds max height
     handleContentExceedsMaxHeight(element);
-  }, [
-    elementRef,
-    minHeight,
-    maxHeight,
-    handleContentFitsInCurrentHeight,
-    handleContentExceedsCurrentHeight,
-    handleContentExceedsMaxHeight,
-  ]);
+  }, [elementRef, minHeight, maxHeight, onHeightChange]);
 
-  // Utility to reset manual-resize state (called after submit/clear)
-  const resetManualResize = () => {
-    hasUserResizedRef.current = false;
-  };
+  // rAF-debounced smartResize wrapper to collapse bursts
+  const pendingSmartRef = useRef<number | null>(null);
+  const smartResize = useCallback(() => {
+    if (pendingSmartRef.current) cancelAnimationFrame(pendingSmartRef.current);
+    pendingSmartRef.current = requestAnimationFrame(() => {
+      pendingSmartRef.current = null;
+      smartResizeBody();
+    });
+  }, [smartResizeBody]);
 
   // Function to increase height when content is empty
   const increaseHeightForEmptyContent = () => {
     const element = elementRef.current;
     if (!element) return;
 
-    const currentHeight = element.offsetHeight;
+    const currentHeight = getStyleHeightPx(element, minHeight);
     const newHeight = Math.min(currentHeight + HEIGHT_INCREMENT, maxHeight);
 
     if (newHeight > currentHeight) {

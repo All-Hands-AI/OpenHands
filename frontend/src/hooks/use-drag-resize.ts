@@ -21,6 +21,7 @@ export const useDragResize = ({
   onHeightChange,
   onReachedMinHeight,
 }: UseDragResizeOptions) => {
+  const NEAR = 1.5; // px tolerance for "at min"
   const getClientY = (event: MouseEvent | TouchEvent): number => {
     if ("touches" in event && event.touches.length > 0) {
       return event.touches[0].clientY;
@@ -59,8 +60,8 @@ export const useDragResize = ({
         onHeightChange(newHeight);
       }
 
-      // If the user dragged down to minHeight, notify so manual mode can be cleared
-      if (onReachedMinHeight && newHeight === minHeight) {
+      // If the user dragged down to (near) minHeight, notify so manual mode can be cleared
+      if (onReachedMinHeight && Math.abs(newHeight - minHeight) <= NEAR) {
         onReachedMinHeight();
       }
     };
