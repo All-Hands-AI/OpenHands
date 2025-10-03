@@ -7,6 +7,7 @@ This is a simplified version that demonstrates the TUI functionality.
 import argparse
 import logging
 import os
+from pathlib import Path
 
 debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
@@ -54,7 +55,7 @@ def main() -> None:
 
         try:
             # Use same persistence directory as CLI
-            asyncio.run(run_acp_server(persistence_dir=CONVERSATIONS_DIR))
+            asyncio.run(run_acp_server(persistence_dir=Path(CONVERSATIONS_DIR)))
         except KeyboardInterrupt:
             print_formatted_text(
                 HTML('\n<yellow>ACP server stopped.</yellow>'), file=sys.stderr
