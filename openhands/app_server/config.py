@@ -217,11 +217,11 @@ def app_conversation_manager() -> AppConversationServiceManager:
     config = get_global_config()
     app_conversation = config.app_conversation
     if app_conversation is None:
-        from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
-            SQLAppConversationServiceManager,
+        from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
+            LiveStatusAppConversationServiceManager,
         )
 
-        app_conversation = SQLAppConversationServiceManager()
+        app_conversation = LiveStatusAppConversationServiceManager()
         config.app_conversation = app_conversation
     return app_conversation
 
