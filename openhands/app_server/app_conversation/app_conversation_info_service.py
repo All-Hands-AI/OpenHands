@@ -67,7 +67,7 @@ class AppConversationInfoService(ABC):
         """
 
 
-class AppConversationInfoServiceResolver(DiscriminatedUnionMixin, ABC):
+class AppConversationInfoServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
          """Get an instance of app conversation info service."""

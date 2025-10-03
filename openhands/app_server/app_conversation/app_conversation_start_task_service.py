@@ -40,7 +40,7 @@ class AppConversationStartTaskService(ABC):
         """
 
 
-class AppConversationStartTaskServiceResolver(DiscriminatedUnionMixin, ABC):
+class AppConversationStartTaskServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
         """Get a resolver for an instance of app conversation start task service."""

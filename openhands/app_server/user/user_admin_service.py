@@ -16,7 +16,7 @@ class UserAdminService(ABC):
         """ Get a user service for this id given."""
 
 
-class UserAdminServiceResolver(DiscriminatedUnionMixin, ABC):
+class UserAdminServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
         """Get a resolver for instances of user admin service ."""

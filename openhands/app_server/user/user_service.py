@@ -36,7 +36,7 @@ class UserService(ABC):
         """ Get custom secrets and github provider secrets for the conversation. """
 
 
-class UserServiceResolver(DiscriminatedUnionMixin, ABC):
+class UserServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for instances of user service limited to the current user."""

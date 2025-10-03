@@ -62,7 +62,7 @@ class SandboxService(ABC):
         """
 
 
-class SandboxServiceResolver(DiscriminatedUnionMixin, ABC):
+class SandboxServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for an instance of sandbox service limited to the current user."""

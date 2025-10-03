@@ -11,7 +11,7 @@ This module provides user management capabilities, including authentication, use
 - **UserService**: Abstract service for user operations
 - **LegacyUserService**: Compatibility layer for legacy user systems
 - **UserRouter**: FastAPI router for user-related endpoints
-- **UserServiceResolver**: Factory for creating user-scoped service instances
+- **UserServiceManager**: Factory for creating user-scoped service instances
 
 ## Features
 

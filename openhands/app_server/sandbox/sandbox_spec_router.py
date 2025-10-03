@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from openhands.app_server.dependency import get_dependency_resolver
+from openhands.app_server.config import sandbox_spec_manager
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -15,7 +15,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
 
 router = APIRouter(prefix='/sandbox-specs', tags=['Sandbox'])
 sandbox_spec_service_dependency = Depends(
-    get_dependency_resolver().sandbox_spec.get_resolver_for_current_user()
+    sandbox_spec_manager().get_resolver_for_current_user()
 )
 
 

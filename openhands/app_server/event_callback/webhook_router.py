@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from openhands.agent_server.models import ConversationInfo, Success
 from openhands.app_server.app_conversation.app_conversation_info_service import AppConversationInfoService
 from openhands.app_server.app_conversation.app_conversation_models import AppConversationInfo
+from openhands.app_server.config import app_conversation_info_manager, event_callback_manager, event_manager, resolve_jwt_service, sandbox_manager, user_admin_manager
 from openhands.app_server.database import unmanaged_session_dependency
-from openhands.app_server.dependency import get_dependency_resolver
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_service import (
@@ -25,25 +25,25 @@ from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.sdk import Event
 
-from openhands.app_server.services.jwt_service import JWTService, get_default_jwt_service
+from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_admin_service import UserAdminService
 from openhands.integrations.provider import ProviderType
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
 sandbox_service_dependency = Depends(
-    get_dependency_resolver().sandbox.get_unsecured_resolver()
+    sandbox_manager().get_unsecured_resolver()
 )
 event_service_dependency = Depends(
-    get_dependency_resolver().event.get_unsecured_resolver()
+    event_manager().get_unsecured_resolver()
 )
 event_callback_service_dependency = Depends(
-    get_dependency_resolver().event_callback.get_unsecured_resolver()
+    event_callback_manager().get_unsecured_resolver()
 )
 app_conversation_info_service_dependency = Depends(
-    get_dependency_resolver().app_conversation_info.get_unsecured_resolver()
+    app_conversation_info_manager().get_unsecured_resolver()
 )
 user_admin_service_dependency = Depends(
-    get_dependency_resolver().user_admin.get_unsecured_resolver()
+    user_admin_manager().get_unsecured_resolver()
 )
 _logger = logging.getLogger(__name__)
 
@@ -122,7 +122,7 @@ async def get_secret(
     access_token: str = Depends(
         APIKeyHeader(name='X-Access-Token', auto_error=False)
     ),
-    jwt_service: JWTService = Depends(get_default_jwt_service),
+    jwt_service: JwtService = Depends(resolve_jwt_service),
     user_admin_service: UserAdminService = app_conversation_info_service_dependency,
 ) -> str:
     """ Given an access token, retrieve a user secret. The access token

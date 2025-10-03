@@ -68,7 +68,7 @@ class EventCallbackService(ABC):
         """Stop using this event callback service."""
 
 
-class EventCallbackServiceResolver(DiscriminatedUnionMixin, ABC):
+class EventCallbackServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
         """Get a resolver for an instance of event callback service."""

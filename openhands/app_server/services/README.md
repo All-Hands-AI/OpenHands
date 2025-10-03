@@ -8,7 +8,7 @@ This module contains core services that support the OpenHands app server infrast
 
 ## Key Components
 
-- **JWTService**: JSON Web Token signing, verification, and encryption
+- **JwtService**: JSON Web Token signing, verification, and encryption
 
 ## JWT Service Features
 

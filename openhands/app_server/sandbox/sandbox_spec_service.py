@@ -49,7 +49,7 @@ class SandboxSpecService(ABC):
         return results
 
 
-class SandboxSpecServiceResolver(DiscriminatedUnionMixin, ABC):
+class SandboxSpecServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_resolver_for_current_user(self) -> Callable:
         """Get a resolver for an instance of sandbox spec service limited to the current user."""

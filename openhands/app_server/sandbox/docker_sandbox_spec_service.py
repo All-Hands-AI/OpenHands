@@ -13,7 +13,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
-    SandboxSpecServiceResolver,
+    SandboxSpecServiceManager,
 )
 
 _global_docker_client: docker.DockerClient | None = None
@@ -127,7 +127,7 @@ class DockerSandboxSpecService(SandboxSpecService):
             return None
 
 
-class DockerSandboxSpecServiceResolver(SandboxSpecServiceResolver):
+class DockerSandboxSpecServiceManager(SandboxSpecServiceManager):
     def get_resolver_for_current_user(self) -> Callable:
         # Docker sandboxes are designed for a single user and
         # don't have security constraints

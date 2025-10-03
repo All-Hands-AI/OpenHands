@@ -19,12 +19,12 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
+from openhands.app_server.config import app_conversation_manager
 from openhands.app_server.database import unmanaged_session_dependency
-from openhands.app_server.dependency import get_dependency_resolver
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
 app_conversation_service_dependency = Depends(
-    get_dependency_resolver().app_conversation.get_resolver_for_current_user()
+    app_conversation_manager().get_resolver_for_current_user()
 )
 
 # Read methods

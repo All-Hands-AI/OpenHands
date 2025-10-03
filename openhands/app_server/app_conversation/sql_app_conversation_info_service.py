@@ -13,7 +13,7 @@ Security and permission checks are handled by wrapper services.
 
 Key components:
 - SQLAppConversationService: Main service class implementing all operations
-- SQLAppConversationServiceResolver: Dependency injection resolver for FastAPI
+- SQLAppConversationServiceManager: Dependency injection resolver for FastAPI
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
-    AppConversationInfoServiceResolver,
+    AppConversationInfoServiceManager,
 )
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
@@ -219,7 +219,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         return query
 
 
-class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
+class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         def resolve_app_conversation_service(
@@ -232,16 +232,14 @@ class SQLAppConversationServiceResolver(AppConversationInfoServiceResolver):
     def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
 
-        from openhands.app_server.dependency import get_dependency_resolver
+        from openhands.app_server.config import user_manager
 
-        user_service_resolver = get_dependency_resolver().user.get_resolver_for_current_user()
-
-        def resolve_app_conversation_service(
-            user_service: UserService = Depends(user_service_resolver),
+        async def resolve_app_conversation_service(
+            user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
             session: AsyncSession = Depends(managed_session_dependency),
         ) -> AppConversationInfoService:
-            current_user = user_service.get_user_info()
-            service = SQLAppConversationInfoService(session=session)
+            user_id = await user_service.get_user_id()
+            service = SQLAppConversationInfoService(session=session, user_id=user_id)
             return service
 
         return resolve_app_conversation_service

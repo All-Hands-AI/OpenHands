@@ -18,9 +18,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.dependency import get_dependency_resolver
-from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxInfo
-from openhands.app_server.sandbox.sandbox_service import SandboxService
+from openhands.app_server.config import app_conversation_manager
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -89,7 +87,7 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = Depends(
-    get_dependency_resolver().app_conversation.get_resolver_for_current_user()
+    app_conversation_manager().get_resolver_for_current_user()
 )
 
 

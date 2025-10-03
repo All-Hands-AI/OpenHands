@@ -26,7 +26,7 @@ from openhands.app_server.event_callback.event_callback_result_models import (
 )
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
-    EventCallbackServiceResolver,
+    EventCallbackServiceManager,
 )
 from openhands.sdk import Event
 
@@ -177,7 +177,7 @@ class SQLEventCallbackService(EventCallbackService):
         pass
 
 
-class SQLEventCallbackServiceResolver(EventCallbackServiceResolver):
+class SQLEventCallbackServiceManager(EventCallbackServiceManager):
     def get_unsecured_resolver(self) -> Callable:
         return self.resolve
 

@@ -4,7 +4,7 @@
 from typing import Callable
 
 from openhands.app_server.user.legacy_user_service import LegacyUserService
-from openhands.app_server.user.user_admin_service import UserAdminService, UserAdminServiceResolver
+from openhands.app_server.user.user_admin_service import UserAdminService, UserAdminServiceManager
 from openhands.app_server.user.user_service import UserService
 from openhands.server.user_auth.user_auth import get_for_user
 
@@ -19,7 +19,7 @@ class LegacyUserAdminService(UserAdminService):
         )
 
 
-class LegacyUserAdminServiceResolver(UserAdminServiceResolver):
+class LegacyUserAdminServiceManager(UserAdminServiceManager):
 
     def get_unsecured_resolver(self) -> Callable:
         return LegacyUserAdminService

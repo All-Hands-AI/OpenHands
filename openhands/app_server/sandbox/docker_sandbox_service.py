@@ -13,7 +13,6 @@ from fastapi import Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.dependency import get_dependency_resolver, get_httpx_client
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_client
 from openhands.app_server.sandbox.sandbox_models import (
@@ -26,7 +25,7 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceResolver,
+    SandboxServiceManager,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.user.legacy_user_service import ROOT_USER
@@ -71,8 +70,8 @@ class DockerSandboxService(SandboxService):
     mounts: list[VolumeMount]
     exposed_ports: list[ExposedPort]
     health_check_path: str | None
+    httpx_client: httpx.AsyncClient
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
-    httpx_client: httpx.AsyncClient = field(default_factory=get_httpx_client)
 
     def _find_unused_port(self) -> int:
         """Find an unused port on the host machine."""
@@ -384,8 +383,8 @@ class DockerSandboxService(SandboxService):
             return False
 
 
-class DockerSandboxServiceResolver(SandboxServiceResolver):
-    """Resolver / Configuration for docker sandbox services."""
+class DockerSandboxServiceManager(SandboxServiceManager):
+    """Manager / Configuration for docker sandbox services."""
 
     container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000
@@ -423,13 +422,12 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
         return self.get_unsecured_resolver()
 
     def get_unsecured_resolver(self) -> Callable:
-        sandbox_spec_resolver = (
-            get_dependency_resolver().sandbox_spec.get_unsecured_resolver()
-        )
-
         # Define inline to prevent circular lookup
+        from openhands.app_server.config import resolve_httpx_client, sandbox_spec_manager
+
         def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = Depends(sandbox_spec_resolver),
+            sandbox_spec_service: SandboxSpecService = Depends(sandbox_spec_manager().get_unsecured_resolver()),
+            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client),
         ) -> SandboxService:
             return DockerSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
@@ -439,6 +437,7 @@ class DockerSandboxServiceResolver(SandboxServiceResolver):
                 mounts=self.mounts,
                 exposed_ports=self.exposed_ports,
                 health_check_path=self.health_check_path,
+                httpx_client=httpx_client,
             )
 
         return resolve_sandbox_service

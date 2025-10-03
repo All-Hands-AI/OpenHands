@@ -29,22 +29,22 @@ class SecretStrDecorator(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            from openhands.app_server.services.jwt_service import (
-                get_default_jwt_service,
+            from openhands.app_server.config import (
+                get_global_config, resolve_jwt_service
             )
 
-            service = get_default_jwt_service()
+            service = resolve_jwt_service(get_global_config())
             token = service.create_jwe_token({'v': value.get_secret_value()})
             return token
         return None
 
     def process_result_param(self, value, dialect):
         if value is not None:
-            from openhands.app_server.services.jwt_service import (
-                get_default_jwt_service,
+            from openhands.app_server.config import (
+                get_global_config, resolve_jwt_service
             )
 
-            service = get_default_jwt_service()
+            service = resolve_jwt_service(get_global_config())
             token = service.decrypt_jwe_token(value)
             return SecretStr(token['v'])
         return None

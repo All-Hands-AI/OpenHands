@@ -1,39 +1,38 @@
 """Configuration for the OpenHands App Server."""
 
 import os
-from datetime import datetime
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
-import base62
+import httpx
+from fastapi import Depends
 from pydantic import (
     BaseModel,
     Field,
     SecretStr,
-    TypeAdapter,
     field_serializer,
 )
 
 from openhands.agent_server.env_parser import from_env
-from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
-    AppConversationInfoServiceResolver,
+    AppConversationInfoServiceManager,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
-    AppConversationServiceResolver,
+    AppConversationServiceManager,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
-    AppConversationStartTaskServiceResolver,
+    AppConversationStartTaskServiceManager,
 )
-from openhands.app_server.event.event_service import EventServiceResolver
+from openhands.app_server.event.event_service import EventServiceManager
 from openhands.app_server.event_callback.event_callback_service import (
-    EventCallbackServiceResolver,
+    EventCallbackServiceManager,
 )
-from openhands.app_server.sandbox.sandbox_service import SandboxServiceResolver
-from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceResolver
-from openhands.app_server.user.user_admin_service import UserAdminServiceResolver
-from openhands.app_server.user.user_service import UserServiceResolver
+from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
+from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceManager
+from openhands.app_server.services.httpx_client_manager import HttpxClientManager
+from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
+from openhands.app_server.user.user_admin_service import UserAdminServiceManager
+from openhands.app_server.user.user_service import UserServiceManager
 from openhands.sdk.utils.models import OpenHandsModel
 
 # Environment variable constants
@@ -55,69 +54,22 @@ def _get_db_url() -> SecretStr:
         return SecretStr(f'postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}')
 
     # Default to sqlite
-    return SecretStr(f'sqlite+aiosqlite:///{_get_default_workspace_dir()}/openhands.db')
+    return SecretStr(
+        f'sqlite+aiosqlite:///{_get_default_persistence_dir()}/openhands.db'
+    )
 
 
-def _get_default_workspace_dir() -> Path:
+def _get_default_persistence_dir() -> Path:
     # Recheck env because this function is also used to generate other defaults
-    workspace_dir = os.getenv('OH_WORKSPACE_DIR')
+    persistence_dir = os.getenv('OH_PERSISTENCE_DIR')
 
-    if workspace_dir:
-        result = Path(workspace_dir)
+    if persistence_dir:
+        result = Path(persistence_dir)
     else:
         result = Path.home() / '.openhands'
 
     result.mkdir(parents=True, exist_ok=True)
     return result
-
-
-class EncryptionKey(BaseModel):
-    """Configuration for an encryption key."""
-
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    key: SecretStr
-    active: bool = True
-    notes: str | None = None
-    created_at: datetime = Field(default_factory=utc_now)
-
-    @field_serializer('key')
-    def serialize_key(self, key: SecretStr, info: Any):
-        """Conditionally serialize the key based on context."""
-        if info.context and info.context.get('reveal_secrets'):
-            return key.get_secret_value()
-        return str(key)  # Returns '**********' by default
-
-
-def _get_default_encryption_keys() -> list[EncryptionKey]:
-    """Generate default encryption keys."""
-    master_key = os.getenv('JWT_SECRET')
-    if master_key:
-        return [
-            EncryptionKey(
-                key=SecretStr(master_key),
-                active=True,
-                notes='jwt secret master key',
-            )
-        ]
-
-    key_file = _get_default_workspace_dir() / '.keys'
-    type_adapter = TypeAdapter(list[EncryptionKey])
-    if key_file.exists():
-        encryption_keys = type_adapter.validate_json(key_file.read_text())
-        return encryption_keys
-
-    encryption_keys = [
-        EncryptionKey(
-            key=SecretStr(base62.encodebytes(os.urandom(32))),
-            active=True,
-            notes='generated master key',
-        )
-    ]
-    json_data = type_adapter.dump_json(
-        encryption_keys, context={'expose_secrets': True}
-    )
-    key_file.write_bytes(json_data)
-    return encryption_keys
 
 
 class GCPConfig(BaseModel):
@@ -148,25 +100,26 @@ class DatabaseConfig(BaseModel):
 
 
 class AppServerConfig(OpenHandsModel):
-    encryption_keys: list[EncryptionKey] = Field(
-        default_factory=_get_default_encryption_keys
-    )
-    workspace_dir: Path = Field(default_factory=_get_default_workspace_dir)
+    persistence_dir: Path = Field(default_factory=_get_default_persistence_dir)
     web_url: str | None = Field(
         default=None,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
-    event: EventServiceResolver | None = None
-    event_callback: EventCallbackServiceResolver | None = None
-    sandbox: SandboxServiceResolver | None = None
-    sandbox_spec: SandboxSpecServiceResolver | None = None
-    app_conversation_info: AppConversationInfoServiceResolver | None = None
-    app_conversation_start_task: AppConversationStartTaskServiceResolver | None = None
-    app_conversation: AppConversationServiceResolver | None = None
-    user: UserServiceResolver | None = None
-    user_admin: UserAdminServiceResolver | None = None
     database: DatabaseConfig = Field(default_factory=DatabaseConfig)
     gcp: GCPConfig = Field(default_factory=GCPConfig)
+
+    # Service managers
+    event: EventServiceManager | None = None
+    event_callback: EventCallbackServiceManager | None = None
+    sandbox: SandboxServiceManager | None = None
+    sandbox_spec: SandboxSpecServiceManager | None = None
+    app_conversation_info: AppConversationInfoServiceManager | None = None
+    app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
+    app_conversation: AppConversationServiceManager | None = None
+    user: UserServiceManager | None = None
+    user_admin: UserAdminServiceManager | None = None
+    jwt: JwtServiceManager | None = None
+    httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
 
 
 _global_config: AppServerConfig | None = None
@@ -180,3 +133,136 @@ def get_global_config() -> AppServerConfig:
         _global_config = from_env(AppServerConfig, 'OH')  # type: ignore
 
     return _global_config  # type: ignore
+
+
+def event_manager() -> EventServiceManager:
+    config = get_global_config()
+    event = config.event
+    if event is None:
+        from openhands.app_server.event.filesystem_event_service import (
+            FilesystemEventServiceManager,
+        )
+
+        event = FilesystemEventServiceManager()
+        config.event = event
+    return event
+
+
+def event_callback_manager() -> EventCallbackServiceManager:
+    config = get_global_config()
+    event_callback = config.event_callback
+    if event_callback is None:
+        from openhands.app_server.event_callback.sql_event_callback_service import (
+            SQLEventCallbackServiceManager,
+        )
+
+        event_callback = SQLEventCallbackServiceManager()
+        config.event_callback = event_callback
+    return event_callback
+
+
+def sandbox_manager() -> SandboxServiceManager:
+    config = get_global_config()
+    sandbox = config.sandbox
+    if sandbox is None:
+        from openhands.app_server.sandbox.docker_sandbox_service import (
+            DockerSandboxServiceManager,
+        )
+
+        sandbox = DockerSandboxServiceManager()
+        config.sandbox = sandbox
+    return sandbox
+
+
+def sandbox_spec_manager() -> SandboxSpecServiceManager:
+    config = get_global_config()
+    sandbox_spec = config.sandbox_spec
+    if sandbox_spec is None:
+        from openhands.app_server.sandbox.docker_sandbox_spec_service import (
+            DockerSandboxSpecServiceManager,
+        )
+
+        sandbox_spec = DockerSandboxSpecServiceManager()
+        config.sandbox_spec = sandbox_spec
+    return sandbox_spec
+
+
+def app_conversation_info_manager() -> AppConversationInfoServiceManager:
+    config = get_global_config()
+    app_conversation_info = config.app_conversation_info
+    if app_conversation_info is None:
+        from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
+            SQLAppConversationServiceManager,
+        )
+
+        app_conversation_info = SQLAppConversationServiceManager()
+        config.app_conversation_info = app_conversation_info
+    return app_conversation_info
+
+
+def app_conversation_start_task_manager() -> AppConversationStartTaskServiceManager:
+    config = get_global_config()
+    app_conversation_start_task = config.app_conversation_start_task
+    if app_conversation_start_task is None:
+        from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
+            SQLAppConversationStartTaskServiceManager,
+        )
+
+        app_conversation_start_task = SQLAppConversationStartTaskServiceManager()
+        config.app_conversation_start_task = app_conversation_start_task
+    return app_conversation_start_task
+
+
+def app_conversation_manager() -> AppConversationServiceManager:
+    config = get_global_config()
+    app_conversation = config.app_conversation
+    if app_conversation is None:
+        from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
+            SQLAppConversationServiceManager,
+        )
+
+        app_conversation = SQLAppConversationServiceManager()
+        config.app_conversation = app_conversation
+    return app_conversation
+
+
+def user_manager() -> UserServiceManager:
+    config = get_global_config()
+    user = config.user
+    if user is None:
+        from openhands.app_server.user.legacy_user_service import (
+            LegacyUserServiceManager,
+        )
+
+        user = LegacyUserServiceManager()
+        config.user = user
+    return user
+
+
+def user_admin_manager() -> UserAdminServiceManager:
+    config = get_global_config()
+    user_admin = config.user_admin
+    if user_admin is None:
+        from openhands.app_server.user.legacy_user_admin_service import (
+            LegacyUserAdminServiceManager,
+        )
+
+        user_admin = LegacyUserAdminServiceManager()
+        config.user_admin = user_admin
+    return user_admin
+
+
+def resolve_jwt_service(
+    config: AppServerConfig = Depends(get_global_config),
+) -> JwtService:
+    resolver = config.jwt
+    if resolver is None:
+        resolver = JwtServiceManager(persistence_dir=config.persistence_dir)
+        config.jwt = resolver
+    return resolver.get_jwt_service()
+
+
+def resolve_httpx_client(
+    config: AppServerConfig = Depends(get_global_config),
+) -> httpx.AsyncClient:
+    return config.httpx.get_httpx_client()

@@ -1,6 +1,7 @@
 import hashlib
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
+from pathlib import Path
 from typing import Any
 
 import jwt
@@ -8,10 +9,11 @@ from jose import jwe
 from jose.constants import ALGORITHMS
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.config import EncryptionKey, get_global_config
+from pydantic import BaseModel, PrivateAttr
+from openhands.app_server.utils.encryption_key import EncryptionKey, get_default_encryption_keys
 
 
-class JWTService:
+class JwtService:
     """Service for signing/verifying JWS tokens and encrypting/decrypting JWE tokens."""
 
     def __init__(self, keys: list[EncryptionKey]):
@@ -219,14 +221,14 @@ class JWTService:
             raise Exception(f'Token decryption failed: {str(e)}')
 
 
-def get_default_jwt_service() -> JWTService:
-    """Get the default JWT service instance.
+class JwtServiceManager(BaseModel):
+    persistence_dir: Path
+    _jwt_service: JwtService | None = PrivateAttr(default=None)
 
-    Returns:
-        JWTService instance using keys from global config
-
-    Raises:
-        ImportError: If OpenHands config module is not available
-    """
-    config = get_global_config()
-    return JWTService(keys=config.encryption_keys)
+    def get_jwt_service(self):
+        jwt_service = self._jwt_service
+        if jwt_service is None:
+            keys = get_default_encryption_keys(self.persistence_dir)
+            jwt_service = JwtService(keys=keys)
+            self._jwt_service = jwt_service
+        return jwt_service

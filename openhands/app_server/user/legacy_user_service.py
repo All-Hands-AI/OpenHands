@@ -4,7 +4,7 @@ from typing import Callable
 from fastapi import Depends
 
 from openhands.app_server.user.user_models import UserInfo
-from openhands.app_server.user.user_service import UserService, UserServiceResolver
+from openhands.app_server.user.user_service import UserService, UserServiceManager
 from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 
 from openhands.integrations.provider import ProviderHandler, ProviderType
@@ -75,7 +75,7 @@ class LegacyUserService(UserService):
 
         return results
 
-class LegacyUserServiceResolver(UserServiceResolver):
+class LegacyUserServiceManager(UserServiceManager):
     def get_resolver_for_current_user(self) -> Callable:
         return resolve_for_user
 

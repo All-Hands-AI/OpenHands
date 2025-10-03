@@ -9,7 +9,7 @@ from typing import Callable
 from uuid import UUID
 
 from openhands.agent_server.models import EventPage, EventSortOrder
-from openhands.app_server.event.event_service import EventService, EventServiceResolver
+from openhands.app_server.event.event_service import EventService, EventServiceManager
 from openhands.app_server.event_callback.event_callback_models import EventKind
 from openhands.sdk import Event
 
@@ -233,7 +233,7 @@ class FilesystemEventService(EventService):
         self._save_event_to_file(conversation_id, event)
 
 
-class FilesystemEventServiceResolver(EventServiceResolver):
+class FilesystemEventServiceManager(EventServiceManager):
     def get_resolver_for_current_user(self) -> Callable:
         _logger.warning(
             'Using secured event service resolver - '
