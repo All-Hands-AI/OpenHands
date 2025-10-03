@@ -14,6 +14,7 @@ from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
+from openhands.cli.deprecation_warning import display_deprecation_warning
 from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
@@ -779,3 +780,6 @@ def run_cli_command(args):
         except Exception as e:
             print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)
+        finally:
+            # Display deprecation warning on exit
+            display_deprecation_warning()

@@ -32,6 +32,7 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
+from openhands.cli.deprecation_warning import display_deprecation_warning
 from openhands.cli.pt_style import (
     COLOR_AGENT_BLUE,
     COLOR_GOLD,
@@ -151,6 +152,9 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 
 def display_banner(session_id: str) -> None:
+    # Display deprecation warning first
+    display_deprecation_warning()
+
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
