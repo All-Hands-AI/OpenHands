@@ -22,6 +22,7 @@ class CmdRunAction(Action):
     hidden: bool = (
         False  # if True, this command does not go through the LLM or event stream
     )
+    reset_terminal: bool = False  # if True, completely reset the terminal session
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
