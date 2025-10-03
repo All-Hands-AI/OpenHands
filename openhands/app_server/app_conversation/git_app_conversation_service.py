@@ -112,7 +112,7 @@ class GitAppConversationService(AppConversationService, ABC):
             f'chmod +x .openhands/pre-commit.sh'
         )
         result = await workspace.execute_command(command, workspace.working_dir)
-        if result['exit_code']:
+        if result.exit_code:
             return
 
         # Check if there's an existing pre-commit hook
@@ -128,9 +128,9 @@ class GitAppConversationService(AppConversationService, ABC):
                         f'chmod +x {PRE_COMMIT_LOCAL}'
                     )
                     result = await workspace.execute_command(command, workspace.working_dir)
-                    if result.get('exit_code') != 0:
+                    if result.exit_code != 0:
                         _logger.error(
-                            f'Failed to preserve existing pre-commit hook: {result.get('stderr')}',
+                            f'Failed to preserve existing pre-commit hook: {result.stderr}',
                         )
                         return
 
@@ -142,8 +142,8 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # Make the pre-commit hook executable
         result = await workspace.execute_command(f'chmod +x {PRE_COMMIT_HOOK}')
-        if result.get('exit_code'):
-            _logger.error(f'Failed to make pre-commit hook executable: {result.get('stderr')}')
+        if result.exit_code:
+            _logger.error(f'Failed to make pre-commit hook executable: {result.stderr}')
             return
 
         _logger.info('Git pre-commit hook installed successfully')

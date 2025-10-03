@@ -7153,8 +7153,8 @@ websockets = ">=12"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
-resolved_reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
+reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
+resolved_reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
 subdirectory = "openhands/agent_server"
 
 [[package]]
@@ -7182,8 +7182,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
-resolved_reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
+reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
+resolved_reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
 subdirectory = "openhands/sdk"
 
 [[package]]
@@ -7209,8 +7209,8 @@ pydantic = ">=2.11.7"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
-resolved_reference = "f862662dc0a7ae3e26295290464f20bb7e84844e"
+reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
+resolved_reference = "31dd29867ff6a38126f9b898798f427ecc3df709"
 subdirectory = "openhands/tools"
 
 [[package]]
@@ -16364,4 +16364,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "a517457cceb027775a57c2d72abebf5048f095fbc061d38b5d4e3e1a74ed197c"
+content-hash = "179e9c2f7177af62fefe652628f2cd842bb531e619fad4f497996b62f4d8c720"
