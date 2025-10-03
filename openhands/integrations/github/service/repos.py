@@ -14,8 +14,32 @@ class GitHubReposMixin(GitHubMixinBase):
     async def get_installations(self) -> list[str]:
         url = f'{self.BASE_URL}/user/installations'
         response, _ = await self._make_request(url)
-        installations = response.get('installations', [])
+        # GitHub API returns installations directly as a list, not wrapped in an object
+        installations = (
+            response
+            if isinstance(response, list)
+            else response.get('installations', [])
+        )
         return [str(i['id']) for i in installations]
+
+    async def get_installation_organizations(self) -> list[str]:
+        """Get organization names from all installations accessible to the user."""
+        url = f'{self.BASE_URL}/user/installations'
+        response, _ = await self._make_request(url)
+        # GitHub API returns installations directly as a list, not wrapped in an object
+        installations = (
+            response
+            if isinstance(response, list)
+            else response.get('installations', [])
+        )
+
+        orgs = []
+        for installation in installations:
+            account = installation.get('account', {})
+            if account.get('type') == 'Organization' and account.get('login'):
+                orgs.append(account['login'])
+
+        return orgs
 
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
@@ -181,7 +205,13 @@ class GitHubReposMixin(GitHubMixinBase):
         return False
 
     async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str, public: bool
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+        public: bool,
+        app_mode: AppMode | None = None,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
         params = {
@@ -206,9 +236,15 @@ class GitHubReposMixin(GitHubMixinBase):
             query_with_user = f'org:{org} in:name {repo_query}'
             params['q'] = query_with_user
         elif not public:
-            # Expand search scope to include user's repositories and organizations they're a member of
-            user = await self.get_user()
-            user_orgs = await self.get_user_organizations()
+            # Choose organization source based on app mode
+            if app_mode == AppMode.SAAS:
+                # In SaaS mode, use installation organizations (GitHub App installations)
+                user_orgs = await self.get_installation_organizations()
+                user = await self.get_user()
+            else:
+                # In OSS mode, use regular user organizations (personal access token scope)
+                user = await self.get_user()
+                user_orgs = await self.get_user_organizations()
 
             # Search in user repos and org repos separately
             all_repos = []
