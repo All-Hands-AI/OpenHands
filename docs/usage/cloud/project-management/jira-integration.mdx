@@ -1,10 +1,21 @@
 ---
-title: Jira Cloud Integration (Coming soon...)
+title: Jira Cloud Integration
 description: Complete guide for setting up Jira Cloud integration with OpenHands Cloud, including service account creation, API token generation, webhook configuration, and workspace integration setup.
 ---
 
 # Jira Cloud Integration
 
+<Note>
+The workspace name is the host part of your Jira Cloud URL.  
+
+For example, if your Jira URL is `https://all-hands.atlassian.net/browse/OH-55`,
+then your **workspace name** is **all-hands.atlassian.net**.  
+
+You will need this when connecting to Jira from OpenHands Cloud.
+</Note>
+
+<Accordion title="🛠️ Setup Instructions (Admin Only)">
+  
 ## Platform Configuration
 
 ### Step 1: Create Service Account
@@ -26,7 +37,8 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 
 1. **Access Service Account Configuration**
    - Locate the created service account from above step and click on it
-   - Click **Create API token**
+   - Click **Create Credentials**
+   - Select **API Token**
    - Set the expiry to 365 days (maximum allowed value)
    - Click **Next**
    - In **Select token scopes** screen, filter by following values
@@ -75,20 +87,12 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 2. **Configure Workspace**
    - Click **Configure** button
    - Enter your workspace name and click **Connect**
-   - **Important:** Make sure you enter the full workspace name, eg: **yourcompany.atlassian.net**
+   - **Important:** Make sure you enter the full workspace name, e.g. **yourcompany.atlassian.net**
       - If no integration exists, you'll be prompted to enter additional credentials required for the workspace integration:
          - **Webhook Secret**: The webhook secret from Step 3 above
          - **Service Account Email**: The service account email from Step 1 above
          - **Service Account API Key**: The API token from Step 2 above
          - Ensure **Active** toggle is enabled
-
-<Note>
-Workspace name is the host name when accessing a resource in Jira Cloud.
-
-Eg: https://all-hands.atlassian.net/browse/OH-55
-
-Here the workspace name is **all-hands**.
-</Note>
 
 3. **Complete OAuth Flow**
    - You'll be redirected to Jira Cloud to complete OAuth verification
@@ -108,6 +112,24 @@ Here the workspace name is **all-hands**.
 - In the edit view, click **Unlink** next to the workspace name
 - This will deactivate your workspace link
 - **Important:** If the original user who configured the integration chooses to unlink their integration, any users currently linked to that workspace integration will also be unlinked, and the workspace integration will be deactivated. The integration can only be reactivated by the original user.
+
+</Accordion>
+
+<Accordion title="👥 Setup Instructions (Regular Users)">
+  
+If your **admin has already completed the Jira Cloud integration** for your company, you only need to:
+
+1. **Log in to OpenHands Cloud**  
+   - Go to [OpenHands Cloud](https://app.all-hands.dev/)  
+   - Sign in with your Git provider (GitHub, GitLab, or BitBucket)
+
+2. **Connect to Your Company Jira Workspace**  
+   - Go to **Settings** > **Integrations**  
+   - Locate the **Jira Cloud** section  
+   - Click **Configure**  
+   - Enter your company’s Jira workspace URL (e.g., `yourcompany.atlassian.net`)  
+   - Complete the OAuth flow when prompted  
+</Accordion>
 
 ### Screenshots
 
