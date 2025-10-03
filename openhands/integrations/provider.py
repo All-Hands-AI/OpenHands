@@ -466,10 +466,22 @@ class ProviderHandler:
             except Exception as e:
                 errors.append(f'{provider.value}: {str(e)}')
 
-        # Log all accumulated errors before raising AuthenticationError
-        logger.error(
-            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
-        )
+        # Log detailed error based on whether we had tokens or not
+        if not self.provider_tokens:
+            logger.error(
+                f'Failed to access repository {repository}: No provider tokens available. '
+                f'provider_tokens dict is empty.'
+            )
+        elif errors:
+            logger.error(
+                f'Failed to access repository {repository} with all available providers. '
+                f'Tried providers: {list(self.provider_tokens.keys())}. '
+                f'Errors: {"; ".join(errors)}'
+            )
+        else:
+            logger.error(
+                f'Failed to access repository {repository}: Unknown error (no providers tried, no errors recorded)'
+            )
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(

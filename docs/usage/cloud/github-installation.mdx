@@ -12,7 +12,7 @@ description: This guide walks you through the process of installing OpenHands Cl
 
 You can grant OpenHands access to specific GitHub repositories:
 
-1. Click on `Add GitHub repos` on the landing page.
+1. Click on `+ Add GitHub Repos` in the repository selection dropdown.
 2. Select your organization and choose the specific repositories to grant OpenHands access to.
 <Accordion title="OpenHands permissions">
   - OpenHands requests short-lived tokens (8-hour expiration) with these permissions:
@@ -34,20 +34,22 @@ You can grant OpenHands access to specific GitHub repositories:
 ## Modifying Repository Access
 
 You can modify GitHub repository access at any time by:
-- Selecting `Add GitHub repos` on the landing page or
-- Visiting the Settings page and selecting `Configure GitHub Repositories` under the `Integrations` tab
+- Selecting `+ Add GitHub Repos` in the repository selection dropdown or
+- Visiting the `Settings > Integrations` page and selecting `Configure GitHub Repositories`
 
 ## Working With GitHub Repos in Openhands Cloud
 
-Once you've granted GitHub repository access, you can start working with your GitHub repository. Use the `select a repo`
-and `select a branch` dropdowns to select the appropriate repository and branch you'd like OpenHands to work on. Then
-click on `Launch` to start the conversation!
+Once you've granted GitHub repository access, you can start working with your GitHub repository. Use the
+`Open Repository` section to select the appropriate repository and branch you'd like OpenHands to work on. Then click
+on `Launch` to start the conversation!
 
 ![Connect Repo](/static/img/connect-repo.png)
 
-## Working on Github Issues and Pull Requests Using Openhands
+## Working on GitHub Issues and Pull Requests Using Openhands
 
-Giving GitHub repository access to OpenHands also allows you to work on GitHub issues and pull requests directly.
+To allow OpenHands to work directly from GitHub directly, you must
+[give OpenHands access to your repository](/usage/cloud/github-installation#modifying-repository-access). Once access is
+given, you can use OpenHands by labeling the issue or by tagging `@openhands`.
 
 ### Working with Issues
 
@@ -64,7 +66,12 @@ To get OpenHands to work on pull requests, mention `@openhands` in the comments 
 - Request updates
 - Get code explanations
 
-**Important Note**: The `@openhands` mention functionality in pull requests only works if the pull request is both *to* and *from* a repository that you have added through the interface. This is because OpenHands needs appropriate permissions to access both repositories.
+<Note>
+The `@openhands` mention functionality in pull requests only works if the pull request is both
+*to* and *from* a repository that you have added through the interface. This is because OpenHands needs appropriate
+permissions to access both repositories.
+</Note>
+
 
 ## Next Steps
 

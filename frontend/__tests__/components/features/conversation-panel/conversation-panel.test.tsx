@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import React from "react";
-import { renderWithQueryAndI18n } from "test-utils";
+import { renderWithProviders } from "test-utils";
 import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
@@ -17,7 +17,7 @@ describe("ConversationPanel", () => {
     },
   ]);
 
-  const renderConversationPanel = () => renderWithQueryAndI18n(<RouterStub />);
+  const renderConversationPanel = () => renderWithProviders(<RouterStub />);
 
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
@@ -287,7 +287,7 @@ describe("ConversationPanel", () => {
       },
     ]);
 
-    renderWithQueryAndI18n(<MyRouterStub />);
+    renderWithProviders(<MyRouterStub />);
 
     const toggleButton = screen.getByText("Toggle");
 
