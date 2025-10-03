@@ -2,7 +2,13 @@ import React from "react";
 
 export const useWebSocket = (
   url: string,
-  options?: { queryParams?: Record<string, string> },
+  options?: {
+    queryParams?: Record<string, string>;
+    onOpen?: (event: Event) => void;
+    onClose?: (event: CloseEvent) => void;
+    onMessage?: (event: MessageEvent) => void;
+    onError?: (event: Event) => void;
+  },
 ) => {
   const [isConnected, setIsConnected] = React.useState(false);
   const [lastMessage, setLastMessage] = React.useState<string | null>(null);
@@ -21,14 +27,16 @@ export const useWebSocket = (
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
-    ws.onopen = () => {
+    ws.onopen = (event) => {
       setIsConnected(true);
       setError(null); // Clear any previous errors
+      options?.onOpen?.(event);
     };
 
     ws.onmessage = (event) => {
       setLastMessage(event.data);
       setMessages((prev) => [...prev, event.data]);
+      options?.onMessage?.(event);
     };
 
     ws.onclose = (event) => {
@@ -41,11 +49,15 @@ export const useWebSocket = (
             `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
           ),
         );
+        // Also call onError handler for error closures
+        options?.onError?.(event);
       }
+      options?.onClose?.(event);
     };
 
-    ws.onerror = () => {
+    ws.onerror = (event) => {
       setIsConnected(false);
+      options?.onError?.(event);
     };
 
     return () => {

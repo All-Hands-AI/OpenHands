@@ -158,4 +158,116 @@ describe("useWebSocket", () => {
       "ws://acme.com/ws?token=abc123&userId=user456&version=v1",
     );
   });
+
+  it("should call onOpen handler when WebSocket connection opens", async () => {
+    const onOpenSpy = vi.fn();
+    const options = { onOpen: onOpenSpy };
+    
+    const { result } = renderHook(() => 
+      useWebSocket("ws://acme.com/ws", options)
+    );
+
+    // Initially should not be connected
+    expect(result.current.isConnected).toBe(false);
+    expect(onOpenSpy).not.toHaveBeenCalled();
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    // onOpen handler should have been called
+    expect(onOpenSpy).toHaveBeenCalledOnce();
+  });
+
+  it("should call onClose handler when WebSocket connection closes", async () => {
+    const onCloseSpy = vi.fn();
+    const options = { onClose: onCloseSpy };
+    
+    const { result, unmount } = renderHook(() => 
+      useWebSocket("ws://acme.com/ws", options)
+    );
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    expect(onCloseSpy).not.toHaveBeenCalled();
+
+    // Unmount to trigger close
+    unmount();
+
+    // Wait for onClose handler to be called
+    await waitFor(() => {
+      expect(onCloseSpy).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("should call onMessage handler when WebSocket receives a message", async () => {
+    const onMessageSpy = vi.fn();
+    const options = { onMessage: onMessageSpy };
+    
+    const { result } = renderHook(() => 
+      useWebSocket("ws://acme.com/ws", options)
+    );
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    // Should receive the welcome message from our mock
+    await waitFor(() => {
+      expect(result.current.lastMessage).toBe("Welcome to the WebSocket!");
+    });
+
+    // onMessage handler should have been called for the welcome message
+    expect(onMessageSpy).toHaveBeenCalledOnce();
+
+    // Send another message from the mock server
+    wsLink.broadcast("Hello from server!");
+
+    await waitFor(() => {
+      expect(result.current.lastMessage).toBe("Hello from server!");
+    });
+
+    // onMessage handler should have been called twice now
+    expect(onMessageSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should call onError handler when WebSocket encounters an error", async () => {
+    const onErrorSpy = vi.fn();
+    const options = { onError: onErrorSpy };
+    
+    // Create a mock that will simulate an error
+    const errorLink = ws.link("ws://error-test.com/ws");
+    server.use(
+      errorLink.addEventListener("connection", ({ client }) => {
+        // Simulate an error by closing the connection immediately
+        client.close(1006, "Connection failed");
+      }),
+    );
+
+    const { result } = renderHook(() => 
+      useWebSocket("ws://error-test.com/ws", options)
+    );
+
+    // Initially should not be connected and no error
+    expect(result.current.isConnected).toBe(false);
+    expect(onErrorSpy).not.toHaveBeenCalled();
+
+    // Wait for the connection to fail
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(false);
+    });
+
+    // Should have error information
+    await waitFor(() => {
+      expect(result.current.error).not.toBe(null);
+    });
+
+    // onError handler should have been called
+    expect(onErrorSpy).toHaveBeenCalledOnce();
+  });
 });
