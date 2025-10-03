@@ -10,7 +10,7 @@ import {
 } from "vitest";
 import { ws } from "msw";
 import { setupServer } from "msw/node";
-import { useEffect, useRef, useState } from "react";
+import { useWebSocket } from "#/hooks/use-websocket";
 
 // MSW WebSocket mock setup
 const wsLink = ws.link("ws://acme.com/ws");
@@ -28,65 +28,6 @@ const server = setupServer(
 beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
-
-const useWebSocket = (url: string, options?: { queryParams?: Record<string, string> }) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastMessage, setLastMessage] = useState<string | null>(null);
-  const [messages, setMessages] = useState<string[]>([]);
-  const [error, setError] = useState<Error | null>(null);
-  const wsRef = useRef<WebSocket | null>(null);
-
-  useEffect(() => {
-    // Build URL with query parameters if provided
-    let wsUrl = url;
-    if (options?.queryParams) {
-      const params = new URLSearchParams(options.queryParams);
-      wsUrl = `${url}?${params.toString()}`;
-    }
-    
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      setIsConnected(true);
-      setError(null); // Clear any previous errors
-    };
-
-    ws.onmessage = (event) => {
-      setLastMessage(event.data);
-      setMessages((prev) => [...prev, event.data]);
-    };
-
-    ws.onclose = (event) => {
-      setIsConnected(false);
-      // If the connection closes with an error code, treat it as an error
-      if (event.code !== 1000) {
-        // 1000 is normal closure
-        setError(
-          new Error(
-            `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
-          ),
-        );
-      }
-    };
-
-    ws.onerror = (event) => {
-      setIsConnected(false);
-    };
-
-    return () => {
-      ws.close();
-    };
-  }, [url, options]);
-
-  return {
-    isConnected,
-    lastMessage,
-    messages,
-    error,
-    socket: wsRef.current,
-  };
-};
 
 describe("useWebSocket", () => {
   it("should establish a WebSocket connection", async () => {
@@ -201,7 +142,7 @@ describe("useWebSocket", () => {
     const queryParams = {
       token: "abc123",
       userId: "user456",
-      version: "v1"
+      version: "v1",
     };
 
     const { result } = renderHook(() => useWebSocket(baseUrl, { queryParams }));
@@ -213,6 +154,8 @@ describe("useWebSocket", () => {
 
     // Verify that the WebSocket was created with query parameters
     expect(result.current.socket).toBeTruthy();
-    expect(result.current.socket!.url).toBe("ws://acme.com/ws?token=abc123&userId=user456&version=v1");
+    expect(result.current.socket!.url).toBe(
+      "ws://acme.com/ws?token=abc123&userId=user456&version=v1",
+    );
   });
 });
