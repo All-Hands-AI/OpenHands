@@ -1,5 +1,13 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  afterEach,
+  vi,
+} from "vitest";
 import { ws } from "msw";
 import { setupServer } from "msw/node";
 import { useEffect, useRef, useState } from "react";
@@ -21,7 +29,7 @@ beforeAll(() => server.listen());
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
-function useWebSocket(url: string) {
+const useWebSocket = (url: string) => {
   const [isConnected, setIsConnected] = useState(false);
   const [lastMessage, setLastMessage] = useState<string | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
@@ -71,7 +79,7 @@ function useWebSocket(url: string) {
     error,
     socket: wsRef.current,
   };
-}
+};
 
 describe("useWebSocket", () => {
   it("should establish a WebSocket connection", async () => {
@@ -158,6 +166,26 @@ describe("useWebSocket", () => {
     expect(result.current.socket).toBeTruthy();
   });
 
-  it.todo("should close the WebSocket connection on unmount");
-  it.todo("should close the WebSocket when called explicitly");
+  it("should close the WebSocket connection on unmount", async () => {
+    const { result, unmount } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws"),
+    );
+
+    // Wait for connection to be established
+    await waitFor(() => {
+      expect(result.current.isConnected).toBe(true);
+    });
+
+    // Verify connection is active
+    expect(result.current.isConnected).toBe(true);
+    expect(result.current.socket).toBeTruthy();
+
+    const closeSpy = vi.spyOn(result.current.socket!, "close");
+
+    // Unmount the component (this should trigger the useEffect cleanup)
+    unmount();
+
+    // Verify that WebSocket close was called during cleanup
+    expect(closeSpy).toHaveBeenCalledOnce();
+  });
 });
