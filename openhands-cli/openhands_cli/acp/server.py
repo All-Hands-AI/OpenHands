@@ -10,6 +10,8 @@ from uuid import UUID
 
 from acp import (
     Agent as ACPAgent,
+)
+from acp import (
     AgentSideConnection,
     InitializeRequest,
     InitializeResponse,
@@ -38,7 +40,6 @@ from acp.schema import (
     SetSessionModeRequest,
     SetSessionModeResponse,
 )
-
 from openhands.sdk import (
     Agent,
     Conversation,
@@ -55,8 +56,14 @@ from openhands.tools.preset.default import (
     get_default_tools,
 )
 
-from .events import EventSubscriber
+from openhands_cli.commands import (
+    format_help_text,
+    get_acp_available_commands,
+    is_slash_command,
+    parse_slash_command,
+)
 
+from .events import EventSubscriber
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +92,7 @@ def convert_acp_mcp_servers_to_openhands_config(
             if server.env:
                 env_dict = {env_var.name: env_var.value for env_var in server.env}
                 mcp_servers[server.name]["env"] = env_dict
-        elif isinstance(server, (McpServer1, McpServer2)):
+        elif isinstance(server, McpServer1 | McpServer2):
             # HTTP/SSE MCP servers - not directly supported by OpenHands yet
             # Log a warning for now
             server_type = "HTTP" if isinstance(server, McpServer1) else "SSE"
@@ -109,8 +116,16 @@ class OpenHandsACPAgent(ACPAgent):
             persistence_dir: Directory for storing conversation data
         """
         self._conn = conn
-        self._persistence_dir = persistence_dir or Path("/tmp/openhands_acp")
-        self._persistence_dir.mkdir(parents=True, exist_ok=True)
+
+        # Use same persistence directory as CLI if not specified
+        if persistence_dir is None:
+            from openhands_cli.locations import CONVERSATIONS_DIR
+
+            os.makedirs(CONVERSATIONS_DIR, exist_ok=True)
+            self._persistence_dir = Path(CONVERSATIONS_DIR)
+        else:
+            self._persistence_dir = Path(persistence_dir)
+            self._persistence_dir.mkdir(parents=True, exist_ok=True)
 
         # Session management: session_id -> Conversation instance
         self._sessions: dict[str, Conversation] = {}
@@ -297,6 +312,9 @@ class OpenHandsACPAgent(ACPAgent):
                 f"Created new session {session_id} with conversation {conversation.id}"
             )
 
+            # Send available commands notification
+            await self._send_available_commands(session_id)
+
             return NewSessionResponse(sessionId=session_id)
 
         except Exception as e:
@@ -338,9 +356,24 @@ class OpenHandsACPAgent(ACPAgent):
         )
 
         try:
+            # Check if this is a slash command
+            if is_slash_command(prompt_text):
+                command, args = parse_slash_command(prompt_text)
+                logger.info(f"Processing slash command: /{command} {args}")
+
+                # Handle the slash command
+                handled = await self._handle_slash_command(session_id, command, args)
+
+                if handled:
+                    logger.info(f"Slash command /{command} handled successfully")
+                    return PromptResponse(stopReason="end_turn")
+                else:
+                    logger.warning(f"Unknown slash command: /{command}")
+                    # Fall through to send as regular message
+
             # Send the message and listen for events
             message = Message(role="user", content=[TextContent(text=prompt_text)])
-            
+
             # Subscribe to events using the extracted EventSubscriber
             subscriber = EventSubscriber(session_id, self._conn)
             conversation.subscribe(subscriber)
@@ -369,6 +402,218 @@ class OpenHandsACPAgent(ACPAgent):
             )
             return PromptResponse(stopReason="error")
 
+    async def _send_available_commands(self, session_id: str) -> None:
+        """Send available commands notification to the client."""
+        try:
+            commands = get_acp_available_commands()
+
+            # Import the notification types
+            from acp.types.session_types import (
+                SessionNotification,
+                SessionUpdate,
+            )
+
+            await self._conn.sessionUpdate(
+                SessionNotification(
+                    sessionId=session_id,
+                    update=SessionUpdate(
+                        sessionUpdate="available_commands_update",
+                        availableCommands=commands,
+                    ),
+                )
+            )
+            logger.info(
+                f"Sent {len(commands)} available commands to session {session_id}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to send available commands: {e}")
+
+    async def _handle_slash_command(
+        self, session_id: str, command: str, args: str
+    ) -> bool:
+        """
+        Handle a slash command.
+
+        Args:
+            session_id: Session ID
+            command: Command name (without /)
+            args: Command arguments
+
+        Returns:
+            True if command was handled, False otherwise
+        """
+        from acp.types.session_types import (
+            ContentBlock1,
+            SessionNotification,
+            SessionUpdate2,
+        )
+
+        conversation = self._sessions.get(session_id)
+        if not conversation:
+            return False
+
+        try:
+            if command == "help":
+                help_text = format_help_text()
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(type="text", text=help_text),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "status":
+                status_lines = [
+                    f"Conversation ID: {conversation.id}",
+                    "Status: Active",
+                    f"Confirmation mode: {'enabled' if conversation.state.confirmation_mode else 'disabled'}",
+                ]
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(
+                                type="text", text="\n".join(status_lines)
+                            ),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "clear":
+                # Just acknowledge the clear command
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(type="text", text="Screen cleared."),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "mcp":
+                # Show MCP server information
+                mcp_info = ["MCP Servers:"]
+                if (
+                    hasattr(conversation.agent, "mcp_config")
+                    and conversation.agent.mcp_config
+                ):
+                    servers = conversation.agent.mcp_config.get("mcpServers", {})
+                    if servers:
+                        for server_name in servers.keys():
+                            mcp_info.append(f"  - {server_name}")
+                    else:
+                        mcp_info.append("  No MCP servers configured")
+                else:
+                    mcp_info.append("  No MCP servers configured")
+
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(
+                                type="text", text="\n".join(mcp_info)
+                            ),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "settings":
+                # Settings command - inform user this is not available in ACP mode
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(
+                                type="text",
+                                text="Settings management is not available in ACP mode. "
+                                "Please use the CLI directly or configure via environment variables.",
+                            ),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "confirm":
+                # Toggle confirmation mode
+                conversation.state.confirmation_mode = (
+                    not conversation.state.confirmation_mode
+                )
+                new_status = (
+                    "enabled" if conversation.state.confirmation_mode else "disabled"
+                )
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(
+                                type="text",
+                                text=f"Confirmation mode {new_status}",
+                            ),
+                        ),
+                    )
+                )
+                return True
+
+            elif command == "resume":
+                # Resume command
+                from openhands.sdk.conversation.state import AgentExecutionStatus
+
+                if conversation.state.agent_status in (
+                    AgentExecutionStatus.PAUSED,
+                    AgentExecutionStatus.WAITING_FOR_CONFIRMATION,
+                ):
+                    # Actually resume the conversation
+                    await conversation.send_message(
+                        Message(role="user", content=[TextContent(text="continue")])
+                    )
+                else:
+                    await self._conn.sessionUpdate(
+                        SessionNotification(
+                            sessionId=session_id,
+                            update=SessionUpdate2(
+                                sessionUpdate="agent_message_chunk",
+                                content=ContentBlock1(
+                                    type="text",
+                                    text="No paused conversation to resume.",
+                                ),
+                            ),
+                        )
+                    )
+                return True
+
+            elif command == "exit":
+                # Exit command - inform that session should be ended
+                await self._conn.sessionUpdate(
+                    SessionNotification(
+                        sessionId=session_id,
+                        update=SessionUpdate2(
+                            sessionUpdate="agent_message_chunk",
+                            content=ContentBlock1(
+                                type="text",
+                                text="To exit, please close the session from your editor.",
+                            ),
+                        ),
+                    )
+                )
+                return True
+
+        except Exception as e:
+            logger.error(f"Error handling slash command /{command}: {e}")
+
+        return False
+
     async def cancel(self, params: CancelNotification) -> None:
         """Cancel the current operation (no-op for now)."""
         logger.info("Cancel requested (no-op)")
@@ -391,8 +636,7 @@ class OpenHandsACPAgent(ACPAgent):
                 raise ValueError(f"Conversation state not found: {session_id}")
 
             logger.info(
-                f"Found conversation {conversation.id} with "
-                f"{len(state.history)} events"
+                f"Found conversation {conversation.id} with {len(state.history)} events"
             )
 
             # Set up MCP servers if provided (similar to newSession)
@@ -458,6 +702,9 @@ class OpenHandsACPAgent(ACPAgent):
                             )
 
             logger.info(f"Successfully loaded session {session_id}")
+
+            # Send available commands notification
+            await self._send_available_commands(session_id)
 
         except Exception as e:
             logger.error(f"Failed to load session {session_id}: {e}", exc_info=True)

@@ -7,15 +7,15 @@ This is a simplified version that demonstrates the TUI functionality.
 import argparse
 import logging
 import os
-from pathlib import Path
 
 debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
     logging.disable(logging.WARNING)
 
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
-from openhands_cli.agent_chat import run_cli_entry
+from prompt_toolkit import print_formatted_text  # noqa: E402
+from prompt_toolkit.formatted_text import HTML  # noqa: E402
+
+from openhands_cli.agent_chat import run_cli_entry  # noqa: E402
 
 
 def main() -> None:
@@ -36,27 +36,25 @@ def main() -> None:
     parser.add_argument(
         "--acp",
         action="store_true",
-        help="Run in ACP (Agent Client Protocol) mode for editor integration"
-    )
-    parser.add_argument(
-        "--persistence-dir",
-        type=str,
-        default=str(Path.home() / ".openhands" / "acp"),
-        help="Directory for storing ACP session data (ACP mode only)"
+        help="Run in ACP (Agent Client Protocol) mode for editor integration. "
+        "Uses the same configuration and persistence directory as the CLI (~/.openhands/conversations)."
     )
 
     args = parser.parse_args()
-    
+
     # Handle ACP mode
     if args.acp:
         import asyncio
+
         from openhands_cli.acp.server import run_acp_server
-        
+        from openhands_cli.locations import CONVERSATIONS_DIR
+
         print_formatted_text(HTML("<green>Starting OpenHands in ACP mode...</green>"))
-        print_formatted_text(HTML(f"<grey>Persistence directory: {args.persistence_dir}</grey>"))
-        
+        print_formatted_text(HTML(f"<grey>Using same persistence directory as CLI: {CONVERSATIONS_DIR}</grey>"))
+
         try:
-            asyncio.run(run_acp_server(persistence_dir=Path(args.persistence_dir)))
+            # Use same persistence directory as CLI
+            asyncio.run(run_acp_server(persistence_dir=None))
         except KeyboardInterrupt:
             print_formatted_text(HTML("\n<yellow>ACP server stopped.</yellow>"))
         except Exception as e:

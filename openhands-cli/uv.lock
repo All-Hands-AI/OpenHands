@@ -7,6 +7,15 @@ resolution-markers = [
 ]
 
 [[package]]
+name = "acp"
+version = "0.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/aa/cd85e25cd62aaec3efd6e95ffc4b4b392d4a8371baf292f5411cf15dffbe/acp-0.0.0.tar.gz", hash = "sha256:4272e4ea8f6576dc4bccb1532e58e48498d6e8d0f6aa31f3b2d531af151fc45f", size = 2037, upload-time = "2016-11-25T14:07:45.718Z" }
+
+[[package]]
 name = "aiofiles"
 version = "24.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1464,6 +1473,7 @@ name = "openhands-cli"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "acp" },
     { name = "openhands-sdk" },
     { name = "openhands-tools" },
     { name = "prompt-toolkit" },
@@ -1484,6 +1494,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "acp", specifier = ">=0.0.0" },
     { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=711efcbadaa78a0b6b20699976e495ddf995767f" },
     { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=711efcbadaa78a0b6b20699976e495ddf995767f" },
     { name = "prompt-toolkit", specifier = ">=3" },
