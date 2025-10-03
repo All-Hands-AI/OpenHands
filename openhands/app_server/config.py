@@ -22,6 +22,10 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskServiceManager,
 )
+from openhands.app_server.app_lifespan.app_lifespan_service import AppLifespanService
+from openhands.app_server.app_lifespan.oss_app_lifespan_service import (
+    OssAppLifespanService,
+)
 from openhands.app_server.event.event_service import EventServiceManager
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackServiceManager,
@@ -119,6 +123,9 @@ class AppServerConfig(OpenHandsModel):
     user_admin: UserAdminServiceManager | None = None
     jwt: JwtServiceManager | None = None
     httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
+
+    # Services
+    lifespan: AppLifespanService = Field(default_factory=OssAppLifespanService)
 
 
 _global_config: AppServerConfig | None = None
@@ -264,3 +271,8 @@ def resolve_jwt_service(
         resolver = JwtServiceManager(persistence_dir=config.persistence_dir)
         config.jwt = resolver
     return resolver.get_jwt_service()
+
+
+def app_lifespan() -> AppLifespanService:
+    config = get_global_config()
+    return config.lifespan

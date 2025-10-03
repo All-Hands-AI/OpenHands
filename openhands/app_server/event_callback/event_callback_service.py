@@ -57,16 +57,6 @@ class EventCallbackService(ABC):
     async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
         """Execute any applicable callbacks for the event and store the results."""
 
-    # Lifecycle methods
-
-    async def __aenter__(self):
-        """Start using this event callback service."""
-        return self
-
-    @abstractmethod
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        """Stop using this event callback service."""
-
 
 class EventCallbackServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
