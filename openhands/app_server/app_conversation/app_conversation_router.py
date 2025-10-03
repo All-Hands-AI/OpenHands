@@ -19,8 +19,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.config import app_conversation_manager
-from openhands.app_server.database import unmanaged_session_dependency
+from openhands.app_server.config import app_conversation_manager, db_service
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
 app_conversation_service_dependency = Depends(
@@ -134,7 +133,7 @@ async def batch_get_app_conversations(
 @router.post('')
 async def start_app_conversation(
     request: AppConversationStartRequest,
-    session: AsyncSession = Depends(unmanaged_session_dependency),
+    db_session: AsyncSession = Depends(db_service().unmanaged_session_dependency),
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
@@ -142,7 +141,7 @@ async def start_app_conversation(
     """Start an app conversation start task and return it."""
     async_iter = app_conversation_service.start_app_conversation(request)
     result = await anext(async_iter)
-    asyncio.create_task(_consume_remaining(async_iter, session))
+    asyncio.create_task(_consume_remaining(async_iter, db_session))
     return result
 
 
@@ -177,7 +176,7 @@ async def batch_get_app_conversation_start_tasks(
     return start_tasks
 
 
-async def _consume_remaining(async_iter, session: AsyncSession):
+async def _consume_remaining(async_iter, db_session: AsyncSession):
     """Consume the remaining items from an async iterator"""
     try:
         while True:
@@ -185,7 +184,7 @@ async def _consume_remaining(async_iter, session: AsyncSession):
     except StopAsyncIteration:
         return
     finally:
-        await session.close()
+        await db_session.close()
 
 
 async def _stream_app_conversation_start(

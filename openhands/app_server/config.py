@@ -2,15 +2,9 @@
 
 import os
 from pathlib import Path
-from typing import Any
 
 from fastapi import Depends
-from pydantic import (
-    BaseModel,
-    Field,
-    SecretStr,
-    field_serializer,
-)
+from pydantic import Field
 
 from openhands.agent_server.env_parser import from_env
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -32,37 +26,15 @@ from openhands.app_server.event_callback.event_callback_service import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceManager
+from openhands.app_server.services.db_service import DbService
 from openhands.app_server.services.httpx_client_manager import HttpxClientManager
 from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
 from openhands.app_server.user.user_admin_service import UserAdminServiceManager
 from openhands.app_server.user.user_service import UserServiceManager
 from openhands.sdk.utils.models import OpenHandsModel
 
-# Environment variable constants
-GCP_REGION = os.environ.get('GCP_REGION')
 
-
-def _get_db_url() -> SecretStr:
-    url = os.environ.get('DB_URL')
-    if url:
-        return SecretStr(url)
-
-    # Legacy fallback
-    host = os.getenv('DB_HOST')
-    port = os.getenv('DB_PORT', '5432')
-    name = os.getenv('DB_NAME', 'openhands')
-    user = os.getenv('DB_USER', 'postgres')
-    password = os.getenv('DB_PASS', 'postgres')
-    if host:
-        return SecretStr(f'postgresql+asyncpg://{user}:{password}@{host}:{port}/{name}')
-
-    # Default to sqlite
-    return SecretStr(
-        f'sqlite+aiosqlite:///{_get_default_persistence_dir()}/openhands.db'
-    )
-
-
-def _get_default_persistence_dir() -> Path:
+def get_default_persistence_dir() -> Path:
     # Recheck env because this function is also used to generate other defaults
     persistence_dir = os.getenv('OH_PERSISTENCE_DIR')
 
@@ -75,42 +47,12 @@ def _get_default_persistence_dir() -> Path:
     return result
 
 
-class GCPConfig(BaseModel):
-    project: str | None = os.getenv('GCP_PROJECT')
-    region: str | None = os.getenv('GCP_REGION')
-
-
-class DatabaseConfig(BaseModel):
-    """Configuration specific to the database."""
-
-    url: SecretStr = _get_db_url()
-    name: str | None = os.getenv('DB_NAME')
-    user: str | None = os.getenv('DB_USER')
-    password: SecretStr | None = (
-        SecretStr(os.environ['DB_PASSWORD']) if os.getenv('DB_PASSWORD') else None
-    )
-    echo: bool = False
-    gcp_db_instance: str | None = os.getenv('GCP_DB_INSTANCE')
-    pool_size: int = int(os.environ.get('DB_POOL_SIZE', '25'))
-    max_overflow: int = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
-
-    @field_serializer('url', 'password')
-    def serialize_key(self, value: SecretStr, info: Any):
-        """Conditionally serialize the key based on context."""
-        if info.context and info.context.get('reveal_secrets'):
-            return value.get_secret_value()
-        return str(value)  # Returns '**********' by default
-
-
 class AppServerConfig(OpenHandsModel):
-    persistence_dir: Path = Field(default_factory=_get_default_persistence_dir)
+    persistence_dir: Path = Field(default_factory=get_default_persistence_dir)
     web_url: str | None = Field(
         default=None,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
-    database: DatabaseConfig = Field(default_factory=DatabaseConfig)
-    gcp: GCPConfig = Field(default_factory=GCPConfig)
-
     # Service managers
     event: EventServiceManager | None = None
     event_callback: EventCallbackServiceManager | None = None
@@ -126,6 +68,9 @@ class AppServerConfig(OpenHandsModel):
 
     # Services
     lifespan: AppLifespanService = Field(default_factory=OssAppLifespanService)
+    db_service: DbService = Field(
+        default_factory=lambda: DbService(persistence_dir=get_default_persistence_dir())
+    )
 
 
 _global_config: AppServerConfig | None = None
@@ -276,3 +221,8 @@ def resolve_jwt_service(
 def app_lifespan() -> AppLifespanService:
     config = get_global_config()
     return config.lifespan
+
+
+def db_service() -> DbService:
+    config = get_global_config()
+    return config.db_service
