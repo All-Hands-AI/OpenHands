@@ -26,6 +26,7 @@ def _get_db_engine():
 
         def get_db_connection():
             from google.cloud.sql.connector import Connector
+
             connector = Connector()
             instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
             return connector.connect(
@@ -53,6 +54,7 @@ def _get_db_engine():
 
 async def async_creator():
     from google.cloud.sql.connector import Connector
+
     loop = asyncio.get_running_loop()
     async with Connector(loop=loop) as connector:
         conn = await connector.connect_async(
