@@ -49,7 +49,7 @@ class StoredEventCallback(Base):  # type: ignore
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
-class StoredEventCallbackResult(Base): # type: ignore
+class StoredEventCallbackResult(Base):  # type: ignore
     __tablename__ = 'v1_event_callback_result'
     id = Column(SQLUUID, primary_key=True)
     status = Column(create_enum_type_decorator(EventCallbackResultStatus))
