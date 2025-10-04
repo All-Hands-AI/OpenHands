@@ -58,7 +58,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
             AppConversationStartTask.id.in_(task_ids)  # type: ignore
         )
         if self.user_id:
-            query = query.where(AppConversationStartTask.created_by_user_id == self.user_id)
+            query = query.where(
+                AppConversationStartTask.created_by_user_id == self.user_id
+            )
 
         result = await self.session.execute(query)
         tasks_by_id = {task.id: task for task in result.scalars().all()}
@@ -74,7 +76,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
             AppConversationStartTask.id == task_id
         )
         if self.user_id:
-            query = query.where(AppConversationStartTask.created_by_user_id == self.user_id)
+            query = query.where(
+                AppConversationStartTask.created_by_user_id == self.user_id
+            )
 
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -83,7 +87,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         self, task: AppConversationStartTask
     ) -> AppConversationStartTask:
         if self.user_id:
-            query = select(AppConversationStartTask).where(AppConversationStartTask.id == task.id)
+            query = select(AppConversationStartTask).where(
+                AppConversationStartTask.id == task.id
+            )
             result = await self.session.execute(query)
             existing: AppConversationStartTask = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
@@ -93,15 +99,16 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         return task
 
 
-class SQLAppConversationStartTaskServiceManager(
-    AppConversationStartTaskServiceManager
-):
+class SQLAppConversationStartTaskServiceManager(AppConversationStartTaskServiceManager):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service
 
+        # Create dependency at module level to avoid B008
+        _db_dependency = Depends(db_service().managed_session_dependency)
+
         def resolve_app_conversation_start_task_service(
-            session: AsyncSession = Depends(db_service().managed_session_dependency),
+            session: AsyncSession = _db_dependency,
         ) -> AppConversationStartTaskService:
             return SQLAppConversationStartTaskService(session=session)
 
@@ -111,12 +118,18 @@ class SQLAppConversationStartTaskServiceManager(
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service, user_manager
 
+        # Create dependencies at module level to avoid B008
+        _user_dependency = Depends(user_manager().get_resolver_for_current_user())
+        _db_dependency = Depends(db_service().managed_session_dependency)
+
         async def resolve_app_conversation_start_task_service(
-            user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
-            session: AsyncSession = Depends(db_service().managed_session_dependency),
+            user_service: UserService = _user_dependency,
+            session: AsyncSession = _db_dependency,
         ) -> AppConversationStartTaskService:
             user_id = await user_service.get_user_id()
-            service = SQLAppConversationStartTaskService(session=session, user_id=user_id)
+            service = SQLAppConversationStartTaskService(
+                session=session, user_id=user_id
+            )
             return service
 
         return resolve_app_conversation_start_task_service

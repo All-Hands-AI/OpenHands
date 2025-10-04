@@ -4,10 +4,9 @@ from typing import Callable
 from openhands.app_server.user.user_models import (
     UserInfo,
 )
+from openhands.integrations.provider import ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
-
-from openhands.integrations.provider import ProviderType
 
 
 class UserService(ABC):
@@ -29,11 +28,11 @@ class UserService(ABC):
 
     @abstractmethod
     async def get_latest_token(self, provider_type: ProviderType) -> str | None:
-        """ Get the latest token for the provider type given"""
+        """Get the latest token for the provider type given"""
 
     @abstractmethod
     async def get_secrets(self) -> dict[str, SecretSource]:
-        """ Get custom secrets and github provider secrets for the conversation. """
+        """Get custom secrets and github provider secrets for the conversation."""
 
 
 class UserServiceManager(DiscriminatedUnionMixin, ABC):

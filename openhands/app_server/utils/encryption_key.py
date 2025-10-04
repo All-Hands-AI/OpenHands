@@ -1,12 +1,12 @@
-
-from datetime import datetime
 import os
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import base62
-from openhands.agent_server.utils import utc_now
 from pydantic import BaseModel, Field, SecretStr, TypeAdapter, field_serializer
+
+from openhands.agent_server.utils import utc_now
 
 
 class EncryptionKey(BaseModel):

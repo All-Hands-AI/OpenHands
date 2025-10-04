@@ -24,9 +24,9 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import Column, Select, String, func, select, UUID as SQLUUID
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Column, Select, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from openhands.sdk.llm import MetricsSnapshot
 
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -38,16 +38,22 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationSortOrder,
 )
 from openhands.app_server.user.user_service import UserService
-from openhands.app_server.utils.sql_utils import Base, UtcDateTime, create_enum_type_decorator, create_json_type_decorator, row2dict
+from openhands.app_server.utils.sql_utils import (
+    Base,
+    UtcDateTime,
+    create_enum_type_decorator,
+    create_json_type_decorator,
+    row2dict,
+)
 from openhands.integrations.service_types import ProviderType
+from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 logger = logging.getLogger(__name__)
 
 
-
 class StoredAppConversationInfo(Base):  # type: ignore
-    __tablename__ = "v1_app_conversation_info"
+    __tablename__ = 'v1_app_conversation_info'
     id = Column(SQLUUID, primary_key=True)
     created_by_user_id = Column(String, index=True)
     selected_repository = Column(String, nullable=True)
@@ -131,9 +137,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         if has_more:
             rows = rows[:limit]
 
-        items = [
-            AppConversationInfo(**row2dict(row)) for row in rows
-        ]
+        items = [AppConversationInfo(**row2dict(row)) for row in rows]
 
         # Calculate next page ID
         next_page_id = None
@@ -232,7 +236,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
         if self.user_id:
-            query = select(StoredAppConversationInfo).where(StoredAppConversationInfo.id == info.id)
+            query = select(StoredAppConversationInfo).where(
+                StoredAppConversationInfo.id == info.id
+            )
             result = await self.session.execute(query)
             existing = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
@@ -243,7 +249,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     def _secure_select(self):
         query = select(StoredAppConversationInfo)
         if self.user_id:
-            query = query.where(StoredAppConversationInfo.created_by_user_id == self.user_id)
+            query = query.where(
+                StoredAppConversationInfo.created_by_user_id == self.user_id
+            )
         return query
 
 
@@ -252,8 +260,11 @@ class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service
 
+        # Create dependency at module level to avoid B008
+        _db_dependency = Depends(db_service().managed_session_dependency)
+
         def resolve_app_conversation_service(
-            session: AsyncSession = Depends(db_service().managed_session_dependency),
+            session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
             return SQLAppConversationInfoService(session=session)
 
@@ -263,9 +274,13 @@ class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service, user_manager
 
+        # Create dependencies at module level to avoid B008
+        _user_dependency = Depends(user_manager().get_resolver_for_current_user())
+        _db_dependency = Depends(db_service().managed_session_dependency)
+
         async def resolve_app_conversation_service(
-            user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
-            session: AsyncSession = Depends(db_service().managed_session_dependency),
+            user_service: UserService = _user_dependency,
+            session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
             user_id = await user_service.get_user_id()
             service = SQLAppConversationInfoService(session=session, user_id=user_id)

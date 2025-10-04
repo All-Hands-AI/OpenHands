@@ -9,7 +9,6 @@ import base62
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
-from openhands.sdk.conversation.state import AgentExecutionStatus
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -44,6 +43,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -346,9 +346,7 @@ async def search_conversations(
     v0_conversation_ids = set(
         conversation.conversation_id for conversation in v0_filtered_results
     )
-    v0_connection_ids_to_conversation_ids = await conversation_manager.get_connections(
-        filter_to_sids=v0_conversation_ids
-    )
+    await conversation_manager.get_connections(filter_to_sids=v0_conversation_ids)
     v0_agent_loop_info = await conversation_manager.get_agent_loop_info(
         filter_to_sids=v0_conversation_ids
     )
@@ -418,7 +416,9 @@ async def search_conversations(
         }
         # Only include page_id if at least one source has more pages
         if next_page_data['v0'] or next_page_data['v1']:
-            next_page_id = base64.b64encode(json.dumps(next_page_data).encode()).decode()
+            next_page_id = base64.b64encode(
+                json.dumps(next_page_data).encode()
+            ).decode()
 
     return ConversationInfoResultSet(results=final_results, next_page_id=next_page_id)
 
@@ -986,7 +986,10 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
     runtime_status = runtime_status_mapping.get(
         app_conversation.agent_status, RuntimeStatus.ERROR
     )
-    title = app_conversation.title or f"Conversation {base62.encodebytes(app_conversation.id.bytes)}"
+    title = (
+        app_conversation.title
+        or f'Conversation {base62.encodebytes(app_conversation.id.bytes)}'
+    )
 
     return ConversationInfo(
         conversation_id=str(app_conversation.id),

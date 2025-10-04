@@ -12,9 +12,7 @@ from openhands.app_server.sandbox.sandbox_service import (
 )
 
 router = APIRouter(prefix='/sandboxes', tags=['Sandbox'])
-sandbox_service_dependency = Depends(
-    sandbox_manager().get_resolver_for_current_user()
-)
+sandbox_service_dependency = Depends(sandbox_manager().get_resolver_for_current_user())
 
 # Read methods
 

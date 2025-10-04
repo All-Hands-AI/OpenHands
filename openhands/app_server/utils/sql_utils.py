@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 from enum import Enum
 from typing import TypeVar
+
 from pydantic import SecretStr, TypeAdapter
 from sqlalchemy import JSON, DateTime, String, TypeDecorator
 from sqlalchemy.orm import declarative_base
@@ -37,7 +38,8 @@ class StoredSecretStr(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is not None:
             from openhands.app_server.config import (
-                get_global_config, resolve_jwt_service
+                get_global_config,
+                resolve_jwt_service,
             )
 
             service = resolve_jwt_service(get_global_config())
@@ -48,7 +50,8 @@ class StoredSecretStr(TypeDecorator):
     def process_result_param(self, value, dialect):
         if value is not None:
             from openhands.app_server.config import (
-                get_global_config, resolve_jwt_service
+                get_global_config,
+                resolve_jwt_service,
             )
 
             service = resolve_jwt_service(get_global_config())
@@ -79,7 +82,6 @@ class UtcDateTime(TypeDecorator):
 
 
 def create_enum_type_decorator(enum_type: type[T]):
-
     class EnumTypeDecorator(TypeDecorator):
         impl = String
         cache_ok = True

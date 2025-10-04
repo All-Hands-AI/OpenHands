@@ -29,9 +29,7 @@ _logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     EventKind = str
 else:
-    EventKind = Literal[
-        tuple(c.__name__ for c in get_known_concrete_subclasses(Event))
-    ]
+    EventKind = Literal[tuple(c.__name__ for c in get_known_concrete_subclasses(Event))]
 
 
 class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
@@ -82,7 +80,12 @@ class CreateEventCallbackRequest(OpenHandsModel):
 
 class EventCallback(SQLModel, CreateEventCallbackRequest, table=True):  # type: ignore
     id: UUID = SQLField(default_factory=uuid4, primary_key=True)
-    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
+    created_at: datetime = SQLField(
+        default_factory=utc_now,
+        sa_column=Column(
+            DateTime(timezone=True), server_default=func.now(), index=True
+        ),
+    )
 
 
 class EventCallbackPage(OpenHandsModel):

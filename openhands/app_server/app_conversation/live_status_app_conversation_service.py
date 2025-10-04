@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -38,7 +37,9 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
 )
-from openhands.app_server.app_conversation.git_app_conversation_service import GitAppConversationService
+from openhands.app_server.app_conversation.git_app_conversation_service import (
+    GitAppConversationService,
+)
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
@@ -49,14 +50,13 @@ from openhands.app_server.sandbox.sandbox_models import (
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_service import UserService
+from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.tools.preset.default import get_default_agent
-
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
-from openhands.integrations.provider import ProviderType
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
@@ -366,7 +366,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
             sandbox = await self.sandbox_service.start_sandbox()
             task.sandbox_id = sandbox.id
         else:
-            sandbox_info = await self.sandbox_service.get_sandbox(task.request.sandbox_id)
+            sandbox_info = await self.sandbox_service.get_sandbox(
+                task.request.sandbox_id
+            )
             if sandbox_info is None:
                 raise SandboxError(f'Sandbox not found: {task.request.sandbox_id}')
             sandbox = sandbox_info
@@ -430,10 +432,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + "/ap/v1/webhooks/secrets",
-                    headers={
-                        'X-Access-Token': access_token
-                    },
+                    url=self.web_url + '/ap/v1/webhooks/secrets',
+                    headers={'X-Access-Token': access_token},
                 )
             else:
                 # If there is no URL specified where the sandbox can access the app server
@@ -459,7 +459,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             if user.confirmation_mode
             else NeverConfirm(),
             initial_message=initial_message,
-            secrets=secrets
+            secrets=secrets,
         )
         return start_conversation_request
 
@@ -473,22 +473,35 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
     )
     init_git_in_empty_workspace: bool = Field(
         default=True,
-        description='Whether to initialize a git repo when the workspace is empty'
+        description='Whether to initialize a git repo when the workspace is empty',
     )
     access_token_hard_timeout: int | None = Field(
-        default=14*86400,
+        default=14 * 86400,
         description=(
-            "A security measure - the time after which git tokens may no longer "
-            "be retrieved by a sandboxed conversation."
-        )
+            'A security measure - the time after which git tokens may no longer '
+            'be retrieved by a sandboxed conversation.'
+        ),
     )
 
     def get_resolver_for_current_user(self) -> Callable:
-        from openhands.app_server.config import app_conversation_info_manager, app_conversation_start_task_manager, get_global_config, httpx_client_manager, resolve_jwt_service, sandbox_manager, user_manager
+        from openhands.app_server.config import (
+            app_conversation_info_manager,
+            app_conversation_start_task_manager,
+            get_global_config,
+            httpx_client_manager,
+            resolve_jwt_service,
+            sandbox_manager,
+            user_manager,
+        )
+
         resolve_user_service = user_manager().get_resolver_for_current_user()
         resolve_sandbox_service = sandbox_manager().get_resolver_for_current_user()
-        resolve_app_conversation_info_service = app_conversation_info_manager().get_resolver_for_current_user()
-        resolve_app_conversation_start_task_service = app_conversation_start_task_manager().get_resolver_for_current_user()
+        resolve_app_conversation_info_service = (
+            app_conversation_info_manager().get_resolver_for_current_user()
+        )
+        resolve_app_conversation_start_task_service = (
+            app_conversation_start_task_manager().get_resolver_for_current_user()
+        )
         resolve_httpx_client_manager = httpx_client_manager().resolve
 
         def _resolve_for_user(
@@ -505,7 +518,9 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
         ) -> AppConversationService:
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:
-                access_token_hard_timeout = timedelta(seconds=float(self.access_token_hard_timeout))
+                access_token_hard_timeout = timedelta(
+                    seconds=float(self.access_token_hard_timeout)
+                )
             config = get_global_config()
 
             # If no web url has been set and we are using docker, we can use host.docker.internal

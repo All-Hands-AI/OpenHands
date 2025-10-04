@@ -33,7 +33,7 @@ class SandboxSpecService(ABC):
         """Get the default sandbox spec."""
         page = await self.search_sandbox_specs()
         if not page:
-            raise SandboxError("No sandbox specs available!")
+            raise SandboxError('No sandbox specs available!')
         return page.items[0]
 
     async def batch_get_sandbox_specs(

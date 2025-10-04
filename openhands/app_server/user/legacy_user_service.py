@@ -5,11 +5,9 @@ from fastapi import Depends
 
 from openhands.app_server.user.user_models import UserInfo
 from openhands.app_server.user.user_service import UserService, UserServiceManager
-from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
-
 from openhands.integrations.provider import ProviderHandler, ProviderType
+from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
-
 
 # In legacy mode for OSS, there is only a single unconstrained user
 ROOT_USER = 'root'
@@ -18,7 +16,7 @@ ROOT_USER = 'root'
 @dataclass
 class LegacyUserService(UserService):
     """Interface to old user settings service. Eventually we want to migrate
-    this to use true database asyncio. """
+    this to use true database asyncio."""
 
     user_auth: UserAuth
     _user_info: UserInfo | None = None
@@ -49,7 +47,9 @@ class LegacyUserService(UserService):
             provider_tokens = await self.user_auth.get_provider_tokens()
             assert provider_tokens is not None
             user_id = await self.get_user_id()
-            provider_handler = ProviderHandler(provider_tokens=provider_tokens, external_auth_id=user_id)
+            provider_handler = ProviderHandler(
+                provider_tokens=provider_tokens, external_auth_id=user_id
+            )
             self._provider_handler = provider_handler
         return provider_handler
 
@@ -74,6 +74,7 @@ class LegacyUserService(UserService):
                 results[name] = StaticSecret(value=custom_secret.secret)
 
         return results
+
 
 class LegacyUserServiceManager(UserServiceManager):
     def get_resolver_for_current_user(self) -> Callable:

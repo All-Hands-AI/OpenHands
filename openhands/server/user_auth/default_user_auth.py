@@ -95,5 +95,5 @@ class DefaultUserAuth(UserAuth):
 
     @classmethod
     async def get_for_user(cls, user_id: str) -> UserAuth:
-        assert user_id == "root"
+        assert user_id == 'root'
         return DefaultUserAuth()

@@ -7,10 +7,13 @@ from typing import Any
 import jwt
 from jose import jwe
 from jose.constants import ALGORITHMS
+from pydantic import BaseModel, PrivateAttr
 
 from openhands.agent_server.utils import utc_now
-from pydantic import BaseModel, PrivateAttr
-from openhands.app_server.utils.encryption_key import EncryptionKey, get_default_encryption_keys
+from openhands.app_server.utils.encryption_key import (
+    EncryptionKey,
+    get_default_encryption_keys,
+)
 
 
 class JwtService:

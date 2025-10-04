@@ -1,6 +1,3 @@
-
-
-
 from abc import ABC, abstractmethod
 from typing import Callable
 
@@ -9,11 +6,11 @@ from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
 class UserAdminService(ABC):
-    """ Service for user administration"""
+    """Service for user administration"""
 
     @abstractmethod
     async def get_user_service(self, user_id: str) -> UserService | None:
-        """ Get a user service for this id given."""
+        """Get a user service for this id given."""
 
 
 class UserAdminServiceManager(DiscriminatedUnionMixin, ABC):

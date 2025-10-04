@@ -7,9 +7,7 @@ from openhands.app_server.user.user_models import UserInfo
 from openhands.app_server.user.user_service import UserService
 
 router = APIRouter(prefix='/users', tags=['User'])
-user_service_dependency = Depends(
-    user_manager().get_resolver_for_current_user()
-)
+user_service_dependency = Depends(user_manager().get_resolver_for_current_user())
 
 # Read methods
 

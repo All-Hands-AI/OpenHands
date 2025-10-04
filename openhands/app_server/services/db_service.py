@@ -59,6 +59,7 @@ class DbService(BaseModel):
     def _create_gcp_db_connection(self):
         # Lazy import because lib does not import if user does not have posgres installed
         from google.cloud.sql.connector import Connector
+
         connector = Connector()
         instance_string = f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}'
         password = self.password
@@ -73,6 +74,7 @@ class DbService(BaseModel):
     async def _create_async_gcp_db_connection(self):
         # Lazy import because lib does not import if user does not have posgres installed
         from google.cloud.sql.connector import Connector
+
         loop = asyncio.get_running_loop()
         async with Connector(loop=loop) as connector:
             password = self.password

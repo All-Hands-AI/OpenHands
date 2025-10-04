@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from typing import Callable
 from uuid import UUID
 
@@ -180,8 +180,11 @@ class SQLEventCallbackServiceManager(EventCallbackServiceManager):
     def get_unsecured_resolver(self) -> Callable:
         from openhands.app_server.config import db_service
 
+        # Create dependency at module level to avoid B008
+        _db_dependency = Depends(db_service().managed_session_dependency)
+
         def resolve(
-            db_session = Depends(db_service().managed_session_dependency)
+            db_session=_db_dependency,
         ) -> EventCallbackService:
             return SQLEventCallbackService(db_session)
 

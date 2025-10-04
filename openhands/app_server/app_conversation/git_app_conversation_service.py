@@ -1,18 +1,20 @@
-
-
-from abc import ABC
-import os
-from pathlib import Path
-import tempfile
-import base62
-
-from dataclasses import dataclass
 import logging
+import os
+import tempfile
+from abc import ABC
+from dataclasses import dataclass
+from pathlib import Path
 from typing import AsyncGenerator
 
-from openhands.app_server.app_conversation.app_conversation_models import AppConversationStartTask, AppConversationStartTaskStatus
-from openhands.app_server.app_conversation.app_conversation_service import AppConversationService
+import base62
 
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartTask,
+    AppConversationStartTaskStatus,
+)
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationService,
+)
 from openhands.app_server.user.user_service import UserService
 from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 
@@ -23,9 +25,9 @@ PRE_COMMIT_LOCAL = '.git/hooks/pre-commit.local'
 
 @dataclass
 class GitAppConversationService(AppConversationService, ABC):
-    """ App Conversation service which adds git specific functionality.
+    """App Conversation service which adds git specific functionality.
 
-    Sets up repositories and installs hooks """
+    Sets up repositories and installs hooks"""
 
     init_git_in_empty_workspace: bool
     user_service: UserService
@@ -58,8 +60,8 @@ class GitAppConversationService(AppConversationService, ABC):
             if self.init_git_in_empty_workspace:
                 _logger.debug('Initializing a new git repository in the workspace.')
                 await workspace.execute_command(
-                    'git init && git config --global --add safe.directory ' +
-                    workspace.working_dir
+                    'git init && git config --global --add safe.directory '
+                    + workspace.working_dir
                 )
             else:
                 _logger.info('Not initializing a new git repository.')
@@ -94,22 +96,21 @@ class GitAppConversationService(AppConversationService, ABC):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
         setup_script = workspace.working_dir + '/.openhands/setup.sh'
 
-        await workspace.execute_command(f'chmod +x {setup_script} && source {setup_script}', timeout=600)
+        await workspace.execute_command(
+            f'chmod +x {setup_script} && source {setup_script}', timeout=600
+        )
 
-        #TODO: Does this need to be done?
+        # TODO: Does this need to be done?
         # Add the action to the event stream as an ENVIRONMENT event
-        #source = EventSource.ENVIRONMENT
-        #self.event_stream.add_event(action, source)
+        # source = EventSource.ENVIRONMENT
+        # self.event_stream.add_event(action, source)
 
     async def maybe_setup_git_hooks(
         self,
         workspace: AsyncRemoteWorkspace,
     ):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
-        command = (
-            'mkdir -p .git/hooks && '
-            f'chmod +x .openhands/pre-commit.sh'
-        )
+        command = 'mkdir -p .git/hooks && chmod +x .openhands/pre-commit.sh'
         result = await workspace.execute_command(command, workspace.working_dir)
         if result.exit_code:
             return
@@ -126,7 +127,9 @@ class GitAppConversationService(AppConversationService, ABC):
                         f'mv {PRE_COMMIT_HOOK} {PRE_COMMIT_LOCAL} &&'
                         f'chmod +x {PRE_COMMIT_LOCAL}'
                     )
-                    result = await workspace.execute_command(command, workspace.working_dir)
+                    result = await workspace.execute_command(
+                        command, workspace.working_dir
+                    )
                     if result.exit_code != 0:
                         _logger.error(
                             f'Failed to preserve existing pre-commit hook: {result.stderr}',
@@ -135,7 +138,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # write the pre-commit hook
         await workspace.file_upload(
-            source_path=Path(__file__).parent / "pre-commit.sh",
+            source_path=Path(__file__).parent / 'pre-commit.sh',
             destination_path=PRE_COMMIT_HOOK,
         )
 

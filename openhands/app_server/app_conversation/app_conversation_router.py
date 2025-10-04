@@ -1,13 +1,23 @@
 """Sandboxed Conversation router for OpenHands Server."""
 
 import asyncio
+import sys
 from datetime import datetime
 from typing import Annotated, AsyncGenerator
 from uuid import UUID
 
+# Handle anext compatibility for Python < 3.10
+if sys.version_info >= (3, 10):
+    from builtins import anext
+else:
+
+    async def anext(async_iterator):
+        """Compatibility function for anext in Python < 3.10"""
+        return await async_iterator.__anext__()
+
+
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.app_server.app_conversation.app_conversation_models import (

@@ -14,8 +14,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.sdk import Workspace
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
-from openhands.app_server.sandbox.sandbox_models import SandboxInfo
-
 
 class AppConversationService(ABC):
     """Service for managing conversations running in sandboxes."""
@@ -87,7 +85,9 @@ class AppConversationService(ABC):
         Typically used to poll and determine if a conversation started."""
 
     @abstractmethod
-    async def run_setup_scripts(self, task: AppConversationStartTask, workspace: Workspace) -> AsyncGenerator[AppConversationStartTask, None]:
+    async def run_setup_scripts(
+        self, task: AppConversationStartTask, workspace: Workspace
+    ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Run the setup scripts for the project and yield status updates"""
         yield task
 

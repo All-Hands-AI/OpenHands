@@ -13,7 +13,7 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-from openhands.app_server.utils.sql_utils import create_json_type_decorator, UtcDateTime
+from openhands.app_server.utils.sql_utils import UtcDateTime, create_json_type_decorator
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import MetricsSnapshot
@@ -66,12 +66,10 @@ class AppConversation(AppConversationInfo):  # type: ignore
         description='Current agent status. Will be None if the sandbox_status is not RUNNING',
     )
     conversation_url: str | None = Field(
-        default=None,
-        description="The URL where the conversation may be accessed"
+        default=None, description='The URL where the conversation may be accessed'
     )
     session_api_key: str | None = Field(
-        default=None,
-        description="The Session Api Key for REST operations."
+        default=None, description='The Session Api Key for REST operations.'
     )
 
     # Have to redefine these due to a bug in SQLModel :(
@@ -140,5 +138,11 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     request: AppConversationStartRequest = SQLField(
         sa_column=Column(create_json_type_decorator(AppConversationStartRequest))
     )
-    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(UtcDateTime, server_default=func.now(), index=True))
-    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(UtcDateTime, onupdate=func.now(), index=True))
+    created_at: datetime = SQLField(
+        default_factory=utc_now,
+        sa_column=Column(UtcDateTime, server_default=func.now(), index=True),
+    )
+    updated_at: datetime = SQLField(
+        default_factory=utc_now,
+        sa_column=Column(UtcDateTime, onupdate=func.now(), index=True),
+    )

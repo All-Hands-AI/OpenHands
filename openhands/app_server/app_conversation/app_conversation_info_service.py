@@ -60,7 +60,9 @@ class AppConversationInfoService(ABC):
     # Mutators
 
     @abstractmethod
-    async def save_app_conversation_info(self, info: AppConversationInfo) -> AppConversationInfo:
+    async def save_app_conversation_info(
+        self, info: AppConversationInfo
+    ) -> AppConversationInfo:
         """Store the sandboxed conversation info object given.
 
         Return the stored info
@@ -70,7 +72,7 @@ class AppConversationInfoService(ABC):
 class AppConversationInfoServiceManager(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     def get_unsecured_resolver(self) -> Callable:
-         """Get an instance of app conversation info service."""
+        """Get an instance of app conversation info service."""
 
     @abstractmethod
     def get_resolver_for_current_user(self) -> Callable:
