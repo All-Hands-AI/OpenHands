@@ -5,6 +5,7 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import sys
+import os
 
 from openhands.sdk import (
     Message,
@@ -72,6 +73,12 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
     session = get_session_prompter()
+
+    # If an initial task was injected via environment (from --task/--file), send it once.
+    initial_task = os.environ.pop("OPENHANDS_CLI_INITIAL_TASK", None)
+    if initial_task:
+        message = Message(role="user", content=[TextContent(text=initial_task)])
+        runner.process_message(message)
 
     # Main chat loop
     while True:
