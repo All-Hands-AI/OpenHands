@@ -32,7 +32,7 @@ export default defineConfig({
     trace: "on-first-retry",
     /* Ignore SSL errors for browser agent test */
     /* Solution inspired by StackOverflow post: https://stackoverflow.com/questions/67048422/ignore-ssl-errors-with-playwright-code-generation */
-    ignore HTTPSErrors: true
+    ignore HTTPSErrors: true,
   },
 
   /* Configure projects for major browsers */
