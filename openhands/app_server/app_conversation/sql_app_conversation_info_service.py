@@ -73,7 +73,8 @@ class StoredAppConversationInfo(Base):  # type: ignore
 class SQLAppConversationInfoService(AppConversationInfoService):
     """SQL implementation of AppConversationInfoService focused on db operations.
 
-    This allows storing a record of a conversation even after its sandbox ceases to exist"""
+    This allows storing a record of a conversation even after its sandbox ceases to exist
+    """
 
     session: AsyncSession
     user_id: str | None = None
@@ -130,7 +131,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = query.limit(limit + 1)
 
         result = await self.session.execute(query)
-        rows = list(result)
+        rows = result.scalars().all()
 
         # Check if there are more results
         has_more = len(rows) > limit
@@ -155,7 +156,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         updated_at__lt: datetime | None = None,
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
-        query = self._secure_select()
+        query = select(func.count(StoredAppConversationInfo.id))
+        if self.user_id:
+            query = query.where(
+                StoredAppConversationInfo.created_by_user_id == self.user_id
+            )
 
         query = self._apply_filters(
             query=query,
@@ -220,7 +225,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = self._secure_select().where(
             StoredAppConversationInfo.id.in_(conversation_ids)
         )
-        rows = await self.session.execute(query)
+        result = await self.session.execute(query)
+        rows = result.scalars().all()
         info_by_id = {info.id: info for info in rows}
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_ids:
