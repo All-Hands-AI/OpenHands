@@ -116,7 +116,6 @@ pybase62 = "^1.0.0"
 openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/agent_server", rev = "31dd29867ff6a38126f9b898798f427ecc3df709" }
 openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "31dd29867ff6a38126f9b898798f427ecc3df709" }
 openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "31dd29867ff6a38126f9b898798f427ecc3df709" }
-sqlmodel = "^0.0.25"
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 
 [tool.poetry.extras]

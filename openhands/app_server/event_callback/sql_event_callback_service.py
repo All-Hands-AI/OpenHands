@@ -22,7 +22,6 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventKind,
 )
 from openhands.app_server.event_callback.event_callback_result_models import (
-    EventCallbackResult,
     EventCallbackResultStatus,
 )
 from openhands.app_server.event_callback.event_callback_service import (
@@ -32,6 +31,7 @@ from openhands.app_server.event_callback.event_callback_service import (
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
+    create_enum_type_decorator,
     create_json_type_decorator,
     row2dict,
 )
@@ -46,6 +46,17 @@ class StoredEventCallback(Base):  # type: ignore
     conversation_id = Column(SQLUUID, nullable=True)
     processor = Column(create_json_type_decorator(EventCallbackProcessor))
     event_kind = Column(String, nullable=True)
+    created_at = Column(UtcDateTime, server_default=func.now(), index=True)
+
+
+class StoredEventCallbackResult(Base): # type: ignore
+    __tablename__ = 'v1_event_callback_result'
+    id = Column(SQLUUID, primary_key=True)
+    status = Column(create_enum_type_decorator(EventCallbackResultStatus))
+    event_callback_id = Column(SQLUUID, index=True)
+    event_id = Column(SQLUUID, index=True)
+    conversation_id = Column(SQLUUID, index=True)
+    detail = Column(String, nullable=True)
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
@@ -189,16 +200,17 @@ class SQLEventCallbackService(EventCallbackService):
     ):
         try:
             result = await callback.processor(conversation_id, callback, event)
+            stored_result = StoredEventCallbackResult(**row2dict(result))
         except Exception as exc:
             _logger.exception(f'Exception in callback {callback.id}', stack_info=True)
-            result = EventCallbackResult(
+            stored_result = StoredEventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
                 event_id=event.id,
                 conversation_id=conversation_id,
                 detail=str(exc),
             )
-        await self.session.add(result)
+        await self.session.add(stored_result)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service."""
