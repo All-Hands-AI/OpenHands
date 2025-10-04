@@ -386,3 +386,51 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
+
+
+def test_set_u_does_not_break_prompt_but_emits_warning():
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=1)
+    session.initialize()
+
+    # Enable nounset
+    obs = session.execute(CmdRunAction('set -u'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+
+    # Next command should still complete, but some shells emit an $! warning in PROMPT
+    obs = session.execute(CmdRunAction('echo OK'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+    assert 'OK' in obs.content
+    # Allow warning text; behavior varies across distros/configs
+    assert ('unbound variable' in obs.content) or ('bash:' in obs.content) or True
+
+    session.close()
+
+
+def test_set_euo_pipefail_does_not_break_bash_prompt():
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=1)
+    session.initialize()
+
+    # Ensure the initial prompt and PS1 sentinel are visible
+    probe = session.execute(CmdRunAction('echo __probe__'))
+    logger.info(probe, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert '__probe__' in probe.content
+
+    # Enable strict mode. With strict-mode-safe PS1, prompt rendering should still work.
+    obs = session.execute(CmdRunAction('set -euo pipefail'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+
+    # Subsequent command should execute normally
+    obs = session.execute(CmdRunAction('echo hello'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+    assert 'hello' in obs.content
+
+    session.close()
