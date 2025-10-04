@@ -1,10 +1,10 @@
-import { setCurrentAgentState } from "#/state/agent-slice";
-import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
-import store from "#/store";
 import { ObservationMessage } from "#/types/message";
+import { useJupyterStore } from "#/state/jupyter-store";
 import { useCommandStore } from "#/state/command-store";
-import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
+import { useBrowserStore } from "#/stores/browser-store";
+import { useAgentStore } from "#/stores/agent-store";
+import { AgentState } from "#/types/agent-state";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -23,26 +23,31 @@ export function handleObservationMessage(message: ObservationMessage) {
       break;
     }
     case ObservationType.RUN_IPYTHON:
-      store.dispatch(
-        appendJupyterOutput({
-          content: message.content,
-          imageUrls: Array.isArray(message.extras?.image_urls)
-            ? message.extras.image_urls
-            : undefined,
-        }),
-      );
+      useJupyterStore.getState().appendJupyterOutput({
+        content: message.content,
+        imageUrls: Array.isArray(message.extras?.image_urls)
+          ? message.extras.image_urls
+          : undefined,
+      });
       break;
     case ObservationType.BROWSE:
     case ObservationType.BROWSE_INTERACTIVE:
-      if (message.extras?.screenshot) {
-        store.dispatch(setScreenshotSrc(message.extras?.screenshot));
+      if (
+        message.extras?.screenshot &&
+        typeof message.extras.screenshot === "string"
+      ) {
+        useBrowserStore.getState().setScreenshotSrc(message.extras.screenshot);
       }
-      if (message.extras?.url) {
-        store.dispatch(setUrl(message.extras.url));
+      if (message.extras?.url && typeof message.extras.url === "string") {
+        useBrowserStore.getState().setUrl(message.extras.url);
       }
       break;
     case ObservationType.AGENT_STATE_CHANGED:
-      store.dispatch(setCurrentAgentState(message.extras.agent_state));
+      if (typeof message.extras.agent_state === "string") {
+        useAgentStore
+          .getState()
+          .setCurrentAgentState(message.extras.agent_state as AgentState);
+      }
       break;
     case ObservationType.DELEGATE:
     case ObservationType.READ:
@@ -63,19 +68,29 @@ export function handleObservationMessage(message: ObservationMessage) {
 
     switch (observation) {
       case "browse":
-        if (message.extras?.screenshot) {
-          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        if (
+          message.extras?.screenshot &&
+          typeof message.extras.screenshot === "string"
+        ) {
+          useBrowserStore
+            .getState()
+            .setScreenshotSrc(message.extras.screenshot);
         }
-        if (message.extras?.url) {
-          store.dispatch(setUrl(message.extras.url));
+        if (message.extras?.url && typeof message.extras.url === "string") {
+          useBrowserStore.getState().setUrl(message.extras.url);
         }
         break;
       case "browse_interactive":
-        if (message.extras?.screenshot) {
-          store.dispatch(setScreenshotSrc(message.extras.screenshot));
+        if (
+          message.extras?.screenshot &&
+          typeof message.extras.screenshot === "string"
+        ) {
+          useBrowserStore
+            .getState()
+            .setScreenshotSrc(message.extras.screenshot);
         }
-        if (message.extras?.url) {
-          store.dispatch(setUrl(message.extras.url));
+        if (message.extras?.url && typeof message.extras.url === "string") {
+          useBrowserStore.getState().setUrl(message.extras.url);
         }
         break;
       default:

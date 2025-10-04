@@ -1,4 +1,3 @@
-import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -7,18 +6,18 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useWsClient } from "#/context/ws-client-provider";
 import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
 import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/u-warning.svg?react";
-import { RootState } from "#/store";
-import { addSubmittedEventId } from "#/state/event-message-slice";
+import { useEventMessageStore } from "#/stores/event-message-store";
 
 export function ConfirmationButtons() {
-  const submittedEventIds = useSelector(
-    (state: RootState) => state.eventMessage.submittedEventIds,
+  const submittedEventIds = useEventMessageStore(
+    (state) => state.submittedEventIds,
   );
-
-  const dispatch = useDispatch();
+  const addSubmittedEventId = useEventMessageStore(
+    (state) => state.addSubmittedEventId,
+  );
 
   const { t } = useTranslation();
 
@@ -40,10 +39,10 @@ export function ConfirmationButtons() {
         return;
       }
 
-      dispatch(addSubmittedEventId(awaitingAction.id));
+      addSubmittedEventId(awaitingAction.id);
       send(generateAgentStateChangeEvent(state));
     },
-    [send],
+    [send, addSubmittedEventId],
   );
 
   // Handle keyboard shortcuts

@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.message import MessageAction
 from openhands.events.event_filter import EventFilter
 from openhands.events.event_store import EventStore
 from openhands.events.serialization.event import event_to_dict
@@ -175,6 +176,53 @@ async def add_event(
     data = await request.json()
     await conversation_manager.send_event_to_conversation(conversation.sid, data)
     return JSONResponse({'success': True})
+
+
+class AddMessageRequest(BaseModel):
+    """Request model for adding a message to a conversation."""
+
+    message: str
+
+
+@app.post('/message')
+async def add_message(
+    data: AddMessageRequest,
+    conversation: ServerConversation = Depends(get_conversation),
+):
+    """Add a message to an existing conversation.
+
+    This endpoint allows adding a user message to an existing conversation.
+    The message will be processed by the agent in the conversation.
+
+    Args:
+        data: The request data containing the message text
+        conversation: The conversation to add the message to (injected by dependency)
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation
+    """
+    try:
+        # Create a MessageAction from the provided message text
+        message_action = MessageAction(content=data.message)
+
+        # Convert the action to a dictionary for sending to the conversation
+        message_data = event_to_dict(message_action)
+
+        # Send the message to the conversation
+        await conversation_manager.send_event_to_conversation(
+            conversation.sid, message_data
+        )
+
+        return JSONResponse({'success': True})
+    except Exception as e:
+        logger.error(f'Error adding message to conversation: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                'success': False,
+                'error': f'Error adding message to conversation: {e}',
+            },
+        )
 
 
 class MicroagentResponse(BaseModel):

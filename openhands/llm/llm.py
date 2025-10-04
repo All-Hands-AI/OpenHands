@@ -148,7 +148,10 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
-
+            elif 'claude-sonnet-4-5' in self.config.model:
+                kwargs.pop(
+                    'reasoning_effort', None
+                )  # don't send reasoning_effort to Claude Sonnet 4.5
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
@@ -502,11 +505,14 @@ class LLM(RetryMixin, DebugMixin):
 
         # Set max_output_tokens from model info if not explicitly set
         if self.config.max_output_tokens is None:
-            # Special case for Claude 3.7 Sonnet models
-            if any(
-                model in self.config.model
-                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
-            ):
+            # Special case for Claude Sonnet models
+            sonnet_models = [
+                'claude-3-7-sonnet',
+                'claude-3.7-sonnet',
+                'claude-sonnet-4',
+                'claude-sonnet-4-5-20250929',
+            ]
+            if any(model in self.config.model for model in sonnet_models):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
             # Try to get from model info
             elif self.model_info is not None:
@@ -814,6 +820,8 @@ class LLM(RetryMixin, DebugMixin):
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
                 message.force_string_serializer = True
             if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
+                message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

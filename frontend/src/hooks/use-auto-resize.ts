@@ -1,5 +1,7 @@
 import { useCallback, useEffect, RefObject, useRef } from "react";
 import { IMessageToSend } from "#/state/conversation-slice";
+import { useCallback, useEffect, RefObject } from "react";
+import { IMessageToSend } from "#/state/conversation-store";
 import { useDragResize } from "./use-drag-resize";
 
 // Constants

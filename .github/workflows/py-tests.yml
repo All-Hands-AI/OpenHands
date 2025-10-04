@@ -19,12 +19,16 @@ jobs:
   # Run python tests on Linux
   test-on-linux:
     name: Python Tests on Linux
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
     strategy:
       matrix:
         python-version: ["3.12"]
+    permissions:
+      # For coverage comment and python-coverage-comment-action branch
+      pull-requests: write
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
@@ -48,10 +52,21 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Unit Tests
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv ./tests/unit
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -s ./tests/unit --cov=openhands --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.${{ matrix.python_version }}"
       - name: Run Runtime Tests with CLIRuntime
-        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
-
+        run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -s tests/runtime/test_bash.py --cov=openhands --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.runtime.${{ matrix.python_version }}"
+      - name: Store coverage file
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-openhands
+          path: |
+            .coverage.${{ matrix.python_version }}
+            .coverage.runtime.${{ matrix.python_version }}
+          include-hidden-files: true
   # Run specific Windows python tests
   test-on-windows:
     name: Python Tests on Windows
@@ -85,7 +100,7 @@ jobs:
           DEBUG: "1"
   test-enterprise:
     name: Enterprise Python Unit Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
         python-version: ["3.12"]
@@ -102,5 +117,37 @@ jobs:
         working-directory: ./enterprise
         run: poetry install --with dev,test
       - name: Run Unit Tests
-        working-directory: ./enterprise
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./tests/unit
+        # Use base working directory for coverage paths to line up.
+        run: PYTHONPATH=".:$PYTHONPATH" poetry run --project=enterprise pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./enterprise/tests/unit --cov=enterprise --cov-branch
+        env:
+          COVERAGE_FILE: ".coverage.enterprise.${{ matrix.python_version }}"
+      - name: Store coverage file
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-enterprise
+          path: ".coverage.enterprise.${{ matrix.python_version }}"
+          include-hidden-files: true
+  coverage-comment:
+    name: Coverage Comment
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: [test-on-linux, test-enterprise]
+
+    permissions:
+      pull-requests: write
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v5
+        id: download
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+
+      - name: Coverage comment
+        id: coverage_comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          MERGE_COVERAGE_FILES: true
