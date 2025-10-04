@@ -10,13 +10,15 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import and_, or_, select
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Column, String, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
     EventCallback,
     EventCallbackPage,
+    EventCallbackProcessor,
     EventKind,
 )
 from openhands.app_server.event_callback.event_callback_result_models import (
@@ -27,9 +29,24 @@ from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
     EventCallbackServiceManager,
 )
+from openhands.app_server.utils.sql_utils import (
+    Base,
+    UtcDateTime,
+    create_json_type_decorator,
+    row2dict,
+)
 from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
+
+
+class StoredEventCallback(Base):  # type: ignore
+    __tablename__ = 'v1_event_callback'
+    id = Column(SQLUUID, primary_key=True)
+    conversation_id = Column(SQLUUID, nullable=True)
+    processor = Column(create_json_type_decorator(EventCallbackProcessor))
+    event_kind = Column(String, nullable=True)
+    created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
 @dataclass
@@ -49,20 +66,25 @@ class SQLEventCallbackService(EventCallbackService):
             event_kind=request.event_kind,
         )
 
-        # Add to session and commit
-        await self.session.add(event_callback)
-        return event_callback
+        # Create stored version and add to session
+        stored_callback = StoredEventCallback(**event_callback.model_dump())
+        self.session.add(stored_callback)
+        await self.session.commit()
+        await self.session.refresh(stored_callback)
+        return EventCallback(**row2dict(stored_callback))
 
     async def get_event_callback(self, id: UUID) -> EventCallback | None:
         """Get a single event callback, returning None if not found."""
-        stmt = select(EventCallback).where(EventCallback.id == id)
+        stmt = select(StoredEventCallback).where(StoredEventCallback.id == id)
         result = await self.session.execute(stmt)
         stored_callback = result.scalar_one_or_none()
-        return stored_callback
+        if stored_callback:
+            return EventCallback(**row2dict(stored_callback))
+        return None
 
     async def delete_event_callback(self, id: UUID) -> bool:
         """Delete an event callback, returning True if deleted, False if not found."""
-        stmt = select(EventCallback).where(EventCallback.id == id)
+        stmt = select(StoredEventCallback).where(StoredEventCallback.id == id)
         result = await self.session.execute(stmt)
         stored_callback = result.scalar_one_or_none()
 
@@ -70,6 +92,7 @@ class SQLEventCallbackService(EventCallbackService):
             return False
 
         await self.session.delete(stored_callback)
+        await self.session.commit()
         return True
 
     async def search_event_callbacks(
@@ -85,17 +108,19 @@ class SQLEventCallbackService(EventCallbackService):
         conditions = []
 
         if conversation_id__eq is not None:
-            conditions.append(EventCallback.conversation_id == conversation_id__eq)
+            conditions.append(
+                StoredEventCallback.conversation_id == conversation_id__eq
+            )
 
         if event_kind__eq is not None:
-            conditions.append(EventCallback.event_kind == event_kind__eq)
+            conditions.append(StoredEventCallback.event_kind == event_kind__eq)
 
         # Note: event_id__eq is not stored in the event_callbacks table
         # This parameter might be used for filtering results after retrieval
         # or might be intended for a different use case
 
         # Build the base query
-        stmt = select(EventCallback)
+        stmt = select(StoredEventCallback)
 
         if conditions:
             stmt = stmt.where(and_(*conditions))
@@ -113,7 +138,7 @@ class SQLEventCallbackService(EventCallbackService):
             offset = 0
 
         # Apply limit and get one extra to check if there are more results
-        stmt = stmt.limit(limit + 1).order_by(EventCallback.created_at.desc())  # type: ignore
+        stmt = stmt.limit(limit + 1).order_by(StoredEventCallback.created_at.desc())
 
         result = await self.session.execute(stmt)
         stored_callbacks = result.scalars().all()
@@ -128,26 +153,30 @@ class SQLEventCallbackService(EventCallbackService):
         if has_more:
             next_page_id = str(offset + limit)
 
-        return EventCallbackPage(items=stored_callbacks, next_page_id=next_page_id)
+        # Convert stored callbacks to domain models
+        callbacks = [EventCallback(**row2dict(cb)) for cb in stored_callbacks]
+        return EventCallbackPage(items=callbacks, next_page_id=next_page_id)
 
     async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
         query = (
-            select(EventCallback)
+            select(StoredEventCallback)
             .where(
                 or_(
-                    EventCallback.event_kind == event.kind,
-                    EventCallback.event_kind.is_(None),  # type: ignore
+                    StoredEventCallback.event_kind == event.kind,
+                    StoredEventCallback.event_kind.is_(None),
                 )
             )
             .where(
                 or_(
-                    EventCallback.conversation_id == conversation_id,
-                    EventCallback.conversation_id.is_(None),  # type: ignore
+                    StoredEventCallback.conversation_id == conversation_id,
+                    StoredEventCallback.conversation_id.is_(None),
                 )
             )
         )
-        callbacks = list(await self.session.execute(query))
-        if callbacks:
+        result = await self.session.execute(query)
+        stored_callbacks = result.scalars().all()
+        if stored_callbacks:
+            callbacks = [EventCallback(**row2dict(cb)) for cb in stored_callbacks]
             await asyncio.gather(
                 *[
                     self.execute_callback(conversation_id, callback, event)

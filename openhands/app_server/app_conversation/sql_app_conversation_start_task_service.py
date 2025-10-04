@@ -22,20 +22,44 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import UUID as SQLUUID
+from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import utc_now
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskStatus,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
     AppConversationStartTaskServiceManager,
 )
 from openhands.app_server.user.user_service import UserService
+from openhands.app_server.utils.sql_utils import (
+    Base,
+    UtcDateTime,
+    create_enum_type_decorator,
+    create_json_type_decorator,
+    row2dict,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class StoredAppConversationStartTask(Base):  # type: ignore
+    __tablename__ = 'v1_app_conversation_start_task'
+    id = Column(SQLUUID, primary_key=True)
+    created_by_user_id = Column(String, index=True)
+    status = Column(create_enum_type_decorator(AppConversationStartTaskStatus))
+    detail = Column(String, nullable=True)
+    app_conversation_id = Column(SQLUUID, nullable=True)
+    sandbox_id = Column(String, nullable=True)
+    agent_server_url = Column(String, nullable=True)
+    request = Column(create_json_type_decorator(AppConversationStartRequest))
+    created_at = Column(UtcDateTime, server_default=func.now(), index=True)
+    updated_at = Column(UtcDateTime, onupdate=func.now(), index=True)
 
 
 @dataclass
@@ -54,47 +78,55 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         if not task_ids:
             return []
 
-        query = select(AppConversationStartTask).where(
-            AppConversationStartTask.id.in_(task_ids)  # type: ignore
+        query = select(StoredAppConversationStartTask).where(
+            StoredAppConversationStartTask.id.in_(task_ids)
         )
         if self.user_id:
             query = query.where(
-                AppConversationStartTask.created_by_user_id == self.user_id
+                StoredAppConversationStartTask.created_by_user_id == self.user_id
             )
 
         result = await self.session.execute(query)
         tasks_by_id = {task.id: task for task in result.scalars().all()}
 
         # Return tasks in the same order as requested, with None for missing ones
-        return [tasks_by_id.get(task_id) for task_id in task_ids]
+        return [
+            AppConversationStartTask(**row2dict(tasks_by_id[task_id]))
+            if task_id in tasks_by_id
+            else None
+            for task_id in task_ids
+        ]
 
     async def get_app_conversation_start_task(
         self, task_id: UUID
     ) -> AppConversationStartTask | None:
         """Get a single start task, returning None if missing."""
-        query = select(AppConversationStartTask).where(
-            AppConversationStartTask.id == task_id
+        query = select(StoredAppConversationStartTask).where(
+            StoredAppConversationStartTask.id == task_id
         )
         if self.user_id:
             query = query.where(
-                AppConversationStartTask.created_by_user_id == self.user_id
+                StoredAppConversationStartTask.created_by_user_id == self.user_id
             )
 
         result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        stored_task = result.scalar_one_or_none()
+        if stored_task:
+            return AppConversationStartTask(**row2dict(stored_task))
+        return None
 
     async def save_app_conversation_start_task(
         self, task: AppConversationStartTask
     ) -> AppConversationStartTask:
         if self.user_id:
-            query = select(AppConversationStartTask).where(
-                AppConversationStartTask.id == task.id
+            query = select(StoredAppConversationStartTask).where(
+                StoredAppConversationStartTask.id == task.id
             )
             result = await self.session.execute(query)
-            existing: AppConversationStartTask = result.scalar_one_or_none()
+            existing = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
         task.updated_at = utc_now()
-        await self.session.merge(task)
+        await self.session.merge(StoredAppConversationStartTask(**task.model_dump()))
         await self.session.commit()
         return task
 

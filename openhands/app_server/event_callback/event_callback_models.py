@@ -1,5 +1,4 @@
 # pyright: reportIncompatibleMethodOverride=false
-# Disable for this file because SQLModel confuses pyright
 from __future__ import annotations
 
 import logging
@@ -9,9 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
 from pydantic import Field
-from sqlalchemy import JSON, Column, DateTime, String, func
-from sqlmodel import Field as SQLField
-from sqlmodel import SQLModel
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.event_callback.event_callback_result_models import (
@@ -68,24 +64,18 @@ class CreateEventCallbackRequest(OpenHandsModel):
             'Optional filter on the conversation to which this callback applies'
         ),
     )
-    processor: EventCallbackProcessor = SQLField(sa_column=Column(JSON))
-    event_kind: EventKind | None = SQLField(
+    processor: EventCallbackProcessor
+    event_kind: EventKind | None = Field(
         default=None,
         description=(
             'Optional filter on the type of events to which this callback applies'
         ),
-        sa_column=Column(String),
     )
 
 
-class EventCallback(SQLModel, CreateEventCallbackRequest, table=True):  # type: ignore
-    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
-    created_at: datetime = SQLField(
-        default_factory=utc_now,
-        sa_column=Column(
-            DateTime(timezone=True), server_default=func.now(), index=True
-        ),
-    )
+class EventCallback(CreateEventCallbackRequest):
+    id: UUID = Field(default_factory=uuid4)
+    created_at: datetime = Field(default_factory=utc_now)
 
 
 class EventCallbackPage(OpenHandsModel):

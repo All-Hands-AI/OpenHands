@@ -74,7 +74,16 @@ class AppConversationService(ABC):
         Yields an instance of AppConversationStartTask as updates occur, which can be used to determine
         the progress of the task.
         """
-        yield AppConversationStartTask()
+        # This is an abstract method - concrete implementations should provide real values
+        from openhands.app_server.app_conversation.app_conversation_models import (
+            AppConversationStartRequest,
+        )
+
+        dummy_request = AppConversationStartRequest()
+        yield AppConversationStartTask(
+            created_by_user_id='dummy',
+            request=dummy_request,
+        )
 
     @abstractmethod
     async def batch_get_app_conversation_start_tasks(
