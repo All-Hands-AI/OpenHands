@@ -122,9 +122,16 @@ class SaaSGitHubService(GitHubService):
             raise Exception(f'No node_id found for repository {repo_id}')
         return node_id
 
-    async def get_paginated_repos(self, page, per_page, sort, installation_id):
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
+    ) -> list[Repository]:
         repositories = await super().get_paginated_repos(
-            page, per_page, sort, installation_id
+            page, per_page, sort, installation_id, query
         )
         asyncio.create_task(
             store_repositories_in_db(repositories, self.external_auth_id)
