@@ -28,7 +28,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 def mock_docker_client():
     """Mock Docker client for testing."""
     with patch(
-        "openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client"
+        'openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client'
     ) as mock_get_client:
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
@@ -39,9 +39,9 @@ def mock_docker_client():
 def mock_image():
     """Create a mock Docker image object."""
     image = MagicMock()
-    image.tags = ["ghcr.io/all-hands-ai/agent-server:latest"]
-    image.id = "sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
-    image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+    image.tags = ['ghcr.io/all-hands-ai/agent-server:latest']
+    image.id = 'sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
+    image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
     return image
 
 
@@ -50,8 +50,8 @@ def mock_image_no_tags():
     """Create a mock Docker image object without tags."""
     image = MagicMock()
     image.tags = []
-    image.id = "sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
-    image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+    image.id = 'sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
+    image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
     return image
 
 
@@ -60,12 +60,12 @@ def mock_image_multiple_tags():
     """Create a mock Docker image object with multiple tags."""
     image = MagicMock()
     image.tags = [
-        "ghcr.io/all-hands-ai/agent-server:latest",
-        "ghcr.io/all-hands-ai/agent-server:v1.0.0",
-        "other-repo/image:tag",
+        'ghcr.io/all-hands-ai/agent-server:latest',
+        'ghcr.io/all-hands-ai/agent-server:v1.0.0',
+        'other-repo/image:tag',
     ]
-    image.id = "sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
-    image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+    image.id = 'sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
+    image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
     return image
 
 
@@ -94,14 +94,14 @@ class TestDockerSandboxSpecService:
         assert result.next_page_id is None
 
         spec_info = result.items[0]
-        assert spec_info.id == "ghcr.io/all-hands-ai/agent-server:latest"
-        assert spec_info.command == "/usr/local/bin/openhands-agent-server"
-        assert spec_info.working_dir == "/home/openhands"
-        assert "OPENVSCODE_SERVER_ROOT" in spec_info.initial_env
+        assert spec_info.id == 'ghcr.io/all-hands-ai/agent-server:latest'
+        assert spec_info.command == '/usr/local/bin/openhands-agent-server'
+        assert spec_info.working_dir == '/home/openhands'
+        assert 'OPENVSCODE_SERVER_ROOT' in spec_info.initial_env
 
         # Verify Docker client was called correctly
         service.docker_client.images.list.assert_called_once_with(
-            name="ghcr.io/all-hands-ai/agent-server"
+            name='ghcr.io/all-hands-ai/agent-server'
         )
 
     async def test_search_sandbox_specs_multiple_images(
@@ -119,9 +119,9 @@ class TestDockerSandboxSpecService:
 
         # Verify
         assert len(result.items) == 2
-        assert result.items[0].id == "ghcr.io/all-hands-ai/agent-server:latest"
+        assert result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:latest'
         assert (
-            result.items[1].id == "ghcr.io/all-hands-ai/agent-server:latest"
+            result.items[1].id == 'ghcr.io/all-hands-ai/agent-server:latest'
         )  # First matching tag
 
     async def test_search_sandbox_specs_no_matching_tags(
@@ -130,9 +130,9 @@ class TestDockerSandboxSpecService:
         """Test search with images that don't match repository."""
         # Setup
         non_matching_image = MagicMock()
-        non_matching_image.tags = ["other-repo/image:tag"]
-        non_matching_image.id = "sha256:1234567890abcdef"
-        non_matching_image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+        non_matching_image.tags = ['other-repo/image:tag']
+        non_matching_image.id = 'sha256:1234567890abcdef'
+        non_matching_image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
 
         service.docker_client.images.list.return_value = [non_matching_image]
 
@@ -149,9 +149,9 @@ class TestDockerSandboxSpecService:
         images = []
         for i in range(5):
             image = MagicMock()
-            image.tags = [f"ghcr.io/all-hands-ai/agent-server:v{i}"]
-            image.id = f"sha256:abcd{i:04d}"
-            image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+            image.tags = [f'ghcr.io/all-hands-ai/agent-server:v{i}']
+            image.id = f'sha256:abcd{i:04d}'
+            image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
             images.append(image)
 
         service.docker_client.images.list.return_value = images
@@ -161,10 +161,10 @@ class TestDockerSandboxSpecService:
 
         # Verify first page
         assert len(result.items) == 3
-        assert result.next_page_id == "3"
+        assert result.next_page_id == '3'
 
         # Execute - second page
-        result = await service.search_sandbox_specs(page_id="3", limit=3)
+        result = await service.search_sandbox_specs(page_id='3', limit=3)
 
         # Verify second page
         assert len(result.items) == 2
@@ -178,7 +178,7 @@ class TestDockerSandboxSpecService:
         service.docker_client.images.list.return_value = [mock_image]
 
         # Execute
-        result = await service.search_sandbox_specs(page_id="invalid")
+        result = await service.search_sandbox_specs(page_id='invalid')
 
         # Verify - should start from beginning
         assert len(result.items) == 1
@@ -188,7 +188,7 @@ class TestDockerSandboxSpecService:
     ):
         """Test handling of Docker API errors."""
         # Setup
-        service.docker_client.images.list.side_effect = APIError("Docker daemon error")
+        service.docker_client.images.list.side_effect = APIError('Docker daemon error')
 
         # Execute
         result = await service.search_sandbox_specs()
@@ -207,26 +207,26 @@ class TestDockerSandboxSpecService:
 
         # Execute
         result = await service.get_sandbox_spec(
-            "ghcr.io/all-hands-ai/agent-server:latest"
+            'ghcr.io/all-hands-ai/agent-server:latest'
         )
 
         # Verify
         assert result is not None
-        assert result.id == "ghcr.io/all-hands-ai/agent-server:latest"
-        assert result.command == "/usr/local/bin/openhands-agent-server"
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
+        assert result.command == '/usr/local/bin/openhands-agent-server'
 
         # Verify Docker client was called correctly
         service.docker_client.images.get.assert_called_once_with(
-            "ghcr.io/all-hands-ai/agent-server:latest"
+            'ghcr.io/all-hands-ai/agent-server:latest'
         )
 
     async def test_get_sandbox_spec_not_found(self, service, mock_docker_client):
         """Test handling when sandbox spec is not found."""
         # Setup
-        service.docker_client.images.get.side_effect = NotFound("Image not found")
+        service.docker_client.images.get.side_effect = NotFound('Image not found')
 
         # Execute
-        result = await service.get_sandbox_spec("nonexistent:tag")
+        result = await service.get_sandbox_spec('nonexistent:tag')
 
         # Verify
         assert result is None
@@ -234,11 +234,11 @@ class TestDockerSandboxSpecService:
     async def test_get_sandbox_spec_api_error(self, service, mock_docker_client):
         """Test handling of Docker API errors during get."""
         # Setup
-        service.docker_client.images.get.side_effect = APIError("Docker daemon error")
+        service.docker_client.images.get.side_effect = APIError('Docker daemon error')
 
         # Execute
         result = await service.get_sandbox_spec(
-            "ghcr.io/all-hands-ai/agent-server:latest"
+            'ghcr.io/all-hands-ai/agent-server:latest'
         )
 
         # Verify
@@ -251,14 +251,14 @@ class TestDockerSandboxSpecService:
 
         # Verify
         assert isinstance(result, SandboxSpecInfo)
-        assert result.id == "ghcr.io/all-hands-ai/agent-server:latest"
-        assert result.command == "/usr/local/bin/openhands-agent-server"
-        assert result.working_dir == "/home/openhands"
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
+        assert result.command == '/usr/local/bin/openhands-agent-server'
+        assert result.working_dir == '/home/openhands'
         assert (
-            result.initial_env["OPENVSCODE_SERVER_ROOT"]
-            == "/openhands/.openvscode-server"
+            result.initial_env['OPENVSCODE_SERVER_ROOT']
+            == '/openhands/.openvscode-server'
         )
-        assert result.initial_env["LOG_JSON"] == "true"
+        assert result.initial_env['LOG_JSON'] == 'true'
         assert isinstance(result.created_at, datetime)
 
     def test_docker_image_to_sandbox_specs_no_tags(self, service, mock_image_no_tags):
@@ -268,18 +268,18 @@ class TestDockerSandboxSpecService:
 
         # Verify
         assert isinstance(result, SandboxSpecInfo)
-        assert result.id == "sha256:abcd1"  # First 12 characters of image ID
-        assert result.command == "/usr/local/bin/openhands-agent-server"
+        assert result.id == 'sha256:abcd1'  # First 12 characters of image ID
+        assert result.command == '/usr/local/bin/openhands-agent-server'
 
     def test_docker_image_to_sandbox_specs_invalid_created_time(self, service):
         """Test handling of invalid creation timestamp."""
         # Setup
         image = MagicMock()
-        image.tags = ["ghcr.io/all-hands-ai/agent-server:latest"]
+        image.tags = ['ghcr.io/all-hands-ai/agent-server:latest']
         image.id = (
-            "sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
+            'sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
         )
-        image.attrs = {"Created": "invalid-timestamp"}
+        image.attrs = {'Created': 'invalid-timestamp'}
 
         # Execute
         result = service._docker_image_to_sandbox_specs(image)
@@ -292,9 +292,9 @@ class TestDockerSandboxSpecService:
         """Test handling of missing creation timestamp."""
         # Setup
         image = MagicMock()
-        image.tags = ["ghcr.io/all-hands-ai/agent-server:latest"]
+        image.tags = ['ghcr.io/all-hands-ai/agent-server:latest']
         image.id = (
-            "sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab"
+            'sha256:abcd1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
         )
         image.attrs = {}
 
@@ -311,14 +311,14 @@ class TestDockerSandboxSpecService:
         """Test that search properly filters images by repository."""
         # Setup
         matching_image = MagicMock()
-        matching_image.tags = ["ghcr.io/all-hands-ai/agent-server:latest"]
-        matching_image.id = "sha256:abcd1234"
-        matching_image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+        matching_image.tags = ['ghcr.io/all-hands-ai/agent-server:latest']
+        matching_image.id = 'sha256:abcd1234'
+        matching_image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
 
         non_matching_image = MagicMock()
-        non_matching_image.tags = ["other-repo/image:tag"]
-        non_matching_image.id = "sha256:efgh5678"
-        non_matching_image.attrs = {"Created": "2024-01-15T10:30:00.000000000Z"}
+        non_matching_image.tags = ['other-repo/image:tag']
+        non_matching_image.id = 'sha256:efgh5678'
+        non_matching_image.attrs = {'Created': '2024-01-15T10:30:00.000000000Z'}
 
         service.docker_client.images.list.return_value = [
             matching_image,
@@ -330,7 +330,7 @@ class TestDockerSandboxSpecService:
 
         # Verify - only matching image should be included
         assert len(result.items) == 1
-        assert result.items[0].id == "ghcr.io/all-hands-ai/agent-server:latest"
+        assert result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:latest'
 
     async def test_search_sandbox_specs_multiple_matching_tags_single_entry(
         self, service, mock_docker_client, mock_image_multiple_tags
@@ -345,14 +345,14 @@ class TestDockerSandboxSpecService:
         # Verify - should only appear once despite multiple matching tags
         assert len(result.items) == 1
         assert (
-            result.items[0].id == "ghcr.io/all-hands-ai/agent-server:latest"
+            result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:latest'
         )  # First matching tag
 
 
 class TestGetDockerClient:
     """Test cases for get_docker_client function."""
 
-    @patch("docker.from_env")
+    @patch('docker.from_env')
     def test_get_docker_client_creates_new_client(self, mock_from_env):
         """Test that get_docker_client creates a new client when none exists."""
         # Setup
@@ -371,7 +371,7 @@ class TestGetDockerClient:
         assert result == mock_client
         mock_from_env.assert_called_once()
 
-    @patch("docker.from_env")
+    @patch('docker.from_env')
     def test_get_docker_client_reuses_existing_client(self, mock_from_env):
         """Test that get_docker_client reuses existing client."""
         # Setup
