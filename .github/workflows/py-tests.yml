@@ -101,7 +101,7 @@ jobs:
         working-directory: ./enterprise
       - name: Run Unit Tests
         # Use base working directory for coverage paths to line up.
-        run: PYTHONPATH=".:$PYTHONPATH" uv run --from=enterprise pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./enterprise/tests/unit --cov=enterprise --cov-branch
+        run: PYTHONPATH=".:$PYTHONPATH" uv run --project=enterprise pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./enterprise/tests/unit --cov=enterprise --cov-branch
         env:
           COVERAGE_FILE: ".coverage.enterprise.${{ matrix.python_version }}"
       - name: Store coverage file

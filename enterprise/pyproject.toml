@@ -49,8 +49,6 @@ dev = [
   "ruff==0.8.3",
   "types-requests>=2.32.4.20250611,<3",
 ]
-# [tool.uv]
-# default-extras = ["dev", "test"]
 
 test = [
   "flake8",
@@ -92,6 +90,7 @@ lint.pydocstyle.convention = "google"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = ["..", "."]
 
 [tool.uv.sources]
 openhands-ai = { path = "../", editable = true }
