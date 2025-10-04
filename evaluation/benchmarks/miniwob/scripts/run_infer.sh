@@ -33,7 +33,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="${OPENHANDS_VERSION}_${NOTE}"
 
-COMMAND="export PYTHONPATH=evaluation/benchmarks/miniwob:\$PYTHONPATH && poetry run python evaluation/benchmarks/miniwob/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/miniwob:\$PYTHONPATH && uv run python evaluation/benchmarks/miniwob/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \

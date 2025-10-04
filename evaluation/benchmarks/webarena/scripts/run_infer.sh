@@ -35,7 +35,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="$OPENHANDS_VERSION"
 
-COMMAND="poetry run python evaluation/benchmarks/webarena/run_infer.py \
+COMMAND="uv run python evaluation/benchmarks/webarena/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 15 \

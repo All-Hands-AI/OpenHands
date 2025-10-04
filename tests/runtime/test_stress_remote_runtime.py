@@ -6,7 +6,7 @@ Example usage:
 export ALLHANDS_API_KEY="YOUR_API_KEY"
 export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.staging.all-hands.dev"
-poetry run pytest -vvxss tests/runtime/test_stress_remote_runtime.py
+uv run pytest -vvxss tests/runtime/test_stress_remote_runtime.py
 ```
 
 """
@@ -306,7 +306,7 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
 
             # Check action_execution_server mem
             mem_action = CmdRunAction(
-                'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | grep "action_execution_server" | grep "/openhands/poetry" | grep -v grep | awk \'{print $1}\''
+                'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | grep "action_execution_server" | grep "/openhands/uv" | grep -v grep | awk \'{print $1}\''
             )
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
