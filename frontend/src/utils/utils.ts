@@ -11,6 +11,34 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Get the numeric height value from an element's style property
+ * @param el The HTML element to get the height from
+ * @param fallback The fallback value to return if style height is invalid
+ * @returns The numeric height value in pixels, or the fallback value
+ *
+ * @example
+ * getStyleHeightPx(element, 20) // Returns 20 if element.style.height is "auto" or invalid
+ * getStyleHeightPx(element, 20) // Returns 100 if element.style.height is "100px"
+ */
+export const getStyleHeightPx = (el: HTMLElement, fallback: number): number => {
+  const elementHeight = parseFloat(el.style.height || "");
+  return Number.isFinite(elementHeight) ? elementHeight : fallback;
+};
+
+/**
+ * Set the height style property of an element to a specific pixel value
+ * @param el The HTML element to set the height for
+ * @param height The height value in pixels to set
+ *
+ * @example
+ * setStyleHeightPx(element, 100) // Sets element.style.height to "100px"
+ * setStyleHeightPx(textarea, 200) // Sets textarea.style.height to "200px"
+ */
+export const setStyleHeightPx = (el: HTMLElement, height: number): void => {
+  el.style.setProperty("height", `${height}px`);
+};
+
+/**
  * Detect if the user is on a mobile device
  * @returns True if the user is on a mobile device, false otherwise
  */

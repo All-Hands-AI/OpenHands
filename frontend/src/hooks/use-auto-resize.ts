@@ -1,5 +1,7 @@
 import { useCallback, useEffect, RefObject, useRef } from "react";
 import { IMessageToSend } from "#/state/conversation-store";
+import { EPS } from "#/utils/constants";
+import { getStyleHeightPx, setStyleHeightPx } from "#/utils/utils";
 import { useDragResize } from "./use-drag-resize";
 
 // Constants
@@ -8,26 +10,12 @@ const DEFAULT_MAX_HEIGHT = 120;
 const HEIGHT_INCREMENT = 20;
 const MANUAL_OVERSIZE_THRESHOLD = 50;
 
-const EPS = 1.5; // px tolerance for "near min"
-
-const getStyleHeightPx = (el: HTMLElement, fallback: number) => {
-  const h = parseFloat(el.style.height || "");
-  return Number.isFinite(h) ? h : fallback;
-};
-
-const setStyleHeightPx = (el: HTMLElement, h: number) => {
-  // eslint-disable-next-line no-param-reassign
-  el.style.height = `${h}px`;
-};
-
 // Manual height tracking utilities
 const useManualHeight = () => {
   const hasUserResizedRef = useRef(false);
   const manualHeightRef = useRef<number | null>(null);
   return { hasUserResizedRef, manualHeightRef };
 };
-
-// -------------------------------
 
 interface UseAutoResizeOptions {
   minHeight?: number;
@@ -133,6 +121,8 @@ export const useAutoResize = (
   elementRef: RefObject<HTMLElement | null>,
   options: UseAutoResizeOptions = {},
 ): UseAutoResizeReturn => {
+  const pendingSmartRef = useRef<number | null>(null);
+
   const {
     minHeight = DEFAULT_MIN_HEIGHT,
     maxHeight = DEFAULT_MAX_HEIGHT,
@@ -153,44 +143,42 @@ export const useAutoResize = (
 
   // Wrap onHeightChange to track manual height during drag
   const handleExternalHeightChange = useCallback(
-    (h: number) => {
-      onHeightChange?.(h);
+    (elementHeight: number) => {
+      onHeightChange?.(elementHeight);
       if (hasUserResizedRef.current) {
-        manualHeightRef.current = h;
+        manualHeightRef.current = elementHeight;
       }
     },
     [onHeightChange],
   );
+
+  // Handle drag start - set manual mode flag
+  const handleDragStart = useCallback(() => {
+    hasUserResizedRef.current = true;
+    onGripDragStart?.();
+  }, [onGripDragStart]);
+
+  // Handle drag end - clear manual mode if at minimum height
+  const handleDragEnd = useCallback(() => {
+    const textareaElement = elementRef.current;
+    if (textareaElement) {
+      const currentHeight = getStyleHeightPx(textareaElement, minHeight);
+      if (Math.abs(currentHeight - minHeight) <= EPS) {
+        hasUserResizedRef.current = false;
+        manualHeightRef.current = null;
+      }
+    }
+    onGripDragEnd?.();
+  }, [minHeight, onGripDragEnd]);
 
   // Use the drag resize hook for manual resizing functionality
   const { handleGripMouseDown, handleGripTouchStart } = useDragResize({
     elementRef,
     minHeight,
     maxHeight,
-    onGripDragStart: enableManualResize
-      ? () => {
-          hasUserResizedRef.current = true;
-          onGripDragStart?.();
-        }
-      : undefined,
-    onGripDragEnd: enableManualResize
-      ? () => {
-          // Clear manual mode if dragged to minimum height
-          const element = elementRef.current;
-          if (element) {
-            const currentHeight = getStyleHeightPx(element, minHeight);
-            if (Math.abs(currentHeight - minHeight) <= EPS) {
-              hasUserResizedRef.current = false;
-              manualHeightRef.current = null;
-            }
-          }
-          onGripDragEnd?.();
-        }
-      : undefined,
+    onGripDragStart: enableManualResize ? handleDragStart : undefined,
+    onGripDragEnd: enableManualResize ? handleDragEnd : undefined,
     onHeightChange: handleExternalHeightChange,
-    onReachedMinHeight: () => {
-      // Only clear manual mode on drag end, not during drag
-    },
   });
 
   // Handle content that fits within current height
@@ -296,7 +284,6 @@ export const useAutoResize = (
   }, [elementRef, minHeight, maxHeight, onHeightChange]);
 
   // rAF-debounced smartResize wrapper to collapse bursts
-  const pendingSmartRef = useRef<number | null>(null);
   const smartResize = useCallback(() => {
     if (pendingSmartRef.current) cancelAnimationFrame(pendingSmartRef.current);
     pendingSmartRef.current = requestAnimationFrame(() => {
