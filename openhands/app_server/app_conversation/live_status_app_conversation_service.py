@@ -343,7 +343,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
             agent_status=agent_status,
-            converation_url=conversation_url,
+            conversation_url=conversation_url,
             session_api_key=session_api_key,
         )
 

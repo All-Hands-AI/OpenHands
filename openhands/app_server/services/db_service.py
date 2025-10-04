@@ -11,7 +11,6 @@ from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
-from sqlalchemy.orm import DeclarativeBase
 from storage.database import sessionmaker
 
 _logger = logging.getLogger(__name__)
@@ -166,11 +165,12 @@ class DbService(BaseModel):
             self._session_maker = session_maker
         return session_maker
 
-    def get_async_session_maker(self) -> async_sessionmaker:
+    async def get_async_session_maker(self) -> async_sessionmaker:
         async_session_maker = self._async_session_maker
         if async_session_maker is None:
+            db_engine = await self.get_async_db_engine()
             async_session_maker = async_sessionmaker(
-                self.get_db_engine(),
+                db_engine,
                 class_=AsyncSession,
                 expire_on_commit=False,
             )
@@ -186,7 +186,8 @@ class DbService(BaseModel):
         Yields:
             AsyncSession: An async SQL session
         """
-        async with self.get_async_session_maker()() as session:
+        session_maker = await self.get_async_session_maker()
+        async with session_maker() as session:
             try:
                 yield session
             finally:
@@ -214,7 +215,8 @@ class DbService(BaseModel):
             yield db_session
         else:
             # Create a new session and store it in request state
-            async with self.get_async_session_maker()() as db_session:
+            session_maker = await self.get_async_session_maker()
+            async with session_maker() as db_session:
                 try:
                     setattr(request.state, 'db_session', db_session)
                     yield db_session
@@ -236,6 +238,7 @@ class DbService(BaseModel):
         db_session = getattr(request.state, 'db_session', None)
         if db_session:
             return db_session
-        db_session = self.get_async_session_maker()()
+        session_maker = await self.get_async_session_maker()
+        db_session = session_maker()
         setattr(request.state, 'db_session', db_session)
         return db_session

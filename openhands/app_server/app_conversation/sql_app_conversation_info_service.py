@@ -1,4 +1,3 @@
-# pyright: reportArgumentType=false, reportAttributeAccessIssue=false, reportOptionalMemberAccess=false
 """SQL implementation of AppConversationService.
 
 This implementation provides CRUD operations for sandboxed conversations focused purely
@@ -25,8 +24,9 @@ from typing import Callable
 from uuid import UUID
 
 from fastapi import Depends
-from sqlalchemy import Select, func, select
+from sqlalchemy import Column, Select, String, func, select, UUID as SQLUUID
 from sqlalchemy.ext.asyncio import AsyncSession
+from openhands.sdk.llm import MetricsSnapshot
 
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -37,11 +37,30 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfoPage,
     AppConversationSortOrder,
 )
-from openhands.app_server.database import managed_session_dependency
-from openhands.app_server.errors import AuthError
 from openhands.app_server.user.user_service import UserService
+from openhands.app_server.utils.sql_utils import Base, UtcDateTime, create_enum_type_decorator, create_json_type_decorator, row2dict
+from openhands.integrations.service_types import ProviderType
+from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 logger = logging.getLogger(__name__)
+
+
+
+class StoredAppConversationInfo(Base):  # type: ignore
+    __tablename__ = "v1_app_conversation_info"
+    id = Column(SQLUUID, primary_key=True)
+    created_by_user_id = Column(String, index=True)
+    selected_repository = Column(String, nullable=True)
+    selected_branch = Column(String, nullable=True)
+    git_provider = Column(create_enum_type_decorator(ProviderType), nullable=True)
+    title = Column(String, nullable=True)
+    trigger = Column(create_enum_type_decorator(ConversationTrigger), nullable=True)
+    pr_number = Column(create_json_type_decorator(list[int]))
+    llm_model = Column(String, nullable=True)
+    metrics = Column(create_json_type_decorator(MetricsSnapshot))
+    sandbox_id = Column(String, index=True)
+    created_at = Column(UtcDateTime, server_default=func.now(), index=True)
+    updated_at = Column(UtcDateTime, onupdate=func.now(), index=True)
 
 
 @dataclass
@@ -78,17 +97,17 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
         # Add sort order
         if sort_order == AppConversationSortOrder.CREATED_AT:
-            query = query.order_by(AppConversationInfo.created_at)
+            query = query.order_by(StoredAppConversationInfo.created_at)
         elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
-            query = query.order_by(AppConversationInfo.created_at.desc())  # type: ignore
+            query = query.order_by(StoredAppConversationInfo.created_at.desc())
         elif sort_order == AppConversationSortOrder.UPDATED_AT:
-            query = query.order_by(AppConversationInfo.updated_at)
+            query = query.order_by(StoredAppConversationInfo.updated_at)
         elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
-            query = query.order_by(AppConversationInfo.updated_at.desc())  # type: ignore
+            query = query.order_by(StoredAppConversationInfo.updated_at.desc())
         elif sort_order == AppConversationSortOrder.TITLE:
-            query = query.order_by(AppConversationInfo.title)
-        elif sort_order == AppConversationSortOrder.TITLE:
-            query = query.order_by(AppConversationInfo.title.desc())  # type: ignore
+            query = query.order_by(StoredAppConversationInfo.title)
+        elif sort_order == AppConversationSortOrder.TITLE_DESC:
+            query = query.order_by(StoredAppConversationInfo.title.desc())
 
         # Apply pagination
         if page_id is not None:
@@ -101,19 +120,20 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         else:
             offset = 0
 
-        # Apply sorting (default to created_at desc)
-        query = query.order_by(AppConversationInfo.created_at.desc())  # type: ignore
-
         # Apply limit and get one extra to check if there are more results
         query = query.limit(limit + 1)
 
         result = await self.session.execute(query)
-        items = list(result.scalars().all())
+        rows = list(result)
 
         # Check if there are more results
-        has_more = len(items) > limit
+        has_more = len(rows) > limit
         if has_more:
-            items = items[:limit]
+            rows = rows[:limit]
+
+        items = [
+            AppConversationInfo(**row2dict(row)) for row in rows
+        ]
 
         # Calculate next page ID
         next_page_id = None
@@ -159,20 +179,20 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         conditions = []
         if title__contains is not None:
             conditions.append(
-                AppConversationInfo.title.like(f'%{title__contains}%')  # type: ignore
+                StoredAppConversationInfo.title.like(f'%{title__contains}%')
             )
 
         if created_at__gte is not None:
-            conditions.append(AppConversationInfo.created_at >= created_at__gte)  # type: ignore
+            conditions.append(StoredAppConversationInfo.created_at >= created_at__gte)
 
         if created_at__lt is not None:
-            conditions.append(AppConversationInfo.created_at < created_at__lt)  # type: ignore
+            conditions.append(StoredAppConversationInfo.created_at < created_at__lt)
 
         if updated_at__gte is not None:
-            conditions.append(AppConversationInfo.updated_at >= updated_at__gte)  # type: ignore
+            conditions.append(StoredAppConversationInfo.updated_at >= updated_at__gte)
 
         if updated_at__lt is not None:
-            conditions.append(AppConversationInfo.updated_at < updated_at__lt)  # type: ignore
+            conditions.append(StoredAppConversationInfo.updated_at < updated_at__lt)
 
         if conditions:
             query = query.where(*conditions)
@@ -182,49 +202,58 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
         query = self._secure_select().where(
-            AppConversationInfo.id == conversation_id
+            StoredAppConversationInfo.id == conversation_id
         )
         result_set = await self.session.execute(query)
         result = result_set.scalar_one_or_none()
-        return result
+        if result:
+            return AppConversationInfo(**row2dict(result))
+        return None
 
     async def batch_get_app_conversation_info(
         self, conversation_ids: list[UUID]
     ) -> list[AppConversationInfo | None]:
         query = self._secure_select().where(
-            AppConversationInfo.id.in_(conversation_ids)  # type: ignore
+            StoredAppConversationInfo.id.in_(conversation_ids)
         )
         rows = await self.session.execute(query)
         info_by_id = {info.id: info for info in rows}
-        results = [
-            info_by_id.get(conversation_id) for conversation_id in conversation_ids
-        ]
+        results: list[AppConversationInfo | None] = []
+        for conversation_id in conversation_ids:
+            info = info_by_id.get(conversation_id)
+            if info:
+                results.append(AppConversationInfo(**row2dict(info)))
+            else:
+                results.append(None)
+
         return results
 
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
         if self.user_id:
-            query = select(AppConversationInfo).where(AppConversationInfo.id == info.id)
+            query = select(StoredAppConversationInfo).where(StoredAppConversationInfo.id == info.id)
             result = await self.session.execute(query)
-            existing: AppConversationInfo = result.scalar_one_or_none()
+            existing = result.scalar_one_or_none()
             assert existing is None or existing.created_by_user_id == self.user_id
-        await self.session.merge(info)
+        await self.session.merge(StoredAppConversationInfo(**info.model_dump()))
         await self.session.commit()
         return info
 
     def _secure_select(self):
-        query = select(AppConversationInfo)
+        query = select(StoredAppConversationInfo)
         if self.user_id:
-            query = query.where(AppConversationInfo.created_by_user_id == self.user_id)
+            query = query.where(StoredAppConversationInfo.created_by_user_id == self.user_id)
         return query
 
 
 class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
+        from openhands.app_server.config import db_service
+
         def resolve_app_conversation_service(
-            session: AsyncSession = Depends(managed_session_dependency),
+            session: AsyncSession = Depends(db_service().managed_session_dependency),
         ) -> AppConversationInfoService:
             return SQLAppConversationInfoService(session=session)
 
@@ -232,12 +261,11 @@ class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
 
     def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
-
-        from openhands.app_server.config import user_manager
+        from openhands.app_server.config import db_service, user_manager
 
         async def resolve_app_conversation_service(
             user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
-            session: AsyncSession = Depends(managed_session_dependency),
+            session: AsyncSession = Depends(db_service().managed_session_dependency),
         ) -> AppConversationInfoService:
             user_id = await user_service.get_user_id()
             service = SQLAppConversationInfoService(session=session, user_id=user_id)

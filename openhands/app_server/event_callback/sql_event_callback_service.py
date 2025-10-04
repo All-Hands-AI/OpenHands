@@ -13,7 +13,6 @@ from fastapi import Depends
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from openhands.app_server.database import managed_session_dependency
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
     EventCallback,
@@ -179,16 +178,18 @@ class SQLEventCallbackService(EventCallbackService):
 
 class SQLEventCallbackServiceManager(EventCallbackServiceManager):
     def get_unsecured_resolver(self) -> Callable:
-        return self.resolve
+        from openhands.app_server.config import db_service
+
+        def resolve(
+            db_session = Depends(db_service().managed_session_dependency)
+        ) -> EventCallbackService:
+            return SQLEventCallbackService(db_session)
+
+        return resolve
 
     def get_resolver_for_current_user(self) -> Callable:
         _logger.warning(
             'Using secured EventCallbackService resolver - '
             'returning unsecured resolver for now. Eventually filter by conversation'
         )
-        return self.resolve
-
-    def resolve(
-        self, session: AsyncSession = Depends(managed_session_dependency)
-    ) -> EventCallbackService:
-        return SQLEventCallbackService(session)
+        return self.get_unsecured_resolver()

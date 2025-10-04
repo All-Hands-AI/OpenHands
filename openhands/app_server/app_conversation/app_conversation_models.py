@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, func
+from sqlalchemy import Column, func
 from sqlmodel import JSON, SQLModel
 from sqlmodel import Field as SQLField
 
@@ -13,33 +13,33 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-from openhands.app_server.utils.sql_utils import create_json_type_decorator
+from openhands.app_server.utils.sql_utils import create_json_type_decorator, UtcDateTime
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 
-class AppConversationInfo(SQLModel, table=True):  # type: ignore
+class AppConversationInfo(BaseModel):
     """Conversation info which does not contain status."""
 
-    id: UUID = SQLField(default_factory=uuid4, primary_key=True)
+    id: UUID = Field(default_factory=uuid4)
 
     created_by_user_id: str
+    sandbox_id: str
 
     selected_repository: str | None = None
     selected_branch: str | None = None
     git_provider: ProviderType | None = None
     title: str | None = None
     trigger: ConversationTrigger | None = None
-    pr_number: list[int] = SQLField(default_factory=list, sa_column=Column(JSON))
+    pr_number: list[int] = Field(default_factory=list)
     llm_model: str | None = None
 
-    metrics: MetricsSnapshot | None = SQLField(default=None, sa_column=Column(JSON))
+    metrics: MetricsSnapshot | None = None
 
-    sandbox_id: str = SQLField(index=True)
-    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
-    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), onupdate=func.now(), index=True))
+    created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class AppConversationSortOrder(Enum):
@@ -140,5 +140,5 @@ class AppConversationStartTask(SQLModel, table=True):  # type: ignore
     request: AppConversationStartRequest = SQLField(
         sa_column=Column(create_json_type_decorator(AppConversationStartRequest))
     )
-    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), server_default=func.now(), index=True))
-    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), onupdate=func.now(), index=True))
+    created_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(UtcDateTime, server_default=func.now(), index=True))
+    updated_at: datetime = SQLField(default_factory=utc_now, sa_column=Column(UtcDateTime, onupdate=func.now(), index=True))

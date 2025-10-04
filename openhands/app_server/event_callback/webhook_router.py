@@ -14,8 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from openhands.agent_server.models import ConversationInfo, Success
 from openhands.app_server.app_conversation.app_conversation_info_service import AppConversationInfoService
 from openhands.app_server.app_conversation.app_conversation_models import AppConversationInfo
-from openhands.app_server.config import app_conversation_info_manager, event_callback_manager, event_manager, resolve_jwt_service, sandbox_manager, user_admin_manager
-from openhands.app_server.database import unmanaged_session_dependency
+from openhands.app_server.config import app_conversation_info_manager, db_service, event_callback_manager, event_manager, resolve_jwt_service, sandbox_manager, user_admin_manager
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_service import (
@@ -90,7 +89,7 @@ async def on_conversation_update(
 async def on_event(
     events: list[Event],
     conversation_id: UUID,
-    session: AsyncSession = Depends(unmanaged_session_dependency),
+    db_session: AsyncSession = Depends(db_service().unmanaged_session_dependency),
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
     event_service: EventService = event_service_dependency,
@@ -109,7 +108,7 @@ async def on_event(
             *[event_service.save_event(conversation_id, event) for event in events]
         )
 
-        asyncio.create_task(_run_callbacks_in_bg_and_close(event_callback_service, conversation_id, events, session))
+        asyncio.create_task(_run_callbacks_in_bg_and_close(event_callback_service, conversation_id, events, db_session))
 
     except Exception:
         _logger.exception('Error in webhook', stack_info=True)

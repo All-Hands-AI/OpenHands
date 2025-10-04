@@ -189,7 +189,7 @@ class DockerSandboxService(SandboxService):
                 )
                 response.raise_for_status()
             except Exception as exc:
-                _logger.warning(f'Sandbox server not running: {exc}')
+                _logger.info(f'Sandbox server not running: {exc}')
                 sandbox_info.status = SandboxStatus.ERROR
                 sandbox_info.exposed_urls = None
                 sandbox_info.session_api_key = None
