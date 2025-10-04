@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 from openhands_cli.locations import PERSISTENCE_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
 
-from openhands.sdk import LLM, Agent, ToolSpec
+from openhands.sdk import LLM, Agent, Tool
 
 
 class TestDirectorySeparation:
@@ -30,7 +30,7 @@ class TestDirectorySeparation:
         assert agent_store.file_store.root == PERSISTENCE_DIR
 
 
-class TestToolSpecFix:
+class TestToolFix:
     """Test that tool specs are replaced with default tools using current directory."""
 
     def test_tools_replaced_with_default_tools_on_load(self):
@@ -39,9 +39,9 @@ class TestToolSpecFix:
         mock_agent = Agent(
             llm=LLM(model='test/model', api_key='test-key', service_id='test-service'),
             tools=[
-                ToolSpec(name='BashTool'),
-                ToolSpec(name='FileEditorTool'),
-                ToolSpec(name='TaskTrackerTool'),
+                Tool(name='BashTool'),
+                Tool(name='FileEditorTool'),
+                Tool(name='TaskTrackerTool'),
             ],
         )
 
