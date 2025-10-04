@@ -8,7 +8,7 @@
 	"image": "mcr.microsoft.com/devcontainers/python:1-3.12-bullseye",
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
-		"ghcr.io/devcontainers-extra/features/poetry:2": {},
+		"ghcr.io/astral-sh/devcontainer-features/uv:1": {},
 		"ghcr.io/devcontainers/features/node:1": {},
 	},
 	"postCreateCommand": ".devcontainer/setup.sh",

@@ -41,7 +41,7 @@ if [ "$USE_UNIT_TESTS" = true ]; then
 fi
 
 # export PYTHONPATH=evaluation/integration_tests:\$PYTHONPATH
-COMMAND="poetry run python evaluation/integration_tests/run_infer.py \
+COMMAND="uv run python evaluation/integration_tests/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations ${MAX_ITERATIONS:-10} \
