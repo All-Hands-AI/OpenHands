@@ -11,7 +11,7 @@ from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
-from storage.database import sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 _logger = logging.getLogger(__name__)
 
