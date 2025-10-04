@@ -485,18 +485,23 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
 
     def get_resolver_for_current_user(self) -> Callable:
         from openhands.app_server.config import app_conversation_info_manager, app_conversation_start_task_manager, get_global_config, httpx_client_manager, resolve_jwt_service, sandbox_manager, user_manager
+        resolve_user_service = user_manager().get_resolver_for_current_user()
+        resolve_sandbox_service = sandbox_manager().get_resolver_for_current_user()
+        resolve_app_conversation_info_service = app_conversation_info_manager().get_resolver_for_current_user()
+        resolve_app_conversation_start_task_service = app_conversation_start_task_manager().get_resolver_for_current_user()
+        resolve_httpx_client_manager = httpx_client_manager().resolve
 
         def _resolve_for_user(
-            user_service: UserService = Depends(user_manager().get_resolver_for_current_user()),
-            sandbox_service: SandboxService = Depends(sandbox_manager().get_resolver_for_current_user()),
+            user_service: UserService = Depends(resolve_user_service),
+            sandbox_service: SandboxService = Depends(resolve_sandbox_service),
             app_conversation_info_service: AppConversationInfoService = Depends(
-                app_conversation_info_manager().get_resolver_for_current_user()
+                resolve_app_conversation_info_service
             ),
             app_conversation_start_task_service: AppConversationStartTaskService = Depends(
-                app_conversation_start_task_manager().get_resolver_for_current_user()
+                resolve_app_conversation_start_task_service
             ),
             jwt_service: JwtService = Depends(resolve_jwt_service),
-            httpx_client: httpx.AsyncClient = Depends(httpx_client_manager().resolve),
+            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client_manager),
         ) -> AppConversationService:
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:

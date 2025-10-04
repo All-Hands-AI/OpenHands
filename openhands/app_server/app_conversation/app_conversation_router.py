@@ -25,6 +25,7 @@ router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
 app_conversation_service_dependency = Depends(
     app_conversation_manager().get_resolver_for_current_user()
 )
+unmanaged_session_dependency = Depends(db_service().unmanaged_session_dependency)
 
 # Read methods
 
@@ -133,7 +134,7 @@ async def batch_get_app_conversations(
 @router.post('')
 async def start_app_conversation(
     request: AppConversationStartRequest,
-    db_session: AsyncSession = Depends(db_service().unmanaged_session_dependency),
+    db_session: AsyncSession = unmanaged_session_dependency,
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
