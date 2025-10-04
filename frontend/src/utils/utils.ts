@@ -3,6 +3,8 @@ import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
 import { SuggestedTaskGroup } from "#/utils/types";
 import { ConversationStatus } from "#/types/conversation-status";
+import { GitRepository } from "#/types/git";
+import { sanitizeQuery } from "#/utils/sanitize-query";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -473,4 +475,86 @@ export const getConversationStatusLabel = (
     default:
       return "COMMON$UNKNOWN";
   }
+};
+
+// Task Tracking Utility Functions
+
+/**
+ * Get the status icon for a task status
+ * @param status The task status
+ * @returns The emoji icon for the status
+ */
+export const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "todo":
+      return "⏳";
+    case "in_progress":
+      return "🔄";
+    case "done":
+      return "✅";
+    default:
+      return "❓";
+  }
+};
+
+/**
+ * Get the CSS class names for a task status badge
+ * @param status The task status
+ * @returns The CSS class names for styling the status badge
+ */
+export const getStatusClassName = (status: string) => {
+  if (status === "done") {
+    return "bg-green-800 text-green-200";
+  }
+  if (status === "in_progress") {
+    return "bg-yellow-800 text-yellow-200";
+  }
+  return "bg-gray-700 text-gray-300";
+};
+
+/**
+ * Helper function to apply client-side filtering based on search query
+ * @param repo The Git repository to check
+ * @param searchQuery The search query string
+ * @returns True if the repository should be included based on the search query
+ */
+export const shouldIncludeRepository = (
+  repo: GitRepository,
+  searchQuery: string,
+): boolean => {
+  if (!searchQuery.trim()) {
+    return true;
+  }
+
+  const sanitizedQuery = sanitizeQuery(searchQuery);
+  const sanitizedRepoName = sanitizeQuery(repo.full_name);
+  return sanitizedRepoName.includes(sanitizedQuery);
+};
+
+/**
+ * Get the OpenHands query string based on the provider
+ * @param provider The git provider
+ * @returns The query string for searching OpenHands repositories
+ */
+export const getOpenHandsQuery = (provider: Provider | null): string => {
+  if (provider === "gitlab") {
+    return "openhands-config";
+  }
+  return ".openhands";
+};
+
+/**
+ * Check if a repository has the OpenHands suffix based on the provider
+ * @param repo The Git repository to check
+ * @param provider The git provider
+ * @returns True if the repository has the OpenHands suffix
+ */
+export const hasOpenHandsSuffix = (
+  repo: GitRepository,
+  provider: Provider | null,
+): boolean => {
+  if (provider === "gitlab") {
+    return repo.full_name.endsWith("/openhands-config");
+  }
+  return repo.full_name.endsWith("/.openhands");
 };

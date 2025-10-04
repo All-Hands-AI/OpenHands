@@ -63,6 +63,7 @@ test = [
   "pytest-forked",
   "pytest-xdist",
   "reportlab",
+  "gevent"
 ]
 
 [tool.hatch.version]
@@ -101,3 +102,7 @@ openhands-ai = { path = "../", editable = true }
 # vcs = "git"
 # style = "pep440"
 # read-from = "tag"
+
+[tool.coverage.run]
+relative_files = true
+omit = [ "tests/*" ]

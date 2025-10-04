@@ -1,7 +1,7 @@
 # Publishes the OpenHands PyPi package
 name: Publish PyPi Package
 
-# Triggered manually
+
 on:
   workflow_dispatch:
     inputs:
@@ -9,6 +9,9 @@ on:
         description: 'Reason for manual trigger'
         required: true
         default: ''
+  push:
+    tags:
+      - "*"
 
 jobs:
   release:

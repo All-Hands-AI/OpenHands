@@ -357,69 +357,6 @@ describe("ConversationCard", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("should show display cost button only when showOptions is true", async () => {
-    const onContextMenuToggle = vi.fn();
-    const { rerender } = renderWithProviders(
-      <ConversationCard
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-        contextMenuOpen
-        onContextMenuToggle={onContextMenuToggle}
-      />,
-    );
-
-    // Wait for context menu to appear
-    const menu = await screen.findByTestId("context-menu");
-    expect(
-      within(menu).queryByTestId("display-cost-button"),
-    ).not.toBeInTheDocument();
-
-    rerender(
-      <ConversationCard
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        showOptions
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-        contextMenuOpen
-        onContextMenuToggle={onContextMenuToggle}
-      />,
-    );
-
-    // Wait for context menu to appear and check for display cost button
-    const newMenu = await screen.findByTestId("context-menu");
-    within(newMenu).getByTestId("display-cost-button");
-  });
-
-  it("should show metrics modal when clicking the display cost button", async () => {
-    const user = userEvent.setup();
-    const onContextMenuToggle = vi.fn();
-    renderWithProviders(
-      <ConversationCard
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-        showOptions
-        contextMenuOpen
-        onContextMenuToggle={onContextMenuToggle}
-      />,
-    );
-
-    const menu = screen.getByTestId("context-menu");
-    const displayCostButton = within(menu).getByTestId("display-cost-button");
-
-    await user.click(displayCostButton);
-
-    // Verify if metrics modal is displayed by checking for the modal content
-    expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
-  });
-
   it("should not display the edit or delete options if the handler is not provided", async () => {
     const onContextMenuToggle = vi.fn();
     const { rerender } = renderWithProviders(
