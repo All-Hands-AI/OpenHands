@@ -1,9 +1,8 @@
-"""Sync DB with Models
+"""Sync DB with Models.
 
 Revision ID: 8f703d51077a
 Revises:
 Create Date: 2025-10-04 09:13:01.062006
-
 """
 from typing import Sequence, Union
 
