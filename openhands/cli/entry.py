@@ -30,7 +30,9 @@ def main():
     args = parser.parse_args()
 
     if hasattr(args, 'version') and args.version:
-        print(f'OpenHands CLI version: {openhands.get_version()}')
+        from openhands import get_version
+
+        print(f'OpenHands CLI version: {get_version()}')
         sys.exit(0)
 
     if args.command == 'serve':
