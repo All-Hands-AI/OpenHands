@@ -55,6 +55,7 @@ class DbService(BaseModel):
             self.gcp_project = os.getenv('GCP_PROJECT')
         if self.gcp_region is None:
             self.gcp_region = os.getenv('GCP_REGION')
+        return self
 
     def _create_gcp_db_connection(self):
         # Lazy import because lib does not import if user does not have posgres installed
