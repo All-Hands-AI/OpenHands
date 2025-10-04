@@ -92,6 +92,9 @@ COMMANDS = {
 
 print_lock = threading.Lock()
 
+# Lock to debounce sending Ctrl+C interrupts to the running command
+_interrupt_lock: asyncio.Lock = asyncio.Lock()
+
 pause_task: asyncio.Task | None = None  # No more than one pause task
 
 
@@ -664,6 +667,15 @@ def display_help() -> None:
         commands_html += f'<gold><b>{command}</b></gold> - <grey>{description}</grey>\n'
     print_formatted_text(HTML(commands_html))
 
+    # Keyboard shortcuts section
+    print_formatted_text(HTML('\nKeyboard shortcuts:'))
+    shortcuts_html = (
+        '<gold><b>Ctrl+P</b></gold> - <grey>Pause the agent</grey>\n'
+        '<gold><b>Ctrl+C</b></gold> - <grey>Pause the agent; press twice quickly to interrupt a running command</grey>\n'
+        '<gold><b>Ctrl+D</b></gold> - <grey>Pause the agent</grey>\n'
+    )
+    print_formatted_text(HTML(shortcuts_html))
+
     # Footer
     print_formatted_text(
         HTML(
@@ -883,12 +895,13 @@ async def read_confirmation_input(
 def start_pause_listener(
     loop: asyncio.AbstractEventLoop,
     done_event: asyncio.Event,
-    event_stream,
+    event_stream: EventStream,
+    config: OpenHandsConfig,
 ) -> None:
     global pause_task
     if pause_task is None or pause_task.done():
         pause_task = loop.create_task(
-            process_agent_pause(done_event, event_stream)
+            process_agent_pause(done_event, event_stream, config)
         )  # Create a task to track agent pause requests from the user
 
 
@@ -902,16 +915,135 @@ async def stop_pause_listener() -> None:
     pause_task = None
 
 
-async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
+def is_command_running(event_stream: EventStream) -> bool:
+    """Check if a shell command is currently running using bounded reverse search.
+
+    We look at the latest relevant event (CmdRunAction or CmdOutputObservation):
+    - If it's a CmdOutputObservation with a finalized exit_code (>= 0), no command is running
+    - If it's a CmdOutputObservation with exit_code == -1, the command is still running (streaming)
+    - If it's a CmdRunAction (non-input), we assume a command has started and is running
+    """
+    try:
+        from openhands.events.event_filter import EventFilter
+
+        filt = EventFilter(include_types=(CmdRunAction, CmdOutputObservation))
+        for ev in event_stream.search_events(reverse=True, filter=filt, limit=50):
+            if isinstance(ev, CmdOutputObservation):
+                return ev.metadata.exit_code == -1
+            if isinstance(ev, CmdRunAction):
+                if ev.is_input:
+                    continue
+                return True
+        return False
+    except Exception:
+        # If detection fails for any reason, default to no running command
+        return False
+
+
+async def _handle_command_interrupt(
+    event_stream: EventStream, config: OpenHandsConfig
+) -> bool:
+    """Handle command interruption with user confirmation.
+
+    Returns:
+        bool: True if the interrupt was handled, False if the user wants to pause the agent
+    """
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>Command is currently running.</gold>'))
+    print_formatted_text('')
+
+    # Keep legacy behavior: single Ctrl+C pauses by default. Offer kill as opt-in.
+    choices = [
+        'Pause the agent (default)',
+        'Continue waiting for command to complete',
+        'Send interrupt to running command (Ctrl+C)',
+    ]
+
+    # Use the passed-in config so we honor CLI settings like VI mode. Run the blocking UI off the loop.
+    selection = await asyncio.to_thread(
+        cli_confirm, config, 'What would you like to do?', choices, 0
+    )
+
+    if selection == 2:  # Send interrupt to the running command
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<gold>Sending interrupt signal to running command...</gold>')
+        )
+        # Debounce rapid interrupts to avoid multiple concurrent dialogs/interrupts
+        if _interrupt_lock.locked():
+            print_formatted_text(HTML('<grey>Interrupt already sent; waiting…</grey>'))
+            return True
+        async with _interrupt_lock:
+            event_stream.add_event(
+                CmdRunAction(command='C-c', is_input=True),
+                EventSource.USER,
+            )
+        return True
+    elif selection == 1:  # Continue waiting
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<gold>Continuing to wait for command completion...</gold>')
+        )
+        return True
+    else:  # Pause the agent (selection == 0)
+        return False
+
+
+async def _handle_interrupt_async(
+    event_stream: EventStream, done: asyncio.Event, config: OpenHandsConfig
+) -> None:
+    """Handle the interrupt asynchronously to avoid blocking the input handler."""
+    try:
+        handled = await _handle_command_interrupt(event_stream, config)
+        if not handled:
+            # User chose to pause the agent
+            print_formatted_text('')
+            print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.PAUSED),
+                EventSource.USER,
+            )
+            done.set()
+    except Exception as e:
+        # If something goes wrong, fall back to pausing the agent
+        print_formatted_text('')
+        print_formatted_text(HTML(f'<ansired>Error handling interrupt: {e}</ansired>'))
+        print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+        event_stream.add_event(
+            ChangeAgentStateAction(AgentState.PAUSED),
+            EventSource.USER,
+        )
+        done.set()
+
+
+async def process_agent_pause(
+    done: asyncio.Event, event_stream: EventStream, config: OpenHandsConfig
+) -> None:
     input = create_input()
 
+    # Double-press detection window for Ctrl+C to send interrupt to running command
+    CTRL_C_WINDOW_SECONDS = 0.4
+    ctrl_c_timer: asyncio.Task | None = None
+
+    async def pause_after_delay(delay: float) -> None:
+        try:
+            await asyncio.sleep(delay)
+            print_formatted_text('')
+            print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.PAUSED),
+                EventSource.USER,
+            )
+            done.set()
+        except asyncio.CancelledError:
+            # Timer canceled because a second Ctrl+C was detected; do nothing
+            pass
+
     def keys_ready() -> None:
+        nonlocal ctrl_c_timer
         for key_press in input.read_keys():
-            if (
-                key_press.key == Keys.ControlP
-                or key_press.key == Keys.ControlC
-                or key_press.key == Keys.ControlD
-            ):
+            if key_press.key == Keys.ControlP or key_press.key == Keys.ControlD:
+                # Immediate pause
                 print_formatted_text('')
                 print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
                 event_stream.add_event(
@@ -919,6 +1051,47 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                     EventSource.USER,
                 )
                 done.set()
+            elif key_press.key == Keys.ControlC:
+                if is_command_running(event_stream):
+                    # If a timer is already running, this is a double-press: send interrupt
+                    if ctrl_c_timer and not ctrl_c_timer.done():
+                        ctrl_c_timer.cancel()
+                        ctrl_c_timer = None
+                        if _interrupt_lock.locked():
+                            print_formatted_text(
+                                HTML('<grey>Interrupt already sent; waiting…</grey>')
+                            )
+                            continue
+
+                        # Send Ctrl+C to the running command
+                        async def send_interrupt() -> None:
+                            async with _interrupt_lock:
+                                print_formatted_text('')
+                                print_formatted_text(
+                                    HTML(
+                                        '<gold>Sending interrupt signal to running command...</gold>'
+                                    )
+                                )
+                                event_stream.add_event(
+                                    CmdRunAction(command='C-c', is_input=True),
+                                    EventSource.USER,
+                                )
+
+                        asyncio.create_task(send_interrupt())
+                    else:
+                        # Start a short window; if no second press, pause
+                        ctrl_c_timer = asyncio.create_task(
+                            pause_after_delay(CTRL_C_WINDOW_SECONDS)
+                        )
+                else:
+                    # No command running: default immediate pause
+                    print_formatted_text('')
+                    print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.PAUSED),
+                        EventSource.USER,
+                    )
+                    done.set()
 
     try:
         with input.raw_mode():
