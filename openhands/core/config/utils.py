@@ -457,10 +457,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
             )
         )
 
-    if cfg.insecure_skip_verify is None:
-        configure_http_session()
-    else:
-        configure_http_session(verify=not cfg.insecure_skip_verify)
+    configure_http_session(verify=not cfg.security.insecure_skip_verify if cfg.security.insecure_skip_verify is not None else True)
 
     # If CLIRuntime is selected, disable Jupyter for all agents
     # Assuming 'cli' is the identifier for CLIRuntime

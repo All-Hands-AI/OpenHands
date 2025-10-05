@@ -27,7 +27,6 @@ These variables correspond to the `[core]` section in `config.toml`:
 | `SAVE_TRAJECTORY_PATH` | string | `"./trajectories"` | Path to store conversation trajectories |
 | `REPLAY_TRAJECTORY_PATH` | string | `""` | Path to load and replay a trajectory file |
 | `FILE_STORE_PATH` | string | `"/tmp/file_store"` | File store directory path |
-| `INSECURE_SKIP_VERIFY` | boolean | `false` | Skip TLS certificate verification for outbound HTTP requests (NOT recommended) |
 | `FILE_STORE` | string | `"memory"` | File store type (`memory`, `local`, etc.) |
 | `FILE_UPLOADS_MAX_FILE_SIZE_MB` | integer | `0` | Maximum file upload size in MB (0 = no limit) |
 | `FILE_UPLOADS_RESTRICT_FILE_TYPES` | boolean | `false` | Whether to restrict file upload types |
@@ -133,6 +132,7 @@ These variables correspond to the `[security]` section in `config.toml`:
 | `SECURITY_CONFIRMATION_MODE` | boolean | `false` | Enable confirmation mode for actions |
 | `SECURITY_SECURITY_ANALYZER` | string | `"llm"` | Security analyzer to use (`llm`, `invariant`) |
 | `SECURITY_ENABLE_SECURITY_ANALYZER` | boolean | `true` | Enable security analysis |
+| `SECURITY_INSECURE_SKIP_VERIFY` | boolean | `false` | Skip TLS certificate verification for outbound HTTP requests (NOT recommended) |
 
 ## Debug and Logging Variables
 
