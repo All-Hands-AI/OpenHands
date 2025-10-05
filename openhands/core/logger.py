@@ -217,7 +217,7 @@ class RollingLogger:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
-        self._write('\033[F' * (self.max_lines))
+        self._write('\033[F' * amount)
         self._flush()
 
     def replace_current_line(self, line: str = '') -> None:

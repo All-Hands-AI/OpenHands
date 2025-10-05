@@ -16,7 +16,7 @@ from openhands_cli.user_actions.types import ConfirmationResult, UserConfirmatio
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
-from openhands.sdk import ActionBase
+from openhands.sdk import Action
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     ConfirmRisky,
@@ -26,7 +26,7 @@ from openhands.sdk.security.confirmation_policy import (
 from tests.utils import _send_keys
 
 
-class MockAction(ActionBase):
+class MockAction(Action):
     """Mock action schema for testing."""
 
     command: str
