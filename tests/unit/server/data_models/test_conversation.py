@@ -158,7 +158,7 @@ async def test_search_conversations():
                     )
 
                     mock_app_conversation_service = AsyncMock()
-                    mock_app_conversation_service.search_app_conversations.return_value=AppConversationPage(
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
                         items=[]
                     )
 
@@ -168,7 +168,7 @@ async def test_search_conversations():
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
-                        app_conversation_service = mock_app_conversation_service,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     expected = ConversationInfoResultSet(
