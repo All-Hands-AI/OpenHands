@@ -19,7 +19,7 @@ from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
 
 from openhands.sdk import LLM, Agent
-from openhands.sdk.tool import FinishTool
+from openhands.sdk.tool import Tool
 
 # Create a minimal agent with only the FinishTool to avoid Windows compatibility issues
 # This is only used for building the binary, not for actual execution
@@ -29,7 +29,7 @@ dummy_agent = Agent(
         api_key='dummy-key',
         metadata=get_llm_metadata(model_name='dummy-model', llm_type='dummy'),
     ),
-    tools=[FinishTool()],
+    tools=[Tool(name="FinishTool")],
 )
 
 # =================================================
