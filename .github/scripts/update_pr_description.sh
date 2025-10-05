@@ -18,7 +18,7 @@ DOCKER_RUN_COMMAND="docker run -it --rm \
   docker.all-hands.dev/all-hands-ai/openhands:${SHORT_SHA}"
 
 # Define the uvx command
-UVX_RUN_COMMAND="uvx --python 3.12 --from git+https://github.com/All-Hands-AI/OpenHands@${BRANCH_NAME} openhands"
+UVX_RUN_COMMAND="uvx --python 3.12 --from git+https://github.com/All-Hands-AI/OpenHands@${BRANCH_NAME}#subdirectory=openhands-cli openhands"
 
 # Get the current PR body
 PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
