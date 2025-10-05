@@ -23,11 +23,15 @@ class TestUserSecrets:
         gitlab_token = ProviderToken(
             token=SecretStr('gitlab-token-456'), user_id='user2'
         )
+        azure_devops_token = ProviderToken(
+            token=SecretStr('azure-devops-token-789'), user_id='user3'
+        )
 
         # Create a store with only provider tokens
         provider_tokens = {
             ProviderType.GITHUB: github_token,
             ProviderType.GITLAB: gitlab_token,
+            ProviderType.AZURE_DEVOPS: azure_devops_token,
         }
 
         # Initialize the store with a dict that will be converted to MappingProxyType
@@ -35,7 +39,7 @@ class TestUserSecrets:
 
         # Verify the tokens were added correctly
         assert isinstance(store.provider_tokens, MappingProxyType)
-        assert len(store.provider_tokens) == 2
+        assert len(store.provider_tokens) == 3
         assert (
             store.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
             == 'github-token-123'
@@ -46,6 +50,11 @@ class TestUserSecrets:
             == 'gitlab-token-456'
         )
         assert store.provider_tokens[ProviderType.GITLAB].user_id == 'user2'
+        assert (
+            store.provider_tokens[ProviderType.AZURE_DEVOPS].token.get_secret_value()
+            == 'azure-devops-token-789'
+        )
+        assert store.provider_tokens[ProviderType.AZURE_DEVOPS].user_id == 'user3'
 
         # Verify custom_secrets is empty
         assert isinstance(store.custom_secrets, MappingProxyType)
@@ -155,8 +164,15 @@ class TestUserSecrets:
         gitlab_token = ProviderToken(
             token=SecretStr('gitlab-token-456'), user_id='user2'
         )
+        azure_devops_token = ProviderToken(
+            token=SecretStr('azure-devops-token-789'), user_id='user3'
+        )
         updated_provider_tokens = MappingProxyType(
-            {ProviderType.GITHUB: github_token, ProviderType.GITLAB: gitlab_token}
+            {
+                ProviderType.GITHUB: github_token,
+                ProviderType.GITLAB: gitlab_token,
+                ProviderType.AZURE_DEVOPS: azure_devops_token,
+            }
         )
 
         updated_store1 = initial_store.model_copy(
@@ -164,7 +180,7 @@ class TestUserSecrets:
         )
 
         # Verify provider_tokens was updated but custom_secrets remains the same
-        assert len(updated_store1.provider_tokens) == 2
+        assert len(updated_store1.provider_tokens) == 3
         assert (
             updated_store1.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
             == 'github-token-123'
@@ -172,6 +188,12 @@ class TestUserSecrets:
         assert (
             updated_store1.provider_tokens[ProviderType.GITLAB].token.get_secret_value()
             == 'gitlab-token-456'
+        )
+        assert (
+            updated_store1.provider_tokens[
+                ProviderType.AZURE_DEVOPS
+            ].token.get_secret_value()
+            == 'azure-devops-token-789'
         )
         assert len(updated_store1.custom_secrets) == 1
         assert (
@@ -276,6 +298,10 @@ class TestUserSecrets:
                 'token': 'gitlab-token-456',  # Also using plain string
                 'user_id': 'user2',
             },
+            ProviderType.AZURE_DEVOPS: {
+                'token': 'azure-devops-token-789',  # Also using plain string
+                'user_id': 'user3',
+            },
         }
 
         # For the second provider, create a ProviderToken directly
@@ -287,6 +313,9 @@ class TestUserSecrets:
         mixed_provider_tokens = {
             ProviderType.GITHUB: provider_tokens_dict[ProviderType.GITHUB],  # Dict
             ProviderType.GITLAB: gitlab_token,  # ProviderToken object
+            ProviderType.AZURE_DEVOPS: provider_tokens_dict[
+                ProviderType.AZURE_DEVOPS
+            ],  # Dict
         }
 
         # Initialize the store
@@ -294,7 +323,7 @@ class TestUserSecrets:
 
         # Verify all tokens are converted to SecretStr
         assert isinstance(store.provider_tokens, MappingProxyType)
-        assert len(store.provider_tokens) == 2
+        assert len(store.provider_tokens) == 3
 
         # Check GitHub token (was plain string in a dict)
         github_token = store.provider_tokens[ProviderType.GITHUB]
@@ -307,6 +336,12 @@ class TestUserSecrets:
         assert isinstance(gitlab_token_result.token, SecretStr)
         assert gitlab_token_result.token.get_secret_value() == 'gitlab-token-456'
         assert gitlab_token_result.user_id == 'user2'
+
+        # Check Azure DevOps token (was plain string in a dict)
+        azure_devops_token = store.provider_tokens[ProviderType.AZURE_DEVOPS]
+        assert isinstance(azure_devops_token.token, SecretStr)
+        assert azure_devops_token.token.get_secret_value() == 'azure-devops-token-789'
+        assert azure_devops_token.user_id == 'user3'
 
     def test_initializing_custom_secrets_with_mixed_value_types(self):
         """Test initializing custom secrets with both plain strings and SecretStr objects."""

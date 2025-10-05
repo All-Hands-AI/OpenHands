@@ -17,6 +17,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
+from openhands.integrations.azure_devops.azure_devops_service import (
+    AzureDevOpsServiceImpl,
+)
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
@@ -108,6 +111,7 @@ class ProviderHandler:
         ProviderType.GITHUB: 'github.com',
         ProviderType.GITLAB: 'gitlab.com',
         ProviderType.BITBUCKET: 'bitbucket.org',
+        ProviderType.AZURE_DEVOPS: 'dev.azure.com',
     }
 
     def __init__(
@@ -128,6 +132,7 @@ class ProviderHandler:
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
             ProviderType.BITBUCKET: BitBucketServiceImpl,
+            ProviderType.AZURE_DEVOPS: AzureDevOpsServiceImpl,
         }
 
         self.external_auth_id = external_auth_id
@@ -645,8 +650,10 @@ class ProviderHandler:
         domain = self.PROVIDER_DOMAINS[provider]
 
         # If provider tokens are provided, use the host from the token if available
+        # Note: For Azure DevOps, don't use the host field as it may contain org/project path
         if self.provider_tokens and provider in self.provider_tokens:
-            domain = self.provider_tokens[provider].host or domain
+            if provider != ProviderType.AZURE_DEVOPS:
+                domain = self.provider_tokens[provider].host or domain
 
         # Try to use token if available, otherwise use public URL
         if self.provider_tokens and provider in self.provider_tokens:
@@ -665,6 +672,21 @@ class ProviderHandler:
                     else:
                         # Access token format: use x-token-auth
                         remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
+                elif provider == ProviderType.AZURE_DEVOPS:
+                    # Azure DevOps uses PAT with empty username
+                    # Format: https://:{PAT}@dev.azure.com/{org}/{project}/_git/{repo}
+                    # repo_name is in format: org/project/repo
+                    # Remove domain prefix if it exists in domain variable
+                    clean_domain = domain.replace('https://', '').replace('http://', '')
+                    parts = repo_name.split('/')
+                    if len(parts) >= 3:
+                        org, project, repo = parts[0], parts[1], parts[2]
+                        remote_url = f'https://:{token_value}@{clean_domain}/{org}/{project}/_git/{repo}'
+                    else:
+                        # Fallback if format is unexpected
+                        remote_url = (
+                            f'https://:{token_value}@{clean_domain}/{repo_name}.git'
+                        )
                 else:
                     # GitHub
                     remote_url = f'https://{token_value}@{domain}/{repo_name}.git'

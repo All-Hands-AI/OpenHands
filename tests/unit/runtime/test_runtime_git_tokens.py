@@ -8,7 +8,10 @@ from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.events.action import Action
 from openhands.events.action.commands import CmdRunAction
-from openhands.events.observation import NullObservation, Observation
+from openhands.events.observation import (
+    NullObservation,
+    Observation,
+)
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
 from openhands.integrations.service_types import AuthenticationError, Repository
@@ -182,11 +185,14 @@ async def test_export_latest_git_provider_tokens_success(runtime):
 async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     """Test token export with multiple token references"""
     config = OpenHandsConfig()
-    # Initialize with both GitHub and GitLab tokens
+    # Initialize with GitHub, GitLab, and Azure DevOps tokens
     git_provider_tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('github_token')),
             ProviderType.GITLAB: ProviderToken(token=SecretStr('gitlab_token')),
+            ProviderType.AZURE_DEVOPS: ProviderToken(
+                token=SecretStr('azure_devops_token')
+            ),
         }
     )
     file_store = get_file_store('local', temp_dir)
@@ -200,15 +206,18 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     )
 
     # Create a command that references multiple tokens
-    cmd = CmdRunAction(command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN')
+    cmd = CmdRunAction(
+        command='echo $GITHUB_TOKEN && echo $GITLAB_TOKEN && echo $AZURE_DEVOPS_TOKEN'
+    )
 
     # Export the tokens
     await runtime._export_latest_git_provider_tokens(cmd)
 
-    # Verify that both tokens were exported
+    # Verify that all tokens were exported
     assert event_stream.secrets == {
         'github_token': 'github_token',
         'gitlab_token': 'gitlab_token',
+        'azure_devops_token': 'azure_devops_token',
     }
 
 
@@ -412,6 +421,52 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     clone_cmd = runtime.run_action_calls[0].command
     assert (
         f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo'
+        in clone_cmd
+    )
+
+    # Check that the second command is the checkout
+    checkout_cmd = runtime.run_action_calls[1].command
+    assert 'cd repo' in checkout_cmd
+    assert 'git checkout -b openhands-workspace-' in checkout_cmd
+
+    assert result == 'repo'
+
+
+@pytest.mark.asyncio
+async def test_clone_or_init_repo_azure_devops_with_token(temp_dir, monkeypatch):
+    """Test cloning Azure DevOps repository with token"""
+    config = OpenHandsConfig()
+
+    # Set up Azure DevOps token
+    azure_devops_token = 'azure_devops_test_token'
+    git_provider_tokens = MappingProxyType(
+        {ProviderType.AZURE_DEVOPS: ProviderToken(token=SecretStr(azure_devops_token))}
+    )
+
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+    runtime = MockRuntime(
+        config=config,
+        event_stream=event_stream,
+        user_id='test_user',
+        git_provider_tokens=git_provider_tokens,
+    )
+
+    # Mock the repository to be Azure DevOps
+    mock_repo_and_patch(monkeypatch, provider=ProviderType.AZURE_DEVOPS)
+
+    # Call the method
+    result = await runtime.clone_or_init_repo(
+        git_provider_tokens=git_provider_tokens,
+        selected_repository='owner/repo',
+        selected_branch=None,
+    )
+
+    # Check that the first command is the git clone with the correct URL format with token
+    # Azure DevOps uses Basic auth format: https://:token@host
+    clone_cmd = runtime.run_action_calls[0].command
+    assert (
+        f'git clone https://:{azure_devops_token}@dev.azure.com/owner/repo.git repo'
         in clone_cmd
     )
 
