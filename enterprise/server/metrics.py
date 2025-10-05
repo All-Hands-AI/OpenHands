@@ -64,16 +64,20 @@ def metrics_app() -> Callable:
             metrics_data = generate_latest(REGISTRY)
 
         # Send HTTP response with metrics
-        await send({
-            'type': 'http.response.start',
-            'status': 200,
-            'headers': [
-                [b'content-type', b'text/plain; version=0.0.4; charset=utf-8'],
-            ],
-        })
-        await send({
-            'type': 'http.response.body',
-            'body': metrics_data,
-        })
+        await send(
+            {
+                'type': 'http.response.start',
+                'status': 200,
+                'headers': [
+                    [b'content-type', b'text/plain; version=0.0.4; charset=utf-8'],
+                ],
+            }
+        )
+        await send(
+            {
+                'type': 'http.response.body',
+                'body': metrics_data,
+            }
+        )
 
     return wrapped_handler
