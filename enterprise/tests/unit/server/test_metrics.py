@@ -5,7 +5,7 @@ import tempfile
 from unittest import mock
 
 import pytest
-from server.metrics import RUNNING_AGENT_LOOPS_GAUGE, metrics_app
+from server.metrics import metrics_app
 
 
 @pytest.fixture
@@ -17,10 +17,6 @@ def multiprocess_dir():
 
 class TestMetricsApp:
     """Test the metrics app functionality."""
-
-    def test_gauge_has_multiprocess_mode(self):
-        """Test that the running agent loops gauge is configured with multiprocess mode."""
-        assert RUNNING_AGENT_LOOPS_GAUGE._multiprocess_mode == 'livesum'
 
     @pytest.mark.asyncio
     async def test_metrics_single_process_mode(self):
@@ -123,93 +119,3 @@ class TestMetricsApp:
             else:
                 if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
                     del os.environ['PROMETHEUS_MULTIPROC_DIR']
-
-    @pytest.mark.asyncio
-    async def test_update_metrics_called(self):
-        """Test that _update_metrics is called when metrics endpoint is accessed."""
-        # We need to patch before calling metrics_app() since it creates a closure
-        with mock.patch('server.metrics.conversation_manager') as mock_cm:
-            from server.clustered_conversation_manager import ClusteredConversationManager
-
-            # Make isinstance check pass
-            mock_cm.__class__ = ClusteredConversationManager
-            mock_cm.get_running_agent_loops_locally = mock.AsyncMock(
-                return_value=['test_session']
-            )
-
-            handler = metrics_app()
-
-            # Mock ASGI scope, receive, and send
-            scope = {'type': 'http', 'method': 'GET', 'path': '/metrics'}
-            receive = mock.AsyncMock()
-            send = mock.AsyncMock()
-
-            # Call the handler
-            await handler(scope, receive, send)
-
-            # Verify that the conversation manager method was called
-            mock_cm.get_running_agent_loops_locally.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_multiprocess_registry_creation(self, multiprocess_dir):
-        """Test that multiprocess mode creates a new registry with MultiProcessCollector."""
-        os.environ['PROMETHEUS_MULTIPROC_DIR'] = multiprocess_dir
-
-        try:
-            handler = metrics_app()
-
-            # Mock ASGI scope, receive, and send
-            scope = {'type': 'http', 'method': 'GET', 'path': '/metrics'}
-            receive = mock.AsyncMock()
-            send = mock.AsyncMock()
-
-            # Mock the conversation manager to avoid actual calls
-            with mock.patch('server.metrics.conversation_manager') as mock_cm:
-                mock_cm.get_running_agent_loops_locally = mock.AsyncMock(
-                    return_value=[]
-                )
-
-                # Call the handler
-                await handler(scope, receive, send)
-
-                # Verify send was called
-                assert send.call_count == 2
-
-                # Get the body
-                body_call = send.call_args_list[1][0][0]
-                metrics_output = body_call['body'].decode('utf-8')
-
-                # Should return valid Prometheus metrics format
-                assert isinstance(metrics_output, str)
-
-        finally:
-            if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-                del os.environ['PROMETHEUS_MULTIPROC_DIR']
-
-    @pytest.mark.asyncio
-    async def test_response_headers(self):
-        """Test that response headers are correctly set."""
-        handler = metrics_app()
-
-        # Mock ASGI scope, receive, and send
-        scope = {'type': 'http', 'method': 'GET', 'path': '/metrics'}
-        receive = mock.AsyncMock()
-        send = mock.AsyncMock()
-
-        # Mock the conversation manager
-        with mock.patch('server.metrics.conversation_manager') as mock_cm:
-            mock_cm.get_running_agent_loops_locally = mock.AsyncMock(return_value=[])
-
-            await handler(scope, receive, send)
-
-            # Check response headers
-            start_call = send.call_args_list[0][0][0]
-            headers = start_call['headers']
-
-            # Verify content-type header
-            content_type_header = next(
-                (h for h in headers if h[0] == b'content-type'), None
-            )
-            assert content_type_header is not None
-            assert b'text/plain' in content_type_header[1]
-            assert b'version=0.0.4' in content_type_header[1]
