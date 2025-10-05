@@ -34,3 +34,27 @@ uv run openhands
 ./dist/openhands            # macOS/Linux
 # dist/openhands.exe        # Windows
 ```
+
+## Multi-Platform Builds
+
+The OpenHands CLI supports building native executables for multiple platforms:
+
+- **Linux** (x64) - Built on Ubuntu
+- **macOS** (x64) - Built on macOS 
+- **Windows** (x64) - Built on Windows with .exe extension
+
+### Automated Builds
+
+GitHub Actions automatically builds binaries for all supported platforms:
+
+- **Pull Requests & Main Branch**: Builds are triggered when CLI files change
+- **Releases**: Release binaries are automatically attached to GitHub releases
+- **Manual Builds**: Can be triggered via workflow dispatch
+
+### Platform-Specific Notes
+
+- **Linux**: Standard executable, requires glibc
+- **macOS**: Universal binary compatible with Intel Macs
+- **Windows**: Native .exe executable, no additional dependencies required
+
+All builds use Python 3.12 and include the complete OpenHands agent SDK.

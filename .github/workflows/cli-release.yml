@@ -1,25 +1,25 @@
-# Workflow that builds and tests the CLI binary executable for multiple platforms
-name: CLI - Build and Test Binary
+# Workflow that builds CLI binaries for release
+name: CLI - Release Binaries
 
-# Run on pushes to main branch and all pull requests, but only when CLI files change
+# Run on release tags
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "openhands-cli/**"
-  pull_request:
-    paths:
-      - "openhands-cli/**"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build release for'
+        required: true
+        type: string
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
-  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-and-test-binary:
-    name: Build and test binary executable
+  build-release-binaries:
+    name: Build release binaries
     strategy:
       fail-fast: false
       matrix:
@@ -27,12 +27,15 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             executable: openhands
+            asset_name: openhands-linux-x64
           - os: macos-latest
             platform: macos
             executable: openhands
+            asset_name: openhands-macos-x64
           - os: windows-latest
             platform: windows
             executable: openhands.exe
+            asset_name: openhands-windows-x64.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -41,6 +44,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -89,9 +93,30 @@ jobs:
 
           echo "✅ Build & test finished without ❌ markers"
 
-      - name: Upload binary artifact
+      - name: Rename binary for release
+        working-directory: openhands-cli/dist
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            mv openhands.exe ${{ matrix.asset_name }}
+          else
+            mv openhands ${{ matrix.asset_name }}
+          fi
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        if: github.event_name == 'release'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: openhands-cli/dist/${{ matrix.asset_name }}
+          asset_name: ${{ matrix.asset_name }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload binary artifact (manual dispatch)
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: openhands-cli-${{ matrix.platform }}
-          path: openhands-cli/dist/${{ matrix.executable }}
+          name: ${{ matrix.asset_name }}
+          path: openhands-cli/dist/${{ matrix.asset_name }}
           retention-days: 30
