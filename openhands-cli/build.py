@@ -53,7 +53,7 @@ def clean_build_directories() -> None:
             if file.endswith('.pyc'):
                 os.remove(os.path.join(root, file))
 
-    print('✅ Cleanup complete!')
+    print('[SUCCESS] Cleanup complete!')
 
 
 def check_pyinstaller() -> bool:
@@ -65,7 +65,7 @@ def check_pyinstaller() -> bool:
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         print(
-            '❌ PyInstaller is not available. Use --install-pyinstaller flag or install manually with:'
+            '[ERROR] PyInstaller is not available. Use --install-pyinstaller flag or install manually with:'
         )
         print('   uv add --dev pyinstaller')
         return False
@@ -92,7 +92,7 @@ def build_executable(
         print(f'Running: {" ".join(cmd)}')
         subprocess.run(cmd, check=True, capture_output=True, text=True)
 
-        print('✅ Build completed successfully!')
+        print('[SUCCESS] Build completed successfully!')
 
         # Check if the executable was created
         dist_dir = Path('dist')
@@ -109,7 +109,7 @@ def build_executable(
         return True
 
     except subprocess.CalledProcessError as e:
-        print(f'❌ Build failed: {e}')
+        print(f'[ERROR] Build failed: {e}')
         if e.stdout:
             print('STDOUT:', e.stdout)
         if e.stderr:
@@ -147,7 +147,7 @@ def test_executable() -> bool:
     if not exe_path.exists():
         exe_path = Path('dist/openhands.exe')
         if not exe_path.exists():
-            print('❌ Executable not found!')
+            print('[ERROR] Executable not found!')
             return False
 
     try:
@@ -185,7 +185,7 @@ def test_executable() -> bool:
                 break
 
         if not saw_welcome:
-            print('❌ Did not detect welcome prompt')
+            print('[ERROR] Did not detect welcome prompt')
             try:
                 proc.kill()
             except Exception:
@@ -193,11 +193,11 @@ def test_executable() -> bool:
             return False
 
         boot_end = time.time()
-        print(f'⏱️  Boot to welcome: {boot_end - boot_start:.2f} seconds')
+        print(f'[TIMING] Boot to welcome: {boot_end - boot_start:.2f} seconds')
 
         # --- Run /help then /exit ---
         if proc.stdin is None:
-            print('❌ stdin unavailable')
+            print('[ERROR] stdin unavailable')
             proc.kill()
             return False
 
@@ -208,25 +208,25 @@ def test_executable() -> bool:
         total_end = time.time()
         full_output = ''.join(captured) + (out or '')
 
-        print(f'⏱️  End-to-end test time: {total_end - boot_start:.2f} seconds')
+        print(f'[TIMING] End-to-end test time: {total_end - boot_start:.2f} seconds')
 
         if 'available commands' in full_output.lower():
-            print('✅ Executable starts, welcome detected, and /help works')
+            print('[SUCCESS] Executable starts, welcome detected, and /help works')
             return True
         else:
-            print('❌ /help output not found')
+            print('[ERROR] /help output not found')
             print('Output preview:', full_output[-500:])
             return False
 
     except subprocess.TimeoutExpired:
-        print('❌ Executable test timed out')
+        print('[ERROR] Executable test timed out')
         try:
             proc.kill()
         except Exception:
             pass
         return False
     except Exception as e:
-        print(f'❌ Error testing executable: {e}')
+        print(f'[ERROR] Error testing executable: {e}')
         try:
             proc.kill()
         except Exception:
@@ -263,12 +263,12 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    print('🚀 OpenHands CLI Build Script')
+    print('OpenHands CLI Build Script')
     print('=' * 40)
 
     # Check if spec file exists
     if not os.path.exists(args.spec):
-        print(f"❌ Spec file '{args.spec}' not found!")
+        print(f"[ERROR] Spec file '{args.spec}' not found!")
         return 1
 
     # Build the executable
@@ -278,11 +278,11 @@ def main() -> int:
     # Test the executable
     if not args.no_test:
         if not test_executable():
-            print('❌ Executable test failed, build process failed')
+            print('[ERROR] Executable test failed, build process failed')
             return 1
 
-    print('\n🎉 Build process completed!')
-    print("📁 Check the 'dist/' directory for your executable")
+    print('\n[SUCCESS] Build process completed!')
+    print("Check the 'dist/' directory for your executable")
 
     return 0
 

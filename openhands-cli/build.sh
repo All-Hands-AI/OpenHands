@@ -8,12 +8,12 @@
 
 set -e  # Exit on any error
 
-echo "🚀 OpenHands CLI Build Script"
+echo "OpenHands CLI Build Script"
 echo "=============================="
 
 # Check if uv is available
 if ! command -v uv &> /dev/null; then
-    echo "❌ uv is required but not found! Please install uv first."
+    echo "[ERROR] uv is required but not found! Please install uv first."
     exit 1
 fi
 
@@ -35,11 +35,11 @@ done
 
 # Install PyInstaller if requested
 if [ "$INSTALL_PYINSTALLER" = true ]; then
-    echo "📦 Installing PyInstaller with uv..."
+    echo "[INFO] Installing PyInstaller with uv..."
     if uv add --dev pyinstaller; then
-        echo "✅ PyInstaller installed successfully with uv!"
+        echo "[SUCCESS] PyInstaller installed successfully with uv!"
     else
-        echo "❌ Failed to install PyInstaller"
+        echo "[ERROR] Failed to install PyInstaller"
         exit 1
     fi
 fi
