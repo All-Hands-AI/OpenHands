@@ -1,16 +1,20 @@
+import os
 from typing import Callable
 
-from prometheus_client import Gauge, make_asgi_app
+from prometheus_client import CollectorRegistry, Gauge, generate_latest
 from server.clustered_conversation_manager import ClusteredConversationManager
 
 from openhands.server.shared import (
     conversation_manager,
 )
 
+# Use livesum mode for multiprocess support - this aggregates gauge values
+# across all worker processes, counting only living processes
 RUNNING_AGENT_LOOPS_GAUGE = Gauge(
     'saas_running_agent_loops',
     'Count of running agent loops, aggregate by session_id to dedupe',
     ['session_id'],
+    multiprocess_mode='livesum',
 )
 
 
@@ -30,7 +34,13 @@ async def _update_metrics():
 
 
 def metrics_app() -> Callable:
-    metrics_callable = make_asgi_app()
+    """
+    Create metrics ASGI app with multiprocess support.
+
+    When PROMETHEUS_MULTIPROC_DIR is set, uses MultiProcessCollector to aggregate
+    metrics across all uvicorn worker processes. This prevents duplicate/conflicting
+    metrics when the same time series is exported by different workers.
+    """
 
     async def wrapped_handler(scope, receive, send):
         """
@@ -38,6 +48,32 @@ def metrics_app() -> Callable:
         Not wrapped in a `try`, failing would make metrics endpoint unavailable.
         """
         await _update_metrics()
-        await metrics_callable(scope, receive, send)
+
+        # Check if multiprocess mode is enabled
+        if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
+            # In multiprocess mode, create a new registry and collect from all workers
+            from prometheus_client import multiprocess
+
+            registry = CollectorRegistry()
+            multiprocess.MultiProcessCollector(registry)
+            metrics_data = generate_latest(registry)
+        else:
+            # Single process mode - use default registry
+            from prometheus_client import REGISTRY
+
+            metrics_data = generate_latest(REGISTRY)
+
+        # Send HTTP response with metrics
+        await send({
+            'type': 'http.response.start',
+            'status': 200,
+            'headers': [
+                [b'content-type', b'text/plain; version=0.0.4; charset=utf-8'],
+            ],
+        })
+        await send({
+            'type': 'http.response.body',
+            'body': metrics_data,
+        })
 
     return wrapped_handler
