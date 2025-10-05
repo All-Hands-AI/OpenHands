@@ -18,10 +18,10 @@ RUNNING_AGENT_LOOPS_GAUGE = Gauge(
 
 async def _update_metrics():
     """Update any prometheus metrics that are not updated during normal operation."""
-    if isinstance(openhands.server.shared.conversation_manager, ClusteredConversationManager):
-        running_agent_loops = (
-            await openhands.server.shared.conversation_manager.get_running_agent_loops_locally()
-        )
+    if isinstance(
+        openhands.server.shared.conversation_manager, ClusteredConversationManager
+    ):
+        running_agent_loops = await openhands.server.shared.conversation_manager.get_running_agent_loops_locally()
         # In multiprocess mode, do NOT call clear() as it can delete memory-mapped files
         # Instead, each worker only sets values for its own sessions
         # Old sessions will naturally expire when their worker process exits
