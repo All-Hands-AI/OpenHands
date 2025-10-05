@@ -23,10 +23,7 @@ async def _update_metrics():
     ):
         running_agent_loops = await openhands.server.shared.conversation_manager.get_running_agent_loops_locally()
         # In multiprocess mode, do NOT call clear() as it can delete memory-mapped files
-        # Instead, each worker only sets values for its own sessions
-        # Old sessions will naturally expire when their worker process exits
         if not os.environ.get('PROMETHEUS_MULTIPROC_DIR'):
-            # Only clear in single-process mode
             RUNNING_AGENT_LOOPS_GAUGE.clear()
         # running_agent_loops shouldn't be None, but can be.
         if running_agent_loops is not None:
@@ -39,32 +36,24 @@ def metrics_app() -> Callable:
     Create metrics ASGI app with multiprocess support.
 
     When PROMETHEUS_MULTIPROC_DIR is set, uses MultiProcessCollector to aggregate
-    metrics across all uvicorn worker processes. This prevents duplicate/conflicting
-    metrics when the same time series is exported by different workers.
+    metrics across all uvicorn worker processes.
     """
 
     async def wrapped_handler(scope, receive, send):
-        """
-        Call _update_metrics before serving Prometheus metrics endpoint.
-        Not wrapped in a `try`, failing would make metrics endpoint unavailable.
-        """
+        # Not wrapped in a try block - failing would make metrics endpoint unavailable
         await _update_metrics()
 
-        # Check if multiprocess mode is enabled
         if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
-            # In multiprocess mode, create a new registry and collect from all workers
             from prometheus_client import multiprocess
 
             registry = CollectorRegistry()
             multiprocess.MultiProcessCollector(registry)
             metrics_data = generate_latest(registry)
         else:
-            # Single process mode - use default registry
             from prometheus_client import REGISTRY
 
             metrics_data = generate_latest(REGISTRY)
 
-        # Send HTTP response with metrics
         await send(
             {
                 'type': 'http.response.start',
