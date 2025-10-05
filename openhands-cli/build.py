@@ -125,7 +125,7 @@ def build_executable(
         return True
 
     except subprocess.CalledProcessError as e:
-        print(f'[ERROR] Build failed with exit code {e.returncode}: {e}')
+        print(f'❌ [ERROR] Build failed with exit code {e.returncode}: {e}')
         if e.stdout:
             print('STDOUT:')
             print(e.stdout)
@@ -176,7 +176,7 @@ def test_executable() -> bool:
     if not exe_path.exists():
         exe_path = Path('dist/openhands.exe')
         if not exe_path.exists():
-            print('[ERROR] Executable not found!')
+            print('❌ [ERROR] Executable not found!')
             print(f'Checked paths: dist/openhands, dist/openhands.exe')
             print(f'Contents of dist directory:')
             dist_dir = Path('dist')
@@ -246,7 +246,7 @@ def test_executable() -> bool:
 
         # --- Run /help then /exit ---
         if proc.stdin is None:
-            print('[ERROR] stdin unavailable')
+            print('❌ [ERROR] stdin unavailable')
             proc.kill()
             return False
 
@@ -263,19 +263,19 @@ def test_executable() -> bool:
             print('[SUCCESS] Executable starts, welcome detected, and /help works')
             return True
         else:
-            print('[ERROR] /help output not found')
+            print('❌ [ERROR] /help output not found')
             print('Output preview:', full_output[-500:])
             return False
 
     except subprocess.TimeoutExpired:
-        print('[ERROR] Executable test timed out')
+        print('❌ [ERROR] Executable test timed out')
         try:
             proc.kill()
         except Exception:
             pass
         return False
     except Exception as e:
-        print(f'[ERROR] Error testing executable: {e}')
+        print(f'❌ [ERROR] Error testing executable: {e}')
         try:
             proc.kill()
         except Exception:
@@ -317,7 +317,7 @@ def main() -> int:
 
     # Check if spec file exists
     if not os.path.exists(args.spec):
-        print(f"[ERROR] Spec file '{args.spec}' not found!")
+        print(f"❌ [ERROR] Spec file '{args.spec}' not found!")
         return 1
 
     # Build the executable
@@ -327,7 +327,7 @@ def main() -> int:
     # Test the executable
     if not args.no_test:
         if not test_executable():
-            print('[ERROR] Executable test failed, build process failed')
+            print('❌ [ERROR] Executable test failed, build process failed')
             return 1
 
     print('\n[SUCCESS] Build process completed!')
