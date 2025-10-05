@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
+from openhands.agent_server.utils import utc_now
 from pydantic import BaseModel, Field
 
 
@@ -16,7 +17,7 @@ class SandboxSpecInfo(BaseModel):
 
     id: str
     command: str
-    created_at: datetime
+    created_at: datetime = Field(default_factory=utc_now)
     initial_env: dict[str, str] = Field(
         default_factory=dict, description='Initial Environment Variables'
     )
