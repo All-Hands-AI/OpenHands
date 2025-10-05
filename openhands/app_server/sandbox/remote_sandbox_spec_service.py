@@ -1,5 +1,5 @@
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 from typing import Callable
 
 from pydantic import Field
@@ -9,8 +9,10 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
 )
-
-from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService, SandboxSpecServiceManager
+from openhands.app_server.sandbox.sandbox_spec_service import (
+    SandboxSpecService,
+    SandboxSpecServiceManager,
+)
 
 
 @dataclass
@@ -20,15 +22,37 @@ class RemoteSandboxSpecService(SandboxSpecService):
     At present, the runtime API exposes methods to check whether a paricular image
     exists, but not to list existing images - so we maintain a list of images locally.
     """
+
     specs: list[SandboxSpecInfo]
 
     async def search_sandbox_specs(
         self, page_id: str | None = None, limit: int = 100
     ) -> SandboxSpecInfoPage:
-        raise NotImplementedError()
+        """Search for sandbox specs with pagination support."""
+        # Apply pagination
+        start_idx = 0
+        if page_id:
+            try:
+                start_idx = int(page_id)
+            except ValueError:
+                start_idx = 0
+
+        end_idx = start_idx + limit
+        paginated_specs = self.specs[start_idx:end_idx]
+
+        # Determine next page ID
+        next_page_id = None
+        if end_idx < len(self.specs):
+            next_page_id = str(end_idx)
+
+        return SandboxSpecInfoPage(items=paginated_specs, next_page_id=next_page_id)
 
     async def get_sandbox_spec(self, sandbox_spec_id: str) -> SandboxSpecInfo | None:
-        raise NotImplementedError()
+        """Get a single sandbox spec by ID, returning None if not found."""
+        for spec in self.specs:
+            if spec.id == sandbox_spec_id:
+                return spec
+        return None
 
     async def get_default_sandbox_spec(self) -> SandboxSpecInfo:
         return self.specs[0]
@@ -47,7 +71,7 @@ def _get_specs_from_legacy_parameter():
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
                 'LOG_JSON': 'true',
             },
-            working_dir='/home/openhands'
+            working_dir='/home/openhands',
         )
     ]
 
@@ -55,7 +79,7 @@ def _get_specs_from_legacy_parameter():
 class RemoteSandboxSpecServiceManager(SandboxSpecServiceManager):
     specs: list[SandboxSpecInfo] = Field(
         default_factory=_get_specs_from_legacy_parameter,
-        description="Preset list of sandbox specs. Falls back to legacy parameter",
+        description='Preset list of sandbox specs. Falls back to legacy parameter',
     )
 
     def get_resolver_for_current_user(self) -> Callable:
