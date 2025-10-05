@@ -116,12 +116,16 @@ def sandbox_manager() -> SandboxServiceManager:
     config = get_global_config()
     sandbox = config.sandbox
     if sandbox is None:
+        # Legacy fallback
         if os.getenv('RUNTIME') == 'remote':
             from openhands.app_server.sandbox.remote_sandbox_service import (
                 RemoteSandboxServiceManager,
             )
 
-            sandbox = RemoteSandboxServiceManager()
+            sandbox = RemoteSandboxServiceManager(
+                api_key=os.environ['SANDBOX_API_KEY'],
+                api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
+            )
         else:
             from openhands.app_server.sandbox.docker_sandbox_service import (
                 DockerSandboxServiceManager,
