@@ -8,12 +8,17 @@ using PyInstaller with the custom spec file.
 
 import argparse
 import os
-import select
 import shutil
 import subprocess
 import sys
 import time
+import threading
 from pathlib import Path
+from queue import Queue, Empty
+
+# Import select only on non-Windows systems
+if os.name != 'nt':
+    import select
 
 from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
@@ -90,7 +95,15 @@ def build_executable(
         cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
 
         print(f'Running: {" ".join(cmd)}')
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
+        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        
+        # Show PyInstaller output for debugging
+        if result.stdout:
+            print('PyInstaller output:')
+            print(result.stdout)
+        if result.stderr:
+            print('PyInstaller stderr:')
+            print(result.stderr)
 
         print('[SUCCESS] Build completed successfully!')
 
@@ -109,11 +122,13 @@ def build_executable(
         return True
 
     except subprocess.CalledProcessError as e:
-        print(f'[ERROR] Build failed: {e}')
+        print(f'[ERROR] Build failed with exit code {e.returncode}: {e}')
         if e.stdout:
-            print('STDOUT:', e.stdout)
+            print('STDOUT:')
+            print(e.stdout)
         if e.stderr:
-            print('STDERR:', e.stderr)
+            print('STDERR:')
+            print(e.stderr)
         return False
 
 
@@ -127,6 +142,17 @@ WELCOME_MARKERS = ['welcome', 'openhands cli', 'type /help', 'available commands
 def _is_welcome(line: str) -> bool:
     s = line.strip().lower()
     return any(marker in s for marker in WELCOME_MARKERS)
+
+
+def _read_output_thread(stdout, queue):
+    """Thread function to read stdout lines and put them in a queue."""
+    try:
+        for line in iter(stdout.readline, ''):
+            queue.put(line)
+        queue.put(None)  # Signal end of stream
+    except Exception as e:
+        queue.put(f"ERROR: {e}")
+        queue.put(None)
 
 
 def test_executable() -> bool:
@@ -170,19 +196,29 @@ def test_executable() -> bool:
         saw_welcome = False
         captured = []
 
+        # Use threading to read output non-blocking on all platforms
+        output_queue = Queue()
+        reader_thread = threading.Thread(target=_read_output_thread, args=(proc.stdout, output_queue))
+        reader_thread.daemon = True
+        reader_thread.start()
+
         while time.time() < deadline:
             if proc.poll() is not None:
                 break
-            rlist, _, _ = select.select([proc.stdout], [], [], 0.2)
-            if not rlist:
+            
+            try:
+                line = output_queue.get(timeout=0.2)
+                if line is None:  # End of stream
+                    break
+                if line.startswith("ERROR:"):
+                    print(f"[ERROR] Reading output: {line}")
+                    break
+                captured.append(line)
+                if _is_welcome(line):
+                    saw_welcome = True
+                    break
+            except Empty:
                 continue
-            line = proc.stdout.readline()
-            if not line:
-                continue
-            captured.append(line)
-            if _is_welcome(line):
-                saw_welcome = True
-                break
 
         if not saw_welcome:
             print('[ERROR] Did not detect welcome prompt')
