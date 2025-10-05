@@ -216,8 +216,6 @@ asyncio.run(run_worker())
             receive = mock.AsyncMock()
             send = mock.AsyncMock()
 
-            # Don't mock conversation_manager - let it use the real one
-            # which is StandaloneConversationManager and won't clear the gauge
             await handler(scope, receive, send)
 
             assert send.call_count == 2
