@@ -15,7 +15,7 @@ def get_llm_metadata(
 
     Args:
         model_name: Name of the LLM model
-        agent_name: Name of the agent (defaults to "openhands")
+        llm_type: Type of the LLM
         session_id: Optional session identifier
         user_id: Optional user identifier
 
