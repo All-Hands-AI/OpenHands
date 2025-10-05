@@ -12,7 +12,6 @@ class SandboxService(ABC):
     @abstractmethod
     async def search_sandboxes(
         self,
-        created_by_user_id__eq: str | None = None,
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:

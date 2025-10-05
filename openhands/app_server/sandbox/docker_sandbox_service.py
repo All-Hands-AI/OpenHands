@@ -197,7 +197,6 @@ class DockerSandboxService(SandboxService):
 
     async def search_sandboxes(
         self,
-        created_by_user_id__eq: str | None = None,
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
@@ -213,12 +212,7 @@ class DockerSandboxService(SandboxService):
                         container
                     )
                     if sandbox_info:
-                        # Filter by user_id if specified
-                        if (
-                            created_by_user_id__eq is None
-                            or sandbox_info.created_by_user_id == created_by_user_id__eq
-                        ):
-                            sandboxes.append(sandbox_info)
+                        sandboxes.append(sandbox_info)
 
             # Sort by creation time (newest first)
             sandboxes.sort(key=lambda x: x.created_at, reverse=True)

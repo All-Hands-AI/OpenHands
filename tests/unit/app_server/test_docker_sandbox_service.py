@@ -176,42 +176,6 @@ class TestDockerSandboxService:
         assert paused_sandbox.session_api_key is None
         assert paused_sandbox.exposed_urls is None
 
-    async def test_search_sandboxes_with_user_filter(
-        self, service, mock_running_container
-    ):
-        """Test search with user ID filter."""
-        # Setup
-        other_container = MagicMock()
-        other_container.name = 'oh-test-other'
-        other_container.status = 'running'
-        other_container.labels = {
-            'created_by_user_id': 'other_user',
-            'sandbox_spec_id': 'spec456',
-        }
-        other_container.attrs = {
-            'Created': '2024-01-15T10:30:00.000000000Z',
-            'Config': {
-                'Env': [
-                    'OH_SESSION_API_KEYS_0=other_session_key',
-                    'OTHER_VAR=other_value',
-                ]
-            },
-            'NetworkSettings': {'Ports': {}},
-        }
-
-        service.docker_client.containers.list.return_value = [
-            mock_running_container,
-            other_container,
-        ]
-        service.httpx_client.get.return_value.raise_for_status.return_value = None
-
-        # Execute
-        result = await service.search_sandboxes(created_by_user_id__eq='user123')
-
-        # Verify
-        assert len(result.items) == 1
-        assert result.items[0].created_by_user_id == 'user123'
-
     async def test_search_sandboxes_pagination(self, service):
         """Test pagination functionality."""
         # Setup - create multiple containers

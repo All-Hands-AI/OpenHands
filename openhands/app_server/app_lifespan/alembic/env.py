@@ -70,17 +70,17 @@ def run_migrations_offline() -> None:
     # Get the database URL from the DbService
     if db_service.host:
         password_value = (
-            db_service.password.get_secret_value() if db_service.password else ''
+            db_service.password.get_secret_value() if db_service.password else ""
         )
-        url = f'postgresql://{db_service.user}:{password_value}@{db_service.host}:{db_service.port}/{db_service.name}'
+        url = f"postgresql://{db_service.user}:{password_value}@{db_service.host}:{db_service.port}/{db_service.name}"
     else:
-        url = f'sqlite:///{db_service.persistence_dir}/openhands.db'
+        url = f"sqlite:///{db_service.persistence_dir}/openhands.db"
 
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={'paramstyle': 'named'},
+        dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():

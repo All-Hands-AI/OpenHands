@@ -19,10 +19,6 @@ sandbox_service_dependency = Depends(sandbox_manager().get_resolver_for_current_
 
 @router.get('/search')
 async def search_sandboxes(
-    created_by_user_id__eq: Annotated[
-        str | None,
-        Query(title='Optional id of the user who created the sandbox'),
-    ] = None,
     page_id: Annotated[
         str | None,
         Query(title='Optional next_page_id from the previously returned page'),
@@ -36,9 +32,7 @@ async def search_sandboxes(
     """Search / list sandboxes owned by the current user."""
     assert limit > 0
     assert limit <= 100
-    return await sandbox_service.search_sandboxes(
-        created_by_user_id__eq=created_by_user_id__eq, page_id=page_id, limit=limit
-    )
+    return await sandbox_service.search_sandboxes(page_id=page_id, limit=limit)
 
 
 @router.get('')
