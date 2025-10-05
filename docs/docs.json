@@ -3,18 +3,16 @@
   "theme": "mint",
   "name": "All Hands Docs",
   "colors": {
-    "primary": "#99873c",
-    "light": "#ffe165",
-    "dark": "#ffe165"
+    "primary": "#99873c"
   },
   "background": {
     "color": {
-      "light": "#f7f3ee",
-      "dark": "#0B0D0E"
+      "light": "#f7f3ee"
     }
   },
   "appearance": {
-    "default": "light"
+    "default": "light",
+    "strict": true
   },
   "favicon": "/logo-square.png",
   "navigation": {
@@ -31,6 +29,7 @@
             "group": "OpenHands Cloud",
             "pages": [
               "usage/cloud/openhands-cloud",
+              "usage/cloud/pro-subscription",
               {
                 "group": "Integrations",
                 "pages": [
@@ -109,8 +108,7 @@
                 },
                 "usage/configuration-options",
                 "usage/how-to/custom-sandbox-guide",
-                "usage/search-engine-setup",
-                "usage/mcp"
+                "usage/search-engine-setup"
                 ]
               }
             ]
@@ -118,7 +116,13 @@
           {
             "group": "Customizations & Settings",
             "pages": [
-              "usage/common-settings",
+              {
+                "group": "OpenHands Settings",
+                "pages": [
+                  "usage/settings/secrets-settings",
+                  "usage/settings/mcp-settings"
+                ]
+              },
               "usage/prompting/repository",
               {
                 "group": "Microagents",
@@ -208,9 +212,8 @@
   },
   "footer": {
     "socials": {
-      "slack": "https://dub.sh/openhands",
-      "github": "https://github.com/All-Hands-AI/OpenHands",
-      "discord": "https://discord.gg/ESHStjSjD4"
+      "slack": "https://all-hands.dev/joinslack",
+      "github": "https://github.com/All-Hands-AI/OpenHands"
     }
   },
   "contextual": {

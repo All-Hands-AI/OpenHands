@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 
 interface UseFileHandlingReturn {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -30,6 +30,25 @@ export const useFileHandling = (
     },
     [onFilesPaste],
   );
+
+  // Listen for paste events with files
+  useEffect(() => {
+    const handlePasteFiles = (event: CustomEvent) => {
+      const files = event.detail.files as File[];
+      if (files && files.length > 0) {
+        addFiles(files);
+      }
+    };
+
+    document.addEventListener("pasteFiles", handlePasteFiles as EventListener);
+
+    return () => {
+      document.removeEventListener(
+        "pasteFiles",
+        handlePasteFiles as EventListener,
+      );
+    };
+  }, [addFiles]);
 
   // File icon click handler
   const handleFileIconClick = useCallback((isDisabled: boolean) => {

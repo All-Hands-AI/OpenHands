@@ -32,6 +32,7 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
+from openhands.cli.deprecation_warning import display_deprecation_warning
 from openhands.cli.pt_style import (
     COLOR_AGENT_BLUE,
     COLOR_GOLD,
@@ -72,6 +73,9 @@ streaming_output_text_area: TextArea | None = None
 # Track recent thoughts to prevent duplicate display
 recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
+
+# Maximum number of lines to display for command output
+MAX_OUTPUT_LINES = 15
 
 # Color and styling constants
 DEFAULT_STYLE = get_cli_style()
@@ -148,6 +152,9 @@ def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> Non
 
 
 def display_banner(session_id: str) -> None:
+    # Display deprecation warning first
+    display_deprecation_warning()
+
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -407,20 +414,28 @@ def display_command_output(output: str) -> None:
             # TODO: clean this up once we clean up terminal output
             continue
         formatted_lines.append(line)
-        formatted_lines.append('\n')
 
-    # Remove the last newline if it exists
-    if formatted_lines:
-        formatted_lines.pop()
+    # Truncate long outputs
+    title = 'Command Output'
+    if len(formatted_lines) > MAX_OUTPUT_LINES:
+        truncated_lines = formatted_lines[:MAX_OUTPUT_LINES]
+        remaining_lines = len(formatted_lines) - MAX_OUTPUT_LINES
+        truncated_lines.append(
+            f'... and {remaining_lines} more lines \n use --full to see complete output'
+        )
+        formatted_output = '\n'.join(truncated_lines)
+        title = f'Command Output (showing {MAX_OUTPUT_LINES} of {len(formatted_lines)} lines)'
+    else:
+        formatted_output = '\n'.join(formatted_lines)
 
     container = Frame(
         TextArea(
-            text=''.join(formatted_lines),
+            text=formatted_output,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Command Output',
+        title=title,
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
