@@ -48,8 +48,6 @@ jobs:
 
       - name: Build binary executable
         working-directory: openhands-cli
-        env:
-          PYTHONPATH: ""
         run: |
           ./build.sh --install-pyinstaller | tee output.log
           echo "Full output:"
