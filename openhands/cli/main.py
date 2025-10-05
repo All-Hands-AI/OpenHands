@@ -517,6 +517,22 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
         )
     )
     print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<grey>💡 Tip: For a persistent installation, you can also use:</grey>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>   <b>uv tool install --python 3.12 openhands-ai</b></grey>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>   This installs OpenHands globally and allows you to control updates.</grey>'
+        )
+    )
+    print_formatted_text('')
 
     # Use cli_confirm to get user choice
     choice = cli_confirm(

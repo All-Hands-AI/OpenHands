@@ -52,6 +52,10 @@ Note that you'll still need `uv` installed for the default MCP servers to work p
 
 <Accordion title="Create shell aliases for easy access across environments">
 
+You have two options for setting up shell aliases:
+
+**Option 1: Using uvx (runs latest version each time)**
+
 Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
@@ -59,6 +63,23 @@ Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
 alias openhands="uvx --python 3.12 --from openhands-ai openhands"
 alias oh="uvx --python 3.12 --from openhands-ai openhands"
 ```
+
+**Option 2: Using uv tool install (persistent installation, recommended for stability)**
+
+First, install OpenHands as a tool:
+
+```bash
+uv tool install --python 3.12 openhands-ai
+```
+
+Then add these aliases to your shell configuration file:
+
+```bash
+# Add OpenHands aliases after uv tool install
+alias oh="openhands"
+```
+
+Note: With `uv tool install`, you control when to update by running `uv tool upgrade openhands-ai`.
 
 After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
 
