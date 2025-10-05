@@ -116,11 +116,18 @@ def sandbox_manager() -> SandboxServiceManager:
     config = get_global_config()
     sandbox = config.sandbox
     if sandbox is None:
-        from openhands.app_server.sandbox.docker_sandbox_service import (
-            DockerSandboxServiceManager,
-        )
+        if os.getenv('RUNTIME') == 'remote':
+            from openhands.app_server.sandbox.remote_sandbox_service import (
+                RemoteSandboxServiceManager,
+            )
 
-        sandbox = DockerSandboxServiceManager()
+            sandbox = RemoteSandboxServiceManager()
+        else:
+            from openhands.app_server.sandbox.docker_sandbox_service import (
+                DockerSandboxServiceManager,
+            )
+
+            sandbox = DockerSandboxServiceManager()
         config.sandbox = sandbox
     return sandbox
 
@@ -129,11 +136,18 @@ def sandbox_spec_manager() -> SandboxSpecServiceManager:
     config = get_global_config()
     sandbox_spec = config.sandbox_spec
     if sandbox_spec is None:
-        from openhands.app_server.sandbox.docker_sandbox_spec_service import (
-            DockerSandboxSpecServiceManager,
-        )
+        if os.getenv('RUNTIME') == 'remote':
+            from openhands.app_server.sandbox.remote_sandbox_spec_service import (
+                RemoteSandboxSpecServiceManager,
+            )
 
-        sandbox_spec = DockerSandboxSpecServiceManager()
+            sandbox_spec = RemoteSandboxSpecServiceManager()
+        else:
+            from openhands.app_server.sandbox.docker_sandbox_spec_service import (
+                DockerSandboxSpecServiceManager,
+            )
+
+            sandbox_spec = DockerSandboxSpecServiceManager()
         config.sandbox_spec = sandbox_spec
     return sandbox_spec
 

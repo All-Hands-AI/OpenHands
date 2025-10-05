@@ -34,7 +34,7 @@ _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 
 
-class StoredRemoteSandbox(Base):
+class StoredRemoteSandbox(Base): # type: ignore
     """Local storage for remote sandbox info.
 
     The remote runtime API does not return some variables we need, and does not
