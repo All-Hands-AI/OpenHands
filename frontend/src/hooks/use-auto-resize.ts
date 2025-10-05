@@ -183,7 +183,11 @@ export const useAutoResize = (
 
   // Handle content that fits within current height
   const handleContentFitsInCurrentHeight = useCallback(
-    (element: HTMLElement, currentHeight: number, contentHeight: number) => {
+    (
+      element: HTMLElement,
+      currentHeight: number,
+      contentHeight: number,
+    ): void => {
       // If user manually resized and we're above min height, preserve their chosen height
       if (hasUserResizedRef.current && currentHeight > minHeight) {
         applyResizeStrategy(element, {
@@ -191,7 +195,7 @@ export const useAutoResize = (
           overflowY: "hidden",
         });
         executeHeightCallback(currentHeight, onHeightChange);
-        return true;
+        return;
       }
 
       // Otherwise allow shrinking towards content (respect minHeight)
@@ -201,14 +205,17 @@ export const useAutoResize = (
         overflowY: "hidden",
       });
       executeHeightCallback(finalHeight, onHeightChange);
-      return true;
     },
     [minHeight, onHeightChange],
   );
 
   // Handle content that exceeds current height but within max height
   const handleContentExceedsCurrentHeight = useCallback(
-    (element: HTMLElement, currentHeight: number, contentHeight: number) => {
+    (
+      element: HTMLElement,
+      currentHeight: number,
+      contentHeight: number,
+    ): void => {
       // Grow unless the element is manually oversized beyond content significantly
       if (!isManuallyOversized(currentHeight, contentHeight)) {
         const finalHeight = Math.max(contentHeight, minHeight);
@@ -217,7 +224,7 @@ export const useAutoResize = (
           overflowY: "hidden",
         });
         executeHeightCallback(finalHeight, onHeightChange);
-        return true;
+        return;
       }
 
       // Keep manual height and allow scrolling as needed
@@ -226,7 +233,6 @@ export const useAutoResize = (
         overflowY: "auto",
       });
       executeHeightCallback(currentHeight, onHeightChange);
-      return true;
     },
     [minHeight, onHeightChange],
   );
@@ -281,7 +287,15 @@ export const useAutoResize = (
 
     // Content exceeds max height
     handleContentExceedsMaxHeight(element);
-  }, [elementRef, minHeight, maxHeight, onHeightChange]);
+  }, [
+    elementRef,
+    minHeight,
+    maxHeight,
+    onHeightChange,
+    handleContentFitsInCurrentHeight,
+    handleContentExceedsCurrentHeight,
+    handleContentExceedsMaxHeight,
+  ]);
 
   // rAF-debounced smartResize wrapper to collapse bursts
   const smartResize = useCallback(() => {
