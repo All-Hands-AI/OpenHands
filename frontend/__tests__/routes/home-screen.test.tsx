@@ -94,8 +94,8 @@ describe("HomeScreen", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: { host: "github.com" },
-        gitlab: { host: "gitlab.com" },
+        github: "fake-token",
+        gitlab: "fake-token",
       },
     });
   });

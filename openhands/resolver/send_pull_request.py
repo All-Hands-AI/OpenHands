@@ -690,7 +690,6 @@ def main() -> None:
     )
     parser.add_argument(
         '--bitbucket-mode',
-        '--bit-bucket-mode',
         dest='bitbucket_mode',
         type=str,
         default='cloud',
