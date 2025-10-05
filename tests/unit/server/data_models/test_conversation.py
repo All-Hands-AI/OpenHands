@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 
+from openhands.app_server.app_conversation.app_conversation_models import AppConversationPage
 from openhands.integrations.service_types import (
     AuthenticationError,
     CreateMicroagent,
@@ -156,12 +157,16 @@ async def test_search_conversations():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value=AppConversationPage(items=[])
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service = mock_app_conversation_service
                     )
 
                     expected = ConversationInfoResultSet(
