@@ -8,14 +8,12 @@ import { Provider } from "#/types/settings";
 
 interface GitControlBarPrButtonProps {
   onSuggestionsClick: (value: string) => void;
-  isEnabled: boolean;
   hasRepository: boolean;
   currentGitProvider: Provider;
 }
 
 export function GitControlBarPrButton({
   onSuggestionsClick,
-  isEnabled,
   hasRepository,
   currentGitProvider,
 }: GitControlBarPrButtonProps) {
@@ -24,7 +22,7 @@ export function GitControlBarPrButton({
   const { providers } = useUserProviders();
 
   const providersAreSet = providers.length > 0;
-  const isButtonEnabled = isEnabled && providersAreSet && hasRepository;
+  const isButtonEnabled = providersAreSet && hasRepository;
 
   const handlePrClick = () => {
     posthog.capture("create_pr_button_clicked");
