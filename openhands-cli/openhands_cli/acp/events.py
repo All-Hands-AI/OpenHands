@@ -150,8 +150,8 @@ class EventSubscriber(Subscriber):
             # Now send the tool_call with action.visualize content
             tool_kind = get_tool_kind(event.tool_name)
 
-            # Use action.title for a brief summary
-            title = event.action.title
+            # Use action.title for a brief summary, fallback to action kind if not available
+            title = getattr(event.action, "title", event.action.kind)
 
             # Use action.visualize for rich content
             action_viz = _rich_text_to_plain(event.action.visualize)

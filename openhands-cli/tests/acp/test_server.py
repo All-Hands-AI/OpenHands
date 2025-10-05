@@ -40,10 +40,13 @@ def temp_persistence_dir():
 
 
 @pytest.mark.asyncio
-async def test_initialize(mock_conn, temp_persistence_dir):
+async def test_initialize(mock_conn, temp_persistence_dir, monkeypatch):
     """Test initialize method with API key available (no auth required)."""
     from acp import InitializeRequest
     from acp.schema import ClientCapabilities
+
+    # Set an API key to simulate having credentials available
+    monkeypatch.setenv("LITELLM_API_KEY", "test-api-key")
 
     agent = OpenHandsACPAgent(mock_conn, temp_persistence_dir)
 

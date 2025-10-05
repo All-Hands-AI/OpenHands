@@ -231,6 +231,7 @@ class OpenHandsACPAgent(ACPAgent):
                 else:
                     logger.warning("No API key found. Using dummy key.")
                     llm_kwargs["api_key"] = "dummy-key"
+                    llm_kwargs["model"] = "gpt-4o-mini"
 
             # Add required service_id
             llm_kwargs["service_id"] = "acp-agent"
