@@ -16,9 +16,9 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
+  "agent-client-protocol>=0.1",
   "openhands-sdk",
   "openhands-tools",
-  "agent-client-protocol>=0.1.0",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
