@@ -700,6 +700,29 @@ fi
             # This is a safe fallback since we'll just use the default .openhands
             return False
 
+    def _is_azure_devops_repository(self, repo_name: str) -> bool:
+        """Check if a repository is hosted on Azure DevOps.
+
+        Args:
+            repo_name: Repository name (e.g., "org/project/repo")
+
+        Returns:
+            True if the repository is hosted on Azure DevOps, False otherwise
+        """
+        try:
+            provider_handler = ProviderHandler(
+                self.git_provider_tokens or MappingProxyType({})
+            )
+            repository = call_async_from_sync(
+                provider_handler.verify_repo_provider,
+                GENERAL_TIMEOUT,
+                repo_name,
+            )
+            return repository.git_provider == ProviderType.AZURE_DEVOPS
+        except Exception:
+            # If we can't determine the provider, assume it's not Azure DevOps
+            return False
+
     def get_microagents_from_org_or_user(
         self, selected_repository: str
     ) -> list[BaseMicroagent]:
@@ -735,24 +758,35 @@ fi
             )
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        org_name = repo_parts[-2]
+        # Determine repository type
+        is_azure_devops = self._is_azure_devops_repository(selected_repository)
+        is_gitlab = self._is_gitlab_repository(selected_repository)
+
+        # Extract the org/user name
+        # Azure DevOps format: org/project/repo (3 parts) - extract org (first part)
+        # GitHub/GitLab/Bitbucket format: owner/repo (2 parts) - extract owner (first part)
+        if is_azure_devops and len(repo_parts) >= 3:
+            org_name = repo_parts[0]  # Get org from org/project/repo
+        else:
+            org_name = repo_parts[-2]  # Get owner from owner/repo
+
         self.log(
             'info',
             f'Extracted org/user name: {org_name}',
         )
-
-        # Determine if this is a GitLab repository
-        is_gitlab = self._is_gitlab_repository(selected_repository)
         self.log(
             'debug',
-            f'Repository type detection - is_gitlab: {is_gitlab}',
+            f'Repository type detection - is_gitlab: {is_gitlab}, is_azure_devops: {is_azure_devops}',
         )
 
-        # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+        # For GitLab and Azure DevOps, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
         if is_gitlab:
             org_openhands_repo = f'{org_name}/openhands-config'
+        elif is_azure_devops:
+            # Azure DevOps format: org/project/repo
+            # For org-level config, use: org/openhands-config/openhands-config
+            org_openhands_repo = f'{org_name}/openhands-config/openhands-config'
         else:
             org_openhands_repo = f'{org_name}/.openhands'
 
