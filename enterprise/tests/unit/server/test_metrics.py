@@ -30,7 +30,13 @@ class TestMetricsApp:
             handler = metrics_app()
 
             # Mock ASGI scope, receive, and send
-            scope = {'type': 'http', 'method': 'GET', 'path': '/metrics'}
+            scope = {
+                'type': 'http',
+                'method': 'GET',
+                'path': '/metrics',
+                'headers': [],
+                'query_string': b'',
+            }
             receive = mock.AsyncMock()
             send = mock.AsyncMock()
 
@@ -80,7 +86,13 @@ class TestMetricsApp:
             handler = metrics_app()
 
             # Mock ASGI scope, receive, and send
-            scope = {'type': 'http', 'method': 'GET', 'path': '/metrics'}
+            scope = {
+                'type': 'http',
+                'method': 'GET',
+                'path': '/metrics',
+                'headers': [],
+                'query_string': b'',
+            }
             receive = mock.AsyncMock()
             send = mock.AsyncMock()
 
