@@ -33,8 +33,7 @@ RUN pip install alembic psycopg2-binary cloud-sql-python-connector pg8000 gsprea
 WORKDIR /app
 COPY enterprise .
 
-RUN chown -R openhands:openhands /app && chmod -R 770 /app && \
-    chmod +x /app/start.sh
+RUN chown -R openhands:openhands /app && chmod -R 770 /app
 USER openhands
 
 # Command will be overridden by Kubernetes deployment template
