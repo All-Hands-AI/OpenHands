@@ -77,64 +77,60 @@ class TestMetricsApp:
 
     @pytest.mark.asyncio
     async def test_metrics_multiprocess_mode(self, multiprocess_dir):
-        """Test metrics endpoint aggregates data from multiple simulated processes."""
+        """Test that our app's metrics are aggregated from multiple worker processes."""
         import subprocess
         import sys
-        from prometheus_client import CollectorRegistry
-        from prometheus_client import multiprocess
 
         # Set PROMETHEUS_MULTIPROC_DIR before running subprocess
         original_env = os.environ.get('PROMETHEUS_MULTIPROC_DIR')
         os.environ['PROMETHEUS_MULTIPROC_DIR'] = multiprocess_dir
 
         try:
-            # Simulate multiple worker processes by running subprocess that writes metrics
-            # Each subprocess writes metrics to the multiprocess directory
+            # Simulate 3 uvicorn worker processes, each tracking different sessions
+            # Each worker imports the actual RUNNING_AGENT_LOOPS_GAUGE from our app
             worker_script = f'''
 import os
 os.environ['PROMETHEUS_MULTIPROC_DIR'] = '{multiprocess_dir}'
-from prometheus_client import Gauge
 
-worker_gauge = Gauge(
-    'test_worker_metric',
-    'Test metric from worker',
-    ['worker_id'],
-    multiprocess_mode='livesum',
-)
-worker_gauge.labels(worker_id='worker{{}}').set({{}})
+# Import the actual gauge from our application code
+from server.metrics import RUNNING_AGENT_LOOPS_GAUGE
+
+# Simulate this worker tracking specific sessions
+sessions = {{}}
+for session_id in sessions:
+    RUNNING_AGENT_LOOPS_GAUGE.labels(session_id=session_id).set(1)
 '''
-            # Run 3 "worker processes" that each write metrics
-            for i in range(1, 4):
-                result = subprocess.run(
-                    [sys.executable, '-c', worker_script.format(i, i * 10)],
-                    capture_output=True,
-                    text=True,
-                )
-                if result.returncode != 0:
-                    raise RuntimeError(
-                        f'Worker {i} failed: {result.stderr}'
-                    )
+            # Worker 1 tracks sessions: session1, session2
+            result = subprocess.run(
+                [sys.executable, '-c', worker_script.format(['session1', 'session2'])],
+                capture_output=True,
+                text=True,
+                cwd='/workspace/OpenHands/enterprise',
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f'Worker 1 failed: {result.stderr}')
 
-            # Now collect metrics using MultiProcessCollector
-            registry = CollectorRegistry()
-            multiprocess.MultiProcessCollector(registry)
+            # Worker 2 tracks sessions: session3, session4
+            result = subprocess.run(
+                [sys.executable, '-c', worker_script.format(['session3', 'session4'])],
+                capture_output=True,
+                text=True,
+                cwd='/workspace/OpenHands/enterprise',
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f'Worker 2 failed: {result.stderr}')
 
-            from prometheus_client import generate_latest
+            # Worker 3 tracks sessions: session5
+            result = subprocess.run(
+                [sys.executable, '-c', worker_script.format(['session5'])],
+                capture_output=True,
+                text=True,
+                cwd='/workspace/OpenHands/enterprise',
+            )
+            if result.returncode != 0:
+                raise RuntimeError(f'Worker 3 failed: {result.stderr}')
 
-            metrics_output = generate_latest(registry).decode('utf-8')
-
-            # Verify that metrics from all workers are present
-            assert 'test_worker_metric' in metrics_output
-            assert 'worker_id="worker1"' in metrics_output
-            assert 'worker_id="worker2"' in metrics_output
-            assert 'worker_id="worker3"' in metrics_output
-
-            # Verify the values are present (livesum aggregation)
-            assert '10.0' in metrics_output or '10' in metrics_output
-            assert '20.0' in metrics_output or '20' in metrics_output
-            assert '30.0' in metrics_output or '30' in metrics_output
-
-            # Now test the actual metrics_app() handler with multiprocess mode
+            # Now test that our metrics_app() handler aggregates all sessions from all workers
             handler = metrics_app()
 
             scope = {
@@ -147,9 +143,10 @@ worker_gauge.labels(worker_id='worker{{}}').set({{}})
             receive = mock.AsyncMock()
             send = mock.AsyncMock()
 
+            # Mock conversation_manager to not interfere with our test
             with mock.patch('server.metrics.conversation_manager') as mock_cm:
                 mock_cm.get_running_agent_loops_locally = mock.AsyncMock(
-                    return_value=['session1', 'session2']
+                    return_value=[]
                 )
 
                 await handler(scope, receive, send)
@@ -164,13 +161,18 @@ worker_gauge.labels(worker_id='worker{{}}').set({{}})
                 assert body_call['type'] == 'http.response.body'
                 assert isinstance(body_call['body'], bytes)
 
-                app_metrics_output = body_call['body'].decode('utf-8')
-                # Should contain our test metrics from multiple workers
-                assert 'test_worker_metric' in app_metrics_output
-                # Verify multiprocess aggregation worked - all 3 workers present
-                assert 'worker_id="worker1"' in app_metrics_output
-                assert 'worker_id="worker2"' in app_metrics_output
-                assert 'worker_id="worker3"' in app_metrics_output
+                metrics_output = body_call['body'].decode('utf-8')
+
+                # Verify our app's metric is present
+                assert 'saas_running_agent_loops' in metrics_output
+
+                # Verify all sessions from all 3 workers are aggregated
+                # This proves multiprocess mode is working correctly
+                assert 'session_id="session1"' in metrics_output
+                assert 'session_id="session2"' in metrics_output
+                assert 'session_id="session3"' in metrics_output
+                assert 'session_id="session4"' in metrics_output
+                assert 'session_id="session5"' in metrics_output
 
         finally:
             # Restore environment
