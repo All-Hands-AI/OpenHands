@@ -66,6 +66,10 @@ class SaasConversationStore(ConversationStore):
                 else kwargs['git_provider']
             )
 
+        # Remove V1 args
+        kwargs.pop('conversation_version')
+        kwargs.pop('sandbox_id')
+
         stored_metadata = StoredConversationMetadata(**kwargs)
 
         def _save_metadata():
