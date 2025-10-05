@@ -184,7 +184,7 @@ async def keycloak_callback(
         )
     except Exception as e:
         logger.error(
-            'auth:posthog_identify:failed',
+            'auth:posthog_set:failed',
             extra={
                 'user_id': user_id,
                 'error': str(e),
