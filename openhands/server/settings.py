@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Literal
-
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -27,15 +25,10 @@ class POSTCustomSecrets(BaseModel):
     custom_secrets: dict[str, CustomSecret] = {}
 
 
-class ProviderTokenSettings(BaseModel):
-    host: str | None = None
-    bitbucket_mode: Literal['cloud', 'server'] | None = None
-
-
 class GETSettingsModel(Settings):
     """Settings with additional token data for the frontend"""
 
-    provider_tokens_set: dict[ProviderType, ProviderTokenSettings | None] | None = (
+    provider_tokens_set: dict[ProviderType, str | None] | None = (
         None  # provider + base_domain key-value pair
     )
     llm_api_key_set: bool

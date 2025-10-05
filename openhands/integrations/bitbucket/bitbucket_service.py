@@ -1,6 +1,6 @@
 import os
 
-from typing import Literal
+from typing import Optional
 
 from pydantic import SecretStr
 
@@ -45,14 +45,30 @@ class BitBucketService(
         token: SecretStr | None = None,
         external_token_manager: bool = False,
         base_domain: str | None = None,
-        bitbucket_mode: Literal['cloud', 'server'] = 'cloud',
+        bitbucket_mode: Optional[str] = None,
     ) -> None:
         self.user_id = user_id
         self.external_token_manager = external_token_manager
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.base_domain = base_domain or 'bitbucket.org'
-        self.bitbucket_mode = bitbucket_mode
+
+        resolved_mode: Optional[str] = None
+        if bitbucket_mode in {'cloud', 'server'}:
+            resolved_mode = bitbucket_mode
+        else:
+            try:
+                from openhands.server.shared import config as shared_config  # type: ignore
+
+                if shared_config.bitbucket_mode in {'cloud', 'server'}:
+                    resolved_mode = shared_config.bitbucket_mode
+            except Exception:
+                resolved_mode = None
+
+        if resolved_mode is None:
+            resolved_mode = 'cloud'
+
+        self.bitbucket_mode = resolved_mode
 
         if self.bitbucket_mode not in {'cloud', 'server'}:
             raise ValueError(

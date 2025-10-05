@@ -63,9 +63,6 @@ const renderGitSettingsScreen = () => {
           GITLAB$HOST_LABEL: "GitLab Host",
           BITBUCKET$TOKEN_LABEL: "Bitbucket Token",
           BITBUCKET$HOST_LABEL: "Bitbucket Host",
-          BITBUCKET$MODE_LABEL: "Bitbucket Mode",
-          BITBUCKET$MODE_OPTION_CLOUD: "Bitbucket Cloud",
-          BITBUCKET$MODE_OPTION_SERVER: "Bitbucket Server",
         },
       },
     },
@@ -103,7 +100,6 @@ beforeEach(() => {
   // Since we don't recreate the query client on every test, we need to
   // reset the query client before each test to avoid state leaks
   // between tests.
-  vi.restoreAllMocks();
   queryClient.invalidateQueries();
 });
 
@@ -184,8 +180,8 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: { host: "github.com" },
-        gitlab: { host: "gitlab.com" },
+        github: null,
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -209,7 +205,7 @@ describe("Content", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        gitlab: { host: "gitlab.com" },
+        gitlab: null,
       },
     });
     queryClient.invalidateQueries();
@@ -274,9 +270,6 @@ describe("Content", () => {
 
 describe("Form submission", () => {
   it("should save the GitHub token", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
@@ -293,15 +286,11 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "test-token", host: "" },
       gitlab: { token: "", host: "" },
-      bitbucket: { token: "", host: "", bitbucket_mode: "cloud" },
-      enterprise_sso: { token: "", host: "" },
+      bitbucket: { token: "", host: "" },
     });
   });
 
   it("should save GitLab tokens", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
@@ -318,15 +307,11 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "", host: "" },
       gitlab: { token: "test-token", host: "" },
-      bitbucket: { token: "", host: "", bitbucket_mode: "cloud" },
-      enterprise_sso: { token: "", host: "" },
+      bitbucket: { token: "", host: "" },
     });
   });
 
   it("should save the Bitbucket token", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
@@ -343,48 +328,11 @@ describe("Form submission", () => {
     expect(saveProvidersSpy).toHaveBeenCalledWith({
       github: { token: "", host: "" },
       gitlab: { token: "", host: "" },
-      bitbucket: { token: "test-token", host: "", bitbucket_mode: "cloud" },
-      enterprise_sso: { token: "", host: "" },
-    });
-  });
-
-  it("should allow selecting Bitbucket server mode", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
-    const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
-    saveProvidersSpy.mockImplementation(() => Promise.resolve(true));
-    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
-    getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
-
-    renderGitSettingsScreen();
-
-    const bitbucketModeSelect = await screen.findByTestId("bitbucket-mode-input");
-    await userEvent.selectOptions(bitbucketModeSelect, "server");
-
-    const bitbucketHostInput = await screen.findByTestId("bitbucket-host-input");
-    await userEvent.clear(bitbucketHostInput);
-    await userEvent.type(bitbucketHostInput, "bitbucket.example.com");
-
-    const submit = await screen.findByTestId("submit-button");
-    await userEvent.click(submit);
-
-    expect(saveProvidersSpy).toHaveBeenCalledWith({
-      github: { token: "", host: "" },
-      gitlab: { token: "", host: "" },
-      bitbucket: {
-        token: "",
-        host: "bitbucket.example.com",
-        bitbucket_mode: "server",
-      },
-      enterprise_sso: { token: "", host: "" },
+      bitbucket: { token: "test-token", host: "" },
     });
   });
 
   it("should disable the button if there is no input", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
 
@@ -418,8 +366,8 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: { host: "github.com" },
-        gitlab: { host: "gitlab.com" },
+        github: null,
+        gitlab: null,
       },
     });
 
@@ -453,8 +401,8 @@ describe("Form submission", () => {
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       provider_tokens_set: {
-        github: { host: "github.com" },
-        gitlab: { host: "gitlab.com" },
+        github: null,
+        gitlab: null,
       },
     });
 
@@ -495,9 +443,6 @@ describe("Form submission", () => {
   });
 
   it("should disable the button after submitting changes", async () => {
-    vi.spyOn(SettingsService, "getSettings").mockResolvedValue({
-      ...MOCK_DEFAULT_USER_SETTINGS,
-    });
     const saveProvidersSpy = vi.spyOn(SecretsService, "addGitProvider");
     const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
