@@ -1,17 +1,14 @@
-import asyncio
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import os
 from typing import Callable
 
 from pydantic import Field
 
-from openhands.app_server.errors import OpenHandsError, SandboxError
+from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
 )
-from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService, SandboxSpecServiceManager
 
@@ -21,8 +18,7 @@ class RemoteSandboxSpecService(SandboxSpecService):
     """Service for managing Sandbox specs in the Remote Runtime API.
 
     At present, the runtime API exposes methods to check whether a paricular image
-    exists, but not to list existing images - so we maintain a list of images locally
-    and check on startup that these exist within the runtime API.
+    exists, but not to list existing images - so we maintain a list of images locally.
     """
     specs: list[SandboxSpecInfo]
 
