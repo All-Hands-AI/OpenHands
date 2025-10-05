@@ -28,10 +28,11 @@ def multiprocess_dir():
 class TestMetricsApp:
     """Test the metrics app functionality."""
 
-    async def test_gauge_has_multiprocess_mode(self):
+    def test_gauge_has_multiprocess_mode(self):
         """Test that the running agent loops gauge is configured with multiprocess mode."""
         assert RUNNING_AGENT_LOOPS_GAUGE._multiprocess_mode == 'livesum'
 
+    @pytest.mark.asyncio
     async def test_metrics_single_process_mode(self, mock_conversation_manager):
         """Test metrics endpoint in single process mode (no PROMETHEUS_MULTIPROC_DIR)."""
         # Ensure PROMETHEUS_MULTIPROC_DIR is not set
@@ -76,6 +77,7 @@ class TestMetricsApp:
             if original_env is not None:
                 os.environ['PROMETHEUS_MULTIPROC_DIR'] = original_env
 
+    @pytest.mark.asyncio
     async def test_metrics_multiprocess_mode(
         self, mock_conversation_manager, multiprocess_dir
     ):
@@ -121,6 +123,7 @@ class TestMetricsApp:
                 if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
                     del os.environ['PROMETHEUS_MULTIPROC_DIR']
 
+    @pytest.mark.asyncio
     async def test_update_metrics_called(self, mock_conversation_manager):
         """Test that _update_metrics is called when metrics endpoint is accessed."""
         handler = metrics_app()
@@ -136,6 +139,7 @@ class TestMetricsApp:
         # Verify that the conversation manager method was called
         mock_conversation_manager.get_running_agent_loops_locally.assert_called_once()
 
+    @pytest.mark.asyncio
     async def test_multiprocess_registry_creation(self, multiprocess_dir):
         """Test that multiprocess mode creates a new registry with MultiProcessCollector."""
         os.environ['PROMETHEUS_MULTIPROC_DIR'] = multiprocess_dir
@@ -171,6 +175,7 @@ class TestMetricsApp:
             if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
                 del os.environ['PROMETHEUS_MULTIPROC_DIR']
 
+    @pytest.mark.asyncio
     async def test_response_headers(self):
         """Test that response headers are correctly set."""
         handler = metrics_app()
