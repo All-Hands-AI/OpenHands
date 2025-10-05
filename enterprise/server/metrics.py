@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable
 
@@ -5,6 +6,8 @@ from prometheus_client import CollectorRegistry, Gauge, generate_latest
 from server.clustered_conversation_manager import ClusteredConversationManager
 
 import openhands.server.shared
+
+logger = logging.getLogger(__name__)
 
 # Use livesum mode for multiprocess support - this aggregates gauge values
 # across all worker processes, counting only living processes
@@ -40,8 +43,10 @@ def metrics_app() -> Callable:
     """
 
     async def wrapped_handler(scope, receive, send):
-        # Not wrapped in a try block - failing would make metrics endpoint unavailable
-        await _update_metrics()
+        try:
+            await _update_metrics()
+        except Exception as e:
+            logger.error(f'Failed to update metrics: {e}', exc_info=True)
 
         if 'PROMETHEUS_MULTIPROC_DIR' in os.environ:
             from prometheus_client import multiprocess
