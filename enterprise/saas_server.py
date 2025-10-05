@@ -6,21 +6,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Initialize prometheus multiprocess directory if configured
-# This must happen BEFORE any prometheus_client imports/usage (specifically server.metrics)
-# Per prometheus_client docs: "directory must be wiped between process runs"
+# Initialize prometheus multiprocess directory before any prometheus_client imports
 prometheus_dir = os.environ.get('PROMETHEUS_MULTIPROC_DIR')
 if prometheus_dir:
     try:
         prometheus_path = Path(prometheus_dir)
-        # Clean the directory (required by prometheus_client documentation)
         if prometheus_path.exists():
             shutil.rmtree(prometheus_path)
-        # Create fresh directory
         prometheus_path.mkdir(parents=True, exist_ok=True)
         print(f'Initialized prometheus multiprocess directory: {prometheus_dir}')
     except Exception as e:
-        # Log error but don't crash - metrics will just not work in multiprocess mode
         print(f'Warning: Failed to initialize PROMETHEUS_MULTIPROC_DIR: {e}')
 
 import socketio  # noqa: E402
