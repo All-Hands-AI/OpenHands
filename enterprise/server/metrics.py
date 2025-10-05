@@ -4,9 +4,7 @@ from typing import Callable
 from prometheus_client import CollectorRegistry, Gauge, generate_latest
 from server.clustered_conversation_manager import ClusteredConversationManager
 
-from openhands.server.shared import (
-    conversation_manager,
-)
+import openhands.server.shared
 
 # Use livesum mode for multiprocess support - this aggregates gauge values
 # across all worker processes, counting only living processes
@@ -20,13 +18,16 @@ RUNNING_AGENT_LOOPS_GAUGE = Gauge(
 
 async def _update_metrics():
     """Update any prometheus metrics that are not updated during normal operation."""
-    if isinstance(conversation_manager, ClusteredConversationManager):
+    if isinstance(openhands.server.shared.conversation_manager, ClusteredConversationManager):
         running_agent_loops = (
-            await conversation_manager.get_running_agent_loops_locally()
+            await openhands.server.shared.conversation_manager.get_running_agent_loops_locally()
         )
-        # Clear so we don't keep counting old sessions.
-        # This is theoretically a race condition but this is scraped on a regular interval.
-        RUNNING_AGENT_LOOPS_GAUGE.clear()
+        # In multiprocess mode, do NOT call clear() as it can delete memory-mapped files
+        # Instead, each worker only sets values for its own sessions
+        # Old sessions will naturally expire when their worker process exits
+        if not os.environ.get('PROMETHEUS_MULTIPROC_DIR'):
+            # Only clear in single-process mode
+            RUNNING_AGENT_LOOPS_GAUGE.clear()
         # running_agent_loops shouldn't be None, but can be.
         if running_agent_loops is not None:
             for sid in running_agent_loops:

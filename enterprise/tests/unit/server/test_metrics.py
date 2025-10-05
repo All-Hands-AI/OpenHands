@@ -41,7 +41,7 @@ class TestMetricsApp:
             send = mock.AsyncMock()
 
             # Mock the conversation manager
-            with mock.patch('server.metrics.conversation_manager') as mock_cm:
+            with mock.patch('openhands.server.shared.conversation_manager') as mock_cm:
                 mock_cm.get_running_agent_loops_locally = mock.AsyncMock(
                     return_value=['session1', 'session2']
                 )
@@ -86,49 +86,106 @@ class TestMetricsApp:
         os.environ['PROMETHEUS_MULTIPROC_DIR'] = multiprocess_dir
 
         try:
-            # Simulate 3 uvicorn worker processes, each tracking different sessions
-            # Each worker imports the actual RUNNING_AGENT_LOOPS_GAUGE from our app
-            worker_script = f'''
+            # Simulate 3 uvicorn worker processes, each running actual app code
+            # Each worker calls _update_metrics() with a real ClusteredConversationManager instance
+            # Using triple braces {{{}}} to escape the f-string interpolation
+            worker_script_template = f'''
 import os
+import sys
+
+# CRITICAL: Set PROMETHEUS_MULTIPROC_DIR BEFORE any prometheus_client imports
 os.environ['PROMETHEUS_MULTIPROC_DIR'] = '{multiprocess_dir}'
 
-# Import the actual gauge from our application code
-from server.metrics import RUNNING_AGENT_LOOPS_GAUGE
+# Now safe to import
+import asyncio
 
-# Simulate this worker tracking specific sessions
-sessions = {{}}
-for session_id in sessions:
-    RUNNING_AGENT_LOOPS_GAUGE.labels(session_id=session_id).set(1)
+# Import the actual app code and classes
+from server.metrics import _update_metrics, RUNNING_AGENT_LOOPS_GAUGE
+from server.clustered_conversation_manager import ClusteredConversationManager
+import openhands.server.shared
+
+# Debug prometheus_client mode
+from prometheus_client import values
+print(f"Prometheus ValueClass: {{values.ValueClass}}", flush=True)
+print(f"PROMETHEUS_MULTIPROC_DIR={{os.environ.get('PROMETHEUS_MULTIPROC_DIR')}}", flush=True)
+print(f"Gauge type: {{type(RUNNING_AGENT_LOOPS_GAUGE)}}", flush=True)
+
+# Create a minimal ClusteredConversationManager instance for testing
+async def run_worker():
+    sessions = SESSIONS_PLACEHOLDER
+    
+    # Get the current conversation_manager (StandaloneConversationManager)
+    base_cm = openhands.server.shared.conversation_manager
+    
+    # Create a real ClusteredConversationManager that inherits all properties
+    # but adds get_running_agent_loops_locally
+    class TestClusteredConversationManager(ClusteredConversationManager):
+        async def get_running_agent_loops_locally(self):
+            return sessions
+    
+    # Create instance with same properties as base_cm
+    test_cm = TestClusteredConversationManager(
+        sio=base_cm.sio,
+        config=base_cm.config,
+        file_store=base_cm.file_store,
+        server_config=base_cm.server_config,
+        monitoring_listener=base_cm.monitoring_listener,
+    )
+    
+    # Temporarily replace conversation_manager
+    original_cm = openhands.server.shared.conversation_manager
+    openhands.server.shared.conversation_manager = test_cm
+    
+    try:
+        await _update_metrics()
+    finally:
+        openhands.server.shared.conversation_manager = original_cm
+
+asyncio.run(run_worker())
 '''
             # Worker 1 tracks sessions: session1, session2
+            worker1_script = worker_script_template.replace('SESSIONS_PLACEHOLDER', str(['session1', 'session2']))
             result = subprocess.run(
-                [sys.executable, '-c', worker_script.format(['session1', 'session2'])],
+                [sys.executable, '-W', 'ignore', '-c', worker1_script],
                 capture_output=True,
                 text=True,
                 cwd='/workspace/OpenHands/enterprise',
             )
+            print(f'Worker 1 stdout: {result.stdout}')
+            print(f'Worker 1 stderr: {result.stderr[:500] if result.stderr else ""}')
             if result.returncode != 0:
-                raise RuntimeError(f'Worker 1 failed: {result.stderr}')
+                raise RuntimeError(
+                    f'Worker 1 failed with code {result.returncode}\n'
+                    f'stdout: {result.stdout}\nstderr: {result.stderr}'
+                )
 
             # Worker 2 tracks sessions: session3, session4
+            worker2_script = worker_script_template.replace('SESSIONS_PLACEHOLDER', str(['session3', 'session4']))
             result = subprocess.run(
-                [sys.executable, '-c', worker_script.format(['session3', 'session4'])],
+                [sys.executable, '-W', 'ignore', '-c', worker2_script],
                 capture_output=True,
                 text=True,
                 cwd='/workspace/OpenHands/enterprise',
             )
             if result.returncode != 0:
-                raise RuntimeError(f'Worker 2 failed: {result.stderr}')
+                raise RuntimeError(
+                    f'Worker 2 failed with code {result.returncode}\n'
+                    f'stdout: {result.stdout}\nstderr: {result.stderr}'
+                )
 
             # Worker 3 tracks sessions: session5
+            worker3_script = worker_script_template.replace('SESSIONS_PLACEHOLDER', str(['session5']))
             result = subprocess.run(
-                [sys.executable, '-c', worker_script.format(['session5'])],
+                [sys.executable, '-W', 'ignore', '-c', worker3_script],
                 capture_output=True,
                 text=True,
                 cwd='/workspace/OpenHands/enterprise',
             )
             if result.returncode != 0:
-                raise RuntimeError(f'Worker 3 failed: {result.stderr}')
+                raise RuntimeError(
+                    f'Worker 3 failed with code {result.returncode}\n'
+                    f'stdout: {result.stdout}\nstderr: {result.stderr}'
+                )
 
             # Now test that our metrics_app() handler aggregates all sessions from all workers
             handler = metrics_app()
@@ -143,36 +200,32 @@ for session_id in sessions:
             receive = mock.AsyncMock()
             send = mock.AsyncMock()
 
-            # Mock conversation_manager to not interfere with our test
-            with mock.patch('server.metrics.conversation_manager') as mock_cm:
-                mock_cm.get_running_agent_loops_locally = mock.AsyncMock(
-                    return_value=[]
-                )
+            # Don't mock conversation_manager - let it use the real one
+            # which is StandaloneConversationManager and won't clear the gauge
+            await handler(scope, receive, send)
 
-                await handler(scope, receive, send)
+            assert send.call_count == 2
 
-                assert send.call_count == 2
+            start_call = send.call_args_list[0][0][0]
+            assert start_call['type'] == 'http.response.start'
+            assert start_call['status'] == 200
 
-                start_call = send.call_args_list[0][0][0]
-                assert start_call['type'] == 'http.response.start'
-                assert start_call['status'] == 200
+            body_call = send.call_args_list[1][0][0]
+            assert body_call['type'] == 'http.response.body'
+            assert isinstance(body_call['body'], bytes)
 
-                body_call = send.call_args_list[1][0][0]
-                assert body_call['type'] == 'http.response.body'
-                assert isinstance(body_call['body'], bytes)
+            metrics_output = body_call['body'].decode('utf-8')
 
-                metrics_output = body_call['body'].decode('utf-8')
+            # Verify our app's metric is present
+            assert 'saas_running_agent_loops' in metrics_output
 
-                # Verify our app's metric is present
-                assert 'saas_running_agent_loops' in metrics_output
-
-                # Verify all sessions from all 3 workers are aggregated
-                # This proves multiprocess mode is working correctly
-                assert 'session_id="session1"' in metrics_output
-                assert 'session_id="session2"' in metrics_output
-                assert 'session_id="session3"' in metrics_output
-                assert 'session_id="session4"' in metrics_output
-                assert 'session_id="session5"' in metrics_output
+            # Verify all sessions from all 3 workers are aggregated
+            # This proves multiprocess mode is working correctly
+            assert 'session_id="session1"' in metrics_output
+            assert 'session_id="session2"' in metrics_output
+            assert 'session_id="session3"' in metrics_output
+            assert 'session_id="session4"' in metrics_output
+            assert 'session_id="session5"' in metrics_output
 
         finally:
             # Restore environment
