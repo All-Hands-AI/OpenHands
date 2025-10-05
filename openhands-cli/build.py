@@ -95,6 +95,9 @@ def build_executable(
         cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
 
         print(f'Running: {" ".join(cmd)}')
+        print(f'Current working directory: {os.getcwd()}')
+        print(f'Platform: {os.name}')
+        
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         
         # Show PyInstaller output for debugging
@@ -174,7 +177,17 @@ def test_executable() -> bool:
         exe_path = Path('dist/openhands.exe')
         if not exe_path.exists():
             print('[ERROR] Executable not found!')
+            print(f'Checked paths: dist/openhands, dist/openhands.exe')
+            print(f'Contents of dist directory:')
+            dist_dir = Path('dist')
+            if dist_dir.exists():
+                for item in dist_dir.iterdir():
+                    print(f'  - {item.name} ({"file" if item.is_file() else "directory"})')
+            else:
+                print('  dist directory does not exist')
             return False
+    
+    print(f'Found executable: {exe_path}')
 
     try:
         if os.name != 'nt':
