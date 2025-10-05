@@ -325,7 +325,6 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
     api_key: str = Field(description='The API Key for remote runtimes')
     resource_factor: int = Field(default=1, description="Factor by which to scale resources in sandbox: 1, 2, 4, or 8")
     runtime_class: str = Field(default="sysbox", description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)')
-    httpx_client: httpx.AsyncClient
 
     def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
