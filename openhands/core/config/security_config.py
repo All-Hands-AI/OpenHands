@@ -6,10 +6,12 @@ class SecurityConfig(BaseModel):
 
     Attributes:
         confirmation_mode: Whether to enable confirmation mode.
+        insecure_skip_verify: Disable TLS certificate verification for outbound HTTP requests (NOT recommended).
         security_analyzer: The security analyzer to use.
     """
 
     confirmation_mode: bool = Field(default=False)
+    insecure_skip_verify: bool = Field(default=False)
     security_analyzer: str | None = Field(default=None)
 
     model_config = ConfigDict(extra='forbid')
