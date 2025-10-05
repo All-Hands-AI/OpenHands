@@ -1,4 +1,3 @@
-import base64
 import logging
 import os
 from dataclasses import dataclass
@@ -8,14 +7,13 @@ import base62
 import httpx
 from fastapi import Depends
 from pydantic import Field
-
-from openhands.agent_server.utils import utc_now
 from sqlalchemy import Column, String, func, select
 from storage.database import AsyncSession
+
+from openhands.agent_server.utils import utc_now
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
-    VSCODE,
     ExposedUrl,
     SandboxInfo,
     SandboxPage,
@@ -34,17 +32,18 @@ _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 
 
-class StoredRemoteSandbox(Base): # type: ignore
+class StoredRemoteSandbox(Base):  # type: ignore
     """Local storage for remote sandbox info.
 
     The remote runtime API does not return some variables we need, and does not
     return stopped runtimes in list operations, so we need a local copy. We use
     the remote api as a source of truth on what is currently running, not was
     run historicallly."""
-    __tablename__ = "v1_remote_sandbox"
+
+    __tablename__ = 'v1_remote_sandbox'
     id = Column(String, primary_key=True)
     created_by_user_id = Column(String, index=True)
-    sandbox_spec_id = Column(String, index=True) # shadows runtime['image']
+    sandbox_spec_id = Column(String, index=True)  # shadows runtime['image']
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
@@ -91,7 +90,9 @@ class RemoteSandboxService(SandboxService):
             _logger.error(f'HTTP error for URL {url}: {e}')
             raise
 
-    def _to_sandbox_info(self, runtime: dict[str, Any] | None, stored: StoredRemoteSandbox) -> SandboxInfo:
+    def _to_sandbox_info(
+        self, runtime: dict[str, Any] | None, stored: StoredRemoteSandbox
+    ) -> SandboxInfo:
         if runtime:
             session_api_key = runtime['session_api_key']
             status = self._runtime_status_to_sandbox_status(
@@ -99,12 +100,7 @@ class RemoteSandboxService(SandboxService):
             )
             session_api_key = runtime['session_api_key']
             if status == SandboxStatus.RUNNING:
-                exposed_urls = [
-                    ExposedUrl(
-                        name=AGENT_SERVER,
-                        url=runtime['url']
-                    )
-                ]
+                exposed_urls = [ExposedUrl(name=AGENT_SERVER, url=runtime['url'])]
             else:
                 exposed_urls = None
         else:
@@ -163,16 +159,18 @@ class RemoteSandboxService(SandboxService):
         if has_more:
             next_page_id = str(offset + limit)
 
-        #Do a list to get running sandboxes
+        # Do a list to get running sandboxes
         response = await self._send_runtime_api_request('GET', '/list')
         response.raise_for_status()
         runtimes_by_session_id = {
-            runtime['session_id']: runtime
-            for runtime in response.json()['runtimes']
+            runtime['session_id']: runtime for runtime in response.json()['runtimes']
         }
 
         # Convert stored callbacks to domain models
-        items = [self._to_sandbox_info(runtimes_by_session_id.get(s.id), s) for s in stored_sandboxes]
+        items = [
+            self._to_sandbox_info(runtimes_by_session_id.get(s.id), s)
+            for s in stored_sandboxes
+        ]
         return SandboxPage(items=items, next_page_id=next_page_id)
 
     async def get_sandbox(self, sandbox_id: str) -> Union[SandboxInfo, None]:
@@ -194,7 +192,7 @@ class RemoteSandboxService(SandboxService):
             _logger.exception('Error getting runtime: {sandbox_id}', stack_info=True)
             runtime_data = None
 
-        return  self._to_sandbox_info(runtime_data, stored_sandbox)
+        return self._to_sandbox_info(runtime_data, stored_sandbox)
 
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
@@ -323,8 +321,14 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
 
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
-    resource_factor: int = Field(default=1, description="Factor by which to scale resources in sandbox: 1, 2, 4, or 8")
-    runtime_class: str = Field(default="sysbox", description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)')
+    resource_factor: int = Field(
+        default=1,
+        description='Factor by which to scale resources in sandbox: 1, 2, 4, or 8',
+    )
+    runtime_class: str = Field(
+        default='sysbox',
+        description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
+    )
 
     def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
@@ -339,13 +343,15 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         config = get_global_config()
         web_url = config.web_url
         if web_url is None:
-            #TODO: Develop a polling protocol so this is not required.
+            # TODO: Develop a polling protocol so this is not required.
             raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
         # Create dependencies at module level to avoid B008
         _sandbox_spec_dependency = Depends(
             sandbox_spec_manager().get_resolver_for_current_user()
         )
-        _user_service_dependency = Depends(user_manager().get_resolver_for_current_user())
+        _user_service_dependency = Depends(
+            user_manager().get_resolver_for_current_user()
+        )
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
