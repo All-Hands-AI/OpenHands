@@ -412,6 +412,10 @@ LOQUACIOUS_LOGGERS = [
 for logger_name in LOQUACIOUS_LOGGERS:
     logging.getLogger(logger_name).setLevel('WARNING')
 
+# Suppress concurrent.futures logger since we handle exceptions in EventStream callbacks
+# and log them with structured context using openhands_logger
+logging.getLogger('concurrent.futures').setLevel(logging.CRITICAL)
+
 
 class LlmFileHandler(logging.FileHandler):
     """LLM prompt and response logging."""
