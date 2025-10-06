@@ -1,5 +1,6 @@
 import base64
 import itertools
+import json
 import os
 import re
 import uuid
@@ -297,8 +298,6 @@ async def search_conversations(
     conversation_store: ConversationStore = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfoResultSet:
-    import json
-    from datetime import datetime, timezone
 
     # Parse combined page_id to extract separate page_ids for each source
     v0_page_id = None
