@@ -104,4 +104,27 @@ describe("useEventStore", () => {
       mockObservationEvent,
     ]);
   });
+
+  it("should clear all events when clearEvents is called", () => {
+    const { result } = renderHook(() => useEventStore());
+
+    // Add some events first
+    act(() => {
+      result.current.addEvent(mockUserMessageEvent);
+      result.current.addEvent(mockActionEvent);
+    });
+
+    // Verify events were added
+    expect(result.current.events).toHaveLength(2);
+    expect(result.current.uiEvents).toHaveLength(2);
+
+    // Clear events
+    act(() => {
+      result.current.clearEvents();
+    });
+
+    // Verify events were cleared
+    expect(result.current.events).toEqual([]);
+    expect(result.current.uiEvents).toEqual([]);
+  });
 });
