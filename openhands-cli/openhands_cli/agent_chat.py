@@ -27,18 +27,28 @@ from openhands_cli.user_actions import UserConfirmation, exit_session_confirmati
 from openhands_cli.user_actions.utils import get_session_prompter
 
 
-def _start_fresh_conversation() -> BaseConversation:
+def _start_fresh_conversation(resume_conversation_id: str | None = None) -> BaseConversation:
     """Start a fresh conversation by creating a new conversation instance.
+    
+    Handles the complete conversation setup process including settings screen
+    if agent configuration is missing.
+
+    Args:
+        resume_conversation_id: Optional conversation ID to resume
 
     Returns:
         BaseConversation: A new conversation instance
     """
-    try:
-        return setup_conversation()
-    except MissingAgentSpec:
-        # This should not happen as we already have a working conversation
-        # but we'll handle it gracefully
-        raise
+    conversation = None
+    settings_screen = SettingsScreen()
+
+    while not conversation:
+        try:
+            conversation = setup_conversation(resume_conversation_id)
+        except MissingAgentSpec:
+            settings_screen.handle_basic_settings(escapable=False)
+    
+    return conversation
 
 
 def _restore_tty() -> None:
@@ -77,15 +87,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = None
-    settings_screen = SettingsScreen()
-
-    while not conversation:
-        try:
-            conversation = setup_conversation(resume_conversation_id)
-        except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
-
+    conversation = _start_fresh_conversation(resume_conversation_id)
     display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Create conversation runner to handle state machine logic
@@ -135,7 +137,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
             elif command == '/new':
                 try:
-                    # Start a fresh conversation
+                    # Start a fresh conversation (no resume ID = new conversation)
                     conversation = _start_fresh_conversation()
                     runner = ConversationRunner(conversation)
                     display_welcome(conversation.id, resume=False)
