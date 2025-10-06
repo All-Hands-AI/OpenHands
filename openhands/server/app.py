@@ -5,8 +5,6 @@ from typing import AsyncIterator
 
 from fastapi.routing import Mount
 
-from openhands.app_server.config import app_lifespan
-
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
@@ -17,8 +15,8 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands import __version__
 from openhands.app_server import v1_router
+from openhands.app_server.config import app_lifespan
 from openhands.integrations.service_types import AuthenticationError
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
@@ -36,6 +34,7 @@ from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
+from openhands.version import get_version
 
 mcp_app = mcp_server.http_app(path='/mcp')
 
@@ -61,7 +60,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title='OpenHands',
     description='OpenHands: Code Less, Make More',
-    version=__version__,
+    version=get_version(),
     lifespan=combine_lifespans(_lifespan, mcp_app.lifespan, app_lifespan().lifespan),
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
