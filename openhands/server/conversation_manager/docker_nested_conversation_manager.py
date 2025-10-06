@@ -44,6 +44,7 @@ from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 from openhands.utils.utils import create_registry_and_conversation_stats
+from openhands.utils.http_session import httpx_verify_option
 
 
 @dataclass
@@ -199,6 +200,7 @@ class DockerNestedConversationManager(ConversationManager):
             await call_sync_from_async(runtime.wait_until_alive)
             await call_sync_from_async(runtime.setup_initial_env)
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
                 }
@@ -295,6 +297,7 @@ class DockerNestedConversationManager(ConversationManager):
 
     async def send_event_to_conversation(self, sid, data):
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
             }
@@ -318,6 +321,7 @@ class DockerNestedConversationManager(ConversationManager):
         try:
             nested_url = self.get_nested_url_for_container(container)
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
                 }
@@ -356,6 +360,7 @@ class DockerNestedConversationManager(ConversationManager):
         """
         try:
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(
                         conversation_id

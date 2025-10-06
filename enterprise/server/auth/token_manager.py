@@ -37,6 +37,7 @@ from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_
 
 from openhands.core.config import load_openhands_config
 from openhands.integrations.service_types import ProviderType
+from openhands.utils.http_session import httpx_verify_option
 
 # Create a function to get config to avoid circular imports
 _config = None
@@ -201,7 +202,7 @@ class TokenManager:
         access_token: str,
         idp: ProviderType,
     ) -> dict[str, str | int]:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             base_url = KEYCLOAK_SERVER_URL_EXT if self.external else KEYCLOAK_SERVER_URL
             url = f'{base_url}/realms/{KEYCLOAK_REALM_NAME}/broker/{idp.value}/token'
             headers = {
@@ -359,7 +360,7 @@ class TokenManager:
             'refresh_token': refresh_token,
             'grant_type': 'refresh_token',
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=payload)
             response.raise_for_status()
             logger.info('Successfully refreshed GitHub token')
@@ -385,7 +386,7 @@ class TokenManager:
             'refresh_token': refresh_token,
             'grant_type': 'refresh_token',
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=payload)
             response.raise_for_status()
             logger.info('Successfully refreshed GitLab token')
@@ -413,7 +414,7 @@ class TokenManager:
             'refresh_token': refresh_token,
         }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=data, headers=headers)
             response.raise_for_status()
             logger.info('Successfully refreshed Bitbucket token')
