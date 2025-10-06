@@ -2,10 +2,9 @@ import { useTranslation } from "react-i18next";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams, useNavigate } from "react-router";
-import { useWsClient } from "#/context/ws-client-provider";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import useMetricsStore from "#/stores/metrics-store";
-import { isSystemMessage } from "#/types/core/guards";
+import { isSystemMessage, isActionOrObservation } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useDeleteConversation } from "./mutation/use-delete-conversation";
@@ -14,6 +13,7 @@ import { useGetTrajectory } from "./mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
+import { useEventStore } from "#/stores/use-event-store";
 
 interface UseConversationNameContextMenuProps {
   conversationId?: string;
@@ -31,7 +31,7 @@ export function useConversationNameContextMenu({
   const { t } = useTranslation();
   const { conversationId: currentConversationId } = useParams();
   const navigate = useNavigate();
-  const { parsedEvents } = useWsClient();
+  const events = useEventStore((state) => state.events);
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
   const { mutate: getTrajectory } = useGetTrajectory();
@@ -46,7 +46,9 @@ export function useConversationNameContextMenu({
   const [confirmStopModalVisible, setConfirmStopModalVisible] =
     React.useState(false);
 
-  const systemMessage = parsedEvents.find(isSystemMessage);
+  const systemMessage = events
+    .filter(isActionOrObservation)
+    .find(isSystemMessage);
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
