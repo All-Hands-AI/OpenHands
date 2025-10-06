@@ -174,19 +174,17 @@ async def keycloak_callback(
     posthog_user_id = f'FEATURE_{user_id}' if IS_FEATURE_ENV else user_id
 
     try:
-        posthog.identify(
-            posthog_user_id,
-            {
-                '$set': {
-                    'user_id': posthog_user_id,  # Explicitly set as property
-                    'original_user_id': user_id,  # Store the original user_id
-                    'is_feature_env': IS_FEATURE_ENV,  # Track if this is a feature environment
-                }
+        posthog.set(
+            distinct_id=posthog_user_id,
+            properties={
+                'user_id': posthog_user_id,
+                'original_user_id': user_id,
+                'is_feature_env': IS_FEATURE_ENV,
             },
         )
     except Exception as e:
         logger.error(
-            'auth:posthog_identify:failed',
+            'auth:posthog_set:failed',
             extra={
                 'user_id': user_id,
                 'error': str(e),
