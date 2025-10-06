@@ -47,10 +47,20 @@ def get_default_persistence_dir() -> Path:
     return result
 
 
+def get_default_web_url() -> str | None:
+    """Get legacy web host parameter.
+
+    If present, we assume we are running under https."""
+    web_host = os.getenv('WEB_HOST')
+    if not web_host:
+        return None
+    return f'https://{web_host}'
+
+
 class AppServerConfig(OpenHandsModel):
     persistence_dir: Path = Field(default_factory=get_default_persistence_dir)
     web_url: str | None = Field(
-        default=None,
+        default_factory=get_default_web_url,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
     # Service managers
