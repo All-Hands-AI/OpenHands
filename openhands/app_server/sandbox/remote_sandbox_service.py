@@ -8,7 +8,7 @@ import httpx
 from fastapi import Depends
 from pydantic import Field
 from sqlalchemy import Column, String, func, select
-from storage.database import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.errors import OpenHandsError, SandboxError
