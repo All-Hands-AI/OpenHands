@@ -77,7 +77,7 @@ class JwtService:
         jwt_payload = {
             **payload,
             'iat': int(now.timestamp()),
-            'exp': int((now + expires_in).timestamp())
+            'exp': int((now + expires_in).timestamp()),
         }
 
         # Use the raw key for JWT signing with key_id in header

@@ -352,8 +352,6 @@ class TestSQLEventCallbackService:
     ):
         """Test that search results are ordered by created_at descending."""
         # Create callbacks with slight delay to ensure different timestamps
-        import asyncio
-
         callback1_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,

@@ -213,7 +213,6 @@ class SQLEventCallbackService(EventCallbackService):
             )
         self.session.add(stored_result)
 
-
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service."""
         pass
