@@ -6,14 +6,15 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 
 import sys
 
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
-
 from openhands.sdk import (
+    BaseConversation,
     Message,
     TextContent,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
+
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import MissingAgentSpec, setup_conversation
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
@@ -24,6 +25,20 @@ from openhands_cli.tui.tui import (
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 from openhands_cli.user_actions.utils import get_session_prompter
+
+
+def _start_fresh_conversation() -> BaseConversation:
+    """Start a fresh conversation by creating a new conversation instance.
+
+    Returns:
+        BaseConversation: A new conversation instance
+    """
+    try:
+        return setup_conversation()
+    except MissingAgentSpec:
+        # This should not happen as we already have a working conversation
+        # but we'll handle it gracefully
+        raise
 
 
 def _restore_tty() -> None:
@@ -117,6 +132,22 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             elif command == '/clear':
                 display_welcome(conversation.id)
                 continue
+
+            elif command == '/new':
+                try:
+                    # Start a fresh conversation
+                    conversation = _start_fresh_conversation()
+                    runner = ConversationRunner(conversation)
+                    display_welcome(conversation.id, resume=False)
+                    print_formatted_text(
+                        HTML('<green>✓ Started fresh conversation</green>')
+                    )
+                    continue
+                except Exception as e:
+                    print_formatted_text(
+                        HTML(f'<red>Error starting fresh conversation: {e}</red>')
+                    )
+                    continue
 
             elif command == '/help':
                 display_help()
