@@ -27,7 +27,7 @@ dependencies = [
   "limits>=5.2,<6",
   "openhands-ai",
   "pg8000>=1.31.2,<2",
-  "posthog>=6.0.0",
+  "posthog>=6",
   "prometheus-fastapi-instrumentator>=7.0.2,<8",
   "psycopg2-binary>=2.9.10,<3",
   "python-json-logger>=3.2.1,<4",
