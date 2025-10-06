@@ -50,7 +50,6 @@ class JupyterPlugin(Plugin):
             poetry_prefix = (
                 'cd /openhands/code\n'
                 'export POETRY_VIRTUALENVS_PATH=/openhands/poetry;\n'
-                'export PYTHONPATH=/openhands/code:$PYTHONPATH;\n'
                 'export MAMBA_ROOT_PREFIX=/openhands/micromamba;\n'
                 '/openhands/micromamba/bin/micromamba run -n openhands '
             )
