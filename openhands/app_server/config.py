@@ -57,6 +57,14 @@ def get_default_web_url() -> str | None:
     return f'https://{web_host}'
 
 
+def _get_default_lifespan():
+    # Check legacy parameters for saas mode. If we are in SAAS mode do not apply
+    # OSS alembic migrations
+    if 'saas' in (os.getenv('OPENHANDS_CONFIG_CLS') or '').lower():
+        return None
+    return OssAppLifespanService()
+
+
 class AppServerConfig(OpenHandsModel):
     persistence_dir: Path = Field(default_factory=get_default_persistence_dir)
     web_url: str | None = Field(
@@ -77,7 +85,7 @@ class AppServerConfig(OpenHandsModel):
     httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
 
     # Services
-    lifespan: AppLifespanService = Field(default_factory=OssAppLifespanService)
+    lifespan: AppLifespanService = Field(default_factory=_get_default_lifespan)
     db_service: DbService = Field(
         default_factory=lambda: DbService(persistence_dir=get_default_persistence_dir())
     )

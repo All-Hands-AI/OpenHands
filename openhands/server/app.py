@@ -45,7 +45,8 @@ def combine_lifespans(*lifespans):
     async def combined_lifespan(app):
         async with contextlib.AsyncExitStack() as stack:
             for lifespan in lifespans:
-                await stack.enter_async_context(lifespan(app))
+                if lifespan:
+                    await stack.enter_async_context(lifespan(app))
             yield
 
     return combined_lifespan
