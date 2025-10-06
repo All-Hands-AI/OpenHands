@@ -17,16 +17,16 @@ from openhands.storage.memory import InMemoryFileStore
 class MockHTTPXResponse:
     """Mock httpx.Response that behaves realistically."""
 
-    def __init__(self, status_code: int, json_data: dict = None):
+    def __init__(self, status_code: int, json_data: dict | None = None):
         self.status_code = status_code
         self._json_data = json_data or {}
-        self.text = str(json_data) if json_data else ""
+        self.text = str(json_data) if json_data else ''
 
     def json(self):
         """Return JSON data."""
         if self._json_data:
             return self._json_data
-        raise ValueError("No JSON data")
+        raise ValueError('No JSON data')
 
     def raise_for_status(self):
         """Raise an exception for 4xx/5xx status codes."""
@@ -40,7 +40,7 @@ class MockHTTPXResponse:
             error = httpx.HTTPStatusError(
                 f"Client error '{self.status_code}' for url 'test'",
                 request=MagicMock(),
-                response=mock_response
+                response=mock_response,
             )
             raise error
 
@@ -64,25 +64,29 @@ async def test_duplicate_secrets_dont_crash_resume(saas_manager):
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # Simulate resume scenario: secret already exists (400)
-    mock_response = MockHTTPXResponse(400, {"message": "Secret MY_API_KEY already exists"})
+    mock_response = MockHTTPXResponse(
+        400, {'message': 'Secret MY_API_KEY already exists'}
+    )
 
     async def mock_post(*args, **kwargs):
         return mock_response
 
     mock_client.post = AsyncMock(side_effect=mock_post)
 
-    custom_secrets = MappingProxyType({
-        'MY_API_KEY': CustomSecret(
-            secret=SecretStr('api_key_value'),
-            description='API Key that already exists on resume'
-        ),
-    })
+    custom_secrets = MappingProxyType(
+        {
+            'MY_API_KEY': CustomSecret(
+                secret=SecretStr('api_key_value'),
+                description='API Key that already exists on resume',
+            ),
+        }
+    )
 
     # This is the fix: should NOT raise an exception even though we get 400 "already exists"
     await saas_manager._setup_custom_secrets(
         client=mock_client,
         api_url='https://runtime.example.com',
-        custom_secrets=custom_secrets
+        custom_secrets=custom_secrets,
     )
 
     # If we got here without exception, the fix works!
@@ -95,26 +99,27 @@ async def test_other_400_errors_still_fail(saas_manager):
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # 400 error but NOT a duplicate
-    mock_response = MockHTTPXResponse(400, {"message": "Invalid secret name format"})
+    mock_response = MockHTTPXResponse(400, {'message': 'Invalid secret name format'})
 
     async def mock_post(*args, **kwargs):
         return mock_response
 
     mock_client.post = AsyncMock(side_effect=mock_post)
 
-    custom_secrets = MappingProxyType({
-        'INVALID!NAME': CustomSecret(
-            secret=SecretStr('value'),
-            description='Secret with invalid name'
-        ),
-    })
+    custom_secrets = MappingProxyType(
+        {
+            'INVALID!NAME': CustomSecret(
+                secret=SecretStr('value'), description='Secret with invalid name'
+            ),
+        }
+    )
 
     # This SHOULD raise because it's not a duplicate error
     with pytest.raises(httpx.HTTPStatusError) as exc_info:
         await saas_manager._setup_custom_secrets(
             client=mock_client,
             api_url='https://runtime.example.com',
-            custom_secrets=custom_secrets
+            custom_secrets=custom_secrets,
         )
 
     assert exc_info.value.response.status_code == 400
@@ -126,25 +131,26 @@ async def test_normal_secret_creation_still_works(saas_manager):
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # Successful creation
-    mock_response = MockHTTPXResponse(200, {"message": "Secret created"})
+    mock_response = MockHTTPXResponse(200, {'message': 'Secret created'})
 
     async def mock_post(*args, **kwargs):
         return mock_response
 
     mock_client.post = AsyncMock(side_effect=mock_post)
 
-    custom_secrets = MappingProxyType({
-        'NEW_SECRET': CustomSecret(
-            secret=SecretStr('new_value'),
-            description='A new secret'
-        ),
-    })
+    custom_secrets = MappingProxyType(
+        {
+            'NEW_SECRET': CustomSecret(
+                secret=SecretStr('new_value'), description='A new secret'
+            ),
+        }
+    )
 
     # Should complete without raising
     await saas_manager._setup_custom_secrets(
         client=mock_client,
         api_url='https://runtime.example.com',
-        custom_secrets=custom_secrets
+        custom_secrets=custom_secrets,
     )
 
     # Verify the secret was created
@@ -161,9 +167,7 @@ async def test_handles_empty_secrets_gracefully(saas_manager):
 
     # Test with None
     await saas_manager._setup_custom_secrets(
-        client=mock_client,
-        api_url='https://runtime.example.com',
-        custom_secrets=None
+        client=mock_client, api_url='https://runtime.example.com', custom_secrets=None
     )
     assert mock_client.post.call_count == 0
 
@@ -171,6 +175,6 @@ async def test_handles_empty_secrets_gracefully(saas_manager):
     await saas_manager._setup_custom_secrets(
         client=mock_client,
         api_url='https://runtime.example.com',
-        custom_secrets=MappingProxyType({})
+        custom_secrets=MappingProxyType({}),
     )
     assert mock_client.post.call_count == 0
