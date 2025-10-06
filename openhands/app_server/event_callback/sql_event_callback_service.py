@@ -194,6 +194,7 @@ class SQLEventCallbackService(EventCallbackService):
                     for callback in callbacks
                 ]
             )
+            await self.session.commit()
 
     async def execute_callback(
         self, conversation_id: UUID, callback: EventCallback, event: Event
@@ -210,7 +211,8 @@ class SQLEventCallbackService(EventCallbackService):
                 conversation_id=conversation_id,
                 detail=str(exc),
             )
-        await self.session.add(stored_result)
+        self.session.add(stored_result)
+
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service."""
