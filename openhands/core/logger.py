@@ -376,6 +376,10 @@ if current_log_level == logging.DEBUG:
 
 if LOG_JSON:
     openhands_logger.addHandler(json_log_handler(current_log_level))
+    # Configure concurrent.futures logger to use JSON formatting as well
+    cf_logger = logging.getLogger('concurrent.futures')
+    cf_logger.setLevel(current_log_level)
+    cf_logger.addHandler(json_log_handler(current_log_level))
 else:
     openhands_logger.addHandler(get_console_handler(current_log_level))
 
@@ -411,10 +415,6 @@ LOQUACIOUS_LOGGERS = [
 
 for logger_name in LOQUACIOUS_LOGGERS:
     logging.getLogger(logger_name).setLevel('WARNING')
-
-# Suppress concurrent.futures logger since we handle exceptions in EventStream callbacks
-# and log them with structured context using openhands_logger
-logging.getLogger('concurrent.futures').setLevel(logging.CRITICAL)
 
 
 class LlmFileHandler(logging.FileHandler):
