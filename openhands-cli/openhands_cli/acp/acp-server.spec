@@ -1,14 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for OpenHands CLI.
+PyInstaller spec file for OpenHands ACP Server.
 
 This spec file configures PyInstaller to create a standalone executable
-for the OpenHands CLI application, supporting both:
-- TUI mode (default): Interactive terminal interface
-- ACP mode (--acp flag): Agent Client Protocol for editor integration
-
-The binary includes the Agent Client Protocol SDK (acp package) which adds
-approximately 88KB to the binary size.
+for the OpenHands Agent Client Protocol (ACP) Server application.
 """
 
 from pathlib import Path
@@ -20,14 +15,12 @@ from PyInstaller.utils.hooks import (
     copy_metadata
 )
 
-
-
 # Get the project root directory (current working directory when running PyInstaller)
 project_root = Path.cwd()
 
 a = Analysis(
-    ['openhands_cli/simple_main.py'],
-    pathex=[str(project_root)],
+    ['__main__.py'],
+    pathex=[str(project_root / 'openhands' / 'agent_server' / 'acp')],
     binaries=[],
     datas=[
         # Include any data files that might be needed
@@ -46,30 +39,25 @@ a = Analysis(
         *copy_metadata('agent-client-protocol'),
     ],
     hiddenimports=[
-        # Explicitly include modules that might not be detected automatically
-        *collect_submodules('openhands_cli'),
-        *collect_submodules('prompt_toolkit'),
-        # Include OpenHands SDK submodules explicitly to avoid resolution issues
         *collect_submodules('openhands.sdk'),
         *collect_submodules('openhands.tools'),
+        *collect_submodules('openhands.agent_server'),
+        *collect_submodules('openhands.agent_server.acp'),
+
         *collect_submodules('tiktoken'),
         *collect_submodules('tiktoken_ext'),
         *collect_submodules('litellm'),
         *collect_submodules('fastmcp'),
-        *collect_submodules('acp'),  # Agent Client Protocol SDK for --acp mode
-        # Include mcp but exclude CLI parts that require typer
+        *collect_submodules('acp'),  # Agent Client Protocol SDK
+        # Include mcp but exclude Agent Server parts that require typer
         'mcp.types',
         'mcp.client',
         'mcp.server',
         'mcp.shared',
-        'openhands.tools.execute_bash',
-        'openhands.tools.str_replace_editor',
-        'openhands.tools.task_tracker',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    # runtime_hooks=[str(project_root / "hooks" / "rthook_profile_imports.py")],
     excludes=[
         # Exclude unnecessary modules to reduce binary size
         'tkinter',
@@ -77,18 +65,16 @@ a = Analysis(
         'numpy',
         'scipy',
         'pandas',
+        'PIL',
         'IPython',
         'jupyter',
         'notebook',
         # Exclude mcp CLI parts that cause issues
         'mcp.cli',
-        'prompt_toolkit.contrib.ssh',
-        'fastmcp.cli',
-        'boto3',
-        'botocore',
-        'posthog',
-        'browser-use',
-        'openhands.tools.browser_use'
+        'mcp.cli.cli',
+        # Exclude the main agent server to reduce size (ACP server is standalone)
+        'openhands.agent_server.api',
+        'openhands.agent_server.app',
     ],
     noarchive=False,
     # IMPORTANT: do not use optimize=2 (-OO) because it strips docstrings used by PLY/bashlex grammar
@@ -102,14 +88,14 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='openhands',
+    name='openhands-acp-server',
     debug=False,
     bootloader_ignore_signals=False,
     strip=True,  # Strip debug symbols to reduce size
     upx=True,    # Use UPX compression if available
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # CLI application needs console
+    console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

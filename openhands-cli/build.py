@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-
+from pydantic import SecretStr
 from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
 
@@ -24,11 +24,8 @@ from openhands.tools.preset.default import get_default_agent
 dummy_agent = get_default_agent(
     llm=LLM(
         model='dummy-model',
-        api_key='dummy-key',
-        metadata=get_llm_metadata(model_name='dummy-model', agent_name='openhands'),
+        api_key=SecretStr('dummy-key'),
     ),
-    working_dir=WORK_DIR,
-    persistence_dir=PERSISTENCE_DIR,
     cli_mode=True,
 )
 
