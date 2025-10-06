@@ -221,7 +221,7 @@ class RemoteSandboxService(SandboxService):
                 created_at=utc_now(),
             )
             self.db_session.add(stored_sandbox)
-            self.db_session.commit()
+            await self.db_session.commit()
 
             # Prepare environment variables
             environment = sandbox_spec.initial_env.copy()
