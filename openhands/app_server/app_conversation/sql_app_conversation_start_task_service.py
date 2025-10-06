@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 class StoredAppConversationStartTask(Base):  # type: ignore
-    __tablename__ = 'v1_app_conversation_start_task'
+    __tablename__ = 'app_conversation_start_task'
     id = Column(SQLUUID, primary_key=True)
     created_by_user_id = Column(String, index=True)
     status = Column(create_enum_type_decorator(AppConversationStartTaskStatus))

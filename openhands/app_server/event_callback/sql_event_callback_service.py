@@ -41,7 +41,7 @@ _logger = logging.getLogger(__name__)
 
 
 class StoredEventCallback(Base):  # type: ignore
-    __tablename__ = 'v1_event_callback'
+    __tablename__ = 'event_callback'
     id = Column(SQLUUID, primary_key=True)
     conversation_id = Column(SQLUUID, nullable=True)
     processor = Column(create_json_type_decorator(EventCallbackProcessor))
@@ -50,7 +50,7 @@ class StoredEventCallback(Base):  # type: ignore
 
 
 class StoredEventCallbackResult(Base):  # type: ignore
-    __tablename__ = 'v1_event_callback_result'
+    __tablename__ = 'event_callback_result'
     id = Column(SQLUUID, primary_key=True)
     status = Column(create_enum_type_decorator(EventCallbackResultStatus))
     event_callback_id = Column(SQLUUID, index=True)
