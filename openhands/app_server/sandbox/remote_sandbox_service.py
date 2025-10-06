@@ -11,7 +11,7 @@ from sqlalchemy import Column, String, func, select
 from storage.database import AsyncSession
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import SandboxError
+from openhands.app_server.errors import OpenHandsError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,
@@ -61,7 +61,7 @@ class RemoteSandboxService(SandboxService):
     web_url: str
     resource_factor: int
     runtime_class: str | None
-    user_id: str
+    user_id: str | None
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
 
@@ -197,6 +197,11 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
+            if self.user_id is None:
+                # This is an illegal state - starting a sandbox with an unsecured service
+                # means the sandbox would not be associated with any user
+                raise OpenHandsError('Cannot start a sandbox without a user_id')
+
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -377,4 +382,41 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         return resolve_sandbox_service
 
     def get_unsecured_resolver(self) -> Callable:
-        return self.get_resolver_for_user()
+        # Define inline to prevent circular lookup
+        from openhands.app_server.config import (
+            db_service,
+            get_global_config,
+            httpx_client_manager,
+            sandbox_spec_manager,
+        )
+
+        config = get_global_config()
+        web_url = config.web_url
+        if web_url is None:
+            # TODO: Develop a polling protocol so this is not required.
+            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
+        # Create dependencies at module level to avoid B008
+        _sandbox_spec_dependency = Depends(
+            sandbox_spec_manager().get_unsecured_resolver()
+        )
+        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
+        db_session_dependency = Depends(db_service().managed_session_dependency)
+
+        async def resolve_sandbox_service(
+            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
+            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
+            db_session: AsyncSession = db_session_dependency,
+        ) -> SandboxService:
+            return RemoteSandboxService(
+                sandbox_spec_service=sandbox_spec_service,
+                api_url=self.api_url,
+                api_key=self.api_key,
+                web_url=web_url,
+                resource_factor=self.resource_factor,
+                runtime_class=self.runtime_class,
+                user_id=None,
+                httpx_client=httpx_client,
+                db_session=db_session,
+            )
+
+        return resolve_sandbox_service
