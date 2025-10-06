@@ -1,4 +1,4 @@
-"""Essential tests for SaasNestedConversationManager custom secrets duplicate handling fix."""
+"""Tests for SaasNestedConversationManager custom secrets handling during resume."""
 
 from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock
@@ -47,7 +47,7 @@ class MockHTTPXResponse:
 
 @pytest.fixture
 def saas_manager():
-    """Create a real SaasNestedConversationManager instance for testing."""
+    """Create a SaasNestedConversationManager instance for testing."""
     manager = SaasNestedConversationManager(
         sio=MagicMock(),
         config=MagicMock(spec=OpenHandsConfig),
@@ -60,7 +60,7 @@ def saas_manager():
 
 @pytest.mark.asyncio
 async def test_duplicate_secrets_dont_crash_resume(saas_manager):
-    """TEST #1: THE MAIN FIX - Duplicate secrets on resume don't crash the system."""
+    """Test that duplicate secrets during resume are handled gracefully."""
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # Simulate resume scenario: secret already exists (400)
@@ -82,20 +82,19 @@ async def test_duplicate_secrets_dont_crash_resume(saas_manager):
         }
     )
 
-    # This is the fix: should NOT raise an exception even though we get 400 "already exists"
+    # Should not raise despite 400 "already exists" error
     await saas_manager._setup_custom_secrets(
         client=mock_client,
         api_url='https://runtime.example.com',
         custom_secrets=custom_secrets,
     )
 
-    # If we got here without exception, the fix works!
     assert mock_client.post.call_count == 1
 
 
 @pytest.mark.asyncio
 async def test_other_400_errors_still_fail(saas_manager):
-    """TEST #2: Don't be too permissive - Other 400 errors should still raise."""
+    """Test that non-duplicate 400 errors are still raised."""
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # 400 error but NOT a duplicate
@@ -114,7 +113,6 @@ async def test_other_400_errors_still_fail(saas_manager):
         }
     )
 
-    # This SHOULD raise because it's not a duplicate error
     with pytest.raises(httpx.HTTPStatusError) as exc_info:
         await saas_manager._setup_custom_secrets(
             client=mock_client,
@@ -127,7 +125,7 @@ async def test_other_400_errors_still_fail(saas_manager):
 
 @pytest.mark.asyncio
 async def test_normal_secret_creation_still_works(saas_manager):
-    """TEST #3: Happy path - Normal secret creation still works."""
+    """Test that normal secret creation works correctly."""
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # Successful creation
@@ -146,14 +144,12 @@ async def test_normal_secret_creation_still_works(saas_manager):
         }
     )
 
-    # Should complete without raising
     await saas_manager._setup_custom_secrets(
         client=mock_client,
         api_url='https://runtime.example.com',
         custom_secrets=custom_secrets,
     )
 
-    # Verify the secret was created
     assert mock_client.post.call_count == 1
     call_args = mock_client.post.call_args_list[0]
     assert call_args[1]['json']['name'] == 'NEW_SECRET'
@@ -162,7 +158,7 @@ async def test_normal_secret_creation_still_works(saas_manager):
 
 @pytest.mark.asyncio
 async def test_handles_empty_secrets_gracefully(saas_manager):
-    """TEST #4: Edge case - Empty or no secrets should not cause issues."""
+    """Test that empty or missing secrets are handled correctly."""
     mock_client = AsyncMock(spec=httpx.AsyncClient)
 
     # Test with None
