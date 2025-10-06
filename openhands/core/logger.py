@@ -376,6 +376,10 @@ if current_log_level == logging.DEBUG:
 
 if LOG_JSON:
     openhands_logger.addHandler(json_log_handler(current_log_level))
+    # Configure concurrent.futures logger to use JSON formatting as well
+    cf_logger = logging.getLogger('concurrent.futures')
+    cf_logger.setLevel(current_log_level)
+    cf_logger.addHandler(json_log_handler(current_log_level))
 else:
     openhands_logger.addHandler(get_console_handler(current_log_level))
 
