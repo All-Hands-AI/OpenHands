@@ -1,35 +1,107 @@
 ---
 title: Organization and User Microagents
-description: Organizations and users can define microagents that apply to all repositories belonging to the organization or user.
+description: An OpenHands configuration repository allows you to define microagents that apply to all adjacent or descendent-pathed repositories.
 ---
 
 ## Usage
 
-These microagents can be [any type of microagent](./microagents-overview#microagent-types) and will be loaded
-accordingly. However, they are applied to all repositories belonging to the organization or user.
+Organization microagents may be any type of microagent. (see [Microagent Types](./microagents-overview#microagent-types))
+The primary difference is that in an Organization-or-User "OpenHands Config" repo, the repo itself conveys the `.openhands` scope construct.
+Thus, in an OpenHands Config repo, OpenHands will look for Microagents in  `microagents/`.
+In a Project repository, OpenHands will look in `.openhands/microagents/`.
+apply to **all repositories** belonging to the organization or user.
 
-Add a `.openhands` repository under the organization or user and create a `microagents` directory and place the
-microagents in that directory.
+To consume microagents from an OpenHands configuration repository, the repo must contain a `microagents/` directory, as this is where OpenHands will search for microagent definitions.
 
-For GitLab organizations, use `openhands-config` as the repository name instead of `.openhands`, since GitLab doesn't support repository names starting with non-alphanumeric characters.
+### Configuration Repository Naming Conventions
+
+- In **GitHub** and **Bitbucket**, OpenHands will look for a repository named `.openhands` within the top-level scope of an organization (or user) account.
+- Since [**GitLab** disallows repository names that begin with non‑alphanumeric characters](https://gitlab.com/gitlab-org/gitlab-foss/-/issues/12721). OpenHands will instead search for a repository named `openhands-config` for GitLab repos.
+
+### TLDR
+
+#### BitBucket,  GitHub, Gitea
+
+- Create a repository with the name  `.openhands` within the organization or user's namespace relevant to the projects OpenHands will be working with.
+
+#### GitLab
+
+- Create a repository with the name `openhands-config` within the organization or user's namespace relevant to the projects OpenHands will be working with.
+
+#### then...
+
+- Within your new Configuration repository, create a `microagents` directory
+- Place your microagent assets in the `microagents` folder.
+ instead of `.openhands`, since GitLab doesn't support repository names starting with non‑alphanumeric characters.
+
+## Functionality
+
+### Loading Logic in OpenHands
+When OpenHands starts a session for a selected repository, Microagents are discovered via the following steps:
+
+1. **Identify Organization Path** – The full repository path (e.g., `github.com/acme/api`) is split into its hierarchical components (`acme`, `api`).
+2. **Generate Candidate Org Paths** – Starting from the deepest group, OpenHands builds candidate paths in descending order:
+   - `acme/api`
+   - `acme`
+3. **Check for Org Repository** – For each candidate, OpenHands checks if an organization‑level repository exists (`<candidate>/.openhands` on GitHub or `<candidate>/openhands-config` on GitLab).
+4. **Clone / Use Local Copy** – If the repo exists locally (already cloned) it is used; otherwise OpenHands clones the remote repo.
+5. **Load Microagents** – Once a repository with a `microagents/` directory is found, all microagents inside are loaded. The first successful candidate stops further searching.
+
+This approach ensures that **nested groups** (e.g., `org/subgroup/project`) can provide their own microagents, and the deepest level takes precedence over higher‑level org repositories.
+
+### Priority Handling
+
+If both a top‑level organization repo and a sub‑group repo contain microagents, OpenHands loads only the microagents from the **deepest** (most specific) repository found first in the descending search order. This allows sub‑groups to override or augment top‑level guidelines without duplication.
 
 ## Example
 
-General microagent file example for organization `Great-Co` located inside the `.openhands` repository:
-`microagents/org-microagent.md`:
-```
-* Use type hints and error boundaries; validate inputs at system boundaries and fail with meaningful error messages.
-* Document interfaces and public APIs; use implementation comments only for non-obvious logic.
-* Follow the same naming convention for variables, classes, constants, etc. already used in each repository.
-```
+### Setting Up an Organization‑Level Microagents Repository (GitHub)
 
-For GitLab organizations, the same microagent would be located inside the `openhands-config` repository.
+1. **Create the Org Repo**
+   ```bash
+   # On GitHub under organization "Great-Co"
+   git init --bare .openhands
+   ```
 
-## User Microagents When Running Openhands on Your Own
+2. **Add a `microagents` Directory**
+   ```bash
+   mkdir -p .openhands/microagents
+   ```
+
+3. **Create a Microagent File** (`.openhands/microagents/org-microagent.md`)
+   ```md
+   * Use type hints and error boundaries; validate inputs at system boundaries and fail with meaningful error messages.
+   * Document interfaces and public APIs; use implementation comments only for non‑obvious logic.
+   * Follow the same naming convention for variables, classes, constants, etc. already used in each repository.
+   ```
+
+### Setting Up an Organization‑Level Microagents Repository (GitLab)
+
+1. **Create the Org Repo**
+   ```bash
+   # On GitLab under organization "Great-Co"
+   git init --bare openhands-config
+   ```
+
+2. **Add a `microagents` Directory**
+   ```bash
+   mkdir -p openhands-config/microagents
+   ```
+
+3. **Create the Same Microagent File** (`openhands-config/microagents/org-microagent.md`) with the same content as above.
+
+These steps ensure that OpenHands will discover and load the microagents for any repository belonging to `Great-Co`.
+
+## User Microagents When Running OpenHands on Your Own
 
 <Note>
-  This works with CLI, headless and development modes. It does not work out of the box when running OpenHands using the docker command.
+  This works with CLI, headless and development modes. It does not work out of the box when running OpenHands using the Docker command.
 </Note>
 
-When running OpenHands on your own, you can place microagents in the `~/.openhands/microagents` folder on your local
-system and OpenHands will always load it for all your conversations.
+When you run OpenHands locally (e.g., via the CLI or in a development environment), you can place microagents in your home directory:
+
+```bash
+mkdir -p ~/.openhands/microagents
+```
+
+Any Markdown files placed inside `~/.openhands/microagents` are automatically loaded for **all** conversations, providing user‑wide guidance.
