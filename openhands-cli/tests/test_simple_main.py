@@ -26,26 +26,36 @@ with patch.dict('sys.modules', {
 class TestMainFunction:
     """Test the main function with different command line arguments."""
 
-    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_default_cli_mode(self, mock_run_cli):
+    def test_main_default_cli_mode(self):
         """Test that CLI mode is the default when no command is specified."""
-        main()
-        mock_run_cli.assert_called_once_with(resume_conversation_id=None)
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_import.return_value = mock_agent_chat
+            main()
+            # The agent_chat module should be imported and run_cli_entry called
+            mock_import.assert_called_with('openhands_cli.agent_chat')
+            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id=None)
 
-    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_explicit_cli_mode(self, mock_run_cli):
+    def test_main_explicit_cli_mode(self):
         """Test explicit CLI mode."""
-        main()
-        mock_run_cli.assert_called_once_with(resume_conversation_id=None)
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_import.return_value = mock_agent_chat
+            main()
+            mock_import.assert_called_with('openhands_cli.agent_chat')
+            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id=None)
 
-    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands', 'cli', '--resume', 'test-conversation-id'])
-    def test_main_cli_mode_with_resume(self, mock_run_cli):
+    def test_main_cli_mode_with_resume(self):
         """Test CLI mode with resume conversation ID."""
-        main()
-        mock_run_cli.assert_called_once_with(resume_conversation_id='test-conversation-id')
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_import.return_value = mock_agent_chat
+            main()
+            mock_import.assert_called_with('openhands_cli.agent_chat')
+            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id='test-conversation-id')
 
     @patch('openhands_cli.gui_launcher.launch_gui_server')
     @patch('sys.argv', ['openhands', 'serve'])
@@ -78,55 +88,63 @@ class TestMainFunction:
     @patch('sys.argv', ['openhands', 'invalid-command'])
     def test_main_invalid_command(self):
         """Test that invalid command shows help and exits."""
-        with patch('sys.exit') as mock_exit:
-            with patch('openhands_cli.simple_main.print_formatted_text'):
-                main()
-        mock_exit.assert_called_once_with(1)
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        # argparse exits with code 2 for invalid arguments
+        assert exc_info.value.code == 2
 
-    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_import_error(self, mock_run_cli):
+    def test_main_import_error(self):
         """Test handling of ImportError."""
-        mock_run_cli.side_effect = ImportError('Missing dependency')
-        
-        with pytest.raises(ImportError):
-            with patch('openhands_cli.simple_main.print_formatted_text'):
-                main()
-
-    @patch('openhands_cli.simple_main.run_cli_entry')
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_keyboard_interrupt(self, mock_run_cli):
-        """Test handling of KeyboardInterrupt."""
-        mock_run_cli.side_effect = KeyboardInterrupt()
-        
-        with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
-            main()
-        
-        # Should print goodbye message
-        mock_print.assert_called()
-
-    @patch('openhands_cli.simple_main.run_cli_entry')
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_eof_error(self, mock_run_cli):
-        """Test handling of EOFError."""
-        mock_run_cli.side_effect = EOFError()
-        
-        with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
-            main()
-        
-        # Should print goodbye message
-        mock_print.assert_called()
-
-    @patch('openhands_cli.simple_main.run_cli_entry')
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_general_exception(self, mock_run_cli):
-        """Test handling of general exceptions."""
-        mock_run_cli.side_effect = Exception('Something went wrong')
-        
-        with pytest.raises(Exception):
-            with patch('openhands_cli.simple_main.print_formatted_text'):
-                with patch('traceback.print_exc'):
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_agent_chat.run_cli_entry.side_effect = ImportError('Missing dependency')
+            mock_import.return_value = mock_agent_chat
+            
+            with pytest.raises(ImportError):
+                with patch('openhands_cli.simple_main.print_formatted_text'):
                     main()
+
+    @patch('sys.argv', ['openhands', 'cli'])
+    def test_main_keyboard_interrupt(self):
+        """Test handling of KeyboardInterrupt."""
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_agent_chat.run_cli_entry.side_effect = KeyboardInterrupt()
+            mock_import.return_value = mock_agent_chat
+            
+            with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
+                main()
+            
+            # Should print goodbye message
+            mock_print.assert_called()
+
+    @patch('sys.argv', ['openhands', 'cli'])
+    def test_main_eof_error(self):
+        """Test handling of EOFError."""
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_agent_chat.run_cli_entry.side_effect = EOFError()
+            mock_import.return_value = mock_agent_chat
+            
+            with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
+                main()
+            
+            # Should print goodbye message
+            mock_print.assert_called()
+
+    @patch('sys.argv', ['openhands', 'cli'])
+    def test_main_general_exception(self):
+        """Test handling of general exceptions."""
+        with patch('importlib.import_module') as mock_import:
+            mock_agent_chat = MagicMock()
+            mock_agent_chat.run_cli_entry.side_effect = Exception('Something went wrong')
+            mock_import.return_value = mock_agent_chat
+            
+            with pytest.raises(Exception):
+                with patch('openhands_cli.simple_main.print_formatted_text'):
+                    with patch('traceback.print_exc'):
+                        main()
 
     @patch('sys.argv', ['openhands', '--help'])
     def test_main_help_option(self):

@@ -4,9 +4,9 @@ Simple main entry point for OpenHands CLI.
 This is a simplified version that demonstrates the TUI functionality.
 """
 
-import argparse
 import logging
 import os
+import sys
 import warnings
 
 debug_env = os.getenv('DEBUG', 'false').lower()
@@ -17,6 +17,8 @@ if debug_env != '1' and debug_env != 'true':
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
+from openhands_cli.argparsers.main_parser import create_main_parser
+
 
 def main() -> None:
     """Main entry point for the OpenHands CLI.
@@ -25,49 +27,7 @@ def main() -> None:
         ImportError: If agent chat dependencies are missing
         Exception: On other error conditions
     """
-    parser = argparse.ArgumentParser(
-        description='OpenHands CLI - Terminal User Interface for OpenHands AI Agent',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    
-    # Create subparsers for different commands
-    subparsers = parser.add_subparsers(
-        dest='command',
-        help='Available commands',
-        description='''
-Available commands:
-  cli    - Run OpenHands in CLI mode (terminal interface) [default]
-  serve  - Launch the OpenHands GUI server (web interface)
-        ''',
-    )
-    
-    # Add 'cli' subcommand (default behavior)
-    cli_parser = subparsers.add_parser(
-        'cli', help='Run OpenHands in CLI mode (terminal interface)'
-    )
-    cli_parser.add_argument(
-        '--resume',
-        type=str,
-        help='Conversation ID to use for the session. If not provided, a random UUID will be generated.',
-    )
-    
-    # Add 'serve' subcommand
-    serve_parser = subparsers.add_parser(
-        'serve', help='Launch the OpenHands GUI server using Docker (web interface)'
-    )
-    serve_parser.add_argument(
-        '--mount-cwd',
-        help='Mount the current working directory into the GUI server container',
-        action='store_true',
-        default=False,
-    )
-    serve_parser.add_argument(
-        '--gpu',
-        help='Enable GPU support by mounting all GPUs into the Docker container via nvidia-docker',
-        action='store_true',
-        default=False,
-    )
-
+    parser = create_main_parser()
     args = parser.parse_args()
     
     # If no subcommand is provided, default to 'cli'
