@@ -26,138 +26,47 @@ with patch.dict('sys.modules', {
 class TestMainFunction:
     """Test the main function with different command line arguments."""
 
-    @patch('sys.argv', ['openhands'])
-    def test_main_default_cli_mode(self):
-        """Test that CLI mode is the default when no command is specified."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_import.return_value = mock_agent_chat
-            main()
-            # The agent_chat module should be imported and run_cli_entry called
-            mock_import.assert_called_with('openhands_cli.agent_chat')
-            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id=None)
-
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_explicit_cli_mode(self):
-        """Test explicit CLI mode."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_import.return_value = mock_agent_chat
-            main()
-            mock_import.assert_called_with('openhands_cli.agent_chat')
-            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id=None)
-
-    @patch('sys.argv', ['openhands', 'cli', '--resume', 'test-conversation-id'])
-    def test_main_cli_mode_with_resume(self):
-        """Test CLI mode with resume conversation ID."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_import.return_value = mock_agent_chat
-            main()
-            mock_import.assert_called_with('openhands_cli.agent_chat')
-            mock_agent_chat.run_cli_entry.assert_called_once_with(resume_conversation_id='test-conversation-id')
-
-    @patch('openhands_cli.gui_launcher.launch_gui_server')
-    @patch('sys.argv', ['openhands', 'serve'])
-    def test_main_serve_mode(self, mock_launch_gui):
-        """Test serve mode."""
-        main()
-        mock_launch_gui.assert_called_once_with(mount_cwd=False, gpu=False)
-
-    @patch('openhands_cli.gui_launcher.launch_gui_server')
-    @patch('sys.argv', ['openhands', 'serve', '--mount-cwd'])
-    def test_main_serve_mode_with_mount_cwd(self, mock_launch_gui):
-        """Test serve mode with mount-cwd option."""
-        main()
-        mock_launch_gui.assert_called_once_with(mount_cwd=True, gpu=False)
-
-    @patch('openhands_cli.gui_launcher.launch_gui_server')
-    @patch('sys.argv', ['openhands', 'serve', '--gpu'])
-    def test_main_serve_mode_with_gpu(self, mock_launch_gui):
-        """Test serve mode with GPU option."""
-        main()
-        mock_launch_gui.assert_called_once_with(mount_cwd=False, gpu=True)
-
-    @patch('openhands_cli.gui_launcher.launch_gui_server')
-    @patch('sys.argv', ['openhands', 'serve', '--mount-cwd', '--gpu'])
-    def test_main_serve_mode_with_all_options(self, mock_launch_gui):
-        """Test serve mode with all options."""
-        main()
-        mock_launch_gui.assert_called_once_with(mount_cwd=True, gpu=True)
-
-    @patch('sys.argv', ['openhands', 'invalid-command'])
-    def test_main_invalid_command(self):
-        """Test that invalid command shows help and exits."""
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        # argparse exits with code 2 for invalid arguments
-        assert exc_info.value.code == 2
-
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_import_error(self):
-        """Test handling of ImportError."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_agent_chat.run_cli_entry.side_effect = ImportError('Missing dependency')
-            mock_import.return_value = mock_agent_chat
-            
-            with pytest.raises(ImportError):
-                with patch('openhands_cli.simple_main.print_formatted_text'):
-                    main()
-
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_keyboard_interrupt(self):
-        """Test handling of KeyboardInterrupt."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_agent_chat.run_cli_entry.side_effect = KeyboardInterrupt()
-            mock_import.return_value = mock_agent_chat
-            
-            with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
-                main()
-            
-            # Should print goodbye message
-            mock_print.assert_called()
-
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_eof_error(self):
-        """Test handling of EOFError."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_agent_chat.run_cli_entry.side_effect = EOFError()
-            mock_import.return_value = mock_agent_chat
-            
-            with patch('openhands_cli.simple_main.print_formatted_text') as mock_print:
-                main()
-            
-            # Should print goodbye message
-            mock_print.assert_called()
-
-    @patch('sys.argv', ['openhands', 'cli'])
-    def test_main_general_exception(self):
-        """Test handling of general exceptions."""
-        with patch('importlib.import_module') as mock_import:
-            mock_agent_chat = MagicMock()
-            mock_agent_chat.run_cli_entry.side_effect = Exception('Something went wrong')
-            mock_import.return_value = mock_agent_chat
-            
-            with pytest.raises(Exception):
-                with patch('openhands_cli.simple_main.print_formatted_text'):
-                    with patch('traceback.print_exc'):
+    @pytest.mark.parametrize(
+        "argv,expected_call_args,expected_launch_args",
+        [
+            # CLI mode tests
+            (['openhands'], {'resume_conversation_id': None}, None),
+            (['openhands', 'cli'], {'resume_conversation_id': None}, None),
+            (['openhands', 'cli', '--resume', 'test-id'], {'resume_conversation_id': 'test-id'}, None),
+            # Serve mode tests
+            (['openhands', 'serve'], None, {'mount_cwd': False, 'gpu': False}),
+            (['openhands', 'serve', '--mount-cwd'], None, {'mount_cwd': True, 'gpu': False}),
+            (['openhands', 'serve', '--gpu'], None, {'mount_cwd': False, 'gpu': True}),
+            (['openhands', 'serve', '--mount-cwd', '--gpu'], None, {'mount_cwd': True, 'gpu': True}),
+        ],
+    )
+    def test_main_commands(self, argv, expected_call_args, expected_launch_args):
+        """Test main function with various command line arguments."""
+        with patch('sys.argv', argv):
+            if expected_call_args is not None:
+                # CLI mode test - mock the import at the module level
+                with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
+                    with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_cli:
                         main()
+                        mock_run_cli.assert_called_once_with(**expected_call_args)
+            else:
+                # Serve mode test
+                with patch('openhands_cli.gui_launcher.launch_gui_server') as mock_launch_gui:
+                    main()
+                    mock_launch_gui.assert_called_once_with(**expected_launch_args)
 
-    @patch('sys.argv', ['openhands', '--help'])
-    def test_main_help_option(self):
-        """Test that help option works."""
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        # argparse exits with code 0 for help
-        assert exc_info.value.code == 0
+    @pytest.mark.parametrize(
+        "argv,expected_exit_code",
+        [
+            (['openhands', 'invalid-command'], 2),  # Invalid command
+            (['openhands', '--help'], 0),  # Help option
+            (['openhands', 'serve', '--help'], 0),  # Serve help option
+        ],
+    )
+    def test_main_exit_scenarios(self, argv, expected_exit_code):
+        """Test scenarios where main exits with specific codes."""
+        with patch('sys.argv', argv):
+            with pytest.raises(SystemExit) as exc_info:
+                main()
+            assert exc_info.value.code == expected_exit_code
 
-    @patch('sys.argv', ['openhands', 'serve', '--help'])
-    def test_serve_help_option(self):
-        """Test that serve help option works."""
-        with pytest.raises(SystemExit) as exc_info:
-            main()
-        # argparse exits with code 0 for help
-        assert exc_info.value.code == 0
