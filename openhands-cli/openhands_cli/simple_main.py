@@ -7,10 +7,12 @@ This is a simplified version that demonstrates the TUI functionality.
 import argparse
 import logging
 import os
+import warnings
 
 debug_env = os.getenv('DEBUG', 'false').lower()
 if debug_env != '1' and debug_env != 'true':
     logging.disable(logging.WARNING)
+    warnings.filterwarnings('ignore')
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
