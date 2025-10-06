@@ -8,9 +8,9 @@ import docker
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
-from openhands.version import get_version
 from openhands.runtime.builder.base import RuntimeBuilder
 from openhands.utils.term_color import TermColor, colorize
+from openhands.version import get_version
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
