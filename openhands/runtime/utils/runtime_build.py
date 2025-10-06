@@ -12,10 +12,10 @@ from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
-from openhands.version import get_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
+from openhands.version import get_version
 
 
 class BuildFromImageType(Enum):
