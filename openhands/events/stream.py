@@ -283,11 +283,13 @@ class EventStream(EventStore):
                 fut.result()
             except Exception as e:
                 import traceback
-                
+
                 # Format traceback as single line for better log aggregation
                 tb_lines = traceback.format_exception(type(e), e, e.__traceback__)
-                traceback_str = ' | '.join(line.strip() for line in tb_lines if line.strip())
-                
+                traceback_str = ' | '.join(
+                    line.strip() for line in tb_lines if line.strip()
+                )
+
                 # Log with structured context for better querying in log aggregation systems
                 logger.error(
                     f'Error in event callback {callback_id} for subscriber {subscriber_id}: '
@@ -300,7 +302,7 @@ class EventStream(EventStore):
                             'error_message': str(e),
                             'traceback': traceback_str,
                         }
-                    }
+                    },
                 )
                 # Don't re-raise to prevent duplicate logging from concurrent.futures logger
                 # The error has been fully logged with context above
