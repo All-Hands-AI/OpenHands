@@ -46,9 +46,8 @@ class JupyterPlugin(Plugin):
         if not is_local_runtime:
             # Non-LocalRuntime
             prefix = f'su - {username} -s ' if SU_TO_USER else ''
-            # cd to code repo, setup all env vars and run micromamba
+            # setup all env vars and run micromamba
             poetry_prefix = (
-                'cd /openhands/code\n'
                 'export POETRY_VIRTUALENVS_PATH=/openhands/poetry;\n'
                 'export MAMBA_ROOT_PREFIX=/openhands/micromamba;\n'
                 '/openhands/micromamba/bin/micromamba run -n openhands '
