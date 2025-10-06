@@ -361,8 +361,6 @@ class TestSQLEventCallbackService:
         )
         callback1 = await service.create_event_callback(callback1_request)
 
-        await asyncio.sleep(0.01)  # Small delay
-
         callback2_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,

@@ -74,7 +74,11 @@ class JwtService:
         if expires_in is None:
             expires_in = timedelta(hours=1)
 
-        jwt_payload = {**payload, 'iat': now, 'exp': now + expires_in}
+        jwt_payload = {
+            **payload,
+            'iat': int(now.timestamp()),
+            'exp': int((now + expires_in).timestamp())
+        }
 
         # Use the raw key for JWT signing with key_id in header
         secret_key = self._keys[key_id].key.get_secret_value()
