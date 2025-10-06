@@ -45,8 +45,7 @@ def combine_lifespans(*lifespans):
     async def combined_lifespan(app):
         async with contextlib.AsyncExitStack() as stack:
             for lifespan in lifespans:
-                if lifespan:
-                    await stack.enter_async_context(lifespan(app))
+                await stack.enter_async_context(lifespan(app))
             yield
 
     return combined_lifespan
@@ -58,11 +57,17 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
 
 
+lifespans = [_lifespan, mcp_app.lifespan]
+app_lifespan_ = app_lifespan()
+if app_lifespan_:
+    lifespans.append(app_lifespan_.lifespan)
+
+
 app = FastAPI(
     title='OpenHands',
     description='OpenHands: Code Less, Make More',
     version=get_version(),
-    lifespan=combine_lifespans(_lifespan, mcp_app.lifespan, app_lifespan().lifespan),
+    lifespan=combine_lifespans(*lifespans),
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
