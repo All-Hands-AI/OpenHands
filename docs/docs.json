@@ -3,18 +3,16 @@
   "theme": "mint",
   "name": "All Hands Docs",
   "colors": {
-    "primary": "#99873c",
-    "light": "#ffe165",
-    "dark": "#ffe165"
+    "primary": "#99873c"
   },
   "background": {
     "color": {
-      "light": "#f7f3ee",
-      "dark": "#0B0D0E"
+      "light": "#f7f3ee"
     }
   },
   "appearance": {
-    "default": "light"
+    "default": "light",
+    "strict": true
   },
   "favicon": "/logo-square.png",
   "navigation": {
@@ -215,8 +213,7 @@
   "footer": {
     "socials": {
       "slack": "https://all-hands.dev/joinslack",
-      "github": "https://github.com/All-Hands-AI/OpenHands",
-      "discord": "https://discord.gg/ESHStjSjD4"
+      "github": "https://github.com/All-Hands-AI/OpenHands"
     }
   },
   "contextual": {
