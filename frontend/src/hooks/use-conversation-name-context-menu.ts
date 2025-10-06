@@ -14,6 +14,7 @@ import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
 import { useEventStore } from "#/stores/use-event-store";
+import { isV0Event } from "#/types/event-type-guards";
 
 interface UseConversationNameContextMenuProps {
   conversationId?: string;
@@ -47,6 +48,7 @@ export function useConversationNameContextMenu({
     React.useState(false);
 
   const systemMessage = events
+    .filter(isV0Event)
     .filter(isActionOrObservation)
     .find(isSystemMessage);
 

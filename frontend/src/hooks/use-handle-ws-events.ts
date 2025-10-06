@@ -37,7 +37,7 @@ export const useHandleWSEvents = () => {
       return;
     }
 
-    if (event.type === "error") {
+    if ("type" in event && event.type === "error") {
       const message: string = `${event.message}`;
       if (message.startsWith("Agent reached maximum")) {
         // We set the agent state to paused here - if the user clicks resume, it auto updates the max iterations

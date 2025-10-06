@@ -11,6 +11,7 @@ import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/u-warning.svg?react";
 import { useEventMessageStore } from "#/stores/event-message-store";
 import { useEventStore } from "#/stores/use-event-store";
+import { isV0Event } from "#/types/event-type-guards";
 
 export function ConfirmationButtons() {
   const submittedEventIds = useEventMessageStore(
@@ -27,6 +28,7 @@ export function ConfirmationButtons() {
 
   // Find the most recent action awaiting confirmation
   const awaitingAction = events
+    .filter(isV0Event)
     .filter(isActionOrObservation)
     .slice()
     .reverse()

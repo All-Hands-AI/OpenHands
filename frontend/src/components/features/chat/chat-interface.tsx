@@ -35,6 +35,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
+import { isV0Event } from "#/types/event-type-guards";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -77,6 +78,7 @@ export function ChatInterface() {
   const optimisticUserMessage = getOptimisticUserMessage();
 
   const events = storeEvents
+    .filter(isV0Event)
     .filter(isActionOrObservation)
     .filter(shouldRenderEvent);
 
@@ -84,6 +86,7 @@ export function ChatInterface() {
   const hasSubstantiveAgentActions = React.useMemo(
     () =>
       storeEvents
+        .filter(isV0Event)
         .filter(isActionOrObservation)
         .some(
           (event) =>
