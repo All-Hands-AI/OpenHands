@@ -9,9 +9,12 @@ from typing import AsyncGenerator
 from fastapi import Request
 from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
+from sqlalchemy.util import await_only
 
 _logger = logging.getLogger(__name__)
 
@@ -112,12 +115,24 @@ class DbService(BaseModel):
         )
 
     async def _create_async_gcp_engine(self):
+        from sqlalchemy.dialects.postgresql.asyncpg import (
+            AsyncAdapt_asyncpg_connection,
+        )
+
+        base_engine = self._create_gcp_engine()
+        dbapi = base_engine.dialect.dbapi
+
+        def adapted_creator():
+            return AsyncAdapt_asyncpg_connection(
+                dbapi,
+                await_only(self._create_async_gcp_db_connection()),
+                prepared_statement_cache_size=100,
+            )
+
         return create_async_engine(
             'postgresql+asyncpg://',
-            creator=self._create_async_gcp_creator(),
-            pool_size=self.pool_size,
-            max_overflow=self.max_overflow,
-            pool_pre_ping=True,
+            creator=adapted_creator,
+            poolclass=NullPool,
         )
 
     async def get_async_db_engine(self) -> AsyncEngine:
@@ -128,14 +143,27 @@ class DbService(BaseModel):
             async_engine = await self._create_async_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                try:
+                    import asyncpg  # noqa: F401
+                except Exception as e:
+                    raise RuntimeError(
+                        "PostgreSQL driver 'asyncpg' is required for async connections but is not installed."
+                    ) from e
+                password = self.password.get_secret_value() if self.password else None
+                url = URL.create(
+                    'postgresql+asyncpg',
+                    username=self.user or '',
+                    password=password,
+                    host=self.host,
+                    port=self.port,
+                    database=self.name,
+                )
             else:
                 url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
 
             async_engine = create_async_engine(
                 url,
-                pool_size=self.pool_size,
-                max_overflow=self.max_overflow,
+                poolclass=NullPool,
                 pool_pre_ping=True,
             )
         self._async_engine = async_engine
@@ -149,7 +177,21 @@ class DbService(BaseModel):
             engine = self._create_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+pg8000://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                try:
+                    import pg8000  # noqa: F401
+                except Exception as e:
+                    raise RuntimeError(
+                        "PostgreSQL driver 'pg8000' is required for sync connections but is not installed."
+                    ) from e
+                password = self.password.get_secret_value() if self.password else None
+                url = URL.create(
+                    'postgresql+pg8000',
+                    username=self.user or '',
+                    password=password,
+                    host=self.host,
+                    port=self.port,
+                    database=self.name,
+                )
             else:
                 url = f'sqlite:///{self.persistence_dir}/openhands.db'
             engine = create_engine(
