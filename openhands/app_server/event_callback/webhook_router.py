@@ -35,6 +35,8 @@ from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.integrations.provider import ProviderType
+from openhands.app_server.user.user_admin_service import UserAdminService
+
 from openhands.sdk import Event
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
@@ -46,7 +48,6 @@ event_callback_service_dependency = Depends(
 app_conversation_info_service_dependency = Depends(
     app_conversation_info_manager().get_unsecured_resolver()
 )
-from openhands.app_server.user.user_admin_service import UserAdminService
 user_admin_service_dependency = Depends(user_admin_manager().get_unsecured_resolver())
 config = get_global_config()
 # Create db dependency at module level to avoid B008
@@ -149,12 +150,10 @@ async def get_secret(
         payload = jwt_service.verify_jws_token(access_token)
         user_id = payload['user_id']
         provider_type = ProviderType[payload['provider_type']]
-        user_injector = config.user
-        assert user_injector is not None
-        user_context = await user_injector.get_for_user(user_id)
+        user_service = await user_admin_service.get_user_service(user_id)
         secret = None
-        if user_context:
-            secret = await user_context.get_latest_token(provider_type)
+        if user_service:
+            secret = await user_service.get_latest_token(provider_type)
         if secret is None:
             raise HTTPException(404, 'No such provider')
         return secret
