@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import List
 
-from server.constants import CURRENT_USER_SETTINGS_VERSION
-from server.logger import logger
-from storage.database import session_maker
-from storage.maintenance_task import MaintenanceTask, MaintenanceTaskProcessor
-from storage.saas_settings_store import SaasSettingsStore
-from storage.user_settings import UserSettings
+from enterprise.server.constants import ORG_SETTINGS_VERSION
+from enterprise.server.logger import logger
+from enterprise.storage.database import session_maker
+from enterprise.storage.maintenance_task import MaintenanceTask, MaintenanceTaskProcessor
+from enterprise.storage.saas_settings_store import SaasSettingsStore
+from enterprise.storage.user_settings import UserSettings
 
 from openhands.core.config import load_openhands_config
 
@@ -17,7 +17,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
     Processor for upgrading user settings to the current version.
 
     This processor takes a list of user IDs and upgrades any users
-    whose user_version is less than CURRENT_USER_SETTINGS_VERSION.
+    whose user_version is less than ORG_SETTINGS_VERSION.
     """
 
     user_ids: List[str]
@@ -37,7 +37,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
             extra={
                 'task_id': task.id,
                 'user_count': len(self.user_ids),
-                'current_version': CURRENT_USER_SETTINGS_VERSION,
+                'current_version': ORG_SETTINGS_VERSION,
             },
         )
 
@@ -59,7 +59,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
                 session.query(UserSettings)
                 .filter(
                     UserSettings.keycloak_user_id.in_(self.user_ids),
-                    UserSettings.user_version < CURRENT_USER_SETTINGS_VERSION,
+                    UserSettings.user_version < ORG_SETTINGS_VERSION,
                 )
                 .all()
             )
@@ -92,7 +92,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
                         'task_id': task.id,
                         'user_id': user_id,
                         'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        'new_version': ORG_SETTINGS_VERSION,
                     },
                 )
 
@@ -104,7 +104,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
                     {
                         'user_id': user_id,
                         'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        'new_version': ORG_SETTINGS_VERSION,
                     }
                 )
 
@@ -114,7 +114,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
                         'task_id': task.id,
                         'user_id': user_id,
                         'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        'new_version': ORG_SETTINGS_VERSION,
                     },
                 )
 

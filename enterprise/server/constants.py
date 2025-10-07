@@ -19,8 +19,8 @@ IS_LOCAL_ENV = bool(HOST == 'localhost')
 DEFAULT_BILLING_MARGIN = float(os.environ.get('DEFAULT_BILLING_MARGIN', '1.0'))
 
 # Map of user settings versions to their corresponding default LLM models
-# This ensures that CURRENT_USER_SETTINGS_VERSION and LITELLM_DEFAULT_MODEL stay in sync
-USER_SETTINGS_VERSION_TO_MODEL = {
+# This ensures that ORG_VERSION_TO_MODEL and LITELLM_DEFAULT_MODEL stay in sync
+ORG_VERSION_TO_MODEL = {
     1: 'claude-3-5-sonnet-20241022',
     2: 'claude-3-7-sonnet-20250219',
     3: 'claude-sonnet-4-20250514',
@@ -30,18 +30,6 @@ USER_SETTINGS_VERSION_TO_MODEL = {
 LITELLM_DEFAULT_MODEL = os.getenv('LITELLM_DEFAULT_MODEL')
 
 # Current user settings version - this should be the latest key in USER_SETTINGS_VERSION_TO_MODEL
-CURRENT_USER_SETTINGS_VERSION = max(USER_SETTINGS_VERSION_TO_MODEL.keys())
-
-# Map of org settings versions to their corresponding default LLM models
-# This ensures that ORG_VERSION_TO_MODEL and LITELLM_DEFAULT_MODEL stay in sync
-ORG_VERSION_TO_MODEL = {
-    1: 'claude-3-5-sonnet-20241022',
-    2: 'claude-3-7-sonnet-20250219',
-    3: 'claude-sonnet-4-20250514',
-    4: 'claude-sonnet-4-20250514',
-}
-
-# Current org settings version - this should be the latest key in ORG_VERSION_TO_MODEL
 ORG_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
 
 LITE_LLM_API_URL = os.environ.get(
@@ -49,22 +37,9 @@ LITE_LLM_API_URL = os.environ.get(
 )
 LITE_LLM_TEAM_ID = os.environ.get('LITE_LLM_TEAM_ID', None)
 LITE_LLM_API_KEY = os.environ.get('LITE_LLM_API_KEY', None)
-SUBSCRIPTION_PRICE_DATA = {
-    'MONTHLY_SUBSCRIPTION': {
-        'unit_amount': 2000,
-        'currency': 'usd',
-        'product_data': {
-            'name': 'OpenHands Monthly',
-            'tax_code': 'txcd_10000000',
-        },
-        'tax_behavior': 'exclusive',
-        'recurring': {'interval': 'month', 'interval_count': 1},
-    },
-}
 
 DEFAULT_INITIAL_BUDGET = float(os.environ.get('DEFAULT_INITIAL_BUDGET', '20'))
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', None)
-STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', None)
 REQUIRE_PAYMENT = os.environ.get('REQUIRE_PAYMENT', '0') in ('1', 'true')
 
 SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', None)
@@ -114,5 +89,5 @@ def get_default_litellm_model():
     """
     if LITELLM_DEFAULT_MODEL:
         return LITELLM_DEFAULT_MODEL
-    model = USER_SETTINGS_VERSION_TO_MODEL[CURRENT_USER_SETTINGS_VERSION]
+    model = ORG_VERSION_TO_MODEL[ORG_SETTINGS_VERSION]
     return build_litellm_proxy_model_path(model)

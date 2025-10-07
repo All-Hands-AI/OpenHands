@@ -5,8 +5,8 @@ Store class for managing organization-user relationships.
 from typing import Optional
 from uuid import UUID
 
-from openhands.enterprise.storage.database import session_maker
-from openhands.enterprise.storage.org_user import OrgUser
+from enterprise.storage.database import session_maker
+from enterprise.storage.org_user import OrgUser
 
 
 class OrgUserStore:

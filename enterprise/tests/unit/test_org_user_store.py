@@ -1,0 +1,252 @@
+from unittest.mock import patch
+
+# Mock the database module before importing OrgUserStore
+with patch('enterprise.storage.database.engine'), patch('enterprise.storage.database.a_engine'):
+    from enterprise.storage.org import Org
+    from enterprise.storage.org_user import OrgUser
+    from enterprise.storage.org_user_store import OrgUserStore
+    from enterprise.storage.role import Role
+    from enterprise.storage.user import User
+
+
+def test_get_org_users(session_maker):
+    # Test getting org_users by org ID
+    with session_maker() as session:
+        # Create test data
+        org = Org(name='test-org')
+        session.add(org)
+        session.flush()
+
+        user1 = User(keycloak_user_id='test-user-1', current_org_id=org.id)
+        user2 = User(keycloak_user_id='test-user-2', current_org_id=org.id)
+        role = Role(name='admin', rank=1)
+        session.add_all([user1, user2, role])
+        session.flush()
+
+        org_user1 = OrgUser(
+            org_id=org.id,
+            user_id=user1.id,
+            role_id=role.id,
+            llm_api_key='test-key-1',
+            status='active',
+        )
+        org_user2 = OrgUser(
+            org_id=org.id,
+            user_id=user2.id,
+            role_id=role.id,
+            llm_api_key='test-key-2',
+            status='active',
+        )
+        session.add_all([org_user1, org_user2])
+        session.commit()
+        org_id = org.id
+
+    # Test retrieval
+    with patch('storage.org_user_store.session_maker', session_maker):
+        org_users = OrgUserStore.get_org_users(org_id)
+        assert len(org_users) == 2
+        api_keys = [ou.llm_api_key.get_secret_value() for ou in org_users]
+        assert 'test-key-1' in api_keys
+        assert 'test-key-2' in api_keys
+
+
+def test_get_user_orgs(session_maker):
+    # Test getting org_users by user ID
+    with session_maker() as session:
+        # Create test data
+        org1 = Org(name='test-org-1')
+        org2 = Org(name='test-org-2')
+        session.add_all([org1, org2])
+        session.flush()
+
+        user = User(keycloak_user_id='test-user', current_org_id=org1.id)
+        role = Role(name='admin', rank=1)
+        session.add_all([user, role])
+        session.flush()
+
+        org_user1 = OrgUser(
+            org_id=org1.id,
+            user_id=user.id,
+            role_id=role.id,
+            llm_api_key='test-key-1',
+            status='active',
+        )
+        org_user2 = OrgUser(
+            org_id=org2.id,
+            user_id=user.id,
+            role_id=role.id,
+            llm_api_key='test-key-2',
+            status='active',
+        )
+        session.add_all([org_user1, org_user2])
+        session.commit()
+        user_id = user.id
+
+    # Test retrieval
+    with patch('storage.org_user_store.session_maker', session_maker):
+        org_users = OrgUserStore.get_user_orgs(user_id)
+        assert len(org_users) == 2
+        api_keys = [ou.llm_api_key.get_secret_value() for ou in org_users]
+        assert 'test-key-1' in api_keys
+        assert 'test-key-2' in api_keys
+
+
+def test_get_org_user(session_maker):
+    # Test getting org_user by org and user ID
+    with session_maker() as session:
+        # Create test data
+        org = Org(name='test-org')
+        session.add(org)
+        session.flush()
+
+        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        role = Role(name='admin', rank=1)
+        session.add_all([user, role])
+        session.flush()
+
+        org_user = OrgUser(
+            org_id=org.id,
+            user_id=user.id,
+            role_id=role.id,
+            llm_api_key='test-key',
+            status='active',
+        )
+        session.add(org_user)
+        session.commit()
+        org_id = org.id
+        user_id = user.id
+
+    # Test retrieval
+    with patch('storage.org_user_store.session_maker', session_maker):
+        retrieved_org_user = OrgUserStore.get_org_user(org_id, user_id)
+        assert retrieved_org_user is not None
+        assert retrieved_org_user.org_id == org_id
+        assert retrieved_org_user.user_id == user_id
+        assert retrieved_org_user.llm_api_key.get_secret_value() == 'test-key'
+
+
+def test_add_user_to_org(session_maker):
+    # Test adding a user to an org
+    with session_maker() as session:
+        # Create test data
+        org = Org(name='test-org')
+        session.add(org)
+        session.flush()
+
+        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        role = Role(name='admin', rank=1)
+        session.add_all([user, role])
+        session.commit()
+        org_id = org.id
+        user_id = user.id
+        role_id = role.id
+
+    # Test creation
+    with patch('storage.org_user_store.session_maker', session_maker):
+        org_user = OrgUserStore.add_user_to_org(
+            org_id=org_id,
+            user_id=user_id,
+            role_id=role_id,
+            llm_api_key='new-test-key',
+            status='active',
+        )
+
+        assert org_user is not None
+        assert org_user.org_id == org_id
+        assert org_user.user_id == user_id
+        assert org_user.role_id == role_id
+        assert org_user.llm_api_key.get_secret_value() == 'new-test-key'
+        assert org_user.status == 'active'
+
+
+def test_update_user_role_in_org(session_maker):
+    # Test updating user role in org
+    with session_maker() as session:
+        # Create test data
+        org = Org(name='test-org')
+        session.add(org)
+        session.flush()
+
+        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        role1 = Role(name='admin', rank=1)
+        role2 = Role(name='user', rank=2)
+        session.add_all([user, role1, role2])
+        session.flush()
+
+        org_user = OrgUser(
+            org_id=org.id,
+            user_id=user.id,
+            role_id=role1.id,
+            llm_api_key='test-key',
+            status='active',
+        )
+        session.add(org_user)
+        session.commit()
+        org_id = org.id
+        user_id = user.id
+        role2_id = role2.id
+
+    # Test update
+    with patch('storage.org_user_store.session_maker', session_maker):
+        updated_org_user = OrgUserStore.update_user_role_in_org(
+            org_id=org_id, user_id=user_id, role_id=role2_id, status='inactive'
+        )
+
+        assert updated_org_user is not None
+        assert updated_org_user.role_id == role2_id
+        assert updated_org_user.status == 'inactive'
+
+
+def test_update_user_role_in_org_not_found(session_maker):
+    # Test updating org_user that doesn't exist
+    from uuid import uuid4
+
+    with patch('storage.org_user_store.session_maker', session_maker):
+        updated_org_user = OrgUserStore.update_user_role_in_org(
+            org_id=uuid4(), user_id=99999, role_id=1
+        )
+        assert updated_org_user is None
+
+
+def test_remove_user_from_org(session_maker):
+    # Test removing a user from an org
+    with session_maker() as session:
+        # Create test data
+        org = Org(name='test-org')
+        session.add(org)
+        session.flush()
+
+        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        role = Role(name='admin', rank=1)
+        session.add_all([user, role])
+        session.flush()
+
+        org_user = OrgUser(
+            org_id=org.id,
+            user_id=user.id,
+            role_id=role.id,
+            llm_api_key='test-key',
+            status='active',
+        )
+        session.add(org_user)
+        session.commit()
+        org_id = org.id
+        user_id = user.id
+
+    # Test removal
+    with patch('storage.org_user_store.session_maker', session_maker):
+        result = OrgUserStore.remove_user_from_org(org_id, user_id)
+        assert result is True
+
+        # Verify it's removed
+        retrieved_org_user = OrgUserStore.get_org_user(org_id, user_id)
+        assert retrieved_org_user is None
+
+
+def test_remove_user_from_org_not_found(session_maker):
+    # Test removing user from org that doesn't exist
+    from uuid import uuid4
+
+    with patch('storage.org_user_store.session_maker', session_maker):
+        result = OrgUserStore.remove_user_from_org(uuid4(), 99999)
+        assert result is False

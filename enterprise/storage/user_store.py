@@ -4,18 +4,18 @@ Store class for managing users.
 
 from typing import Optional
 
-from openhands.enterprise.integrations.stripe_service import migrate_customer
-from openhands.enterprise.server.logger import logger
+from enterprise.integrations.stripe_service import migrate_customer
+from enterprise.server.logger import logger
 from sqlalchemy.orm import joinedload
-from openhands.enterprise.storage.database import session_maker
-from openhands.enterprise.storage.encrypt_utils import decrypt_model
-from openhands.enterprise.storage.lite_llm_manager import LiteLlmManager
-from openhands.enterprise.storage.org import Org
-from openhands.enterprise.storage.org_store import OrgStore
-from openhands.enterprise.storage.org_user import OrgUser
-from openhands.enterprise.storage.role_store import RoleStore
-from openhands.enterprise.storage.user import User
-from openhands.enterprise.storage.user_settings import UserSettings
+from enterprise.storage.database import session_maker
+from enterprise.storage.encrypt_utils import decrypt_model
+from enterprise.storage.lite_llm_manager import LiteLlmManager
+from enterprise.storage.org import Org
+from enterprise.storage.org_store import OrgStore
+from enterprise.storage.org_user import OrgUser
+from enterprise.storage.role_store import RoleStore
+from enterprise.storage.user import User
+from enterprise.storage.user_settings import UserSettings
 
 from openhands.storage.data_models.settings import Settings
 

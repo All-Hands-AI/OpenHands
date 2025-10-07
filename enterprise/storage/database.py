@@ -1,12 +1,15 @@
 import asyncio
 import os
+import sys
 
-from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.util import await_only
+
+# Check if we're running in a test environment
+IS_TESTING = 'pytest' in sys.modules
 
 DB_HOST = os.environ.get('DB_HOST', 'localhost')  # for non-GCP environments
 DB_PORT = os.environ.get('DB_PORT', '5432')  # for non-GCP environments
@@ -24,6 +27,7 @@ MAX_OVERFLOW = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
 
 def _get_db_engine():
     if GCP_DB_INSTANCE:  # GCP environments
+        from google.cloud.sql.connector import Connector
 
         def get_db_connection():
             connector = Connector()
@@ -52,6 +56,11 @@ def _get_db_engine():
 
 
 async def async_creator():
+    if not GCP_DB_INSTANCE:
+        return None
+
+    from google.cloud.sql.connector import Connector
+
     loop = asyncio.get_running_loop()
     async with Connector(loop=loop) as connector:
         conn = await connector.connect_async(

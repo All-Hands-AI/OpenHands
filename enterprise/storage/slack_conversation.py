@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Identity, Integer, String
-from storage.base import Base
+from sqlalchemy import Column, ForeignKey, Identity, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from enterprise.storage.base import Base
 
 
 class SlackConversation(Base):  # type: ignore
@@ -8,4 +10,8 @@ class SlackConversation(Base):  # type: ignore
     conversation_id = Column(String, nullable=False, index=True)
     channel_id = Column(String, nullable=False)
     keycloak_user_id = Column(String, nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
     parent_id = Column(String, nullable=True, index=True)
+
+    # Relationships
+    org = relationship('Org', back_populates='slack_conversations')

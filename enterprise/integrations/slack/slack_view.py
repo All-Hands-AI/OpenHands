@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
-from integrations.models import Message
-from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
-from integrations.utils import CONVERSATION_URL, get_final_agent_observation
+from enterprise.integrations.models import Message
+from enterprise.integrations.slack.slack_types import SlackViewInterface, StartingConvoException
+from enterprise.integrations.utils import CONVERSATION_URL, get_final_agent_observation
 from jinja2 import Environment
 from slack_sdk import WebClient
-from storage.slack_conversation import SlackConversation
-from storage.slack_conversation_store import SlackConversationStore
-from storage.slack_team_store import SlackTeamStore
-from storage.slack_user import SlackUser
+from enterprise.storage.slack_conversation import SlackConversation
+from enterprise.storage.slack_conversation_store import SlackConversationStore
+from enterprise.storage.slack_team_store import SlackTeamStore
+from enterprise.storage.slack_user import SlackUser
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
@@ -166,6 +166,7 @@ class SlackNewConversationView(SlackViewInterface):
                     'channel_id': self.channel_id,
                     'conversation_id': self.conversation_id,
                     'keycloak_user_id': user_info.keycloak_user_id,
+                    'org_id': user_info.org_id,
                     'parent_id': self.thread_ts or self.message_ts,
                 },
             )
@@ -173,6 +174,7 @@ class SlackNewConversationView(SlackViewInterface):
                 conversation_id=self.conversation_id,
                 channel_id=self.channel_id,
                 keycloak_user_id=user_info.keycloak_user_id,
+                org_id=user_info.org_id,
                 parent_id=self.thread_ts
                 or self.message_ts,  # conversations can start in a thread reply as well; we should always references the parent's (root level msg's) message ID
             )
@@ -198,6 +200,7 @@ class SlackNewConversationView(SlackViewInterface):
             if conversation_instructions
             else None,
             image_urls=None,
+            attach_convo_id=True,
             replay_json=None,
             conversation_trigger=ConversationTrigger.SLACK,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
@@ -268,9 +271,7 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
             raise StartingConvoException('Conversation no longer exists.')
 
         provider_tokens = await saas_user_auth.get_provider_tokens()
-
-        # Should we raise here if there are no provider tokens?
-        providers_set = list(provider_tokens.keys()) if provider_tokens else []
+        providers_set = list(provider_tokens.keys())
 
         conversation_init_data = await setup_init_conversation_settings(
             user_id, self.conversation_id, providers_set
@@ -294,9 +295,9 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
             raise StartingConvoException('Conversation is still starting')
 
         user_msg, _ = self._get_instructions(jinja)
-        user_msg_action = MessageAction(content=user_msg)
+        user_msg = MessageAction(content=user_msg)
         await conversation_manager.send_event_to_conversation(
-            self.conversation_id, event_to_dict(user_msg_action)
+            self.conversation_id, event_to_dict(user_msg)
         )
 
         return self.conversation_id

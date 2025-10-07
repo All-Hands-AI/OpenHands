@@ -4,25 +4,26 @@ from types import MappingProxyType
 
 import jwt
 from fastapi import Request
-from keycloak.exceptions import KeycloakError
 from pydantic import SecretStr
-from server.auth.auth_error import (
+from enterprise.server.auth.auth_error import (
     AuthError,
     BearerTokenError,
     CookieError,
     ExpiredError,
     NoCredentialsError,
 )
-from server.auth.token_manager import TokenManager, get_config
-from server.logger import logger
-from server.rate_limit import RateLimiter, create_redis_rate_limiter
-from storage.api_key_store import ApiKeyStore
-from storage.auth_tokens import AuthTokens
-from storage.database import session_maker
-from storage.saas_secrets_store import SaasSecretsStore
-from storage.saas_settings_store import SaasSettingsStore
+from enterprise.server.auth.token_manager import TokenManager
+from enterprise.server.config import get_config
+from enterprise.server.logger import logger
+from enterprise.server.rate_limit import RateLimiter, create_redis_rate_limiter
+from enterprise.storage.api_key_store import ApiKeyStore
+from enterprise.storage.auth_tokens import AuthTokens
+from enterprise.storage.database import session_maker
+from enterprise.storage.saas_secrets_store import SaasSecretsStore
+from enterprise.storage.saas_settings_store import SaasSettingsStore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
+from keycloak.exceptions import KeycloakError
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
@@ -101,11 +102,9 @@ class SaasUserAuth(UserAuth):
             return settings
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
-        # If load() returned None, should settings be created?
-        if settings:
-            settings.email = self.email
-            settings.email_verified = self.email_verified
-            self._settings = settings
+        settings.email = self.email
+        settings.email_verified = self.email_verified
+        self._settings = settings
         return settings
 
     async def get_secrets_store(self):
@@ -140,8 +139,9 @@ class SaasUserAuth(UserAuth):
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         logger.debug('saas_user_auth_get_provider_tokens')
-        if self.provider_tokens is not None:
-            return self.provider_tokens
+        provider_tokens = self.provider_tokens
+        if provider_tokens is not None:
+            return provider_tokens
         provider_tokens = {}
         access_token = await self.get_access_token()
         if not access_token:
@@ -187,8 +187,9 @@ class SaasUserAuth(UserAuth):
                         session.commit()
                     raise
 
-            self.provider_tokens = MappingProxyType(provider_tokens)
-            return self.provider_tokens
+            provider_tokens = MappingProxyType(provider_tokens)
+            self.provider_tokens = provider_tokens
+            return provider_tokens
         except Exception as e:
             # Any error refreshing tokens means we need to log in again
             raise AuthError() from e

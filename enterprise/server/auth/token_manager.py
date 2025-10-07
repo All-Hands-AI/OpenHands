@@ -9,12 +9,7 @@ import httpx
 import jwt
 from cryptography.fernet import Fernet
 from jwt.exceptions import DecodeError
-from keycloak.exceptions import (
-    KeycloakAuthenticationError,
-    KeycloakConnectionError,
-    KeycloakError,
-)
-from server.auth.constants import (
+from enterprise.server.auth.constants import (
     BITBUCKET_APP_CLIENT_ID,
     BITBUCKET_APP_CLIENT_SECRET,
     GITHUB_APP_CLIENT_ID,
@@ -25,28 +20,23 @@ from server.auth.constants import (
     KEYCLOAK_SERVER_URL,
     KEYCLOAK_SERVER_URL_EXT,
 )
-from server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
-from server.logger import logger
+from enterprise.server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
+from enterprise.server.config import get_config
+from enterprise.server.logger import logger
 from sqlalchemy import String as SQLString
 from sqlalchemy import type_coerce
-from storage.auth_token_store import AuthTokenStore
-from storage.database import session_maker
-from storage.github_app_installation import GithubAppInstallation
-from storage.offline_token_store import OfflineTokenStore
+from enterprise.storage.auth_token_store import AuthTokenStore
+from enterprise.storage.database import session_maker
+from enterprise.storage.github_app_installation import GithubAppInstallation
+from enterprise.storage.offline_token_store import OfflineTokenStore
 from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
-from openhands.core.config import load_openhands_config
+from keycloak.exceptions import (
+    KeycloakAuthenticationError,
+    KeycloakConnectionError,
+    KeycloakError,
+)
 from openhands.integrations.service_types import ProviderType
-
-# Create a function to get config to avoid circular imports
-_config = None
-
-
-def get_config():
-    global _config
-    if _config is None:
-        _config = load_openhands_config()
-    return _config
 
 
 def _before_sleep_callback(retry_state: RetryCallState) -> None:
@@ -275,7 +265,9 @@ class TokenManager:
                 self._check_expiration_and_refresh
             )
             if not token_info:
-                logger.info(f'No tokens for user: {username}, identity provider: {idp}')
+                logger.error(
+                    f'No tokens for user: {username}, identity provider: {idp}'
+                )
                 raise ValueError(
                     f'No tokens for user: {username}, identity provider: {idp}'
                 )
