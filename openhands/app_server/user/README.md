@@ -8,10 +8,10 @@ This module provides user management capabilities, including authentication, use
 
 ## Key Components
 
-- **UserService**: Abstract service for user operations
-- **LegacyUserService**: Compatibility layer for legacy user systems
+- **UserContext**: Abstract context for user operations
+- **AuthUserContext**: Compatibility layer for user auth.
 - **UserRouter**: FastAPI router for user-related endpoints
-- **UserServiceManager**: Factory for creating user-scoped service instances
+- **UserContextInjector**: Factory for getting user context with FastAPI dependency injection
 
 ## Features
 

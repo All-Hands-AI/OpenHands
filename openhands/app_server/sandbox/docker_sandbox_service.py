@@ -28,7 +28,6 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceManager,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
-from openhands.app_server.user.legacy_user_service import ROOT_USER
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -108,14 +107,6 @@ class DockerSandboxService(SandboxService):
 
     async def _container_to_sandbox_info(self, container) -> SandboxInfo | None:
         """Convert Docker container to SandboxInfo."""
-        # Get user_id and sandbox_spec_id from labels
-        labels = container.labels or {}
-        created_by_user_id = labels.get('created_by_user_id')
-        sandbox_spec_id = labels.get('sandbox_spec_id')
-
-        if not created_by_user_id or not sandbox_spec_id:
-            return None
-
         # Convert Docker status to runtime status
         status = self._docker_status_to_sandbox_status(container.status)
 
@@ -163,8 +154,8 @@ class DockerSandboxService(SandboxService):
 
         return SandboxInfo(
             id=container.name,
-            created_by_user_id=created_by_user_id,
-            sandbox_spec_id=sandbox_spec_id,
+            created_by_user_id=None,
+            sandbox_spec_id=container.image,
             status=status,
             session_api_key=session_api_key,
             exposed_urls=exposed_urls,
@@ -284,7 +275,6 @@ class DockerSandboxService(SandboxService):
 
         # Prepare labels
         labels = {
-            'created_by_user_id': ROOT_USER,
             'sandbox_spec_id': sandbox_spec.id,
         }
 
@@ -419,17 +409,15 @@ class DockerSandboxServiceManager(SandboxServiceManager):
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
             httpx_client_manager,
-            sandbox_spec_manager,
+            sandbox_spec_injector,
         )
 
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_unsecured_resolver()
-        )
+        sandbox_spec_dependency = Depends(sandbox_spec_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
 
         def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
+            sandbox_spec_service: SandboxSpecService = sandbox_spec_dependency,
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
         ) -> SandboxService:
             return DockerSandboxService(

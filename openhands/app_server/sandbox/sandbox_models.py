@@ -31,7 +31,7 @@ class SandboxInfo(BaseModel):
     """Information about a sandbox."""
 
     id: str
-    created_by_user_id: str
+    created_by_user_id: str | None
     sandbox_spec_id: str
     status: SandboxStatus
     session_api_key: str | None = Field(

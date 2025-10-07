@@ -49,11 +49,7 @@ class SandboxSpecService(ABC):
         return results
 
 
-class SandboxSpecServiceManager(DiscriminatedUnionMixin, ABC):
+class SandboxSpecServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of sandbox spec service limited to the current user."""
-
-    @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
-        """Get a resolver for all available sandbox specs."""
+    def get_injector(self) -> Callable[..., SandboxSpecService]:
+        """Get a resolver for an instance of sandbox spec service."""

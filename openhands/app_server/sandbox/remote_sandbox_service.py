@@ -24,8 +24,7 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxServiceManager,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
-from openhands.app_server.user.legacy_user_service import ROOT_USER
-from openhands.app_server.user.user_service import UserService
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
@@ -221,7 +220,7 @@ class RemoteSandboxService(SandboxService):
             # Store the sandbox
             stored_sandbox = StoredRemoteSandbox(
                 id=sandbox_id,
-                created_by_user_id=self.user_id or ROOT_USER,
+                created_by_user_id=self.user_id,
                 sandbox_spec_id=sandbox_spec_id,
                 created_at=utc_now(),
             )
@@ -341,8 +340,8 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             db_service,
             get_global_config,
             httpx_client_manager,
-            sandbox_spec_manager,
-            user_manager,
+            sandbox_spec_injector,
+            user_injector,
         )
 
         config = get_global_config()
@@ -351,18 +350,14 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             # TODO: Develop a polling protocol so this is not required.
             raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_resolver_for_current_user()
-        )
-        _user_service_dependency = Depends(
-            user_manager().get_resolver_for_current_user()
-        )
+        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
+        user_dependency = Depends(user_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_sandbox_service(
             sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            user_service: UserService = _user_service_dependency,
+            user_service: UserContext = user_dependency,
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
             db_session: AsyncSession = db_session_dependency,
         ) -> SandboxService:
@@ -387,7 +382,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             db_service,
             get_global_config,
             httpx_client_manager,
-            sandbox_spec_manager,
+            sandbox_spec_injector,
         )
 
         config = get_global_config()
@@ -396,9 +391,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             # TODO: Develop a polling protocol so this is not required.
             raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_unsecured_resolver()
-        )
+        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
