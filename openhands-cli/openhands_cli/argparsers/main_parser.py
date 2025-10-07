@@ -25,6 +25,13 @@ subcommands:
 """
     )
     
+    # Add top-level --resume argument for convenience (defaults to cli subcommand)
+    parser.add_argument(
+        '--resume',
+        type=str,
+        help='Conversation ID to resume (implies cli subcommand)'
+    )
+    
     # Create subparsers
     subparsers = parser.add_subparsers(
         dest='command',

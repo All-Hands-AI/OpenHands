@@ -30,9 +30,13 @@ def main() -> None:
     parser = create_main_parser()
     args = parser.parse_args()
 
-    # If no subcommand is provided, default to 'cli'
+    # If no subcommand is provided, or if --resume is used at top level, default to 'cli'
     if args.command is None:
-        args = parser.parse_args(['cli'])
+        # If --resume was provided at top level, pass it to cli subcommand
+        if args.resume:
+            args = parser.parse_args(['cli', '--resume', args.resume])
+        else:
+            args = parser.parse_args(['cli'])
 
     try:
         if args.command == 'serve':

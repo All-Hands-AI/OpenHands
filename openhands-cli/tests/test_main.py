@@ -91,6 +91,21 @@ class TestMainEntryPoint:
             resume_conversation_id='test-conversation-id'
         )
 
+    @patch('openhands_cli.agent_chat.run_cli_entry')
+    @patch('sys.argv', ['openhands', '--resume', 'test-conversation-id'])
+    def test_main_with_top_level_resume_argument(self, mock_run_agent_chat: MagicMock) -> None:
+        """Test that main() handles top-level --resume argument and defaults to cli."""
+        # Mock run_cli_entry to raise KeyboardInterrupt to exit gracefully
+        mock_run_agent_chat.side_effect = KeyboardInterrupt()
+
+        # Should complete without raising an exception (graceful exit)
+        simple_main.main()
+
+        # Should call run_cli_entry with the resume conversation ID
+        mock_run_agent_chat.assert_called_once_with(
+            resume_conversation_id='test-conversation-id'
+        )
+
 
 
 
