@@ -18,15 +18,14 @@ Key components:
 from __future__ import annotations
 
 import logging
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Callable
 from uuid import UUID
-import uuid
 
 from fastapi import Depends
-from sqlalchemy import DateTime, Float, Integer
-from sqlalchemy import Column, Select, String, func, select
+from sqlalchemy import Column, DateTime, Float, Integer, Select, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
@@ -44,8 +43,8 @@ from openhands.app_server.utils.sql_utils import (
     Base,
     create_json_type_decorator,
 )
-from openhands.sdk.llm import MetricsSnapshot
 from openhands.llm.metrics import TokenUsage
+from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 logger = logging.getLogger(__name__)
@@ -85,7 +84,7 @@ class StoredConversationMetadata(Base):  # type: ignore
     # LLM model used for the conversation
     llm_model = Column(String, nullable=True)
 
-    conversation_version = Column(String, nullable=False, default="V0", index=True)
+    conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
 
 
@@ -218,10 +217,14 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             conditions.append(StoredConversationMetadata.created_at < created_at__lt)
 
         if updated_at__gte is not None:
-            conditions.append(StoredConversationMetadata.last_updated_at >= updated_at__gte)
+            conditions.append(
+                StoredConversationMetadata.last_updated_at >= updated_at__gte
+            )
 
         if updated_at__lt is not None:
-            conditions.append(StoredConversationMetadata.last_updated_at < updated_at__lt)
+            conditions.append(
+                StoredConversationMetadata.last_updated_at < updated_at__lt
+            )
 
         if conditions:
             query = query.where(*conditions)
@@ -274,7 +277,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
         stored = StoredConversationMetadata(
             conversation_id=info.id,
-            github_user_id=None, # TODO: Should we add this to the conversation info?
+            github_user_id=None,  # TODO: Should we add this to the conversation info?
             user_id=info.created_by_user_id,
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
@@ -282,10 +285,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             title=info.title,
             last_updated_at=info.updated_at,
             created_at=info.created_at,
-
             trigger=info.trigger.value if info.trigger else None,
             pr_number=info.pr_number,
-
             # Cost and token metrics
             accumulated_cost=metrics.accumulated_cost,
             prompt_tokens=usage.prompt_tokens,
@@ -310,12 +311,12 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         if self.user_id:
             query = query.where(
                 StoredConversationMetadata.user_id == self.user_id,
-                StoredConversationMetadata.conversation_version == "V1",
+                StoredConversationMetadata.conversation_version == 'V1',
             )
         return query
 
     def _to_info(self, stored: StoredConversationMetadata) -> AppConversationInfo:
-        #V1 conversations should always have a sandbox_id
+        # V1 conversations should always have a sandbox_id
         sandbox_id = stored.sandbox_id
         assert sandbox_id is not None
 
@@ -346,7 +347,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             llm_model=stored.llm_model,
             metrics=metrics,
             created_at=stored.created_at,
-            updated_at=stored.last_updated_at
+            updated_at=stored.last_updated_at,
         )
 
 
