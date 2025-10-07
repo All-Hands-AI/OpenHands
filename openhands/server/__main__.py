@@ -15,9 +15,20 @@ def main():
             'version': 1,
             'disable_existing_loggers': False,
             'formatters': {
+                # Uvicorn mutates 'default' and 'access' to set use_colors; keep them present using Uvicorn formatters
+                'default': {
+                    '()': 'uvicorn.logging.DefaultFormatter',
+                    'fmt': '%(levelprefix)s %(message)s',
+                    'use_colors': None,
+                },
+                'access': {
+                    '()': 'uvicorn.logging.AccessFormatter',
+                    'fmt': '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
+                    'use_colors': None,
+                },
+                # Actual JSON formatters used by handlers below
                 'json': {
                     '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
-                    # Keep format minimal; our JsonFormatter adds timestamp automatically when configured in core.logger
                     'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(exc_info)s',
                 },
                 'json_access': {
@@ -65,7 +76,8 @@ def main():
         port=int(os.environ.get('port') or '3000'),
         log_level='debug' if os.environ.get('DEBUG') else 'info',
         log_config=log_config,
-        use_colors=False,
+        # If LOG_JSON enabled, force colors off; otherwise let uvicorn default
+        use_colors=False if log_config else None,
     )
 
 
