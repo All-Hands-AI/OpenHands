@@ -69,7 +69,7 @@ class SettingsScreen:
                     'Enabled'
                     if not isinstance(
                         self.conversation.state.confirmation_policy, NeverConfirm
-                    )
+                    ) and self.conversation.agent.security_analyzer
                     else 'Disabled',
                 ),
                 (
