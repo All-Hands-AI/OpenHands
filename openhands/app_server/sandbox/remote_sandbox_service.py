@@ -1,3 +1,4 @@
+from abc import ABC
 import logging
 import os
 from dataclasses import dataclass
@@ -48,7 +49,7 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
 
 @dataclass
-class RemoteSandboxService(SandboxService):
+class RemoteSandboxService(SandboxService, ABC):
     """Sandbox service that uses HTTP to communicate with a remote runtime API.
 
     This service adapts the legacy RemoteRuntime HTTP protocol to work with
@@ -58,7 +59,6 @@ class RemoteSandboxService(SandboxService):
     sandbox_spec_service: SandboxSpecService
     api_url: str
     api_key: str
-    web_url: str
     resource_factor: int
     runtime_class: str | None
     user_context: UserContext
@@ -129,9 +129,6 @@ class RemoteSandboxService(SandboxService):
         self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
     ) -> dict[str, str]:
         environment = sandbox_spec.initial_env.copy()
-        environment[WEBHOOK_CALLBACK_VARIABLE] = (
-            f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
-        )
         return environment
 
     async def search_sandboxes(
@@ -327,6 +324,25 @@ class RemoteSandboxService(SandboxService):
             return False
 
 
+@dataclass
+class CallbackRemoteSandboxService(RemoteSandboxService):
+    """ RemoteSandboxService which uses callbacks to keep conversations
+    and events stored on the app server in sync with the agent servers.
+
+    Typically used in hosted deployments where the app server has a public
+    facling url"""
+    web_url: str
+
+    async def _init_environment(
+        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
+    ) -> dict[str, str]:
+        environment = sandbox_spec.initial_env.copy()
+        environment[WEBHOOK_CALLBACK_VARIABLE] = (
+            f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+        )
+        return environment
+
+
 class RemoteSandboxServiceInjector(SandboxServiceInjector):
     """Dependency injector for remote sandbox services."""
 
@@ -368,7 +384,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
             db_session: AsyncSession = db_session_dependency,
         ) -> SandboxService:
-            return RemoteSandboxService(
+            return CallbackRemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 api_url=self.api_url,
                 api_key=self.api_key,
