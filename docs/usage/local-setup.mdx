@@ -84,13 +84,13 @@ See the [uv installation guide](https://docs.astral.sh/uv/getting-started/instal
 **Launch OpenHands**:
 ```bash
 # Launch the GUI server
-uvx --python 3.12 --from openhands-ai openhands serve
+uvx --python 3.12 openhands serve
 
 # Or with GPU support (requires nvidia-docker)
-uvx --python 3.12 --from openhands-ai openhands serve --gpu
+uvx --python 3.12 openhands serve --gpu
 
 # Or with current directory mounted
-uvx --python 3.12 --from openhands-ai openhands serve --mount-cwd
+uvx --python 3.12 openhands serve --mount-cwd
 ```
 
 This will automatically handle Docker requirements checking, image pulling, and launching the GUI server. The `--gpu` flag enables GPU support via nvidia-docker, and `--mount-cwd` mounts your current directory into the container.
@@ -101,7 +101,7 @@ If you prefer to use pip and have Python 3.12+ installed:
 
 ```bash
 # Install OpenHands
-pip install openhands-ai
+pip install openhands
 
 # Launch the GUI server
 openhands serve

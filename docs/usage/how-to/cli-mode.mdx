@@ -32,7 +32,7 @@ We recommend using [uv](https://docs.astral.sh/uv/) for the best OpenHands exper
 
 2. **Launch OpenHands CLI**:
 ```bash
-uvx --python 3.12 --from openhands-ai openhands
+uvx --python 3.12 openhands
 ```
 
 <AccordionGroup>
@@ -43,7 +43,7 @@ If you prefer to use pip:
 
 ```bash
 # Install OpenHands
-pip install openhands-ai
+pip install openhands
 ```
 
 Note that you'll still need `uv` installed for the default MCP servers to work properly.
@@ -56,8 +56,8 @@ Add the following to your shell configuration file (`.bashrc`, `.zshrc`, etc.):
 
 ```bash
 # Add OpenHands aliases (recommended)
-alias openhands="uvx --python 3.12 --from openhands-ai openhands"
-alias oh="uvx --python 3.12 --from openhands-ai openhands"
+alias openhands="uvx --python 3.12 openhands"
+alias oh="uvx --python 3.12 openhands"
 ```
 
 After adding these lines, reload your shell configuration with `source ~/.bashrc` or `source ~/.zshrc` (depending on your shell).
@@ -74,7 +74,7 @@ cd ~
 uv venv .openhands-venv --python 3.12
 
 # Install OpenHands in the virtual environment
-uv pip install -t ~/.openhands-venv/lib/python3.12/site-packages openhands-ai
+uv pip install -t ~/.openhands-venv/lib/python3.12/site-packages openhands
 
 # Add the bin directory to your PATH in your shell configuration file
 echo 'export PATH="$PATH:$HOME/.openhands-venv/bin"' >> ~/.bashrc  # or ~/.zshrc
