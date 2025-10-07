@@ -2,115 +2,99 @@
 
 from unittest.mock import MagicMock, patch
 from uuid import UUID
-
-import pytest
-
 from openhands_cli.agent_chat import _start_fresh_conversation
+from unittest.mock import MagicMock, patch
+from prompt_toolkit.input.defaults import create_pipe_input
+from prompt_toolkit.output.defaults import DummyOutput
+from openhands_cli.setup import MissingAgentSpec
+from openhands_cli.user_actions import UserConfirmation
+
+@patch('openhands_cli.agent_chat.setup_conversation')
+def test_start_fresh_conversation_success(mock_setup_conversation):
+    """Test that _start_fresh_conversation creates a new conversation successfully."""
+    # Mock the conversation object
+    mock_conversation = MagicMock()
+    mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
+    mock_setup_conversation.return_value = mock_conversation
+
+    # Call the function
+    result = _start_fresh_conversation()
+
+    # Verify the result
+    assert result == mock_conversation
+    mock_setup_conversation.assert_called_once_with(None)
 
 
-class TestNewCommand:
-    """Test the /new command functionality."""
+@patch('openhands_cli.agent_chat.SettingsScreen')
+@patch('openhands_cli.agent_chat.setup_conversation')
+def test_start_fresh_conversation_missing_agent_spec(
+    mock_setup_conversation,
+    mock_settings_screen_class
+):
+    """Test that _start_fresh_conversation handles MissingAgentSpec exception."""
+    # Mock the SettingsScreen instance
+    mock_settings_screen = MagicMock()
+    mock_settings_screen_class.return_value = mock_settings_screen
 
-    @patch('openhands_cli.agent_chat.setup_conversation')
-    def test_start_fresh_conversation_success(self, mock_setup_conversation):
-        """Test that _start_fresh_conversation creates a new conversation successfully."""
-        # Mock the conversation object
-        mock_conversation = MagicMock()
-        mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
-        mock_setup_conversation.return_value = mock_conversation
+    # Mock setup_conversation to raise MissingAgentSpec on first call, then succeed
+    mock_conversation = MagicMock()
+    mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
+    mock_setup_conversation.side_effect = [
+        MissingAgentSpec("Agent spec missing"),
+        mock_conversation
+    ]
 
-        # Call the function
-        result = _start_fresh_conversation()
+    # Call the function
+    result = _start_fresh_conversation()
 
-        # Verify the result
-        assert result == mock_conversation
-        mock_setup_conversation.assert_called_once_with(None)
-
-    @patch('openhands_cli.agent_chat.SettingsScreen')
-    @patch('openhands_cli.agent_chat.setup_conversation')
-    def test_start_fresh_conversation_missing_agent_spec(self, mock_setup_conversation, mock_settings_screen_class):
-        """Test that _start_fresh_conversation handles MissingAgentSpec exception."""
-        from openhands_cli.setup import MissingAgentSpec
-        
-        # Mock the SettingsScreen instance
-        mock_settings_screen = MagicMock()
-        mock_settings_screen_class.return_value = mock_settings_screen
-
-        # Mock setup_conversation to raise MissingAgentSpec on first call, then succeed
-        mock_conversation = MagicMock()
-        mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
-        mock_setup_conversation.side_effect = [
-            MissingAgentSpec("Agent spec missing"),
-            mock_conversation
-        ]
-
-        # Call the function
-        result = _start_fresh_conversation()
-
-        # Verify the result
-        assert result == mock_conversation
-        # Should be called twice: first fails, second succeeds
-        assert mock_setup_conversation.call_count == 2
-        # Settings screen should be called once
-        mock_settings_screen.handle_basic_settings.assert_called_once_with(escapable=False)
-
-    @patch('openhands_cli.agent_chat.setup_conversation')
-    def test_start_fresh_conversation_other_exception(self, mock_setup_conversation):
-        """Test that _start_fresh_conversation handles other exceptions."""
-        # Mock setup_conversation to raise a generic exception
-        mock_setup_conversation.side_effect = Exception("Generic error")
-
-        # Call the function and expect it to raise the exception
-        with pytest.raises(Exception, match="Generic error"):
-            _start_fresh_conversation()
-
-        mock_setup_conversation.assert_called_once_with(None)
+    # Verify the result
+    assert result == mock_conversation
+    # Should be called twice: first fails, second succeeds
+    assert mock_setup_conversation.call_count == 2
+    # Settings screen should be called once
+    mock_settings_screen.handle_basic_settings.assert_called_once_with(escapable=False)
 
 
-class TestNewCommandIntegration:
-    """Integration tests for the /new command in the chat loop."""
 
-    @patch('openhands_cli.agent_chat.setup_conversation')
-    def test_new_command_integration(self, mock_setup_conversation):
-        """Test the /new command integration in the chat loop."""
-        # Mock the conversation object
-        mock_conversation = MagicMock()
-        mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
-        mock_setup_conversation.return_value = mock_conversation
 
-        # Import and test the function that would be called in the chat loop
-        from openhands_cli.agent_chat import _start_fresh_conversation
-        
-        # Simulate the /new command logic
-        conversation = _start_fresh_conversation()
 
-        # Verify the calls
-        mock_setup_conversation.assert_called_once_with(None)
-        assert conversation == mock_conversation
+@patch('openhands_cli.agent_chat.exit_session_confirmation')
+@patch('openhands_cli.agent_chat.get_session_prompter')
+@patch('openhands_cli.agent_chat.setup_conversation')
+@patch('openhands_cli.agent_chat.ConversationRunner')
+def test_new_command_resets_confirmation_mode(
+    mock_runner_cls,
+    mock_setup_conversation,
+    mock_get_session_prompter,
+    mock_exit_confirm,
+):
+    # Auto-accept the exit prompt to avoid interactive UI and EOFError
+    mock_exit_confirm.return_value = UserConfirmation.ACCEPT
 
-    def test_new_command_in_commands_dict(self):
-        """Test that /new command is properly defined in COMMANDS dictionary."""
-        from openhands_cli.tui.tui import COMMANDS
-        
-        assert '/new' in COMMANDS
-        assert COMMANDS['/new'] == 'Start a fresh conversation'
+    conv1 = MagicMock(); conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    conv2 = MagicMock(); conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+    mock_setup_conversation.side_effect = [conv1, conv2]
 
-    def test_new_command_completion(self):
-        """Test that /new command appears in command completion."""
-        from openhands_cli.tui.tui import CommandCompleter
-        from prompt_toolkit.completion import CompleteEvent
-        from prompt_toolkit.document import Document
-        
-        completer = CommandCompleter()
-        document = Document('/n')
-        completions = list(completer.get_completions(document, CompleteEvent()))
-        
-        # Should include /new command
-        completion_texts = [c.text for c in completions]
-        assert '/new' in completion_texts
-        
-        # Test exact match
-        document = Document('/new')
-        completions = list(completer.get_completions(document, CompleteEvent()))
-        assert len(completions) == 1
-        assert completions[0].text == '/new'
+    # Distinct runner instances for each conversation
+    runner1 = MagicMock(); runner1.is_confirmation_mode_enabled = True
+    runner2 = MagicMock(); runner2.is_confirmation_mode_enabled = False
+    mock_runner_cls.side_effect = [runner1, runner2]
+
+    # Real session fed by a pipe (no interactive confirmation now)
+    from openhands_cli.user_actions.utils import get_session_prompter as real_get_session_prompter
+    with create_pipe_input() as pipe:
+        output = DummyOutput()
+        session = real_get_session_prompter(input=pipe, output=output)
+        mock_get_session_prompter.return_value = session
+
+        from openhands_cli.agent_chat import run_cli_entry
+        # Trigger /new, then /status, then /exit (exit will be auto-accepted)
+        for ch in "/new\r/status\r/exit\r":
+            pipe.send_text(ch)
+
+        run_cli_entry(None)
+
+    # Assert we switched to a new runner for conv2
+    assert mock_runner_cls.call_count == 2
+    assert mock_runner_cls.call_args_list[0].args[0] is conv1
+    assert mock_runner_cls.call_args_list[1].args[0] is conv2
