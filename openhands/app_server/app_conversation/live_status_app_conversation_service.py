@@ -432,7 +432,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + '/ap/v1/webhooks/secrets',
+                    url=self.web_url + '/api/v1/webhooks/secrets',
                     headers={'X-Access-Token': access_token},
                 )
             else:

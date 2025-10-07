@@ -24,6 +24,7 @@ from openhands.app_server.config import (
     get_global_config,
     resolve_jwt_service,
     sandbox_manager,
+    user_admin_manager,
 )
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
@@ -137,6 +138,7 @@ async def on_event(
 async def get_secret(
     access_token: str = Depends(APIKeyHeader(name='X-Access-Token', auto_error=False)),
     jwt_service: JwtService = Depends(resolve_jwt_service),
+    user_admin_service: UserAdminService = user_admin_service_dependency,
 ) -> str:
     """Given an access token, retrieve a user secret. The access token
     is limited by user and provider type, and may include a timeout, limiting
