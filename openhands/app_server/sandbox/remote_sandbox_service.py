@@ -1,6 +1,6 @@
-from abc import ABC
 import logging
 import os
+from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Union
 
@@ -326,11 +326,12 @@ class RemoteSandboxService(SandboxService, ABC):
 
 @dataclass
 class CallbackRemoteSandboxService(RemoteSandboxService):
-    """ RemoteSandboxService which uses callbacks to keep conversations
+    """RemoteSandboxService which uses callbacks to keep conversations
     and events stored on the app server in sync with the agent servers.
 
     Typically used in hosted deployments where the app server has a public
     facling url"""
+
     web_url: str
 
     async def _init_environment(

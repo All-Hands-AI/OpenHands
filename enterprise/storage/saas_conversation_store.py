@@ -53,12 +53,12 @@ class SaasConversationStore(ConversationStore):
             kwargs['git_provider'] = ProviderType(kwargs['git_provider'])
 
         # Remove V1 attributes
-        kwargs.pop("max_budget_per_task", None)
-        kwargs.pop("cache_read_tokens", None)
-        kwargs.pop("cache_write_tokens", None)
-        kwargs.pop("reasoning_tokens", None)
-        kwargs.pop("context_window", None)
-        kwargs.pop("per_turn_token", None)
+        kwargs.pop('max_budget_per_task', None)
+        kwargs.pop('cache_read_tokens', None)
+        kwargs.pop('cache_write_tokens', None)
+        kwargs.pop('reasoning_tokens', None)
+        kwargs.pop('context_window', None)
+        kwargs.pop('per_turn_token', None)
 
         return ConversationMetadata(**kwargs)
 
