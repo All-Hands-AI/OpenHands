@@ -21,9 +21,9 @@ from openhands.app_server.config import (
     db_service,
     event_callback_manager,
     event_manager,
+    get_global_config,
     resolve_jwt_service,
     sandbox_manager,
-    user_admin_manager,
 )
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
@@ -33,7 +33,6 @@ from openhands.app_server.event_callback.event_callback_service import (
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.user_admin_service import UserAdminService
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
 
@@ -46,7 +45,7 @@ event_callback_service_dependency = Depends(
 app_conversation_info_service_dependency = Depends(
     app_conversation_info_manager().get_unsecured_resolver()
 )
-user_admin_service_dependency = Depends(user_admin_manager().get_unsecured_resolver())
+config = get_global_config()
 # Create db dependency at module level to avoid B008
 db_session_dependency = Depends(db_service().unmanaged_session_dependency)
 _logger = logging.getLogger(__name__)
@@ -138,7 +137,6 @@ async def on_event(
 async def get_secret(
     access_token: str = Depends(APIKeyHeader(name='X-Access-Token', auto_error=False)),
     jwt_service: JwtService = Depends(resolve_jwt_service),
-    user_admin_service: UserAdminService = app_conversation_info_service_dependency,
 ) -> str:
     """Given an access token, retrieve a user secret. The access token
     is limited by user and provider type, and may include a timeout, limiting
@@ -147,10 +145,12 @@ async def get_secret(
         payload = jwt_service.verify_jws_token(access_token)
         user_id = payload['user_id']
         provider_type = ProviderType[payload['provider_type']]
-        user_service = await user_admin_service.get_user_service(user_id)
+        user_injector = config.user
+        assert user_injector is not None
+        user_context = await user_injector.get_for_user(user_id)
         secret = None
-        if user_service:
-            secret = await user_service.get_latest_token(provider_type)
+        if user_context:
+            secret = await user_context.get_latest_token(provider_type)
         if secret is None:
             raise HTTPException(404, 'No such provider')
         return secret

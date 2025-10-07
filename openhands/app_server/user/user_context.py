@@ -9,13 +9,13 @@ from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
-class UserService(ABC):
+class UserContext(ABC):
     """Service for managing users."""
 
     # Read methods
 
     @abstractmethod
-    async def get_user_id(self) -> str:
+    async def get_user_id(self) -> str | None:
         """Get the user id"""
 
     @abstractmethod
@@ -35,7 +35,11 @@ class UserService(ABC):
         """Get custom secrets and github provider secrets for the conversation."""
 
 
-class UserServiceManager(DiscriminatedUnionMixin, ABC):
+class UserContextInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable:
         """Get a resolver for instances of user service limited to the current user."""
+
+    @abstractmethod
+    async def get_for_user(self, user_id: str | None) -> UserContext:
+        """ Get a user context for the user with the id given."""

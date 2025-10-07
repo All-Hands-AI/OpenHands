@@ -11,7 +11,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
-    SandboxSpecServiceManager,
+    SandboxSpecServiceInjector,
 )
 
 
@@ -76,7 +76,7 @@ def _get_specs_from_legacy_parameter():
     ]
 
 
-class RemoteSandboxSpecServiceManager(SandboxSpecServiceManager):
+class RemoteSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     specs: list[SandboxSpecInfo] = Field(
         default_factory=_get_specs_from_legacy_parameter,
         description='Preset list of sandbox specs. Falls back to legacy parameter',

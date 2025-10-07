@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Callable
 
 from fastapi import Depends
 from pydantic import Field
@@ -25,12 +26,14 @@ from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackServiceManager,
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
-from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceManager
+from openhands.app_server.sandbox.sandbox_spec_service import (
+    SandboxSpecService,
+    SandboxSpecServiceInjector,
+)
 from openhands.app_server.services.db_service import DbService
 from openhands.app_server.services.httpx_client_manager import HttpxClientManager
 from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
-from openhands.app_server.user.user_admin_service import UserAdminServiceManager
-from openhands.app_server.user.user_service import UserServiceManager
+from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.sdk.utils.models import OpenHandsModel
 
 
@@ -75,12 +78,11 @@ class AppServerConfig(OpenHandsModel):
     event: EventServiceManager | None = None
     event_callback: EventCallbackServiceManager | None = None
     sandbox: SandboxServiceManager | None = None
-    sandbox_spec: SandboxSpecServiceManager | None = None
+    sandbox_spec: SandboxSpecServiceInjector | None = None
     app_conversation_info: AppConversationInfoServiceManager | None = None
     app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
     app_conversation: AppConversationServiceManager | None = None
-    user: UserServiceManager | None = None
-    user_admin: UserAdminServiceManager | None = None
+    user: UserContextInjector | None = None
     jwt: JwtServiceManager | None = None
     httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
 
@@ -154,24 +156,24 @@ def sandbox_manager() -> SandboxServiceManager:
     return sandbox
 
 
-def sandbox_spec_manager() -> SandboxSpecServiceManager:
+def sandbox_spec_injector() -> Callable[..., SandboxSpecService]:
     config = get_global_config()
     sandbox_spec = config.sandbox_spec
     if sandbox_spec is None:
         if os.getenv('RUNTIME') == 'remote':
             from openhands.app_server.sandbox.remote_sandbox_spec_service import (
-                RemoteSandboxSpecServiceManager,
+                RemoteSandboxSpecServiceInjector,
             )
 
-            sandbox_spec = RemoteSandboxSpecServiceManager()
+            sandbox_spec = RemoteSandboxSpecServiceInjector()
         else:
             from openhands.app_server.sandbox.docker_sandbox_spec_service import (
-                DockerSandboxSpecServiceManager,
+                DockerSandboxSpecServiceInjector,
             )
 
-            sandbox_spec = DockerSandboxSpecServiceManager()
+            sandbox_spec = DockerSandboxSpecServiceInjector()
         config.sandbox_spec = sandbox_spec
-    return sandbox_spec
+    return sandbox_spec.get_injector()
 
 
 def app_conversation_info_manager() -> AppConversationInfoServiceManager:
@@ -213,30 +215,17 @@ def app_conversation_manager() -> AppConversationServiceManager:
     return app_conversation
 
 
-def user_manager() -> UserServiceManager:
+def user_injector() -> Callable[..., UserContext]:
     config = get_global_config()
     user = config.user
     if user is None:
-        from openhands.app_server.user.legacy_user_service import (
-            LegacyUserServiceManager,
+        from openhands.app_server.user.auth_user_context import (
+            AuthUserContextInjector,
         )
 
-        user = LegacyUserServiceManager()
+        user = AuthUserContextInjector()
         config.user = user
-    return user
-
-
-def user_admin_manager() -> UserAdminServiceManager:
-    config = get_global_config()
-    user_admin = config.user_admin
-    if user_admin is None:
-        from openhands.app_server.user.legacy_user_admin_service import (
-            LegacyUserAdminServiceManager,
-        )
-
-        user_admin = LegacyUserAdminServiceManager()
-        config.user_admin = user_admin
-    return user_admin
+    return user.get_injector()
 
 
 def httpx_client_manager() -> HttpxClientManager:

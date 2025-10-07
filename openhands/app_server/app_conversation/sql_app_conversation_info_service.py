@@ -38,7 +38,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfoPage,
     AppConversationSortOrder,
 )
-from openhands.app_server.user.user_service import UserService
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import (
     Base,
     create_json_type_decorator,
@@ -368,14 +368,14 @@ class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
 
     def get_resolver_for_current_user(self) -> Callable:
         # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service, user_manager
+        from openhands.app_server.config import db_service, user_injector
 
         # Create dependencies at module level to avoid B008
-        _user_dependency = Depends(user_manager().get_resolver_for_current_user())
+        user_dependency = Depends(user_injector())
         _db_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_app_conversation_service(
-            user_service: UserService = _user_dependency,
+            user_service: UserContext = user_dependency,
             session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
             user_id = await user_service.get_user_id()
