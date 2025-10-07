@@ -10,7 +10,7 @@ from openhands.llm.llm import (
     LLM,
     LLM_RETRY_EXCEPTIONS,
 )
-from openhands.llm.model_features import get_features
+from openhands.llm.llm_utils import prepare_reasoning_model_kwargs
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -65,12 +65,10 @@ class AsyncLLM(LLM):
             # Merge kwargs from the partial function
             merged_kwargs = {**async_completion_unwrapped.keywords, **kwargs}
 
-            # Set reasoning effort for models that support it
-            if get_features(self.config.model).supports_reasoning_effort:
-                merged_kwargs['reasoning_effort'] = self.config.reasoning_effort
-                # Remove temperature and top_p for reasoning models
-                merged_kwargs.pop('temperature', None)
-                merged_kwargs.pop('top_p', None)
+            # Handle reasoning model kwargs (remove temperature/top_p, add reasoning_effort)
+            prepare_reasoning_model_kwargs(
+                merged_kwargs, self.config.model, self.config.reasoning_effort
+            )
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]

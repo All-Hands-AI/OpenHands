@@ -1277,10 +1277,10 @@ async def test_async_llm_claude_sonnet_45_removes_temperature_top_p(mock_acomple
     llm = AsyncLLM(config, service_id='svc')
     await llm.async_completion(messages=[{'role': 'user', 'content': 'hi'}])
     call_kwargs = mock_acompletion.call_args[1]
-    # For reasoning models, temperature and top_p should be removed
+    # For Claude Sonnet 4.5, temperature, top_p, and reasoning_effort should all be removed
     assert 'temperature' not in call_kwargs
     assert 'top_p' not in call_kwargs
-    assert call_kwargs.get('reasoning_effort') == 'medium'
+    assert 'reasoning_effort' not in call_kwargs  # Claude doesn't accept this parameter
 
 
 @pytest.mark.asyncio
@@ -1309,10 +1309,10 @@ async def test_streaming_llm_claude_sonnet_45_removes_temperature_top_p(
         chunks.append(chunk)
 
     call_kwargs = mock_acompletion.call_args[1]
-    # For reasoning models, temperature and top_p should be removed
+    # For Claude Sonnet 4.5, temperature, top_p, and reasoning_effort should all be removed
     assert 'temperature' not in call_kwargs
     assert 'top_p' not in call_kwargs
-    assert call_kwargs.get('reasoning_effort') == 'medium'
+    assert 'reasoning_effort' not in call_kwargs  # Claude doesn't accept this parameter
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -1451,6 +1451,7 @@ async def test_streaming_reasoning_effort_passthrough(mock_call):
 @patch('openhands.llm.async_llm.litellm_acompletion')
 @pytest.mark.asyncio
 async def test_async_streaming_no_thinking_for_gemini(mock_acompletion):
+    """Test that AsyncLLM with Gemini and reasoning_effort='low' uses thinking budget."""
     mock_acompletion.return_value = {
         'choices': [{'message': {'content': 'ok'}}],
     }
@@ -1458,7 +1459,10 @@ async def test_async_streaming_no_thinking_for_gemini(mock_acompletion):
     llm = AsyncLLM(config, service_id='svc')
     await llm.async_completion(messages=[{'role': 'user', 'content': 'hi'}])
     call_kwargs = mock_acompletion.call_args[1]
-    assert 'thinking' not in call_kwargs
+    # For Gemini with reasoning_effort='low', thinking budget should be set
+    assert 'thinking' in call_kwargs
+    assert call_kwargs['thinking'] == {'budget_tokens': 128}
+    assert call_kwargs.get('reasoning_effort') is None
 
 
 @patch('openhands.llm.llm.litellm_completion')
