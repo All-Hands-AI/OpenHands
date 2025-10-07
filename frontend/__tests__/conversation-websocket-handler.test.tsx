@@ -8,7 +8,8 @@ import {
   useConversationWebSocket,
 } from "#/contexts/conversation-websocket-context";
 import { useEventStore } from "#/stores/use-event-store";
-import { MessageEvent } from "#/types/v1/core";
+import { MessageEvent, OpenHandsEvent } from "#/types/v1/core";
+import { isV1Event } from "#/types/event-type-guards";
 
 // MSW WebSocket mock setup
 const wsLink = ws.link("ws://localhost/events/socket");
@@ -44,7 +45,9 @@ function EventStoreComponent() {
       <div data-testid="events-count">{events.length}</div>
       <div data-testid="ui-events-count">{uiEvents.length}</div>
       <div data-testid="latest-event-id">
-        {"id" in (events[events.length - 1] || {}) ? (events[events.length - 1] as any).id : "none"}
+        {isV1Event(events[events.length - 1])
+          ? (events[events.length - 1] as OpenHandsEvent).id
+          : "none"}
       </div>
     </div>
   );
