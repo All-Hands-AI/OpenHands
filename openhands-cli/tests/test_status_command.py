@@ -6,16 +6,16 @@ from uuid import uuid4
 
 import pytest
 
-from openhands_cli.agent_chat import _display_status
+from openhands_cli.tui.status import display_status
 from openhands.sdk.llm.utils.metrics import Metrics, TokenUsage
 
 
 class TestDisplayStatus:
-    """Test the _display_status function."""
+    """Test the display_status function."""
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_with_empty_conversation(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_with_empty_conversation(self, mock_print_formatted, mock_print_container):
         """Test status display with a conversation that has no events or stats."""
         # Create a mock conversation with minimal data
         mock_conversation = Mock()
@@ -30,7 +30,7 @@ class TestDisplayStatus:
         
         # Call the function with a default session start time
         session_start = datetime.now()
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
         
         # Verify that print functions were called
         assert mock_print_formatted.called
@@ -44,9 +44,9 @@ class TestDisplayStatus:
         uptime_call = mock_print_formatted.call_args_list[1]
         assert "0h 0m" in str(uptime_call)
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_with_metrics(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_with_metrics(self, mock_print_formatted, mock_print_container):
         """Test status display with conversation that has usage metrics."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -70,7 +70,7 @@ class TestDisplayStatus:
 
         # Call the function with a default session start time
         session_start = datetime.now()
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
 
         # Verify that print functions were called
         assert mock_print_formatted.called
@@ -92,9 +92,9 @@ class TestDisplayStatus:
         assert "100" in text_content   # Cache writes
         assert "2,300" in text_content  # Total tokens (1500 + 800)
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_with_uptime_calculation(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_with_uptime_calculation(self, mock_print_formatted, mock_print_container):
         """Test status display with uptime calculation from session start time."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -111,16 +111,16 @@ class TestDisplayStatus:
         session_start = datetime.now() - timedelta(hours=1, minutes=30, seconds=45)
         
         # Call the function with session start time
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
         
         # Verify uptime calculation
         uptime_call = mock_print_formatted.call_args_list[1]
         uptime_text = str(uptime_call)
         assert "1h 30m" in uptime_text
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_with_session_start_time(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_with_session_start_time(self, mock_print_formatted, mock_print_container):
         """Test status display with different session start time."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -137,16 +137,16 @@ class TestDisplayStatus:
         session_start = datetime.now() - timedelta(minutes=5, seconds=30)
         
         # Call the function with session start time
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
         
         # Verify uptime calculation
         uptime_call = mock_print_formatted.call_args_list[1]
         uptime_text = str(uptime_call)
         assert "5m" in uptime_text
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_zero_uptime(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_zero_uptime(self, mock_print_formatted, mock_print_container):
         """Test status display with zero uptime."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -161,16 +161,16 @@ class TestDisplayStatus:
         
         # Call the function with current time as session start time (0 uptime)
         session_start = datetime.now()
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
         
         # Verify zero uptime
         uptime_call = mock_print_formatted.call_args_list[1]
         uptime_text = str(uptime_call)
         assert "0h 0m" in uptime_text
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_with_none_token_usage(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_with_none_token_usage(self, mock_print_formatted, mock_print_container):
         """Test status display handles None token usage gracefully."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -189,7 +189,7 @@ class TestDisplayStatus:
         
         # Call the function with a default session start time
         session_start = datetime.now()
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
         
         # Verify that print functions were called without error
         assert mock_print_formatted.called
@@ -204,9 +204,9 @@ class TestDisplayStatus:
         assert "$0.050000" in text_content
         assert "0" in text_content  # Should show 0 for missing token counts
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_box_formatting(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_box_formatting(self, mock_print_formatted, mock_print_container):
         """Test that the status display creates proper formatting."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -221,7 +221,7 @@ class TestDisplayStatus:
 
         # Call the function with a default session start time
         session_start = datetime.now()
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
 
         # Verify that print functions were called
         assert mock_print_formatted.called
@@ -235,9 +235,9 @@ class TestDisplayStatus:
         assert hasattr(container_arg, 'title')
         assert "Usage Metrics" in container_arg.title
 
-    @patch('openhands_cli.agent_chat.print_container')
-    @patch('openhands_cli.agent_chat.print_formatted_text')
-    def test_display_status_comprehensive_scenario(self, mock_print_formatted, mock_print_container):
+    @patch('openhands_cli.tui.status.print_container')
+    @patch('openhands_cli.tui.status.print_formatted_text')
+    def testdisplay_status_comprehensive_scenario(self, mock_print_formatted, mock_print_container):
         """Test status display with a comprehensive scenario including all data."""
         # Create a mock conversation
         mock_conversation = Mock()
@@ -263,7 +263,7 @@ class TestDisplayStatus:
         session_start = datetime.now() - timedelta(hours=2, minutes=15, seconds=30)
 
         # Call the function with session start time
-        _display_status(mock_conversation, session_start_time=session_start)
+        display_status(mock_conversation, session_start_time=session_start)
 
         # Verify all components are present
         assert mock_print_formatted.called
