@@ -6,8 +6,6 @@ from pydantic import SecretStr, TypeAdapter
 from sqlalchemy import JSON, DateTime, String, TypeDecorator
 from sqlalchemy.orm import declarative_base
 
-from openhands.app_server.services.jwt_service import JwtService
-
 Base = declarative_base()
 T = TypeVar('T', bound=Enum)
 

@@ -4,8 +4,8 @@ from typing import Any, Awaitable, Callable
 from fastapi import Depends, Request
 from pydantic import PrivateAttr
 
+from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.app_server.user.user_models import UserInfo
-from openhands.app_server.user.user_context import UserContext, UserContext, UserContextInjector
 from openhands.integrations.provider import ProviderHandler, ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
@@ -24,7 +24,7 @@ class AuthUserContext(UserContext):
     async def get_user_id(self) -> str | None:
         # If you have an auth object here you are logged in. If user_id is None
         # it means we are in OSS mode.
-        user_id = (await self.user_auth.get_user_id())
+        user_id = await self.user_auth.get_user_id()
         return user_id
 
     async def get_user_info(self) -> UserInfo:
@@ -85,6 +85,7 @@ class AuthUserContextInjector(UserContextInjector):
         user_auth_class = self._user_auth_class
         if user_auth_class is None:
             from openhands.server.config.server_config import load_server_config
+
             impl_name = load_server_config().user_auth_class
             user_auth_class = get_impl(UserAuth, impl_name)
             self._user_auth_class = user_auth_class

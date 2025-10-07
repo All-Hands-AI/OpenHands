@@ -43,4 +43,4 @@ class UserContextInjector(DiscriminatedUnionMixin, ABC):
 
     @abstractmethod
     async def get_for_user(self, user_id: str | None) -> UserContext:
-        """ Get a user context for the user with the id given."""
+        """Get a user context for the user with the id given."""

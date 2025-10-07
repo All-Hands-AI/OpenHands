@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from openhands.app_server.config import user_injector
-from openhands.app_server.user.user_models import UserInfo
 from openhands.app_server.user.user_context import UserContext
+from openhands.app_server.user.user_models import UserInfo
 
 router = APIRouter(prefix='/users', tags=['User'])
 user_dependency = Depends(user_injector())

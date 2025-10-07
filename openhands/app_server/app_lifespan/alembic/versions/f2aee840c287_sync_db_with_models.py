@@ -17,8 +17,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
 )
-from openhands.integrations.service_types import ProviderType
-from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 # revision identifiers, used by Alembic.
 revision: str = 'f2aee840c287'
@@ -191,9 +189,7 @@ def downgrade() -> None:
         table_name='event_callback_result',
     )
     op.drop_table('event_callback_result')
-    op.drop_index(
-        op.f('ix_event_callback_created_at'), table_name='event_callback'
-    )
+    op.drop_index(op.f('ix_event_callback_created_at'), table_name='event_callback')
     op.drop_table('event_callback')
     op.drop_index(
         op.f('ix_app_conversation_start_task_updated_at'),

@@ -103,5 +103,7 @@ class AppConversationService(ABC):
 
 class AppConversationServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_injector(self) -> Callable[..., AppConversationService | Awaitable[AppConversationService]]:
+    def get_injector(
+        self,
+    ) -> Callable[..., AppConversationService | Awaitable[AppConversationService]]:
         """Get a resolver for an instance of sandbox spec service limited to the current user."""

@@ -1,23 +1,24 @@
 """Filesystem-based EventService implementation."""
 
-from dataclasses import dataclass
 import glob
 import json
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Awaitable, Callable
 from uuid import UUID
 
 from fastapi import Depends
+
 from openhands.agent_server.models import EventPage, EventSortOrder
-from openhands.app_server.app_conversation.app_conversation_info_service import AppConversationInfoService
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
 from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.event.event_service import EventService, EventServiceInjector
 from openhands.app_server.event_callback.event_callback_models import EventKind
 from openhands.sdk import Event
-
-from openhands.app_server.user.user_context import UserContext
 
 _logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class FilesystemEventService(EventService):
 
     Uses an AppConversationInfoService to lookup conversations
     """
+
     app_conversation_info_service: AppConversationInfoService
     events_dir: Path
 
@@ -122,13 +124,18 @@ class FilesystemEventService(EventService):
 
     async def _filter_files_by_conversation(self, files: list[Path]) -> list[Path]:
         conversation_ids = list(self._get_conversation_ids(files))
-        conversations = await self.app_conversation_info_service.batch_get_app_conversation_info(conversation_ids)
+        conversations = (
+            await self.app_conversation_info_service.batch_get_app_conversation_info(
+                conversation_ids
+            )
+        )
         permitted_conversation_ids = set()
         for conversation in conversations:
             if conversation:
                 permitted_conversation_ids.add(conversation.id)
         result = [
-            file for file in files
+            file
+            for file in files
             if self._get_conversation_id(file) in permitted_conversation_ids
         ]
         return result
@@ -196,7 +203,11 @@ class FilesystemEventService(EventService):
         conversation_id = self._get_conversation_id(file)
         if not conversation_id:
             return None
-        conversation = await self.app_conversation_info_service.get_app_conversation_info(conversation_id)
+        conversation = (
+            await self.app_conversation_info_service.get_app_conversation_info(
+                conversation_id
+            )
+        )
         if not conversation:
             return None
 
@@ -275,7 +286,11 @@ class FilesystemEventService(EventService):
 
     async def save_event(self, conversation_id: UUID, event: Event):
         """Save an event. Internal method intended not be part of the REST api."""
-        conversation = await self.app_conversation_info_service.get_app_conversation_info(conversation_id)
+        conversation = (
+            await self.app_conversation_info_service.get_app_conversation_info(
+                conversation_id
+            )
+        )
         if not conversation:
             # This is either an illegal state or somebody is trying to hack
             raise OpenHandsError('No such conversation: {conversaiont_id}')
@@ -284,13 +299,17 @@ class FilesystemEventService(EventService):
 
 class FilesystemEventServiceInjector(EventServiceInjector):
     def get_injector(self) -> Callable[..., Awaitable[EventService]]:
-        from openhands.app_server.config import app_conversation_info_injector, get_global_config
+        from openhands.app_server.config import (
+            app_conversation_info_injector,
+            get_global_config,
+        )
 
         app_conversation_info_dependency = Depends(app_conversation_info_injector())
         persistence_dir = get_global_config().persistence_dir
 
-
-        async def resolve(app_conversation_info_service: AppConversationInfoService = app_conversation_info_dependency) -> EventService:
+        async def resolve(
+            app_conversation_info_service: AppConversationInfoService = app_conversation_info_dependency,
+        ) -> EventService:
             return FilesystemEventService(
                 app_conversation_info_service=app_conversation_info_service,
                 events_dir=persistence_dir / 'v1' / 'events',

@@ -1,19 +1,18 @@
-
-
-
 from dataclasses import dataclass
 from typing import Callable
 
 from fastapi import Request
-from openhands.integrations.provider import ProviderType
-from openhands.sdk.conversation.secret_source import SecretSource
+
 from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.app_server.user.user_models import UserInfo
+from openhands.integrations.provider import ProviderType
+from openhands.sdk.conversation.secret_source import SecretSource
 
 
 @dataclass
 class AdminUserContext(UserContext):
     """User context for use in admin operations which allows access beyond the scope of a single user"""
+
     user_id: str | None
 
     async def get_user_id(self) -> str | None:
@@ -32,9 +31,7 @@ class AdminUserContext(UserContext):
         raise NotImplementedError()
 
 
-
 class AdminUserContextInjector(UserContextInjector):
-
     def get_injector(self) -> Callable:
         return resolve_admin
 
@@ -42,9 +39,7 @@ class AdminUserContextInjector(UserContextInjector):
         return AdminUserContext(user_id)
 
 
-def resolve_admin(
-    request: Request
-) -> UserContext:
+def resolve_admin(request: Request) -> UserContext:
     user_context = getattr(request.state, 'user_context')
     if user_context is None:
         user_context = AdminUserContext(user_id=None)

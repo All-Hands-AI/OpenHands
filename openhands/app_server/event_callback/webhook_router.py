@@ -52,7 +52,9 @@ _logger = logging.getLogger(__name__)
 
 async def valid_sandbox(
     sandbox_id: str,
-    user_context: UserContext = Depends(resolve_admin), # Admin access for this function
+    user_context: UserContext = Depends(
+        resolve_admin
+    ),  # Admin access for this function
     session_api_key: str = Depends(
         APIKeyHeader(name='X-Session-API-Key', auto_error=False)
     ),

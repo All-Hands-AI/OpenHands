@@ -51,5 +51,7 @@ class SandboxSpecService(ABC):
 
 class SandboxSpecServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_injector(self) -> Callable[..., SandboxSpecService | Awaitable[SandboxSpecService]]:
+    def get_injector(
+        self,
+    ) -> Callable[..., SandboxSpecService | Awaitable[SandboxSpecService]]:
         """Get a resolver for an instance of sandbox spec service."""

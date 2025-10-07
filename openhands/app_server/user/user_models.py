@@ -1,7 +1,3 @@
-from uuid import uuid4
-
-from pydantic import Field
-
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.storage.data_models.settings import Settings
 

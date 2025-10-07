@@ -264,7 +264,7 @@ class TestDockerSandboxService:
         non_matching_container = MagicMock()
         non_matching_container.name = 'other-container'
         non_matching_container.status = 'running'
-        non_matching_container.image.tags = ['other'],
+        non_matching_container.image.tags = (['other'],)
 
         service.docker_client.containers.list.return_value = [
             matching_container,

@@ -131,7 +131,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         return task
 
 
-class SQLAppConversationStartTaskServiceInjector(AppConversationStartTaskServiceInjector):
+class SQLAppConversationStartTaskServiceInjector(
+    AppConversationStartTaskServiceInjector
+):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service

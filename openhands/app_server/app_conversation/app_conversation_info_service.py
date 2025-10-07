@@ -71,5 +71,9 @@ class AppConversationInfoService(ABC):
 
 class AppConversationInfoServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_injector(self) -> Callable[..., AppConversationInfoService | Awaitable[AppConversationInfoService]]:
+    def get_injector(
+        self,
+    ) -> Callable[
+        ..., AppConversationInfoService | Awaitable[AppConversationInfoService]
+    ]:
         """Get an instance of app conversation info service."""

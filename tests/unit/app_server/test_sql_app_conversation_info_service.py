@@ -240,7 +240,9 @@ class TestSQLAppConversationInfoService:
         assert retrieved_info.trigger is None
         assert retrieved_info.pr_number == []
         assert retrieved_info.llm_model is None
-        assert retrieved_info.metrics == MetricsSnapshot(accumulated_token_usage=TokenUsage())
+        assert retrieved_info.metrics == MetricsSnapshot(
+            accumulated_token_usage=TokenUsage()
+        )
 
     @pytest.mark.asyncio
     async def test_batch_get_conversation_info(
