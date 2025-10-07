@@ -821,7 +821,9 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error while running /execute_action: {str(e)}', exc_info=True)
+            logger.error(
+                f'Error while running /execute_action: {str(e)}', exc_info=True
+            )
             raise HTTPException(
                 status_code=500,
                 detail=f'Internal server error: {str(e)}',
@@ -1101,9 +1103,21 @@ if __name__ == '__main__':
                 },
             },
             'loggers': {
-                'uvicorn': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
-                'uvicorn.error': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
-                'uvicorn.access': {'handlers': ['access'], 'level': 'INFO', 'propagate': False},
+                'uvicorn': {
+                    'handlers': ['default'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
+                'uvicorn.error': {
+                    'handlers': ['default'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
+                'uvicorn.access': {
+                    'handlers': ['access'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
             },
             'root': {'level': 'INFO', 'handlers': ['default']},
         }

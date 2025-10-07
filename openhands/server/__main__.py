@@ -40,9 +40,21 @@ def main():
                 },
             },
             'loggers': {
-                'uvicorn': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
-                'uvicorn.error': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
-                'uvicorn.access': {'handlers': ['access'], 'level': 'INFO', 'propagate': False},
+                'uvicorn': {
+                    'handlers': ['default'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
+                'uvicorn.error': {
+                    'handlers': ['default'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
+                'uvicorn.access': {
+                    'handlers': ['access'],
+                    'level': 'INFO',
+                    'propagate': False,
+                },
             },
             'root': {'level': 'INFO', 'handlers': ['default']},
         }
