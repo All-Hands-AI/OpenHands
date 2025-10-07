@@ -10,34 +10,34 @@ from prompt_toolkit.widgets import Frame, TextArea
 
 
 def display_status(
-    conversation: BaseConversation, 
+    conversation: BaseConversation,
     session_start_time: datetime,
 ) -> None:
     """Display detailed conversation status including metrics and uptime.
-    
+
     Args:
         conversation: The conversation to display status for
         session_start_time: The session start time for uptime calculation
     """
     # Get conversation stats
     stats = conversation.conversation_stats.get_combined_metrics()
-    
+
     # Calculate uptime from session start time
     now = datetime.now()
     diff = now - session_start_time
-    
+
     # Format as hours, minutes, seconds
     total_seconds = int(diff.total_seconds())
     hours = total_seconds // 3600
     minutes = (total_seconds % 3600) // 60
     seconds = total_seconds % 60
     uptime_str = f"{hours}h {minutes}m {seconds}s"
-    
+
     # Display conversation ID and uptime
     print_formatted_text(HTML(f'<grey>Conversation ID: {conversation.id}</grey>'))
     print_formatted_text(HTML(f'<grey>Uptime:          {uptime_str}</grey>'))
     print_formatted_text('')
-    
+
     # Calculate token metrics
     token_usage = stats.accumulated_token_usage
     total_input_tokens = token_usage.prompt_tokens if token_usage else 0
@@ -46,14 +46,26 @@ def display_status(
     cache_writes = token_usage.cache_write_tokens if token_usage else 0
     total_tokens = total_input_tokens + total_output_tokens
     total_cost = stats.accumulated_cost
-    
+
     # Use prompt_toolkit containers for formatted display
-    _display_usage_metrics_container(total_cost, total_input_tokens, total_output_tokens, 
-                                   cache_hits, cache_writes, total_tokens)
+    _display_usage_metrics_container(
+        total_cost,
+        total_input_tokens,
+        total_output_tokens,
+        cache_hits,
+        cache_writes,
+        total_tokens
+    )
 
 
-def _display_usage_metrics_container(total_cost: float, total_input_tokens: int, total_output_tokens: int,
-                                   cache_hits: int, cache_writes: int, total_tokens: int) -> None:
+def _display_usage_metrics_container(
+    total_cost: float,
+    total_input_tokens: int,
+    total_output_tokens: int,
+    cache_hits: int,
+    cache_writes: int,
+    total_tokens: int
+) -> None:
     """Display usage metrics using prompt_toolkit containers."""
     # Format values with proper formatting
     cost_str = f'${total_cost:.6f}'
