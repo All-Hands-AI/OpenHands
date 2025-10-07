@@ -32,7 +32,7 @@ def main() -> None:
 
     # If no subcommand is provided, default to 'cli'
     if args.command is None:
-        args.command = 'cli'
+        args = parser.parse_args(['cli'])
 
     try:
         if args.command == 'serve':

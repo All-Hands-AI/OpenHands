@@ -1,9 +1,13 @@
 """Tests for main entry point functionality."""
 
+import sys
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from openhands_cli import simple_main
+from openhands_cli.simple_main import main
+
 
 
 class TestMainEntryPoint:
@@ -86,3 +90,66 @@ class TestMainEntryPoint:
         mock_run_agent_chat.assert_called_once_with(
             resume_conversation_id='test-conversation-id'
         )
+
+
+
+
+@pytest.mark.parametrize(
+    "argv,expected_kwargs",
+    [
+        (['openhands'], {"resume_conversation_id": None}),
+        (['openhands', 'cli'], {"resume_conversation_id": None}),
+        (['openhands', 'cli', '--resume', 'test-id'], {"resume_conversation_id": 'test-id'}),
+    ],
+)
+def test_main_cli_calls_run_cli_entry(monkeypatch, argv, expected_kwargs):
+    # Patch sys.argv since main() takes no params
+    monkeypatch.setattr(sys, "argv", argv, raising=False)
+
+    called = {}
+    fake_agent_chat = SimpleNamespace(
+        run_cli_entry=lambda **kw: called.setdefault("kwargs", kw)
+    )
+    # Provide the symbol that main() will import
+    monkeypatch.setitem(sys.modules, "openhands_cli.agent_chat", fake_agent_chat)
+
+    # Execute (no SystemExit expected on success)
+    main()
+    assert called["kwargs"] == expected_kwargs
+
+
+@pytest.mark.parametrize(
+    "argv,expected_kwargs",
+    [
+        (['openhands', 'serve'], {"mount_cwd": False, "gpu": False}),
+        (['openhands', 'serve', '--mount-cwd'], {"mount_cwd": True, "gpu": False}),
+        (['openhands', 'serve', '--gpu'], {"mount_cwd": False, "gpu": True}),
+        (['openhands', 'serve', '--mount-cwd', '--gpu'], {"mount_cwd": True, "gpu": True}),
+    ],
+)
+def test_main_serve_calls_launch_gui_server(monkeypatch, argv, expected_kwargs):
+    monkeypatch.setattr(sys, "argv", argv, raising=False)
+
+    called = {}
+    fake_gui = SimpleNamespace(
+        launch_gui_server=lambda **kw: called.setdefault("kwargs", kw)
+    )
+    monkeypatch.setitem(sys.modules, "openhands_cli.gui_launcher", fake_gui)
+
+    main()
+    assert called["kwargs"] == expected_kwargs
+
+
+@pytest.mark.parametrize(
+    "argv,expected_exit_code",
+    [
+        (['openhands', 'invalid-command'], 2),  # argparse error
+        (['openhands', '--help'], 0),           # top-level help
+        (['openhands', 'serve', '--help'], 0),  # subcommand help
+    ],
+)
+def test_help_and_invalid(monkeypatch, argv, expected_exit_code):
+    monkeypatch.setattr(sys, "argv", argv, raising=False)
+    with pytest.raises(SystemExit) as exc:
+        main()
+    assert exc.value.code == expected_exit_code
