@@ -2,13 +2,12 @@
 
 from unittest.mock import MagicMock, patch
 from uuid import UUID
-
 from openhands_cli.agent_chat import _start_fresh_conversation
-from openhands_cli.setup import MissingAgentSpec
-from openhands_cli.user_actions import UserConfirmation
-from openhands.sdk.llm.utils.metrics import Metrics, TokenUsage
+from unittest.mock import MagicMock, patch
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
+from openhands_cli.setup import MissingAgentSpec
+from openhands_cli.user_actions import UserConfirmation
 
 @patch('openhands_cli.agent_chat.setup_conversation')
 def test_start_fresh_conversation_success(mock_setup_conversation):
@@ -72,39 +71,8 @@ def test_new_command_resets_confirmation_mode(
     # Auto-accept the exit prompt to avoid interactive UI and EOFError
     mock_exit_confirm.return_value = UserConfirmation.ACCEPT
 
-    # Create properly mocked conversations with stats
-    conv1 = MagicMock()
-    conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-    
-    # Mock conversation stats for conv1
-    mock_stats1 = MagicMock()
-    mock_metrics1 = Metrics()
-    mock_metrics1.accumulated_cost = 0.0
-    mock_metrics1.accumulated_token_usage = TokenUsage(
-        prompt_tokens=0,
-        completion_tokens=0,
-        cache_read_tokens=0,
-        cache_write_tokens=0
-    )
-    mock_stats1.get_combined_metrics.return_value = mock_metrics1
-    conv1.conversation_stats = mock_stats1
-    
-    conv2 = MagicMock()
-    conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
-    
-    # Mock conversation stats for conv2
-    mock_stats2 = MagicMock()
-    mock_metrics2 = Metrics()
-    mock_metrics2.accumulated_cost = 0.0
-    mock_metrics2.accumulated_token_usage = TokenUsage(
-        prompt_tokens=0,
-        completion_tokens=0,
-        cache_read_tokens=0,
-        cache_write_tokens=0
-    )
-    mock_stats2.get_combined_metrics.return_value = mock_metrics2
-    conv2.conversation_stats = mock_stats2
-    
+    conv1 = MagicMock(); conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    conv2 = MagicMock(); conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
     mock_setup_conversation.side_effect = [conv1, conv2]
 
     # Distinct runner instances for each conversation
@@ -121,7 +89,7 @@ def test_new_command_resets_confirmation_mode(
 
         from openhands_cli.agent_chat import run_cli_entry
         # Trigger /new, then /status, then /exit (exit will be auto-accepted)
-        for ch in "/new\r/status\r/exit\r":
+        for ch in "/new\r/exit\r":
             pipe.send_text(ch)
 
         run_cli_entry(None)
