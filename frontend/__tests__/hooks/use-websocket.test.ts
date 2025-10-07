@@ -162,9 +162,9 @@ describe("useWebSocket", () => {
   it("should call onOpen handler when WebSocket connection opens", async () => {
     const onOpenSpy = vi.fn();
     const options = { onOpen: onOpenSpy };
-    
-    const { result } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Initially should not be connected
@@ -183,9 +183,9 @@ describe("useWebSocket", () => {
   it("should call onClose handler when WebSocket connection closes", async () => {
     const onCloseSpy = vi.fn();
     const options = { onClose: onCloseSpy };
-    
-    const { result, unmount } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result, unmount } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Wait for connection to be established
@@ -207,9 +207,9 @@ describe("useWebSocket", () => {
   it("should call onMessage handler when WebSocket receives a message", async () => {
     const onMessageSpy = vi.fn();
     const options = { onMessage: onMessageSpy };
-    
-    const { result } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Wait for connection to be established
@@ -239,7 +239,7 @@ describe("useWebSocket", () => {
   it("should call onError handler when WebSocket encounters an error", async () => {
     const onErrorSpy = vi.fn();
     const options = { onError: onErrorSpy };
-    
+
     // Create a mock that will simulate an error
     const errorLink = ws.link("ws://error-test.com/ws");
     server.use(
@@ -249,8 +249,8 @@ describe("useWebSocket", () => {
       }),
     );
 
-    const { result } = renderHook(() => 
-      useWebSocket("ws://error-test.com/ws", options)
+    const { result } = renderHook(() =>
+      useWebSocket("ws://error-test.com/ws", options),
     );
 
     // Initially should not be connected and no error
