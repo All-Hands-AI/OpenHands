@@ -77,6 +77,7 @@ def test_commands_dict() -> None:
         '/exit',
         '/help',
         '/clear',
+        '/new',
         '/status',
         '/confirm',
         '/resume',
