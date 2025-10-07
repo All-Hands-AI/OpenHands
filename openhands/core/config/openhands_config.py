@@ -1,5 +1,5 @@
 import os
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
@@ -81,6 +81,10 @@ class OpenHandsConfig(BaseModel):
     search_api_key: SecretStr | None = Field(
         default=None,
         description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
+    )
+    bitbucket_mode: Literal['cloud', 'server'] = Field(
+        default='cloud',
+        description='Bitbucket API mode to use when integrating with Bitbucket. Use "server" for Bitbucket Data Center/Server.',
     )
 
     workspace_base: str | None = Field(default=None)

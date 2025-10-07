@@ -33,6 +33,7 @@ These variables correspond to the `[core]` section in `config.toml`:
 | `FILE_UPLOADS_ALLOWED_EXTENSIONS` | list | `[".*"]` | List of allowed file extensions for uploads |
 | `MAX_BUDGET_PER_TASK` | float | `0.0` | Maximum budget per task (0.0 = no limit) |
 | `MAX_ITERATIONS` | integer | `100` | Maximum number of iterations per task |
+| `BITBUCKET_MODE` | string | `"cloud"` | Bitbucket API mode (`cloud` or `server`) used for git integrations |
 | `RUNTIME` | string | `"docker"` | Runtime environment (`docker`, `local`, `cli`, etc.) |
 | `DEFAULT_AGENT` | string | `"CodeActAgent"` | Default agent class to use |
 | `JWT_SECRET` | string | auto-generated | JWT secret for authentication |

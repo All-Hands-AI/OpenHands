@@ -9,7 +9,7 @@ description: This page outlines all available configuration options for OpenHand
 </Note>
 
 <Note>
-   **Looking for Environment Variables?** All configuration options can also be set using environment variables. 
+   **Looking for Environment Variables?** All configuration options can also be set using environment variables.
    See the [Environment Variables Reference](./environment-variables) for a complete list with examples.
 </Note>
 
@@ -102,6 +102,13 @@ Core configuration options can be set as environment variables by converting to 
   - Type: `int`
   - Default: `100`
   - Description: Maximum number of iterations
+
+### Git Integrations
+- `bitbucket_mode`
+  - Type: `"cloud" | "server"`
+  - Default: `"cloud"`
+  - Description: Select the Bitbucket API to target globally. Set to `"server"` when connecting to Bitbucket Data Center/Server deployments.
+  - Environment variable: `BITBUCKET_MODE`
 
 ### Sandbox Configuration
 - `volumes`
@@ -430,6 +437,18 @@ All security configuration options can be set as environment variables by prefix
   - Type: `str`
   - Default: `""`
   - Description: The security analyzer to use
+
+## Secrets Store and Git Provider Tokens
+
+You can manage long-lived Git credentials in the `[secrets_store.provider_tokens]` section of `config.toml`.
+Each provider (`github`, `gitlab`, `bitbucket`) accepts a table with provider-specific options.
+
+To enable Bitbucket Server/Data Center support, set the global mode in the `[core]` section:
+
+```toml
+[core]
+bitbucket_mode = "server"
+```
 
 ---
 

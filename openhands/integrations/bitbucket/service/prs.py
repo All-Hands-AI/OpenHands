@@ -1,3 +1,5 @@
+from typing import Any
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import RequestMethod
@@ -31,24 +33,63 @@ class BitBucketPRsMixin(BitBucketMixinBase):
             The URL of the created pull request
         """
         owner, repo = self._extract_owner_and_repo(repo_name)
+        repo_base = self._repo_api_base(owner, repo)
 
-        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/pullrequests'
+        payload: dict[str, Any]
 
-        payload = {
-            'title': title,
-            'description': body or '',
-            'source': {'branch': {'name': source_branch}},
-            'destination': {'branch': {'name': target_branch}},
-            'close_source_branch': False,
-            'draft': draft,
-        }
+        if self._is_server:
+            url = f'{repo_base}/pull-requests'
+            payload = {
+                'title': title,
+                'description': body or '',
+                'fromRef': {
+                    'id': f'refs/heads/{source_branch}',
+                    'repository': {'slug': repo, 'project': {'key': owner}},
+                },
+                'toRef': {
+                    'id': f'refs/heads/{target_branch}',
+                    'repository': {'slug': repo, 'project': {'key': owner}},
+                },
+            }
+        else:
+            url = f'{repo_base}/pullrequests'
+            payload = {
+                'title': title,
+                'description': body or '',
+                'source': {'branch': {'name': source_branch}},
+                'destination': {'branch': {'name': target_branch}},
+                'close_source_branch': False,
+                'draft': draft,
+            }
 
         data, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
         )
 
         # Return the URL to the pull request
-        return data.get('links', {}).get('html', {}).get('href', '')
+        links = data.get('links', {}) if isinstance(data, dict) else {}
+
+        if isinstance(links, dict):
+            html_link = links.get('html')
+            if isinstance(html_link, dict):
+                href = html_link.get('href')
+                if href:
+                    return href
+            if isinstance(html_link, list) and html_link:
+                href = html_link[0].get('href')
+                if href:
+                    return href
+            self_link = links.get('self')
+            if isinstance(self_link, dict):
+                href = self_link.get('href')
+                if href:
+                    return href
+            if isinstance(self_link, list) and self_link:
+                href = self_link[0].get('href')
+                if href:
+                    return href
+
+        return ''
 
     async def get_pr_details(self, repository: str, pr_number: int) -> dict:
         """Get detailed information about a specific pull request
@@ -60,7 +101,14 @@ class BitBucketPRsMixin(BitBucketMixinBase):
         Returns:
             Raw Bitbucket API response for the pull request
         """
-        url = f'{self.BASE_URL}/repositories/{repository}/pullrequests/{pr_number}'
+        owner, repo = self._extract_owner_and_repo(repository)
+        repo_base = self._repo_api_base(owner, repo)
+
+        if self._is_server:
+            url = f'{repo_base}/pull-requests/{pr_number}'
+        else:
+            url = f'{repo_base}/pullrequests/{pr_number}'
+
         pr_data, _ = await self._make_request(url)
 
         return pr_data
