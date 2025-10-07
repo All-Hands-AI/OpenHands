@@ -25,7 +25,7 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceManager,
+    SandboxServiceInjector,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 
@@ -367,7 +367,7 @@ class DockerSandboxService(SandboxService):
             return False
 
 
-class DockerSandboxServiceManager(SandboxServiceManager):
+class DockerSandboxServiceInjector(SandboxServiceInjector):
     """Manager / Configuration for docker sandbox services."""
 
     container_url_pattern: str = 'http://localhost:{port}'
@@ -400,21 +400,16 @@ class DockerSandboxServiceManager(SandboxServiceManager):
         ),
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.get_unsecured_resolver()
-
-    def get_unsecured_resolver(self) -> Callable:
+    def get_injector(self) -> Callable[..., SandboxService]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
-            httpx_client_manager,
+            httpx_client_injector,
             sandbox_spec_injector,
         )
 
         # Create dependencies at module level to avoid B008
         sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
+        _httpx_client_dependency = Depends(httpx_client_injector())
 
         def resolve_sandbox_service(
             sandbox_spec_service: SandboxSpecService = sandbox_spec_dependency,

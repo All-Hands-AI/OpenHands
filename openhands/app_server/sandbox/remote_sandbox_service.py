@@ -1,7 +1,7 @@
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Awaitable, Callable, Union
 
 import base62
 import httpx
@@ -21,7 +21,7 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceManager,
+    SandboxServiceInjector,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.user.user_context import UserContext
@@ -320,7 +320,7 @@ class RemoteSandboxService(SandboxService):
             return False
 
 
-class RemoteSandboxServiceManager(SandboxServiceManager):
+class RemoteSandboxServiceInjector(SandboxServiceInjector):
     """Manager for remote sandbox services."""
 
     api_url: str = Field(description='The API URL for remote runtimes')
@@ -334,12 +334,12 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[SandboxService]]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
             db_service,
             get_global_config,
-            httpx_client_manager,
+            httpx_client_injector,
             sandbox_spec_injector,
             user_injector,
         )
@@ -352,7 +352,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         # Create dependencies at module level to avoid B008
         _sandbox_spec_dependency = Depends(sandbox_spec_injector())
         user_dependency = Depends(user_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
+        _httpx_client_dependency = Depends(httpx_client_injector())
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_sandbox_service(
@@ -370,44 +370,6 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
                 user_id=user_id,
-                httpx_client=httpx_client,
-                db_session=db_session,
-            )
-
-        return resolve_sandbox_service
-
-    def get_unsecured_resolver(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import (
-            db_service,
-            get_global_config,
-            httpx_client_manager,
-            sandbox_spec_injector,
-        )
-
-        config = get_global_config()
-        web_url = config.web_url
-        if web_url is None:
-            # TODO: Develop a polling protocol so this is not required.
-            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
-        # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
-        db_session_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-            db_session: AsyncSession = db_session_dependency,
-        ) -> SandboxService:
-            return RemoteSandboxService(
-                sandbox_spec_service=sandbox_spec_service,
-                api_url=self.api_url,
-                api_key=self.api_key,
-                web_url=web_url,
-                resource_factor=self.resource_factor,
-                runtime_class=self.runtime_class,
-                user_id=None,
                 httpx_client=httpx_client,
                 db_session=db_session,
             )

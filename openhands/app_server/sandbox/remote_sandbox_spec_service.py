@@ -82,12 +82,9 @@ class RemoteSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         description='Preset list of sandbox specs. Falls back to legacy parameter',
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
-        # At present, all specs are available to all users within the system
-        return self.get_unsecured_resolver()
+    def get_injector(self) -> Callable[..., SandboxSpecService]:
+        """Get a resolver for an instance of sandbox spec service."""
+        return self.resolve
 
-    def get_unsecured_resolver(self) -> Callable:
-        return self._resolve
-
-    def _resolve(self):
+    def resolve(self):
         return RemoteSandboxSpecService(self.specs)

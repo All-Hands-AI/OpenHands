@@ -5,7 +5,7 @@ from fastapi import Request
 from pydantic import BaseModel, Field
 
 
-class HttpxClientManager(BaseModel):
+class HttpxClientInjector(BaseModel):
     timeout: int = Field(default=15, description='Default timeout on all http requests')
 
     async def resolve(

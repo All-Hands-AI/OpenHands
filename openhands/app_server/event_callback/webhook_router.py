@@ -17,13 +17,13 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
 )
 from openhands.app_server.config import (
-    app_conversation_info_manager,
+    app_conversation_info_injector,
     db_service,
-    event_callback_manager,
-    event_manager,
+    event_callback_injector,
+    event_injector,
     get_global_config,
-    resolve_jwt_service,
-    sandbox_manager,
+    jwt_service,
+    sandbox_injector,
 )
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
@@ -33,18 +33,17 @@ from openhands.app_server.event_callback.event_callback_service import (
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
+from openhands.app_server.user.admin_user_context import resolve_admin
+from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
-sandbox_service_dependency = Depends(sandbox_manager().get_unsecured_resolver())
-event_service_dependency = Depends(event_manager().get_unsecured_resolver())
-event_callback_service_dependency = Depends(
-    event_callback_manager().get_unsecured_resolver()
-)
-app_conversation_info_service_dependency = Depends(
-    app_conversation_info_manager().get_unsecured_resolver()
-)
+sandbox_service_dependency = Depends(sandbox_injector())
+event_service_dependency = Depends(event_injector())
+event_callback_service_dependency = Depends(event_callback_injector())
+app_conversation_info_service_dependency = Depends(app_conversation_info_injector())
+jwt_dependency = Depends(jwt_service)
 config = get_global_config()
 # Create db dependency at module level to avoid B008
 db_session_dependency = Depends(db_service().unmanaged_session_dependency)
@@ -53,6 +52,7 @@ _logger = logging.getLogger(__name__)
 
 async def valid_sandbox(
     sandbox_id: str,
+    user_context: UserContext = Depends(resolve_admin), # Admin access for this function
     session_api_key: str = Depends(
         APIKeyHeader(name='X-Session-API-Key', auto_error=False)
     ),
@@ -67,8 +67,8 @@ async def valid_sandbox(
 @router.post('/{sandbox_id}/conversations')
 async def on_conversation_update(
     conversation_info: ConversationInfo,
-    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
 ) -> Success:
     """Webhook callback for when a conversation starts, pauses, resumes, or deletes."""
     app_conversation = await app_conversation_info_service.get_app_conversation_info(
@@ -97,9 +97,9 @@ async def on_conversation_update(
 async def on_event(
     events: list[Event],
     conversation_id: UUID,
+    sandbox_info: SandboxInfo = Depends(valid_sandbox),
     db_session: AsyncSession = db_session_dependency,
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
-    sandbox_info: SandboxInfo = Depends(valid_sandbox),
     event_service: EventService = event_service_dependency,
     event_callback_service: EventCallbackService = event_callback_service_dependency,
 ) -> Success:
@@ -136,7 +136,7 @@ async def on_event(
 @router.get('/secrets')
 async def get_secret(
     access_token: str = Depends(APIKeyHeader(name='X-Access-Token', auto_error=False)),
-    jwt_service: JwtService = Depends(resolve_jwt_service),
+    jwt_service: JwtService = jwt_dependency,
 ) -> str:
     """Given an access token, retrieve a user secret. The access token
     is limited by user and provider type, and may include a timeout, limiting

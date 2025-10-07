@@ -29,12 +29,10 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.config import app_conversation_manager, db_service
+from openhands.app_server.config import app_conversation_injector, db_service
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
-app_conversation_service_dependency = Depends(
-    app_conversation_manager().get_resolver_for_current_user()
-)
+app_conversation_service_dependency = Depends(app_conversation_injector())
 unmanaged_session_dependency = Depends(db_service().unmanaged_session_dependency)
 
 # Read methods

@@ -12,7 +12,7 @@ Security and permission checks are handled by wrapper services.
 
 Key components:
 - SQLAppConversationService: Main service class implementing all operations
-- SQLAppConversationServiceManager: Dependency injection resolver for FastAPI
+- SQLAppConversationInfoServiceInjector: Dependency injection resolver for FastAPI
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable
+from typing import Awaitable, Callable
 from uuid import UUID
 import uuid
 
@@ -32,7 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
-    AppConversationInfoServiceManager,
+    AppConversationInfoServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
@@ -350,22 +350,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         )
 
 
-class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
-    def get_unsecured_resolver(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service
+class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
 
-        # Create dependency at module level to avoid B008
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        def resolve_app_conversation_service(
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationInfoService:
-            return SQLAppConversationInfoService(session=session)
-
-        return resolve_app_conversation_service
-
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[AppConversationInfoService]]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service, user_injector
 
@@ -374,10 +361,10 @@ class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
         _db_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_app_conversation_service(
-            user_service: UserContext = user_dependency,
+            user_context: UserContext = user_dependency,
             session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
-            user_id = await user_service.get_user_id()
+            user_id = await user_context.get_user_id()
             service = SQLAppConversationInfoService(session=session, user_id=user_id)
             return service
 

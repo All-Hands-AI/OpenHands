@@ -18,7 +18,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.config import app_conversation_manager
+from openhands.app_server.config import app_conversation_info_injector
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -87,9 +87,7 @@ from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
-app_conversation_service_dependency = Depends(
-    app_conversation_manager().get_resolver_for_current_user()
-)
+app_conversation_service_dependency = Depends(app_conversation_info_injector())
 
 
 def _filter_conversations_by_age(

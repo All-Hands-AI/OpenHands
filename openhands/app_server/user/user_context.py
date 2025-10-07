@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Awaitable, Callable
 
 from openhands.app_server.user.user_models import (
     UserInfo,
@@ -37,8 +37,9 @@ class UserContext(ABC):
 
 class UserContextInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_injector(self) -> Callable:
-        """Get a resolver for instances of user service limited to the current user."""
+    def get_injector(self) -> Callable[..., UserContext | Awaitable[UserContext]]:
+        """Get a resolver for instances of user service limited to the current user. Caches the user context
+        in the current request as the `user_context` attribute"""
 
     @abstractmethod
     async def get_for_user(self, user_id: str | None) -> UserContext:

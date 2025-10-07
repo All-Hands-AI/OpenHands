@@ -58,11 +58,7 @@ class EventCallbackService(ABC):
         """Execute any applicable callbacks for the event and store the results."""
 
 
-class EventCallbackServiceManager(DiscriminatedUnionMixin, ABC):
+class EventCallbackServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
+    def get_injector(self) -> Callable[..., EventCallbackService]:
         """Get a resolver for an instance of event callback service."""
-
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of event callback service limited to the current user."""

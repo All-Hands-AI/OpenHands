@@ -1,6 +1,6 @@
-"""Tests for HttpxClientManager.
+"""Tests for HttpxClientInjector.
 
-This module tests the HttpxClientManager service, focusing on:
+This module tests the HttpxClientInjector service, focusing on:
 - Client reuse within the same request context
 - Client isolation between different requests
 - Proper client lifecycle management and cleanup
@@ -11,7 +11,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.app_server.services.httpx_client_manager import HttpxClientManager
+from openhands.app_server.services.httpx_client_injector import HttpxClientInjector
 
 
 class MockRequest:
@@ -24,18 +24,18 @@ class MockRequest:
             delattr(self.state, 'httpx_client')
 
 
-class TestHttpxClientManager:
-    """Test cases for HttpxClientManager."""
+class TestHttpxClientInjector:
+    """Test cases for HttpxClientInjector."""
 
     @pytest.fixture
     def manager(self):
-        """Create a HttpxClientManager instance with default settings."""
-        return HttpxClientManager()
+        """Create a HttpxClientInjector instance with default settings."""
+        return HttpxClientInjector()
 
     @pytest.fixture
     def manager_with_custom_timeout(self):
-        """Create a HttpxClientManager instance with custom timeout."""
-        return HttpxClientManager(timeout=30)
+        """Create a HttpxClientInjector instance with custom timeout."""
+        return HttpxClientInjector(timeout=30)
 
     @pytest.fixture
     def mock_request(self):
@@ -202,13 +202,13 @@ class TestHttpxClientManager:
 
     @pytest.mark.asyncio
     async def test_manager_configuration_validation(self):
-        """Test that HttpxClientManager validates configuration properly."""
+        """Test that HttpxClientInjector validates configuration properly."""
         # Test default configuration
-        manager = HttpxClientManager()
+        manager = HttpxClientInjector()
         assert manager.timeout == 15
 
         # Test custom configuration
-        manager_custom = HttpxClientManager(timeout=60)
+        manager_custom = HttpxClientInjector(timeout=60)
         assert manager_custom.timeout == 60
 
         # Test that configuration is used in client creation
@@ -278,8 +278,8 @@ class TestHttpxClientManager:
             # await mock_request.state.httpx_client.aclose()
 
     def test_manager_is_pydantic_model(self):
-        """Test that HttpxClientManager is properly configured as a Pydantic model."""
-        manager = HttpxClientManager()
+        """Test that HttpxClientInjector is properly configured as a Pydantic model."""
+        manager = HttpxClientInjector()
 
         # Test that it's a Pydantic model
         assert hasattr(manager, 'model_fields')
@@ -292,7 +292,7 @@ class TestHttpxClientManager:
         assert timeout_field.description == 'Default timeout on all http requests'
 
         # Test model validation
-        validated = HttpxClientManager.model_validate({'timeout': 25})
+        validated = HttpxClientInjector.model_validate({'timeout': 25})
         assert validated.timeout == 25
 
     @pytest.mark.asyncio

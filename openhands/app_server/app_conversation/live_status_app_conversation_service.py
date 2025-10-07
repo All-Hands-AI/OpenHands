@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import time
-from typing import AsyncGenerator, Callable, Sequence
+from typing import AsyncGenerator, Awaitable, Callable, Sequence
 from uuid import UUID
 
 import httpx
@@ -32,7 +32,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
-    AppConversationServiceManager,
+    AppConversationServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
@@ -464,7 +464,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return start_conversation_request
 
 
-class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
+class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
     sandbox_startup_timeout: int = Field(
         default=120, description='The max timeout time for sandbox startup'
     )
@@ -483,38 +483,39 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
         ),
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[AppConversationService]]:
         from openhands.app_server.config import (
-            app_conversation_info_manager,
-            app_conversation_start_task_manager,
+            app_conversation_info_injector,
+            app_conversation_start_task_injector,
             get_global_config,
-            httpx_client_manager,
-            resolve_jwt_service,
-            sandbox_manager,
+            httpx_client_injector,
+            jwt_service,
+            sandbox_injector,
             user_injector,
         )
 
         user_dependency = Depends(user_injector())
-        resolve_sandbox_service = sandbox_manager().get_resolver_for_current_user()
-        resolve_app_conversation_info_service = (
-            app_conversation_info_manager().get_resolver_for_current_user()
+        sandbox_service_dependency = Depends(sandbox_injector())
+        app_conversation_info_service_dependency = Depends(
+            app_conversation_info_injector()
         )
-        resolve_app_conversation_start_task_service = (
-            app_conversation_start_task_manager().get_resolver_for_current_user()
+        app_conversation_start_task_service_dependency = Depends(
+            app_conversation_start_task_injector()
         )
-        resolve_httpx_client_manager = httpx_client_manager().resolve
+        jwt_service_dependency = Depends(jwt_service)
+        httpx_client_injector_dependency = Depends(httpx_client_injector())
 
-        def _resolve_for_user(
+        async def resolve(
             user_service: UserContext = user_dependency,
-            sandbox_service: SandboxService = Depends(resolve_sandbox_service),
-            app_conversation_info_service: AppConversationInfoService = Depends(
-                resolve_app_conversation_info_service
+            sandbox_service: SandboxService = sandbox_service_dependency,
+            app_conversation_info_service: AppConversationInfoService = (
+                app_conversation_info_service_dependency
             ),
-            app_conversation_start_task_service: AppConversationStartTaskService = Depends(
-                resolve_app_conversation_start_task_service
+            app_conversation_start_task_service: AppConversationStartTaskService = (
+                app_conversation_start_task_service_dependency
             ),
-            jwt_service: JwtService = Depends(resolve_jwt_service),
-            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client_manager),
+            jwt_service: JwtService = jwt_service_dependency,
+            httpx_client: httpx.AsyncClient = httpx_client_injector_dependency,
         ) -> AppConversationService:
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:
@@ -543,4 +544,4 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
                 access_token_hard_timeout=access_token_hard_timeout,
             )
 
-        return _resolve_for_user
+        return resolve

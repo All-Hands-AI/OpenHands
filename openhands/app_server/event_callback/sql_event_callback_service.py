@@ -26,7 +26,7 @@ from openhands.app_server.event_callback.event_callback_result_models import (
 )
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
-    EventCallbackServiceManager,
+    EventCallbackServiceInjector,
 )
 from openhands.app_server.utils.sql_utils import (
     Base,
@@ -38,6 +38,8 @@ from openhands.app_server.utils.sql_utils import (
 from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
+
+# TODO: Add user level filtering to this class
 
 
 class StoredEventCallback(Base):  # type: ignore
@@ -218,8 +220,8 @@ class SQLEventCallbackService(EventCallbackService):
         pass
 
 
-class SQLEventCallbackServiceManager(EventCallbackServiceManager):
-    def get_unsecured_resolver(self) -> Callable:
+class SQLEventCallbackServiceInjector(EventCallbackServiceInjector):
+    def get_injector(self) -> Callable[..., EventCallbackService]:
         from openhands.app_server.config import db_service
 
         # Create dependency at module level to avoid B008
@@ -231,10 +233,3 @@ class SQLEventCallbackServiceManager(EventCallbackServiceManager):
             return SQLEventCallbackService(db_session)
 
         return resolve
-
-    def get_resolver_for_current_user(self) -> Callable:
-        _logger.warning(
-            'Using secured EventCallbackService resolver - '
-            'returning unsecured resolver for now. Eventually filter by conversation'
-        )
-        return self.get_unsecured_resolver()

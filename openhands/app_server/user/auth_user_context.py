@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from pydantic import PrivateAttr
 
 from openhands.app_server.user.user_models import UserInfo
@@ -78,7 +78,7 @@ class AuthUserContext(UserContext):
 class AuthUserContextInjector(UserContextInjector):
     _user_auth_class: Any = PrivateAttr(default=None)
 
-    def get_injector(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[UserContext]]:
         return resolve
 
     async def get_for_user(self, user_id: str | None) -> UserContext:
@@ -92,7 +92,12 @@ class AuthUserContextInjector(UserContextInjector):
         return AuthUserContext(user_auth)
 
 
-def resolve(
+async def resolve(
+    request: Request,
     user_auth: UserAuth = Depends(get_user_auth),
 ) -> UserContext:
-    return AuthUserContext(user_auth=user_auth)
+    user_context = getattr(request.state, 'user_context')
+    if user_context is None:
+        user_context = AuthUserContext(user_auth=user_auth)
+        setattr(request.state, 'user_context', user_context)
+    return user_context

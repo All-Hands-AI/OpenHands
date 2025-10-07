@@ -11,7 +11,7 @@ Security and permission checks are handled by wrapper services.
 
 Key components:
 - SQLAppConversationStartTaskService: Main service class implementing all operations
-- SQLAppConversationStartTaskServiceManager: Dependency injection resolver for FastAPI
+- SQLAppConversationStartTaskServiceInjector: Dependency injection resolver for FastAPI
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
-    AppConversationStartTaskServiceManager,
+    AppConversationStartTaskServiceInjector,
 )
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import (
@@ -131,7 +131,7 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         return task
 
 
-class SQLAppConversationStartTaskServiceManager(AppConversationStartTaskServiceManager):
+class SQLAppConversationStartTaskServiceInjector(AppConversationStartTaskServiceInjector):
     def get_unsecured_resolver(self) -> Callable:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service
