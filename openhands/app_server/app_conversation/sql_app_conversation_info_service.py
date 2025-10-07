@@ -344,7 +344,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
         return AppConversationInfo(
             id=UUID(stored.conversation_id),
-            created_by_user_id=stored.user_id,
+            created_by_user_id=stored.user_id if stored.user_id else None,
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
