@@ -23,6 +23,7 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
     SandboxServiceInjector,
 )
+from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
@@ -123,6 +124,15 @@ class RemoteSandboxService(SandboxService):
         if user_id:
             query = query.where(StoredRemoteSandbox.created_by_user_id == user_id)
         return query
+
+    async def _init_environment(
+        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
+    ) -> dict[str, str]:
+        environment = sandbox_spec.initial_env.copy()
+        environment[WEBHOOK_CALLBACK_VARIABLE] = (
+            f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+        )
+        return environment
 
     async def search_sandboxes(
         self,
@@ -228,10 +238,7 @@ class RemoteSandboxService(SandboxService):
             await self.db_session.commit()
 
             # Prepare environment variables
-            environment = sandbox_spec.initial_env.copy()
-            environment[WEBHOOK_CALLBACK_VARIABLE] = (
-                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
-            )
+            environment = self._init_environment(sandbox_spec, sandbox_id)
 
             # Prepare start request
             start_request: dict[str, Any] = {
