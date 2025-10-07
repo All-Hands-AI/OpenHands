@@ -45,7 +45,8 @@ from openhands.app_server.utils.sql_utils import (
     create_json_type_decorator,
 )
 from openhands.sdk.llm import MetricsSnapshot
-from openhands.llm.metrics import TokenUsage
+from openhands.sdk.llm.utils.metrics import TokenUsage
+from openhands.integrations.provider import ProviderType
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 logger = logging.getLogger(__name__)
@@ -231,7 +232,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
         query = self._secure_select().where(
-            StoredConversationMetadata.conversation_id == conversation_id
+            StoredConversationMetadata.conversation_id == str(conversation_id)
         )
         result_set = await self.session.execute(query)
         result = result_set.scalar_one_or_none()
@@ -242,14 +243,15 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def batch_get_app_conversation_info(
         self, conversation_ids: list[UUID]
     ) -> list[AppConversationInfo | None]:
+        conversation_id_strs = [str(conversation_id) for conversation_id in conversation_ids]
         query = self._secure_select().where(
-            StoredConversationMetadata.conversation_id.in_(conversation_ids)
+            StoredConversationMetadata.conversation_id.in_(conversation_id_strs)
         )
         result = await self.session.execute(query)
         rows = result.scalars().all()
-        info_by_id = {info.id: info for info in rows}
+        info_by_id = {info.conversation_id: info for info in rows if info}
         results: list[AppConversationInfo | None] = []
-        for conversation_id in conversation_ids:
+        for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
             if info:
                 results.append(self._to_info(info))
@@ -273,12 +275,12 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         usage = metrics.accumulated_token_usage or TokenUsage()
 
         stored = StoredConversationMetadata(
-            conversation_id=info.id,
+            conversation_id=str(info.id),
             github_user_id=None, # TODO: Should we add this to the conversation info?
             user_id=info.created_by_user_id,
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
-            git_provider=info.git_provider,
+            git_provider=info.git_provider.value if info.git_provider else None,
             title=info.title,
             last_updated_at=info.updated_at,
             created_at=info.created_at,
@@ -306,11 +308,12 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         return info
 
     def _secure_select(self):
-        query = select(StoredConversationMetadata)
+        query = select(StoredConversationMetadata).where(
+            StoredConversationMetadata.conversation_version == "V1"
+        )
         if self.user_id:
             query = query.where(
                 StoredConversationMetadata.user_id == self.user_id,
-                StoredConversationMetadata.conversation_version == "V1",
             )
         return query
 
@@ -319,29 +322,32 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         sandbox_id = stored.sandbox_id
         assert sandbox_id is not None
 
+        #Rebuild token usage
+        token_usage = TokenUsage(
+            prompt_tokens=stored.prompt_tokens,
+            completion_tokens=stored.completion_tokens,
+            cache_read_tokens=stored.cache_read_tokens,
+            cache_write_tokens=stored.cache_write_tokens,
+            context_window=stored.context_window,
+            per_turn_token=stored.per_turn_token,
+        )
+
         # Rebuild metrics object
         metrics = MetricsSnapshot(
             accumulated_cost=stored.accumulated_cost,
             max_budget_per_task=stored.max_budget_per_task,
-            accumulated_token_usage=TokenUsage(
-                prompt_tokens=stored.prompt_tokens,
-                completion_tokens=stored.completion_tokens,
-                cache_read_tokens=stored.cache_read_tokens,
-                cache_write_tokens=stored.cache_write_tokens,
-                context_window=stored.context_window,
-                per_turn_token=stored.per_turn_token,
-            ),
+            accumulated_token_usage=token_usage,
         )
 
         return AppConversationInfo(
-            id=stored.conversation_id,
+            id=UUID(stored.conversation_id),
             created_by_user_id=stored.user_id,
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
-            git_provider=stored.git_provider,
+            git_provider=ProviderType(stored.git_provider) if stored.git_provider else None,
             title=stored.title,
-            trigger=ConversationTrigger[stored.trigger] if stored.trigger else None,
+            trigger=ConversationTrigger(stored.trigger) if stored.trigger else None,
             pr_number=stored.pr_number,
             llm_model=stored.llm_model,
             metrics=metrics,
