@@ -124,7 +124,74 @@ describe("Conversation WebSocket Handler", () => {
       expect(screen.getByTestId("ui-events-count")).toHaveTextContent("1");
     });
 
-    it.todo("should handle malformed/invalid event data gracefully");
+    it("should handle malformed/invalid event data gracefully", async () => {
+      // Set up MSW to send various invalid events when connection is established
+      server.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+
+          // Send invalid JSON
+          client.send("invalid json string");
+
+          // Send valid JSON but missing required fields
+          client.send(JSON.stringify({ message: "missing required fields" }));
+
+          // Send valid JSON with wrong data types
+          client.send(
+            JSON.stringify({
+              id: 123, // should be string
+              timestamp: "2023-01-01T00:00:00Z",
+              source: "agent",
+            }),
+          );
+
+          // Send null values for required fields
+          client.send(
+            JSON.stringify({
+              id: null,
+              timestamp: "2023-01-01T00:00:00Z",
+              source: "agent",
+            }),
+          );
+
+          // Send a valid event after invalid ones to ensure processing continues
+          client.send(
+            JSON.stringify({
+              id: "valid-event-123",
+              timestamp: new Date().toISOString(),
+              source: "agent",
+              llm_message: {
+                role: "assistant",
+                content: [
+                  { type: "text", text: "Valid message after invalid ones" },
+                ],
+              },
+              activated_microagents: [],
+              extended_content: [],
+            }),
+          );
+        }),
+      );
+
+      // Render components that use both WebSocket and event store
+      render(
+        <ConversationWebSocketProvider>
+          <EventStoreComponent />
+        </ConversationWebSocketProvider>,
+      );
+
+      // Wait for connection and event processing
+      // Only the valid event should be added to the store
+      await waitFor(() => {
+        expect(screen.getByTestId("events-count")).toHaveTextContent("1");
+      });
+
+      // Verify only the valid event was added
+      expect(screen.getByTestId("latest-event-id")).toHaveTextContent(
+        "valid-event-123",
+      );
+      expect(screen.getByTestId("ui-events-count")).toHaveTextContent("1");
+    });
   });
 
   // 3. State Management Tests

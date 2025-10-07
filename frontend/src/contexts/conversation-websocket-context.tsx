@@ -31,13 +31,16 @@ export function ConversationWebSocketProvider({
     (messageEvent: MessageEvent) => {
       try {
         const event = JSON.parse(messageEvent.data);
-        // Basic validation - ensure it has required BaseEvent properties
+        // Strict validation - ensure it has required BaseEvent properties with correct types
         if (
           event &&
           typeof event === "object" &&
-          event.id &&
-          event.timestamp &&
-          event.source
+          typeof event.id === "string" &&
+          event.id.length > 0 &&
+          typeof event.timestamp === "string" &&
+          event.timestamp.length > 0 &&
+          typeof event.source === "string" &&
+          event.source.length > 0
         ) {
           addEvent(event);
         }
