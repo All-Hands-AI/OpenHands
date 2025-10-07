@@ -17,6 +17,7 @@ COMMANDS = {
     '/exit': 'Exit the application',
     '/help': 'Display available commands',
     '/clear': 'Clear the screen',
+    '/new': 'Start a fresh conversation',
     '/status': 'Display conversation details',
     '/confirm': 'Toggle confirmation mode on/off',
     '/resume': 'Resume a paused conversation',
