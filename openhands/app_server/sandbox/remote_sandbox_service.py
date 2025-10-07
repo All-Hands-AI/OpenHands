@@ -11,7 +11,7 @@ from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import OpenHandsError, SandboxError
+from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,

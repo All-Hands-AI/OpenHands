@@ -40,6 +40,8 @@ class AdminUserContextInjector(UserContextInjector):
 
 
 def resolve_admin(request: Request) -> UserContext:
+    """Adding this as a dependency to the start of the endpoint means that the
+    services will function in admin mode, with no user filtering."""
     user_context = getattr(request.state, 'user_context', None)
     if user_context is None:
         user_context = AdminUserContext(user_id=None)

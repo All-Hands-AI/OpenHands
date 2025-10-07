@@ -379,7 +379,9 @@ class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
             user_context: UserContext = user_dependency,
             session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
-            service = SQLAppConversationInfoService(session=session, user_context=user_context)
+            service = SQLAppConversationInfoService(
+                session=session, user_context=user_context
+            )
             return service
 
         return resolve_app_conversation_service

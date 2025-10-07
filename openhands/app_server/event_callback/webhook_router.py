@@ -66,6 +66,21 @@ async def valid_sandbox(
     return sandbox_info
 
 
+async def validate_conversation(
+    conversation_id: UUID,
+    sandbox_info: SandboxInfo,
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
+):
+    app_conversation_info = (
+        await app_conversation_info_service.get_app_conversation_info(conversation_id)
+    )
+    if not app_conversation_info:
+        return
+    if app_conversation_info.created_by_user_id != sandbox_info.created_by_user_id:
+        # Make sure that the conversation and sandbox were created by the same user
+        raise AuthError()
+
+
 @router.post('/{sandbox_id}/conversations')
 async def on_conversation_update(
     conversation_info: ConversationInfo,
@@ -73,24 +88,21 @@ async def on_conversation_update(
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
 ) -> Success:
     """Webhook callback for when a conversation starts, pauses, resumes, or deletes."""
-    app_conversation = await app_conversation_info_service.get_app_conversation_info(
-        conversation_info.id
+    await validate_conversation(
+        conversation_info.id, sandbox_info, app_conversation_info_service
     )
-    if app_conversation:
-        if app_conversation.created_by_user_id != sandbox_info.created_by_user_id:
-            raise AuthError()
-    else:
-        app_conversation_info = AppConversationInfo(
-            id=conversation_info.id,
-            title=f'Conversation {conversation_info.id}',
-            sandbox_id=sandbox_info.id,
-            created_by_user_id=sandbox_info.created_by_user_id,
-            llm_model=conversation_info.agent.llm.model,
-            # TODO: Lots of git parameters required
-        )
-        await app_conversation_info_service.save_app_conversation_info(
-            app_conversation_info
-        )
+
+    app_conversation_info = AppConversationInfo(
+        id=conversation_info.id,
+        title=f'Conversation {conversation_info.id}',
+        sandbox_id=sandbox_info.id,
+        created_by_user_id=sandbox_info.created_by_user_id,
+        llm_model=conversation_info.agent.llm.model,
+        # Git parameters are required here...
+    )
+    await app_conversation_info_service.save_app_conversation_info(
+        app_conversation_info
+    )
 
     return Success()
 
@@ -107,15 +119,9 @@ async def on_event(
 ) -> Success:
     """Webhook callback for when event stream events occur."""
 
-    # Events can only be applied to an exsiting conversation with the correct owner
-    app_conversation = await app_conversation_info_service.get_app_conversation_info(
-        conversation_id
+    await validate_conversation(
+        conversation_id, sandbox_info, app_conversation_info_service
     )
-    if (
-        not app_conversation
-        or app_conversation.created_by_user_id != sandbox_info.created_by_user_id
-    ):
-        raise AuthError()
 
     try:
         # Save events...
