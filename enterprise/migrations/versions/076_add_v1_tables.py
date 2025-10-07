@@ -17,8 +17,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
 )
-from openhands.integrations.service_types import ProviderType
-from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 # revision identifiers, used by Alembic.
 revision: str = '076'
@@ -31,31 +29,33 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column(
         'conversation_metadata',
-        sa.Column('max_budget_per_task', sa.Float(), nullable=True)
+        sa.Column('max_budget_per_task', sa.Float(), nullable=True),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('cache_read_tokens', sa.Integer(), server_default="0")
+        sa.Column('cache_read_tokens', sa.Integer(), server_default='0'),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('cache_write_tokens', sa.Integer(), server_default="0")
+        sa.Column('cache_write_tokens', sa.Integer(), server_default='0'),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('reasoning_tokens', sa.Integer(), server_default="0")
+        sa.Column('reasoning_tokens', sa.Integer(), server_default='0'),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('context_window', sa.Integer(), server_default="0")
+        sa.Column('context_window', sa.Integer(), server_default='0'),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('per_turn_token', sa.Integer(), server_default="0")
+        sa.Column('per_turn_token', sa.Integer(), server_default='0'),
     )
     op.add_column(
         'conversation_metadata',
-        sa.Column('conversation_version', sa.String(), nullable=False, server_default="V0")
+        sa.Column(
+            'conversation_version', sa.String(), nullable=False, server_default='V0'
+        ),
     )
     op.create_index(
         op.f('ix_conversation_metadata_conversation_version'),
@@ -63,10 +63,7 @@ def upgrade() -> None:
         ['conversation_version'],
         unique=False,
     )
-    op.add_column(
-        'conversation_metadata',
-        sa.Column('sandbox_id', sa.String())
-    )
+    op.add_column('conversation_metadata', sa.Column('sandbox_id', sa.String()))
     op.create_index(
         op.f('ix_conversation_metadata_sandbox_id'),
         'conversation_metadata',
@@ -234,9 +231,7 @@ def downgrade() -> None:
         table_name='event_callback_result',
     )
     op.drop_table('event_callback_result')
-    op.drop_index(
-        op.f('ix_event_callback_created_at'), table_name='event_callback'
-    )
+    op.drop_index(op.f('ix_event_callback_created_at'), table_name='event_callback')
     op.drop_table('event_callback')
     op.drop_index(
         op.f('ix_app_conversation_start_task_updated_at'),
@@ -259,6 +254,6 @@ def downgrade() -> None:
     op.drop_column('conversation_metadata', 'cache_write_tokens')
     op.drop_column('conversation_metadata', 'cache_read_tokens')
     op.drop_column('conversation_metadata', 'max_budget_per_task')
-    op.execute("DROP TYPE appconversationstarttaskstatus")
-    op.execute("DROP TYPE eventcallbackresultstatus")
+    op.execute('DROP TYPE appconversationstarttaskstatus')
+    op.execute('DROP TYPE eventcallbackresultstatus')
     # ### end Alembic commands ###
