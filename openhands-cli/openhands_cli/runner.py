@@ -2,6 +2,7 @@ from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import BaseConversation, Message
 from openhands.sdk.conversation.state import AgentExecutionStatus, ConversationState
+from openhands.sdk.security.analyzer import SecurityAnalyzerBase
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     ConfirmationPolicyBase,
@@ -18,6 +19,8 @@ class ConversationRunner:
 
     def __init__(self, conversation: BaseConversation):
         self.conversation = conversation
+        # Store the original security analyzer so we can restore it when re-enabling confirmation mode
+        self._original_security_analyzer = conversation.agent.security_analyzer
 
     @property
     def is_confirmation_mode_enabled(self):
@@ -25,14 +28,35 @@ class ConversationRunner:
 
     def toggle_confirmation_mode(self):
         if self.is_confirmation_mode_enabled:
+            # Disable confirmation mode: set NeverConfirm policy and remove security analyzer
             self.set_confirmation_policy(NeverConfirm())
+            self._update_agent_security_analyzer(None)
         else:
+            # Enable confirmation mode: set AlwaysConfirm policy and restore security analyzer
             self.set_confirmation_policy(AlwaysConfirm())
+            self._update_agent_security_analyzer(self._original_security_analyzer)
 
     def set_confirmation_policy(
         self, confirmation_policy: ConfirmationPolicyBase
     ) -> None:
         self.conversation.set_confirmation_policy(confirmation_policy)
+
+    def _update_agent_security_analyzer(
+        self, security_analyzer: SecurityAnalyzerBase | None
+    ) -> None:
+        """Update the agent's security analyzer.
+        
+        Args:
+            security_analyzer: The new security analyzer to set, or None to remove it
+        """
+        # Create a new agent instance with the updated security analyzer
+        new_agent = self.conversation.agent.model_copy(
+            update={"security_analyzer": security_analyzer}
+        )
+        
+        # Update both the conversation's agent and the state's agent
+        self.conversation.agent = new_agent
+        self.conversation._state.agent = new_agent
 
     def _start_listener(self) -> None:
         self.listener = PauseListener(on_pause=self.conversation.pause)
