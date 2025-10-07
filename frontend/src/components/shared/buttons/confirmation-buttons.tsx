@@ -11,7 +11,7 @@ import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/u-warning.svg?react";
 import { useEventMessageStore } from "#/stores/event-message-store";
 import { useEventStore } from "#/stores/use-event-store";
-import { isV0Event } from "#/types/event-type-guards";
+import { isV0Event } from "#/types/v1/type-guards";
 
 export function ConfirmationButtons() {
   const submittedEventIds = useEventMessageStore(

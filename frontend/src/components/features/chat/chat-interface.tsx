@@ -35,7 +35,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
-import { isV0Event } from "#/types/event-type-guards";
+import { isV0Event } from "#/types/v1/type-guards";
 
 function getEntryPoint(
   hasRepository: boolean | null,

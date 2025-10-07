@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isV1Event, isV0Event } from '../src/types/event-type-guards';
+import { isV1Event, isV0Event } from '../src/types/v1/type-guards';
 
 describe('Event Type Guards - Core Functionality', () => {
   describe('isV1Event', () => {

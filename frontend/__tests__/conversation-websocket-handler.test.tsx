@@ -9,7 +9,7 @@ import {
 } from "#/contexts/conversation-websocket-context";
 import { useEventStore } from "#/stores/use-event-store";
 import { MessageEvent, OpenHandsEvent } from "#/types/v1/core";
-import { isV1Event } from "#/types/event-type-guards";
+import { isV1Event } from "#/types/v1/type-guards";
 
 // MSW WebSocket mock setup
 const wsLink = ws.link("ws://localhost/events/socket");

@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
+import { isV1Event } from "#/types/v1/type-guards";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -31,17 +32,8 @@ export function ConversationWebSocketProvider({
     (messageEvent: MessageEvent) => {
       try {
         const event = JSON.parse(messageEvent.data);
-        // Strict validation - ensure it has required BaseEvent properties with correct types
-        if (
-          event &&
-          typeof event === "object" &&
-          typeof event.id === "string" &&
-          event.id.length > 0 &&
-          typeof event.timestamp === "string" &&
-          event.timestamp.length > 0 &&
-          typeof event.source === "string" &&
-          event.source.length > 0
-        ) {
+        // Use type guard to validate v1 event structure
+        if (isV1Event(event)) {
           addEvent(event);
         }
       } catch (error) {

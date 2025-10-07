@@ -14,7 +14,7 @@ import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
 import { useEventStore } from "#/stores/use-event-store";
-import { isV0Event } from "#/types/event-type-guards";
+import { isV0Event } from "#/types/v1/type-guards";
 
 interface UseConversationNameContextMenuProps {
   conversationId?: string;
