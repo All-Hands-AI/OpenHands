@@ -10,7 +10,6 @@ import pytest
 from openhands_cli.gui_launcher import (
     _format_docker_command_for_logging,
     check_docker_requirements,
-    ensure_config_dir_exists,
     get_openhands_version,
     launch_gui_server,
 )
@@ -67,30 +66,12 @@ class TestCheckDockerRequirements:
                 mock_run.side_effect = run_side_effect
             else:
                 mock_run.return_value = run_side_effect
-        
+
         with patch('openhands_cli.gui_launcher.print_formatted_text') as mock_print:
             result = check_docker_requirements()
-            
+
         assert result is expected_result
         assert mock_print.call_count == expected_print_count
-
-
-class TestEnsureConfigDirExists:
-    """Test configuration directory creation."""
-
-    @patch('pathlib.Path.home')
-    def test_config_dir_creation(self, mock_home):
-        """Test that config directory is created if it doesn't exist."""
-        mock_home_path = MagicMock()
-        mock_home.return_value = mock_home_path
-        mock_config_dir = MagicMock()
-        mock_home_path.__truediv__.return_value = mock_config_dir
-        
-        result = ensure_config_dir_exists()
-        
-        mock_home_path.__truediv__.assert_called_once_with('.openhands')
-        mock_config_dir.mkdir.assert_called_once_with(exist_ok=True)
-        assert result == mock_config_dir
 
 
 class TestGetOpenHandsVersion:
@@ -105,10 +86,10 @@ class TestGetOpenHandsVersion:
     )
     def test_version_retrieval(self, env_value, expected):
         """Test version retrieval from environment."""
-        env_dict = {'OPENHANDS_VERSION': env_value} if env_value else {}
-        with patch.dict(os.environ, env_dict, clear=True):
-            result = get_openhands_version()
-            assert result == expected
+        if env_value:
+            os.environ['OPENHANDS_VERSION'] = env_value
+        result = get_openhands_version()
+        assert result == expected
 
 
 class TestLaunchGuiServer:
@@ -119,10 +100,10 @@ class TestLaunchGuiServer:
     def test_launch_gui_server_docker_not_available(self, mock_print, mock_check_docker):
         """Test that launch_gui_server exits when Docker is not available."""
         mock_check_docker.return_value = False
-        
+
         with pytest.raises(SystemExit) as exc_info:
             launch_gui_server()
-        
+
         assert exc_info.value.code == 1
 
     @pytest.mark.parametrize(
@@ -171,7 +152,7 @@ class TestLaunchGuiServer:
         mock_version.return_value = 'latest'
         mock_check_output.return_value = '1000\n'
         mock_cwd.return_value = Path('/current/dir')
-        
+
         # Configure subprocess.run side effects
         side_effects = []
         if pull_side_effect is not None:
@@ -179,15 +160,15 @@ class TestLaunchGuiServer:
                 side_effects.append(pull_side_effect)
             else:
                 side_effects.append(pull_side_effect)
-        
+
         if run_side_effect is not None:
             if isinstance(run_side_effect, Exception):
                 side_effects.append(run_side_effect)
             else:
                 side_effects.append(run_side_effect)
-        
+
         mock_run.side_effect = side_effects
-        
+
         # Test the function
         if expected_exit_code is not None:
             with pytest.raises(SystemExit) as exc_info:
@@ -196,24 +177,24 @@ class TestLaunchGuiServer:
         else:
             # Should not raise SystemExit for successful cases
             launch_gui_server(mount_cwd=mount_cwd, gpu=gpu)
-            
+
             # Verify subprocess.run was called correctly
             assert mock_run.call_count == 2  # Pull and run commands
-            
+
             # Check pull command
             pull_call = mock_run.call_args_list[0]
             pull_cmd = pull_call[0][0]
             assert pull_cmd[0:3] == ['docker', 'pull', 'docker.all-hands.dev/all-hands-ai/runtime:latest-nikolaik']
-            
+
             # Check run command
             run_call = mock_run.call_args_list[1]
             run_cmd = run_call[0][0]
             assert run_cmd[0:2] == ['docker', 'run']
-            
+
             if mount_cwd:
                 assert 'SANDBOX_VOLUMES=/current/dir:/workspace:rw' in ' '.join(run_cmd)
                 assert 'SANDBOX_USER_ID=1000' in ' '.join(run_cmd)
-            
+
             if gpu:
                 assert '--gpus' in run_cmd
                 assert 'all' in run_cmd

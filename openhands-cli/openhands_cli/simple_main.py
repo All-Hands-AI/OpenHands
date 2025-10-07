@@ -33,8 +33,6 @@ def main() -> None:
     # If no subcommand is provided, default to 'cli'
     if args.command is None:
         args.command = 'cli'
-        # Add resume attribute for backward compatibility
-        args.resume = getattr(args, 'resume', None)
 
     try:
         if args.command == 'serve':
