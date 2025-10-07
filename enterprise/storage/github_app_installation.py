@@ -1,5 +1,5 @@
 from sqlalchemy import Column, DateTime, Integer, String, text
-from storage.base import Base
+from enterprise.storage.base import Base
 
 
 class GithubAppInstallation(Base):  # type: ignore
