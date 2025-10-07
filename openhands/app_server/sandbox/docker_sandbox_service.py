@@ -368,7 +368,7 @@ class DockerSandboxService(SandboxService):
 
 
 class DockerSandboxServiceInjector(SandboxServiceInjector):
-    """Manager / Configuration for docker sandbox services."""
+    """Dependency injector for docker sandbox services."""
 
     container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000

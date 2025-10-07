@@ -321,7 +321,7 @@ class RemoteSandboxService(SandboxService):
 
 
 class RemoteSandboxServiceInjector(SandboxServiceInjector):
-    """Manager for remote sandbox services."""
+    """Dependency injector for remote sandbox services."""
 
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
