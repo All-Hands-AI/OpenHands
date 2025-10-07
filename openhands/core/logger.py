@@ -357,11 +357,7 @@ def log_uncaught_exceptions(
     """
     # Route uncaught exceptions through our logger with proper exc_info
     # Avoid manual formatting which creates multi-line plain-text log entries
-    try:
-        openhands_logger.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
-    except Exception:
-        # Fallback to root logger if our logger isn't initialized yet
-        logging.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
+    openhands_logger.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
 
 
 sys.excepthook = log_uncaught_exceptions
