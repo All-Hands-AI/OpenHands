@@ -345,7 +345,7 @@ logging.basicConfig(level=logging.ERROR)
 def log_uncaught_exceptions(
     ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
 ) -> Any:
-    """Logs uncaught exceptions along with the traceback.
+    """Logs uncaught exceptions in structured form when JSON logging is enabled.
 
     Args:
         ex_cls: The type of the exception.
@@ -355,9 +355,13 @@ def log_uncaught_exceptions(
     Returns:
         None
     """
-    if tb:  # Add check since tb can be None
-        logging.error(''.join(traceback.format_tb(tb)))
-    logging.error('{0}: {1}'.format(ex_cls, ex))
+    # Route uncaught exceptions through our logger with proper exc_info
+    # Avoid manual formatting which creates multi-line plain-text log entries
+    try:
+        openhands_logger.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
+    except Exception:
+        # Fallback to root logger if our logger isn't initialized yet
+        logging.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
 
 
 sys.excepthook = log_uncaught_exceptions

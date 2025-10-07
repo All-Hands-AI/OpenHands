@@ -14,7 +14,6 @@ import shutil
 import sys
 import tempfile
 import time
-import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -241,7 +240,7 @@ class ActionExecutor:
             self.browser = BrowserEnv(self.browsergym_eval_env)
             logger.debug('Browser initialized asynchronously')
         except Exception as e:
-            logger.error(f'Failed to initialize browser: {e}')
+            logger.error(f'Failed to initialize browser: {e}', exc_info=True)
             self.browser = None
 
     async def _ensure_browser_ready(self):
@@ -393,7 +392,7 @@ class ActionExecutor:
             obs = await call_sync_from_async(bash_session.execute, action)
             return obs
         except Exception as e:
-            logger.error(f'Error running command: {e}')
+            logger.error(f'Error running command: {e}', exc_info=True)
             return ErrorObservation(str(e))
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -768,14 +767,14 @@ if __name__ == '__main__':
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
-        logger.error(f'HTTP exception occurred: {exc.detail}')
+        logger.error(f'HTTP exception occurred: {exc.detail}', exc_info=True)
         return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ):
-        logger.error(f'Validation error occurred: {exc}')
+        logger.error(f'Validation error occurred: {exc}', exc_info=True)
         return JSONResponse(
             status_code=422,
             content={
@@ -822,10 +821,10 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error while running /execute_action: {str(e)}')
+            logger.error(f'Error while running /execute_action: {str(e)}', exc_info=True)
             raise HTTPException(
                 status_code=500,
-                detail=traceback.format_exc(),
+                detail=f'Internal server error: {str(e)}',
             )
         finally:
             update_last_execution_time()
@@ -1067,8 +1066,45 @@ if __name__ == '__main__':
             return JSONResponse(content=sorted_entries)
 
         except Exception as e:
-            logger.error(f'Error listing files: {e}')
+            logger.error(f'Error listing files: {e}', exc_info=True)
             return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
-    run(app, host='0.0.0.0', port=args.port)
+    # When LOG_JSON=1, provide a JSON log config to Uvicorn so error/access logs are structured
+    log_config = None
+    if os.getenv('LOG_JSON', '0') in ('1', 'true', 'True'):
+        log_config = {
+            'version': 1,
+            'disable_existing_loggers': False,
+            'formatters': {
+                'json': {
+                    '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                    'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(exc_info)s',
+                },
+                'json_access': {
+                    '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                    'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(client_addr)s %(request_line)s %(status_code)s',
+                },
+            },
+            'handlers': {
+                'default': {
+                    'class': 'logging.StreamHandler',
+                    'level': 'INFO',
+                    'formatter': 'json',
+                    'stream': 'ext://sys.stdout',
+                },
+                'access': {
+                    'class': 'logging.StreamHandler',
+                    'level': 'INFO',
+                    'formatter': 'json_access',
+                    'stream': 'ext://sys.stdout',
+                },
+            },
+            'loggers': {
+                'uvicorn': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
+                'uvicorn.error': {'handlers': ['default'], 'level': 'INFO', 'propagate': False},
+                'uvicorn.access': {'handlers': ['access'], 'level': 'INFO', 'propagate': False},
+            },
+            'root': {'level': 'INFO', 'handlers': ['default']},
+        }
+    run(app, host='0.0.0.0', port=args.port, log_config=log_config, use_colors=False)
