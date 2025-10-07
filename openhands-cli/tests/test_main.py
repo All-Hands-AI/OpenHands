@@ -9,80 +9,80 @@ from openhands_cli import simple_main
 class TestMainEntryPoint:
     """Test the main entry point behavior."""
 
+    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_starts_agent_chat_directly(self) -> None:
+    def test_main_starts_agent_chat_directly(
+        self, mock_run_agent_chat: MagicMock
+    ) -> None:
         """Test that main() starts agent chat directly when setup succeeds."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                # Mock run_cli_entry to raise KeyboardInterrupt to exit gracefully
-                mock_run_agent_chat.side_effect = KeyboardInterrupt()
+        # Mock run_cli_entry to raise KeyboardInterrupt to exit gracefully
+        mock_run_agent_chat.side_effect = KeyboardInterrupt()
 
-                # Should complete without raising an exception (graceful exit)
-                simple_main.main()
+        # Should complete without raising an exception (graceful exit)
+        simple_main.main()
 
-                # Should call run_cli_entry with no resume conversation ID
-                mock_run_agent_chat.assert_called_once_with(resume_conversation_id=None)
+        # Should call run_cli_entry with no resume conversation ID
+        mock_run_agent_chat.assert_called_once_with(resume_conversation_id=None)
 
+    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_handles_import_error(self) -> None:
+    def test_main_handles_import_error(self, mock_run_agent_chat: MagicMock) -> None:
         """Test that main() handles ImportError gracefully."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                mock_run_agent_chat.side_effect = ImportError('Missing dependency')
+        mock_run_agent_chat.side_effect = ImportError('Missing dependency')
 
-                # Should raise ImportError (re-raised after handling)
-                with pytest.raises(ImportError) as exc_info:
-                    simple_main.main()
+        # Should raise ImportError (re-raised after handling)
+        with pytest.raises(ImportError) as exc_info:
+            simple_main.main()
 
-                assert str(exc_info.value) == 'Missing dependency'
+        assert str(exc_info.value) == 'Missing dependency'
 
+    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_handles_keyboard_interrupt(self) -> None:
+    def test_main_handles_keyboard_interrupt(
+        self, mock_run_agent_chat: MagicMock
+    ) -> None:
         """Test that main() handles KeyboardInterrupt gracefully."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                # Mock run_cli_entry to raise KeyboardInterrupt
-                mock_run_agent_chat.side_effect = KeyboardInterrupt()
+        # Mock run_cli_entry to raise KeyboardInterrupt
+        mock_run_agent_chat.side_effect = KeyboardInterrupt()
 
-                # Should complete without raising an exception (graceful exit)
-                simple_main.main()
+        # Should complete without raising an exception (graceful exit)
+        simple_main.main()
 
+    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_handles_eof_error(self) -> None:
+    def test_main_handles_eof_error(self, mock_run_agent_chat: MagicMock) -> None:
         """Test that main() handles EOFError gracefully."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                # Mock run_cli_entry to raise EOFError
-                mock_run_agent_chat.side_effect = EOFError()
+        # Mock run_cli_entry to raise EOFError
+        mock_run_agent_chat.side_effect = EOFError()
 
-                # Should complete without raising an exception (graceful exit)
-                simple_main.main()
+        # Should complete without raising an exception (graceful exit)
+        simple_main.main()
 
+    @patch('openhands_cli.simple_main.run_cli_entry')
     @patch('sys.argv', ['openhands'])
-    def test_main_handles_general_exception(self) -> None:
+    def test_main_handles_general_exception(
+        self, mock_run_agent_chat: MagicMock
+    ) -> None:
         """Test that main() handles general exceptions."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                mock_run_agent_chat.side_effect = Exception('Unexpected error')
+        mock_run_agent_chat.side_effect = Exception('Unexpected error')
 
-                # Should raise Exception (re-raised after handling)
-                with pytest.raises(Exception) as exc_info:
-                    simple_main.main()
+        # Should raise Exception (re-raised after handling)
+        with pytest.raises(Exception) as exc_info:
+            simple_main.main()
 
-                assert str(exc_info.value) == 'Unexpected error'
+        assert str(exc_info.value) == 'Unexpected error'
 
-    @patch('sys.argv', ['openhands', 'cli', '--resume', 'test-conversation-id'])
-    def test_main_with_resume_argument(self) -> None:
+    @patch('openhands_cli.simple_main.run_cli_entry')
+    @patch('sys.argv', ['openhands', '--resume', 'test-conversation-id'])
+    def test_main_with_resume_argument(self, mock_run_agent_chat: MagicMock) -> None:
         """Test that main() passes resume conversation ID when provided."""
-        with patch.dict('sys.modules', {'openhands_cli.agent_chat': MagicMock()}):
-            with patch('openhands_cli.agent_chat.run_cli_entry') as mock_run_agent_chat:
-                # Mock run_cli_entry to raise KeyboardInterrupt to exit gracefully
-                mock_run_agent_chat.side_effect = KeyboardInterrupt()
+        # Mock run_cli_entry to raise KeyboardInterrupt to exit gracefully
+        mock_run_agent_chat.side_effect = KeyboardInterrupt()
 
-                # Should complete without raising an exception (graceful exit)
-                simple_main.main()
+        # Should complete without raising an exception (graceful exit)
+        simple_main.main()
 
-                # Should call run_cli_entry with the provided resume conversation ID
-                mock_run_agent_chat.assert_called_once_with(
-                    resume_conversation_id='test-conversation-id'
-                )
+        # Should call run_cli_entry with the provided resume conversation ID
+        mock_run_agent_chat.assert_called_once_with(
+            resume_conversation_id='test-conversation-id'
+        )
