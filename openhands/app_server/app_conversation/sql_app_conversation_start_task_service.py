@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import Awaitable, Callable
 from uuid import UUID
 
 from fastapi import Depends
@@ -134,21 +134,7 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
 class SQLAppConversationStartTaskServiceInjector(
     AppConversationStartTaskServiceInjector
 ):
-    def get_unsecured_resolver(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service
-
-        # Create dependency at module level to avoid B008
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        def resolve_app_conversation_start_task_service(
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationStartTaskService:
-            return SQLAppConversationStartTaskService(session=session)
-
-        return resolve_app_conversation_start_task_service
-
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[AppConversationStartTaskService]]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import db_service, user_injector
 

@@ -6,6 +6,7 @@ from typing import Awaitable, Callable
 
 import httpx
 from pydantic import Field
+from stripe import EventService
 
 from openhands.agent_server.env_parser import from_env
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -13,6 +14,7 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
     AppConversationInfoServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationService,
     AppConversationServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
@@ -112,9 +114,7 @@ def get_global_config() -> AppServerConfig:
     return _global_config  # type: ignore
 
 
-def event_injector() -> Callable[
-    ..., EventServiceInjector | Awaitable[EventServiceInjector]
-]:
+def event_injector() -> Callable[..., EventService | Awaitable[EventService]]:
     config = get_global_config()
     event = config.event
     if event is None:
@@ -124,7 +124,7 @@ def event_injector() -> Callable[
 
         event = FilesystemEventServiceInjector()
         config.event = event
-    return event
+    return event.get_injector()
 
 
 def event_callback_injector() -> Callable[
@@ -218,7 +218,9 @@ def app_conversation_start_task_injector() -> Callable[
     return app_conversation_start_task.get_injector()
 
 
-def app_conversation_injector() -> AppConversationServiceInjector:
+def app_conversation_injector() -> Callable[
+    ..., AppConversationService | Awaitable[AppConversationService]
+]:
     config = get_global_config()
     app_conversation = config.app_conversation
     if app_conversation is None:
@@ -228,7 +230,7 @@ def app_conversation_injector() -> AppConversationServiceInjector:
 
         app_conversation = LiveStatusAppConversationServiceInjector()
         config.app_conversation = app_conversation
-    return app_conversation
+    return app_conversation.get_injector()
 
 
 def user_injector() -> Callable[..., UserContext | Awaitable[UserContext]]:

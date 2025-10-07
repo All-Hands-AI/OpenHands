@@ -97,7 +97,7 @@ async def resolve(
     request: Request,
     user_auth: UserAuth = Depends(get_user_auth),
 ) -> UserContext:
-    user_context = getattr(request.state, 'user_context')
+    user_context = getattr(request.state, 'user_context', None)
     if user_context is None:
         user_context = AuthUserContext(user_auth=user_auth)
         setattr(request.state, 'user_context', user_context)

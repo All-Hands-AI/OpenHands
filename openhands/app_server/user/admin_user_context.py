@@ -40,7 +40,7 @@ class AdminUserContextInjector(UserContextInjector):
 
 
 def resolve_admin(request: Request) -> UserContext:
-    user_context = getattr(request.state, 'user_context')
+    user_context = getattr(request.state, 'user_context', None)
     if user_context is None:
         user_context = AdminUserContext(user_id=None)
         setattr(request.state, 'user_context', user_context)

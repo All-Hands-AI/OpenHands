@@ -129,4 +129,8 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     def get_injector(self) -> Callable[..., SandboxSpecService]:
-        return DockerSandboxSpecService
+        return _inject
+
+
+def _inject():
+    return DockerSandboxSpecService()
