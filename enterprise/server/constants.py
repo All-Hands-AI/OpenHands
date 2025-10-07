@@ -32,6 +32,18 @@ LITELLM_DEFAULT_MODEL = os.getenv('LITELLM_DEFAULT_MODEL')
 # Current user settings version - this should be the latest key in USER_SETTINGS_VERSION_TO_MODEL
 CURRENT_USER_SETTINGS_VERSION = max(USER_SETTINGS_VERSION_TO_MODEL.keys())
 
+# Map of org settings versions to their corresponding default LLM models
+# This ensures that ORG_VERSION_TO_MODEL and LITELLM_DEFAULT_MODEL stay in sync
+ORG_VERSION_TO_MODEL = {
+    1: 'claude-3-5-sonnet-20241022',
+    2: 'claude-3-7-sonnet-20250219',
+    3: 'claude-sonnet-4-20250514',
+    4: 'claude-sonnet-4-20250514',
+}
+
+# Current org settings version - this should be the latest key in ORG_VERSION_TO_MODEL
+ORG_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
+
 LITE_LLM_API_URL = os.environ.get(
     'LITE_LLM_API_URL', 'https://llm-proxy.app.all-hands.dev'
 )
