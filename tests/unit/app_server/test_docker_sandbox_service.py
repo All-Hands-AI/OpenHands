@@ -56,7 +56,7 @@ def mock_httpx_client():
     client = AsyncMock(spec=httpx.AsyncClient)
     # Configure the mock response
     mock_response = AsyncMock()
-    mock_response.raise_for_status = AsyncMock()
+    mock_response.raise_for_status = MagicMock()
     client.get.return_value = mock_response
     return client
 
@@ -90,7 +90,7 @@ def mock_running_container():
     container = MagicMock()
     container.name = 'oh-test-abc123'
     container.status = 'running'
-    container.labels = {'created_by_user_id': 'user123', 'sandbox_spec_id': 'spec456'}
+    container.image.tags = ['spec456']
     container.attrs = {
         'Created': '2024-01-15T10:30:00.000000000Z',
         'Config': {
@@ -112,7 +112,7 @@ def mock_paused_container():
     container = MagicMock()
     container.name = 'oh-test-def456'
     container.status = 'paused'
-    container.labels = {'created_by_user_id': 'user123', 'sandbox_spec_id': 'spec456'}
+    container.image.tags = ['spec456']
     container.attrs = {
         'Created': '2024-01-15T10:30:00.000000000Z',
         'Config': {'Env': []},
@@ -163,7 +163,7 @@ class TestDockerSandboxService:
             s for s in result.items if s.status == SandboxStatus.RUNNING
         )
         assert running_sandbox.id == 'oh-test-abc123'
-        assert running_sandbox.created_by_user_id == 'user123'
+        assert running_sandbox.created_by_user_id is None
         assert running_sandbox.sandbox_spec_id == 'spec456'
         assert running_sandbox.session_api_key == 'session_key_123'
         assert len(running_sandbox.exposed_urls) == 2
@@ -184,10 +184,7 @@ class TestDockerSandboxService:
             container = MagicMock()
             container.name = f'oh-test-container{i}'
             container.status = 'running'
-            container.labels = {
-                'created_by_user_id': 'user123',
-                'sandbox_spec_id': 'spec456',
-            }
+            container.image.tags = ['spec456']
             container.attrs = {
                 'Created': f'2024-01-{15 + i:02d}T10:30:00.000000000Z',
                 'Config': {
@@ -252,10 +249,7 @@ class TestDockerSandboxService:
         matching_container = MagicMock()
         matching_container.name = 'oh-test-abc123'
         matching_container.status = 'running'
-        matching_container.labels = {
-            'created_by_user_id': 'user123',
-            'sandbox_spec_id': 'spec456',
-        }
+        matching_container.image.tags = ['spec456']
         matching_container.attrs = {
             'Created': '2024-01-15T10:30:00.000000000Z',
             'Config': {
@@ -270,7 +264,7 @@ class TestDockerSandboxService:
         non_matching_container = MagicMock()
         non_matching_container.name = 'other-container'
         non_matching_container.status = 'running'
-        non_matching_container.labels = {}
+        non_matching_container.image.tags = ['other'],
 
         service.docker_client.containers.list.return_value = [
             matching_container,
@@ -284,32 +278,6 @@ class TestDockerSandboxService:
         # Verify - only matching container should be included
         assert len(result.items) == 1
         assert result.items[0].id == 'oh-test-abc123'
-
-    async def test_search_sandboxes_missing_labels(self, service):
-        """Test handling of containers with missing labels."""
-        # Setup
-        container_no_labels = MagicMock()
-        container_no_labels.name = 'oh-test-nolabels'
-        container_no_labels.status = 'running'
-        container_no_labels.labels = {}
-
-        container_partial_labels = MagicMock()
-        container_partial_labels.name = 'oh-test-partial'
-        container_partial_labels.status = 'running'
-        container_partial_labels.labels = {
-            'created_by_user_id': 'user123'
-        }  # Missing sandbox_spec_id
-
-        service.docker_client.containers.list.return_value = [
-            container_no_labels,
-            container_partial_labels,
-        ]
-
-        # Execute
-        result = await service.search_sandboxes()
-
-        # Verify - containers with missing labels should be filtered out
-        assert len(result.items) == 0
 
     async def test_get_sandbox_success(self, service, mock_running_container):
         """Test successful retrieval of specific sandbox."""
@@ -374,10 +342,7 @@ class TestDockerSandboxService:
         mock_container = MagicMock()
         mock_container.name = 'oh-test-test_container_id'
         mock_container.status = 'running'
-        mock_container.labels = {
-            'created_by_user_id': 'root',
-            'sandbox_spec_id': 'test-image:latest',
-        }
+        mock_container.image.tags = ['test-image:latest']
         mock_container.attrs = {
             'Created': '2024-01-15T10:30:00.000000000Z',
             'Config': {
@@ -416,10 +381,7 @@ class TestDockerSandboxService:
         mock_container = MagicMock()
         mock_container.name = 'oh-test-abc123'
         mock_container.status = 'running'
-        mock_container.labels = {
-            'created_by_user_id': 'user123',
-            'sandbox_spec_id': 'spec456',
-        }
+        mock_container.image.tags = ['spec456']
         mock_container.attrs = {
             'Created': '2024-01-15T10:30:00.000000000Z',
             'Config': {
@@ -656,7 +618,7 @@ class TestDockerSandboxService:
         # Verify
         assert result is not None
         assert result.id == 'oh-test-abc123'
-        assert result.created_by_user_id == 'user123'
+        assert result.created_by_user_id is None
         assert result.sandbox_spec_id == 'spec456'
         assert result.status == SandboxStatus.RUNNING
         assert result.session_api_key == 'session_key_123'
@@ -669,28 +631,13 @@ class TestDockerSandboxService:
         vscode_url = next(url for url in result.exposed_urls if url.name == VSCODE)
         assert vscode_url.url == 'http://localhost:12346'
 
-    async def test_container_to_sandbox_info_missing_labels(self, service):
-        """Test conversion with missing labels."""
-        # Setup
-        container = MagicMock()
-        container.labels = {}
-
-        # Execute
-        result = await service._container_to_sandbox_info(container)
-
-        # Verify
-        assert result is None
-
     async def test_container_to_sandbox_info_invalid_created_time(self, service):
         """Test conversion with invalid creation timestamp."""
         # Setup
         container = MagicMock()
         container.name = 'oh-test-abc123'
         container.status = 'running'
-        container.labels = {
-            'created_by_user_id': 'user123',
-            'sandbox_spec_id': 'spec456',
-        }
+        container.image.tags = ['spec456']
         container.attrs = {
             'Created': 'invalid-timestamp',
             'Config': {

@@ -155,7 +155,7 @@ class DockerSandboxService(SandboxService):
         return SandboxInfo(
             id=container.name,
             created_by_user_id=None,
-            sandbox_spec_id=container.image,
+            sandbox_spec_id=container.image.tags[0],
             status=status,
             session_api_key=session_api_key,
             exposed_urls=exposed_urls,
