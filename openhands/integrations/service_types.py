@@ -21,6 +21,7 @@ class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
     BITBUCKET = 'bitbucket'
+    CODECOMMIT = 'codecommit'
     ENTERPRISE_SSO = 'enterprise_sso'
 
 
@@ -74,6 +75,16 @@ class SuggestedTask(BaseModel):
                 'tokenEnvVar': 'BITBUCKET_TOKEN',
                 'ciSystem': 'Bitbucket Pipelines',
                 'ciProvider': 'Bitbucket',
+                'requestVerb': 'pull request',
+            }
+        elif self.git_provider == ProviderType.CODECOMMIT:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'AWS CodeCommit API',
+                'tokenEnvVar': 'AWS_ACCESS_KEY_ID',
+                'ciSystem': 'AWS CodeBuild',
+                'ciProvider': 'AWS',
                 'requestVerb': 'pull request',
             }
 

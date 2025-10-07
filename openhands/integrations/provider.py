@@ -18,6 +18,7 @@ from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
+from openhands.integrations.codecommit.codecommit_service import CodeCommitService
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -40,6 +41,7 @@ from openhands.server.types import AppMode
 
 class ProviderToken(BaseModel):
     token: SecretStr | None = Field(default=None)
+    secret: SecretStr | None = Field(default=None)  # For AWS secret access key
     user_id: str | None = Field(default=None)
     host: str | None = Field(default=None)
 
@@ -59,9 +61,20 @@ class ProviderToken(BaseModel):
             # Cannot pass None to SecretStr
             if token_str is None:
                 token_str = ''  # type: ignore[unreachable]
+                
+            # Handle secret field for AWS secret access key
+            secret_str = token_value.get('secret', '')
+            if secret_str is None:
+                secret_str = ''
+                
             user_id = token_value.get('user_id')
             host = token_value.get('host')
-            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
+            return cls(
+                token=SecretStr(token_str), 
+                secret=SecretStr(secret_str) if secret_str else None,
+                user_id=user_id, 
+                host=host
+            )
 
         else:
             raise ValueError('Unsupported Provider token type')
@@ -108,6 +121,7 @@ class ProviderHandler:
         ProviderType.GITHUB: 'github.com',
         ProviderType.GITLAB: 'gitlab.com',
         ProviderType.BITBUCKET: 'bitbucket.org',
+        ProviderType.CODECOMMIT: 'git-codecommit.amazonaws.com',
     }
 
     def __init__(
@@ -128,6 +142,7 @@ class ProviderHandler:
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
             ProviderType.BITBUCKET: BitBucketServiceImpl,
+            ProviderType.CODECOMMIT: CodeCommitService,
         }
 
         self.external_auth_id = external_auth_id
@@ -320,7 +335,16 @@ class ProviderHandler:
         custom_host = self.provider_tokens[provider].host
         custom_host_exists = custom_host and custom_host in query
         default_host_exists = self.PROVIDER_DOMAINS[provider] in query
-
+        
+        # Special case for CodeCommit which can have URLs in different formats
+        if provider == ProviderType.CODECOMMIT:
+            return query.startswith(('http://', 'https://')) and (
+                custom_host_exists or 
+                default_host_exists or 
+                'git-codecommit.' in query or
+                'console.aws.amazon.com/codecommit' in query
+            )
+        
         return query.startswith(('http://', 'https://')) and (
             custom_host_exists or default_host_exists
         )
@@ -442,6 +466,8 @@ class ProviderHandler:
     @classmethod
     def get_provider_env_key(cls, provider: ProviderType) -> str:
         """Map ProviderType value to the environment variable name in the runtime"""
+        if provider == ProviderType.CODECOMMIT:
+            return 'aws_access_key_id'
         return f'{provider.value}_token'.lower()
 
     async def verify_repo_provider(
