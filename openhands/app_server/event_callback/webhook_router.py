@@ -46,6 +46,8 @@ event_callback_service_dependency = Depends(
 app_conversation_info_service_dependency = Depends(
     app_conversation_info_manager().get_unsecured_resolver()
 )
+from openhands.app_server.user.user_admin_service import UserAdminService
+user_admin_service_dependency = Depends(user_admin_manager().get_unsecured_resolver())
 config = get_global_config()
 # Create db dependency at module level to avoid B008
 db_session_dependency = Depends(db_service().unmanaged_session_dependency)
