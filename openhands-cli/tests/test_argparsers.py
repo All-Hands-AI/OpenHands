@@ -17,23 +17,23 @@ def test_create_main_parser():
 def test_main_parser_help_contains_expected_sections():
     parser = create_main_parser()
     help_text = parser.format_help()
-    assert "cli" in help_text
     assert "serve" in help_text
     assert "terminal interface" in help_text
-    assert "web interface" in help_text
+    assert "interface)" in help_text  # Matches "(web interface)" even with line breaks
+    assert "--resume" in help_text
 
 
 @pytest.mark.parametrize(
     "args,resume",
     [
-        (["cli"], None),
-        (["cli", "--resume", "test-id"], "test-id"),
+        ([], None),
+        (["--resume", "test-id"], "test-id"),
     ],
 )
-def test_cli_subcommand_parsing(args, resume):
+def test_cli_default_parsing(args, resume):
     parser = create_main_parser()
     parsed = parser.parse_args(args)
-    assert parsed.command == "cli"
+    assert parsed.command is None  # CLI is default, no subcommand needed
     assert parsed.resume == resume
 
 
@@ -85,8 +85,9 @@ def test_add_serve_parser():
 
 def test_cli_parser_default_resume():
     parser = create_main_parser()
-    parsed = parser.parse_args(["cli"])
+    parsed = parser.parse_args([])  # No args means CLI mode with no resume
     assert parsed.resume is None
+    assert parsed.command is None  # CLI is default
 
 
 def test_serve_parser_default_flags():

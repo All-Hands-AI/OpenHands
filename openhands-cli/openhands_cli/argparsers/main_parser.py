@@ -2,12 +2,9 @@
 
 import argparse
 
-from openhands_cli.argparsers.cli_parser import add_cli_parser
-from openhands_cli.argparsers.serve_parser import add_serve_parser
-
 
 def create_main_parser() -> argparse.ArgumentParser:
-    """Create the main argument parser with all subcommands.
+    """Create the main argument parser with CLI as default and serve as subcommand.
     
     Returns:
         The configured argument parser
@@ -16,31 +13,44 @@ def create_main_parser() -> argparse.ArgumentParser:
         description='OpenHands CLI - Terminal User Interface for OpenHands AI Agent',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-subcommands:
+By default, OpenHands runs in CLI mode (terminal interface).
+Use 'serve' subcommand to launch the GUI server instead.
 
-  Available commands:
-    cli    - Run OpenHands in CLI mode (terminal interface) [default]
-    serve  - Launch the OpenHands GUI server (web interface)
-
+Examples:
+  openhands                           # Start CLI mode
+  openhands --resume conversation-id  # Resume a conversation in CLI mode
+  openhands serve                     # Launch GUI server
+  openhands serve --gpu               # Launch GUI server with GPU support
 """
     )
     
-    # Add top-level --resume argument for convenience (defaults to cli subcommand)
+    # CLI arguments at top level (default mode)
     parser.add_argument(
         '--resume',
         type=str,
-        help='Conversation ID to resume (implies cli subcommand)'
+        help='Conversation ID to resume'
     )
     
-    # Create subparsers
+    # Only serve as subcommand
     subparsers = parser.add_subparsers(
         dest='command',
-        help='Available commands',
-        metavar='{cli,serve}'
+        help='Additional commands'
     )
     
-    # Add individual parsers
-    add_cli_parser(subparsers)
-    add_serve_parser(subparsers)
+    # Add serve subcommand
+    serve_parser = subparsers.add_parser(
+        'serve',
+        help='Launch the OpenHands GUI server using Docker (web interface)'
+    )
+    serve_parser.add_argument(
+        '--mount-cwd',
+        action='store_true',
+        help='Mount the current working directory in the Docker container'
+    )
+    serve_parser.add_argument(
+        '--gpu',
+        action='store_true',
+        help='Enable GPU support in the Docker container'
+    )
     
     return parser

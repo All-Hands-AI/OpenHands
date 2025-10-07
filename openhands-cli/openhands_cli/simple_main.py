@@ -30,29 +30,19 @@ def main() -> None:
     parser = create_main_parser()
     args = parser.parse_args()
 
-    # If no subcommand is provided, or if --resume is used at top level, default to 'cli'
-    if args.command is None:
-        # If --resume was provided at top level, pass it to cli subcommand
-        if args.resume:
-            args = parser.parse_args(['cli', '--resume', args.resume])
-        else:
-            args = parser.parse_args(['cli'])
-
     try:
         if args.command == 'serve':
             # Import gui_launcher only when needed
             from openhands_cli.gui_launcher import launch_gui_server
 
             launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
-        elif args.command == 'cli':
+        else:
+            # Default CLI behavior - no subcommand needed
             # Import agent_chat only when needed
             from openhands_cli.agent_chat import run_cli_entry
 
             # Start agent chat
             run_cli_entry(resume_conversation_id=args.resume)
-        else:
-            parser.print_help()
-            sys.exit(1)
     except KeyboardInterrupt:
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except EOFError:
