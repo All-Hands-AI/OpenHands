@@ -62,9 +62,15 @@ class AsyncLLM(LLM):
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
 
+            # Merge kwargs from the partial function
+            merged_kwargs = {**async_completion_unwrapped.keywords, **kwargs}
+
             # Set reasoning effort for models that support it
             if get_features(self.config.model).supports_reasoning_effort:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+                merged_kwargs['reasoning_effort'] = self.config.reasoning_effort
+                # Remove temperature and top_p for reasoning models
+                merged_kwargs.pop('temperature', None)
+                merged_kwargs.pop('top_p', None)
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
@@ -90,8 +96,8 @@ class AsyncLLM(LLM):
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                # Call the underlying function directly with merged kwargs
+                resp = await async_completion_unwrapped.func(*args, **merged_kwargs)
 
                 message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)

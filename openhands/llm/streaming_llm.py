@@ -55,6 +55,12 @@ class StreamingLLM(AsyncLLM):
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
 
+            # Merge kwargs from the partial function
+            merged_kwargs = {
+                **async_streaming_completion_unwrapped.keywords,
+                **kwargs,
+            }
+
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
 
@@ -66,13 +72,18 @@ class StreamingLLM(AsyncLLM):
 
             # Set reasoning effort for models that support it
             if get_features(self.config.model).supports_reasoning_effort:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+                merged_kwargs['reasoning_effort'] = self.config.reasoning_effort
+                # Remove temperature and top_p for reasoning models
+                merged_kwargs.pop('temperature', None)
+                merged_kwargs.pop('top_p', None)
 
             self.log_prompt(messages)
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_streaming_completion_unwrapped(*args, **kwargs)
+                # Call the underlying function directly with merged kwargs
+                resp = await async_streaming_completion_unwrapped.func(
+                    *args, **merged_kwargs
+                )
 
                 # For streaming we iterate over the chunks
                 async for chunk in resp:
