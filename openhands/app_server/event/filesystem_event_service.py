@@ -111,7 +111,7 @@ class FilesystemEventService(EventService):
     def _get_conversation_id(self, file: Path) -> UUID | None:
         try:
             return UUID(file.parent.name)
-        except:
+        except Exception:
             return None
 
     def _get_conversation_ids(self, files: list[Path]) -> set[UUID]:
