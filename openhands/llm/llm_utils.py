@@ -46,11 +46,12 @@ def check_tools(
 
 
 def prepare_reasoning_model_kwargs(
-    kwargs: dict[str, Any], model: str, reasoning_effort: str
+    kwargs: dict[str, Any], model: str, reasoning_effort: str | None
 ) -> None:
-    """
-    Prepare kwargs for reasoning models by handling reasoning_effort parameter
-    and removing incompatible parameters like temperature and top_p.
+    """Prepare kwargs for reasoning models.
+
+    Handles reasoning_effort parameter and removes incompatible parameters
+    like temperature and top_p.
 
     This function modifies kwargs in-place to ensure compatibility with reasoning
     models (Claude Sonnet-4-5, o3, Gemini-2.5-pro, etc.) which don't support
