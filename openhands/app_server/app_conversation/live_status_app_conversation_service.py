@@ -49,7 +49,7 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.user_service import UserService
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
@@ -68,7 +68,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 class LiveStatusAppConversationService(GitAppConversationService):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
-    user_service: UserService
+    user_service: UserContext
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
     sandbox_service: SandboxService
@@ -491,10 +491,10 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
             httpx_client_manager,
             resolve_jwt_service,
             sandbox_manager,
-            user_manager,
+            user_injector,
         )
 
-        resolve_user_service = user_manager().get_resolver_for_current_user()
+        user_dependency = Depends(user_injector())
         resolve_sandbox_service = sandbox_manager().get_resolver_for_current_user()
         resolve_app_conversation_info_service = (
             app_conversation_info_manager().get_resolver_for_current_user()
@@ -505,7 +505,7 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
         resolve_httpx_client_manager = httpx_client_manager().resolve
 
         def _resolve_for_user(
-            user_service: UserService = Depends(resolve_user_service),
+            user_service: UserContext = user_dependency,
             sandbox_service: SandboxService = Depends(resolve_sandbox_service),
             app_conversation_info_service: AppConversationInfoService = Depends(
                 resolve_app_conversation_info_service

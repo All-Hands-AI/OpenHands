@@ -21,7 +21,7 @@ class AppConversationInfo(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
 
-    created_by_user_id: str
+    created_by_user_id: str | None
     sandbox_id: str
 
     selected_repository: str | None = None
@@ -119,7 +119,7 @@ class AppConversationStartTask(BaseModel):
     is populated."""
 
     id: UUID = Field(default_factory=uuid4)
-    created_by_user_id: str
+    created_by_user_id: str | None
     status: AppConversationStartTaskStatus = AppConversationStartTaskStatus.WORKING
     detail: str | None = None
     app_conversation_id: UUID | None = Field(

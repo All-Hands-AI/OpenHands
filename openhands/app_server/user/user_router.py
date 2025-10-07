@@ -2,19 +2,19 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from openhands.app_server.config import user_manager
+from openhands.app_server.config import user_injector
 from openhands.app_server.user.user_models import UserInfo
-from openhands.app_server.user.user_service import UserService
+from openhands.app_server.user.user_context import UserContext
 
 router = APIRouter(prefix='/users', tags=['User'])
-user_service_dependency = Depends(user_manager().get_resolver_for_current_user())
+user_dependency = Depends(user_injector())
 
 # Read methods
 
 
 @router.get('/me')
 async def get_current_user(
-    user_service: UserService = user_service_dependency,
+    user_service: UserContext = user_dependency,
 ) -> UserInfo:
     """Get the current authenticated user."""
     user = await user_service.get_user_info()

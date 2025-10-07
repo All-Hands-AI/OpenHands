@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Callable
 
 from fastapi import Depends
 from pydantic import Field
@@ -29,8 +30,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.db_service import DbService
 from openhands.app_server.services.httpx_client_manager import HttpxClientManager
 from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
-from openhands.app_server.user.user_admin_service import UserAdminServiceManager
-from openhands.app_server.user.user_service import UserServiceManager
+from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.sdk.utils.models import OpenHandsModel
 
 
@@ -79,8 +79,7 @@ class AppServerConfig(OpenHandsModel):
     app_conversation_info: AppConversationInfoServiceManager | None = None
     app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
     app_conversation: AppConversationServiceManager | None = None
-    user: UserServiceManager | None = None
-    user_admin: UserAdminServiceManager | None = None
+    user: UserContextInjector | None = None
     jwt: JwtServiceManager | None = None
     httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
 
@@ -213,30 +212,17 @@ def app_conversation_manager() -> AppConversationServiceManager:
     return app_conversation
 
 
-def user_manager() -> UserServiceManager:
+def user_injector() -> Callable[..., UserContext]:
     config = get_global_config()
     user = config.user
     if user is None:
-        from openhands.app_server.user.legacy_user_service import (
-            LegacyUserServiceManager,
+        from openhands.app_server.user.auth_user_context import (
+            AuthUserContextInjector,
         )
 
-        user = LegacyUserServiceManager()
+        user = AuthUserContextInjector()
         config.user = user
-    return user
-
-
-def user_admin_manager() -> UserAdminServiceManager:
-    config = get_global_config()
-    user_admin = config.user_admin
-    if user_admin is None:
-        from openhands.app_server.user.legacy_user_admin_service import (
-            LegacyUserAdminServiceManager,
-        )
-
-        user_admin = LegacyUserAdminServiceManager()
-        config.user_admin = user_admin
-    return user_admin
+    return user.get_injector()
 
 
 def httpx_client_manager() -> HttpxClientManager:

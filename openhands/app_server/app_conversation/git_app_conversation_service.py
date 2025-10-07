@@ -15,7 +15,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.user.user_service import UserService
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class GitAppConversationService(AppConversationService, ABC):
     Sets up repositories and installs hooks"""
 
     init_git_in_empty_workspace: bool
-    user_service: UserService
+    user_service: UserContext
 
     async def run_setup_scripts(
         self,
