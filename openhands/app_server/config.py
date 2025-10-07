@@ -26,7 +26,10 @@ from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackServiceManager,
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
-from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecServiceManager
+from openhands.app_server.sandbox.sandbox_spec_service import (
+    SandboxSpecService,
+    SandboxSpecServiceInjector,
+)
 from openhands.app_server.services.db_service import DbService
 from openhands.app_server.services.httpx_client_manager import HttpxClientManager
 from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
@@ -75,7 +78,7 @@ class AppServerConfig(OpenHandsModel):
     event: EventServiceManager | None = None
     event_callback: EventCallbackServiceManager | None = None
     sandbox: SandboxServiceManager | None = None
-    sandbox_spec: SandboxSpecServiceManager | None = None
+    sandbox_spec: SandboxSpecServiceInjector | None = None
     app_conversation_info: AppConversationInfoServiceManager | None = None
     app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
     app_conversation: AppConversationServiceManager | None = None
@@ -153,24 +156,24 @@ def sandbox_manager() -> SandboxServiceManager:
     return sandbox
 
 
-def sandbox_spec_manager() -> SandboxSpecServiceManager:
+def sandbox_spec_injector() -> Callable[..., SandboxSpecService]:
     config = get_global_config()
     sandbox_spec = config.sandbox_spec
     if sandbox_spec is None:
         if os.getenv('RUNTIME') == 'remote':
             from openhands.app_server.sandbox.remote_sandbox_spec_service import (
-                RemoteSandboxSpecServiceManager,
+                RemoteSandboxSpecServiceInjector,
             )
 
-            sandbox_spec = RemoteSandboxSpecServiceManager()
+            sandbox_spec = RemoteSandboxSpecServiceInjector()
         else:
             from openhands.app_server.sandbox.docker_sandbox_spec_service import (
-                DockerSandboxSpecServiceManager,
+                DockerSandboxSpecServiceInjector,
             )
 
-            sandbox_spec = DockerSandboxSpecServiceManager()
+            sandbox_spec = DockerSandboxSpecServiceInjector()
         config.sandbox_spec = sandbox_spec
-    return sandbox_spec
+    return sandbox_spec.get_injector()
 
 
 def app_conversation_info_manager() -> AppConversationInfoServiceManager:

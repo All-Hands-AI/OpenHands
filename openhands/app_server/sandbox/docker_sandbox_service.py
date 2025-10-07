@@ -409,17 +409,15 @@ class DockerSandboxServiceManager(SandboxServiceManager):
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
             httpx_client_manager,
-            sandbox_spec_manager,
+            sandbox_spec_injector,
         )
 
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_unsecured_resolver()
-        )
+        sandbox_spec_dependency = Depends(sandbox_spec_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
 
         def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
+            sandbox_spec_service: SandboxSpecService = sandbox_spec_dependency,
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
         ) -> SandboxService:
             return DockerSandboxService(

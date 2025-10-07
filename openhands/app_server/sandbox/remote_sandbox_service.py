@@ -340,7 +340,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             db_service,
             get_global_config,
             httpx_client_manager,
-            sandbox_spec_manager,
+            sandbox_spec_injector,
             user_injector,
         )
 
@@ -350,9 +350,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             # TODO: Develop a polling protocol so this is not required.
             raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_resolver_for_current_user()
-        )
+        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
         user_dependency = Depends(user_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
         db_session_dependency = Depends(db_service().managed_session_dependency)
@@ -384,7 +382,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             db_service,
             get_global_config,
             httpx_client_manager,
-            sandbox_spec_manager,
+            sandbox_spec_injector,
         )
 
         config = get_global_config()
@@ -393,9 +391,7 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
             # TODO: Develop a polling protocol so this is not required.
             raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
         # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(
-            sandbox_spec_manager().get_unsecured_resolver()
-        )
+        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
         _httpx_client_dependency = Depends(httpx_client_manager().resolve)
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
