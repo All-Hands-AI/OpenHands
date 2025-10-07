@@ -881,7 +881,7 @@ if __name__ == '__main__':
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough
-            max_retries=1,
+            max_retries=2,
         )
     else:
         critic = AgentFinishedCritic()

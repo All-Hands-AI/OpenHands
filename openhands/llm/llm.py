@@ -105,6 +105,8 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
+    'gpt-5',
+    'gpt-5-mini',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -113,6 +115,8 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1',
     'o1-2024-12-17',
     'xai/grok-4-0709',
+    'openai/gpt-5',
+    'openai/gpt-5-mini',
 ]
 
 

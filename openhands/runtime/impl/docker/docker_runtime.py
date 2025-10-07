@@ -62,6 +62,12 @@ def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
         ),
     )
 
+def _parent_id_of(image, docker_client):
+    try:
+        attrs = image.attrs  # may trigger a reload internally
+    except Exception:
+        attrs = docker_client.api.inspect_image(image.id)
+    return attrs.get('Parent') or attrs.get('ParentId') or ''
 
 class DockerRuntime(ActionExecutionClient):
     """This runtime will subscribe the event stream.
@@ -99,9 +105,14 @@ class DockerRuntime(ActionExecutionClient):
             import multiprocessing
             current_process = multiprocessing.current_process()
             if current_process.name == 'MainProcess':
-                DockerRuntime._shutdown_listener_id = add_shutdown_listener(
-                    lambda: stop_all_containers(CONTAINER_NAME_PREFIX)
-                )
+                def full_cleanup():
+                    try:
+                        self._remove_containers_by_prefix(CONTAINER_NAME_PREFIX)
+                        if self.config.sandbox.base_container_image:
+                            self._cleanup_base_image_and_dependencies()
+                    except Exception as e:
+                        logger.warning(f'Shutdown cleanup failed: {e}')
+                DockerRuntime._shutdown_listener_id = add_shutdown_listener(full_cleanup)
             else:
                 # For worker processes, only clean up their own container
                 def cleanup_own():
@@ -527,6 +538,92 @@ class DockerRuntime(ActionExecutionClient):
 
         self._release_port_locks()
 
+        # Clean up base container image and dependent images if configured
+        if self.config.sandbox.base_container_image:
+            self._cleanup_base_image_and_dependencies()
+
+
+    def _cleanup_base_image_and_dependencies(self) -> None:
+        """Clean up the base container image and any images that depend on it."""
+        try:
+            docker_client = self._init_docker_client()
+            try:
+                base_image = self.config.sandbox.base_container_image
+                if not base_image:
+                    return
+
+                logger.debug(f'Cleaning up base image and dependencies: {base_image}')
+
+                # Find all images that depend on the base image (including the base image itself)
+                images_to_remove = self._find_dependent_images(docker_client, base_image)
+
+                # Remove dependent images first (in reverse order to handle dependencies)
+                for image_id in reversed(images_to_remove):
+                    self._safely_remove_image(docker_client, image_id)
+
+                try:
+                    docker_client.images.prune({'dangling': True})
+                except Exception:
+                    pass
+            finally:
+                docker_client.close()
+        except Exception as e:
+            logger.warning(f'Error during base image cleanup: {e}')
+
+    def _find_dependent_images(self, docker_client: docker.DockerClient, base_image: str) -> list[str]:
+        """Find all images that depend on the given base image.
+
+        Args:
+            docker_client: Docker client instance
+            base_image: The base image name or ID to find dependencies for
+
+        Returns:
+            List of image IDs that depend on the base image, including the base image itself
+        """
+        try:
+            # Get the base image object to get its ID
+            try:
+                base_image_obj = docker_client.images.get(base_image)
+                base_image_id = base_image_obj.id
+            except docker.errors.NotFound:
+                logger.debug(f'Base image {base_image} not found, skipping cleanup')
+                return []
+
+            all_images = docker_client.images.list()
+            dependent_images = []
+
+            # Add the base image itself
+            dependent_images.append(base_image_id)
+
+            # Find images that have the base image as parent (directly or indirectly)
+            def find_children(parent_id: str) -> list[str]:
+                children = []
+                for image in all_images:
+                    # no 'Config' guard; just read the parent key that actually exists
+                    parent = _parent_id_of(image, docker_client)
+                    if parent == parent_id and image.id != parent_id:
+                        children.append(image.id)
+                        children.extend(find_children(image.id))
+                return children
+
+            # Find all children of the base image
+            dependent_images.extend(find_children(base_image_id))
+
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_dependent_images = []
+            for image_id in dependent_images:
+                if image_id not in seen:
+                    seen.add(image_id)
+                    unique_dependent_images.append(image_id)
+
+            logger.debug(f'Found {len(unique_dependent_images)} images dependent on {base_image}: {unique_dependent_images}')
+            return unique_dependent_images
+
+        except Exception as e:
+            logger.debug(f'Error finding dependent images for {base_image}: {e}')
+            return []
+
     def _safely_remove_image(self, docker_client: docker.DockerClient, image_id: str) -> None:
         """Safely remove a Docker image if it's not being used by other containers or images.
 
@@ -546,24 +643,17 @@ class DockerRuntime(ActionExecutionClient):
             # Get all images to check for parent-child relationships
             all_images = docker_client.images.list()
             for image in all_images:
-                # Check if this image depends on the one we want to remove
-                if hasattr(image, 'attrs') and 'Config' in image.attrs:
-                    parent_id = image.attrs.get('Parent', '')
-                    if parent_id == image_id and image.id != image_id:
-                        logger.debug(f'Image {image_id} is a parent of {image.id}, skipping removal')
-                        return
+                parent_id = _parent_id_of(image, docker_client)
+                if parent_id == image_id and image.id != image_id:
+                    logger.debug(f'Image {image_id} is a parent of {image.id}, skipping removal')
+                    return
 
             # Safe to remove the image
             try:
-                docker_client.images.remove(image_id, force=False)
-                logger.debug(f'Successfully removed image: {image_id}')
+                docker_client.images.remove(image_id, force=True, noprune=False)
+                logger.info(f'Successfully removed image: {image_id}')
             except docker.errors.APIError as e:
-                if 'image is being used by' in str(e).lower() or 'conflict' in str(e).lower():
-                    logger.debug(f'Image {image_id} is still in use, skipping removal: {e}')
-                else:
-                    logger.debug(f'API error removing image {image_id}: {e}')
-            except Exception as e:
-                logger.debug(f'Error removing image {image_id}: {e}')
+                logger.debug(f'API error removing image {image_id}: {e}')
 
         except Exception as e:
             logger.debug(f'Error during safe image removal for {image_id}: {e}')
@@ -588,7 +678,7 @@ class DockerRuntime(ActionExecutionClient):
 
                             logger.debug(f'Stopping and removing container: {container.name}')
                             container.stop()
-                            container.remove(force=True)
+                            container.remove(force=True, v=True)
                     except docker.errors.APIError as e:
                         logger.debug(f'API error removing container {container.name}: {e}')
                     except docker.errors.NotFound:
@@ -599,6 +689,11 @@ class DockerRuntime(ActionExecutionClient):
                 # Now safely remove images associated with the removed containers
                 for image_id in set(container_images_to_cleanup):  # Use set to avoid duplicates
                     self._safely_remove_image(docker_client, image_id)
+
+                try:
+                    docker_client.images.prune({'dangling': True})
+                except Exception:
+                    pass
 
             finally:
                 docker_client.close()
