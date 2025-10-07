@@ -15,7 +15,7 @@ import { useWebSocket } from "#/hooks/use-websocket";
 // MSW WebSocket mock setup
 const wsLink = ws.link("ws://acme.com/ws");
 
-const server = setupServer(
+const mswServer = setupServer(
   wsLink.addEventListener("connection", ({ client, server }) => {
     // Establish the connection
     server.connect();
@@ -25,9 +25,9 @@ const server = setupServer(
   }),
 );
 
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+beforeAll(() => mswServer.listen());
+afterEach(() => mswServer.resetHandlers());
+afterAll(() => mswServer.close());
 
 describe("useWebSocket", () => {
   it("should establish a WebSocket connection", async () => {
@@ -81,7 +81,7 @@ describe("useWebSocket", () => {
   it("should handle connection errors gracefully", async () => {
     // Create a mock that will simulate an error
     const errorLink = ws.link("ws://error-test.com/ws");
-    server.use(
+    mswServer.use(
       errorLink.addEventListener("connection", ({ client }) => {
         // Simulate an error by closing the connection immediately
         client.close(1006, "Connection failed");
@@ -242,7 +242,7 @@ describe("useWebSocket", () => {
 
     // Create a mock that will simulate an error
     const errorLink = ws.link("ws://error-test.com/ws");
-    server.use(
+    mswServer.use(
       errorLink.addEventListener("connection", ({ client }) => {
         // Simulate an error by closing the connection immediately
         client.close(1006, "Connection failed");

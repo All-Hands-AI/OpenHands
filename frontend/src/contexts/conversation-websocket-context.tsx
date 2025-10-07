@@ -8,7 +8,9 @@ import React, {
 } from "react";
 import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
+import { useErrorMessageStore } from "#/stores/error-message-store";
 import { isV1Event } from "#/types/v1/type-guards";
+import { AgentErrorEvent } from "#/types/v1/core/events/observation-event";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -27,6 +29,7 @@ export function ConversationWebSocketProvider({
     "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
   >("CONNECTING");
   const { addEvent } = useEventStore();
+  const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
@@ -35,23 +38,43 @@ export function ConversationWebSocketProvider({
         // Use type guard to validate v1 event structure
         if (isV1Event(event)) {
           addEvent(event);
+
+          // Handle AgentErrorEvent specifically
+          if (event.source === "agent" && "error" in event) {
+            const agentErrorEvent = event as AgentErrorEvent;
+            setErrorMessage(agentErrorEvent.error);
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.warn("Failed to parse WebSocket message as JSON:", error);
       }
     },
-    [addEvent],
+    [addEvent, setErrorMessage],
   );
 
   const websocketOptions = useMemo(
     () => ({
-      onOpen: () => setConnectionState("OPEN"),
-      onClose: () => setConnectionState("CLOSED"),
-      onError: () => setConnectionState("CLOSED"),
+      onOpen: () => {
+        setConnectionState("OPEN");
+        removeErrorMessage(); // Clear any previous error messages on successful connection
+      },
+      onClose: (event: CloseEvent) => {
+        setConnectionState("CLOSED");
+        // Set error message for unexpected disconnects (not normal closure)
+        if (event.code !== 1000) {
+          setErrorMessage(
+            `Connection lost: ${event.reason || "Unexpected disconnect"}`,
+          );
+        }
+      },
+      onError: () => {
+        setConnectionState("CLOSED");
+        setErrorMessage("Failed to connect to server");
+      },
       onMessage: handleMessage,
     }),
-    [handleMessage],
+    [handleMessage, setErrorMessage, removeErrorMessage],
   );
 
   const { socket } = useWebSocket(
