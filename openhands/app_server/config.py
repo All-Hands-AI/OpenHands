@@ -6,7 +6,6 @@ from typing import Awaitable, Callable
 
 import httpx
 from pydantic import Field
-from stripe import EventService
 
 from openhands.agent_server.env_parser import from_env
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -25,7 +24,7 @@ from openhands.app_server.app_lifespan.app_lifespan_service import AppLifespanSe
 from openhands.app_server.app_lifespan.oss_app_lifespan_service import (
     OssAppLifespanService,
 )
-from openhands.app_server.event.event_service import EventServiceInjector
+from openhands.app_server.event.event_service import EventService, EventServiceInjector
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
     EventCallbackServiceInjector,
