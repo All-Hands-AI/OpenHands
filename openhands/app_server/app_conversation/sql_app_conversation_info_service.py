@@ -97,7 +97,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     """
 
     session: AsyncSession
-    user_id: str | None = None
+    user_context: UserContext
 
     async def search_app_conversation_info(
         self,
@@ -111,7 +111,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         limit: int = 100,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations without permission checks."""
-        query = self._secure_select()
+        query = await self._secure_select()
 
         query = self._apply_filters(
             query=query,
@@ -177,9 +177,10 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
         query = select(func.count(StoredConversationMetadata.conversation_id))
-        if self.user_id:
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = query.where(
-                StoredConversationMetadata.created_by_user_id == self.user_id
+                StoredConversationMetadata.created_by_user_id == user_id
             )
 
         query = self._apply_filters(
@@ -234,7 +235,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def get_app_conversation_info(
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
-        query = self._secure_select().where(
+        query = await self._secure_select()
+        query = query.where(
             StoredConversationMetadata.conversation_id == str(conversation_id)
         )
         result_set = await self.session.execute(query)
@@ -249,7 +251,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         conversation_id_strs = [
             str(conversation_id) for conversation_id in conversation_ids
         ]
-        query = self._secure_select().where(
+        query = await self._secure_select()
+        query = query.where(
             StoredConversationMetadata.conversation_id.in_(conversation_id_strs)
         )
         result = await self.session.execute(query)
@@ -268,13 +271,14 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
-        if self.user_id:
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = select(StoredConversationMetadata).where(
                 StoredConversationMetadata.conversation_id == info.id
             )
             result = await self.session.execute(query)
             existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == self.user_id
+            assert existing is None or existing.created_by_user_id == user_id
 
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
@@ -310,13 +314,14 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         await self.session.commit()
         return info
 
-    def _secure_select(self):
+    async def _secure_select(self):
         query = select(StoredConversationMetadata).where(
             StoredConversationMetadata.conversation_version == 'V1'
         )
-        if self.user_id:
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = query.where(
-                StoredConversationMetadata.user_id == self.user_id,
+                StoredConversationMetadata.user_id == user_id,
             )
         return query
 
@@ -374,8 +379,7 @@ class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
             user_context: UserContext = user_dependency,
             session: AsyncSession = _db_dependency,
         ) -> AppConversationInfoService:
-            user_id = await user_context.get_user_id()
-            service = SQLAppConversationInfoService(session=session, user_id=user_id)
+            service = SQLAppConversationInfoService(session=session, user_context=user_context)
             return service
 
         return resolve_app_conversation_service

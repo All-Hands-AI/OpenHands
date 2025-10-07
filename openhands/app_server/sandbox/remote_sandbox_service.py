@@ -41,7 +41,7 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
     __tablename__ = 'v1_remote_sandbox'
     id = Column(String, primary_key=True)
-    created_by_user_id = Column(String, index=True)
+    created_by_user_id = Column(String, nullable=True, index=True)
     sandbox_spec_id = Column(String, index=True)  # shadows runtime['image']
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
@@ -60,7 +60,7 @@ class RemoteSandboxService(SandboxService):
     web_url: str
     resource_factor: int
     runtime_class: str | None
-    user_id: str | None
+    user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
 
@@ -117,10 +117,11 @@ class RemoteSandboxService(SandboxService):
             created_at=stored.created_at,
         )
 
-    def _secure_select(self):
+    async def _secure_select(self):
         query = select(StoredRemoteSandbox)
-        if self.user_id:
-            query = query.where(StoredRemoteSandbox.created_by_user_id == self.user_id)
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            query = query.where(StoredRemoteSandbox.created_by_user_id == user_id)
         return query
 
     async def search_sandboxes(
@@ -128,7 +129,7 @@ class RemoteSandboxService(SandboxService):
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
-        stmt = self._secure_select()
+        stmt = await self._secure_select()
 
         # Handle pagination
         if page_id is not None:
@@ -174,7 +175,8 @@ class RemoteSandboxService(SandboxService):
 
     async def get_sandbox(self, sandbox_id: str) -> Union[SandboxInfo, None]:
         """Get a single sandbox by checking its corresponding runtime."""
-        stmt = self._secure_select().where(StoredRemoteSandbox.id == sandbox_id)
+        stmt = await self._secure_select()
+        stmt = stmt.where(StoredRemoteSandbox.id == sandbox_id)
         result = await self.db_session.execute(stmt)
         stored_sandbox = result.scalar_one_or_none()
         if stored_sandbox is None:
@@ -196,11 +198,6 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
-            if self.user_id is None:
-                # This is an illegal state - starting a sandbox with an unsecured service
-                # means the sandbox would not be associated with any user
-                raise OpenHandsError('Cannot start a sandbox without a user_id')
-
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -217,10 +214,13 @@ class RemoteSandboxService(SandboxService):
             # Create a unique id
             sandbox_id = base62.encodebytes(os.urandom(16))
 
+            # get user id
+            user_id = self.user_context.get_user_id()
+
             # Store the sandbox
             stored_sandbox = StoredRemoteSandbox(
                 id=sandbox_id,
-                created_by_user_id=self.user_id,
+                created_by_user_id=user_id,
                 sandbox_spec_id=sandbox_spec_id,
                 created_at=utc_now(),
             )
@@ -357,11 +357,10 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
 
         async def resolve_sandbox_service(
             sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            user_service: UserContext = user_dependency,
+            user_context: UserContext = user_dependency,
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
             db_session: AsyncSession = db_session_dependency,
         ) -> SandboxService:
-            user_id = await user_service.get_user_id()
             return RemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 api_url=self.api_url,
@@ -369,7 +368,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                 web_url=web_url,
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
-                user_id=user_id,
+                user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,
             )

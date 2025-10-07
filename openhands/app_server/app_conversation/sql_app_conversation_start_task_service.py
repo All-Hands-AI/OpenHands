@@ -143,10 +143,10 @@ class SQLAppConversationStartTaskServiceInjector(
         _db_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_app_conversation_start_task_service(
-            user_service: UserContext = user_dependency,
+            user_context: UserContext = user_dependency,
             session: AsyncSession = _db_dependency,
         ) -> AppConversationStartTaskService:
-            user_id = await user_service.get_user_id()
+            user_id = await user_context.get_user_id()
             service = SQLAppConversationStartTaskService(
                 session=session, user_id=user_id
             )

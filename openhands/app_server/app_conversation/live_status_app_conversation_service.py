@@ -68,7 +68,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 class LiveStatusAppConversationService(GitAppConversationService):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
-    user_service: UserContext
+    user_context: UserContext
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
     sandbox_service: SandboxService
@@ -153,7 +153,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         self, request: AppConversationStartRequest
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         # Create and yield the start task
-        user_id = await self.user_service.get_user_id()
+        user_id = await self.user_context.get_user_id()
         task = AppConversationStartTask(
             created_by_user_id=user_id,
             request=request,
@@ -205,7 +205,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             info = ConversationInfo.model_validate(response.json())
 
             # Store info...
-            user_id = await self.user_service.get_user_id()
+            user_id = await self.user_context.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
                 title=f'Conversation {info.id}',
@@ -415,10 +415,10 @@ class LiveStatusAppConversationService(GitAppConversationService):
         initial_message: SendMessageRequest | None,
         git_provider: ProviderType | None,
     ) -> StartConversationRequest:
-        user = await self.user_service.get_user_info()
+        user = await self.user_context.get_user_info()
 
         # Set up a secret for the git token
-        secrets = await self.user_service.get_secrets()
+        secrets = await self.user_context.get_secrets()
         if git_provider:
             if self.web_url:
                 # If there is a web url, then we create an access token to access it.
@@ -439,7 +439,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # If there is no URL specified where the sandbox can access the app server
                 # then we supply a static secret with the most recent value. Depending
                 # on the type, this may eventually expire.
-                static_token = await self.user_service.get_latest_token(git_provider)
+                static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
                     secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
 
@@ -506,7 +506,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
         httpx_client_injector_dependency = Depends(httpx_client_injector())
 
         async def resolve(
-            user_service: UserContext = user_dependency,
+            user_context: UserContext = user_dependency,
             sandbox_service: SandboxService = sandbox_service_dependency,
             app_conversation_info_service: AppConversationInfoService = (
                 app_conversation_info_service_dependency
@@ -532,7 +532,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
 
             return LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
-                user_service=user_service,
+                user_context=user_context,
                 sandbox_service=sandbox_service,
                 app_conversation_info_service=app_conversation_info_service,
                 app_conversation_start_task_service=app_conversation_start_task_service,
