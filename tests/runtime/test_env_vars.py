@@ -3,6 +3,7 @@
 import os
 from unittest.mock import patch
 
+import pytest
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.events.action import CmdRunAction
@@ -25,9 +26,9 @@ def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
         )
         print(obs)
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert (
-            obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
-        ), f'Output: [{obs.content}] for {runtime_cls}'
+        assert obs.content.strip().split('\n\r')[0].strip() == 'BAZ', (
+            f'Output: [{obs.content}] for {runtime_cls}'
+        )
 
         _close_test_runtime(runtime)
 
@@ -83,6 +84,10 @@ def test_env_vars_added_by_config(temp_dir, runtime_cls):
     _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    os.environ.get('TEST_RUNTIME') in ['cli', 'local'],
+    reason='This test is specific to DockerRuntime and its pause/resume persistence',
+)
 def test_docker_runtime_env_vars_persist_after_restart(temp_dir):
     from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 

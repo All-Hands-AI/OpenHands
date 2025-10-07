@@ -8,13 +8,10 @@ import json
 import os
 import re
 import sys
-from typing import Dict, Tuple
 
 
 def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
-    """
-    Calculate the cost of the model call.
-    """
+    """Calculate the cost of the model call."""
     if 'claude-3-5-sonnet' in model.lower():
         # https://www.anthropic.com/pricing#anthropic-api, accessed 12/11/2024
         return 0.000003 * prompt_tokens + 0.000015 * completion_tokens
@@ -60,9 +57,8 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
         raise ValueError(f'Unknown model: {model}')
 
 
-def analyze_eval_json_file(filepath: str) -> Tuple[int, int]:
-    """
-    Analyze a single eval JSON file and extract the total and result from final_score.
+def analyze_eval_json_file(filepath: str) -> tuple[int, int]:
+    """Analyze a single eval JSON file and extract the total and result from final_score.
 
     Args:
         filepath: Path to the JSON file
@@ -84,9 +80,8 @@ def analyze_eval_json_file(filepath: str) -> Tuple[int, int]:
         return (0, 0)
 
 
-def analyze_traj_json_file(filepath: str) -> Tuple[int, float]:
-    """
-    Analyze a single trajectory JSON file and extract the steps and tokens
+def analyze_traj_json_file(filepath: str) -> tuple[int, float]:
+    """Analyze a single trajectory JSON file and extract the steps and tokens
     for each step. Then estimate the cost based on the tokens and the model type.
     Note: this is assuming there's no prompt caching at all.
     """
@@ -115,9 +110,8 @@ def analyze_traj_json_file(filepath: str) -> Tuple[int, float]:
 
 def analyze_folder(
     folder_path: str,
-) -> Tuple[Dict[str, Tuple[int, int]], Dict[str, Tuple[int, float]]]:
-    """
-    Analyze all eval_*.json & traj_*.json files in the specified folder.
+) -> tuple[dict[str, tuple[int, int]], dict[str, tuple[int, float]]]:
+    """Analyze all eval_*.json & traj_*.json files in the specified folder.
 
     Args:
         folder_path: Path to the folder containing JSON files
@@ -149,9 +143,7 @@ def analyze_folder(
 
 
 def get_task_nature_category(task_name: str) -> str:
-    """
-    Get the nature category of the task.
-    """
+    """Get the nature category of the task."""
     task_nature = task_name.split('-')[0]
     if task_nature.lower() in ['sde', 'pm', 'ds', 'admin', 'hr', 'finance']:
         return task_nature
@@ -160,8 +152,7 @@ def get_task_nature_category(task_name: str) -> str:
 
 
 def calculate_score(total: int, result: int) -> float:
-    """
-    Calculate the score as a number between 0 and 1.
+    """Calculate the score as a number between 0 and 1.
 
     Formula: score = (result / total) * 0.5 + (result // total) * 0.5
     Explanation:
@@ -179,8 +170,7 @@ def calculate_score(total: int, result: int) -> float:
 
 
 def is_perfect_completion(total: int, result: int) -> bool:
-    """
-    Check if the task achieved perfect completion.
+    """Check if the task achieved perfect completion.
 
     Args:
         total: Total possible points
@@ -252,7 +242,7 @@ def main():
     print('\n## Summary\n')
     print(f'**Tasks Evaluated:** {len(eval_results)}\n')
     print(
-        f'**Perfect Completions:** {perfect_completions}/{len(eval_results)} ({(perfect_completions/len(eval_results)*100):.2f}%)\n'
+        f'**Perfect Completions:** {perfect_completions}/{len(eval_results)} ({(perfect_completions / len(eval_results) * 100):.2f}%)\n'
     )
 
     overall_score = (
@@ -278,10 +268,10 @@ def main():
         print('\n## Statistics\n')
         print('| Metric | Value |')
         print('|---------|--------|')
-        print(f'| Highest Task Score | {highest_score*100:.2f}% |')
-        print(f'| Lowest Task Score | {lowest_score*100:.2f}% |')
-        print(f'| Median Task Score | {median_score*100:.2f}% |')
-        print(f'| Average Task Score | {avg_score*100:.2f}% |')
+        print(f'| Highest Task Score | {highest_score * 100:.2f}% |')
+        print(f'| Lowest Task Score | {lowest_score * 100:.2f}% |')
+        print(f'| Median Task Score | {median_score * 100:.2f}% |')
+        print(f'| Average Task Score | {avg_score * 100:.2f}% |')
 
         # compute avg score per nature category
         print('\n## Statistics per Nature Category\n')
@@ -307,9 +297,11 @@ def main():
                 if nature_category == task_nature and is_perfect
             )
             print(
-                f'| Perfect Completions for {task_nature} | {perfect_completions}/{num_of_tasks} ({perfect_completions/num_of_tasks*100:.2f}%) |'
+                f'| Perfect Completions for {task_nature} | {perfect_completions}/{num_of_tasks} ({perfect_completions / num_of_tasks * 100:.2f}%) |'
             )
-            print(f'| Average Score for {task_nature} | {task_nature_score*100:.2f}% |')
+            print(
+                f'| Average Score for {task_nature} | {task_nature_score * 100:.2f}% |'
+            )
 
 
 if __name__ == '__main__':

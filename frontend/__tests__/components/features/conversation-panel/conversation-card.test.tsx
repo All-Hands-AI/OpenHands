@@ -12,12 +12,10 @@ import {
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
-import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
+import { ConversationCard } from "#/components/features/conversation-panel/conversation-card/conversation-card";
 import { clickOnEditButton } from "./utils";
 
 // We'll use the actual i18next implementation but override the translation function
-import { I18nextProvider } from "react-i18next";
-import i18n from "i18next";
 
 // Mock the t function to return our custom translations
 vi.mock("react-i18next", async () => {
@@ -27,9 +25,9 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "CONVERSATION$CREATED": "Created",
-          "CONVERSATION$AGO": "ago",
-          "CONVERSATION$UPDATED": "Updated"
+          CONVERSATION$CREATED: "Created",
+          CONVERSATION$AGO: "ago",
+          CONVERSATION$UPDATED: "Updated",
         };
         return translations[key] || key;
       },
@@ -66,7 +64,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -78,11 +75,12 @@ describe("ConversationCard", () => {
     within(card).getByText("Conversation 1");
 
     // Just check that the card contains the expected text content
-    expect(card).toHaveTextContent("Created");
     expect(card).toHaveTextContent("ago");
 
     // Use a regex to match the time part since it might have whitespace
-    const timeRegex = new RegExp(formatTimeDelta(new Date("2021-10-01T12:00:00Z")));
+    const timeRegex = new RegExp(
+      formatTimeDelta(new Date("2021-10-01T12:00:00Z")),
+    );
     expect(card).toHaveTextContent(timeRegex);
   });
 
@@ -91,7 +89,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -106,9 +103,12 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={{
+          selected_repository: "org/selectedRepository",
+          selected_branch: "main",
+          git_provider: "github",
+        }}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -118,44 +118,67 @@ describe("ConversationCard", () => {
 
   it("should toggle a context menu when clicking the ellipsis button", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
+    const onContextMenuToggle = vi.fn();
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen={false}
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
 
-    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    // Context menu is always in the DOM but hidden by CSS classes when contextMenuOpen is false
+    const contextMenu = screen.queryByTestId("context-menu");
+    if (contextMenu) {
+      const contextMenuParent = contextMenu.parentElement;
+      if (contextMenuParent) {
+        expect(contextMenuParent).toHaveClass("opacity-0", "invisible");
+      }
+    }
 
     const ellipsisButton = screen.getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
+
+    expect(onContextMenuToggle).toHaveBeenCalledWith(true);
+
+    // Simulate context menu being opened by parent
+    rerender(
+      <ConversationCard
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
+      />,
+    );
 
     screen.getByTestId("context-menu");
 
     await user.click(ellipsisButton);
 
-    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    expect(onContextMenuToggle).toHaveBeenCalledWith(false);
   });
 
   it("should call onDelete when the delete button is clicked", async () => {
     const user = userEvent.setup();
+    const onContextMenuToggle = vi.fn();
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
 
     const menu = screen.getByTestId("context-menu");
     const deleteButton = within(menu).getByTestId("delete-button");
@@ -163,6 +186,7 @@ describe("ConversationCard", () => {
     await user.click(deleteButton);
 
     expect(onDelete).toHaveBeenCalled();
+    expect(onContextMenuToggle).toHaveBeenCalledWith(false);
   });
 
   test("clicking the selectedRepository should not trigger the onClick handler", async () => {
@@ -170,10 +194,13 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
-        selectedRepository="org/selectedRepository"
+        selectedRepository={{
+          selected_repository: "org/selectedRepository",
+          selected_branch: "main",
+          git_provider: "github",
+        }}
         lastUpdatedAt="2021-10-01T12:00:00Z"
       />,
     );
@@ -188,22 +215,48 @@ describe("ConversationCard", () => {
 
   test("conversation title should call onChangeTitle when changed and blurred", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
+    let menuOpen = true;
+    const onContextMenuToggle = vi.fn((isOpen: boolean) => {
+      menuOpen = isOpen;
+    });
+    const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
+        contextMenuOpen={menuOpen}
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
 
     await clickOnEditButton(user);
+
+    // Re-render with updated state
+    rerender(
+      <ConversationCard
+        onDelete={onDelete}
+        title="Conversation 1"
+        selectedRepository={null}
+        lastUpdatedAt="2021-10-01T12:00:00Z"
+        onChangeTitle={onChangeTitle}
+        contextMenuOpen={menuOpen}
+        onContextMenuToggle={onContextMenuToggle}
+      />,
+    );
+
     const title = screen.getByTestId("conversation-card-title");
 
     expect(title).toBeEnabled();
-    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+    // Context menu should be hidden after edit button is clicked (check CSS classes on parent div)
+    const contextMenu = screen.queryByTestId("context-menu");
+    if (contextMenu) {
+      const contextMenuParent = contextMenu.parentElement;
+      if (contextMenuParent) {
+        expect(contextMenuParent).toHaveClass("opacity-0", "invisible");
+      }
+    }
     // expect to be focused
     expect(document.activeElement).toBe(title);
 
@@ -212,19 +265,20 @@ describe("ConversationCard", () => {
     await user.tab();
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
-    expect(title).toHaveValue("New Conversation Name");
   });
 
-  it("should reset title and not call onChangeTitle when the title is empty", async () => {
+  it("should not call onChange title", async () => {
     const user = userEvent.setup();
+    const onContextMenuToggle = vi.fn();
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
 
@@ -235,8 +289,7 @@ describe("ConversationCard", () => {
     await user.clear(title);
     await user.tab();
 
-    expect(onChangeTitle).not.toHaveBeenCalled();
-    expect(title).toHaveValue("Conversation 1");
+    expect(onChangeTitle).not.toBeCalled();
   });
 
   test("clicking the title should trigger the onClick handler", async () => {
@@ -245,7 +298,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -261,14 +313,16 @@ describe("ConversationCard", () => {
 
   test("clicking the title should not trigger the onClick handler if edit mode", async () => {
     const user = userEvent.setup();
+    const onContextMenuToggle = vi.fn();
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
 
@@ -282,19 +336,18 @@ describe("ConversationCard", () => {
 
   test("clicking the delete button should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
+    const onContextMenuToggle = vi.fn();
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
 
     const menu = screen.getByTestId("context-menu");
     const deleteButton = within(menu).getByTestId("delete-button");
@@ -304,79 +357,8 @@ describe("ConversationCard", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  it("should show display cost button only when showOptions is true", async () => {
-    const user = userEvent.setup();
-    const { rerender } = renderWithProviders(
-      <ConversationCard
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        isActive
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-
-    // Wait for context menu to appear
-    const menu = await screen.findByTestId("context-menu");
-    expect(
-      within(menu).queryByTestId("display-cost-button"),
-    ).not.toBeInTheDocument();
-
-    // Close menu
-    await user.click(ellipsisButton);
-
-    rerender(
-      <ConversationCard
-        onDelete={onDelete}
-        onChangeTitle={onChangeTitle}
-        showOptions
-        isActive
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-      />,
-    );
-
-    // Open menu again
-    await user.click(ellipsisButton);
-
-    // Wait for context menu to appear and check for display cost button
-    const newMenu = await screen.findByTestId("context-menu");
-    within(newMenu).getByTestId("display-cost-button");
-  });
-
-  it("should show metrics modal when clicking the display cost button", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(
-      <ConversationCard
-        onDelete={onDelete}
-        isActive
-        onChangeTitle={onChangeTitle}
-        title="Conversation 1"
-        selectedRepository={null}
-        lastUpdatedAt="2021-10-01T12:00:00Z"
-        showOptions
-      />,
-    );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
-
-    const menu = screen.getByTestId("context-menu");
-    const displayCostButton = within(menu).getByTestId("display-cost-button");
-
-    await user.click(displayCostButton);
-
-    // Verify if metrics modal is displayed by checking for the modal content
-    expect(screen.getByTestId("metrics-modal")).toBeInTheDocument();
-  });
-
   it("should not display the edit or delete options if the handler is not provided", async () => {
-    const user = userEvent.setup();
+    const onContextMenuToggle = vi.fn();
     const { rerender } = renderWithProviders(
       <ConversationCard
         onClick={onClick}
@@ -384,19 +366,15 @@ describe("ConversationCard", () => {
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
-
-    const ellipsisButton = screen.getByTestId("ellipsis-button");
-    await user.click(ellipsisButton);
 
     const menu = await screen.findByTestId("context-menu");
     expect(within(menu).queryByTestId("edit-button")).toBeInTheDocument();
     expect(within(menu).queryByTestId("delete-button")).not.toBeInTheDocument();
 
-    // toggle to hide the context menu
-    await user.click(ellipsisButton);
-
     rerender(
       <ConversationCard
         onClick={onClick}
@@ -404,10 +382,11 @@ describe("ConversationCard", () => {
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
+        contextMenuOpen
+        onContextMenuToggle={onContextMenuToggle}
       />,
     );
 
-    await user.click(ellipsisButton);
     const newMenu = await screen.findByTestId("context-menu");
     expect(
       within(newMenu).queryByTestId("edit-button"),
@@ -451,39 +430,5 @@ describe("ConversationCard", () => {
     );
 
     expect(screen.queryByTestId("ellipsis-button")).not.toBeInTheDocument();
-  });
-
-  describe("state indicator", () => {
-    it("should render the 'STOPPED' indicator by default", () => {
-      renderWithProviders(
-        <ConversationCard
-          onDelete={onDelete}
-          isActive
-          onChangeTitle={onChangeTitle}
-          title="Conversation 1"
-          selectedRepository={null}
-          lastUpdatedAt="2021-10-01T12:00:00Z"
-        />,
-      );
-
-      screen.getByTestId("STOPPED-indicator");
-    });
-
-    it("should render the other indicators when provided", () => {
-      renderWithProviders(
-        <ConversationCard
-          onDelete={onDelete}
-          isActive
-          onChangeTitle={onChangeTitle}
-          title="Conversation 1"
-          selectedRepository={null}
-          lastUpdatedAt="2021-10-01T12:00:00Z"
-          status="RUNNING"
-        />,
-      );
-
-      expect(screen.queryByTestId("STOPPED-indicator")).not.toBeInTheDocument();
-      screen.getByTestId("RUNNING-indicator");
-    });
   });
 });

@@ -137,7 +137,7 @@ for repo, diff in repo_diffs:
     is_significant = diff >= threshold
     repo_color = 'red' if is_significant else 'yellow'
 
-    print(f"\n{colored(repo, repo_color, attrs=['bold'])}:")
+    print(f'\n{colored(repo, repo_color, attrs=["bold"])}:')
     print(
         colored(
             f'Difference: {diff} instances! (Larger diff = Y better)',

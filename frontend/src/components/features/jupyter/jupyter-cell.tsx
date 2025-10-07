@@ -1,5 +1,5 @@
 import React from "react";
-import { Cell } from "#/state/jupyter-slice";
+import { Cell } from "#/state/jupyter-store";
 import { JupyterLine, parseCellContent } from "#/utils/parse-cell-content";
 import { JupytrerCellInput } from "./jupyter-cell-input";
 import { JupyterCellOutput } from "./jupyter-cell-output";
@@ -12,8 +12,8 @@ export function JupyterCell({ cell }: JupyterCellProps) {
   const [lines, setLines] = React.useState<JupyterLine[]>([]);
 
   React.useEffect(() => {
-    setLines(parseCellContent(cell.content));
-  }, [cell.content]);
+    setLines(parseCellContent(cell.content, cell.imageUrls));
+  }, [cell.content, cell.imageUrls]);
 
   if (cell.type === "input") {
     return <JupytrerCellInput code={cell.content} />;

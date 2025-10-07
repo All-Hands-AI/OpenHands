@@ -1,19 +1,40 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
-import { useConversation } from "#/context/conversation-context";
+import { useTranslation } from "react-i18next";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { useConversationId } from "#/hooks/use-conversation-id";
+import { I18nKey } from "#/i18n/declaration";
+import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
+import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 
-export const useVSCodeUrl = (config: { enabled: boolean }) => {
-  const { conversationId } = useConversation();
+// Define the return type for the VS Code URL query
+interface VSCodeUrlResult {
+  url: string | null;
+  error: string | null;
+}
 
-  const data = useQuery({
+export const useVSCodeUrl = () => {
+  const { t } = useTranslation();
+  const { conversationId } = useConversationId();
+  const runtimeIsReady = useRuntimeIsReady();
+
+  return useQuery<VSCodeUrlResult>({
     queryKey: ["vscode_url", conversationId],
-    queryFn: () => {
+    queryFn: async () => {
       if (!conversationId) throw new Error("No conversation ID");
-      return OpenHands.getVSCodeUrl(conversationId);
+      const data = await ConversationService.getVSCodeUrl(conversationId);
+      if (data.vscode_url) {
+        return {
+          url: transformVSCodeUrl(data.vscode_url),
+          error: null,
+        };
+      }
+      return {
+        url: null,
+        error: t(I18nKey.VSCODE$URL_NOT_AVAILABLE),
+      };
     },
-    enabled: !!conversationId && config.enabled,
+    enabled: runtimeIsReady && !!conversationId,
     refetchOnMount: true,
+    retry: 3,
   });
-
-  return data;
 };

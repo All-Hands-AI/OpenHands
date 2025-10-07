@@ -18,7 +18,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.plugins import (
     PluginRequirement,
 )
@@ -102,15 +102,15 @@ class BrowsingAgent(Agent):
 
     def __init__(
         self,
-        llm: LLM,
         config: AgentConfig,
+        llm_registry: LLMRegistry,
     ) -> None:
         """Initializes a new instance of the BrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = ['chat', 'bid']
@@ -125,9 +125,9 @@ class BrowsingAgent(Agent):
         self.reset()
 
     def reset(self) -> None:
-        """Resets the Browsing Agent."""
+        """Resets the Browsing Agent's internal state."""
         super().reset()
-        self.cost_accumulator = 0
+        # Reset agent-specific counters but not LLM metrics
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:
@@ -217,7 +217,7 @@ class BrowsingAgent(Agent):
         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
 
         response = self.llm.completion(
-            messages=self.llm.format_messages_for_llm(messages),
+            messages=messages,
             stop=[')```', ')\n```'],
         )
         return self.response_parser.parse(response)

@@ -5,14 +5,15 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands.controller.agent import Agent
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     parse_arguments,
     setup_config_from_args,
 )
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
@@ -22,6 +23,7 @@ from openhands.core.setup import (
     create_memory,
     create_runtime,
     generate_sid,
+    get_provider_tokens,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -30,10 +32,11 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.mcp import fetch_mcp_tools_from_config
+from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 class FakeUserResponseFunc(Protocol):
@@ -46,15 +49,15 @@ class FakeUserResponseFunc(Protocol):
 
 
 async def run_controller(
-    config: AppConfig,
+    config: OpenHandsConfig,
     initial_user_action: Action,
     sid: str | None = None,
     runtime: Runtime | None = None,
-    agent: Agent | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
     memory: Memory | None = None,
+    conversation_instructions: str | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -66,7 +69,6 @@ async def run_controller(
         sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
-        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
@@ -88,25 +90,32 @@ async def run_controller(
           config.max_budget_per_task.
 
     Example:
-        >>> config = load_app_config()
+        >>> config = load_openhands_config()
         >>> action = MessageAction(content="Write a hello world program")
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
 
-    if agent is None:
-        agent = create_agent(config)
-        mcp_tools = await fetch_mcp_tools_from_config(config.mcp)
-        agent.set_mcp_tools(mcp_tools)
+    llm_registry, conversation_stats, config = create_registry_and_conversation_stats(
+        config,
+        sid,
+        None,
+    )
+
+    agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
     if runtime is None:
+        # In itialize repository if needed
+        repo_tokens = get_provider_tokens()
         runtime = create_runtime(
             config,
+            llm_registry,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
+            git_provider_tokens=repo_tokens,
         )
         # Connect to the runtime
         call_async_from_sync(runtime.connect)
@@ -115,6 +124,7 @@ async def run_controller(
         if config.sandbox.selected_repo:
             repo_directory = initialize_repository_for_runtime(
                 runtime,
+                immutable_provider_tokens=repo_tokens,
                 selected_repository=config.sandbox.selected_repo,
             )
 
@@ -128,7 +138,21 @@ async def run_controller(
             sid=sid,
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
+            conversation_instructions=conversation_instructions,
+            working_dir=str(runtime.workspace_root),
         )
+
+    # Add MCP tools to the agent
+    if agent.config.enable_mcp:
+        # Add OpenHands' MCP server by default
+        _, openhands_mcp_stdio_servers = (
+            OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                config.mcp_host, config, None
+            )
+        )
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:
@@ -139,12 +163,12 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
+        agent, runtime, config, conversation_stats, replay_events=replay_events
     )
 
-    assert isinstance(
-        initial_user_action, Action
-    ), f'initial user actions must be an Action, got {type(initial_user_action)}'
+    assert isinstance(initial_user_action, Action), (
+        f'initial user actions must be an Action, got {type(initial_user_action)}'
+    )
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
@@ -237,8 +261,7 @@ def auto_continue_response(
 
 
 def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
-    """
-    Load trajectory from given path, serialize it to a list of events, and return
+    """Load trajectory from given path, serialize it to a list of events, and return
     two things:
     1) A list of events except the first action
     2) First action (user message, a.k.a. initial task)
@@ -263,7 +286,7 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
 if __name__ == '__main__':
     args = parse_arguments()
 
-    config: AppConfig = setup_config_from_args(args)
+    config: OpenHandsConfig = setup_config_from_args(args)
 
     # Read task from file, CLI args, or stdin
     task_str = read_task(args, config.cli_multiline_input)

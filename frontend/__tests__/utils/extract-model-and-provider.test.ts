@@ -71,15 +71,21 @@ describe("extractModelAndProvider", () => {
       separator: "/",
     });
 
-    expect(extractModelAndProvider("claude-3-haiku-20240307")).toEqual({
+    expect(extractModelAndProvider("claude-sonnet-4-20250514")).toEqual({
       provider: "anthropic",
-      model: "claude-3-haiku-20240307",
+      model: "claude-sonnet-4-20250514",
       separator: "/",
     });
 
-    expect(extractModelAndProvider("claude-2.1")).toEqual({
+    expect(extractModelAndProvider("claude-opus-4-20250514")).toEqual({
       provider: "anthropic",
-      model: "claude-2.1",
+      model: "claude-opus-4-20250514",
+      separator: "/",
+    });
+
+    expect(extractModelAndProvider("claude-opus-4-1-20250805")).toEqual({
+      provider: "anthropic",
+      model: "claude-opus-4-1-20250805",
       separator: "/",
     });
   });

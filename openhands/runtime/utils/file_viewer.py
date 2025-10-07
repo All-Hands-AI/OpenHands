@@ -1,6 +1,4 @@
-"""
-Utility module for generating file viewer HTML content.
-"""
+"""Utility module for generating file viewer HTML content."""
 
 import base64
 import mimetypes
@@ -8,8 +6,7 @@ import os
 
 
 def generate_file_viewer_html(file_path: str) -> str:
-    """
-    Generate HTML content for viewing different file types.
+    """Generate HTML content for viewing different file types.
 
     Args:
         file_path: The absolute path to the file
@@ -35,8 +32,8 @@ def generate_file_viewer_html(file_path: str) -> str:
     # Check if the file extension is supported
     if file_extension not in supported_extensions:
         raise ValueError(
-            f"Unsupported file extension: {file_extension}. "
-            f"Supported extensions are: {', '.join(supported_extensions)}"
+            f'Unsupported file extension: {file_extension}. '
+            f'Supported extensions are: {", ".join(supported_extensions)}'
         )
 
     # Check if the file exists

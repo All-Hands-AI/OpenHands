@@ -6,6 +6,13 @@ This folder contains evaluation harness for evaluating agents on the [GAIA bench
 
 Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
+To enable the Tavily MCP Server, you can add the Tavily API key under the `core` section of your `config.toml` file, like below:
+
+```toml
+[core]
+search_api_key = "tvly-******"
+```
+
 ## Run the evaluation
 
 We are using the GAIA dataset hosted on [Hugging Face](https://huggingface.co/datasets/gaia-benchmark/GAIA).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FileService } from "#/api/file-service/file-service.api";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import {
   FILE_VARIANTS_1,
   FILE_VARIANTS_2,
@@ -10,20 +10,20 @@ import {
  * You can find the mock handlers in `frontend/src/mocks/file-service-handlers.ts`.
  */
 
-describe("FileService", () => {
+describe("ConversationService File API", () => {
   it("should get a list of files", async () => {
-    await expect(FileService.getFiles("test-conversation-id")).resolves.toEqual(
-      FILE_VARIANTS_1,
-    );
+    await expect(
+      ConversationService.getFiles("test-conversation-id"),
+    ).resolves.toEqual(FILE_VARIANTS_1);
 
     await expect(
-      FileService.getFiles("test-conversation-id-2"),
+      ConversationService.getFiles("test-conversation-id-2"),
     ).resolves.toEqual(FILE_VARIANTS_2);
   });
 
   it("should get content of a file", async () => {
     await expect(
-      FileService.getFile("test-conversation-id", "file1.txt"),
+      ConversationService.getFile("test-conversation-id", "file1.txt"),
     ).resolves.toEqual("Content of file1.txt");
   });
 });

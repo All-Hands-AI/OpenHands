@@ -3,14 +3,16 @@ SHELL=/usr/bin/env bash
 
 # Variables
 BACKEND_HOST ?= "127.0.0.1"
-BACKEND_PORT = 3000
+BACKEND_PORT ?= 3000
 BACKEND_HOST_PORT = "$(BACKEND_HOST):$(BACKEND_PORT)"
-FRONTEND_PORT = 3001
+FRONTEND_HOST ?= "127.0.0.1"
+FRONTEND_PORT ?= 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
+KIND_CLUSTER_NAME = "local-hands"
 
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
@@ -39,6 +41,7 @@ ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
 	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
 check-system:
@@ -101,6 +104,18 @@ check-docker:
 		exit 1; \
 	fi
 
+check-tmux:
+	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
+	@if command -v tmux > /dev/null; then \
+		echo "$(BLUE)$(shell tmux -V) is already installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)╔════════════════════════════════════════════════════════════════════════════╗$(RESET)"; \
+		echo "$(YELLOW)║ OPTIONAL: tmux is not installed.                                          ║$(RESET)"; \
+		echo "$(YELLOW)║ Some advanced terminal features may not work without tmux.                ║$(RESET)"; \
+		echo "$(YELLOW)║ You can install it if needed, but it's not required for development.      ║$(RESET)"; \
+		echo "$(YELLOW)╚════════════════════════════════════════════════════════════════════════════╝$(RESET)"; \
+	fi
+
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
@@ -137,7 +152,7 @@ install-python-dependencies:
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
-		poetry install; \
+		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
@@ -159,7 +174,7 @@ install-python-dependencies:
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
-install-frontend-dependencies:
+install-frontend-dependencies: check-npm check-nodejs
 	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -167,23 +182,57 @@ install-frontend-dependencies:
 	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
-install-pre-commit-hooks:
+install-pre-commit-hooks: check-python check-poetry install-python-dependencies
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
-lint-backend:
+lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
-lint-frontend:
+lint-frontend: install-frontend-dependencies
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
 	@cd frontend && npm run lint
 
 lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
+
+kind:
+	@echo "$(YELLOW)Checking if kind is installed...$(RESET)"
+	@if ! command -v kind > /dev/null; then \
+		echo "$(RED)kind is not installed. Please install kind with `brew install kind` to continue$(RESET)"; \
+		exit 1; \
+	else \
+		echo "$(BLUE)kind $(shell kind version) is already installed.$(RESET)"; \
+	fi
+	@echo "$(YELLOW)Checking if kind cluster '$(KIND_CLUSTER_NAME)' already exists...$(RESET)"
+	@if kind get clusters | grep -q "^$(KIND_CLUSTER_NAME)$$"; then \
+		echo "$(BLUE)Kind cluster '$(KIND_CLUSTER_NAME)' already exists.$(RESET)"; \
+		kubectl config use-context kind-$(KIND_CLUSTER_NAME); \
+	else \
+		echo "$(YELLOW)Creating kind cluster '$(KIND_CLUSTER_NAME)'...$(RESET)"; \
+		kind create cluster --name $(KIND_CLUSTER_NAME) --config kind/cluster.yaml; \
+	fi
+	@echo "$(YELLOW)Checking if mirrord is installed...$(RESET)"
+	@if ! command -v mirrord > /dev/null; then \
+		echo "$(RED)mirrord is not installed. Please install mirrord with `brew install metalbear-co/mirrord/mirrord` to continue$(RESET)"; \
+		exit 1; \
+	else \
+		echo "$(BLUE)mirrord $(shell mirrord --version) is already installed.$(RESET)"; \
+	fi
+	@echo "$(YELLOW)Installing k8s mirrord resources...$(RESET)"
+	@kubectl apply -f kind/manifests
+	@echo "$(GREEN)Mirrord resources installed successfully.$(RESET)"
+	@echo "$(YELLOW)Waiting for Mirrord pod to be ready.$(RESET)"
+	@sleep 5
+	@kubectl wait --for=condition=Available deployment/ubuntu-dev
+	@echo "$(YELLOW)Waiting for Nginx to be ready.$(RESET)"
+	@kubectl -n ingress-nginx wait --for=condition=Available deployment/ingress-nginx-controller
+	@echo "$(YELLOW)Running make run inside of mirrord.$(RESET)"
+	@mirrord exec --target deployment/ubuntu-dev -- make run
 
 test-frontend:
 	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
@@ -275,6 +324,15 @@ setup-config-prompts:
 	@read -p "Enter your LLM base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
 
+setup-config-basic:
+	@printf '%s\n' \
+	'[core]' \
+	'workspace_base="./workspace"' \
+	> config.toml
+	@echo "$(GREEN)config.toml created.$(RESET)"
+
+openhands-cloud-run:
+	@$(MAKE) run BACKEND_HOST="0.0.0.0" BACKEND_PORT="12000" FRONTEND_HOST="0.0.0.0" FRONTEND_PORT="12001"
 
 # Develop in container
 docker-dev:
@@ -309,5 +367,5 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-python check-npm check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
-.PHONY: docker-dev docker-run
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
+.PHONY: kind

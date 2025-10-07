@@ -1,27 +1,32 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
-import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
-import { Command } from "#/state/command-slice";
+import { Command, useCommandStore } from "#/state/command-store";
+import { AgentState } from "#/types/agent-state";
+import { renderWithProviders } from "../../test-utils";
+import { useAgentStore } from "#/stores/agent-store";
+
+// Mock the WsClient context
+vi.mock("#/context/ws-client-provider", () => ({
+  useWsClient: () => ({
+    send: vi.fn(),
+    status: "CONNECTED",
+    isLoadingMessages: false,
+    events: [],
+  }),
+}));
 
 interface TestTerminalComponentProps {
   commands: Command[];
 }
 
-function TestTerminalComponent({
-  commands,
-}: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands });
+function TestTerminalComponent({ commands }: TestTerminalComponentProps) {
+  // Set commands in Zustand store
+  useCommandStore.setState({ commands });
+  // Set agent state in Zustand store
+  useAgentStore.setState({ curAgentState: AgentState.RUNNING });
+  const ref = useTerminal();
   return <div ref={ref} />;
-}
-
-interface WrapperProps {
-  children: ReactNode;
-}
-
-function Wrapper({ children }: WrapperProps) {
-  return <div>{children}</div>;
 }
 
 describe("useTerminal", () => {
@@ -55,9 +60,7 @@ describe("useTerminal", () => {
   });
 
   it("should render", () => {
-    render(<TestTerminalComponent commands={[]} />, {
-      wrapper: Wrapper,
-    });
+    renderWithProviders(<TestTerminalComponent commands={[]} />);
   });
 
   it("should render the commands in the terminal", () => {
@@ -66,9 +69,7 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    render(<TestTerminalComponent commands={commands} />, {
-      wrapper: Wrapper,
-    });
+    renderWithProviders(<TestTerminalComponent commands={commands} />);
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
@@ -86,14 +87,7 @@ describe("useTerminal", () => {
       { content: secret, type: "output" },
     ];
 
-    render(
-      <TestTerminalComponent
-        commands={commands}
-      />,
-      {
-        wrapper: Wrapper,
-      },
-    );
+    renderWithProviders(<TestTerminalComponent commands={commands} />);
 
     // This test is no longer relevant as secrets filtering has been removed
   });

@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 from datetime import datetime
+from logging.handlers import TimedRotatingFileHandler
 from types import TracebackType
 from typing import Any, Literal, Mapping, MutableMapping, TextIO
 
@@ -42,7 +43,11 @@ else:
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
-LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
+LOG_TO_FILE = os.getenv('LOG_TO_FILE', str(LOG_LEVEL == 'DEBUG')).lower() in [
+    'true',
+    '1',
+    'yes',
+]
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
@@ -212,7 +217,7 @@ class RollingLogger:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
-        self._write('\033[F' * (self.max_lines))
+        self._write('\033[F' * amount)
         self._flush()
 
     def replace_current_line(self, line: str = '') -> None:
@@ -261,6 +266,7 @@ class SensitiveDataFilter(logging.Filter):
             'modal_api_token_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'runloop_api_key',
             'daytona_api_key',
         ]
 
@@ -289,13 +295,21 @@ def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
 
 
 def get_file_handler(
-    log_dir: str, log_level: int = logging.INFO
-) -> logging.FileHandler:
+    log_dir: str,
+    log_level: int = logging.INFO,
+    when: str = 'd',
+    backup_count: int = 7,
+    utc: bool = False,
+) -> TimedRotatingFileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d')
-    file_name = f'openhands_{timestamp}.log'
-    file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
+    file_name = 'openhands.log'
+    file_handler = TimedRotatingFileHandler(
+        os.path.join(log_dir, file_name),
+        when=when,
+        backupCount=backup_count,
+        utc=utc,
+    )
     file_handler.setLevel(log_level)
     if LOG_JSON:
         file_handler.setFormatter(json_formatter())
@@ -317,10 +331,7 @@ def json_log_handler(
     level: int = logging.INFO,
     _out: TextIO = sys.stdout,
 ) -> logging.Handler:
-    """
-    Configure logger instance for structured logging as json lines.
-    """
-
+    """Configure logger instance for structured logging as json lines."""
     handler = logging.StreamHandler(_out)
     handler.setLevel(level)
     handler.setFormatter(json_formatter())
@@ -361,11 +372,14 @@ if DEBUG:
     openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
-    LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
 if LOG_JSON:
     openhands_logger.addHandler(json_log_handler(current_log_level))
+    # Configure concurrent.futures logger to use JSON formatting as well
+    cf_logger = logging.getLogger('concurrent.futures')
+    cf_logger.setLevel(current_log_level)
+    cf_logger.addHandler(json_log_handler(current_log_level))
 else:
     openhands_logger.addHandler(get_console_handler(current_log_level))
 
@@ -385,10 +399,22 @@ if LOG_TO_FILE:
     )  # default log to project root
     openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
-# Exclude LiteLLM from logging output
+# Exclude LiteLLM from logging output as it can leak keys
 logging.getLogger('LiteLLM').disabled = True
 logging.getLogger('LiteLLM Router').disabled = True
 logging.getLogger('LiteLLM Proxy').disabled = True
+
+# Exclude loquacious loggers
+LOQUACIOUS_LOGGERS = [
+    'engineio',
+    'engineio.server',
+    'socketio',
+    'socketio.client',
+    'socketio.server',
+]
+
+for logger_name in LOQUACIOUS_LOGGERS:
+    logging.getLogger(logger_name).setLevel('WARNING')
 
 
 class LlmFileHandler(logging.FileHandler):
@@ -480,8 +506,7 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]
     ) -> tuple[str, MutableMapping[str, Any]]:
-        """
-        If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
+        """If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
         Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.
         """
         if 'extra' in kwargs and isinstance(kwargs['extra'], dict):

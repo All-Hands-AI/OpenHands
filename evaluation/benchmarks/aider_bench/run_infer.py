@@ -17,6 +17,8 @@ from evaluation.utils.shared import (
     EvalOutput,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -24,7 +26,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     load_from_toml,
     parse_arguments,
@@ -46,18 +48,13 @@ SKIP_NUM = (
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.11-bookworm'
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
+        sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
@@ -80,7 +77,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -110,7 +107,7 @@ def initialize_runtime(
                 file_path,
                 '/workspace',
             )
-    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Initialization Fn {"-" * 50}\n')
 
 
 def complete_runtime(
@@ -123,7 +120,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}\n')
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
@@ -147,7 +144,7 @@ def complete_runtime(
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
+    logger.info(f'\n{"-" * 50} END Runtime Completion Fn {"-" * 50}\n')
 
     runtime.close()
 
@@ -246,7 +243,7 @@ def process_instance(
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
     histories = compatibility_for_eval_history_pairs(state.history)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

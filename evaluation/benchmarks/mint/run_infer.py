@@ -15,6 +15,8 @@ from evaluation.utils.shared import (
     EvalOutput,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -22,9 +24,9 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -102,22 +104,17 @@ def load_incontext_example(task_name: str, with_tool: bool = True):
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'xingyaoww/od-eval-mint:v1.0'
     sandbox_config.runtime_extra_deps = (
         f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}'
     )
 
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
@@ -130,7 +127,7 @@ def initialize_runtime(runtime: Runtime):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -144,7 +141,7 @@ def initialize_runtime(runtime: Runtime):
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def process_instance(
@@ -205,7 +202,7 @@ def process_instance(
         task_state = state.extra_data['task_state']
         logger.info('Task state: ' + str(task_state.to_dict()))
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -229,7 +226,7 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
 
     SUBSETS = [
         # Eurus subset: https://arxiv.org/abs/2404.02078

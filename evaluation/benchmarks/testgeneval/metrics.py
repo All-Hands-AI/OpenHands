@@ -1,5 +1,5 @@
 import sys
-from typing import Callable, Dict, List, Optional, Sequence, TypeVar, Union
+from typing import Callable, Optional, Sequence, TypeVar, Union
 
 import nltk
 import numpy as np
@@ -11,9 +11,8 @@ if sys.getrecursionlimit() < 10_000:
     sys.setrecursionlimit(10_000)
 
 
-def bleu(gold: List[str], pred: List[str]) -> float:
-    """
-    Calculate BLEU score, using smoothing method 2 with auto reweighting, in the range of 0~100.
+def bleu(gold: list[str], pred: list[str]) -> float:
+    """Calculate BLEU score, using smoothing method 2 with auto reweighting, in the range of 0~100.
 
     :param gold: list of gold tokens
     :param pred: list of predicted tokens
@@ -29,9 +28,8 @@ def bleu(gold: List[str], pred: List[str]) -> float:
     )
 
 
-def batch_bleu(golds: List[List[str]], preds: List[List[str]]) -> List[float]:
-    """
-    Calculate BLEU score for a batch of sentences.
+def batch_bleu(golds: list[list[str]], preds: list[list[str]]) -> list[float]:
+    """Calculate BLEU score for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -42,9 +40,8 @@ def batch_bleu(golds: List[List[str]], preds: List[List[str]]) -> List[float]:
     return [bleu(gold, pred) for gold, pred in zip(golds, preds)]
 
 
-def corpus_bleu(golds: List[List[str]], preds: List[List[str]]) -> float:
-    """
-    Calculate corpus-level BLEU score for a batch of sentences.
+def corpus_bleu(golds: list[list[str]], preds: list[list[str]]) -> float:
+    """Calculate corpus-level BLEU score for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -61,10 +58,9 @@ def corpus_bleu(golds: List[List[str]], preds: List[List[str]]) -> float:
 
 
 def edit_sim(
-    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = ' '
+    gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' '
 ) -> float:
-    """
-    Calculate char-level edit similarity, in the range of 0~100.
+    """Calculate char-level edit similarity, in the range of 0~100.
 
     :param gold: gold sentence or list of gold tokens
     :param pred: predicted sentence or list of predicted tokens
@@ -81,12 +77,11 @@ def edit_sim(
 
 
 def batch_edit_sim(
-    golds: List[Union[str, List[str]]],
-    preds: List[Union[str, List[str]]],
+    golds: list[Union[str, list[str]]],
+    preds: list[Union[str, list[str]]],
     sep: str = ' ',
-) -> List[float]:
-    """
-    Calculate char-level edit similarity for a batch of sentences.
+) -> list[float]:
+    """Calculate char-level edit similarity for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -102,8 +97,7 @@ T = TypeVar('T')
 
 
 def exact_match(gold: T, pred: T) -> float:
-    """
-    Calculate exact match accuracy, in the range of {0, 100}.
+    """Calculate exact match accuracy, in the range of {0, 100}.
 
     :param gold: gold sentence or list of gold tokens
     :param pred: predicted sentence or list of predicted tokens
@@ -114,9 +108,8 @@ def exact_match(gold: T, pred: T) -> float:
     return 100.0 if gold == pred else 0.0
 
 
-def batch_exact_match(golds: List[T], preds: List[T]) -> List[float]:
-    """
-    Calculate exact match accuracy for a batch of sentences.
+def batch_exact_match(golds: list[T], preds: list[T]) -> list[float]:
+    """Calculate exact match accuracy for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -128,10 +121,9 @@ def batch_exact_match(golds: List[T], preds: List[T]) -> List[float]:
 
 
 def rouge_l(
-    gold: Union[str, List[str]], pred: Union[str, List[str]], sep: str = ' '
-) -> Dict[str, float]:
-    """
-    Calculate ROUGE-L F1, precision, and recall scores, in the range of 0~100.
+    gold: Union[str, list[str]], pred: Union[str, list[str]], sep: str = ' '
+) -> dict[str, float]:
+    """Calculate ROUGE-L F1, precision, and recall scores, in the range of 0~100.
 
     :param gold: gold sentence or list of gold tokens
     :param pred: predicted sentence or list of predicted tokens
@@ -152,12 +144,11 @@ def rouge_l(
 
 
 def batch_rouge_l(
-    golds: List[Union[str, List[str]]],
-    preds: List[Union[str, List[str]]],
+    golds: list[Union[str, list[str]]],
+    preds: list[Union[str, list[str]]],
     sep: str = ' ',
-) -> Dict[str, List[float]]:
-    """
-    Calculate ROUGE-L F1, precision, and recall scores for a batch of sentences.
+) -> dict[str, list[float]]:
+    """Calculate ROUGE-L F1, precision, and recall scores for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -171,12 +162,11 @@ def batch_rouge_l(
 
 
 def accuracy(
-    gold: List[str],
-    pred: List[str],
+    gold: list[str],
+    pred: list[str],
     ignore: Optional[Sequence[str]] = None,
 ) -> float:
-    """
-    Calculate token-level accuracy, in the range of 0~100.
+    """Calculate token-level accuracy, in the range of 0~100.
     If gold and pred are not the same length, the longer one would be truncated.
 
     :param gold: list of gold tokens
@@ -206,12 +196,11 @@ def accuracy(
 
 
 def batch_accuracy(
-    golds: List[List[str]],
-    preds: List[List[str]],
+    golds: list[list[str]],
+    preds: list[list[str]],
     ignore: Optional[Sequence[str]] = None,
-) -> List[float]:
-    """
-    Calculate token-level accuracy for a batch of sentences.
+) -> list[float]:
+    """Calculate token-level accuracy for a batch of sentences.
 
     :param golds: list of gold sentences
     :param preds: list of predicted sentences
@@ -224,10 +213,9 @@ def batch_accuracy(
 
 
 def first_match_to_topk(
-    first_match_list: List[int], k_values: List[int]
-) -> Dict[int, List[float]]:
-    """
-    Calculate top-k accuracy with the first match ranks (1-indexed).
+    first_match_list: list[int], k_values: list[int]
+) -> dict[int, list[float]]:
+    """Calculate top-k accuracy with the first match ranks (1-indexed).
 
     :param first_match: first match ranks (1-indexed)
     :param k_values: k values to consider
@@ -237,8 +225,7 @@ def first_match_to_topk(
 
 
 def pass_at_k(n: int, c: int, k: int) -> float:
-    """
-    Sample pass@k metric according to the Codex paper, but in the scale of 0~100.
+    """Sample pass@k metric according to the Codex paper, but in the scale of 0~100.
     :param n: total number of samples
     :param c: number of correct samples
     :param k: k in pass@$k$
@@ -250,9 +237,8 @@ def pass_at_k(n: int, c: int, k: int) -> float:
         return (1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1)).item()) * 100
 
 
-def self_bleu(samples: List[List[str]]) -> float:
-    """
-    Calculate self-BLEU among the samples.
+def self_bleu(samples: list[list[str]]) -> float:
+    """Calculate self-BLEU among the samples.
     :param samples: the chosen m samples
     :return: self-BLEU
     """
@@ -273,9 +259,8 @@ def self_bleu(samples: List[List[str]]) -> float:
     return np.mean(scores).item()
 
 
-def self_edit_distance(samples: List[Union[str, List[str]]], sep=' ') -> float:
-    """
-    Calculate self-edit-distance among the samples.
+def self_edit_distance(samples: list[Union[str, list[str]]], sep=' ') -> float:
+    """Calculate self-edit-distance among the samples.
     :param samples: the chosen m samples
     :param sep: the separator between tokens
     :return: self-edit-distance
@@ -299,7 +284,7 @@ def self_edit_distance(samples: List[Union[str, List[str]]], sep=' ') -> float:
     return np.mean(scores).item()
 
 
-QUALITY_METRICS: Dict[str, Callable[[List[str], List[str]], float]] = {
+QUALITY_METRICS: dict[str, Callable[[list[str], list[str]], float]] = {
     'bleu': bleu,
     'xmatch': exact_match,
     'edit-sim': edit_sim,

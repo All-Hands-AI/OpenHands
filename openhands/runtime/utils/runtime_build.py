@@ -6,10 +6,9 @@ import string
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import List
 
 import docker
-from dirhash import dirhash  # type: ignore
+from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
 import openhands
@@ -33,6 +32,7 @@ def _generate_dockerfile(
     base_image: str,
     build_from: BuildFromImageType = BuildFromImageType.SCRATCH,
     extra_deps: str | None = None,
+    enable_browser: bool = True,
 ) -> str:
     """Generate the Dockerfile content for the runtime image based on the base image.
 
@@ -40,6 +40,7 @@ def _generate_dockerfile(
     - base_image (str): The base image provided for the runtime image
     - build_from (BuildFromImageType): The build method for the runtime image.
     - extra_deps (str):
+    - enable_browser (bool): Whether to enable browser support (install Playwright)
 
     Returns:
     - str: The resulting Dockerfile content
@@ -56,6 +57,7 @@ def _generate_dockerfile(
         build_from_scratch=build_from == BuildFromImageType.SCRATCH,
         build_from_versioned=build_from == BuildFromImageType.VERSIONED,
         extra_deps=extra_deps if extra_deps is not None else '',
+        enable_browser=enable_browser,
     )
     return dockerfile_content
 
@@ -87,9 +89,9 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         # Hash the repo if it's too long
         if len(repo) > 32:
             repo_hash = hashlib.md5(repo[:-24].encode()).hexdigest()[:8]
+
             repo = f'{repo_hash}_{repo[-24:]}'  # Use 8 char hash + last 24 chars
-        else:
-            repo = repo.replace('/', '_s_')
+        repo = repo.replace('/', '_s_')
 
         new_tag = f'oh_v{oh_version}_image_{repo}_tag_{tag}'
 
@@ -111,7 +113,8 @@ def build_runtime_image(
     build_folder: str | None = None,
     dry_run: bool = False,
     force_rebuild: bool = False,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
+    enable_browser: bool = True,
 ) -> str:
     """Prepares the final docker build folder.
 
@@ -126,11 +129,12 @@ def build_runtime_image(
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
     - force_rebuild (bool): if True, it will create the Dockerfile which uses the base_image
     - extra_build_args (List[str]): Additional build arguments to pass to the builder
+    - enable_browser (bool): Whether to enable browser support (install Playwright)
 
     Returns:
     - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
 
-    See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
+    See https://docs.all-hands.dev/usage/architecture/runtime for more details.
     """
     if build_folder is None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -143,6 +147,7 @@ def build_runtime_image(
                 force_rebuild=force_rebuild,
                 platform=platform,
                 extra_build_args=extra_build_args,
+                enable_browser=enable_browser,
             )
             return result
 
@@ -155,6 +160,7 @@ def build_runtime_image(
         force_rebuild=force_rebuild,
         platform=platform,
         extra_build_args=extra_build_args,
+        enable_browser=enable_browser,
     )
     return result
 
@@ -167,10 +173,11 @@ def build_runtime_image_in_folder(
     dry_run: bool,
     force_rebuild: bool,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
+    enable_browser: bool = True,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
-    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
+    lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image, enable_browser)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
         f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
@@ -189,6 +196,7 @@ def build_runtime_image_in_folder(
             base_image,
             build_from=BuildFromImageType.SCRATCH,
             extra_deps=extra_deps,
+            enable_browser=enable_browser,
         )
         if not dry_run:
             _build_sandbox_image(
@@ -227,7 +235,7 @@ def build_runtime_image_in_folder(
     else:
         logger.debug(f'Build [{hash_image_name}] from scratch')
 
-    prep_build_folder(build_folder, base_image, build_from, extra_deps)
+    prep_build_folder(build_folder, base_image, build_from, extra_deps, enable_browser)
     if not dry_run:
         _build_sandbox_image(
             build_folder,
@@ -252,6 +260,7 @@ def prep_build_folder(
     base_image: str,
     build_from: BuildFromImageType,
     extra_deps: str | None,
+    enable_browser: bool = True,
 ) -> None:
     # Copy the source code to directory. It will end up in build_folder/code
     # If package is not found, build from source code
@@ -271,6 +280,11 @@ def prep_build_folder(
         ),
     )
 
+    # Copy the 'microagents' directory (Microagents)
+    shutil.copytree(
+        Path(project_root, 'microagents'), Path(build_folder, 'code', 'microagents')
+    )
+
     # Copy pyproject.toml and poetry.lock files
     for file in ['pyproject.toml', 'poetry.lock']:
         src = Path(openhands_source_dir, file)
@@ -283,9 +297,11 @@ def prep_build_folder(
         base_image,
         build_from=build_from,
         extra_deps=extra_deps,
+        enable_browser=enable_browser,
     )
-    with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
-        file.write(dockerfile_content)  # type: ignore
+    dockerfile_path = Path(build_folder, 'Dockerfile')
+    with open(str(dockerfile_path), 'w') as f:
+        f.write(dockerfile_content)
 
 
 _ALPHABET = string.digits + string.ascii_lowercase
@@ -294,17 +310,20 @@ _ALPHABET = string.digits + string.ascii_lowercase
 def truncate_hash(hash: str) -> str:
     """Convert the base16 hash to base36 and truncate at 16 characters."""
     value = int(hash, 16)
-    result: List[str] = []
+    result: list[str] = []
     while value > 0 and len(result) < 16:
         value, remainder = divmod(value, len(_ALPHABET))
         result.append(_ALPHABET[remainder])
     return ''.join(result)
 
 
-def get_hash_for_lock_files(base_image: str) -> str:
+def get_hash_for_lock_files(base_image: str, enable_browser: bool = True) -> str:
     openhands_source_dir = Path(openhands.__file__).parent
     md5 = hashlib.md5()
     md5.update(base_image.encode())
+    # Only include enable_browser in hash when it's False for backward compatibility
+    if not enable_browser:
+        md5.update(str(enable_browser).encode())
     for file in ['pyproject.toml', 'poetry.lock']:
         src = Path(openhands_source_dir, file)
         if not src.exists():
@@ -347,7 +366,7 @@ def _build_sandbox_image(
     lock_tag: str,
     versioned_tag: str | None,
     platform: str | None = None,
-    extra_build_args: List[str] | None = None,
+    extra_build_args: list[str] | None = None,
 ) -> str:
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist."""
     names = [
@@ -378,6 +397,10 @@ if __name__ == '__main__':
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
     parser.add_argument('--platform', type=str, default=None)
+    parser.add_argument('--enable_browser', action='store_true', default=True)
+    parser.add_argument(
+        '--no_enable_browser', dest='enable_browser', action='store_false'
+    )
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -385,9 +408,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )
@@ -409,6 +432,7 @@ if __name__ == '__main__':
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
                 platform=args.platform,
+                enable_browser=args.enable_browser,
             )
 
             _runtime_image_repo, runtime_image_source_tag = (
@@ -444,6 +468,9 @@ if __name__ == '__main__':
         logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
-            args.base_image, docker_builder, platform=args.platform
+            args.base_image,
+            docker_builder,
+            platform=args.platform,
+            enable_browser=args.enable_browser,
         )
         logger.debug(f'\nBuilt image: {image_name}\n')

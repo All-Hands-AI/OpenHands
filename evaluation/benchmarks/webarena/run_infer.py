@@ -12,6 +12,8 @@ from evaluation.utils.shared import (
     EvalOutput,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -19,7 +21,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -44,7 +46,7 @@ SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 def get_config(
     metadata: EvalMetadata,
     env_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     base_url = os.environ.get('WEBARENA_BASE_URL', None)
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
     assert base_url is not None, 'WEBARENA_BASE_URL must be set'
@@ -64,15 +66,10 @@ def get_config(
         'MAP': f'{base_url}:3000',
         'HOMEPAGE': f'{base_url}:4399',
     }
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
@@ -87,7 +84,7 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
@@ -102,7 +99,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
     return goal
 
 
@@ -115,7 +112,7 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
@@ -123,7 +120,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return {
         'rewards': json.loads(obs.content),
     }
@@ -163,7 +160,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Instruction is the first message from the USER
     instruction = ''
@@ -212,7 +209,7 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
-        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
         llm_config.modify_params = False
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

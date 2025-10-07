@@ -214,7 +214,7 @@ def parse_git_header(text: str | list[str]) -> header | None:
             new_version = g.group(2)
             continue
 
-        # git always has it's own special headers
+        # git always has its own special headers
         o = git_header_old_line.match(line)
         if o:
             old_path = o.group(1)

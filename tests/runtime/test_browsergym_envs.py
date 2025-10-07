@@ -36,6 +36,7 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
         force_rebuild_runtime=True,
+        enable_browser=True,
     )
     from openhands.runtime.browser.browser_env import (
         BROWSER_EVAL_GET_GOAL_ACTION,
@@ -43,7 +44,9 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     )
 
     # Test browse
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
+    action = BrowseInteractiveAction(
+        browser_actions=BROWSER_EVAL_GET_GOAL_ACTION, return_axtree=False
+    )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -54,7 +57,7 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     assert 'from the list and click Submit' in obs.content
 
     # Make sure the browser can produce observation in eval env
-    action = BrowseInteractiveAction(browser_actions='noop()')
+    action = BrowseInteractiveAction(browser_actions='noop()', return_axtree=False)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -64,7 +67,9 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     )
 
     # Make sure the rewards are working
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
+    action = BrowseInteractiveAction(
+        browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION, return_axtree=False
+    )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})

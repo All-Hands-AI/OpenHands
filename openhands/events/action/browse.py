@@ -11,7 +11,8 @@ class BrowseURLAction(Action):
     thought: str = ''
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
+    return_axtree: bool = False
 
     @property
     def message(self) -> str:
@@ -32,13 +33,12 @@ class BrowseInteractiveAction(Action):
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
+    return_axtree: bool = False
 
     @property
     def message(self) -> str:
-        return (
-            f'I am interacting with the browser:\n' f'```\n{self.browser_actions}\n```'
-        )
+        return f'I am interacting with the browser:\n```\n{self.browser_actions}\n```'
 
     def __str__(self) -> str:
         ret = '**BrowseInteractiveAction**\n'

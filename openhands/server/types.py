@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import ClassVar, Protocol
+from typing import Any, ClassVar, Protocol
 
 
 class AppMode(Enum):
@@ -27,7 +27,7 @@ class ServerConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_config(self) -> dict[str, str]:
+    def get_config(self) -> dict[str, Any]:
         """Configure attributes for frontend"""
         raise NotImplementedError
 

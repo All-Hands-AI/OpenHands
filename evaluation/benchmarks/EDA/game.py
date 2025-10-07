@@ -73,7 +73,7 @@ class Q20Game:
         usr_msg = self.answerer(guesser_question)
 
         self.guesser_messages.append(
-            {'role': 'user', 'content': f"{usr_msg['content'].strip()}"}
+            {'role': 'user', 'content': f'{usr_msg["content"].strip()}'}
         )
 
         if 'bingo' in usr_msg['content'].lower():

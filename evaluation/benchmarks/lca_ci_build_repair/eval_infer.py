@@ -16,13 +16,14 @@ import ruamel.yaml
 from evaluation.utils.shared import (
     EvalMetadata,
     get_default_sandbox_config_for_eval,
+    get_openhands_config_for_eval,
     make_metadata,
 )
 from openhands.core.config import (
-    AppConfig,
     LLMConfig,
-    get_parser,
-    load_app_config,
+    OpenHandsConfig,
+    get_evaluation_parser,
+    load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
@@ -34,18 +35,13 @@ from openhands.utils.async_utils import call_async_from_sync
 
 def get_config(
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
@@ -53,7 +49,7 @@ def get_config(
     return config
 
 
-config = load_app_config()
+config = load_openhands_config()
 
 
 def load_bench_config():
@@ -73,7 +69,7 @@ def run_eval(
     runtime: Runtime,
 ):
     """Run the evaluation and create report"""
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     lca_path = bench_config['LCA_PATH']
@@ -146,7 +142,7 @@ def run_eval(
     obs = runtime.run_action(action)
     report_str = obs.content
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
     return report_str
 
 
@@ -167,7 +163,7 @@ def process_predictions(predictions_path: str):
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '-s',
         '--eval-split',

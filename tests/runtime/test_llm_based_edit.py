@@ -39,9 +39,9 @@ def test_edit_from_scratch(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(
-            obs, FileEditObservation
-        ), 'The observation should be a FileEditObservation.'
+        assert isinstance(obs, FileEditObservation), (
+            'The observation should be a FileEditObservation.'
+        )
 
         action = FileReadAction(
             path=os.path.join('/workspace', 'app.py'),
@@ -78,9 +78,9 @@ def test_edit(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(
-            obs, FileEditObservation
-        ), 'The observation should be a FileEditObservation.'
+        assert isinstance(obs, FileEditObservation), (
+            'The observation should be a FileEditObservation.'
+        )
 
         action = FileReadAction(
             path=os.path.join('/workspace', 'app.py'),
@@ -138,9 +138,9 @@ def test_edit_long_file(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-        assert isinstance(
-            obs, FileEditObservation
-        ), 'The observation should be a FileEditObservation.'
+        assert isinstance(obs, FileEditObservation), (
+            'The observation should be a FileEditObservation.'
+        )
 
         action = FileReadAction(
             path=os.path.join('/workspace', 'app.py'),

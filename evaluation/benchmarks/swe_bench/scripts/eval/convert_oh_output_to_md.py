@@ -44,17 +44,17 @@ def convert_history_to_str(history):
         if isinstance(event, list):
             # "event" is a legacy pair of (action, observation)
             event_obj = event_from_dict(event[0])
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
             ret += separator
 
             event_obj = event_from_dict(event[1])
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
         else:
             # "event" is a single event
             event_obj = event_from_dict(event)
-            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += f'## {i + 1}| {event_obj.__class__.__name__}\n\n'
             ret += str(event_obj)
     return ret
 
@@ -105,12 +105,12 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
     if tool_call['type'] != 'function':
         raise ValueError("Tool call type must be 'function'.")
 
-    ret = f"<function={tool_call['function']['name']}>\n"
+    ret = f'<function={tool_call["function"]["name"]}>\n'
     try:
         args = json.loads(tool_call['function']['arguments'])
     except json.JSONDecodeError as e:
         raise ValueError(
-            f"Failed to parse arguments as JSON. Arguments: {tool_call['function']['arguments']}"
+            f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}'
         ) from e
     for param_name, param_value in args.items():
         is_multiline = isinstance(param_value, str) and '\n' in param_value

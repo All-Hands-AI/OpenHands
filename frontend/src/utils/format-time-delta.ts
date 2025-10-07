@@ -26,3 +26,19 @@ export const formatTimeDelta = (date: Date) => {
   if (months < 12) return `${months}mo`;
   return `${years}y`;
 };
+
+/**
+ * Formats a date into a MM/DD/YYYY string format.
+ * @param date The date to format
+ * @returns A string in MM/DD/YYYY format
+ *
+ * @example
+ * formatDateMMDDYYYY(new Date("2025-05-30T00:15:08")); // "05/30/2025"
+ * formatDateMMDDYYYY(new Date("2024-12-25T10:30:00")); // "12/25/2024"
+ */
+export const formatDateMMDDYYYY = (date: Date) =>
+  date.toLocaleDateString("en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    year: "numeric",
+  });

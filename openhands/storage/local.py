@@ -9,6 +9,8 @@ class LocalFileStore(FileStore):
     root: str
 
     def __init__(self, root: str):
+        if root.startswith('~'):
+            root = os.path.expanduser(root)
         self.root = root
         os.makedirs(self.root, exist_ok=True)
 

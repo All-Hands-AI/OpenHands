@@ -27,7 +27,7 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     display_feedback = feedback.model_dump()
     if 'trajectory' in display_feedback:
         display_feedback['trajectory'] = (
-            f"elided [length: {len(display_feedback['trajectory'])}"
+            f'elided [length: {len(display_feedback["trajectory"])}'
         )
     if 'token' in display_feedback:
         display_feedback['token'] = 'elided'
@@ -40,6 +40,6 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     )
     if response.status_code != 200:
         raise ValueError(f'Failed to store feedback: {response.text}')
-    response_data = json.loads(response.text)
+    response_data: dict[str, str] = json.loads(response.text)
     logger.debug(f'Stored feedback: {response.text}')
     return response_data

@@ -9,6 +9,8 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -21,7 +23,7 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
 )
@@ -41,21 +43,15 @@ FAKE_RESPONSES = {
 def get_config(
     metadata: EvalMetadata,
     instance_id: str,
-) -> AppConfig:
+) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.platform = 'linux/amd64'
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
-        # debug
-        debug=True,
+        sandbox_config=sandbox_config,
     )
+    config.debug = True
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance_id
@@ -93,14 +89,14 @@ def process_instance(
     spec = importlib.util.spec_from_file_location(instance_id, instance.file_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
-    assert hasattr(
-        test_module, 'Test'
-    ), f'Test module {instance_id} does not have a Test class'
+    assert hasattr(test_module, 'Test'), (
+        f'Test module {instance_id} does not have a Test class'
+    )
 
     test_class: type[BaseIntegrationTest] = test_module.Test
-    assert issubclass(
-        test_class, BaseIntegrationTest
-    ), f'Test class {instance_id} does not inherit from BaseIntegrationTest'
+    assert issubclass(test_class, BaseIntegrationTest), (
+        f'Test class {instance_id} does not inherit from BaseIntegrationTest'
+    )
 
     instruction = test_class.INSTRUCTION
 
@@ -135,7 +131,7 @@ def process_instance(
         assert len(histories) > 0, 'History should not be empty'
 
         test_result: TestResult = test_class.verify_result(runtime, histories)
-        metrics = state.metrics.get() if state.metrics else None
+        metrics = get_metrics(state)
     finally:
         runtime.close()
 

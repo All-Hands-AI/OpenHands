@@ -1,23 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import {
-  useWsClient,
-  WsClientProviderStatus,
-} from "#/context/ws-client-provider";
-import { useConversation } from "#/context/conversation-context";
-import OpenHands from "#/api/open-hands";
+import { useConversationId } from "#/hooks/use-conversation-id";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { useRuntimeIsReady } from "../use-runtime-is-ready";
 
 export const useConversationConfig = () => {
-  const { status } = useWsClient();
-  const { conversationId } = useConversation();
+  const { conversationId } = useConversationId();
+  const runtimeIsReady = useRuntimeIsReady();
 
   const query = useQuery({
     queryKey: ["conversation_config", conversationId],
     queryFn: () => {
       if (!conversationId) throw new Error("No conversation ID");
-      return OpenHands.getRuntimeId(conversationId);
+      return ConversationService.getRuntimeId(conversationId);
     },
-    enabled: status !== WsClientProviderStatus.DISCONNECTED && !!conversationId,
+    enabled: runtimeIsReady && !!conversationId,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

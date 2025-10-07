@@ -1,19 +1,222 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  test,
+  vi,
+} from "vitest";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderWithProviders } from "test-utils";
 import type { Message } from "#/message";
-import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chat-slice";
-import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
+import { useWsClient } from "#/context/ws-client-provider";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useConfig } from "#/hooks/query/use-config";
+import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { OpenHandsAction } from "#/types/core/actions";
+
+// Mock the hooks
+vi.mock("#/context/ws-client-provider");
+vi.mock("#/stores/error-message-store");
+vi.mock("#/stores/optimistic-user-message-store");
+vi.mock("#/hooks/query/use-config");
+vi.mock("#/hooks/mutation/use-get-trajectory");
+vi.mock("#/hooks/mutation/use-upload-files");
+
+// Mock React Router hooks at the top level
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+    useRouteLoaderData: vi.fn(() => ({})),
+  };
+});
+
+// Mock other hooks that might be used by the component
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
+  useConversationNameContextMenu: () => ({
+    isOpen: false,
+    contextMenuRef: { current: null },
+    handleContextMenu: vi.fn(),
+    handleClose: vi.fn(),
+    handleRename: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
+
+// Helper function to render with Router context
+const renderChatInterfaceWithRouter = () =>
+  renderWithProviders(
+    <MemoryRouter>
+      <ChatInterface />
+    </MemoryRouter>,
+  );
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
-  renderWithProviders(<ChatInterface />);
+  renderWithProviders(
+    <MemoryRouter>
+      <ChatInterface />
+    </MemoryRouter>,
+  );
 
-describe("Empty state", () => {
+// Helper function to render with QueryClientProvider and Router (for newer tests)
+const renderWithQueryClient = (
+  ui: React.ReactElement,
+  queryClient: QueryClient,
+) =>
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>{ui}</MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+describe("ChatInterface - Chat Suggestions", () => {
+  // Create a new QueryClient for each test
+  let queryClient: QueryClient;
+
+  beforeEach(() => {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    // Default mock implementations
+    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      send: vi.fn(),
+      isLoadingMessages: false,
+      parsedEvents: [],
+    });
+    (
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      setOptimisticUserMessage: vi.fn(),
+      getOptimisticUserMessage: vi.fn(() => null),
+    });
+    (
+      useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      setErrorMessage: vi.fn(),
+      removeErrorMessage: vi.fn(),
+    });
+    (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { APP_MODE: "local" },
+    });
+    (useGetTrajectory as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isLoading: false,
+    });
+    (useUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutateAsync: vi
+        .fn()
+        .mockResolvedValue({ skipped_files: [], uploaded_files: [] }),
+      isLoading: false,
+    });
+  });
+
+  test("should show chat suggestions when there are no events", () => {
+    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      send: vi.fn(),
+      isLoadingMessages: false,
+      parsedEvents: [],
+    });
+
+    renderWithQueryClient(<ChatInterface />, queryClient);
+
+    // Check if ChatSuggestions is rendered
+    expect(screen.getByTestId("chat-suggestions")).toBeInTheDocument();
+  });
+
+  test("should show chat suggestions when there are only environment events", () => {
+    const environmentEvent: OpenHandsAction = {
+      id: 1,
+      source: "environment",
+      action: "system",
+      args: {
+        content: "source .openhands/setup.sh",
+        tools: null,
+        openhands_version: null,
+        agent_class: null,
+      },
+      message: "Running setup script",
+      timestamp: "2025-07-01T00:00:00Z",
+    };
+
+    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      send: vi.fn(),
+      isLoadingMessages: false,
+      parsedEvents: [environmentEvent],
+    });
+
+    renderWithQueryClient(<ChatInterface />, queryClient);
+
+    // Check if ChatSuggestions is still rendered with environment events
+    expect(screen.getByTestId("chat-suggestions")).toBeInTheDocument();
+  });
+
+  test("should hide chat suggestions when there is a user message", () => {
+    const userEvent: OpenHandsAction = {
+      id: 1,
+      source: "user",
+      action: "message",
+      args: {
+        content: "Hello",
+        image_urls: [],
+        file_urls: [],
+      },
+      message: "Hello",
+      timestamp: "2025-07-01T00:00:00Z",
+    };
+
+    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      send: vi.fn(),
+      isLoadingMessages: false,
+      parsedEvents: [userEvent],
+    });
+
+    renderWithQueryClient(<ChatInterface />, queryClient);
+
+    // Check if ChatSuggestions is not rendered with user events
+    expect(screen.queryByTestId("chat-suggestions")).not.toBeInTheDocument();
+  });
+
+  test("should hide chat suggestions when there is an optimistic user message", () => {
+    (
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      setOptimisticUserMessage: vi.fn(),
+      getOptimisticUserMessage: vi.fn(() => "Optimistic message"),
+    });
+
+    renderWithQueryClient(<ChatInterface />, queryClient);
+
+    // Check if ChatSuggestions is not rendered with optimistic user message
+    expect(screen.queryByTestId("chat-suggestions")).not.toBeInTheDocument();
+  });
+});
+
+describe("ChatInterface - Empty state", () => {
   const { send: sendMock } = vi.hoisted(() => ({
     send: vi.fn(),
   }));
@@ -21,58 +224,65 @@ describe("Empty state", () => {
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
     useWsClient: vi.fn(() => ({
       send: sendMock,
-      status: WsClientProviderStatus.CONNECTED,
+      status: "CONNECTED",
       isLoadingMessages: false,
+      parsedEvents: [],
     })),
   }));
 
   beforeAll(() => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({})),
-    }));
-
     vi.mock("#/context/socket", async (importActual) => ({
       ...(await importActual<typeof import("#/context/ws-client-provider")>()),
       useWsClient: useWsClientMock,
     }));
   });
 
+  beforeEach(() => {
+    // Reset mocks to ensure empty state
+    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      send: sendMock,
+      status: "CONNECTED",
+      isLoadingMessages: false,
+      parsedEvents: [],
+    });
+    (
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      setOptimisticUserMessage: vi.fn(),
+      getOptimisticUserMessage: vi.fn(() => null),
+    });
+    (
+      useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
+      setErrorMessage: vi.fn(),
+      removeErrorMessage: vi.fn(),
+    });
+    (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: { APP_MODE: "local" },
+    });
+    (useGetTrajectory as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutate: vi.fn(),
+      mutateAsync: vi.fn(),
+      isLoading: false,
+    });
+    (useUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+      mutateAsync: vi
+        .fn()
+        .mockResolvedValue({ skipped_files: [], uploaded_files: [] }),
+      isLoading: false,
+    });
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should render suggestions if empty", () => {
-    const { store } = renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { messages: [] },
-      },
-    });
-
-    expect(screen.getByTestId("suggestions")).toBeInTheDocument();
-
-    act(() => {
-      store.dispatch(
-        addUserMessage({
-          content: "Hello",
-          imageUrls: [],
-          timestamp: new Date().toISOString(),
-          pending: true,
-        }),
-      );
-    });
-
-    expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
-  });
+  it.todo("should render suggestions if empty");
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { messages: [] },
-      },
-    });
+    renderChatInterfaceWithRouter();
 
-    const suggestions = screen.getByTestId("suggestions");
+    const suggestions = screen.getByTestId("chat-suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
 
     // check that there are at most 4 suggestions displayed
@@ -91,27 +301,21 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
+        parsedEvents: [],
       }));
-      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
-      const { store } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { messages: [] },
-        },
-      });
+      renderChatInterfaceWithRouter();
 
-      const suggestions = screen.getByTestId("suggestions");
+      const suggestions = screen.getByTestId("chat-suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
       const input = screen.getByTestId("chat-input");
 
       await user.click(displayedSuggestions[0]);
 
       // user message loaded to input
-      expect(addUserMessageSpy).not.toHaveBeenCalled();
-      expect(screen.queryByTestId("suggestions")).toBeInTheDocument();
-      expect(store.getState().chat.messages).toHaveLength(0);
+      expect(screen.queryByTestId("chat-suggestions")).toBeInTheDocument();
       expect(input).toHaveValue(displayedSuggestions[0].textContent);
     },
   );
@@ -121,17 +325,14 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
+        parsedEvents: [],
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />, {
-        preloadedState: {
-          chat: { messages: [] },
-        },
-      });
+      const { rerender } = renderChatInterfaceWithRouter();
 
-      const suggestions = screen.getByTestId("suggestions");
+      const suggestions = screen.getByTestId("chat-suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
 
       await user.click(displayedSuggestions[0]);
@@ -139,10 +340,15 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        status: WsClientProviderStatus.CONNECTED,
+        status: "CONNECTED",
         isLoadingMessages: false,
+        parsedEvents: [],
       }));
-      rerender(<ChatInterface />);
+      rerender(
+        <MemoryRouter>
+          <ChatInterface />
+        </MemoryRouter>,
+      );
 
       await waitFor(() =>
         expect(sendMock).toHaveBeenCalledWith(expect.any(String)),
@@ -151,7 +357,7 @@ describe("Empty state", () => {
   );
 });
 
-describe.skip("ChatInterface", () => {
+describe.skip("ChatInterface - General functionality", () => {
   beforeAll(() => {
     // mock useScrollToBottom hook
     vi.mock("#/hooks/useScrollToBottom", () => ({
@@ -232,7 +438,11 @@ describe.skip("ChatInterface", () => {
       },
     ];
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     const imageCarousel = screen.getByTestId("image-carousel");
     expect(imageCarousel).toBeInTheDocument();
@@ -271,7 +481,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByTestId("continue-action-button")).toBeInTheDocument();
   });
@@ -299,10 +513,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render both GitHub buttons initially when ghToken is available", () => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
-    }));
+    // Note: This test may need adjustment since useRouteLoaderData is now globally mocked
 
     const messages: Message[] = [
       {
@@ -325,10 +536,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render only 'Push changes to PR' button after PR is created", async () => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
-    }));
+    // Note: This test may need adjustment since useRouteLoaderData is now globally mocked
 
     const messages: Message[] = [
       {
@@ -347,7 +555,11 @@ describe.skip("ChatInterface", () => {
     await user.click(prButton);
 
     // Re-render to trigger state update
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     // Verify only one button is shown
     const pushToPrButton = screen.getByRole("button", {
@@ -397,7 +609,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByTestId("feedback-actions")).toBeInTheDocument();
   });

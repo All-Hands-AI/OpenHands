@@ -1,3 +1,7 @@
+/**
+ * @deprecated This type is deprecated and will be removed in a future version.
+ * Use types in `frontend/src/types/core` instead.
+ */
 export interface ActionMessage {
   id: number;
 
@@ -19,11 +23,14 @@ export interface ActionMessage {
   // LLM metrics information
   llm_metrics?: {
     accumulated_cost: number;
+    max_budget_per_task: number | null;
     accumulated_token_usage: {
       prompt_tokens: number;
       completion_tokens: number;
       cache_read_tokens: number;
       cache_write_tokens: number;
+      context_window: number;
+      per_turn_token: number;
     };
   };
 
@@ -67,4 +74,5 @@ export interface StatusMessage {
   type: string;
   id?: string;
   message: string;
+  conversation_title?: string;
 }

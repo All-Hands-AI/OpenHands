@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
-import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
@@ -95,14 +95,34 @@ describe("ExpandableMessage", () => {
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
+  it("should render with neutral border and no icon for action messages with undefined success (timeout case)", () => {
+    renderWithProviders(
+      <ExpandableMessage
+        id="OBSERVATION_MESSAGE$RUN"
+        message="Command timed out"
+        type="action"
+        success={undefined}
+      />,
+    );
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
+    const container = element.closest(
+      "div.flex.gap-2.items-center.justify-start",
+    );
+    expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
+  });
+
   it("should render the out of credits message when the user is out of credits", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - We only care about the APP_MODE and FEATURE_FLAGS fields
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const RouterStub = createRoutesStub([

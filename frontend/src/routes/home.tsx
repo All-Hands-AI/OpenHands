@@ -1,68 +1,47 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
-import { setReplayJson } from "#/state/initial-query-slice";
-import { useGitUser } from "#/hooks/query/use-git-user";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useConfig } from "#/hooks/query/use-config";
-import { ReplaySuggestionBox } from "#/components/features/suggestions/replay-suggestion-box";
-import { GitRepositoriesSuggestionBox } from "#/components/features/git/git-repositories-suggestion-box";
-import { CodeNotInGitLink } from "#/components/features/git/code-not-in-github-link";
-import { HeroHeading } from "#/components/shared/hero-heading";
-import { TaskForm } from "#/components/shared/task-form";
-import { convertFileToText } from "#/utils/convert-file-to-text";
-import { ENABLE_TRAJECTORY_REPLAY } from "#/utils/feature-flags";
+import { PrefetchPageLinks } from "react-router";
+import { HomeHeader } from "#/components/features/home/home-header/home-header";
+import { RepoConnector } from "#/components/features/home/repo-connector";
+import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestions";
+import { GitRepository } from "#/types/git";
+import { NewConversation } from "#/components/features/home/new-conversation/new-conversation";
+import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
 
-function Home() {
-  const dispatch = useDispatch();
-  const formRef = React.useRef<HTMLFormElement>(null);
+<PrefetchPageLinks page="/conversations/:conversationId" />;
 
-  const { data: config } = useConfig();
-  const { data: user } = useGitUser();
-
-  const gitHubAuthUrl = useGitHubAuthUrl({
-    appMode: config?.APP_MODE || null,
-    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
-  });
+function HomeScreen() {
+  const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(
+    null,
+  );
 
   return (
     <div
       data-testid="home-screen"
-      className="bg-base-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto px-2"
+      className="px-0 pt-4 bg-transparent h-full flex flex-col pt-[35px] overflow-y-auto rounded-xl lg:px-[42px] lg:pt-[42px] custom-scrollbar-always"
     >
-      <HeroHeading />
-      <div className="flex flex-col gap-1 w-full mt-8 md:w-[600px] items-center">
-        <div className="flex flex-col gap-2 w-full">
-          <TaskForm ref={formRef} />
-        </div>
+      <HomeHeader />
 
-        <div className="flex gap-4 w-full flex-col md:flex-row mt-8">
-          <GitRepositoriesSuggestionBox
-            handleSubmit={() => formRef.current?.requestSubmit()}
-            gitHubAuthUrl={gitHubAuthUrl}
-            user={user || null}
-          />
-          {ENABLE_TRAJECTORY_REPLAY() && (
-            <ReplaySuggestionBox
-              onChange={async (event) => {
-                if (event.target.files) {
-                  const json = event.target.files[0];
-                  dispatch(setReplayJson(await convertFileToText(json)));
-                  posthog.capture("json_file_uploaded");
-                  formRef.current?.requestSubmit();
-                } else {
-                  // TODO: handle error
-                }
-              }}
-            />
-          )}
+      <div className="pt-[25px] flex justify-center">
+        <div
+          className="flex flex-col gap-5 px-6 sm:max-w-full sm:min-w-full md:flex-row lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
+          data-testid="home-screen-new-conversation-section"
+        >
+          <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
+          <NewConversation />
         </div>
-        <div className="w-full flex justify-start mt-2 ml-2">
-          <CodeNotInGitLink />
+      </div>
+
+      <div className="pt-4 flex sm:justify-start md:justify-center">
+        <div
+          className="flex flex-col gap-5 px-6 md:flex-row min-w-full md:max-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
+          data-testid="home-screen-recent-conversations-section"
+        >
+          <RecentConversations />
+          <TaskSuggestions filterFor={selectedRepo} />
         </div>
       </div>
     </div>
   );
 }
 
-export default Home;
+export default HomeScreen;

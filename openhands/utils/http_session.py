@@ -10,8 +10,7 @@ CLIENT = httpx.Client()
 
 @dataclass
 class HttpSession:
-    """
-    request.Session is reusable after it has been closed. This behavior makes it
+    """request.Session is reusable after it has been closed. This behavior makes it
     likely to leak file descriptors (Especially when combined with tenacity).
     We wrap the session to make it unusable after being closed
     """
@@ -28,6 +27,7 @@ class HttpSession:
         headers = kwargs.get('headers') or {}
         headers = {**self.headers, **headers}
         kwargs['headers'] = headers
+        logger.debug(f'HttpSession:request called with args {args} and kwargs {kwargs}')
         return CLIENT.request(*args, **kwargs)
 
     def stream(self, *args, **kwargs):

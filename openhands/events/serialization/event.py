@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import Event, EventSource
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
@@ -71,6 +70,8 @@ def event_from_dict(data: dict[str, Any]) -> 'Event':
                 metrics = Metrics()
                 if isinstance(value, dict):
                     metrics.accumulated_cost = value.get('accumulated_cost', 0.0)
+                    # Set max_budget_per_task if available
+                    metrics.max_budget_per_task = value.get('max_budget_per_task')
                     for cost in value.get('costs', []):
                         metrics._costs.append(Cost(**cost))
                     metrics.response_latencies = [
@@ -118,9 +119,17 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
+
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
+
+    # Remove task_completed from serialization when it's None (backward compatibility)
+    if 'task_completed' in props and props['task_completed'] is None:
+        props.pop('task_completed')
     if 'action' in d:
+        # Handle security_risk for actions - include it in args
+        if 'security_risk' in props:
+            props['security_risk'] = props['security_risk'].value
         d['args'] = props
         if event.timeout is not None:
             d['timeout'] = event.timeout
@@ -135,7 +144,6 @@ def event_to_dict(event: 'Event') -> dict:
             k: (v.value if isinstance(v, Enum) else _convert_pydantic_to_dict(v))
             for k, v in props.items()
         }
-        logger.debug(f'extras data in event_to_dict: {d["extras"]}')
         # Include success field for CmdOutputObservation
         if hasattr(event, 'success'):
             d['success'] = event.success

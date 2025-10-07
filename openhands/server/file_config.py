@@ -1,7 +1,7 @@
 import os
 import re
 
-from openhands.core.config import AppConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
@@ -15,7 +15,7 @@ FILES_TO_IGNORE = [
 ]
 
 
-def sanitize_filename(filename):
+def sanitize_filename(filename: str) -> str:
     """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
     filename = os.path.basename(filename)
@@ -30,7 +30,7 @@ def sanitize_filename(filename):
 
 
 def load_file_upload_config(
-    config: AppConfig = shared_config,
+    config: OpenHandsConfig = shared_config,
 ) -> tuple[int, bool, list[str]]:
     """Load file upload configuration from the config object.
 
@@ -90,7 +90,7 @@ def load_file_upload_config(
 MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
 
 
-def is_extension_allowed(filename):
+def is_extension_allowed(filename: str) -> bool:
     """Check if the file extension is allowed based on the current configuration.
 
     This function supports wildcards and files without extensions.
@@ -111,3 +111,29 @@ def is_extension_allowed(filename):
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
+
+
+def get_unique_filename(filename: str, folder_path: str) -> str:
+    """Returns unique filename on given folder_path. By checking if the given
+     filename exists. If it doesn't, filename is simply returned.
+     Otherwise, it append copy(#number) until the filename is unique.
+
+    Args:
+        filename (str): The name of the file to check.
+        folder_path (str): directory path in which file name check is performed.
+
+    Returns:
+        string: unique filename.
+    """
+    name, ext = os.path.splitext(filename)
+    filename_candidate = filename
+    copy_index = 0
+
+    while os.path.exists(os.path.join(folder_path, filename_candidate)):
+        if copy_index == 0:
+            filename_candidate = f'{name} copy{ext}'
+        else:
+            filename_candidate = f'{name} copy({copy_index}){ext}'
+        copy_index += 1
+
+    return filename_candidate

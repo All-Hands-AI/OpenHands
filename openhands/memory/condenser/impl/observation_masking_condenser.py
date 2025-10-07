@@ -4,6 +4,7 @@ from openhands.core.config.condenser_config import ObservationMaskingCondenserCo
 from openhands.events.event import Event
 from openhands.events.observation import Observation
 from openhands.events.observation.agent import AgentCondensationObservation
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import Condensation, Condenser, View
 
 
@@ -28,9 +29,11 @@ class ObservationMaskingCondenser(Condenser):
 
     @classmethod
     def from_config(
-        cls, config: ObservationMaskingCondenserConfig
+        cls,
+        config: ObservationMaskingCondenserConfig,
+        llm_registry: LLMRegistry,
     ) -> ObservationMaskingCondenser:
-        return ObservationMaskingCondenser(**config.model_dump(exclude=['type']))
+        return ObservationMaskingCondenser(**config.model_dump(exclude={'type'}))
 
 
 ObservationMaskingCondenser.register_config(ObservationMaskingCondenserConfig)

@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
+import { waitFor } from "@testing-library/react";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 
 // These tests will now fail because the conversation panel is rendered through a portal
 // and technically not a child of the Sidebar component.
@@ -18,14 +19,14 @@ const renderSidebar = () =>
   renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
 
 describe("Sidebar", () => {
-  const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+  const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it("should fetch settings data on mount", () => {
+  it("should fetch settings data on mount", async () => {
     renderSidebar();
-    expect(getSettingsSpy).toHaveBeenCalled();
+    await waitFor(() => expect(getSettingsSpy).toHaveBeenCalled());
   });
 });

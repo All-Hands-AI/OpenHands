@@ -1,60 +1,36 @@
 # OpenHands Documentation
 
-This website is built using [Docusaurus](https://docusaurus.io/).
+This directory contains the documentation for OpenHands. The documentation is automatically synchronized with the [All-Hands-AI/docs](https://github.com/All-Hands-AI/docs) repository, which hosts the unified documentation site using Mintlify.
 
-When published, the content will be published at https://docs.all-hands.dev/.
+## Documentation Structure
 
-### Installation
+The documentation files in this directory are automatically included in the main documentation site via Git submodules. When you make changes to documentation in this repository, they will be automatically synchronized to the docs repository.
 
-```bash
-$ cd docs
-$ yarn
-```
+## How It Works
 
-### Local Development
+1. **Automatic Sync**: When documentation changes are pushed to the `main` branch, a GitHub Action automatically notifies the docs repository
+2. **Submodule Update**: The docs repository updates its submodule reference to include your latest changes  
+3. **Site Rebuild**: Mintlify automatically rebuilds and deploys the documentation site
 
-```
-$ yarn start # for the default English version
-```
+## Making Documentation Changes
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+Simply edit the documentation files in this directory as usual. The synchronization happens automatically when changes are merged to the main branch.
 
-Alternatively, you can pass a `--locale` argument to render a specific language in dev mode as in:
+## Local Development
 
-```
-$ yarn start --locale pt-BR # for the Brazilian Portuguese version
-$ yarn start --locale fr # for the French version
-$ yarn start --locale zh-Hans # for the Chinese Han (simplified variant) version
-```
-
-### Build
-
-```
-$ yarn build
-```
-
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
-
-It compiles all languages.
-
-### Deployment
-
-Open a new pull request and - when it is merged - the [deploy-docs](.github/workflows/deploy-docs.yml) GH action will take care of everything else.
-
-## Automatic Translations
-
-Translations can be automatically updated when the original English content changes, this is done by the script [`translation_updater.py`](./translation_updater.py).
-
-From the root of the repository, you can run the following:
+For local documentation development in this repository only:
 
 ```bash
-$ export ANTHROPIC_API_KEY=<your_api_key>
-$ poetry run python docs/translation_updater.py
-# ...
-# Change detected in docs/modules/usage/getting-started.mdx
-# translating... docs/modules/usage/getting-started.mdx pt-BR
-# translation done
-# ...
+npm install -g mint
+# or
+yarn global add mint
+
+# Preview local changes
+mint dev
 ```
 
-This process uses `claude-3-7-sonnet-20250219` as base model and each language consumes at least ~30k input tokens and ~35k output tokens.
+For the complete unified documentation site, work with the [All-Hands-AI/docs](https://github.com/All-Hands-AI/docs) repository.
+
+## Configuration
+
+The Mintlify configuration (`docs.json`) has been moved to the root of the [All-Hands-AI/docs](https://github.com/All-Hands-AI/docs) repository to enable unified documentation across multiple repositories.

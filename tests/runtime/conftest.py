@@ -7,15 +7,15 @@ import time
 import pytest
 from pytest import TempPathFactory
 
-from openhands.core.config import AppConfig, load_app_config
+from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
+from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -129,10 +129,8 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'runloop':
-        return [RunloopRuntime]
-    elif runtime.lower() == 'daytona':
-        return [DaytonaRuntime]
+    elif runtime.lower() == 'cli':
+        return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
@@ -204,8 +202,8 @@ def base_container_image(request):
 
 
 def _load_runtime(
-    temp_dir,
-    runtime_cls,
+    temp_dir: str | None,
+    runtime_cls: str,
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
@@ -214,15 +212,18 @@ def _load_runtime(
     force_rebuild_runtime: bool = False,
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
-) -> tuple[Runtime, AppConfig]:
+    override_mcp_config: MCPConfig | None = None,
+    enable_browser: bool = False,
+) -> tuple[Runtime, OpenHandsConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
     plugins = [AgentSkillsRequirement(), JupyterRequirement()]
 
-    config = load_app_config()
+    config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
+    config.enable_browser = enable_browser
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
     config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs
@@ -231,7 +232,7 @@ def _load_runtime(
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
     elif temp_dir is not None:
-        test_mount_path = temp_dir
+        test_mount_path = str(temp_dir)
     else:
         test_mount_path = None
     config.workspace_base = test_mount_path
@@ -256,18 +257,41 @@ def _load_runtime(
         config.sandbox.base_container_image = base_container_image
         config.sandbox.runtime_container_image = None
 
-    file_store = get_file_store(config.file_store, config.file_store_path)
+    if override_mcp_config is not None:
+        config.mcp = override_mcp_config
+
+    file_store = file_store = get_file_store(
+        file_store_type=config.file_store,
+        file_store_path=config.file_store_path,
+        file_store_web_hook_url=config.file_store_web_hook_url,
+        file_store_web_hook_headers=config.file_store_web_hook_headers,
+        file_store_web_hook_batch=config.file_store_web_hook_batch,
+    )
     event_stream = EventStream(sid, file_store)
+
+    # Create a LLMRegistry instance for the runtime
+    llm_registry = LLMRegistry(config=OpenHandsConfig())
 
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        llm_registry=llm_registry,
         sid=sid,
         plugins=plugins,
     )
+
+    # For CLIRuntime, the tests' assertions should be based on the physical workspace path,
+    # not the logical "/workspace". So, we adjust config.workspace_mount_path_in_sandbox
+    # to reflect the actual physical path used by CLIRuntime's OHEditor.
+    if isinstance(runtime, CLIRuntime):
+        config.workspace_mount_path_in_sandbox = str(runtime.workspace_root)
+        logger.info(
+            f'Adjusted workspace_mount_path_in_sandbox for CLIRuntime to: {config.workspace_mount_path_in_sandbox}'
+        )
+
     call_async_from_sync(runtime.connect)
     time.sleep(2)
-    return runtime, config
+    return runtime, runtime.config
 
 
 # Export necessary function

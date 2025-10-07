@@ -54,9 +54,9 @@ docker run -it \
 When adding a note or warning, use the built-in note and warning syntax.
 
 Example:
-:::note
+<Note>
 This section is for advanced users only.
-:::
+</Note>
 
 ### Referring to UI Elements
 

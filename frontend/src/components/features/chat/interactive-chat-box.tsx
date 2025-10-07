@@ -1,81 +1,156 @@
-import React from "react";
-import { ChatInput } from "./chat-input";
-import { cn } from "#/utils/utils";
-import { ImageCarousel } from "../images/image-carousel";
-import { UploadImageInput } from "../images/upload-image-input";
+import { isFileImage } from "#/utils/is-file-image";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { validateFiles } from "#/utils/file-validation";
+import { CustomChatInput } from "./custom-chat-input";
+import { AgentState } from "#/types/agent-state";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { GitControlBar } from "./git-control-bar";
+import { useConversationStore } from "#/state/conversation-store";
+import { useAgentStore } from "#/stores/agent-store";
+import { processFiles, processImages } from "#/utils/file-processing";
 
 interface InteractiveChatBoxProps {
-  isDisabled?: boolean;
-  mode?: "stop" | "submit";
-  onSubmit: (message: string, images: File[]) => void;
+  onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
-  value?: string;
-  onChange?: (message: string) => void;
 }
 
 export function InteractiveChatBox({
-  isDisabled,
-  mode = "submit",
   onSubmit,
   onStop,
-  value,
-  onChange,
 }: InteractiveChatBoxProps) {
-  const [images, setImages] = React.useState<File[]>([]);
+  const {
+    images,
+    files,
+    addImages,
+    addFiles,
+    clearAllFiles,
+    addFileLoading,
+    removeFileLoading,
+    addImageLoading,
+    removeImageLoading,
+  } = useConversationStore();
+  const { curAgentState } = useAgentStore();
+  const { data: conversation } = useActiveConversation();
 
-  const handleUpload = (files: File[]) => {
-    setImages((prevImages) => [...prevImages, ...files]);
+  // Helper function to validate and filter files
+  const validateAndFilterFiles = (selectedFiles: File[]) => {
+    const validation = validateFiles(selectedFiles, [...images, ...files]);
+
+    if (!validation.isValid) {
+      displayErrorToast(`Error: ${validation.errorMessage}`);
+      return null;
+    }
+
+    const validFiles = selectedFiles.filter((f) => !isFileImage(f));
+    const validImages = selectedFiles.filter((f) => isFileImage(f));
+
+    return { validFiles, validImages };
   };
 
-  const handleRemoveImage = (index: number) => {
-    setImages((prevImages) => {
-      const newImages = [...prevImages];
-      newImages.splice(index, 1);
-      return newImages;
-    });
+  // Helper function to show loading indicators for files
+  const showLoadingIndicators = (validFiles: File[], validImages: File[]) => {
+    validFiles.forEach((file) => addFileLoading(file.name));
+    validImages.forEach((image) => addImageLoading(image.name));
   };
 
-  const handleSubmit = (message: string) => {
-    onSubmit(message, images);
-    setImages([]);
-    if (message) {
-      onChange?.("");
+  // Helper function to handle successful file processing results
+  const handleSuccessfulFiles = (fileResults: { successful: File[] }) => {
+    if (fileResults.successful.length > 0) {
+      addFiles(fileResults.successful);
+      fileResults.successful.forEach((file) => removeFileLoading(file.name));
     }
   };
 
-  return (
-    <div
-      data-testid="interactive-chat-box"
-      className="flex flex-col gap-[10px]"
-    >
-      {images.length > 0 && (
-        <ImageCarousel
-          size="small"
-          images={images.map((image) => URL.createObjectURL(image))}
-          onRemove={handleRemoveImage}
-        />
-      )}
+  // Helper function to handle successful image processing results
+  const handleSuccessfulImages = (imageResults: { successful: File[] }) => {
+    if (imageResults.successful.length > 0) {
+      addImages(imageResults.successful);
+      imageResults.successful.forEach((image) =>
+        removeImageLoading(image.name),
+      );
+    }
+  };
 
-      <div
-        className={cn(
-          "flex items-end gap-1",
-          "bg-tertiary border border-neutral-600 rounded-lg px-2",
-          "transition-colors duration-200",
-          "hover:border-neutral-500 focus-within:border-neutral-500",
-        )}
-      >
-        <UploadImageInput onUpload={handleUpload} />
-        <ChatInput
-          disabled={isDisabled}
-          button={mode}
-          onChange={onChange}
-          onSubmit={handleSubmit}
-          onStop={onStop}
-          value={value}
-          onImagePaste={handleUpload}
-          className="py-[10px]"
-          buttonClassName="py-[10px]"
-        />
+  // Helper function to handle failed file processing results
+  const handleFailedFiles = (
+    fileResults: { failed: { file: File; error: Error }[] },
+    imageResults: { failed: { file: File; error: Error }[] },
+  ) => {
+    fileResults.failed.forEach(({ file, error }) => {
+      removeFileLoading(file.name);
+      displayErrorToast(
+        `Failed to process file ${file.name}: ${error.message}`,
+      );
+    });
+
+    imageResults.failed.forEach(({ file, error }) => {
+      removeImageLoading(file.name);
+      displayErrorToast(
+        `Failed to process image ${file.name}: ${error.message}`,
+      );
+    });
+  };
+
+  // Helper function to clear loading states on error
+  const clearLoadingStates = (validFiles: File[], validImages: File[]) => {
+    validFiles.forEach((file) => removeFileLoading(file.name));
+    validImages.forEach((image) => removeImageLoading(image.name));
+  };
+
+  const handleUpload = async (selectedFiles: File[]) => {
+    // Step 1: Validate and filter files
+    const result = validateAndFilterFiles(selectedFiles);
+    if (!result) return;
+
+    const { validFiles, validImages } = result;
+
+    // Step 2: Show loading indicators immediately
+    showLoadingIndicators(validFiles, validImages);
+
+    // Step 3: Process files using REAL FileReader
+    try {
+      const [fileResults, imageResults] = await Promise.all([
+        processFiles(validFiles),
+        processImages(validImages),
+      ]);
+
+      // Step 4: Handle successful results
+      handleSuccessfulFiles(fileResults);
+      handleSuccessfulImages(imageResults);
+
+      // Step 5: Handle failed results
+      handleFailedFiles(fileResults, imageResults);
+    } catch (error) {
+      // Clear loading states and show error
+      clearLoadingStates(validFiles, validImages);
+      displayErrorToast("An unexpected error occurred while processing files");
+    }
+  };
+
+  const handleSubmit = (message: string) => {
+    onSubmit(message, images, files);
+    clearAllFiles();
+  };
+
+  const handleSuggestionsClick = (suggestion: string) => {
+    handleSubmit(suggestion);
+  };
+
+  const isDisabled =
+    curAgentState === AgentState.LOADING ||
+    curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
+
+  return (
+    <div data-testid="interactive-chat-box">
+      <CustomChatInput
+        disabled={isDisabled}
+        onSubmit={handleSubmit}
+        onStop={onStop}
+        onFilesPaste={handleUpload}
+        conversationStatus={conversation?.status || null}
+      />
+      <div className="mt-4">
+        <GitControlBar onSuggestionsClick={handleSuggestionsClick} />
       </div>
     </div>
   );

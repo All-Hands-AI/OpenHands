@@ -86,7 +86,6 @@ class GitlabIssueHandler(IssueHandlerInterface):
         Returns:
             List of Gitlab issues.
         """
-
         if not issue_numbers:
             raise ValueError('Unspecified issue number')
 
@@ -214,7 +213,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
 
     def reply_to_comment(self, pr_number: int, comment_id: str, reply: str) -> None:
         response = httpx.get(
-            f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split('/')[-1]}',
+            f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split("/")[-1]}',
             headers=self.headers,
         )
         response.raise_for_status()
@@ -225,7 +224,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
                 'note_id': discussions.get('notes', [])[-1]['id'],
             }
             response = httpx.post(
-                f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split('/')[-1]}/notes',
+                f'{self.base_url}/merge_requests/{pr_number}/discussions/{comment_id.split("/")[-1]}/notes',
                 headers=self.headers,
                 json=data,
             )

@@ -11,8 +11,7 @@ from evaluation.benchmarks.testgeneval.constants import (
 
 
 def get_test_directives(instance: TestGenEvalInstance) -> list:
-    """
-    Get test directives from the test_patch of a task instance
+    """Get test directives from the test_patch of a task instance
 
     Args:
         instance (dict): task instance
@@ -24,7 +23,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
         return ['test.py']
 
     # Get test directives from test patch and remove non-test files
-    directives = [f"/testbed/{instance['test_file']}"]
+    directives = [f'/testbed/{instance["test_file"]}']
 
     # For Django tests, remove extension + "tests/" prefix and convert slashes to dots (module referencing)
     if instance['repo'] == 'django/django':
@@ -43,9 +42,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
 def load_testgeneval_dataset(
     name='kjain14/testgeneval', split='test', ids=None
 ) -> list[TestGenEvalInstance]:
-    """
-    Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file
-    """
+    """Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file"""
     # check that all instance IDs are in the dataset
     if ids:
         ids = set(ids)
@@ -65,8 +62,8 @@ def load_testgeneval_dataset(
         if ids - dataset_ids:
             raise ValueError(
                 (
-                    "Some instance IDs not found in dataset!"
-                    f"\nMissing IDs:\n{' '.join(ids - dataset_ids)}"
+                    'Some instance IDs not found in dataset!'
+                    f'\nMissing IDs:\n{" ".join(ids - dataset_ids)}'
                 )
             )
         dataset = [instance for instance in dataset if instance['id'] in ids]

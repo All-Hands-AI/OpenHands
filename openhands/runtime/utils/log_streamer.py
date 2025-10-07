@@ -14,7 +14,7 @@ class LogStreamer:
     def __init__(
         self,
         container: docker.models.containers.Container,
-        logFn: Callable,
+        logFn: Callable[[str, str], None],
     ):
         self.log = logFn
         # Initialize all attributes before starting the thread on this instance

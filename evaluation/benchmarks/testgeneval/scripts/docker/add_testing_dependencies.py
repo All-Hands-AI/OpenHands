@@ -71,9 +71,10 @@ def process_images(dataset, original_namespace, new_namespace, start_instance_id
             patch_file_path = 'patch.diff'
             test_patch_file_path = 'test_patch.diff'
 
-            with open(patch_file_path, 'w') as patch_file, open(
-                test_patch_file_path, 'w'
-            ) as test_patch_file:
+            with (
+                open(patch_file_path, 'w') as patch_file,
+                open(test_patch_file_path, 'w') as test_patch_file,
+            ):
                 patch_file.write(datum['patch'])
                 test_patch_file.write(datum['test_patch'])
 

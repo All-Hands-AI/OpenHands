@@ -10,27 +10,13 @@
 # General core configurations
 ##############################################################################
 [core]
-# API key for E2B
-#e2b_api_key = ""
-
-# API key for Modal
-#modal_api_token_id = ""
-#modal_api_token_secret = ""
-
-# API key for Daytona
-#daytona_api_key = ""
-
-# Daytona Target
-#daytona_target = ""
+# API keys and configuration for core services
 
 # Base path for the workspace
 #workspace_base = "./workspace"
 
 # Cache directory path
 #cache_dir = "/tmp/cache"
-
-# Reasoning effort for o1 models (low, medium, high, or not set)
-#reasoning_effort = "medium"
 
 # Debugging enabled
 #debug = false
@@ -60,11 +46,14 @@
 # Maximum file size for uploads, in megabytes
 #file_uploads_max_file_size_mb = 0
 
+# Enable the browser environment
+#enable_browser = true
+
 # Maximum budget per task, 0.0 means no limit
 #max_budget_per_task = 0.0
 
 # Maximum number of iterations
-#max_iterations = 250
+#max_iterations = 500
 
 # Path to mount the workspace in the sandbox
 #workspace_mount_path_in_sandbox = "/workspace"
@@ -126,6 +115,9 @@ api_key = ""
 
 # API version
 #api_version = ""
+
+# Reasoning effort for OpenAI o-series models (low, medium, high, or not set)
+#reasoning_effort = "medium"
 
 # Cost per input token
 #input_cost_per_token = 0.0
@@ -201,10 +193,39 @@ model = "gpt-4o"
 #native_tool_calling = None
 
 
+# Safety settings for models that support them (e.g., Mistral AI, Gemini)
+# Example for Mistral AI:
+# safety_settings = [
+#   { "category" = "hate", "threshold" = "low" },
+#   { "category" = "harassment", "threshold" = "low" },
+#   { "category" = "sexual", "threshold" = "low" },
+#   { "category" = "dangerous", "threshold" = "low" }
+# ]
+#
+# Example for Gemini:
+# safety_settings = [
+#   { "category" = "HARM_CATEGORY_HARASSMENT", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_HATE_SPEECH", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold" = "BLOCK_NONE" },
+#   { "category" = "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold" = "BLOCK_NONE" }
+# ]
+#safety_settings = []
+
+[llm.draft_editor]
+# The number of times llm_editor tries to fix an error when editing.
+correct_num = 5
 
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
+
+# Example routing LLM configuration for multimodal model routing
+# Uncomment and configure to enable model routing with a secondary model
+#[llm.secondary_model]
+#model = "kimi-k2"
+#api_key = ""
+#for_routing = true
+#max_input_tokens = 128000
 
 
 #################################### Agent ###################################
@@ -216,13 +237,27 @@ model = "gpt-4o"
 [agent]
 
 # Whether the browsing tool is enabled
+# Note: when this is set to true, enable_browser in the core config must also be true
 enable_browsing = true
 
 # Whether the LLM draft editor is enabled
 enable_llm_editor = false
 
+# Whether the standard editor tool (str_replace_editor) is enabled
+# Only has an effect if enable_llm_editor is False
+enable_editor = true
+
 # Whether the IPython tool is enabled
 enable_jupyter = true
+
+# Whether the command tool is enabled
+enable_cmd = true
+
+# Whether the think tool is enabled
+enable_think = true
+
+# Whether the finish tool is enabled
+enable_finish = true
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
@@ -237,10 +272,18 @@ enable_jupyter = true
 # length limit
 enable_history_truncation = true
 
+# Whether the condensation request tool is enabled
+enable_condensation_request = false
+
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
 # useful when an agent doesn't demand high quality but uses a lot of tokens
 llm_config = 'gpt3'
+
+[agent.CustomAgent]
+# Example: use a custom agent from a different package
+# This will be automatically be registered as a new agent named "CustomAgent"
+classpath = "my_package.my_module.MyCustomAgent"
 
 #################################### Sandbox ###################################
 # Configuration for the sandbox
@@ -300,8 +343,24 @@ llm_config = 'gpt3'
 # Enable GPU support in the runtime
 #enable_gpu = false
 
+# When there are multiple cards, you can specify the GPU by ID
+#cuda_visible_devices = ''
+
 # Additional Docker runtime kwargs
 #docker_runtime_kwargs = {}
+
+# Specific port to use for VSCode. If not set, a random port will be chosen.
+# Useful when deploying OpenHands in a remote machine where you need to expose a specific port.
+#vscode_port = 41234
+
+# Volume mounts in the format 'host_path:container_path[:mode]'
+# e.g. '/my/host/dir:/workspace:rw'
+# Multiple mounts can be specified using commas
+# e.g. '/path1:/workspace/path1,/path2:/workspace/path2:ro'
+
+# Configure volumes under the [sandbox] section:
+# [sandbox]
+# volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro"
 
 #################################### Security ###################################
 # Configuration for security features
@@ -312,10 +371,11 @@ llm_config = 'gpt3'
 #confirmation_mode = false
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-#security_analyzer = ""
+# Available options: 'llm' (default), 'invariant'
+#security_analyzer = "llm"
 
 # Whether to enable security analyzer
-#enable_security_analyzer = false
+#enable_security_analyzer = true
 
 #################################### Condenser #################################
 # Condensers control how conversation history is managed and compressed when
@@ -378,9 +438,105 @@ type = "noop"
 #[llm.condenser]
 #model = "gpt-4o"
 #temperature = 0.1
-#max_tokens = 1024
+#max_input_tokens = 1024
 
 #################################### Eval ####################################
 # Configuration for the evaluation, please refer to the specific evaluation
 # plugin for the available options
 ##############################################################################
+
+
+########################### Kubernetes #######################################
+# Kubernetes configuration when using the Kubernetes runtime
+##############################################################################
+[kubernetes]
+# The Kubernetes namespace to use for OpenHands resources
+#namespace = "default"
+
+# Domain for ingress resources
+#ingress_domain = "localhost"
+
+# Size of the persistent volume claim
+#pvc_storage_size = "2Gi"
+
+# Storage class for persistent volume claims
+#pvc_storage_class = "standard"
+
+# CPU request for runtime pods
+#resource_cpu_request = "1"
+
+# Memory request for runtime pods
+#resource_memory_request = "1Gi"
+
+# Memory limit for runtime pods
+#resource_memory_limit = "2Gi"
+
+# Optional name of image pull secret for private registries
+#image_pull_secret = ""
+
+# Optional name of TLS secret for ingress
+#ingress_tls_secret = ""
+
+# Optional node selector key for pod scheduling
+#node_selector_key = ""
+
+# Optional node selector value for pod scheduling
+#node_selector_val = ""
+
+# Optional YAML string defining pod tolerations
+#tolerations_yaml = ""
+
+# Run the runtime sandbox container in privileged mode for use with docker-in-docker
+#privileged = false
+
+#################################### MCP #####################################
+# Configuration for Model Context Protocol (MCP) servers
+# MCP allows OpenHands to communicate with external tool servers
+##############################################################################
+[mcp]
+# SSE servers - Server-Sent Events transport (legacy)
+#sse_servers = [
+#    # Basic SSE server with just a URL
+#    "http://localhost:8080/mcp/sse",
+#
+#    # SSE server with authentication
+#    {url = "https://api.example.com/mcp/sse", api_key = "your-api-key"}
+#]
+
+# SHTTP servers - Streamable HTTP transport (recommended)
+#shttp_servers = [
+#    # Basic SHTTP server with default 60s timeout
+#    "https://api.example.com/mcp/shttp",
+#
+#    # SHTTP server with custom timeout for long-running tools
+#    {
+#        url = "https://api.example.com/mcp/shttp",
+#        api_key = "your-api-key",
+#        timeout = 180  # 3 minutes for processing-heavy tools (1-3600 seconds)
+#    }
+#]
+
+# Stdio servers - Direct process communication (development only)
+#stdio_servers = [
+#    # Basic stdio server
+#    {name = "filesystem", command = "npx", args = ["@modelcontextprotocol/server-filesystem", "/"]},
+#
+#    # Stdio server with environment variables
+#    {
+#        name = "fetch",
+#        command = "uvx",
+#        args = ["mcp-server-fetch"],
+#        env = {DEBUG = "true"}
+#    }
+#]
+
+#################################### Model Routing ############################
+# Configuration for experimental model routing feature
+# Enables intelligent switching between different LLM models for specific purposes
+##############################################################################
+[model_routing]
+# Router to use for model selection
+# Available options:
+# - "noop_router" (default): No routing, always uses primary LLM
+# - "multimodal_router": A router that switches between primary and secondary models, depending on whether the input is multimodal or not
+#router_name = "noop_router"

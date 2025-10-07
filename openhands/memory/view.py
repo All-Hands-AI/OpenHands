@@ -4,7 +4,8 @@ from typing import overload
 
 from pydantic import BaseModel
 
-from openhands.events.action.agent import CondensationAction
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.agent import CondensationAction, CondensationRequestAction
 from openhands.events.event import Event
 from openhands.events.observation.agent import AgentCondensationObservation
 
@@ -16,6 +17,7 @@ class View(BaseModel):
     """
 
     events: list[Event]
+    unhandled_condensation_request: bool = False
 
     def __len__(self) -> int:
         return len(self.events)
@@ -49,6 +51,10 @@ class View(BaseModel):
         for event in events:
             if isinstance(event, CondensationAction):
                 forgotten_event_ids.update(event.forgotten)
+                # Make sure we also forget the condensation action itself
+                forgotten_event_ids.add(event.id)
+            if isinstance(event, CondensationRequestAction):
+                forgotten_event_ids.add(event.id)
 
         kept_events = [event for event in events if event.id not in forgotten_event_ids]
 
@@ -65,8 +71,23 @@ class View(BaseModel):
                     break
 
         if summary is not None and summary_offset is not None:
+            logger.info(f'Inserting summary at offset {summary_offset}')
+
             kept_events.insert(
                 summary_offset, AgentCondensationObservation(content=summary)
             )
 
-        return View(events=kept_events)
+        # Check for an unhandled condensation request -- these are events closer to the
+        # end of the list than any condensation action.
+        unhandled_condensation_request = False
+        for event in reversed(events):
+            if isinstance(event, CondensationAction):
+                break
+            if isinstance(event, CondensationRequestAction):
+                unhandled_condensation_request = True
+                break
+
+        return View(
+            events=kept_events,
+            unhandled_condensation_request=unhandled_condensation_request,
+        )

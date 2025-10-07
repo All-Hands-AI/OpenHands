@@ -5,6 +5,7 @@ from unittest.mock import ANY, MagicMock, call, patch
 import pytest
 
 from openhands.core.config import LLMConfig
+from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.resolver_output import Issue, ResolverOutput
@@ -12,13 +13,12 @@ from openhands.resolver.send_pull_request import (
     apply_patch,
     initialize_repo,
     load_single_resolver_output,
+    main,
     make_commit,
-    process_all_successful_issues,
     process_single_issue,
     send_pull_request,
     update_existing_pull_request,
 )
-from openhands.resolver.utils import Platform
 
 
 @pytest.fixture
@@ -142,9 +142,9 @@ index 9daeafb..b02def2 100644
     with open(dos_file, 'rb') as f:
         dos_content = f.read()
 
-    assert (
-        b'\r\n' not in unix_content
-    ), 'Unix-style line endings were changed to DOS-style'
+    assert b'\r\n' not in unix_content, (
+        'Unix-style line endings were changed to DOS-style'
+    )
     assert b'\r\n' in dos_content, 'DOS-style line endings were changed to Unix-style'
 
     # Check if content was updated correctly
@@ -289,7 +289,7 @@ def test_update_existing_pull_request(
         issue,
         token,
         username,
-        Platform.GITHUB,
+        ProviderType.GITHUB,
         patch_dir,
         llm_config,
         comment_message=None,
@@ -388,7 +388,7 @@ def test_send_pull_request(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type=pr_type,
         target_branch=target_branch,
@@ -478,7 +478,7 @@ def test_send_pull_request_with_reviewer(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         reviewer=reviewer,
@@ -536,7 +536,7 @@ def test_send_pull_request_target_branch_with_fork(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         fork_owner=fork_owner,
@@ -600,7 +600,7 @@ def test_send_pull_request_target_branch_with_additional_message(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='ready',
         target_branch=target_branch,
@@ -639,7 +639,7 @@ def test_send_pull_request_invalid_target_branch(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
             target_branch='nonexistent-branch',
@@ -674,7 +674,7 @@ def test_send_pull_request_git_push_failure(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -734,7 +734,7 @@ def test_send_pull_request_permission_error(
             issue=mock_issue,
             token='test-token',
             username='test-user',
-            platform=Platform.GITHUB,
+            platform=ProviderType.GITHUB,
             patch_dir=repo_path,
             pr_type='ready',
         )
@@ -861,7 +861,7 @@ def test_process_single_pr_update(
         resolver_output,
         token,
         username,
-        Platform.GITHUB,
+        ProviderType.GITHUB,
         pr_type,
         mock_llm_config,
         None,
@@ -874,13 +874,17 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr'
+        f'{mock_output_dir}/patches/pr_1',
+        resolver_output.issue,
+        'pr',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
         token=token,
         username=username,
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
         llm_config=mock_llm_config,
@@ -904,7 +908,7 @@ def test_process_single_issue(
     token = 'test_token'
     username = 'test_user'
     pr_type = 'draft'
-    platform = Platform.GITHUB
+    platform = ProviderType.GITHUB
 
     resolver_output = ResolverOutput(
         issue=Issue(
@@ -952,7 +956,11 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
+        f'{mock_output_dir}/patches/issue_1',
+        resolver_output.issue,
+        'issue',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -967,6 +975,8 @@ def test_process_single_issue(
         reviewer=None,
         pr_title=None,
         base_domain='github.com',
+        git_user_name='openhands',
+        git_user_email='openhands@all-hands.dev',
     )
 
 
@@ -1013,7 +1023,7 @@ def test_process_single_issue_unsuccessful(
         resolver_output,
         token,
         username,
-        Platform.GITHUB,
+        ProviderType.GITHUB,
         pr_type,
         mock_llm_config,
         None,
@@ -1026,131 +1036,6 @@ def test_process_single_issue_unsuccessful(
     mock_apply_patch.assert_not_called()
     mock_make_commit.assert_not_called()
     mock_send_pull_request.assert_not_called()
-
-
-@patch('openhands.resolver.send_pull_request.load_all_resolver_outputs')
-@patch('openhands.resolver.send_pull_request.process_single_issue')
-def test_process_all_successful_issues(
-    mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
-):
-    # Create ResolverOutput objects with properly initialized GithubIssue instances
-    resolver_output_1 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=1,
-            title='Issue 1',
-            body='Body 1',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 1',
-        base_commit='def456',
-        git_patch='Test patch 1',
-        history=[],
-        metrics={},
-        success=True,
-        comment_success=None,
-        result_explanation='Test success 1',
-        error=None,
-    )
-
-    resolver_output_2 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=2,
-            title='Issue 2',
-            body='Body 2',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 2',
-        base_commit='ghi789',
-        git_patch='Test patch 2',
-        history=[],
-        metrics={},
-        success=False,
-        comment_success=None,
-        result_explanation='',
-        error='Test error 2',
-    )
-
-    resolver_output_3 = ResolverOutput(
-        issue=Issue(
-            owner='test-owner',
-            repo='test-repo',
-            number=3,
-            title='Issue 3',
-            body='Body 3',
-        ),
-        issue_type='issue',
-        instruction='Test instruction 3',
-        base_commit='jkl012',
-        git_patch='Test patch 3',
-        history=[],
-        metrics={},
-        success=True,
-        comment_success=None,
-        result_explanation='Test success 3',
-        error=None,
-    )
-
-    mock_load_all_resolver_outputs.return_value = [
-        resolver_output_1,
-        resolver_output_2,
-        resolver_output_3,
-    ]
-
-    # Call the function
-    process_all_successful_issues(
-        'output_dir',
-        'token',
-        'username',
-        Platform.GITHUB,
-        'draft',
-        mock_llm_config,  # llm_config
-        None,  # fork_owner
-    )
-
-    # Assert that process_single_issue was called for successful issues only
-    assert mock_process_single_issue.call_count == 2
-
-    # Check that the function was called with the correct arguments for successful issues
-    mock_process_single_issue.assert_has_calls(
-        [
-            call(
-                'output_dir',
-                resolver_output_1,
-                'token',
-                'username',
-                Platform.GITHUB,
-                'draft',
-                mock_llm_config,
-                None,
-                False,
-                None,
-                None,
-                None,
-                'github.com',
-            ),
-            call(
-                'output_dir',
-                resolver_output_3,
-                'token',
-                'username',
-                Platform.GITHUB,
-                'draft',
-                mock_llm_config,
-                None,
-                False,
-                None,
-                None,
-                None,
-                'github.com',
-            ),
-        ]
-    )
-
-    # Add more assertions as needed to verify the behavior of the function
 
 
 @patch('httpx.get')
@@ -1179,7 +1064,7 @@ def test_send_pull_request_branch_naming(
         issue=mock_issue,
         token='test-token',
         username='test-user',
-        platform=Platform.GITHUB,
+        platform=ProviderType.GITHUB,
         patch_dir=repo_path,
         pr_type='branch',
     )
@@ -1217,7 +1102,6 @@ def test_send_pull_request_branch_naming(
 
 
 @patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
-@patch('openhands.resolver.send_pull_request.process_all_successful_issues')
 @patch('openhands.resolver.send_pull_request.process_single_issue')
 @patch('openhands.resolver.send_pull_request.load_single_resolver_output')
 @patch('openhands.resolver.send_pull_request.identify_token')
@@ -1229,11 +1113,8 @@ def test_main(
     mock_identify_token,
     mock_load_single_resolver_output,
     mock_process_single_issue,
-    mock_process_all_successful_issues,
     mock_parser,
 ):
-    from openhands.resolver.send_pull_request import main
-
     # Setup mock parser
     mock_args = MagicMock()
     mock_args.token = None
@@ -1249,6 +1130,7 @@ def test_main(
     mock_args.target_branch = None
     mock_args.reviewer = None
     mock_args.pr_title = None
+    mock_args.selected_repo = None
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
@@ -1263,12 +1145,12 @@ def test_main(
     mock_resolver_output = MagicMock()
     mock_load_single_resolver_output.return_value = mock_resolver_output
 
-    mock_identify_token.return_value = Platform.GITHUB
+    mock_identify_token.return_value = ProviderType.GITHUB
 
     # Run main function
     main()
 
-    mock_identify_token.assert_called_with('mock_token', None, ANY)
+    mock_identify_token.assert_called_with('mock_token', mock_args.base_domain)
 
     llm_config = LLMConfig(
         model=mock_args.llm_model,
@@ -1282,7 +1164,7 @@ def test_main(
         mock_resolver_output,
         'mock_token',
         'mock_username',
-        Platform.GITHUB,
+        ProviderType.GITHUB,
         'draft',
         llm_config,
         None,
@@ -1291,6 +1173,8 @@ def test_main(
         mock_args.reviewer,
         mock_args.pr_title,
         ANY,
+        ANY,  # git_user_name from args
+        ANY,  # git_user_email from args
     )
 
     # Other assertions
@@ -1299,28 +1183,17 @@ def test_main(
     mock_path_exists.assert_called_with('/mock/output')
     mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
 
-    # Test for 'all_successful' issue number
-    mock_args.issue_number = 'all_successful'
-    main()
-    mock_process_all_successful_issues.assert_called_with(
-        '/mock/output',
-        'mock_token',
-        'mock_username',
-        Platform.GITHUB,
-        'draft',
-        llm_config,
-        None,
-        ANY,
-    )
-
     # Test for invalid issue number
     mock_args.issue_number = 'invalid'
     with pytest.raises(ValueError):
         main()
 
     # Test for invalid token
-    mock_identify_token.return_value = Platform.INVALID
-    with pytest.raises(ValueError, match='Token is invalid.'):
+    mock_args.issue_number = '42'  # Reset to valid issue number
+    mock_getenv.side_effect = (
+        lambda key, default=None: None
+    )  # Return None for all env vars
+    with pytest.raises(ValueError, match='token is not set'):
         main()
 
 
@@ -1392,6 +1265,139 @@ def test_make_commit_no_changes(mock_subprocess_run):
     assert mock_subprocess_run.call_count == 3
     git_status_call = mock_subprocess_run.call_args_list[2][0][0]
     assert f'git -C {repo_dir} status --porcelain' in git_status_call
+
+
+@patch('subprocess.run')
+def test_make_commit_with_custom_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+    custom_git_user_name = 'custom-user'
+    custom_git_user_email = 'custom@example.com'
+
+    # Mock subprocess.run to simulate successful operations
+    mock_subprocess_run.side_effect = [
+        MagicMock(
+            returncode=0, stdout=''
+        ),  # git config user.name check (empty = not set)
+        MagicMock(returncode=0),  # git config set user.name and user.email
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function with custom git config
+    make_commit(repo_dir, issue, 'issue', custom_git_user_name, custom_git_user_email)
+
+    # Assert that subprocess.run was called with the correct arguments
+    calls = mock_subprocess_run.call_args_list
+    assert len(calls) == 5
+
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check git config set call (second call)
+    git_config_set_call = calls[1][0][0]
+    expected_config_command = (
+        f'git -C {repo_dir} config user.name "{custom_git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{custom_git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"'
+    )
+    assert expected_config_command == git_config_set_call
+
+
+@patch('subprocess.run')
+def test_make_commit_with_existing_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+
+    # Mock subprocess.run to simulate successful operations
+    mock_subprocess_run.side_effect = [
+        MagicMock(
+            returncode=0, stdout='existing-user\n'
+        ),  # git config user.name check (non-empty = already set)
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function
+    make_commit(repo_dir, issue, 'issue')
+
+    # Assert that subprocess.run was called with the correct arguments
+    calls = mock_subprocess_run.call_args_list
+    assert len(calls) == 4
+
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check that git config set was NOT called (since username already exists)
+    # The remaining calls should be git add, git status, git commit
+    git_add_call = calls[1][0][0]
+    assert f'git -C {repo_dir} add .' == git_add_call
+
+
+@patch('subprocess.run')
+def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+    git_user_name = 'User "with quotes"'
+    git_user_email = 'user@domain.com'
+
+    # Mock subprocess.run to simulate successful operations
+    mock_subprocess_run.side_effect = [
+        MagicMock(
+            returncode=0, stdout=''
+        ),  # git config user.name check (empty = not set)
+        MagicMock(returncode=0),  # git config set
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function with special characters in git config
+    make_commit(repo_dir, issue, 'issue', git_user_name, git_user_email)
+
+    # Assert that subprocess.run was called with properly escaped git config
+    calls = mock_subprocess_run.call_args_list
+    assert len(calls) == 5
+
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check git config set call (second call)
+    git_config_set_call = calls[1][0][0]
+
+    # Check that quotes are properly handled in the command
+    expected_config_command = (
+        f'git -C {repo_dir} config user.name "{git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"'
+    )
+    assert expected_config_command == git_config_set_call
 
 
 def test_apply_patch_rename_directory(mock_output_dir):

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
@@ -55,8 +57,7 @@ class ReplayManager:
         )
 
     def should_replay(self) -> bool:
-        """
-        Whether the controller is in trajectory replay mode, and the replay
+        """Whether the controller is in trajectory replay mode, and the replay
         hasn't finished. Note: after the replay is finished, the user and
         the agent could continue to message/act.
 
@@ -79,7 +80,7 @@ class ReplayManager:
         return event
 
     @staticmethod
-    def get_replay_events(trajectory) -> list[Event]:
+    def get_replay_events(trajectory: list[dict]) -> list[Event]:
         if not isinstance(trajectory, list):
             raise ValueError(
                 f'Expected a list in {trajectory}, got {type(trajectory).__name__}'

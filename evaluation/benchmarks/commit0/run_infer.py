@@ -16,6 +16,8 @@ from evaluation.utils.shared import (
     assert_and_raise,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -25,9 +27,9 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
-    AppConfig,
+    OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -82,9 +84,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
     if RUN_WITH_BROWSING:
         instruction += (
-            '<IMPORTANT!>\n'
-            'You SHOULD NEVER attempt to browse the web. '
-            '</IMPORTANT!>\n'
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
     return instruction
 
@@ -103,7 +103,7 @@ def get_instance_docker_image(repo_name: str) -> str:
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
-) -> AppConfig:
+) -> OpenHandsConfig:
     repo_name = instance['repo'].split('/')[1]
     base_container_image = get_instance_docker_image(repo_name)
     logger.info(
@@ -115,15 +115,11 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
 
-    config = AppConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
+        sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        enable_browser=RUN_WITH_BROWSING,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
@@ -265,7 +261,7 @@ def complete_runtime(
 
     test_dir = instance['test']['test_dir']
     action = CmdRunAction(
-        command=f"{instance['test']['test_cmd']} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1"
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -481,7 +477,7 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(
@@ -507,7 +503,6 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     Returns:
         Filtered dataset based on split type
     """
-
     filtered_dataset = pd.concat(
         [
             dataset[dataset['repo'].str.split('/').str[1] == repo]
@@ -526,7 +521,7 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,

@@ -1,43 +1,55 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router";
 import posthog from "posthog-js";
-import { useDispatch, useSelector } from "react-redux";
-import OpenHands from "#/api/open-hands";
-import { setInitialPrompt } from "#/state/initial-query-slice";
-import { RootState } from "#/store";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
+import { SuggestedTask } from "#/utils/types";
+import { Provider } from "#/types/settings";
+import { CreateMicroagent } from "#/api/open-hands.types";
+
+interface CreateConversationVariables {
+  query?: string;
+  repository?: {
+    name: string;
+    gitProvider: Provider;
+    branch?: string;
+  };
+  suggestedTask?: SuggestedTask;
+  conversationInstructions?: string;
+  createMicroagent?: CreateMicroagent;
+}
 
 export const useCreateConversation = () => {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
-  const { selectedRepository, files, replayJson } = useSelector(
-    (state: RootState) => state.initialQuery,
-  );
-
   return useMutation({
-    mutationFn: async (variables: { q?: string }) => {
-      if (variables.q) dispatch(setInitialPrompt(variables.q));
+    mutationKey: ["create-conversation"],
+    mutationFn: async (variables: CreateConversationVariables) => {
+      const {
+        query,
+        repository,
+        suggestedTask,
+        conversationInstructions,
+        createMicroagent,
+      } = variables;
 
-      return OpenHands.createConversation(
-        selectedRepository || undefined,
-        variables.q,
-        files,
-        replayJson || undefined,
+      return ConversationService.createConversation(
+        repository?.name,
+        repository?.gitProvider,
+        query,
+        suggestedTask,
+        repository?.branch,
+        conversationInstructions,
+        createMicroagent,
       );
     },
-    onSuccess: async ({ conversation_id: conversationId }, { q }) => {
+    onSuccess: async (_, { query, repository }) => {
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
-        query_character_length: q?.length,
-        has_repository: !!selectedRepository,
-        has_files: files.length > 0,
-        has_replay_json: !!replayJson,
+        query_character_length: query?.length,
+        has_repository: !!repository,
       });
       await queryClient.invalidateQueries({
         queryKey: ["user", "conversations"],
       });
-      navigate(`/conversations/${conversationId}`);
     },
   });
 };

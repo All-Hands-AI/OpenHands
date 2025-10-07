@@ -8,26 +8,37 @@
 import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import store from "./store";
-import { useConfig } from "./hooks/query/use-config";
-import { AuthProvider } from "./context/auth-context";
-import { queryClientConfig } from "./query-client-config";
+import { QueryClientProvider } from "@tanstack/react-query";
+import OptionService from "./api/option-service/option-service.api";
+import { displayErrorToast } from "./utils/custom-toast-handlers";
+import { queryClient } from "./query-client-config";
 
 function PosthogInit() {
-  const { data: config } = useConfig();
+  const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
+    null,
+  );
 
   React.useEffect(() => {
-    if (config?.POSTHOG_CLIENT_KEY) {
-      posthog.init(config.POSTHOG_CLIENT_KEY, {
+    (async () => {
+      try {
+        const config = await OptionService.getConfig();
+        setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
+      } catch (error) {
+        displayErrorToast("Error fetching PostHog client key");
+      }
+    })();
+  }, []);
+
+  React.useEffect(() => {
+    if (posthogClientKey) {
+      posthog.init(posthogClientKey, {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
       });
     }
-  }, [config]);
+  }, [posthogClientKey]);
 
   return null;
 }
@@ -45,21 +56,16 @@ async function prepareApp() {
   }
 }
 
-export const queryClient = new QueryClient(queryClientConfig);
-
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
-        <Provider store={store}>
-          <AuthProvider>
-            <QueryClientProvider client={queryClient}>
-              <HydratedRouter />
-              <PosthogInit />
-            </QueryClientProvider>
-          </AuthProvider>
-        </Provider>
+        <QueryClientProvider client={queryClient}>
+          <HydratedRouter />
+          <PosthogInit />
+        </QueryClientProvider>
+        <div id="modal-portal-exit" />
       </StrictMode>,
     );
   }),

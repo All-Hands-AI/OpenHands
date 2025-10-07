@@ -53,6 +53,7 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
     condenser_config: CondenserConfig | None = None
+    instruction_template_name: str | None = None
 
 
 class EvalOutput(BaseModel):
@@ -109,7 +110,7 @@ def codeact_user_response(
 ) -> str:
     encaps_str = (
         (
-            'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+            'Your final answer MUST be encapsulated within <solution> and </solution>.\n'
             'For example: The answer to the question is <solution> 42 </solution>.\n'
         )
         if encapsulate_solution
@@ -117,7 +118,7 @@ def codeact_user_response(
     )
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
+        'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool.\n'
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
@@ -205,6 +206,7 @@ def make_metadata(
         condenser_config=condenser_config
         if condenser_config
         else NoOpCondenserConfig(),
+        instruction_template_name=os.environ.get('INSTRUCTION_TEMPLATE_NAME'),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
@@ -221,9 +223,9 @@ def prepare_dataset(
     eval_ids: list[str] | None = None,
     skip_num: int | None = None,
 ):
-    assert (
-        'instance_id' in dataset.columns
-    ), "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    assert 'instance_id' in dataset.columns, (
+        "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
+    )
     id_column = 'instance_id'
     logger.info(f'Writing evaluation output to {output_file}')
     finished_ids: set[str] = set()
@@ -263,8 +265,20 @@ def prepare_dataset(
             f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
         )
 
+    def make_serializable(instance_dict: dict) -> dict:
+        import numpy as np
+
+        for k, v in instance_dict.items():
+            if isinstance(v, np.ndarray):
+                instance_dict[k] = v.tolist()
+            elif isinstance(v, pd.Timestamp):
+                instance_dict[k] = str(v)
+            elif isinstance(v, dict):
+                instance_dict[k] = make_serializable(v)
+        return instance_dict
+
     new_dataset = [
-        instance
+        make_serializable(instance.to_dict())
         for _, instance in dataset.iterrows()
         if str(instance[id_column]) not in finished_ids
     ]
@@ -298,6 +312,76 @@ def assert_and_raise(condition: bool, msg: str):
     """
     if not condition:
         raise EvalException(msg)
+
+
+def log_skipped_maximum_retries_exceeded(instance, metadata, error, max_retries=5):
+    """Log and skip the instance when maximum retries are exceeded.
+
+    Args:
+        instance: The instance that failed
+        metadata: The evaluation metadata
+        error: The error that occurred
+        max_retries: The maximum number of retries that were attempted
+
+    Returns:
+        EvalOutput with the error information
+    """
+    from openhands.core.logger import openhands_logger as logger
+
+    # Log the error
+    logger.exception(error)
+    logger.error(
+        f'Maximum error retries reached for instance {instance.instance_id}. '
+        f'Check maximum_retries_exceeded.jsonl, fix the issue and run evaluation again. '
+        f'Skipping this instance and continuing with others.'
+    )
+
+    # Add the instance name to maximum_retries_exceeded.jsonl in the same folder as output.jsonl
+    if metadata and metadata.eval_output_dir:
+        retries_file_path = os.path.join(
+            metadata.eval_output_dir,
+            'maximum_retries_exceeded.jsonl',
+        )
+        try:
+            # Write the instance info as a JSON line
+            with open(retries_file_path, 'a') as f:
+                import json
+
+                # No need to get Docker image as we're not including it in the error entry
+
+                error_entry = {
+                    'instance_id': instance.instance_id,
+                    'error': str(error),
+                    'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                }
+                f.write(json.dumps(error_entry) + '\n')
+            logger.info(f'Added instance {instance.instance_id} to {retries_file_path}')
+        except Exception as write_error:
+            logger.error(
+                f'Failed to write to maximum_retries_exceeded.jsonl: {write_error}'
+            )
+
+    return EvalOutput(
+        instance_id=instance.instance_id,
+        test_result={},
+        error=f'Maximum retries ({max_retries}) reached: {str(error)}',
+        status='error',
+    )
+
+
+def check_maximum_retries_exceeded(eval_output_dir):
+    """Check if maximum_retries_exceeded.jsonl exists and output a message."""
+    from openhands.core.logger import openhands_logger as logger
+
+    retries_file_path = os.path.join(eval_output_dir, 'maximum_retries_exceeded.jsonl')
+    if os.path.exists(retries_file_path):
+        logger.info(
+            'ATTENTION: Some instances reached maximum error retries and were skipped.'
+        )
+        logger.info(f'These instances are listed in: {retries_file_path}')
+        logger.info(
+            'Fix these instances and run evaluation again with EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=false'
+        )
 
 
 def _process_instance_wrapper(
@@ -352,11 +436,26 @@ def _process_instance_wrapper(
                     + f'[Encountered after {max_retries} retries. Please check the logs and report the issue.]'
                     + '-' * 10
                 )
-                # Raise an error after all retries & stop the evaluation
-                logger.exception(e)
-                raise RuntimeError(
-                    f'Maximum error retries reached for instance {instance.instance_id}'
-                ) from e
+
+                # Check if EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED is set to true
+                skip_errors = (
+                    os.environ.get(
+                        'EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED', 'false'
+                    ).lower()
+                    == 'true'
+                )
+
+                if skip_errors:
+                    # Use the dedicated function to log and skip maximum retries exceeded
+                    return log_skipped_maximum_retries_exceeded(
+                        instance, metadata, e, max_retries
+                    )
+                else:
+                    # Raise an error after all retries & stop the evaluation
+                    logger.exception(e)
+                    raise RuntimeError(
+                        f'Maximum error retries reached for instance {instance.instance_id}'
+                    ) from e
             msg = (
                 '-' * 10
                 + '\n'
@@ -445,6 +544,10 @@ def run_evaluation(
     output_fp.close()
     logger.info('\nEvaluation finished.\n')
 
+    # Check if any instances reached maximum retries
+    if metadata and metadata.eval_output_dir:
+        check_maximum_retries_exceeded(metadata.eval_output_dir)
+
 
 def reset_logger_for_multiprocessing(
     logger: logging.Logger, instance_id: str, log_dir: str
@@ -521,8 +624,7 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
-    """
-    The AgentController class overrides last error for certain exceptions
+    """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here
     This is because we do a comparisino against the stringified error
     """
@@ -566,8 +668,23 @@ def is_fatal_runtime_error(error: str | None) -> bool:
 
 
 def get_metrics(state: State) -> dict[str, Any]:
-    """Extract metrics from the state."""
-    metrics = state.metrics.get() if state.metrics else {}
+    """Extract metrics for evaluations.
+
+    Prefer ConversationStats (source of truth) and fall back to state.metrics for
+    backward compatibility.
+    """
+    metrics: dict[str, Any]
+    try:
+        if getattr(state, 'conversation_stats', None):
+            combined = state.conversation_stats.get_combined_metrics()
+            metrics = combined.get()
+        elif getattr(state, 'metrics', None):
+            metrics = state.metrics.get()
+        else:
+            metrics = {}
+    except Exception:
+        metrics = state.metrics.get() if getattr(state, 'metrics', None) else {}
+
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
 
@@ -586,3 +703,79 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         remote_runtime_enable_retries=True,
         remote_runtime_class='sysbox',
     )
+
+
+def get_openhands_config_for_eval(
+    metadata: EvalMetadata | None = None,
+    sandbox_config: SandboxConfig | None = None,
+    runtime: str | None = None,
+    max_iterations: int | None = None,
+    default_agent: str | None = None,
+    enable_browser: bool = False,
+    workspace_base: str | None = None,
+    workspace_mount_path: str | None = None,
+):
+    """Create an OpenHandsConfig with common patterns used across evaluation scripts.
+
+    This function provides a standardized way to create OpenHands configurations
+    for evaluation runs, with sensible defaults that match the patterns used in
+    most run_infer.py scripts. Individual evaluation scripts can override specific
+    attributes as needed.
+
+    Args:
+        metadata: EvalMetadata containing agent class, max iterations, etc.
+        sandbox_config: Custom sandbox config. If None, uses get_default_sandbox_config_for_eval()
+        runtime: Runtime type. If None, uses environment RUNTIME or 'docker'
+        max_iterations: Max iterations for the agent. If None, uses metadata.max_iterations
+        default_agent: Agent class name. If None, uses metadata.agent_class
+        enable_browser: Whether to enable browser functionality
+        workspace_base: Workspace base path. Defaults to None
+        workspace_mount_path: Workspace mount path. Defaults to None
+
+    Returns:
+        OpenHandsConfig: Configured for evaluation with eval-specific overrides applied
+    """
+    # Defer import to avoid circular imports at module load time
+    from openhands.core.config.openhands_config import (
+        OpenHandsConfig as _OHConfig,  # type: ignore
+    )
+
+    # Use provided sandbox config or get default
+    if sandbox_config is None:
+        sandbox_config = get_default_sandbox_config_for_eval()
+
+    # Extract values from metadata if provided
+    if metadata is not None:
+        if max_iterations is None:
+            max_iterations = metadata.max_iterations
+        if default_agent is None:
+            default_agent = metadata.agent_class
+
+    # Use environment runtime or default
+    if runtime is None:
+        runtime = os.environ.get('RUNTIME', 'docker')
+
+    # Provide sensible defaults if still None
+    if default_agent is None:
+        default_agent = 'CodeActAgent'
+    if max_iterations is None:
+        max_iterations = 50
+
+    # Always use repo-local .eval_sessions directory (absolute path)
+    eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
+
+    # Create the base config with evaluation-specific overrides
+    config = _OHConfig(
+        default_agent=default_agent,
+        run_as_openhands=False,
+        runtime=runtime,
+        max_iterations=max_iterations,
+        enable_browser=enable_browser,
+        sandbox=sandbox_config,
+        workspace_base=workspace_base,
+        workspace_mount_path=workspace_mount_path,
+        file_store='local',
+        file_store_path=eval_store,
+    )
+
+    return config
