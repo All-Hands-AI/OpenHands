@@ -282,7 +282,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         stored = StoredConversationMetadata(
             conversation_id=str(info.id),
             github_user_id=None,  # TODO: Should we add this to the conversation info?
-            user_id=info.created_by_user_id,
+            user_id=info.created_by_user_id or "",
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
             git_provider=info.git_provider.value if info.git_provider else None,
