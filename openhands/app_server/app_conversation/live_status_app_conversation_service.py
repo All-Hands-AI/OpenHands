@@ -208,11 +208,17 @@ class LiveStatusAppConversationService(GitAppConversationService):
             user_id = await self.user_context.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
+                # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
                 title=f'Conversation {info.id}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
-                # TODO: Lots of git parameters required
+                # Git parameters
+                selected_repository=request.selected_repository,
+                selected_branch=request.selected_branch,
+                git_provider=request.git_provider,
+                trigger=request.trigger,
+                pr_number=request.pr_number,
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info

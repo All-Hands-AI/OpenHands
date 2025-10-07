@@ -66,19 +66,25 @@ async def valid_sandbox(
     return sandbox_info
 
 
-async def validate_conversation(
+async def valid_conversation(
     conversation_id: UUID,
     sandbox_info: SandboxInfo,
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
-):
+) -> AppConversationInfo:
     app_conversation_info = (
         await app_conversation_info_service.get_app_conversation_info(conversation_id)
     )
     if not app_conversation_info:
-        return
+        # Conversation does not yet exist - create a stub
+        return AppConversationInfo(
+            id=conversation_id,
+            sandbox_id=sandbox_info.id,
+            created_by_user_id=sandbox_info.created_by_user_id,
+        )
     if app_conversation_info.created_by_user_id != sandbox_info.created_by_user_id:
         # Make sure that the conversation and sandbox were created by the same user
         raise AuthError()
+    return app_conversation_info
 
 
 @router.post('/{sandbox_id}/conversations')
@@ -88,17 +94,23 @@ async def on_conversation_update(
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
 ) -> Success:
     """Webhook callback for when a conversation starts, pauses, resumes, or deletes."""
-    await validate_conversation(
+    existing = await valid_conversation(
         conversation_info.id, sandbox_info, app_conversation_info_service
     )
 
     app_conversation_info = AppConversationInfo(
         id=conversation_info.id,
-        title=f'Conversation {conversation_info.id}',
+        # TODO: As of writing, ConversationInfo from AgentServer does not have a title
+        title=existing.title or f'Conversation {conversation_info.id}',
         sandbox_id=sandbox_info.id,
         created_by_user_id=sandbox_info.created_by_user_id,
         llm_model=conversation_info.agent.llm.model,
-        # Git parameters are required here...
+        # Git parameters
+        selected_repository=existing.selected_repository,
+        selected_branch=existing.selected_branch,
+        git_provider=existing.git_provider,
+        trigger=existing.trigger,
+        pr_number=existing.pr_number,
     )
     await app_conversation_info_service.save_app_conversation_info(
         app_conversation_info
@@ -119,7 +131,7 @@ async def on_event(
 ) -> Success:
     """Webhook callback for when event stream events occur."""
 
-    await validate_conversation(
+    await valid_conversation(
         conversation_id, sandbox_info, app_conversation_info_service
     )
 
