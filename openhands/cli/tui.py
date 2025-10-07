@@ -999,7 +999,7 @@ def cli_confirm(
     content_window = Window(
         FormattedTextControl(get_choice_text),
         always_hide_cursor=True,
-        height=Dimension(max=dynamic_height),
+        height=Dimension(preferred=dynamic_height, max=dynamic_height),
     )
 
     # Add frame for HIGH risk commands
