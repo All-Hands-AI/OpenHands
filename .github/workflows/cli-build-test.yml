@@ -1,13 +1,13 @@
 # Workflow that builds and tests the CLI binary executable
 name: CLI - Build and Test Binary
 
-# Run on pushes to main branch and tags, and on pull requests when CLI files change
+# Run on pushes to main branch and CLI tags, and on pull requests when CLI files change
 on:
   push:
     branches:
       - main
     tags:
-      - "*"
+      - "*-cli"
   pull_request:
     paths:
       - "openhands-cli/**"

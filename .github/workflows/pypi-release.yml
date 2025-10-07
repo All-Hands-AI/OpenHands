@@ -16,6 +16,8 @@ on:
 jobs:
   release:
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    # Only run for tags that don't contain '-cli'
+    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-cli')
     steps:
       - uses: actions/checkout@v4
       - uses: useblacksmith/setup-python@v6
@@ -36,6 +38,8 @@ jobs:
   release-cli:
     name: Publish CLI to PyPI
     runs-on: ubuntu-latest
+    # Only run for tags that contain '-cli'
+    if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, '-cli')
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
