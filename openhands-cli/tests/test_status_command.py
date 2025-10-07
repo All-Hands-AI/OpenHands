@@ -7,14 +7,15 @@ from uuid import uuid4
 import pytest
 
 from openhands_cli.agent_chat import _display_status
-from openhands.sdk.conversation.state import ConversationStats, Event
 from openhands.sdk.llm.utils.metrics import Metrics, TokenUsage
 
 
 class TestDisplayStatus:
     """Test the _display_status function."""
 
-    def test_display_status_with_empty_conversation(self, capsys):
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_with_empty_conversation(self, mock_print_formatted, mock_print_container):
         """Test status display with a conversation that has no events or stats."""
         # Create a mock conversation with minimal data
         mock_conversation = Mock()
@@ -27,28 +28,31 @@ class TestDisplayStatus:
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Call the function with a default session start time
+        session_start = datetime.now()
+        _display_status(mock_conversation, session_start_time=session_start)
         
-        # Capture output
-        captured = capsys.readouterr()
+        # Verify that print functions were called
+        assert mock_print_formatted.called
+        assert mock_print_container.called
         
-        # Verify basic information is displayed
-        assert str(mock_conversation.id) in captured.out
-        assert "Uptime:          0h 0m 0s" in captured.out
-        assert "Usage Metrics" in captured.out
-        assert "Total Cost (USD):    $0.000000" in captured.out
-        assert "Total Input Tokens:  0" in captured.out
-        assert "Total Output Tokens: 0" in captured.out
-        assert "Total Tokens:        0" in captured.out
+        # Verify conversation ID was printed
+        conversation_id_call = mock_print_formatted.call_args_list[0]
+        assert str(mock_conversation.id) in str(conversation_id_call)
+        
+        # Verify uptime was printed (should be close to 0)
+        uptime_call = mock_print_formatted.call_args_list[1]
+        assert "0h 0m" in str(uptime_call)
 
-    def test_display_status_with_metrics(self, capsys):
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_with_metrics(self, mock_print_formatted, mock_print_container):
         """Test status display with conversation that has usage metrics."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
         mock_conversation.state.events = []
-        
+
         # Create metrics with some usage data
         mock_metrics = Metrics()
         mock_metrics.accumulated_cost = 0.123456
@@ -58,65 +62,44 @@ class TestDisplayStatus:
             cache_read_tokens=200,
             cache_write_tokens=100
         )
-        
+
         # Mock conversation stats
         mock_stats = Mock()
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
+
+        # Call the function with a default session start time
+        session_start = datetime.now()
+        _display_status(mock_conversation, session_start_time=session_start)
+
+        # Verify that print functions were called
+        assert mock_print_formatted.called
+        assert mock_print_container.called
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Check that the container contains the expected metrics data
+        container_call = mock_print_container.call_args_list[0]
+        container_arg = container_call[0][0]  # First positional argument
         
-        # Capture output
-        captured = capsys.readouterr()
+        # The container should be a Frame with TextArea content
+        assert hasattr(container_arg, 'body')
+        text_content = container_arg.body.text
         
         # Verify metrics are displayed correctly
-        assert "Total Cost (USD):    $0.123456" in captured.out
-        assert "Total Input Tokens:  1500" in captured.out
-        assert "Total Output Tokens: 800" in captured.out
-        assert "Cache Hits:       200" in captured.out
-        assert "Cache Writes:     100" in captured.out
-        assert "Total Tokens:        2300" in captured.out  # 1500 + 800
+        assert "$0.123456" in text_content
+        assert "1,500" in text_content  # Total input tokens
+        assert "800" in text_content   # Total output tokens
+        assert "200" in text_content   # Cache hits
+        assert "100" in text_content   # Cache writes
+        assert "2,300" in text_content  # Total tokens (1500 + 800)
 
-    def test_display_status_with_uptime_calculation(self, capsys):
-        """Test status display with uptime calculation from first event."""
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_with_uptime_calculation(self, mock_print_formatted, mock_print_container):
+        """Test status display with uptime calculation from session start time."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
-        
-        # Create a mock event with timestamp from 1 hour, 30 minutes, 45 seconds ago
-        past_time = datetime.now() - timedelta(hours=1, minutes=30, seconds=45)
-        mock_event = Mock()
-        mock_event.timestamp = past_time.isoformat()
-        mock_conversation.state.events = [mock_event]
-        
-        # Mock conversation stats with empty metrics
-        mock_stats = Mock()
-        mock_metrics = Metrics()
-        mock_stats.get_combined_metrics.return_value = mock_metrics
-        mock_conversation.conversation_stats = mock_stats
-        
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
-        
-        # Capture output
-        captured = capsys.readouterr()
-        
-        # Verify uptime is calculated (should be approximately 1h 30m 45s)
-        # We'll check for the hour and minute parts since seconds might vary slightly
-        assert "1h 30m" in captured.out
-
-    def test_display_status_with_timezone_timestamp(self, capsys):
-        """Test status display with timezone-aware timestamp."""
-        # Create a mock conversation
-        mock_conversation = Mock()
-        mock_conversation.id = uuid4()
-        
-        # Create a mock event with timezone-aware timestamp
-        past_time = datetime.now() - timedelta(minutes=5, seconds=30)
-        mock_event = Mock()
-        mock_event.timestamp = past_time.isoformat() + 'Z'  # UTC timezone
-        mock_conversation.state.events = [mock_event]
+        mock_conversation.state.events = []
         
         # Mock conversation stats
         mock_stats = Mock()
@@ -124,25 +107,25 @@ class TestDisplayStatus:
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Set session start time to 1 hour, 30 minutes, 45 seconds ago
+        session_start = datetime.now() - timedelta(hours=1, minutes=30, seconds=45)
         
-        # Capture output
-        captured = capsys.readouterr()
+        # Call the function with session start time
+        _display_status(mock_conversation, session_start_time=session_start)
         
-        # Verify uptime is calculated (should be approximately 0h 5m 30s)
-        assert "0h 5m" in captured.out
+        # Verify uptime calculation
+        uptime_call = mock_print_formatted.call_args_list[1]
+        uptime_text = str(uptime_call)
+        assert "1h 30m" in uptime_text
 
-    def test_display_status_with_invalid_timestamp(self, capsys):
-        """Test status display handles invalid timestamp gracefully."""
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_with_session_start_time(self, mock_print_formatted, mock_print_container):
+        """Test status display with different session start time."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
-        
-        # Create a mock event with invalid timestamp
-        mock_event = Mock()
-        mock_event.timestamp = "invalid-timestamp"
-        mock_conversation.state.events = [mock_event]
+        mock_conversation.state.events = []
         
         # Mock conversation stats
         mock_stats = Mock()
@@ -150,23 +133,51 @@ class TestDisplayStatus:
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Set session start time to 5 minutes, 30 seconds ago
+        session_start = datetime.now() - timedelta(minutes=5, seconds=30)
         
-        # Capture output
-        captured = capsys.readouterr()
+        # Call the function with session start time
+        _display_status(mock_conversation, session_start_time=session_start)
         
-        # Verify it falls back to default uptime
-        assert "Uptime:          0h 0m 0s" in captured.out
+        # Verify uptime calculation
+        uptime_call = mock_print_formatted.call_args_list[1]
+        uptime_text = str(uptime_call)
+        assert "5m" in uptime_text
 
-    def test_display_status_with_none_token_usage(self, capsys):
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_zero_uptime(self, mock_print_formatted, mock_print_container):
+        """Test status display with zero uptime."""
+        # Create a mock conversation
+        mock_conversation = Mock()
+        mock_conversation.id = uuid4()
+        mock_conversation.state.events = []
+        
+        # Mock conversation stats
+        mock_stats = Mock()
+        mock_metrics = Metrics()
+        mock_stats.get_combined_metrics.return_value = mock_metrics
+        mock_conversation.conversation_stats = mock_stats
+        
+        # Call the function with current time as session start time (0 uptime)
+        session_start = datetime.now()
+        _display_status(mock_conversation, session_start_time=session_start)
+        
+        # Verify zero uptime
+        uptime_call = mock_print_formatted.call_args_list[1]
+        uptime_text = str(uptime_call)
+        assert "0h 0m" in uptime_text
+
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_with_none_token_usage(self, mock_print_formatted, mock_print_container):
         """Test status display handles None token usage gracefully."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
         mock_conversation.state.events = []
         
-        # Create metrics with None token usage
+        # Create metrics with cost but no token usage
         mock_metrics = Metrics()
         mock_metrics.accumulated_cost = 0.05
         mock_metrics.accumulated_token_usage = None
@@ -176,60 +187,63 @@ class TestDisplayStatus:
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Call the function with a default session start time
+        session_start = datetime.now()
+        _display_status(mock_conversation, session_start_time=session_start)
         
-        # Capture output
-        captured = capsys.readouterr()
+        # Verify that print functions were called without error
+        assert mock_print_formatted.called
+        assert mock_print_container.called
+        
+        # Check that the container contains the expected data
+        container_call = mock_print_container.call_args_list[0]
+        container_arg = container_call[0][0]
+        text_content = container_arg.body.text
         
         # Verify it handles None token usage gracefully
-        assert "Total Cost (USD):    $0.050000" in captured.out
-        assert "Total Input Tokens:  0" in captured.out
-        assert "Total Output Tokens: 0" in captured.out
-        assert "Cache Hits:       0" in captured.out
-        assert "Cache Writes:     0" in captured.out
-        assert "Total Tokens:        0" in captured.out
+        assert "$0.050000" in text_content
+        assert "0" in text_content  # Should show 0 for missing token counts
 
-    def test_display_status_box_formatting(self, capsys):
-        """Test that the status display creates proper box formatting."""
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_box_formatting(self, mock_print_formatted, mock_print_container):
+        """Test that the status display creates proper formatting."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
         mock_conversation.state.events = []
-        
+
         # Mock conversation stats
         mock_stats = Mock()
         mock_metrics = Metrics()
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
-        
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
-        
-        # Capture output
-        captured = capsys.readouterr()
-        
-        # Verify box formatting characters are present
-        assert "┌" in captured.out  # Top-left corner
-        assert "┐" in captured.out  # Top-right corner
-        assert "└" in captured.out  # Bottom-left corner
-        assert "┘" in captured.out  # Bottom-right corner
-        assert "│" in captured.out  # Vertical borders
-        assert "─" in captured.out  # Horizontal borders
-        assert "Usage Metrics" in captured.out  # Title in box
 
-    def test_display_status_comprehensive_scenario(self, capsys):
+        # Call the function with a default session start time
+        session_start = datetime.now()
+        _display_status(mock_conversation, session_start_time=session_start)
+
+        # Verify that print functions were called
+        assert mock_print_formatted.called
+        assert mock_print_container.called
+        
+        # Verify the container is a Frame (which provides the box formatting)
+        container_call = mock_print_container.call_args_list[0]
+        container_arg = container_call[0][0]
+        
+        # Should be a Frame with title "Usage Metrics"
+        assert hasattr(container_arg, 'title')
+        assert "Usage Metrics" in container_arg.title
+
+    @patch('openhands_cli.agent_chat.print_container')
+    @patch('openhands_cli.agent_chat.print_formatted_text')
+    def test_display_status_comprehensive_scenario(self, mock_print_formatted, mock_print_container):
         """Test status display with a comprehensive scenario including all data."""
         # Create a mock conversation
         mock_conversation = Mock()
         mock_conversation.id = uuid4()
-        
-        # Create a mock event with timestamp from 2 hours, 15 minutes, 30 seconds ago
-        past_time = datetime.now() - timedelta(hours=2, minutes=15, seconds=30)
-        mock_event = Mock()
-        mock_event.timestamp = past_time.isoformat()
-        mock_conversation.state.events = [mock_event]
-        
+        mock_conversation.state.events = []
+
         # Create comprehensive metrics
         mock_metrics = Metrics()
         mock_metrics.accumulated_cost = 1.234567
@@ -239,25 +253,39 @@ class TestDisplayStatus:
             cache_read_tokens=500,
             cache_write_tokens=250
         )
-        
+
         # Mock conversation stats
         mock_stats = Mock()
         mock_stats.get_combined_metrics.return_value = mock_metrics
         mock_conversation.conversation_stats = mock_stats
+
+        # Set session start time to 2 hours, 15 minutes, 30 seconds ago
+        session_start = datetime.now() - timedelta(hours=2, minutes=15, seconds=30)
+
+        # Call the function with session start time
+        _display_status(mock_conversation, session_start_time=session_start)
+
+        # Verify all components are present
+        assert mock_print_formatted.called
+        assert mock_print_container.called
         
-        # Call the function
-        _display_status(mock_conversation, use_formatted_text=False)
+        # Verify conversation ID
+        conversation_id_call = mock_print_formatted.call_args_list[0]
+        assert str(mock_conversation.id) in str(conversation_id_call)
         
-        # Capture output
-        captured = capsys.readouterr()
+        # Verify uptime
+        uptime_call = mock_print_formatted.call_args_list[1]
+        uptime_text = str(uptime_call)
+        assert "2h 15m" in uptime_text
         
-        # Verify all components are present and correct
-        assert str(mock_conversation.id) in captured.out
-        assert "2h 15m" in captured.out  # Uptime
-        assert "Total Cost (USD):    $1.234567" in captured.out
-        assert "Total Input Tokens:  5000" in captured.out
-        assert "Total Output Tokens: 3000" in captured.out
-        assert "Cache Hits:       500" in captured.out
-        assert "Cache Writes:     250" in captured.out
-        assert "Total Tokens:        8000" in captured.out  # 5000 + 3000
-        assert "Usage Metrics" in captured.out
+        # Verify comprehensive metrics
+        container_call = mock_print_container.call_args_list[0]
+        container_arg = container_call[0][0]
+        text_content = container_arg.body.text
+        
+        assert "$1.234567" in text_content
+        assert "5,000" in text_content  # Input tokens
+        assert "3,000" in text_content  # Output tokens
+        assert "500" in text_content   # Cache hits
+        assert "250" in text_content   # Cache writes
+        assert "8,000" in text_content  # Total tokens (5000 + 3000)

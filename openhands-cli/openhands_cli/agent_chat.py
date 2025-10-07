@@ -30,50 +30,34 @@ from openhands_cli.user_actions import UserConfirmation, exit_session_confirmati
 from openhands_cli.user_actions.utils import get_session_prompter
 
 
-def _display_status(conversation: BaseConversation, use_formatted_text: bool = True) -> None:
+def _display_status(
+    conversation: BaseConversation, 
+    session_start_time: datetime,
+) -> None:
     """Display detailed conversation status including metrics and uptime.
     
     Args:
         conversation: The conversation to display status for
-        use_formatted_text: Whether to use prompt_toolkit formatted text (for CLI) or regular print (for tests)
+        session_start_time: The session start time for uptime calculation
     """
     # Get conversation stats
     stats = conversation.conversation_stats.get_combined_metrics()
     
-    # Calculate uptime from first event
-    uptime_str = "0h 0m 0s"
-    if conversation.state.events:
-        first_event = conversation.state.events[0]
-        try:
-            # Parse the timestamp
-            if first_event.timestamp.endswith('Z'):
-                start_time = datetime.fromisoformat(first_event.timestamp.replace('Z', '+00:00'))
-            else:
-                start_time = datetime.fromisoformat(first_event.timestamp)
-            
-            # Calculate time difference
-            now = datetime.now(start_time.tzinfo) if start_time.tzinfo else datetime.now()
-            diff = now - start_time
-            
-            # Format as hours, minutes, seconds
-            total_seconds = int(diff.total_seconds())
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            seconds = total_seconds % 60
-            uptime_str = f"{hours}h {minutes}m {seconds}s"
-        except Exception:
-            # If timestamp parsing fails, keep default
-            pass
+    # Calculate uptime from session start time
+    now = datetime.now()
+    diff = now - session_start_time
+    
+    # Format as hours, minutes, seconds
+    total_seconds = int(diff.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    uptime_str = f"{hours}h {minutes}m {seconds}s"
     
     # Display conversation ID and uptime
-    if use_formatted_text:
-        print_formatted_text(HTML(f'<grey>Conversation ID: {conversation.id}</grey>'))
-        print_formatted_text(HTML(f'<grey>Uptime:          {uptime_str}</grey>'))
-        print_formatted_text('')
-    else:
-        print(f"Conversation ID: {conversation.id}")
-        print(f"Uptime:          {uptime_str}")
-        print()
+    print_formatted_text(HTML(f'<grey>Conversation ID: {conversation.id}</grey>'))
+    print_formatted_text(HTML(f'<grey>Uptime:          {uptime_str}</grey>'))
+    print_formatted_text('')
     
     # Calculate token metrics
     token_usage = stats.accumulated_token_usage
@@ -84,14 +68,9 @@ def _display_status(conversation: BaseConversation, use_formatted_text: bool = T
     total_tokens = total_input_tokens + total_output_tokens
     total_cost = stats.accumulated_cost
     
-    if use_formatted_text:
-        # Use prompt_toolkit containers for formatted display
-        _display_usage_metrics_container(total_cost, total_input_tokens, total_output_tokens, 
-                                       cache_hits, cache_writes, total_tokens)
-    else:
-        # Use simple print for tests
-        _display_usage_metrics_simple(total_cost, total_input_tokens, total_output_tokens,
-                                    cache_hits, cache_writes, total_tokens)
+    # Use prompt_toolkit containers for formatted display
+    _display_usage_metrics_container(total_cost, total_input_tokens, total_output_tokens, 
+                                   cache_hits, cache_writes, total_tokens)
 
 
 def _display_usage_metrics_container(total_cost: float, total_input_tokens: int, total_output_tokens: int,
@@ -138,36 +117,6 @@ def _display_usage_metrics_container(total_cost: float, total_input_tokens: int,
 
     print_container(container)
 
-
-def _display_usage_metrics_simple(total_cost: float, total_input_tokens: int, total_output_tokens: int,
-                                cache_hits: int, cache_writes: int, total_tokens: int) -> None:
-    """Display usage metrics using simple print statements for testing."""
-    box_width = 200
-    title = "Usage Metrics"
-    title_padding = (box_width - len(title) - 2) // 2
-    
-    # Top border
-    print(f"┌{'─' * title_padding}| {title} |{'─' * (box_width - title_padding - len(title) - 4)}┐")
-    
-    # Content lines
-    content_lines = [
-        f"   Total Cost (USD):    ${total_cost:.6f}",
-        "",
-        f"   Total Input Tokens:  {total_input_tokens}",
-        f"      Cache Hits:       {cache_hits}",
-        f"      Cache Writes:     {cache_writes}",
-        f"   Total Output Tokens: {total_output_tokens}",
-        "",
-        f"   Total Tokens:        {total_tokens}",
-    ]
-    
-    for line in content_lines:
-        padding = box_width - len(line) - 2
-        print(f"│{line}{' ' * padding}│")
-    
-    # Bottom border
-    print(f"└{'─' * box_width}┘")
-    print()
 
 
 def _start_fresh_conversation(resume_conversation_id: str | None = None) -> BaseConversation:
@@ -232,6 +181,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
     conversation = _start_fresh_conversation(resume_conversation_id)
     display_welcome(conversation.id, bool(resume_conversation_id))
+
+    # Track session start time for uptime calculation
+    session_start_time = datetime.now()
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
@@ -299,7 +251,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 continue
 
             elif command == '/status':
-                _display_status(conversation)
+                _display_status(conversation, session_start_time=session_start_time)
                 continue
 
             elif command == '/confirm':
