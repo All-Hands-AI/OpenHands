@@ -66,11 +66,11 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    # Get database URL from DbService
+    # Get database URL from DbSessionInjector
     global_config = get_global_config()
     db_session = global_config.db_session
 
-    # Get the database URL from the DbService
+    # Get the database URL from the DbSessionInjector
     if db_session.host:
         password_value = (
             db_session.password.get_secret_value() if db_session.password else ''
@@ -97,7 +97,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    # Use the DbService engine instead of creating a new one
+    # Use the DbSessionInjector engine instead of creating a new one
     global_config = get_global_config()
     db_session = global_config.db_session
     connectable = db_session.get_db_engine()
