@@ -1,29 +1,23 @@
-import React from "react";
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import { ws } from "msw";
-import { setupServer } from "msw/node";
+import { screen, waitFor, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-import {
-  ConversationWebSocketProvider,
-  useConversationWebSocket,
-} from "#/contexts/conversation-websocket-context";
-import { useEventStore } from "#/stores/use-event-store";
-import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
-import { MessageEvent, OpenHandsEvent } from "#/types/v1/core";
-import { AgentErrorEvent } from "#/types/v1/core/events/observation-event";
-import { isV1Event } from "#/types/v1/type-guards";
+import {
+  createMockMessageEvent,
+  createMockUserMessageEvent,
+  createMockAgentErrorEvent,
+} from "#/mocks/mock-ws-helpers";
+import {
+  ConnectionStatusComponent,
+  EventStoreComponent,
+  OptimisticUserMessageStoreComponent,
+  ErrorMessageStoreComponent,
+} from "./helpers/websocket-test-components";
+import { ConversationWebSocketProvider } from "#/contexts/conversation-websocket-context";
+import { conversationWebSocketTestSetup } from "./helpers/msw-websocket-setup";
 
 // MSW WebSocket mock setup
-const wsLink = ws.link("ws://localhost/events/socket");
-
-const mswServer = setupServer(
-  wsLink.addEventListener("connection", ({ server }) => {
-    server.connect();
-  }),
-);
+const { wsLink, server: mswServer } = conversationWebSocketTestSetup();
 
 beforeAll(() => mswServer.listen());
 afterEach(() => {
@@ -31,57 +25,8 @@ afterEach(() => {
 });
 afterAll(() => mswServer.close());
 
-// Test component to access context values
-function ConnectionStatusComponent() {
-  const { connectionState } = useConversationWebSocket();
-
-  return (
-    <div>
-      <div data-testid="connection-state">{connectionState}</div>
-    </div>
-  );
-}
-
-// Test component to access event store values
-function EventStoreComponent() {
-  const { events, uiEvents } = useEventStore();
-  return (
-    <div>
-      <div data-testid="events-count">{events.length}</div>
-      <div data-testid="ui-events-count">{uiEvents.length}</div>
-      <div data-testid="latest-event-id">
-        {isV1Event(events[events.length - 1])
-          ? (events[events.length - 1] as OpenHandsEvent).id
-          : "none"}
-      </div>
-    </div>
-  );
-}
-
-// Test component to access optimistic user message store values
-function OptimisticUserMessageStoreComponent() {
-  const { optimisticUserMessage } = useOptimisticUserMessageStore();
-  return (
-    <div>
-      <div data-testid="optimistic-user-message">
-        {optimisticUserMessage || "none"}
-      </div>
-    </div>
-  );
-}
-
-// Test component to access error message store values
-function ErrorMessageStoreComponent() {
-  const { errorMessage } = useErrorMessageStore();
-  return (
-    <div>
-      <div data-testid="error-message">{errorMessage || "none"}</div>
-    </div>
-  );
-}
-
 // Helper function to render components with ConversationWebSocketProvider
-function renderContext(
+function renderWithWebSocketContext(
   children: React.ReactNode,
   conversationId = "test-conversation-default",
 ) {
@@ -106,7 +51,7 @@ describe("Conversation WebSocket Handler", () => {
   describe("Connection Management", () => {
     it("should establish WebSocket connection to /events/socket URL", async () => {
       // This will fail because we haven't created the context yet
-      renderContext(<ConnectionStatusComponent />);
+      renderWithWebSocketContext(<ConnectionStatusComponent />);
 
       // Initially should be CONNECTING
       expect(screen.getByTestId("connection-state")).toHaveTextContent(
@@ -128,17 +73,7 @@ describe("Conversation WebSocket Handler", () => {
   describe("Event Stream Processing", () => {
     it("should update event store with received WebSocket events", async () => {
       // Create a mock MessageEvent to send through WebSocket
-      const mockMessageEvent: MessageEvent = {
-        id: "test-event-123",
-        timestamp: new Date().toISOString(),
-        source: "agent",
-        llm_message: {
-          role: "assistant",
-          content: [{ type: "text", text: "Hello from agent" }],
-        },
-        activated_microagents: [],
-        extended_content: [],
-      };
+      const mockMessageEvent = createMockMessageEvent();
 
       // Set up MSW to send the event when connection is established
       mswServer.use(
@@ -150,7 +85,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and event store
-      renderContext(<EventStoreComponent />);
+      renderWithWebSocketContext(<EventStoreComponent />);
 
       // Wait for connection and event processing
       await waitFor(() => {
@@ -214,7 +149,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and event store
-      renderContext(<EventStoreComponent />);
+      renderWithWebSocketContext(<EventStoreComponent />);
 
       // Wait for connection and event processing
       // Only the valid event should be added to the store
@@ -239,17 +174,7 @@ describe("Conversation WebSocket Handler", () => {
       setOptimisticUserMessage("This is an optimistic message");
 
       // Create a mock user MessageEvent to send through WebSocket
-      const mockUserMessageEvent: MessageEvent = {
-        id: "user-message-123",
-        timestamp: new Date().toISOString(),
-        source: "user",
-        llm_message: {
-          role: "user",
-          content: [{ type: "text", text: "Hello from user" }],
-        },
-        activated_microagents: [],
-        extended_content: [],
-      };
+      const mockUserMessageEvent = createMockUserMessageEvent();
 
       // Set up MSW to send the user message event when connection is established
       mswServer.use(
@@ -261,7 +186,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and optimistic user message store
-      renderContext(<OptimisticUserMessageStoreComponent />);
+      renderWithWebSocketContext(<OptimisticUserMessageStoreComponent />);
 
       // Initially should show the optimistic message
       expect(screen.getByTestId("optimistic-user-message")).toHaveTextContent(
@@ -293,14 +218,7 @@ describe("Conversation WebSocket Handler", () => {
   describe("Error Handling & Recovery", () => {
     it("should update error message store on AgentErrorEvent", async () => {
       // Create a mock AgentErrorEvent to send through WebSocket
-      const mockAgentErrorEvent: AgentErrorEvent = {
-        id: "error-event-123",
-        timestamp: new Date().toISOString(),
-        source: "agent",
-        tool_name: "str_replace_editor",
-        tool_call_id: "tool-call-456",
-        error: "Failed to execute command: Permission denied",
-      };
+      const mockAgentErrorEvent = createMockAgentErrorEvent();
 
       // Set up MSW to send the error event when connection is established
       mswServer.use(
@@ -312,7 +230,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      renderContext(<ErrorMessageStoreComponent />);
+      renderWithWebSocketContext(<ErrorMessageStoreComponent />);
 
       // Initially should show "none"
       expect(screen.getByTestId("error-message")).toHaveTextContent("none");
@@ -335,7 +253,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      renderContext(
+      renderWithWebSocketContext(
         <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
@@ -374,7 +292,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      renderContext(
+      renderWithWebSocketContext(
         <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
@@ -425,7 +343,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      renderContext(
+      renderWithWebSocketContext(
         <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
