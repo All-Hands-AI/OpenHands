@@ -1,6 +1,7 @@
 import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
 import { AgentErrorEvent } from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
+import { ActionEvent } from "./core/events/action-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -61,6 +62,17 @@ export const isUserMessageEvent = (
   event.llm_message !== null &&
   "role" in event.llm_message &&
   event.llm_message.role === "user";
+
+/**
+ * Type guard function to check if an event is an action event
+ */
+export const isActionEvent = (event: OpenHandsEvent): event is ActionEvent =>
+  event.source === "agent" &&
+  "action" in event &&
+  "tool_name" in event &&
+  "tool_call_id" in event &&
+  typeof event.tool_name === "string" &&
+  typeof event.tool_call_id === "string";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

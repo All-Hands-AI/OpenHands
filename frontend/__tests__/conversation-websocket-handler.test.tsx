@@ -1,7 +1,9 @@
+import React from "react";
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ws } from "msw";
 import { setupServer } from "msw/node";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
   ConversationWebSocketProvider,
@@ -78,16 +80,33 @@ function ErrorMessageStoreComponent() {
   );
 }
 
+// Helper function to render components with ConversationWebSocketProvider
+function renderContext(
+  children: React.ReactNode,
+  conversationId = "test-conversation-default",
+) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ConversationWebSocketProvider conversationId={conversationId}>
+        {children}
+      </ConversationWebSocketProvider>
+    </QueryClientProvider>,
+  );
+}
+
 describe("Conversation WebSocket Handler", () => {
   // 1. Connection Lifecycle Tests
   describe("Connection Management", () => {
     it("should establish WebSocket connection to /events/socket URL", async () => {
       // This will fail because we haven't created the context yet
-      render(
-        <ConversationWebSocketProvider>
-          <ConnectionStatusComponent />
-        </ConversationWebSocketProvider>,
-      );
+      renderContext(<ConnectionStatusComponent />);
 
       // Initially should be CONNECTING
       expect(screen.getByTestId("connection-state")).toHaveTextContent(
@@ -131,11 +150,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and event store
-      render(
-        <ConversationWebSocketProvider>
-          <EventStoreComponent />
-        </ConversationWebSocketProvider>,
-      );
+      renderContext(<EventStoreComponent />);
 
       // Wait for connection and event processing
       await waitFor(() => {
@@ -199,11 +214,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and event store
-      render(
-        <ConversationWebSocketProvider>
-          <EventStoreComponent />
-        </ConversationWebSocketProvider>,
-      );
+      renderContext(<EventStoreComponent />);
 
       // Wait for connection and event processing
       // Only the valid event should be added to the store
@@ -250,11 +261,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and optimistic user message store
-      render(
-        <ConversationWebSocketProvider>
-          <OptimisticUserMessageStoreComponent />
-        </ConversationWebSocketProvider>,
-      );
+      renderContext(<OptimisticUserMessageStoreComponent />);
 
       // Initially should show the optimistic message
       expect(screen.getByTestId("optimistic-user-message")).toHaveTextContent(
@@ -305,11 +312,7 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      render(
-        <ConversationWebSocketProvider>
-          <ErrorMessageStoreComponent />
-        </ConversationWebSocketProvider>,
-      );
+      renderContext(<ErrorMessageStoreComponent />);
 
       // Initially should show "none"
       expect(screen.getByTestId("error-message")).toHaveTextContent("none");
@@ -332,11 +335,11 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      render(
-        <ConversationWebSocketProvider>
+      renderContext(
+        <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
-        </ConversationWebSocketProvider>,
+        </>,
       );
 
       // Initially should show "none"
@@ -371,11 +374,11 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      render(
-        <ConversationWebSocketProvider>
+      renderContext(
+        <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
-        </ConversationWebSocketProvider>,
+        </>,
       );
 
       // Initially should show "none"
@@ -422,11 +425,11 @@ describe("Conversation WebSocket Handler", () => {
       );
 
       // Render components that use both WebSocket and error message store
-      render(
-        <ConversationWebSocketProvider>
+      renderContext(
+        <>
           <ErrorMessageStoreComponent />
           <ConnectionStatusComponent />
-        </ConversationWebSocketProvider>,
+        </>,
       );
 
       // Initially should show "none"

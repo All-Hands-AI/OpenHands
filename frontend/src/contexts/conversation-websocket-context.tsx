@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
@@ -14,6 +15,7 @@ import {
   isV1Event,
   isAgentErrorEvent,
   isUserMessageEvent,
+  isActionEvent,
 } from "#/types/v1/type-guards";
 
 interface ConversationWebSocketContextType {
@@ -26,12 +28,15 @@ const ConversationWebSocketContext = createContext<
 
 export function ConversationWebSocketProvider({
   children,
+  conversationId,
 }: {
   children: React.ReactNode;
+  conversationId?: string;
 }) {
   const [connectionState, setConnectionState] = useState<
     "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
   >("CONNECTING");
+  const queryClient = useQueryClient();
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
@@ -53,13 +58,50 @@ export function ConversationWebSocketProvider({
           if (isUserMessageEvent(event)) {
             removeOptimisticUserMessage();
           }
+
+          // Handle cache invalidation for ActionEvent
+          if (isActionEvent(event)) {
+            const currentConversationId =
+              conversationId || "test-conversation-id"; // TODO: Get from context
+            const { action } = event;
+
+            // Helper function to strip workspace prefix from file paths
+            const stripWorkspacePrefix = (path: string): string => {
+              // Strip /workspace/ and the next directory level
+              // e.g., "/workspace/repo/src/file.py" -> "src/file.py"
+              // e.g., "/workspace/my-project/components/Button.tsx" -> "components/Button.tsx"
+              const workspaceMatch = path.match(/^\/workspace\/[^/]+\/(.*)$/);
+              return workspaceMatch ? workspaceMatch[1] : path;
+            };
+
+            // Invalidate file_changes cache for file-related actions
+            if (
+              action.kind === "StrReplaceEditorAction" ||
+              action.kind === "ExecuteBashAction"
+            ) {
+              queryClient.invalidateQueries(
+                {
+                  queryKey: ["file_changes", currentConversationId],
+                },
+                { cancelRefetch: false },
+              );
+            }
+
+            // Invalidate specific file diff cache for file modifications
+            if (action.kind === "StrReplaceEditorAction" && action.path) {
+              const strippedPath = stripWorkspacePrefix(action.path);
+              queryClient.invalidateQueries({
+                queryKey: ["file_diff", currentConversationId, strippedPath],
+              });
+            }
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.warn("Failed to parse WebSocket message as JSON:", error);
       }
     },
-    [addEvent, setErrorMessage, removeOptimisticUserMessage],
+    [addEvent, setErrorMessage, removeOptimisticUserMessage, queryClient],
   );
 
   const websocketOptions = useMemo(
