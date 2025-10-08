@@ -202,8 +202,8 @@ def base_container_image(request):
 
 
 def _load_runtime(
-    temp_dir,
-    runtime_cls,
+    temp_dir: str | None,
+    runtime_cls: str,
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
@@ -232,7 +232,7 @@ def _load_runtime(
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
     elif temp_dir is not None:
-        test_mount_path = temp_dir
+        test_mount_path = str(temp_dir)
     else:
         test_mount_path = None
     config.workspace_base = test_mount_path
