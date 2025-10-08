@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from typing import AsyncGenerator
 
+from fastapi import Request
 from pydantic import Field
 
 from openhands.app_server.errors import OpenHandsError
@@ -84,6 +85,6 @@ class RemoteSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     )
 
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxSpecService, None]:
         yield RemoteSandboxSpecService(self.specs)

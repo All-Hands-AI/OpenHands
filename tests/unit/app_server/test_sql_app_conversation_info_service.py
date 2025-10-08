@@ -72,7 +72,9 @@ def service(async_session) -> SQLAppConversationInfoService:
 @pytest.fixture
 def service_with_user(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance with a user_id for testing."""
-    return SQLAppConversationInfoService(db_session=async_session, user_id='test_user_123')
+    return SQLAppConversationInfoService(
+        db_session=async_session, user_id='test_user_123'
+    )
 
 
 @pytest.fixture

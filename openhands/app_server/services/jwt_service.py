@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, AsyncGenerator
 
 import jwt
+from fastapi import Request
 from jose import jwe
 from jose.constants import ALGORITHMS
 from pydantic import BaseModel, PrivateAttr
@@ -241,5 +242,7 @@ class JwtServiceInjector(BaseModel, Injector[JwtService]):
             self._jwt_service = jwt_service
         return jwt_service
 
-    async def inject(self, state: InjectorState) -> AsyncGenerator[JwtService, None]:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[JwtService, None]:
         yield self.get_jwt_service()

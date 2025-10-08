@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Union
 
 import base62
 import httpx
+from fastapi import Request
 from pydantic import Field
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -349,7 +350,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
     )
 
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (

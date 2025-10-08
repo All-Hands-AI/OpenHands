@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from typing import AsyncGenerator
 from uuid import UUID
 
+from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -134,7 +135,7 @@ class SQLAppConversationStartTaskServiceInjector(
     AppConversationStartTaskServiceInjector
 ):
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[AppConversationStartTaskService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
@@ -143,8 +144,8 @@ class SQLAppConversationStartTaskServiceInjector(
         )
 
         async with (
-            get_user_context(state) as user_context,
-            get_db_session(state) as db_session,
+            get_user_context(state, request) as user_context,
+            get_db_session(state, request) as db_session,
         ):
             user_id = await user_context.get_user_id()
             service = SQLAppConversationStartTaskService(

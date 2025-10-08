@@ -30,7 +30,9 @@ sys.modules['asyncpg'] = MagicMock()
 sys.modules['google.cloud.sql.connector'] = MagicMock()
 
 # Import after mocking to avoid import-time issues
-from openhands.app_server.services.db_session_injector import DbSessionInjector  # noqa: E402
+from openhands.app_server.services.db_session_injector import (  # noqa: E402
+    DbSessionInjector,
+)
 
 
 class MockRequest:
@@ -162,7 +164,9 @@ class TestDbSessionInjectorConnections:
         engine = basic_db_session_injector.get_db_engine()
 
         assert isinstance(engine, Engine)
-        expected_url = f'sqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
+        expected_url = (
+            f'sqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
+        )
         assert str(engine.url) == expected_url
 
     @pytest.mark.asyncio
@@ -171,9 +175,7 @@ class TestDbSessionInjectorConnections:
         engine = await basic_db_session_injector.get_async_db_engine()
 
         assert isinstance(engine, AsyncEngine)
-        expected_url = (
-            f'sqlite+aiosqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
-        )
+        expected_url = f'sqlite+aiosqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
         assert str(engine.url) == expected_url
 
     def test_postgres_connection_with_host(self, postgres_db_session_injector):
@@ -206,7 +208,9 @@ class TestDbSessionInjectorConnections:
             assert call_args[1]['pool_pre_ping']
 
     @pytest.mark.asyncio
-    async def test_postgres_async_connection_with_host(self, postgres_db_session_injector):
+    async def test_postgres_async_connection_with_host(
+        self, postgres_db_session_injector
+    ):
         """Test PostgreSQL async connection when host is defined."""
         with patch(
             'openhands.app_server.services.db_session_injector.create_async_engine'
@@ -235,8 +239,12 @@ class TestDbSessionInjectorConnections:
             assert call_args[1]['max_overflow'] == 10
             assert call_args[1]['pool_pre_ping']
 
-    @patch('openhands.app_server.services.db_session_injector.DbSessionInjector._create_gcp_engine')
-    def test_gcp_connection_configuration(self, mock_create_gcp_engine, gcp_db_session_injector):
+    @patch(
+        'openhands.app_server.services.db_session_injector.DbSessionInjector._create_gcp_engine'
+    )
+    def test_gcp_connection_configuration(
+        self, mock_create_gcp_engine, gcp_db_session_injector
+    ):
         """Test GCP Cloud SQL connection configuration."""
         mock_engine = MagicMock()
         mock_create_gcp_engine.return_value = mock_engine

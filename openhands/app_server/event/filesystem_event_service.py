@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import AsyncGenerator
 from uuid import UUID
 
+from fastapi import Request
+
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -297,14 +299,16 @@ class FilesystemEventService(EventService):
 
 
 class FilesystemEventServiceInjector(EventServiceInjector):
-    async def inject(self, state: InjectorState) -> AsyncGenerator[EventService, None]:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[EventService, None]:
         from openhands.app_server.config import (
             get_app_conversation_info_service,
             get_global_config,
         )
 
         async with get_app_conversation_info_service(
-            state
+            state, request
         ) as app_conversation_info_service:
             persistence_dir = get_global_config().persistence_dir
 

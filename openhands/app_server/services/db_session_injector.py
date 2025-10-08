@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 from typing import AsyncGenerator
 
+from fastapi import Request
 from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -205,7 +206,9 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             finally:
                 await session.close()
 
-    async def inject(self, state: InjectorState) -> AsyncGenerator[AsyncSession, None]:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[AsyncSession, None]:
         """Dependency function that manages database sessions through request state.
 
         This function stores the database session in the request state to enable

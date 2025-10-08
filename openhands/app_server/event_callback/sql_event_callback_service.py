@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import AsyncGenerator
 from uuid import UUID
 
+from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import Column, String, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -222,7 +223,7 @@ class SQLEventCallbackService(EventCallbackService):
 
 class SQLEventCallbackServiceInjector(EventCallbackServiceInjector):
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[EventCallbackService, None]:
         from openhands.app_server.config import get_db_session
 

@@ -9,6 +9,7 @@ from typing import AsyncGenerator, Sequence
 from uuid import UUID
 
 import httpx
+from fastapi import Request
 from pydantic import Field, SecretStr, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -490,7 +491,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
     )
 
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[AppConversationService, None]:
         from openhands.app_server.config import (
             get_app_conversation_info_service,
@@ -503,14 +504,16 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
         )
 
         async with (
-            get_user_context(state) as user_context,
-            get_sandbox_service(state) as sandbox_service,
-            get_app_conversation_info_service(state) as app_conversation_info_service,
+            get_user_context(state, request) as user_context,
+            get_sandbox_service(state, request) as sandbox_service,
+            get_app_conversation_info_service(
+                state, request
+            ) as app_conversation_info_service,
             get_app_conversation_start_task_service(
-                state
+                state, request
             ) as app_conversation_start_task_service,
-            get_jwt_service(state) as jwt_service,
-            get_httpx_client(state) as httpx_client,
+            get_jwt_service(state, request) as jwt_service,
+            get_httpx_client(state, request) as httpx_client,
         ):
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:

@@ -4,6 +4,7 @@ from typing import AsyncGenerator
 
 import docker
 from docker.errors import APIError, NotFound
+from fastapi import Request
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -128,6 +129,6 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxSpecService, None]:
         yield DockerSandboxSpecService()

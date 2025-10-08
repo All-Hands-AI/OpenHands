@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from typing import AsyncGenerator
 
 from fastapi import Request
 
 from openhands.app_server.errors import OpenHandsError
-from openhands.app_server.services.injector import InjectorState
-from openhands.app_server.user.user_context import UserContext, UserContextInjector
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.user.user_models import UserInfo
 from openhands.integrations.provider import ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource
@@ -35,15 +33,6 @@ class AdminUserContext(UserContext):
 
 USER_CONTEXT_ATTR = 'user_context'
 ADMIN = AdminUserContext(user_id=None)
-
-
-class AdminUserContextInjector(UserContextInjector):
-    async def inject(self, state: InjectorState) -> AsyncGenerator[UserContext, None]:
-        user_context = getattr(state, USER_CONTEXT_ATTR, None)
-        if user_context is None:
-            user_context = AdminUserContext(user_id=None)
-            setattr(state, USER_CONTEXT_ATTR, user_context)
-        yield user_context
 
 
 def as_admin(request: Request):

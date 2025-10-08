@@ -9,6 +9,7 @@ import base62
 import docker
 import httpx
 from docker.errors import APIError, NotFound
+from fastapi import Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.agent_server.utils import utc_now
@@ -401,7 +402,7 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
     )
 
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (

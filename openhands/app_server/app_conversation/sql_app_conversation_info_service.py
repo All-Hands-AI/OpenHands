@@ -24,6 +24,7 @@ from datetime import datetime
 from typing import AsyncGenerator
 from uuid import UUID
 
+from fastapi import Request
 from sqlalchemy import Column, DateTime, Float, Integer, Select, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -368,7 +369,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
 class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
     async def inject(
-        self, state: InjectorState
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[AppConversationInfoService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
@@ -377,8 +378,8 @@ class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
         )
 
         async with (
-            get_user_context(state) as user_context,
-            get_db_session(state) as db_session,
+            get_user_context(state, request) as user_context,
+            get_db_session(state, request) as db_session,
         ):
             service = SQLAppConversationInfoService(
                 db_session=db_session, user_context=user_context
