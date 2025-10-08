@@ -396,16 +396,20 @@ class TestConfirmationMode:
                     policy_change=NeverConfirm(),
                 )
 
-                # Mock print_formatted_text to avoid output during test
-                with patch('openhands_cli.runner.print_formatted_text'):
-                    result = runner._handle_confirmation_request()
+                # Mock setup_conversation to avoid creating a real conversation
+                with patch('openhands_cli.runner.setup_conversation') as mock_setup:
+                    mock_setup.return_value = mock_conversation
+                    
+                    # Mock print_formatted_text to avoid output during test
+                    with patch('openhands_cli.runner.print_formatted_text'):
+                        result = runner._handle_confirmation_request()
 
-                    # Verify that confirmation mode was disabled
-                    assert result == UserConfirmation.ACCEPT
-                    # Should have called set_confirmation_policy with NeverConfirm
-                    mock_conversation.set_confirmation_policy.assert_called_with(
-                        NeverConfirm()
-                    )
+                        # Verify that confirmation mode was disabled
+                        assert result == UserConfirmation.ACCEPT
+                        # Should have called set_confirmation_policy with NeverConfirm
+                        mock_conversation.set_confirmation_policy.assert_called_with(
+                            NeverConfirm()
+                        )
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_auto_confirm_safe(
