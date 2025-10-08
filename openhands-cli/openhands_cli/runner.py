@@ -11,7 +11,6 @@ from openhands.sdk.security.confirmation_policy import (
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
 from openhands_cli.user_actions import ask_user_confirmation
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
 from openhands_cli.setup import setup_conversation
 
 
