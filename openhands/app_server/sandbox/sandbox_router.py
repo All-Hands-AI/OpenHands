@@ -2,17 +2,17 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from openhands.agent_server.models import Success
-from openhands.app_server.config import sandbox_injector
+from openhands.app_server.config import depends_sandbox_service
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxPage
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
 )
 
 router = APIRouter(prefix='/sandboxes', tags=['Sandbox'])
-sandbox_service_dependency = Depends(sandbox_injector())
+sandbox_service_dependency = depends_sandbox_service()
 
 # Read methods
 

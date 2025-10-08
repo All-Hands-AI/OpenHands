@@ -30,7 +30,7 @@ sys.modules['asyncpg'] = MagicMock()
 sys.modules['google.cloud.sql.connector'] = MagicMock()
 
 # Import after mocking to avoid import-time issues
-from openhands.app_server.services.db_service import DbService  # noqa: E402
+from openhands.app_server.services.db_session_injector import DbService  # noqa: E402
 
 
 class MockRequest:

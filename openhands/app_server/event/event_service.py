@@ -2,11 +2,11 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Awaitable, Callable
 from uuid import UUID
 
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.event_callback.event_callback_models import EventKind
+from openhands.app_server.services.injector import Injector
 from openhands.sdk import Event
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -55,7 +55,5 @@ class EventService(ABC):
         )
 
 
-class EventServiceInjector(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_injector(self) -> Callable[..., EventService | Awaitable[EventService]]:
-        """Get a resolver for an instance of event service."""
+class EventServiceInjector(DiscriminatedUnionMixin, Injector[EventService], ABC):
+    pass

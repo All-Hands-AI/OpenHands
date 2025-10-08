@@ -5,11 +5,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import time
-from typing import AsyncGenerator, Awaitable, Callable, Sequence
+from typing import AsyncGenerator, Sequence
 from uuid import UUID
 
 import httpx
-from fastapi import Depends
 from pydantic import Field, SecretStr, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -48,6 +47,7 @@ from openhands.app_server.sandbox.sandbox_models import (
     SandboxStatus,
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
@@ -489,40 +489,29 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
         ),
     )
 
-    def get_injector(self) -> Callable[..., Awaitable[AppConversationService]]:
+    async def inject(
+        self, state: InjectorState
+    ) -> AsyncGenerator[AppConversationService, None]:
         from openhands.app_server.config import (
-            app_conversation_info_injector,
-            app_conversation_start_task_injector,
+            get_app_conversation_info_service,
+            get_app_conversation_start_task_service,
             get_global_config,
-            httpx_client_injector,
-            jwt_service,
-            sandbox_injector,
-            user_injector,
+            get_httpx_client,
+            get_jwt_service,
+            get_sandbox_service,
+            get_user_context,
         )
 
-        user_dependency = Depends(user_injector())
-        sandbox_service_dependency = Depends(sandbox_injector())
-        app_conversation_info_service_dependency = Depends(
-            app_conversation_info_injector()
-        )
-        app_conversation_start_task_service_dependency = Depends(
-            app_conversation_start_task_injector()
-        )
-        jwt_service_dependency = Depends(jwt_service)
-        httpx_client_injector_dependency = Depends(httpx_client_injector())
-
-        async def resolve(
-            user_context: UserContext = user_dependency,
-            sandbox_service: SandboxService = sandbox_service_dependency,
-            app_conversation_info_service: AppConversationInfoService = (
-                app_conversation_info_service_dependency
-            ),
-            app_conversation_start_task_service: AppConversationStartTaskService = (
-                app_conversation_start_task_service_dependency
-            ),
-            jwt_service: JwtService = jwt_service_dependency,
-            httpx_client: httpx.AsyncClient = httpx_client_injector_dependency,
-        ) -> AppConversationService:
+        async with (
+            get_user_context(state) as user_context,
+            get_sandbox_service(state) as sandbox_service,
+            get_app_conversation_info_service(state) as app_conversation_info_service,
+            get_app_conversation_start_task_service(
+                state
+            ) as app_conversation_start_task_service,
+            get_jwt_service(state) as jwt_service,
+            get_httpx_client(state) as httpx_client,
+        ):
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:
                 access_token_hard_timeout = timedelta(
@@ -536,7 +525,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 if isinstance(sandbox_service, DockerSandboxService):
                     web_url = f'http://host.docker.internal:{sandbox_service.host_port}'
 
-            return LiveStatusAppConversationService(
+            yield LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_context=user_context,
                 sandbox_service=sandbox_service,
@@ -549,5 +538,3 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 web_url=web_url,
                 access_token_hard_timeout=access_token_hard_timeout,
             )
-
-        return resolve

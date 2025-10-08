@@ -6,17 +6,20 @@ import os
 from pathlib import Path
 from typing import AsyncGenerator
 
-from fastapi import Request
 from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import sessionmaker
 
+from openhands.app_server.services.injector import Injector, InjectorState
+
 _logger = logging.getLogger(__name__)
+DB_SESSION_ATTR = 'db_session'
+DB_SESSION_KEEP_OPEN_ATTR = 'db_session_keep_open'
 
 
-class DbService(BaseModel):
+class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
     persistence_dir: Path
     host: str | None = None
     port: int | None = None
@@ -202,10 +205,7 @@ class DbService(BaseModel):
             finally:
                 await session.close()
 
-    async def managed_session_dependency(
-        self,
-        request: Request,
-    ) -> AsyncGenerator[AsyncSession, None]:
+    async def inject(self, state: InjectorState) -> AsyncGenerator[AsyncSession, None]:
         """Dependency function that manages database sessions through request state.
 
         This function stores the database session in the request state to enable
@@ -219,35 +219,30 @@ class DbService(BaseModel):
         Yields:
             AsyncSession: An async SQL session stored in request state
         """
-        db_session = getattr(request.state, 'db_session', None)
+        db_session = getattr(state, DB_SESSION_ATTR, None)
         if db_session:
             yield db_session
         else:
             # Create a new session and store it in request state
             session_maker = await self.get_async_session_maker()
-            async with session_maker() as db_session:
-                try:
-                    setattr(request.state, 'db_session', db_session)
-                    yield db_session
-                    await db_session.commit()
-                except Exception:
-                    _logger.exception('Rolling back SQL due to error', stack_info=True)
-                    await db_session.rollback()
-                    raise
-                finally:
+            db_session = session_maker()
+            try:
+                setattr(state, DB_SESSION_ATTR, db_session)
+                yield db_session
+                await db_session.commit()
+            except Exception:
+                _logger.exception('Rolling back SQL due to error', stack_info=True)
+                await db_session.rollback()
+                raise
+            finally:
+                # If instructed, do not close the db session at the end of the request.
+                if not getattr(state, DB_SESSION_KEEP_OPEN_ATTR, False):
                     # Clean up the session from request state
-                    if hasattr(request.state, 'db_session'):
-                        delattr(request.state, 'db_session')
+                    if hasattr(state, DB_SESSION_ATTR):
+                        delattr(state, DB_SESSION_ATTR)
                     await db_session.close()
 
-    async def unmanaged_session_dependency(self, request: Request) -> AsyncSession:
-        """Using this dependency before others means that the database session used in
-        the request must be committed / closed manually. This is useful in cases where processing
-        continues after the response is sent."""
-        db_session = getattr(request.state, 'db_session', None)
-        if db_session:
-            return db_session
-        session_maker = await self.get_async_session_maker()
-        db_session = session_maker()
-        setattr(request.state, 'db_session', db_session)
-        return db_session
+
+def set_db_session_keep_open(state: InjectorState, keep_open: bool):
+    """Set whether the connection should be kept open after the request terminates."""
+    setattr(state, DB_SESSION_KEEP_OPEN_ATTR, keep_open)

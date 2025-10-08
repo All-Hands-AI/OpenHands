@@ -1,6 +1,5 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Callable
 from uuid import UUID
 
 from openhands.app_server.event_callback.event_callback_models import (
@@ -9,6 +8,7 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackPage,
     EventKind,
 )
+from openhands.app_server.services.injector import Injector
 from openhands.sdk import Event
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -58,7 +58,7 @@ class EventCallbackService(ABC):
         """Execute any applicable callbacks for the event and store the results."""
 
 
-class EventCallbackServiceInjector(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_injector(self) -> Callable[..., EventCallbackService]:
-        """Get a resolver for an instance of event callback service."""
+class EventCallbackServiceInjector(
+    DiscriminatedUnionMixin, Injector[EventCallbackService], ABC
+):
+    pass

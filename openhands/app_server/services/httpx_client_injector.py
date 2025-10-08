@@ -1,22 +1,23 @@
 from typing import AsyncGenerator
 
 import httpx
-from fastapi import Request
 from pydantic import BaseModel, Field
 
+from openhands.app_server.services.injector import Injector, InjectorState
 
-class HttpxClientInjector(BaseModel):
+
+class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
+    """Injector for a httpx client. By keeping a single httpx client alive in the
+    context of server requests handshakes are minimized while connection pool leaks
+    are prevented."""
+
     timeout: int = Field(default=15, description='Default timeout on all http requests')
 
-    async def resolve(
-        self, request: Request
+    async def inject(
+        self, state: InjectorState
     ) -> AsyncGenerator[httpx.AsyncClient, None]:
-        """Sharing a single client in the system can save time on handshakes, but leave us
-        susceptible to leaks. Opening a different httpx connection for each operation is inefficient.
-        So the balance is a managed connection shared within a fastapi request
-        """
-        httpx_client = getattr(request.state, 'httpx_client', None)
+        httpx_client = getattr(state, 'httpx_client', None)
         if not httpx_client:
             httpx_client = httpx.AsyncClient(timeout=self.timeout)
-            request.state.httpx_client = httpx_client
+            setattr(state, 'httpx_client', httpx_client)
         yield httpx_client

@@ -1,18 +1,16 @@
 import logging
 import os
-from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, AsyncGenerator, Union
 
 import base62
 import httpx
-from fastapi import Depends
 from pydantic import Field
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import SandboxError
+from openhands.app_server.errors import OpenHandsError, SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,
@@ -26,6 +24,7 @@ from openhands.app_server.sandbox.sandbox_service import (
 )
 from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
@@ -49,7 +48,7 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
 
 @dataclass
-class RemoteSandboxService(SandboxService, ABC):
+class RemoteSandboxService(SandboxService):
     """Sandbox service that uses HTTP to communicate with a remote runtime API.
 
     This service adapts the legacy RemoteRuntime HTTP protocol to work with
@@ -59,6 +58,7 @@ class RemoteSandboxService(SandboxService, ABC):
     sandbox_spec_service: SandboxSpecService
     api_url: str
     api_key: str
+    web_url: str | None
     resource_factor: int
     runtime_class: str | None
     user_context: UserContext
@@ -82,7 +82,9 @@ class RemoteSandboxService(SandboxService, ABC):
         """Send a request to the remote runtime API."""
         try:
             url = self.api_url + path
-            return await self.httpx_client.request(method, url, **kwargs)
+            return await self.httpx_client.request(
+                method, url, headers={'X-Session-API-Key': self.api_key}, **kwargs
+            )
         except httpx.TimeoutException:
             _logger.error(f'No response received within timeout for URL: {url}')
             raise
@@ -128,7 +130,15 @@ class RemoteSandboxService(SandboxService, ABC):
     async def _init_environment(
         self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
     ) -> dict[str, str]:
+        """Initialize the environment variables for the sandbox."""
         environment = sandbox_spec.initial_env.copy()
+
+        # If a public facing url is defined, add a callback to the agent server environment.
+        if self.web_url:
+            environment[WEBHOOK_CALLBACK_VARIABLE] = (
+                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+            )
+
         return environment
 
     async def search_sandboxes(
@@ -324,26 +334,6 @@ class RemoteSandboxService(SandboxService, ABC):
             return False
 
 
-@dataclass
-class CallbackRemoteSandboxService(RemoteSandboxService):
-    """RemoteSandboxService which uses callbacks to keep conversations
-    and events stored on the app server in sync with the agent servers.
-
-    Typically used in hosted deployments where the app server has a public
-    facling url"""
-
-    web_url: str
-
-    async def _init_environment(
-        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
-    ) -> dict[str, str]:
-        environment = sandbox_spec.initial_env.copy()
-        environment[WEBHOOK_CALLBACK_VARIABLE] = (
-            f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
-        )
-        return environment
-
-
 class RemoteSandboxServiceInjector(SandboxServiceInjector):
     """Dependency injector for remote sandbox services."""
 
@@ -358,34 +348,31 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
         description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
     )
 
-    def get_injector(self) -> Callable[..., Awaitable[SandboxService]]:
+    async def inject(
+        self, state: InjectorState
+    ) -> AsyncGenerator[SandboxService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
-            db_service,
+            get_db_session,
             get_global_config,
-            httpx_client_injector,
-            sandbox_spec_injector,
-            user_injector,
+            get_httpx_client,
+            get_sandbox_spec_service,
+            get_user_context,
         )
 
+        # If no public facing web url is defined, poll for changes as callbacks will be unavailable.
         config = get_global_config()
         web_url = config.web_url
         if web_url is None:
-            # TODO: Develop a polling protocol so this is not required.
-            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
-        # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        user_dependency = Depends(user_injector())
-        _httpx_client_dependency = Depends(httpx_client_injector())
-        db_session_dependency = Depends(db_service().managed_session_dependency)
+            raise OpenHandsError('A web_url is required!')
 
-        async def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            user_context: UserContext = user_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-            db_session: AsyncSession = db_session_dependency,
-        ) -> SandboxService:
-            return CallbackRemoteSandboxService(
+        async with (
+            get_user_context(state) as user_context,
+            get_sandbox_spec_service(state) as sandbox_spec_service,
+            get_httpx_client(state) as httpx_client,
+            get_db_session(state) as db_session,
+        ):
+            yield RemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 api_url=self.api_url,
                 api_key=self.api_key,
@@ -396,5 +383,3 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                 httpx_client=httpx_client,
                 db_session=db_session,
             )
-
-        return resolve_sandbox_service

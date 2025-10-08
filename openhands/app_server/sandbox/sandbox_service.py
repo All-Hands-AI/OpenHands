@@ -1,8 +1,8 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Awaitable, Callable
 
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxPage
+from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -61,7 +61,5 @@ class SandboxService(ABC):
         """
 
 
-class SandboxServiceInjector(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_injector(self) -> Callable[..., SandboxService | Awaitable[SandboxService]]:
-        """Get an injector for an instance of sandbox service."""
+class SandboxServiceInjector(DiscriminatedUnionMixin, Injector[SandboxService], ABC):
+    pass

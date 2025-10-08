@@ -37,19 +37,23 @@ class StoredSecretStr(TypeDecorator):
 
     def process_bind_param(self, value, dialect):
         if value is not None:
-            from openhands.app_server.config import jwt_service
+            from openhands.app_server.config import get_global_config
 
-            service = jwt_service()
-            token = service.create_jwe_token({'v': value.get_secret_value()})
+            jwt_service_injector = get_global_config().jwt
+            assert jwt_service_injector is not None
+            jwt_service = jwt_service_injector.get_jwt_service()
+            token = jwt_service.create_jwe_token({'v': value.get_secret_value()})
             return token
         return None
 
     def process_result_param(self, value, dialect):
         if value is not None:
-            from openhands.app_server.config import jwt_service
+            from openhands.app_server.config import get_global_config
 
-            service = jwt_service()
-            token = service.decrypt_jwe_token(value)
+            jwt_service_injector = get_global_config().jwt
+            assert jwt_service_injector is not None
+            jwt_service = jwt_service_injector.get_jwt_service()
+            token = jwt_service.decrypt_jwe_token(value)
             return SecretStr(token['v'])
         return None
 

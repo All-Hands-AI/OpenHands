@@ -1,7 +1,6 @@
-import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable
+from typing import AsyncGenerator
 
 import docker
 from docker.errors import APIError, NotFound
@@ -15,9 +14,9 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
+from openhands.app_server.services.injector import InjectorState
 
 _global_docker_client: docker.DockerClient | None = None
-_logger = logging.getLogger(__name__)
 
 
 def get_docker_client() -> docker.DockerClient:
@@ -128,9 +127,7 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
-    def get_injector(self) -> Callable[..., SandboxSpecService]:
-        return _inject
-
-
-def _inject():
-    return DockerSandboxSpecService()
+    async def inject(
+        self, state: InjectorState
+    ) -> AsyncGenerator[SandboxSpecService, None]:
+        yield DockerSandboxSpecService()

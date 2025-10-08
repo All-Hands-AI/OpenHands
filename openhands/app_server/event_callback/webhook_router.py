@@ -4,7 +4,7 @@ import asyncio
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import APIKeyHeader
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,13 +17,13 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
 )
 from openhands.app_server.config import (
-    app_conversation_info_injector,
-    db_service,
-    event_callback_injector,
-    event_injector,
+    depends_app_conversation_info_service,
+    depends_db_session,
+    depends_event_callback_service,
+    depends_event_service,
+    depends_jwt_service,
+    depends_sandbox_service,
     get_global_config,
-    jwt_service,
-    sandbox_injector,
 )
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
@@ -32,29 +32,27 @@ from openhands.app_server.event_callback.event_callback_service import (
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
+from openhands.app_server.services.db_session_injector import set_db_session_keep_open
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.admin_user_context import resolve_admin
+from openhands.app_server.user.admin_user_context import as_admin
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
-sandbox_service_dependency = Depends(sandbox_injector())
-event_service_dependency = Depends(event_injector())
-event_callback_service_dependency = Depends(event_callback_injector())
-app_conversation_info_service_dependency = Depends(app_conversation_info_injector())
-jwt_dependency = Depends(jwt_service)
+sandbox_service_dependency = depends_sandbox_service()
+event_service_dependency = depends_event_service()
+event_callback_service_dependency = depends_event_callback_service()
+app_conversation_info_service_dependency = depends_app_conversation_info_service()
+jwt_dependency = depends_jwt_service()
 config = get_global_config()
-# Create db dependency at module level to avoid B008
-db_session_dependency = Depends(db_service().unmanaged_session_dependency)
+db_session_dependency = depends_db_session()
 _logger = logging.getLogger(__name__)
 
 
 async def valid_sandbox(
     sandbox_id: str,
-    user_context: UserContext = Depends(
-        resolve_admin
-    ),  # Admin access for this function
+    user_context: UserContext = Depends(as_admin),
     session_api_key: str = Depends(
         APIKeyHeader(name='X-Session-API-Key', auto_error=False)
     ),
@@ -121,6 +119,7 @@ async def on_conversation_update(
 
 @router.post('/{sandbox_id}/events/{conversation_id}')
 async def on_event(
+    request: Request,
     events: list[Event],
     conversation_id: UUID,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
@@ -130,6 +129,9 @@ async def on_event(
     event_callback_service: EventCallbackService = event_callback_service_dependency,
 ) -> Success:
     """Webhook callback for when event stream events occur."""
+
+    # Because we are processing after the request finishes, keep the db connection open
+    set_db_session_keep_open(request.state, True)
 
     await valid_conversation(
         conversation_id, sandbox_info, app_conversation_info_service

@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable
+from typing import Any, AsyncGenerator
 
-from fastapi import Depends, Request
+from fastapi import Request
 from pydantic import PrivateAttr
 
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.app_server.user.user_models import UserInfo
 from openhands.integrations.provider import ProviderHandler, ProviderType
@@ -75,30 +77,38 @@ class AuthUserContext(UserContext):
         return results
 
 
+USER_ID_ATTR = 'user_id'
+
+
 class AuthUserContextInjector(UserContextInjector):
     _user_auth_class: Any = PrivateAttr(default=None)
 
-    def get_injector(self) -> Callable[..., Awaitable[UserContext]]:
-        return resolve
+    async def inject(self, state: InjectorState) -> AsyncGenerator[UserContext, None]:
+        user_context = getattr(state, USER_CONTEXT_ATTR, None)
+        if user_context is None:
+            # Get the user_id from the request state
+            user_id = getattr(state, USER_ID_ATTR)
+            assert user_id is not None
 
-    async def get_for_user(self, user_id: str | None) -> UserContext:
-        user_auth_class = self._user_auth_class
-        if user_auth_class is None:
-            from openhands.server.config.server_config import load_server_config
+            # Get the user auth class from the config
+            user_auth_class = self._user_auth_class
+            if user_auth_class is None:
+                from openhands.server.config.server_config import load_server_config
 
-            impl_name = load_server_config().user_auth_class
-            user_auth_class = get_impl(UserAuth, impl_name)
-            self._user_auth_class = user_auth_class
-        user_auth = await user_auth_class.get_for_user(user_id)
-        return AuthUserContext(user_auth)
+                impl_name = load_server_config().user_auth_class
+                user_auth_class = get_impl(UserAuth, impl_name)
+                self._user_auth_class = user_auth_class
 
+            user_auth = await user_auth_class.get_for_user(user_id)
+            user_context = AuthUserContext(user_auth=user_auth)
+            setattr(state, USER_CONTEXT_ATTR, user_context)
 
-async def resolve(
-    request: Request,
-    user_auth: UserAuth = Depends(get_user_auth),
-) -> UserContext:
-    user_context = getattr(request.state, 'user_context', None)
-    if user_context is None:
-        user_context = AuthUserContext(user_auth=user_auth)
-        setattr(request.state, 'user_context', user_context)
-    return user_context
+        yield user_context
+
+    async def depends(self, request: Request) -> AsyncGenerator[UserContext, None]:  # type: ignore
+        user_context = getattr(request.state, USER_CONTEXT_ATTR, None)
+        if user_context is None:
+            user_auth = await get_user_auth(request)
+            user_context = AuthUserContext(user_auth=user_auth)
+            setattr(request.state, 'user_context', user_context)
+        yield user_context
