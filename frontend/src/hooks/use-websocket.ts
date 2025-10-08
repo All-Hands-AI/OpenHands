@@ -1,6 +1,6 @@
 import React from "react";
 
-export const useWebSocket = (
+export const useWebSocket = <T = string>(
   url: string,
   options?: {
     queryParams?: Record<string, string>;
@@ -11,8 +11,8 @@ export const useWebSocket = (
   },
 ) => {
   const [isConnected, setIsConnected] = React.useState(false);
-  const [lastMessage, setLastMessage] = React.useState<string | null>(null);
-  const [messages, setMessages] = React.useState<string[]>([]);
+  const [lastMessage, setLastMessage] = React.useState<T | null>(null);
+  const [messages, setMessages] = React.useState<T[]>([]);
   const [error, setError] = React.useState<Error | null>(null);
   const wsRef = React.useRef<WebSocket | null>(null);
 
