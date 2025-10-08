@@ -1,6 +1,7 @@
 import { act } from "@testing-library/react";
 import { vi, afterEach } from "vitest";
 import type * as ZustandExportedTypes from "zustand";
+
 export * from "zustand";
 
 const { create: actualCreate, createStore: actualCreateStore } =
@@ -23,12 +24,11 @@ const createUncurried = <T>(
 // when creating a store, we get its initial state, create a reset function and add it in the set
 export const create = (<T>(
   stateCreator: ZustandExportedTypes.StateCreator<T>,
-) => {
+) =>
   // to support curried version of create
-  return typeof stateCreator === "function"
+  typeof stateCreator === "function"
     ? createUncurried(stateCreator)
-    : createUncurried;
-}) as typeof ZustandExportedTypes.create;
+    : createUncurried) as typeof ZustandExportedTypes.create;
 
 const createStoreUncurried = <T>(
   stateCreator: ZustandExportedTypes.StateCreator<T>,
@@ -44,12 +44,11 @@ const createStoreUncurried = <T>(
 // when creating a store, we get its initial state, create a reset function and add it in the set
 export const createStore = (<T>(
   stateCreator: ZustandExportedTypes.StateCreator<T>,
-) => {
+) =>
   // to support curried version of createStore
-  return typeof stateCreator === "function"
+  typeof stateCreator === "function"
     ? createStoreUncurried(stateCreator)
-    : createStoreUncurried;
-}) as typeof ZustandExportedTypes.createStore;
+    : createStoreUncurried) as typeof ZustandExportedTypes.createStore;
 
 // reset all stores after each test run
 afterEach(() => {

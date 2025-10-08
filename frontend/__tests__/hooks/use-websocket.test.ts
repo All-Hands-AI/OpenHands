@@ -15,7 +15,7 @@ import { useWebSocket } from "#/hooks/use-websocket";
 // MSW WebSocket mock setup
 const wsLink = ws.link("ws://acme.com/ws");
 
-const server = setupServer(
+const mswServer = setupServer(
   wsLink.addEventListener("connection", ({ client, server }) => {
     // Establish the connection
     server.connect();
@@ -25,9 +25,9 @@ const server = setupServer(
   }),
 );
 
-beforeAll(() => server.listen());
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+beforeAll(() => mswServer.listen());
+afterEach(() => mswServer.resetHandlers());
+afterAll(() => mswServer.close());
 
 describe("useWebSocket", () => {
   it("should establish a WebSocket connection", async () => {
@@ -81,7 +81,7 @@ describe("useWebSocket", () => {
   it("should handle connection errors gracefully", async () => {
     // Create a mock that will simulate an error
     const errorLink = ws.link("ws://error-test.com/ws");
-    server.use(
+    mswServer.use(
       errorLink.addEventListener("connection", ({ client }) => {
         // Simulate an error by closing the connection immediately
         client.close(1006, "Connection failed");
@@ -162,9 +162,9 @@ describe("useWebSocket", () => {
   it("should call onOpen handler when WebSocket connection opens", async () => {
     const onOpenSpy = vi.fn();
     const options = { onOpen: onOpenSpy };
-    
-    const { result } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Initially should not be connected
@@ -183,9 +183,9 @@ describe("useWebSocket", () => {
   it("should call onClose handler when WebSocket connection closes", async () => {
     const onCloseSpy = vi.fn();
     const options = { onClose: onCloseSpy };
-    
-    const { result, unmount } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result, unmount } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Wait for connection to be established
@@ -207,9 +207,9 @@ describe("useWebSocket", () => {
   it("should call onMessage handler when WebSocket receives a message", async () => {
     const onMessageSpy = vi.fn();
     const options = { onMessage: onMessageSpy };
-    
-    const { result } = renderHook(() => 
-      useWebSocket("ws://acme.com/ws", options)
+
+    const { result } = renderHook(() =>
+      useWebSocket("ws://acme.com/ws", options),
     );
 
     // Wait for connection to be established
@@ -239,18 +239,18 @@ describe("useWebSocket", () => {
   it("should call onError handler when WebSocket encounters an error", async () => {
     const onErrorSpy = vi.fn();
     const options = { onError: onErrorSpy };
-    
+
     // Create a mock that will simulate an error
     const errorLink = ws.link("ws://error-test.com/ws");
-    server.use(
+    mswServer.use(
       errorLink.addEventListener("connection", ({ client }) => {
         // Simulate an error by closing the connection immediately
         client.close(1006, "Connection failed");
       }),
     );
 
-    const { result } = renderHook(() => 
-      useWebSocket("ws://error-test.com/ws", options)
+    const { result } = renderHook(() =>
+      useWebSocket("ws://error-test.com/ws", options),
     );
 
     // Initially should not be connected and no error
