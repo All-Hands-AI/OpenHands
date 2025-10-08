@@ -64,11 +64,12 @@ class DbService(BaseModel):
         connector = Connector()
         instance_string = f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}'
         password = self.password
+        assert password is not None
         return connector.connect(
             instance_string,
             'pg8000',
             user=self.user,
-            password=password.get_secret_value() if password else None,
+            password=password.get_secret_value(),
             db=self.name,
         )
 
@@ -79,11 +80,12 @@ class DbService(BaseModel):
         loop = asyncio.get_running_loop()
         async with Connector(loop=loop) as connector:
             password = self.password
+            assert password is not None
             conn = await connector.connect_async(
                 f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}',
                 'asyncpg',
                 user=self.user,
-                password=password.get_secret_value() if password else None,
+                password=password.get_secret_value(),
                 db=self.name,
             )
             return conn
@@ -128,7 +130,9 @@ class DbService(BaseModel):
             async_engine = await self._create_async_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                password = self.password
+                assert password is not None
+                url = f'postgresql+asyncpg://{self.user}:{password}@{self.host}:{self.port}/{self.name}'
             else:
                 url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
 
@@ -149,7 +153,9 @@ class DbService(BaseModel):
             engine = self._create_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+pg8000://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                password = self.password
+                assert password is not None
+                url = f'postgresql+pg8000://{self.user}:{password.get_secret_value()}@{self.host}:{self.port}/{self.name}'
             else:
                 url = f'sqlite:///{self.persistence_dir}/openhands.db'
             engine = create_engine(
