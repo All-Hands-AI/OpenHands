@@ -20,8 +20,11 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
 )
+from openhands.app_server.user.admin_user_context import AdminUserContext
 from openhands.app_server.utils.sql_utils import Base
 from openhands.integrations.service_types import ProviderType
+from openhands.sdk.llm import MetricsSnapshot
+from openhands.sdk.llm.utils.metrics import TokenUsage
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 # Note: MetricsSnapshot from SDK is not available in test environment
@@ -61,7 +64,9 @@ async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture
 def service(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance for testing."""
-    return SQLAppConversationInfoService(session=async_session)
+    return SQLAppConversationInfoService(
+        session=async_session, user_context=AdminUserContext(user_id=None)
+    )
 
 
 @pytest.fixture
@@ -186,7 +191,7 @@ class TestSQLAppConversationInfoService:
             trigger=ConversationTrigger.RESOLVER,
             pr_number=[789, 101112],
             llm_model='claude-3',
-            metrics=None,
+            metrics=MetricsSnapshot(accumulated_token_usage=TokenUsage()),
             created_at=datetime(2024, 2, 15, 10, 30, 0, tzinfo=timezone.utc),
             updated_at=datetime(2024, 2, 15, 11, 45, 0, tzinfo=timezone.utc),
         )
@@ -238,7 +243,9 @@ class TestSQLAppConversationInfoService:
         assert retrieved_info.trigger is None
         assert retrieved_info.pr_number == []
         assert retrieved_info.llm_model is None
-        assert retrieved_info.metrics is None
+        assert retrieved_info.metrics == MetricsSnapshot(
+            accumulated_token_usage=TokenUsage()
+        )
 
     @pytest.mark.asyncio
     async def test_batch_get_conversation_info(
@@ -468,10 +475,10 @@ class TestSQLAppConversationInfoService:
         """Test that user isolation works correctly."""
         # Create services for different users
         user1_service = SQLAppConversationInfoService(
-            session=async_session, user_id='user1'
+            session=async_session, user_context=AdminUserContext(user_id='user1')
         )
         user2_service = SQLAppConversationInfoService(
-            session=async_session, user_id='user2'
+            session=async_session, user_context=AdminUserContext(user_id='user2')
         )
 
         # Create conversations for different users

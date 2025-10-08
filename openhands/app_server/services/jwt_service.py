@@ -228,11 +228,11 @@ class JwtService:
             raise Exception(f'Token decryption failed: {str(e)}')
 
 
-class JwtServiceManager(BaseModel):
+class JwtServiceInjector(BaseModel):
     persistence_dir: Path
     _jwt_service: JwtService | None = PrivateAttr(default=None)
 
-    def get_jwt_service(self):
+    def get_jwt_service(self) -> JwtService:
         jwt_service = self._jwt_service
         if jwt_service is None:
             keys = get_default_encryption_keys(self.persistence_dir)

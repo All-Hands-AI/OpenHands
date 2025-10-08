@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from time import time
-from typing import AsyncGenerator, Callable, Sequence
+from typing import AsyncGenerator, Awaitable, Callable, Sequence
 from uuid import UUID
 
 import httpx
@@ -32,7 +32,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
-    AppConversationServiceManager,
+    AppConversationServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
@@ -68,7 +68,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 class LiveStatusAppConversationService(GitAppConversationService):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
-    user_service: UserContext
+    user_context: UserContext
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
     sandbox_service: SandboxService
@@ -153,7 +153,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         self, request: AppConversationStartRequest
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         # Create and yield the start task
-        user_id = await self.user_service.get_user_id()
+        user_id = await self.user_context.get_user_id()
         task = AppConversationStartTask(
             created_by_user_id=user_id,
             request=request,
@@ -205,14 +205,20 @@ class LiveStatusAppConversationService(GitAppConversationService):
             info = ConversationInfo.model_validate(response.json())
 
             # Store info...
-            user_id = await self.user_service.get_user_id()
+            user_id = await self.user_context.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
+                # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
                 title=f'Conversation {info.id}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
-                # TODO: Lots of git parameters required
+                # Git parameters
+                selected_repository=request.selected_repository,
+                selected_branch=request.selected_branch,
+                git_provider=request.git_provider,
+                trigger=request.trigger,
+                pr_number=request.pr_number,
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
@@ -415,10 +421,10 @@ class LiveStatusAppConversationService(GitAppConversationService):
         initial_message: SendMessageRequest | None,
         git_provider: ProviderType | None,
     ) -> StartConversationRequest:
-        user = await self.user_service.get_user_info()
+        user = await self.user_context.get_user_info()
 
         # Set up a secret for the git token
-        secrets = await self.user_service.get_secrets()
+        secrets = await self.user_context.get_secrets()
         if git_provider:
             if self.web_url:
                 # If there is a web url, then we create an access token to access it.
@@ -439,7 +445,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # If there is no URL specified where the sandbox can access the app server
                 # then we supply a static secret with the most recent value. Depending
                 # on the type, this may eventually expire.
-                static_token = await self.user_service.get_latest_token(git_provider)
+                static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
                     secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
 
@@ -464,7 +470,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return start_conversation_request
 
 
-class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
+class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
     sandbox_startup_timeout: int = Field(
         default=120, description='The max timeout time for sandbox startup'
     )
@@ -483,38 +489,39 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
         ),
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[AppConversationService]]:
         from openhands.app_server.config import (
-            app_conversation_info_manager,
-            app_conversation_start_task_manager,
+            app_conversation_info_injector,
+            app_conversation_start_task_injector,
             get_global_config,
-            httpx_client_manager,
-            resolve_jwt_service,
-            sandbox_manager,
+            httpx_client_injector,
+            jwt_service,
+            sandbox_injector,
             user_injector,
         )
 
         user_dependency = Depends(user_injector())
-        resolve_sandbox_service = sandbox_manager().get_resolver_for_current_user()
-        resolve_app_conversation_info_service = (
-            app_conversation_info_manager().get_resolver_for_current_user()
+        sandbox_service_dependency = Depends(sandbox_injector())
+        app_conversation_info_service_dependency = Depends(
+            app_conversation_info_injector()
         )
-        resolve_app_conversation_start_task_service = (
-            app_conversation_start_task_manager().get_resolver_for_current_user()
+        app_conversation_start_task_service_dependency = Depends(
+            app_conversation_start_task_injector()
         )
-        resolve_httpx_client_manager = httpx_client_manager().resolve
+        jwt_service_dependency = Depends(jwt_service)
+        httpx_client_injector_dependency = Depends(httpx_client_injector())
 
-        def _resolve_for_user(
-            user_service: UserContext = user_dependency,
-            sandbox_service: SandboxService = Depends(resolve_sandbox_service),
-            app_conversation_info_service: AppConversationInfoService = Depends(
-                resolve_app_conversation_info_service
+        async def resolve(
+            user_context: UserContext = user_dependency,
+            sandbox_service: SandboxService = sandbox_service_dependency,
+            app_conversation_info_service: AppConversationInfoService = (
+                app_conversation_info_service_dependency
             ),
-            app_conversation_start_task_service: AppConversationStartTaskService = Depends(
-                resolve_app_conversation_start_task_service
+            app_conversation_start_task_service: AppConversationStartTaskService = (
+                app_conversation_start_task_service_dependency
             ),
-            jwt_service: JwtService = Depends(resolve_jwt_service),
-            httpx_client: httpx.AsyncClient = Depends(resolve_httpx_client_manager),
+            jwt_service: JwtService = jwt_service_dependency,
+            httpx_client: httpx.AsyncClient = httpx_client_injector_dependency,
         ) -> AppConversationService:
             access_token_hard_timeout = None
             if self.access_token_hard_timeout:
@@ -531,7 +538,7 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
 
             return LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
-                user_service=user_service,
+                user_context=user_context,
                 sandbox_service=sandbox_service,
                 app_conversation_info_service=app_conversation_info_service,
                 app_conversation_start_task_service=app_conversation_start_task_service,
@@ -543,4 +550,4 @@ class LiveStatusAppConversationServiceManager(AppConversationServiceManager):
                 access_token_hard_timeout=access_token_hard_timeout,
             )
 
-        return _resolve_for_user
+        return resolve

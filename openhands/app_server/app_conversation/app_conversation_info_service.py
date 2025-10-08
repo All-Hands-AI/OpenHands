@@ -1,7 +1,7 @@
 import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Callable
+from typing import Awaitable, Callable
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -69,11 +69,11 @@ class AppConversationInfoService(ABC):
         """
 
 
-class AppConversationInfoServiceManager(DiscriminatedUnionMixin, ABC):
+class AppConversationInfoServiceInjector(DiscriminatedUnionMixin, ABC):
     @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
+    def get_injector(
+        self,
+    ) -> Callable[
+        ..., AppConversationInfoService | Awaitable[AppConversationInfoService]
+    ]:
         """Get an instance of app conversation info service."""
-
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get an instance of app conversation info service limited to the current user."""

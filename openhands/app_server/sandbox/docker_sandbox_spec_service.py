@@ -128,15 +128,9 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
-    def get_resolver_for_current_user(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.get_unsecured_resolver()
+    def get_injector(self) -> Callable[..., SandboxSpecService]:
+        return _inject
 
-    def get_unsecured_resolver(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.resolve
 
-    def resolve(self) -> SandboxSpecService:
-        return DockerSandboxSpecService()
+def _inject():
+    return DockerSandboxSpecService()

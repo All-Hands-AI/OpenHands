@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from pydantic import PrivateAttr
 
+from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.app_server.user.user_models import UserInfo
-from openhands.app_server.user.user_context import UserContext, UserContext, UserContextInjector
 from openhands.integrations.provider import ProviderHandler, ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
@@ -24,7 +24,7 @@ class AuthUserContext(UserContext):
     async def get_user_id(self) -> str | None:
         # If you have an auth object here you are logged in. If user_id is None
         # it means we are in OSS mode.
-        user_id = (await self.user_auth.get_user_id())
+        user_id = await self.user_auth.get_user_id()
         return user_id
 
     async def get_user_info(self) -> UserInfo:
@@ -78,13 +78,14 @@ class AuthUserContext(UserContext):
 class AuthUserContextInjector(UserContextInjector):
     _user_auth_class: Any = PrivateAttr(default=None)
 
-    def get_injector(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[UserContext]]:
         return resolve
 
     async def get_for_user(self, user_id: str | None) -> UserContext:
         user_auth_class = self._user_auth_class
         if user_auth_class is None:
             from openhands.server.config.server_config import load_server_config
+
             impl_name = load_server_config().user_auth_class
             user_auth_class = get_impl(UserAuth, impl_name)
             self._user_auth_class = user_auth_class
@@ -92,7 +93,12 @@ class AuthUserContextInjector(UserContextInjector):
         return AuthUserContext(user_auth)
 
 
-def resolve(
+async def resolve(
+    request: Request,
     user_auth: UserAuth = Depends(get_user_auth),
 ) -> UserContext:
-    return AuthUserContext(user_auth=user_auth)
+    user_context = getattr(request.state, 'user_context', None)
+    if user_context is None:
+        user_context = AuthUserContext(user_auth=user_auth)
+        setattr(request.state, 'user_context', user_context)
+    return user_context

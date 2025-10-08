@@ -2,37 +2,44 @@
 
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Awaitable, Callable
 
-from fastapi import Depends
+import httpx
 from pydantic import Field
 
 from openhands.agent_server.env_parser import from_env
 from openhands.app_server.app_conversation.app_conversation_info_service import (
-    AppConversationInfoServiceManager,
+    AppConversationInfoService,
+    AppConversationInfoServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
-    AppConversationServiceManager,
+    AppConversationService,
+    AppConversationServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
-    AppConversationStartTaskServiceManager,
+    AppConversationStartTaskService,
+    AppConversationStartTaskServiceInjector,
 )
 from openhands.app_server.app_lifespan.app_lifespan_service import AppLifespanService
 from openhands.app_server.app_lifespan.oss_app_lifespan_service import (
     OssAppLifespanService,
 )
-from openhands.app_server.event.event_service import EventServiceManager
+from openhands.app_server.event.event_service import EventService, EventServiceInjector
 from openhands.app_server.event_callback.event_callback_service import (
-    EventCallbackServiceManager,
+    EventCallbackService,
+    EventCallbackServiceInjector,
 )
-from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
+from openhands.app_server.sandbox.sandbox_service import (
+    SandboxService,
+    SandboxServiceInjector,
+)
 from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
 from openhands.app_server.services.db_service import DbService
-from openhands.app_server.services.httpx_client_manager import HttpxClientManager
-from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
+from openhands.app_server.services.httpx_client_injector import HttpxClientInjector
+from openhands.app_server.services.jwt_service import JwtService, JwtServiceInjector
 from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.sdk.utils.models import OpenHandsModel
 
@@ -74,17 +81,17 @@ class AppServerConfig(OpenHandsModel):
         default_factory=get_default_web_url,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
-    # Service managers
-    event: EventServiceManager | None = None
-    event_callback: EventCallbackServiceManager | None = None
-    sandbox: SandboxServiceManager | None = None
+    # Service injectors
+    event: EventServiceInjector | None = None
+    event_callback: EventCallbackServiceInjector | None = None
+    sandbox: SandboxServiceInjector | None = None
     sandbox_spec: SandboxSpecServiceInjector | None = None
-    app_conversation_info: AppConversationInfoServiceManager | None = None
-    app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
-    app_conversation: AppConversationServiceManager | None = None
+    app_conversation_info: AppConversationInfoServiceInjector | None = None
+    app_conversation_start_task: AppConversationStartTaskServiceInjector | None = None
+    app_conversation: AppConversationServiceInjector | None = None
     user: UserContextInjector | None = None
-    jwt: JwtServiceManager | None = None
-    httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
+    jwt: JwtServiceInjector | None = None
+    httpx: HttpxClientInjector = Field(default_factory=HttpxClientInjector)
 
     # Services
     lifespan: AppLifespanService = Field(default_factory=_get_default_lifespan)
@@ -106,57 +113,61 @@ def get_global_config() -> AppServerConfig:
     return _global_config  # type: ignore
 
 
-def event_manager() -> EventServiceManager:
+def event_injector() -> Callable[..., EventService | Awaitable[EventService]]:
     config = get_global_config()
     event = config.event
     if event is None:
         from openhands.app_server.event.filesystem_event_service import (
-            FilesystemEventServiceManager,
+            FilesystemEventServiceInjector,
         )
 
-        event = FilesystemEventServiceManager()
+        event = FilesystemEventServiceInjector()
         config.event = event
-    return event
+    return event.get_injector()
 
 
-def event_callback_manager() -> EventCallbackServiceManager:
+def event_callback_injector() -> Callable[
+    ..., EventCallbackService | Awaitable[EventCallbackService]
+]:
     config = get_global_config()
     event_callback = config.event_callback
     if event_callback is None:
         from openhands.app_server.event_callback.sql_event_callback_service import (
-            SQLEventCallbackServiceManager,
+            SQLEventCallbackServiceInjector,
         )
 
-        event_callback = SQLEventCallbackServiceManager()
+        event_callback = SQLEventCallbackServiceInjector()
         config.event_callback = event_callback
-    return event_callback
+    return event_callback.get_injector()
 
 
-def sandbox_manager() -> SandboxServiceManager:
+def sandbox_injector() -> Callable[..., SandboxService | Awaitable[SandboxService]]:
     config = get_global_config()
     sandbox = config.sandbox
     if sandbox is None:
         # Legacy fallback
         if os.getenv('RUNTIME') == 'remote':
             from openhands.app_server.sandbox.remote_sandbox_service import (
-                RemoteSandboxServiceManager,
+                RemoteSandboxServiceInjector,
             )
 
-            sandbox = RemoteSandboxServiceManager(
+            sandbox = RemoteSandboxServiceInjector(
                 api_key=os.environ['SANDBOX_API_KEY'],
                 api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
             )
         else:
             from openhands.app_server.sandbox.docker_sandbox_service import (
-                DockerSandboxServiceManager,
+                DockerSandboxServiceInjector,
             )
 
-            sandbox = DockerSandboxServiceManager()
+            sandbox = DockerSandboxServiceInjector()
         config.sandbox = sandbox
-    return sandbox
+    return sandbox.get_injector()
 
 
-def sandbox_spec_injector() -> Callable[..., SandboxSpecService]:
+def sandbox_spec_injector() -> Callable[
+    ..., SandboxSpecService | Awaitable[SandboxSpecService]
+]:
     config = get_global_config()
     sandbox_spec = config.sandbox_spec
     if sandbox_spec is None:
@@ -176,46 +187,52 @@ def sandbox_spec_injector() -> Callable[..., SandboxSpecService]:
     return sandbox_spec.get_injector()
 
 
-def app_conversation_info_manager() -> AppConversationInfoServiceManager:
+def app_conversation_info_injector() -> Callable[
+    ..., AppConversationInfoService | Awaitable[AppConversationInfoService]
+]:
     config = get_global_config()
     app_conversation_info = config.app_conversation_info
     if app_conversation_info is None:
         from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
-            SQLAppConversationServiceManager,
+            SQLAppConversationInfoServiceInjector,
         )
 
-        app_conversation_info = SQLAppConversationServiceManager()
+        app_conversation_info = SQLAppConversationInfoServiceInjector()
         config.app_conversation_info = app_conversation_info
-    return app_conversation_info
+    return app_conversation_info.get_injector()
 
 
-def app_conversation_start_task_manager() -> AppConversationStartTaskServiceManager:
+def app_conversation_start_task_injector() -> Callable[
+    ..., AppConversationStartTaskService | Awaitable[AppConversationStartTaskService]
+]:
     config = get_global_config()
     app_conversation_start_task = config.app_conversation_start_task
     if app_conversation_start_task is None:
         from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
-            SQLAppConversationStartTaskServiceManager,
+            SQLAppConversationStartTaskServiceInjector,
         )
 
-        app_conversation_start_task = SQLAppConversationStartTaskServiceManager()
+        app_conversation_start_task = SQLAppConversationStartTaskServiceInjector()
         config.app_conversation_start_task = app_conversation_start_task
-    return app_conversation_start_task
+    return app_conversation_start_task.get_injector()
 
 
-def app_conversation_manager() -> AppConversationServiceManager:
+def app_conversation_injector() -> Callable[
+    ..., AppConversationService | Awaitable[AppConversationService]
+]:
     config = get_global_config()
     app_conversation = config.app_conversation
     if app_conversation is None:
         from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
-            LiveStatusAppConversationServiceManager,
+            LiveStatusAppConversationServiceInjector,
         )
 
-        app_conversation = LiveStatusAppConversationServiceManager()
+        app_conversation = LiveStatusAppConversationServiceInjector()
         config.app_conversation = app_conversation
-    return app_conversation
+    return app_conversation.get_injector()
 
 
-def user_injector() -> Callable[..., UserContext]:
+def user_injector() -> Callable[..., UserContext | Awaitable[UserContext]]:
     config = get_global_config()
     user = config.user
     if user is None:
@@ -228,17 +245,18 @@ def user_injector() -> Callable[..., UserContext]:
     return user.get_injector()
 
 
-def httpx_client_manager() -> HttpxClientManager:
+def httpx_client_injector() -> Callable[
+    ..., httpx.AsyncClient | Awaitable[httpx.AsyncClient]
+]:
     config = get_global_config()
-    return config.httpx
+    return config.httpx.resolve
 
 
-def resolve_jwt_service(
-    config: AppServerConfig = Depends(get_global_config),
-) -> JwtService:
+def jwt_service() -> JwtService:
+    config = get_global_config()
     resolver = config.jwt
     if resolver is None:
-        resolver = JwtServiceManager(persistence_dir=config.persistence_dir)
+        resolver = JwtServiceInjector(persistence_dir=config.persistence_dir)
         config.jwt = resolver
     return resolver.get_jwt_service()
 

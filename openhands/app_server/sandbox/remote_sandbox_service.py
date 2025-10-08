@@ -1,7 +1,8 @@
 import logging
 import os
+from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, Awaitable, Callable, Union
 
 import base62
 import httpx
@@ -11,7 +12,7 @@ from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import OpenHandsError, SandboxError
+from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,
@@ -21,8 +22,9 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceManager,
+    SandboxServiceInjector,
 )
+from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
@@ -41,13 +43,13 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
     __tablename__ = 'v1_remote_sandbox'
     id = Column(String, primary_key=True)
-    created_by_user_id = Column(String, index=True)
+    created_by_user_id = Column(String, nullable=True, index=True)
     sandbox_spec_id = Column(String, index=True)  # shadows runtime['image']
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
 @dataclass
-class RemoteSandboxService(SandboxService):
+class RemoteSandboxService(SandboxService, ABC):
     """Sandbox service that uses HTTP to communicate with a remote runtime API.
 
     This service adapts the legacy RemoteRuntime HTTP protocol to work with
@@ -57,10 +59,9 @@ class RemoteSandboxService(SandboxService):
     sandbox_spec_service: SandboxSpecService
     api_url: str
     api_key: str
-    web_url: str
     resource_factor: int
     runtime_class: str | None
-    user_id: str | None
+    user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
 
@@ -117,18 +118,25 @@ class RemoteSandboxService(SandboxService):
             created_at=stored.created_at,
         )
 
-    def _secure_select(self):
+    async def _secure_select(self):
         query = select(StoredRemoteSandbox)
-        if self.user_id:
-            query = query.where(StoredRemoteSandbox.created_by_user_id == self.user_id)
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            query = query.where(StoredRemoteSandbox.created_by_user_id == user_id)
         return query
+
+    async def _init_environment(
+        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
+    ) -> dict[str, str]:
+        environment = sandbox_spec.initial_env.copy()
+        return environment
 
     async def search_sandboxes(
         self,
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
-        stmt = self._secure_select()
+        stmt = await self._secure_select()
 
         # Handle pagination
         if page_id is not None:
@@ -174,7 +182,8 @@ class RemoteSandboxService(SandboxService):
 
     async def get_sandbox(self, sandbox_id: str) -> Union[SandboxInfo, None]:
         """Get a single sandbox by checking its corresponding runtime."""
-        stmt = self._secure_select().where(StoredRemoteSandbox.id == sandbox_id)
+        stmt = await self._secure_select()
+        stmt = stmt.where(StoredRemoteSandbox.id == sandbox_id)
         result = await self.db_session.execute(stmt)
         stored_sandbox = result.scalar_one_or_none()
         if stored_sandbox is None:
@@ -196,11 +205,6 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
-            if self.user_id is None:
-                # This is an illegal state - starting a sandbox with an unsecured service
-                # means the sandbox would not be associated with any user
-                raise OpenHandsError('Cannot start a sandbox without a user_id')
-
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -217,10 +221,13 @@ class RemoteSandboxService(SandboxService):
             # Create a unique id
             sandbox_id = base62.encodebytes(os.urandom(16))
 
+            # get user id
+            user_id = self.user_context.get_user_id()
+
             # Store the sandbox
             stored_sandbox = StoredRemoteSandbox(
                 id=sandbox_id,
-                created_by_user_id=self.user_id,
+                created_by_user_id=user_id,
                 sandbox_spec_id=sandbox_spec_id,
                 created_at=utc_now(),
             )
@@ -228,10 +235,7 @@ class RemoteSandboxService(SandboxService):
             await self.db_session.commit()
 
             # Prepare environment variables
-            environment = sandbox_spec.initial_env.copy()
-            environment[WEBHOOK_CALLBACK_VARIABLE] = (
-                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
-            )
+            environment = self._init_environment(sandbox_spec, sandbox_id)
 
             # Prepare start request
             start_request: dict[str, Any] = {
@@ -320,8 +324,28 @@ class RemoteSandboxService(SandboxService):
             return False
 
 
-class RemoteSandboxServiceManager(SandboxServiceManager):
-    """Manager for remote sandbox services."""
+@dataclass
+class CallbackRemoteSandboxService(RemoteSandboxService):
+    """RemoteSandboxService which uses callbacks to keep conversations
+    and events stored on the app server in sync with the agent servers.
+
+    Typically used in hosted deployments where the app server has a public
+    facling url"""
+
+    web_url: str
+
+    async def _init_environment(
+        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
+    ) -> dict[str, str]:
+        environment = sandbox_spec.initial_env.copy()
+        environment[WEBHOOK_CALLBACK_VARIABLE] = (
+            f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+        )
+        return environment
+
+
+class RemoteSandboxServiceInjector(SandboxServiceInjector):
+    """Dependency injector for remote sandbox services."""
 
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
@@ -334,12 +358,12 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
+    def get_injector(self) -> Callable[..., Awaitable[SandboxService]]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
             db_service,
             get_global_config,
-            httpx_client_manager,
+            httpx_client_injector,
             sandbox_spec_injector,
             user_injector,
         )
@@ -352,62 +376,23 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         # Create dependencies at module level to avoid B008
         _sandbox_spec_dependency = Depends(sandbox_spec_injector())
         user_dependency = Depends(user_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
+        _httpx_client_dependency = Depends(httpx_client_injector())
         db_session_dependency = Depends(db_service().managed_session_dependency)
 
         async def resolve_sandbox_service(
             sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            user_service: UserContext = user_dependency,
+            user_context: UserContext = user_dependency,
             httpx_client: httpx.AsyncClient = _httpx_client_dependency,
             db_session: AsyncSession = db_session_dependency,
         ) -> SandboxService:
-            user_id = await user_service.get_user_id()
-            return RemoteSandboxService(
+            return CallbackRemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 api_url=self.api_url,
                 api_key=self.api_key,
                 web_url=web_url,
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
-                user_id=user_id,
-                httpx_client=httpx_client,
-                db_session=db_session,
-            )
-
-        return resolve_sandbox_service
-
-    def get_unsecured_resolver(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import (
-            db_service,
-            get_global_config,
-            httpx_client_manager,
-            sandbox_spec_injector,
-        )
-
-        config = get_global_config()
-        web_url = config.web_url
-        if web_url is None:
-            # TODO: Develop a polling protocol so this is not required.
-            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
-        # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
-        db_session_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-            db_session: AsyncSession = db_session_dependency,
-        ) -> SandboxService:
-            return RemoteSandboxService(
-                sandbox_spec_service=sandbox_spec_service,
-                api_url=self.api_url,
-                api_key=self.api_key,
-                web_url=web_url,
-                resource_factor=self.resource_factor,
-                runtime_class=self.runtime_class,
-                user_id=None,
+                user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,
             )

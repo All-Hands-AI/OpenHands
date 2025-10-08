@@ -7,13 +7,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from openhands.agent_server.models import EventPage, EventSortOrder
-from openhands.app_server.config import event_manager
+from openhands.app_server.config import event_injector
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_models import EventKind
 from openhands.sdk import Event
 
 router = APIRouter(prefix='/events', tags=['Events'])
-event_service_dependency = Depends(event_manager().get_resolver_for_current_user())
+event_service_dependency = Depends(event_injector())
 
 
 # Read methods
