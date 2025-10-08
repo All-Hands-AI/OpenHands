@@ -282,61 +282,59 @@ def get_app_lifespan_service() -> AppLifespanService:
     return config.lifespan
 
 
-def depends_event_service() -> Depends[EventService]:
+def depends_event_service():
     injector = get_global_config().event
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_event_callback_service() -> Depends[EventCallbackService]:
+def depends_event_callback_service():
     injector = get_global_config().event_callback
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_sandbox_service() -> Depends[SandboxService]:
+def depends_sandbox_service():
     injector = get_global_config().sandbox
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_sandbox_spec_service() -> Depends[SandboxSpecService]:
+def depends_sandbox_spec_service():
     injector = get_global_config().sandbox_spec
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_app_conversation_info_service() -> Depends[AppConversationInfoService]:
+def depends_app_conversation_info_service():
     injector = get_global_config().app_conversation_info
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_app_conversation_start_task_service() -> Depends[
-    AppConversationStartTaskService
-]:
+def depends_app_conversation_start_task_service():
     injector = get_global_config().app_conversation_start_task
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_app_conversation_service() -> Depends[AppConversationService]:
+def depends_app_conversation_service():
     injector = get_global_config().app_conversation
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_user_context() -> Depends[UserContext]:
+def depends_user_context():
     injector = get_global_config().user
     assert injector is not None
     return Depends(injector.depends)
 
 
-def depends_httpx_client() -> Depends[httpx.AsyncClient]:
+def depends_httpx_client():
     return Depends(get_global_config().httpx.depends)
 
 
-def depends_jwt_service() -> Depends[JwtService]:
+def depends_jwt_service():
     injector = get_global_config().jwt
     assert injector is not None
     return Depends(injector.depends)

@@ -13,6 +13,8 @@ from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
 from openhands.utils.import_utils import get_impl
 
+USER_AUTH_ATTR = 'user_auth'
+
 
 @dataclass
 class AuthUserContext(UserContext):
@@ -86,20 +88,22 @@ class AuthUserContextInjector(UserContextInjector):
     async def inject(self, state: InjectorState) -> AsyncGenerator[UserContext, None]:
         user_context = getattr(state, USER_CONTEXT_ATTR, None)
         if user_context is None:
-            # Get the user_id from the request state
-            user_id = getattr(state, USER_ID_ATTR)
-            assert user_id is not None
+            user_auth = getattr(state, USER_AUTH_ATTR, None)
+            if user_auth is None:
+                # Get the user_id from the request state
+                user_id = getattr(state, USER_ID_ATTR, None)
+                assert user_id is not None
 
-            # Get the user auth class from the config
-            user_auth_class = self._user_auth_class
-            if user_auth_class is None:
-                from openhands.server.config.server_config import load_server_config
+                # Get the user auth class from the config
+                user_auth_class = self._user_auth_class
+                if user_auth_class is None:
+                    from openhands.server.config.server_config import load_server_config
 
-                impl_name = load_server_config().user_auth_class
-                user_auth_class = get_impl(UserAuth, impl_name)
-                self._user_auth_class = user_auth_class
+                    impl_name = load_server_config().user_auth_class
+                    user_auth_class = get_impl(UserAuth, impl_name)
+                    self._user_auth_class = user_auth_class
 
-            user_auth = await user_auth_class.get_for_user(user_id)
+                user_auth = await user_auth_class.get_for_user(user_id)
             user_context = AuthUserContext(user_auth=user_auth)
             setattr(state, USER_CONTEXT_ATTR, user_context)
 

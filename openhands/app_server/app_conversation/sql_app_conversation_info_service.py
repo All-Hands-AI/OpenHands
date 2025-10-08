@@ -25,7 +25,7 @@ from typing import AsyncGenerator
 from uuid import UUID
 
 from sqlalchemy import Column, DateTime, Float, Integer, Select, String, func, select
-from sqlalchemy.ext.asyncio import Asyncdb_session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -96,7 +96,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     This allows storing a record of a conversation even after its sandbox ceases to exist
     """
 
-    db_session: Asyncdb_session
+    db_session: AsyncSession
     user_context: UserContext
 
     async def search_app_conversation_info(

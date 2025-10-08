@@ -11,7 +11,7 @@ from uuid import UUID
 
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import Column, String, and_, func, or_, select
-from sqlalchemy.ext.asyncio import Asyncdb_session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.app_server.event_callback.event_callback_models import (
     CreateEventCallbackRequest,
@@ -66,7 +66,7 @@ class StoredEventCallbackResult(Base):  # type: ignore
 class SQLEventCallbackService(EventCallbackService):
     """SQL implementation of EventCallbackService."""
 
-    db_session: Asyncdb_session
+    db_session: AsyncSession
 
     async def create_event_callback(
         self, request: CreateEventCallbackRequest
