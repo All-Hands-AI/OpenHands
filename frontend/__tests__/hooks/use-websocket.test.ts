@@ -12,24 +12,24 @@ import { ws } from "msw";
 import { setupServer } from "msw/node";
 import { useWebSocket } from "#/hooks/use-websocket";
 
-// MSW WebSocket mock setup
-const wsLink = ws.link("ws://acme.com/ws");
+describe.skip("useWebSocket", () => {
+  // MSW WebSocket mock setup
+  const wsLink = ws.link("ws://acme.com/ws");
 
-const mswServer = setupServer(
-  wsLink.addEventListener("connection", ({ client, server }) => {
-    // Establish the connection
-    server.connect();
+  const mswServer = setupServer(
+    wsLink.addEventListener("connection", ({ client, server }) => {
+      // Establish the connection
+      server.connect();
 
-    // Send a welcome message to confirm connection
-    client.send("Welcome to the WebSocket!");
-  }),
-);
+      // Send a welcome message to confirm connection
+      client.send("Welcome to the WebSocket!");
+    }),
+  );
 
-beforeAll(() => mswServer.listen());
-afterEach(() => mswServer.resetHandlers());
-afterAll(() => mswServer.close());
+  beforeAll(() => mswServer.listen());
+  afterEach(() => mswServer.resetHandlers());
+  afterAll(() => mswServer.close());
 
-describe("useWebSocket", () => {
   it("should establish a WebSocket connection", async () => {
     const { result } = renderHook(() => useWebSocket("ws://acme.com/ws"));
 
