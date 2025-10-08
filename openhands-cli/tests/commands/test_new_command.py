@@ -77,8 +77,8 @@ def test_new_command_resets_confirmation_mode(
     mock_setup_conversation.side_effect = [conv2]
 
     # Distinct runner instances for each conversation
-    runner1 = MagicMock(); runner1.is_confirmation_mode_enabled = True
-    runner2 = MagicMock(); runner2.is_confirmation_mode_enabled = False
+    runner1 = MagicMock(); runner1.is_confirmation_mode_active = True
+    runner2 = MagicMock(); runner2.is_confirmation_mode_active = False
     mock_runner_cls.side_effect = [runner1, runner2]
 
     # Real session fed by a pipe (no interactive confirmation now)

@@ -142,7 +142,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             elif command == '/confirm':
                 runner.toggle_confirmation_mode()
                 new_status = (
-                    'enabled' if runner.is_confirmation_mode_enabled else 'disabled'
+                    'enabled' if runner.is_confirmation_mode_active else 'disabled'
                 )
                 print_formatted_text(
                     HTML(f'<yellow>Confirmation mode {new_status}</yellow>')

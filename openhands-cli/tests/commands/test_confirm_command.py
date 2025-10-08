@@ -53,7 +53,7 @@ def test_toggle_confirmation_mode_transitions(
         runner.toggle_confirmation_mode()
 
         # Assert state
-        assert runner.is_confirmation_mode_enabled is expected_enabled
+        assert runner.is_confirmation_mode_active is expected_enabled
         assert runner.conversation is target_conv
 
         # Assert setup called with same conversation ID + correct analyzer flag
@@ -95,20 +95,20 @@ def test_rapid_alternating_toggles_produce_expected_states(runner_disabled: Conv
         mock_setup.side_effect = [enabled_conv, disabled_conv, enabled_conv, disabled_conv]
 
         # Start disabled
-        assert runner_disabled.is_confirmation_mode_enabled is False
+        assert runner_disabled.is_confirmation_mode_active is False
 
         # Enable, Disable, Enable, Disable
         runner_disabled.toggle_confirmation_mode()
-        assert runner_disabled.is_confirmation_mode_enabled is True
+        assert runner_disabled.is_confirmation_mode_active is True
 
         runner_disabled.toggle_confirmation_mode()
-        assert runner_disabled.is_confirmation_mode_enabled is False
+        assert runner_disabled.is_confirmation_mode_active is False
 
         runner_disabled.toggle_confirmation_mode()
-        assert runner_disabled.is_confirmation_mode_enabled is True
+        assert runner_disabled.is_confirmation_mode_active is True
 
         runner_disabled.toggle_confirmation_mode()
-        assert runner_disabled.is_confirmation_mode_enabled is False
+        assert runner_disabled.is_confirmation_mode_active is False
 
         mock_setup.assert_has_calls(
             [
