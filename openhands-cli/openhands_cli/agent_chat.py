@@ -5,6 +5,7 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import sys
+from datetime import datetime
 
 from openhands.sdk import (
     Message,
@@ -18,6 +19,7 @@ from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import setup_conversation, start_fresh_conversation
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
+from openhands_cli.tui.status import display_status
 from openhands_cli.tui.tui import (
     display_help,
     display_welcome,
@@ -64,6 +66,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
     conversation = start_fresh_conversation(resume_conversation_id)
     display_welcome(conversation.id, bool(resume_conversation_id))
+
+    # Track session start time for uptime calculation
+    session_start_time = datetime.now()
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
@@ -131,16 +136,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 continue
 
             elif command == '/status':
-                print_formatted_text(
-                    HTML(f'<grey>Conversation ID: {conversation.id}</grey>')
-                )
-                print_formatted_text(HTML('<grey>Status: Active</grey>'))
-                confirmation_status = (
-                    'enabled' if conversation.state.confirmation_mode else 'disabled'
-                )
-                print_formatted_text(
-                    HTML(f'<grey>Confirmation mode: {confirmation_status}</grey>')
-                )
+                display_status(conversation, session_start_time=session_start_time)
                 continue
 
             elif command == '/confirm':

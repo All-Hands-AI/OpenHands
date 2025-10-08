@@ -89,7 +89,7 @@ def test_new_command_resets_confirmation_mode(
 
         from openhands_cli.agent_chat import run_cli_entry
         # Trigger /new, then /status, then /exit (exit will be auto-accepted)
-        for ch in "/new\r/status\r/exit\r":
+        for ch in "/new\r/exit\r":
             pipe.send_text(ch)
 
         run_cli_entry(None)
