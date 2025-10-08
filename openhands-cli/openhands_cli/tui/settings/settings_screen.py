@@ -1,5 +1,12 @@
 import os
 
+from openhands.sdk import LLM, BaseConversation, LocalFileStore
+from openhands.sdk.security.confirmation_policy import NeverConfirm
+from openhands.tools.preset.default import get_default_agent
+from prompt_toolkit import HTML, print_formatted_text
+from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.widgets import Frame, TextArea
+
 from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 from openhands_cli.pt_style import COLOR_GREY
@@ -16,13 +23,6 @@ from openhands_cli.user_actions.settings_action import (
     save_settings_confirmation,
     settings_type_confirmation,
 )
-from prompt_toolkit import HTML, print_formatted_text
-from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.widgets import Frame, TextArea
-
-from openhands.sdk import LLM, BaseConversation, LocalFileStore
-from openhands.sdk.security.confirmation_policy import NeverConfirm
-from openhands.tools.preset.default import get_default_agent
 
 
 class SettingsScreen:
@@ -127,7 +127,26 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
+    def configure_first_time_settings(self):
+        """Configure settings for first-time users with choice between basic and advanced."""
+        try:
+            settings_type = settings_type_confirmation(first_time=True)
+        except KeyboardInterrupt:
+            # For first-time users, we can't allow them to escape without configuring
+            # So we'll default to basic settings
+            print_formatted_text(HTML('\n<yellow>Using basic settings as default...</yellow>'))
+            settings_type = SettingsType.BASIC
+
+        if settings_type == SettingsType.BASIC:
+            self.handle_basic_settings(escapable=False)
+        elif settings_type == SettingsType.ADVANCED:
+            self.handle_advanced_settings(escapable=False)
+
     def handle_basic_settings(self, escapable=True):
+        if not escapable:
+            print_formatted_text(HTML('\n<green>Setting up your LLM configuration...</green>'))
+            print_formatted_text(HTML('<grey>This will configure the AI model that powers OpenHands.</grey>\n'))
+
         step_counter = StepCounter(3)
         try:
             provider = choose_llm_provider(step_counter, escapable=escapable)
@@ -142,14 +161,23 @@ class SettingsScreen:
             )
             save_settings_confirmation()
         except KeyboardInterrupt:
-            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
-            return
+            if escapable:
+                print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+                return
+            else:
+                # For first-time users, we need to complete the setup
+                print_formatted_text(HTML('\n<yellow>Setup is required to continue. Please complete the configuration.</yellow>'))
+                return self.handle_basic_settings(escapable=False)
 
         # Store the collected settings for persistence
         self._save_llm_settings(f'{provider}/{llm_model}', api_key)
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
+        if not escapable:
+            print_formatted_text(HTML('\n<green>Setting up advanced LLM configuration...</green>'))
+            print_formatted_text(HTML('<grey>This allows custom model endpoints and additional features.</grey>\n'))
+
         step_counter = StepCounter(4)
         try:
             custom_model = prompt_custom_model(step_counter)
@@ -165,8 +193,13 @@ class SettingsScreen:
             # Confirm save
             save_settings_confirmation()
         except KeyboardInterrupt:
-            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
-            return
+            if escapable:
+                print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+                return
+            else:
+                # For first-time users, we need to complete the setup
+                print_formatted_text(HTML('\n<yellow>Setup is required to continue. Please complete the configuration.</yellow>'))
+                return self.handle_advanced_settings(escapable=False)
 
         # Store the collected settings for persistence
         self._save_advanced_settings(

@@ -29,11 +29,9 @@ from openhands_cli.user_actions import UserConfirmation, exit_session_confirmati
 from openhands_cli.user_actions.utils import get_session_prompter
 
 
-
-
 def _start_fresh_conversation(resume_conversation_id: str | None = None) -> BaseConversation:
     """Start a fresh conversation by creating a new conversation instance.
-    
+
     Handles the complete conversation setup process including settings screen
     if agent configuration is missing.
 
@@ -50,8 +48,9 @@ def _start_fresh_conversation(resume_conversation_id: str | None = None) -> Base
         try:
             conversation = setup_conversation(resume_conversation_id)
         except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
-    
+            # For first-time users, show the full settings flow with choice between basic/advanced
+            settings_screen.configure_first_time_settings()
+
     return conversation
 
 
