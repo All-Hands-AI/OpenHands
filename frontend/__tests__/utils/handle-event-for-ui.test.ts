@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import {
   ActionEvent,
   ObservationEvent,
@@ -6,7 +7,6 @@ import {
   OpenHandsEvent,
 } from "#/types/v1/core";
 import { handleEventForUI } from "#/utils/handle-event-for-ui";
-import { describe, expect, it } from "vitest";
 
 describe("handleEventForUI", () => {
   const mockObservationEvent: ObservationEvent = {
