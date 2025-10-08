@@ -3,7 +3,7 @@ import { OpenHandsObservation } from "./observations";
 import { OpenHandsVariance } from "./variances";
 
 /**
- * @deprecated use the v1 OpenHandsEvent instead
+ * @deprecated Will be removed once we fully transition to v1 events
  */
 export type OpenHandsParsedEvent =
   | OpenHandsAction
