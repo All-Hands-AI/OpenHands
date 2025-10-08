@@ -33,6 +33,8 @@ describe("VirtualKeyboardManager", () => {
   });
 
   it("should initialize with overlaysContent set to true", () => {
+    getVirtualKeyboardManager();
+
     expect(mockVirtualKeyboard.overlaysContent).toBe(true);
     expect(mockVirtualKeyboard.addEventListener).toHaveBeenCalledWith(
       "geometrychange",
