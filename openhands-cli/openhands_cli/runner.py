@@ -22,7 +22,7 @@ class ConversationRunner:
 
     @property
     def is_confirmation_mode_enabled(self):
-        return self.conversation.agent.security_analyzer and self.conversation.confirmation_policy_active
+        return bool(self.conversation.agent.security_analyzer and self.conversation.confirmation_policy_active)
 
     def toggle_confirmation_mode(self):
         new_confirmation_mode_state = not self.is_confirmation_mode_enabled
