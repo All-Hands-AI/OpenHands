@@ -586,3 +586,125 @@ export const hasOpenHandsSuffix = (
   }
   return repo.full_name.endsWith("/.openhands");
 };
+
+/**
+ * Virtual Keyboard Manager for proper event-driven detection
+ * Handles the Virtual Keyboard API correctly with proper state management
+ */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+class VirtualKeyboardManager {
+  private isVisible = false;
+
+  private listeners: Set<() => void> = new Set();
+
+  private isInitialized = false;
+
+  private cleanup: (() => void) | null = null;
+
+  constructor() {
+    this.initializeVirtualKeyboard();
+  }
+
+  private initializeVirtualKeyboard(): void {
+    if (this.isInitialized) return;
+
+    // Check if the Virtual Keyboard API is available
+    if (
+      typeof navigator !== "undefined" &&
+      "virtualKeyboard" in navigator &&
+      typeof (navigator as any).virtualKeyboard === "object"
+    ) {
+      try {
+        const vk = (navigator as any).virtualKeyboard;
+
+        // Enable overlay mode to prevent automatic viewport adjustments
+        // This is crucial for the API to work properly
+        vk.overlaysContent = true;
+
+        // Set up geometry change listener
+        const handleGeometryChange = (event: any) => {
+          const { height } = event.target.boundingRect;
+          const wasVisible = this.isVisible;
+          this.isVisible = height > 0;
+
+          // Notify listeners if state changed
+          if (wasVisible !== this.isVisible) {
+            this.listeners.forEach((callback) => callback());
+          }
+        };
+
+        vk.addEventListener("geometrychange", handleGeometryChange);
+
+        // Store cleanup function
+        this.cleanup = () => {
+          vk.removeEventListener("geometrychange", handleGeometryChange);
+        };
+
+        this.isInitialized = true;
+      } catch (error) {
+        console.warn("Failed to initialize Virtual Keyboard API:", error);
+      }
+    }
+  }
+
+  /**
+   * Returns true if the virtual keyboard is currently visible
+   */
+  public isKeyboardVisible(): boolean {
+    return this.isVisible;
+  }
+
+  /**
+   * Add a listener for keyboard visibility changes
+   * Returns a cleanup function to remove the listener
+   */
+  public addListener(callback: () => void): () => void {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  }
+
+  /**
+   * Clean up resources and remove all listeners
+   */
+  public destroy(): void {
+    this.listeners.clear();
+    if (this.cleanup) {
+      this.cleanup();
+      this.cleanup = null;
+    }
+    this.isInitialized = false;
+  }
+}
+
+// Global instance for the application
+let virtualKeyboardManager: VirtualKeyboardManager | null = null;
+
+/**
+ * Get the global virtual keyboard manager instance
+ */
+export const getVirtualKeyboardManager = (): VirtualKeyboardManager => {
+  if (!virtualKeyboardManager) {
+    virtualKeyboardManager = new VirtualKeyboardManager();
+  }
+  return virtualKeyboardManager;
+};
+
+/**
+ * Clean up the global virtual keyboard manager
+ * Should be called when the application unmounts
+ */
+export const cleanupVirtualKeyboardManager = (): void => {
+  if (virtualKeyboardManager) {
+    virtualKeyboardManager.destroy();
+    virtualKeyboardManager = null;
+  }
+};
+
+/**
+ * Returns true if the virtual keyboard is visible (on supported platforms).
+ * Note: This is a best-effort check and may not be supported in all browsers.
+ *
+ * @deprecated Use getVirtualKeyboardManager().isKeyboardVisible() for better performance
+ */
+export const isVirtualKeyboardVisible = (): boolean =>
+  getVirtualKeyboardManager().isKeyboardVisible();
