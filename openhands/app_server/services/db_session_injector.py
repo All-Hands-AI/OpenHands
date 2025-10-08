@@ -232,7 +232,8 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             try:
                 setattr(state, DB_SESSION_ATTR, db_session)
                 yield db_session
-                await db_session.commit()
+                if not getattr(state, DB_SESSION_KEEP_OPEN_ATTR, False):
+                    await db_session.commit()
             except Exception:
                 _logger.exception('Rolling back SQL due to error', stack_info=True)
                 await db_session.rollback()

@@ -184,7 +184,7 @@ async def _run_callbacks_in_bg_and_close(
     event_callback_service: EventCallbackService,
     conversation_id: UUID,
     events: list[Event],
-    session: AsyncSession,
+    db_session: AsyncSession,
 ):
     """Run all callbacks and close the session"""
     try:
@@ -192,4 +192,4 @@ async def _run_callbacks_in_bg_and_close(
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
     finally:
-        await session.close()
+        await db_session.close()

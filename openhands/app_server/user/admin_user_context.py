@@ -39,7 +39,7 @@ def as_admin(request: Request):
     """Service the request as an admin user without restrictions. The endpoint should
     handle security."""
     user_context = getattr(request.state, USER_CONTEXT_ATTR, None)
-    if user_context != ADMIN:
+    if user_context not in (None, ADMIN):
         raise OpenHandsError(
             'Non admin context already present! '
             '(Do you need to move the as_admin dependency to the start of the args?)'
