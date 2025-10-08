@@ -25,17 +25,21 @@ class ConversationRunner:
         return self.conversation.agent.security_analyzer and self.conversation.confirmation_policy_active
 
     def toggle_confirmation_mode(self):
+        new_confirmation_mode_state = not self.is_confirmation_mode_enabled
+
         self.conversation = setup_conversation(
             self.conversation.id,
-            include_security_analyzer=not self.is_confirmation_mode_enabled
+            include_security_analyzer=new_confirmation_mode_state
         )
 
-        if self.is_confirmation_mode_enabled:
+        if new_confirmation_mode_state:
+            # Enable confirmation mode: set AlwaysConfirm policy
+            self.set_confirmation_policy(AlwaysConfirm())
+        else:
             # Disable confirmation mode: set NeverConfirm policy and remove security analyzer
             self.set_confirmation_policy(NeverConfirm())
-        else:
-            # Enable confirmation mode: set AlwaysConfirm policy and restore security analyzer
-            self.set_confirmation_policy(AlwaysConfirm())
+
+
 
     def set_confirmation_policy(
         self, confirmation_policy: ConfirmationPolicyBase
