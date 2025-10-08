@@ -82,6 +82,7 @@ export function CustomChatInput({
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   } = useGripResize(
     chatInputRef as React.RefObject<HTMLDivElement | null>,
     messageToSend,
@@ -92,6 +93,7 @@ export function CustomChatInput({
     fileInputRef as React.RefObject<HTMLInputElement | null>,
     smartResize,
     onSubmit,
+    resetManualResize,
   );
 
   const { handleInput, handlePaste, handleKeyDown, handleBlur, handleFocus } =
@@ -113,7 +115,6 @@ export function CustomChatInput({
     },
     [setShouldHideSuggestions, clearAllFiles],
   );
-
   return (
     <div className={`w-full ${className}`}>
       {/* Hidden file input */}
