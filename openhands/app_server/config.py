@@ -210,7 +210,7 @@ def get_event_service(
 ) -> AsyncContextManager[EventService]:
     injector = get_global_config().event
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_event_callback_service(
@@ -218,7 +218,7 @@ def get_event_callback_service(
 ) -> AsyncContextManager[EventCallbackService]:
     injector = get_global_config().event_callback
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_sandbox_service(
@@ -226,7 +226,7 @@ def get_sandbox_service(
 ) -> AsyncContextManager[SandboxService]:
     injector = get_global_config().sandbox
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_sandbox_spec_service(
@@ -234,7 +234,7 @@ def get_sandbox_spec_service(
 ) -> AsyncContextManager[SandboxSpecService]:
     injector = get_global_config().sandbox_spec
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_app_conversation_info_service(
@@ -242,7 +242,7 @@ def get_app_conversation_info_service(
 ) -> AsyncContextManager[AppConversationInfoService]:
     injector = get_global_config().app_conversation_info
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_app_conversation_start_task_service(
@@ -250,7 +250,7 @@ def get_app_conversation_start_task_service(
 ) -> AsyncContextManager[AppConversationStartTaskService]:
     injector = get_global_config().app_conversation_start_task
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_app_conversation_service(
@@ -258,7 +258,7 @@ def get_app_conversation_service(
 ) -> AsyncContextManager[AppConversationService]:
     injector = get_global_config().app_conversation
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_user_context(
@@ -266,13 +266,13 @@ def get_user_context(
 ) -> AsyncContextManager[UserContext]:
     injector = get_global_config().user
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_httpx_client(
     state: InjectorState, request: Request | None = None
 ) -> AsyncContextManager[httpx.AsyncClient]:
-    return get_global_config().httpx.context(state)
+    return get_global_config().httpx.context(state, request)
 
 
 def get_jwt_service(
@@ -280,13 +280,13 @@ def get_jwt_service(
 ) -> AsyncContextManager[JwtService]:
     injector = get_global_config().jwt
     assert injector is not None
-    return injector.context(state)
+    return injector.context(state, request)
 
 
 def get_db_session(
     state: InjectorState, request: Request | None = None
 ) -> AsyncContextManager[AsyncSession]:
-    return get_global_config().db_session.context(state)
+    return get_global_config().db_session.context(state, request)
 
 
 def get_app_lifespan_service() -> AppLifespanService:

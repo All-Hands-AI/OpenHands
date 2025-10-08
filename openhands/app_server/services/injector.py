@@ -25,7 +25,7 @@ class Injector(Generic[T], ABC):
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[T, None]:
         """Context function suitable for use in async with clauses"""
-        async for result in self.inject(state):
+        async for result in self.inject(state, request):
             yield result
 
     async def depends(self, request: Request) -> AsyncGenerator[T, None]:
