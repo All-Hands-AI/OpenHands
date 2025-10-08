@@ -23,7 +23,11 @@ export const useChatSubmission = (
       return;
     }
 
-    onSubmit(message);
+    // Remove @ symbols before file paths (e.g., @path/to/file.ts -> path/to/file.ts)
+    // Only remove @ when preceded by whitespace or at start (not in emails like alona@gmail.com)
+    const cleanedMessage = message.replace(/(^|\s)@(\S+)/g, "$1$2");
+
+    onSubmit(cleanedMessage);
 
     // Clear the input
     clearTextContent(chatInputRef.current);
@@ -40,7 +44,11 @@ export const useChatSubmission = (
   const handleResumeAgent = useCallback(() => {
     const message = chatInputRef.current?.innerText || "continue";
 
-    onSubmit(message.trim());
+    // Remove @ symbols before file paths (e.g., @path/to/file.ts -> path/to/file.ts)
+    // Only remove @ when preceded by whitespace or at start (not in emails like alona@gmail.com)
+    const cleanedMessage = message.replace(/(^|\s)@(\S+)/g, "$1$2");
+
+    onSubmit(cleanedMessage.trim());
 
     // Clear the input
     clearTextContent(chatInputRef.current);

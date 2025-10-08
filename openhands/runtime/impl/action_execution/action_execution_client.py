@@ -140,15 +140,18 @@ class ActionExecutionClient(Runtime):
         self.log('debug', f'Response text: {response.text}')
         assert response.is_closed
 
-    def list_files(self, path: str | None = None) -> list[str]:
+    def list_files(self, path: str | None = None, recursive: bool = False) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
+        If recursive is True, recursively list all files in subdirectories.
         """
         try:
-            data = {}
+            data: dict[str, str | bool] = {}
             if path is not None:
                 data['path'] = path
+            if recursive:
+                data['recursive'] = recursive
 
             response = self._send_action_server_request(
                 'POST',
