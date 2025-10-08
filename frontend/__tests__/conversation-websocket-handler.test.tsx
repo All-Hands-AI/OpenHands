@@ -9,6 +9,7 @@ import {
 } from "#/contexts/conversation-websocket-context";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { MessageEvent, OpenHandsEvent } from "#/types/v1/core";
 import { AgentErrorEvent } from "#/types/v1/core/events/observation-event";
 import { isV1Event } from "#/types/v1/type-guards";
@@ -50,6 +51,18 @@ function EventStoreComponent() {
         {isV1Event(events[events.length - 1])
           ? (events[events.length - 1] as OpenHandsEvent).id
           : "none"}
+      </div>
+    </div>
+  );
+}
+
+// Test component to access optimistic user message store values
+function OptimisticUserMessageStoreComponent() {
+  const { optimisticUserMessage } = useOptimisticUserMessageStore();
+  return (
+    <div>
+      <div data-testid="optimistic-user-message">
+        {optimisticUserMessage || "none"}
       </div>
     </div>
   );
@@ -208,7 +221,54 @@ describe("Conversation WebSocket Handler", () => {
 
   // 3. State Management Tests
   describe("State Management Integration", () => {
-    it.todo("should clear optimistic user messages when confirmed");
+    it("should clear optimistic user messages when confirmed", async () => {
+      // First, set an optimistic user message
+      const { setOptimisticUserMessage } =
+        useOptimisticUserMessageStore.getState();
+      setOptimisticUserMessage("This is an optimistic message");
+
+      // Create a mock user MessageEvent to send through WebSocket
+      const mockUserMessageEvent: MessageEvent = {
+        id: "user-message-123",
+        timestamp: new Date().toISOString(),
+        source: "user",
+        llm_message: {
+          role: "user",
+          content: [{ type: "text", text: "Hello from user" }],
+        },
+        activated_microagents: [],
+        extended_content: [],
+      };
+
+      // Set up MSW to send the user message event when connection is established
+      mswServer.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+          // Send the mock user message event after connection
+          client.send(JSON.stringify(mockUserMessageEvent));
+        }),
+      );
+
+      // Render components that use both WebSocket and optimistic user message store
+      render(
+        <ConversationWebSocketProvider>
+          <OptimisticUserMessageStoreComponent />
+        </ConversationWebSocketProvider>,
+      );
+
+      // Initially should show the optimistic message
+      expect(screen.getByTestId("optimistic-user-message")).toHaveTextContent(
+        "This is an optimistic message",
+      );
+
+      // Wait for connection and user message event processing
+      // The optimistic message should be cleared when user message is confirmed
+      await waitFor(() => {
+        expect(screen.getByTestId("optimistic-user-message")).toHaveTextContent(
+          "none",
+        );
+      });
+    });
   });
 
   // 4. Cache Management Tests

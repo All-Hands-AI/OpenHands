@@ -1,4 +1,6 @@
 import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
+import { AgentErrorEvent } from "./core/events/observation-event";
+import { MessageEvent } from "./core/events/message-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -33,6 +35,32 @@ export const isObservationEvent = (
   event.source === "environment" &&
   "action_id" in event &&
   "observation" in event;
+
+/**
+ * Type guard function to check if an event is an agent error event
+ */
+export const isAgentErrorEvent = (
+  event: OpenHandsEvent,
+): event is AgentErrorEvent =>
+  event.source === "agent" &&
+  "tool_name" in event &&
+  "tool_call_id" in event &&
+  "error" in event &&
+  typeof event.tool_name === "string" &&
+  typeof event.tool_call_id === "string" &&
+  typeof event.error === "string";
+
+/**
+ * Type guard function to check if an event is a user message event
+ */
+export const isUserMessageEvent = (
+  event: OpenHandsEvent,
+): event is MessageEvent =>
+  "llm_message" in event &&
+  typeof event.llm_message === "object" &&
+  event.llm_message !== null &&
+  "role" in event.llm_message &&
+  event.llm_message.role === "user";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

@@ -9,8 +9,12 @@ import React, {
 import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
-import { isV1Event } from "#/types/v1/type-guards";
-import { AgentErrorEvent } from "#/types/v1/core/events/observation-event";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import {
+  isV1Event,
+  isAgentErrorEvent,
+  isUserMessageEvent,
+} from "#/types/v1/type-guards";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -30,6 +34,7 @@ export function ConversationWebSocketProvider({
   >("CONNECTING");
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
+  const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
@@ -40,9 +45,13 @@ export function ConversationWebSocketProvider({
           addEvent(event);
 
           // Handle AgentErrorEvent specifically
-          if (event.source === "agent" && "error" in event) {
-            const agentErrorEvent = event as AgentErrorEvent;
-            setErrorMessage(agentErrorEvent.error);
+          if (isAgentErrorEvent(event)) {
+            setErrorMessage(event.error);
+          }
+
+          // Clear optimistic user message when a user message is confirmed
+          if (isUserMessageEvent(event)) {
+            removeOptimisticUserMessage();
           }
         }
       } catch (error) {
@@ -50,7 +59,7 @@ export function ConversationWebSocketProvider({
         console.warn("Failed to parse WebSocket message as JSON:", error);
       }
     },
-    [addEvent, setErrorMessage],
+    [addEvent, setErrorMessage, removeOptimisticUserMessage],
   );
 
   const websocketOptions = useMemo(
