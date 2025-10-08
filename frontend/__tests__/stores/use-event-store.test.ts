@@ -1,3 +1,5 @@
+import { act, renderHook } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { useEventStore } from "#/stores/use-event-store";
 import {
   ActionEvent,
@@ -5,8 +7,6 @@ import {
   ObservationEvent,
   SecurityRisk,
 } from "#/types/v1/core";
-import { act, renderHook } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
 
 const mockUserMessageEvent: MessageEvent = {
   id: "test-event-1",
