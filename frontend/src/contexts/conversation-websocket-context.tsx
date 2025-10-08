@@ -6,7 +6,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
@@ -17,6 +17,7 @@ import {
   isUserMessageEvent,
   isActionEvent,
 } from "#/types/v1/type-guards";
+import type { ActionEvent } from "#/types/v1/core/events/action-event";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -25,6 +26,45 @@ interface ConversationWebSocketContextType {
 const ConversationWebSocketContext = createContext<
   ConversationWebSocketContextType | undefined
 >(undefined);
+
+// Helper function to strip workspace prefix from file paths
+const stripWorkspacePrefix = (path: string): string => {
+  // Strip /workspace/ and the next directory level
+  // e.g., "/workspace/repo/src/file.py" -> "src/file.py"
+  // e.g., "/workspace/my-project/components/Button.tsx" -> "components/Button.tsx"
+  const workspaceMatch = path.match(/^\/workspace\/[^/]+\/(.*)$/);
+  return workspaceMatch ? workspaceMatch[1] : path;
+};
+
+// Helper function to handle cache invalidation for ActionEvent
+const handleActionEventCacheInvalidation = (
+  event: ActionEvent,
+  conversationId: string,
+  queryClient: QueryClient,
+) => {
+  const { action } = event;
+
+  // Invalidate file_changes cache for file-related actions
+  if (
+    action.kind === "StrReplaceEditorAction" ||
+    action.kind === "ExecuteBashAction"
+  ) {
+    queryClient.invalidateQueries(
+      {
+        queryKey: ["file_changes", conversationId],
+      },
+      { cancelRefetch: false },
+    );
+  }
+
+  // Invalidate specific file diff cache for file modifications
+  if (action.kind === "StrReplaceEditorAction" && action.path) {
+    const strippedPath = stripWorkspacePrefix(action.path);
+    queryClient.invalidateQueries({
+      queryKey: ["file_diff", conversationId, strippedPath],
+    });
+  }
+};
 
 export function ConversationWebSocketProvider({
   children,
@@ -63,37 +103,11 @@ export function ConversationWebSocketProvider({
           if (isActionEvent(event)) {
             const currentConversationId =
               conversationId || "test-conversation-id"; // TODO: Get from context
-            const { action } = event;
-
-            // Helper function to strip workspace prefix from file paths
-            const stripWorkspacePrefix = (path: string): string => {
-              // Strip /workspace/ and the next directory level
-              // e.g., "/workspace/repo/src/file.py" -> "src/file.py"
-              // e.g., "/workspace/my-project/components/Button.tsx" -> "components/Button.tsx"
-              const workspaceMatch = path.match(/^\/workspace\/[^/]+\/(.*)$/);
-              return workspaceMatch ? workspaceMatch[1] : path;
-            };
-
-            // Invalidate file_changes cache for file-related actions
-            if (
-              action.kind === "StrReplaceEditorAction" ||
-              action.kind === "ExecuteBashAction"
-            ) {
-              queryClient.invalidateQueries(
-                {
-                  queryKey: ["file_changes", currentConversationId],
-                },
-                { cancelRefetch: false },
-              );
-            }
-
-            // Invalidate specific file diff cache for file modifications
-            if (action.kind === "StrReplaceEditorAction" && action.path) {
-              const strippedPath = stripWorkspacePrefix(action.path);
-              queryClient.invalidateQueries({
-                queryKey: ["file_diff", currentConversationId, strippedPath],
-              });
-            }
+            handleActionEventCacheInvalidation(
+              event,
+              currentConversationId,
+              queryClient,
+            );
           }
         }
       } catch (error) {
