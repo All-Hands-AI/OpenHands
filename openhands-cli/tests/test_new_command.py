@@ -2,14 +2,12 @@
 
 from unittest.mock import MagicMock, patch
 from uuid import UUID
-
+from openhands_cli.agent_chat import _start_fresh_conversation
+from unittest.mock import MagicMock, patch
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
-
-from openhands_cli.agent_chat import _start_fresh_conversation
 from openhands_cli.setup import MissingAgentSpec
 from openhands_cli.user_actions import UserConfirmation
-
 
 @patch('openhands_cli.agent_chat.setup_conversation')
 def test_start_fresh_conversation_success(mock_setup_conversation):
@@ -53,8 +51,8 @@ def test_start_fresh_conversation_missing_agent_spec(
     assert result == mock_conversation
     # Should be called twice: first fails, second succeeds
     assert mock_setup_conversation.call_count == 2
-    # Settings screen should be called once with the new first-time method
-    mock_settings_screen.configure_first_time_settings.assert_called_once()
+    # Settings screen should be called once
+    mock_settings_screen.handle_basic_settings.assert_called_once_with(escapable=False)
 
 
 
@@ -73,23 +71,17 @@ def test_new_command_resets_confirmation_mode(
     # Auto-accept the exit prompt to avoid interactive UI and EOFError
     mock_exit_confirm.return_value = UserConfirmation.ACCEPT
 
-    conv1 = MagicMock()
-    conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-    conv2 = MagicMock()
-    conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
+    conv1 = MagicMock(); conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
+    conv2 = MagicMock(); conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
     mock_setup_conversation.side_effect = [conv1, conv2]
 
     # Distinct runner instances for each conversation
-    runner1 = MagicMock()
-    runner1.is_confirmation_mode_enabled = True
-    runner2 = MagicMock()
-    runner2.is_confirmation_mode_enabled = False
+    runner1 = MagicMock(); runner1.is_confirmation_mode_enabled = True
+    runner2 = MagicMock(); runner2.is_confirmation_mode_enabled = False
     mock_runner_cls.side_effect = [runner1, runner2]
 
     # Real session fed by a pipe (no interactive confirmation now)
-    from openhands_cli.user_actions.utils import (
-        get_session_prompter as real_get_session_prompter,
-    )
+    from openhands_cli.user_actions.utils import get_session_prompter as real_get_session_prompter
     with create_pipe_input() as pipe:
         output = DummyOutput()
         session = real_get_session_prompter(input=pipe, output=output)
