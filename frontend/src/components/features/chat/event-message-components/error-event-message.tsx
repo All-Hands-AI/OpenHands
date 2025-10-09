@@ -5,6 +5,7 @@ import { LikertScaleWrapper } from "./likert-scale-wrapper";
 import { MicroagentStatus } from "#/types/microagent-status";
 
 interface ErrorEventMessageProps {
+  event: { errorId?: string; errorMessage: string };
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
   microagentPRUrl?: string;
@@ -24,6 +25,7 @@ interface ErrorEventMessageProps {
 }
 
 export function ErrorEventMessage({
+  event: { errorId, errorMessage },
   microagentStatus,
   microagentConversationId,
   microagentPRUrl,

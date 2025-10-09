@@ -1,16 +1,10 @@
 import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import { isOpenHandsAction } from "#/types/core/guards";
 import { ChatMessage } from "../chat-message";
 import { MicroagentStatusWrapper } from "./microagent-status-wrapper";
 import { MicroagentStatus } from "#/types/microagent-status";
 
-const hasThoughtProperty = (
-  obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj && !!obj.thought;
-
 interface ObservationPairEventMessageProps {
-  event: OpenHandsAction;
+  event: { thought: string };
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
   microagentPRUrl?: string;
@@ -28,18 +22,10 @@ export function ObservationPairEventMessage({
   microagentPRUrl,
   actions,
 }: ObservationPairEventMessageProps) {
-  if (!isOpenHandsAction(event)) {
-    return null;
-  }
-
-  if (hasThoughtProperty(event.args) && event.action !== "think") {
+  if (event.thought) {
     return (
       <div>
-        <ChatMessage
-          type="agent"
-          message={event.args.thought}
-          actions={actions}
-        />
+        <ChatMessage type="agent" message={event.thought} actions={actions} />
         <MicroagentStatusWrapper
           microagentStatus={microagentStatus}
           microagentConversationId={microagentConversationId}

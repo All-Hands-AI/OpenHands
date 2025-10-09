@@ -1,19 +1,13 @@
-import {
-  AssistantMessageAction,
-  UserMessageAction,
-} from "#/types/core/actions";
 import i18n from "#/i18n";
-import { isUserMessage } from "#/types/core/guards";
+import { MessageEvent } from "#/types/v1/core";
 
-export const parseMessageFromEvent = (
-  event: UserMessageAction | AssistantMessageAction,
-): string => {
-  const m = isUserMessage(event) ? event.args.content : event.message;
-  if (!event.args.file_urls || event.args.file_urls.length === 0) {
-    return m;
+export const parseMessageFromEvent = (event: MessageEvent): string => {
+  if (event.llm_message.content[0].type === "text") {
+    return event.llm_message.content[0].text;
   }
-  const delimiter = i18n.t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE");
-  const parts = m.split(delimiter);
+  if (event.llm_message.content[0].type === "image") {
+    return i18n.t("CHAT_INTERFACE$AUGMENTED_PROMPT_FILES_TITLE");
+  }
 
-  return parts[0];
+  return "";
 };

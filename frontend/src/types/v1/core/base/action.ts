@@ -1,7 +1,7 @@
 import { ActionBase } from "./base";
 import { TaskItem } from "./common";
 
-interface MCPToolAction extends ActionBase<"MCPToolAction"> {
+export interface MCPToolAction extends ActionBase<"MCPToolAction"> {
   /**
    * Dynamic data fields from the tool call
    */
@@ -15,14 +15,14 @@ export interface FinishAction extends ActionBase<"FinishAction"> {
   message: string;
 }
 
-interface ThinkAction extends ActionBase<"ThinkAction"> {
+export interface ThinkAction extends ActionBase<"ThinkAction"> {
   /**
    * The thought to log
    */
   thought: string;
 }
 
-interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
+export interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
   /**
    * The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process.
    */
@@ -41,7 +41,8 @@ interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
   reset: boolean;
 }
 
-interface StrReplaceEditorAction extends ActionBase<"StrReplaceEditorAction"> {
+export interface StrReplaceEditorAction
+  extends ActionBase<"StrReplaceEditorAction"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
    */
@@ -72,7 +73,7 @@ interface StrReplaceEditorAction extends ActionBase<"StrReplaceEditorAction"> {
   view_range: [number, number] | null;
 }
 
-interface TaskTrackerAction extends ActionBase<"TaskTrackerAction"> {
+export interface TaskTrackerAction extends ActionBase<"TaskTrackerAction"> {
   /**
    * The command to execute. `view` shows the current task list. `plan` creates or updates the task list based on provided requirements and progress. Always `view` the current list before making changes.
    */
@@ -83,7 +84,8 @@ interface TaskTrackerAction extends ActionBase<"TaskTrackerAction"> {
   task_list: TaskItem[];
 }
 
-interface BrowserNavigateAction extends ActionBase<"BrowserNavigateAction"> {
+export interface BrowserNavigateAction
+  extends ActionBase<"BrowserNavigateAction"> {
   /**
    * The URL to navigate to
    */
@@ -94,7 +96,7 @@ interface BrowserNavigateAction extends ActionBase<"BrowserNavigateAction"> {
   new_tab: boolean;
 }
 
-interface BrowserClickAction extends ActionBase<"BrowserClickAction"> {
+export interface BrowserClickAction extends ActionBase<"BrowserClickAction"> {
   /**
    * The index of the element to click (from browser_get_state)
    */
@@ -105,7 +107,7 @@ interface BrowserClickAction extends ActionBase<"BrowserClickAction"> {
   new_tab: boolean;
 }
 
-interface BrowserTypeAction extends ActionBase<"BrowserTypeAction"> {
+export interface BrowserTypeAction extends ActionBase<"BrowserTypeAction"> {
   /**
    * The index of the input element (from browser_get_state)
    */
@@ -116,14 +118,15 @@ interface BrowserTypeAction extends ActionBase<"BrowserTypeAction"> {
   text: string;
 }
 
-interface BrowserGetStateAction extends ActionBase<"BrowserGetStateAction"> {
+export interface BrowserGetStateAction
+  extends ActionBase<"BrowserGetStateAction"> {
   /**
    * Whether to include a screenshot of the current page. Default: False
    */
   include_screenshot: boolean;
 }
 
-interface BrowserGetContentAction
+export interface BrowserGetContentAction
   extends ActionBase<"BrowserGetContentAction"> {
   /**
    * Whether to include links in the content (default: False)
@@ -135,29 +138,32 @@ interface BrowserGetContentAction
   start_from_char: number;
 }
 
-interface BrowserScrollAction extends ActionBase<"BrowserScrollAction"> {
+export interface BrowserScrollAction extends ActionBase<"BrowserScrollAction"> {
   /**
    * Direction to scroll. Options: 'up', 'down'. Default: 'down'
    */
   direction: "up" | "down";
 }
 
-interface BrowserGoBackAction extends ActionBase<"BrowserGoBackAction"> {
+export interface BrowserGoBackAction extends ActionBase<"BrowserGoBackAction"> {
   // No additional properties - this action has no parameters
 }
 
-interface BrowserListTabsAction extends ActionBase<"BrowserListTabsAction"> {
+export interface BrowserListTabsAction
+  extends ActionBase<"BrowserListTabsAction"> {
   // No additional properties - this action has no parameters
 }
 
-interface BrowserSwitchTabAction extends ActionBase<"BrowserSwitchTabAction"> {
+export interface BrowserSwitchTabAction
+  extends ActionBase<"BrowserSwitchTabAction"> {
   /**
    * 4 Character Tab ID of the tab to switch to (from browser_list_tabs)
    */
   tab_id: string;
 }
 
-interface BrowserCloseTabAction extends ActionBase<"BrowserCloseTabAction"> {
+export interface BrowserCloseTabAction
+  extends ActionBase<"BrowserCloseTabAction"> {
   /**
    * 4 Character Tab ID of the tab to close (from browser_list_tabs)
    */

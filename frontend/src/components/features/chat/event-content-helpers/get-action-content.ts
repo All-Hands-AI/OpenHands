@@ -1,97 +1,69 @@
-import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
-import {
-  FileWriteAction,
-  CommandAction,
-  IPythonAction,
-  BrowseAction,
-  BrowseInteractiveAction,
-  MCPAction,
-  ThinkAction,
-  OpenHandsAction,
-  FinishAction,
-  TaskTrackingAction,
-} from "#/types/core/actions";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
-import i18n from "#/i18n";
+import {
+  ActionEvent,
+  BrowserClickAction,
+  BrowserNavigateAction,
+  ExecuteBashAction,
+  FinishAction,
+  MCPToolAction,
+  StrReplaceEditorAction,
+  TaskTrackerAction,
+  ThinkAction,
+} from "#/types/v1/core";
 
-const getRiskText = (risk: ActionSecurityRisk) => {
-  switch (risk) {
-    case ActionSecurityRisk.LOW:
-      return i18n.t("SECURITY$LOW_RISK");
-    case ActionSecurityRisk.MEDIUM:
-      return i18n.t("SECURITY$MEDIUM_RISK");
-    case ActionSecurityRisk.HIGH:
-      return i18n.t("SECURITY$HIGH_RISK");
-    case ActionSecurityRisk.UNKNOWN:
-    default:
-      return i18n.t("SECURITY$UNKNOWN_RISK");
+const getWriteActionContent = (
+  event: ActionEvent<StrReplaceEditorAction>,
+): string => {
+  let newStr = event.action.new_str;
+  if (newStr && newStr.length > MAX_CONTENT_LENGTH) {
+    newStr = `${newStr.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
+  return `${event.action.path}\n${newStr}`;
 };
 
-const getWriteActionContent = (event: FileWriteAction): string => {
-  let { content } = event.args;
-  if (content.length > MAX_CONTENT_LENGTH) {
-    content = `${event.args.content.slice(0, MAX_CONTENT_LENGTH)}...`;
-  }
-  return `${event.args.path}\n${content}`;
-};
+const getRunActionContent = (event: ActionEvent<ExecuteBashAction>): string =>
+  `Command:\n\`${event.action.command}\``;
 
-const getRunActionContent = (event: CommandAction): string => {
-  let content = `Command:\n\`${event.args.command}\``;
+const getBrowseActionContent = (
+  event: ActionEvent<BrowserNavigateAction>,
+): string => `Browsing ${event.action.url}`;
 
-  if (event.args.confirmation_state === "awaiting_confirmation") {
-    content += `\n\n${getRiskText(event.args.security_risk)}`;
-  }
+const getBrowseInteractiveActionContent = (
+  event: ActionEvent<BrowserClickAction>,
+) => `**Action:**\n\n\`\`\`python\n${event.action.new_tab}\n\`\`\``;
 
-  return content;
-};
-
-const getIPythonActionContent = (event: IPythonAction): string => {
-  let content = `\`\`\`\n${event.args.code}\n\`\`\``;
-
-  if (event.args.confirmation_state === "awaiting_confirmation") {
-    content += `\n\n${getRiskText(event.args.security_risk)}`;
-  }
-
-  return content;
-};
-
-const getBrowseActionContent = (event: BrowseAction): string =>
-  `Browsing ${event.args.url}`;
-
-const getBrowseInteractiveActionContent = (event: BrowseInteractiveAction) =>
-  `**Action:**\n\n\`\`\`python\n${event.args.browser_actions}\n\`\`\``;
-
-const getMcpActionContent = (event: MCPAction): string => {
+const getMcpActionContent = (event: ActionEvent<MCPToolAction>): string => {
   // Format MCP action with name and arguments
-  const name = event.args.name || "";
-  const args = event.args.arguments || {};
+  const name = event.action.data.name || "";
+  const args = event.action.data.arguments || {};
   let details = `**MCP Tool Call:** ${name}\n\n`;
   // Include thought if available
-  if (event.args.thought) {
-    details += `\n\n**Thought:**\n${event.args.thought}`;
+  if (event.thought) {
+    details += `\n\n**Thought:**\n${event.thought}`;
   }
   details += `\n\n**Arguments:**\n\`\`\`json\n${JSON.stringify(args, null, 2)}\n\`\`\``;
   return details;
 };
 
-const getThinkActionContent = (event: ThinkAction): string =>
-  event.args.thought;
+const getThinkActionContent = (event: ActionEvent<ThinkAction>): string =>
+  event.action.thought;
 
-const getFinishActionContent = (event: FinishAction): string =>
-  event.args.final_thought.trim();
+const getFinishActionContent = (event: ActionEvent<FinishAction>): string =>
+  event.action.message.trim();
 
-const getTaskTrackingActionContent = (event: TaskTrackingAction): string => {
-  let content = `**Command:** \`${event.args.command}\``;
+const getTaskTrackingActionContent = (
+  event: ActionEvent<TaskTrackerAction>,
+): string => {
+  let content = `**Command:** \`${event.action.command}\``;
 
   if (
-    event.args.command === "plan" &&
-    event.args.task_list &&
-    event.args.task_list.length > 0
+    event.action.command === "plan" &&
+    event.action.task_list &&
+    event.action.task_list.length > 0
   ) {
-    content += `\n\n**Task List (${event.args.task_list.length} ${event.args.task_list.length === 1 ? "item" : "items"}):**\n`;
+    content += `\n\n**Task List (${event.action.task_list.length} ${event.action.task_list.length === 1 ? "item" : "items"}):**\n`;
 
-    event.args.task_list.forEach((task, index) => {
+    event.action.task_list.forEach((task, index) => {
       const statusIcon =
         {
           todo: "⏳",
@@ -100,43 +72,45 @@ const getTaskTrackingActionContent = (event: TaskTrackingAction): string => {
         }[task.status] || "❓";
 
       content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase().replace("_", " ")}]** ${task.title}`;
-      content += `\n   *ID: ${task.id}*`;
+      content += `\n   *ID: ${task.title}*`;
       if (task.notes) {
         content += `\n   *Notes: ${task.notes}*`;
       }
     });
-  } else if (event.args.command === "plan") {
+  } else if (event.action.command === "plan") {
     content += "\n\n**Task List:** Empty";
   }
 
   return content;
 };
 
-const getNoContentActionContent = (): string => "";
-
-export const getActionContent = (event: OpenHandsAction): string => {
-  switch (event.action) {
-    case "read":
-    case "edit":
-      return getNoContentActionContent();
-    case "write":
-      return getWriteActionContent(event);
-    case "run":
-      return getRunActionContent(event);
-    case "run_ipython":
-      return getIPythonActionContent(event);
-    case "browse":
-      return getBrowseActionContent(event);
-    case "browse_interactive":
-      return getBrowseInteractiveActionContent(event);
-    case "call_tool_mcp":
-      return getMcpActionContent(event);
-    case "think":
-      return getThinkActionContent(event);
-    case "finish":
-      return getFinishActionContent(event);
-    case "task_tracking":
-      return getTaskTrackingActionContent(event);
+// TODO: Extend for the rest of browser actions
+export const getActionContent = (event: ActionEvent): string => {
+  switch (event.action.kind) {
+    case "StrReplaceEditorAction":
+      return getWriteActionContent(
+        event as ActionEvent<StrReplaceEditorAction>,
+      );
+    case "ExecuteBashAction":
+      return getRunActionContent(event as ActionEvent<ExecuteBashAction>);
+    case "BrowserNavigateAction":
+      return getBrowseActionContent(
+        event as ActionEvent<BrowserNavigateAction>,
+      );
+    case "BrowserClickAction":
+      return getBrowseInteractiveActionContent(
+        event as ActionEvent<BrowserClickAction>,
+      );
+    case "MCPToolAction":
+      return getMcpActionContent(event as ActionEvent<MCPToolAction>);
+    case "ThinkAction":
+      return getThinkActionContent(event as ActionEvent<ThinkAction>);
+    case "FinishAction":
+      return getFinishActionContent(event as ActionEvent<FinishAction>);
+    case "TaskTrackerAction":
+      return getTaskTrackingActionContent(
+        event as ActionEvent<TaskTrackerAction>,
+      );
     default:
       return getDefaultEventContent(event);
   }

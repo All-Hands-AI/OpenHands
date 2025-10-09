@@ -1,6 +1,4 @@
 import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import { isUserMessage, isAssistantMessage } from "#/types/core/guards";
 import { ChatMessage } from "../chat-message";
 import { ImageCarousel } from "../../images/image-carousel";
 import { FileList } from "../../files/file-list";
@@ -9,9 +7,11 @@ import { MicroagentStatusWrapper } from "./microagent-status-wrapper";
 import { LikertScaleWrapper } from "./likert-scale-wrapper";
 import { parseMessageFromEvent } from "../event-content-helpers/parse-message-from-event";
 import { MicroagentStatus } from "#/types/microagent-status";
+import { MessageEvent } from "#/types/v1/core";
+import { isAssistantMessageEvent } from "#/types/v1/type-guards";
 
 interface UserAssistantEventMessageProps {
-  event: OpenHandsAction;
+  event: MessageEvent;
   shouldShowConfirmationButtons: boolean;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
@@ -43,10 +43,6 @@ export function UserAssistantEventMessage({
   isCheckingFeedback,
   feedbackData,
 }: UserAssistantEventMessageProps) {
-  if (!isUserMessage(event) && !isAssistantMessage(event)) {
-    return null;
-  }
-
   const message = parseMessageFromEvent(event);
 
   return (
@@ -66,7 +62,7 @@ export function UserAssistantEventMessage({
         microagentPRUrl={microagentPRUrl}
         actions={actions}
       />
-      {isAssistantMessage(event) && event.action === "message" && (
+      {isAssistantMessageEvent(event) && (
         <LikertScaleWrapper
           shouldShow={isLastMessage}
           config={config}

@@ -77,14 +77,24 @@ export function EventMessage({
 
   // Error observations
   if (isAgentErrorEvent(event)) {
-    return <ErrorEventMessage event={event} {...commonProps} />;
+    return (
+      <ErrorEventMessage
+        event={{
+          errorId: event.error,
+          errorMessage: event.error,
+        }}
+        {...commonProps}
+      />
+    );
   }
 
   // Observation pairs with OpenHands actions
   if (hasObservationPair && isActionEvent(event)) {
     return (
       <ObservationPairEventMessage
-        event={event}
+        event={{
+          thought: event.thought[0].text,
+        }}
         microagentStatus={microagentStatus}
         microagentConversationId={microagentConversationId}
         microagentPRUrl={microagentPRUrl}
@@ -99,6 +109,7 @@ export function EventMessage({
   }
 
   // User and assistant messages
+  // TODO: Split into separate components?
   if (isUserMessageEvent(event) || isAssistantMessageEvent(event)) {
     return (
       <UserAssistantEventMessage
@@ -111,7 +122,13 @@ export function EventMessage({
 
   // Reject observations
   if (isUserRejectObservation(event)) {
-    return <RejectEventMessage event={event} />;
+    return (
+      <RejectEventMessage
+        event={{
+          message: event.rejection_reason,
+        }}
+      />
+    );
   }
 
   // MCP observations

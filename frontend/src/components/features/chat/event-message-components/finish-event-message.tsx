@@ -1,14 +1,13 @@
 import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import { isFinishAction } from "#/types/core/guards";
 import { ChatMessage } from "../chat-message";
 import { MicroagentStatusWrapper } from "./microagent-status-wrapper";
 import { LikertScaleWrapper } from "./likert-scale-wrapper";
 import { getEventContent } from "../event-content-helpers/get-event-content";
 import { MicroagentStatus } from "#/types/microagent-status";
+import { ActionEvent, FinishAction } from "#/types/v1/core";
 
 interface FinishEventMessageProps {
-  event: OpenHandsAction;
+  event: ActionEvent<FinishAction>;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
   microagentPRUrl?: string;
@@ -18,7 +17,6 @@ interface FinishEventMessageProps {
     tooltip?: string;
   }>;
   isLastMessage: boolean;
-  isInLast10Actions: boolean;
   config?: { APP_MODE?: string } | null;
   isCheckingFeedback: boolean;
   feedbackData: {
@@ -35,15 +33,10 @@ export function FinishEventMessage({
   microagentPRUrl,
   actions,
   isLastMessage,
-  isInLast10Actions,
   config,
   isCheckingFeedback,
   feedbackData,
 }: FinishEventMessageProps) {
-  if (!isFinishAction(event)) {
-    return null;
-  }
-
   return (
     <>
       <ChatMessage
