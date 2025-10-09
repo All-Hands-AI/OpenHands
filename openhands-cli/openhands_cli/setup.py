@@ -78,7 +78,8 @@ def setup_conversation(
             conversation_id=conversation_id,
         )
 
-        conversation.set_confirmation_policy(AlwaysConfirm())
+        if include_security_analyzer:
+            conversation.set_confirmation_policy(AlwaysConfirm())
 
     print_formatted_text(
         HTML(f'<green>✓ Agent initialized with model: {agent.llm.model}</green>')
