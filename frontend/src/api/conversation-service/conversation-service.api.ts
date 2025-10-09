@@ -12,6 +12,7 @@ import {
   FileUploadSuccessResponse,
   GetFilesResponse,
   GetFileResponse,
+  ConversationMetricsResponse,
 } from "../open-hands.types";
 import { openHands } from "../open-hands-axios";
 import { Provider } from "#/types/settings";
@@ -421,6 +422,21 @@ class ConversationService {
       },
     );
     return response.data;
+  }
+
+  /**
+   * Get comprehensive metrics data for a conversation
+   * @param conversationId ID of the conversation
+   * @returns Comprehensive metrics data including cost, token usage, and latency
+   */
+  static async getConversationMetrics(
+    conversationId: string,
+  ): Promise<ConversationMetricsResponse> {
+    const url = `${this.getConversationUrl(conversationId)}/metrics`;
+    const { data } = await openHands.get<ConversationMetricsResponse>(url, {
+      headers: this.getConversationHeaders(),
+    });
+    return data;
   }
 }
 

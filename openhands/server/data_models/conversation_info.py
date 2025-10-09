@@ -27,3 +27,8 @@ class ConversationInfo:
     session_api_key: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     pr_number: list[int] = field(default_factory=list)
+    # Cost and token metrics from conversation metadata
+    accumulated_cost: float = 0.0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
