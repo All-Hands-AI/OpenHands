@@ -8,7 +8,7 @@ If this resonates with you, we'd love to have you join us in our quest!
 
 ## 🤝 How to Join
 
-Check out our [How to Join the Community section.](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-how-to-join-the-community)
+Check out our [How to Join the Community section.](https://github.com/OpenHands/OpenHands?tab=readme-ov-file#-how-to-join-the-community)
 
 ## 💪 Becoming a Contributor
 

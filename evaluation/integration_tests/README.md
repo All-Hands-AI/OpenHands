@@ -1,8 +1,8 @@
 # Integration tests
 
-This directory implements integration tests that [was running in CI](https://github.com/All-Hands-AI/OpenHands/tree/23d3becf1d6f5d07e592f7345750c314a826b4e9/tests/integration).
+This directory implements integration tests that [was running in CI](https://github.com/OpenHands/OpenHands/tree/23d3becf1d6f5d07e592f7345750c314a826b4e9/tests/integration).
 
-[PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985) introduce LLM-based editing, which requires access to LLM to perform edit. Hence, we remove integration tests from CI and intend to run them as nightly evaluation to ensure the quality of OpenHands softwares.
+[PR 3985](https://github.com/OpenHands/OpenHands/pull/3985) introduce LLM-based editing, which requires access to LLM to perform edit. Hence, we remove integration tests from CI and intend to run them as nightly evaluation to ensure the quality of OpenHands softwares.
 
 ## To add new tests
 

@@ -13,12 +13,12 @@ DOCKER_RUN_COMMAND="docker run -it --rm \
   -p 3000:3000 \
   -v /var/run/docker.sock:/var/run/docker.sock \
   --add-host host.docker.internal:host-gateway \
-  -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:${SHORT_SHA}-nikolaik \
+  -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/openhands/runtime:${SHORT_SHA}-nikolaik \
   --name openhands-app-${SHORT_SHA} \
-  docker.all-hands.dev/all-hands-ai/openhands:${SHORT_SHA}"
+  docker.all-hands.dev/openhands/openhands:${SHORT_SHA}"
 
 # Define the uvx command
-UVX_RUN_COMMAND="uvx --python 3.12 --from git+https://github.com/All-Hands-AI/OpenHands@${BRANCH_NAME}#subdirectory=openhands-cli openhands"
+UVX_RUN_COMMAND="uvx --python 3.12 --from git+https://github.com/OpenHands/OpenHands@${BRANCH_NAME}#subdirectory=openhands-cli openhands"
 
 # Get the current PR body
 PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
