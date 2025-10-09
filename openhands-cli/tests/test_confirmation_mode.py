@@ -116,7 +116,7 @@ class TestConfirmationMode:
         runner = ConversationRunner(mock_conversation)
 
         # Verify initial state
-        assert runner.is_confirmation_mode_active is False
+        assert runner.is_confirmation_mode_enabled is False
 
     def test_ask_user_confirmation_empty_actions(self) -> None:
         """Test that ask_user_confirmation returns ACCEPT for empty actions list."""
@@ -377,7 +377,7 @@ class TestConfirmationMode:
 
         # Enable confirmation mode first
         runner.set_confirmation_policy(AlwaysConfirm())
-        assert runner.is_confirmation_mode_active is True
+        assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
         with patch(
@@ -396,20 +396,16 @@ class TestConfirmationMode:
                     policy_change=NeverConfirm(),
                 )
 
-                # Mock setup_conversation to avoid creating a real conversation
-                with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-                    mock_setup.return_value = mock_conversation
+                # Mock print_formatted_text to avoid output during test
+                with patch('openhands_cli.runner.print_formatted_text'):
+                    result = runner._handle_confirmation_request()
 
-                    # Mock print_formatted_text to avoid output during test
-                    with patch('openhands_cli.runner.print_formatted_text'):
-                        result = runner._handle_confirmation_request()
-
-                        # Verify that confirmation mode was disabled
-                        assert result == UserConfirmation.ACCEPT
-                        # Should have called set_confirmation_policy with NeverConfirm
-                        mock_conversation.set_confirmation_policy.assert_called_with(
-                            NeverConfirm()
-                        )
+                    # Verify that confirmation mode was disabled
+                    assert result == UserConfirmation.ACCEPT
+                    # Should have called set_confirmation_policy with NeverConfirm
+                    mock_conversation.set_confirmation_policy.assert_called_with(
+                        NeverConfirm()
+                    )
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_auto_confirm_safe(
@@ -440,7 +436,7 @@ class TestConfirmationMode:
 
         # Enable confirmation mode first
         runner.set_confirmation_policy(AlwaysConfirm())
-        assert runner.is_confirmation_mode_active is True
+        assert runner.is_confirmation_mode_enabled is True
 
         # Mock get_unmatched_actions to return some actions
         with patch(
@@ -470,334 +466,3 @@ class TestConfirmationMode:
                     mock_conversation.set_confirmation_policy.assert_called_with(
                         expected_policy
                     )
-
-    def test_toggle_confirmation_mode_from_disabled_to_enabled(self) -> None:
-        """Test that toggle_confirmation_mode enables confirmation mode when currently disabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially disabled
-        assert runner.is_confirmation_mode_active is False
-
-        # Mock setup_conversation to return a conversation with security analyzer
-        with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-            mock_enabled_conversation = MagicMock()
-            mock_enabled_conversation.agent.security_analyzer = MagicMock()
-            mock_enabled_conversation.confirmation_policy_active = True
-            mock_setup.return_value = mock_enabled_conversation
-
-            # Toggle confirmation mode
-            runner.toggle_confirmation_mode()
-
-            # Verify setup_conversation was called with include_security_analyzer=True
-            mock_setup.assert_called_once_with(
-                mock_conversation.id,
-                include_security_analyzer=True
-            )
-
-            # Verify conversation was updated
-            assert runner.conversation == mock_enabled_conversation
-
-            # Verify AlwaysConfirm policy was set
-            mock_enabled_conversation.set_confirmation_policy.assert_called_once_with(
-                AlwaysConfirm()
-            )
-
-    def test_toggle_confirmation_mode_from_enabled_to_disabled(self) -> None:
-        """Test that toggle_confirmation_mode disables confirmation mode when currently enabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially enabled
-        assert runner.is_confirmation_mode_active is True
-
-        # Mock setup_conversation to return a conversation without security analyzer
-        with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-            mock_disabled_conversation = MagicMock()
-            mock_disabled_conversation.agent.security_analyzer = None
-            mock_disabled_conversation.confirmation_policy_active = False
-            mock_setup.return_value = mock_disabled_conversation
-
-            # Toggle confirmation mode
-            runner.toggle_confirmation_mode()
-
-            # Verify setup_conversation was called with include_security_analyzer=False
-            mock_setup.assert_called_once_with(
-                mock_conversation.id,
-                include_security_analyzer=False
-            )
-
-            # Verify conversation was updated
-            assert runner.conversation == mock_disabled_conversation
-
-            # Verify NeverConfirm policy was set
-            mock_disabled_conversation.set_confirmation_policy.assert_called_once_with(
-                NeverConfirm()
-            )
-
-    def test_security_analyzer_exists_when_confirmation_mode_enabled(self) -> None:
-        """Test that security analyzer exists when confirmation mode is enabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        runner = ConversationRunner(mock_conversation)
-
-        # Confirmation mode should be enabled
-        assert runner.is_confirmation_mode_active is True
-
-        # Security analyzer should exist
-        assert runner.conversation.agent.security_analyzer is not None
-
-    def test_security_analyzer_none_when_confirmation_mode_disabled(self) -> None:
-        """Test that security analyzer is None when confirmation mode is disabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        runner = ConversationRunner(mock_conversation)
-
-        # Confirmation mode should be disabled
-        assert runner.is_confirmation_mode_active is False
-
-        # Security analyzer should be None
-        assert runner.conversation.agent.security_analyzer is None
-
-    def test_confirmation_policy_always_confirm_when_enabled(self) -> None:
-        """Test that confirmation policy is AlwaysConfirm when confirmation mode is enabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        runner = ConversationRunner(mock_conversation)
-
-        # Enable confirmation mode explicitly
-        runner.set_confirmation_policy(AlwaysConfirm())
-
-        # Verify AlwaysConfirm policy was set
-        mock_conversation.set_confirmation_policy.assert_called_with(AlwaysConfirm())
-
-    def test_confirmation_policy_never_confirm_when_disabled(self) -> None:
-        """Test that confirmation policy is NeverConfirm when confirmation mode is disabled."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        runner = ConversationRunner(mock_conversation)
-
-        # Disable confirmation mode explicitly
-        runner.set_confirmation_policy(NeverConfirm())
-
-        # Verify NeverConfirm policy was set
-        mock_conversation.set_confirmation_policy.assert_called_with(NeverConfirm())
-
-    def test_confirmation_mode_state_consistency_after_toggle(self) -> None:
-        """Test that confirmation mode state is consistent after toggling."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially disabled
-        assert runner.is_confirmation_mode_active is False
-
-        # Mock setup_conversation for enabling
-        with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-            mock_enabled_conversation = MagicMock()
-            mock_enabled_conversation.agent.security_analyzer = MagicMock()
-            mock_enabled_conversation.confirmation_policy_active = True
-            mock_setup.return_value = mock_enabled_conversation
-
-            # Toggle to enable
-            runner.toggle_confirmation_mode()
-
-            # Should be enabled now
-            assert runner.is_confirmation_mode_active is True
-            assert runner.conversation.agent.security_analyzer is not None
-
-            # Mock setup_conversation for disabling
-            mock_disabled_conversation = MagicMock()
-            mock_disabled_conversation.agent.security_analyzer = None
-            mock_disabled_conversation.confirmation_policy_active = False
-            mock_setup.return_value = mock_disabled_conversation
-
-            # Toggle to disable
-            runner.toggle_confirmation_mode()
-
-            # Should be disabled now
-            assert runner.is_confirmation_mode_active is False
-            assert runner.conversation.agent.security_analyzer is None
-
-    def test_approval_with_never_confirm_disables_confirmation_mode(self) -> None:
-        """Test that approving with 'Always proceed' option disables confirmation mode."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially enabled
-        assert runner.is_confirmation_mode_active is True
-
-        # Mock get_unmatched_actions to return some actions
-        with patch(
-            'openhands_cli.runner.ConversationState.get_unmatched_actions'
-        ) as mock_get_actions:
-            mock_action = MagicMock()
-            mock_action.tool_name = 'bash'
-            mock_action.action = 'echo test'
-            mock_get_actions.return_value = [mock_action]
-
-            # Mock ask_user_confirmation to return ACCEPT with NeverConfirm policy
-            with patch('openhands_cli.runner.ask_user_confirmation') as mock_ask:
-                mock_ask.return_value = ConfirmationResult(
-                    decision=UserConfirmation.ACCEPT,
-                    reason='',
-                    policy_change=NeverConfirm(),
-                )
-
-                # Mock setup_conversation to return disabled conversation
-                with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-                    mock_disabled_conversation = MagicMock()
-                    mock_disabled_conversation.agent.security_analyzer = None
-                    mock_disabled_conversation.confirmation_policy_active = False
-                    mock_setup.return_value = mock_disabled_conversation
-
-                    # Mock print_formatted_text to avoid output during test
-                    with patch('openhands_cli.runner.print_formatted_text'):
-                        result = runner._handle_confirmation_request()
-
-                        # Verify that confirmation mode was disabled
-                        assert result == UserConfirmation.ACCEPT
-
-                        # Verify toggle_confirmation_mode was called (setup_conversation called)
-                        mock_setup.assert_called_once_with(
-                            mock_conversation.id,
-                            include_security_analyzer=False
-                        )
-
-                        # Verify conversation was updated to disabled state
-                        assert runner.conversation == mock_disabled_conversation
-
-    def test_approval_with_confirm_risky_keeps_security_analyzer(self) -> None:
-        """Test that approving with 'Auto-confirm safe' option keeps security analyzer but changes policy."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially enabled
-        assert runner.is_confirmation_mode_active is True
-
-        # Mock get_unmatched_actions to return some actions
-        with patch(
-            'openhands_cli.runner.ConversationState.get_unmatched_actions'
-        ) as mock_get_actions:
-            mock_action = MagicMock()
-            mock_action.tool_name = 'bash'
-            mock_action.action = 'echo test'
-            mock_get_actions.return_value = [mock_action]
-
-            # Mock ask_user_confirmation to return ACCEPT with ConfirmRisky policy
-            with patch('openhands_cli.runner.ask_user_confirmation') as mock_ask:
-                expected_policy = ConfirmRisky(threshold=SecurityRisk.HIGH)
-                mock_ask.return_value = ConfirmationResult(
-                    decision=UserConfirmation.ACCEPT,
-                    reason='',
-                    policy_change=expected_policy,
-                )
-
-                # Mock print_formatted_text to avoid output during test
-                with patch('openhands_cli.runner.print_formatted_text'):
-                    result = runner._handle_confirmation_request()
-
-                    # Verify that security-based confirmation policy was set
-                    assert result == UserConfirmation.ACCEPT
-
-                    # Security analyzer should still exist
-                    assert runner.conversation.agent.security_analyzer is not None
-
-                    # Should set ConfirmRisky policy
-                    mock_conversation.set_confirmation_policy.assert_called_with(
-                        expected_policy
-                    )
-
-    def test_multiple_confirmation_mode_toggles(self) -> None:
-        """Test multiple confirmation mode toggles maintain correct state."""
-        mock_conversation = MagicMock()
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        original_id = "original-conversation-id"
-        mock_conversation.id = original_id
-        runner = ConversationRunner(mock_conversation)
-
-        # Initially disabled
-        assert runner.is_confirmation_mode_active is False
-
-        with patch('openhands_cli.runner.setup_conversation') as mock_setup:
-            # First toggle: enable
-            mock_enabled_conversation = MagicMock()
-            mock_enabled_conversation.agent.security_analyzer = MagicMock()
-            mock_enabled_conversation.confirmation_policy_active = True
-            mock_enabled_conversation.id = "enabled-conversation-id"
-            mock_setup.return_value = mock_enabled_conversation
-
-            runner.toggle_confirmation_mode()
-            assert runner.is_confirmation_mode_active is True
-
-            # Second toggle: disable
-            mock_disabled_conversation = MagicMock()
-            mock_disabled_conversation.agent.security_analyzer = None
-            mock_disabled_conversation.confirmation_policy_active = False
-            mock_disabled_conversation.id = "disabled-conversation-id"
-            mock_setup.return_value = mock_disabled_conversation
-
-            runner.toggle_confirmation_mode()
-            assert runner.is_confirmation_mode_active is False
-
-            # Third toggle: enable again
-            mock_setup.return_value = mock_enabled_conversation
-            runner.toggle_confirmation_mode()
-            assert runner.is_confirmation_mode_active is True
-
-            # Verify setup_conversation was called 3 times
-            assert mock_setup.call_count == 3
-
-            # Verify the first call used the original conversation ID with enable=True
-            first_call = mock_setup.call_args_list[0]
-            assert first_call[0][0] == original_id
-            assert first_call[1]['include_security_analyzer'] is True
-
-            # Verify the second call used the enabled conversation ID with enable=False
-            second_call = mock_setup.call_args_list[1]
-            assert second_call[0][0] == "enabled-conversation-id"
-            assert second_call[1]['include_security_analyzer'] is False
-
-            # Verify the third call used the disabled conversation ID with enable=True
-            third_call = mock_setup.call_args_list[2]
-            assert third_call[0][0] == "disabled-conversation-id"
-            assert third_call[1]['include_security_analyzer'] is True
-
-    def test_confirmation_mode_property_reflects_both_analyzer_and_policy(self) -> None:
-        """Test that is_confirmation_mode_active property correctly reflects both security analyzer and policy state."""
-        mock_conversation = MagicMock()
-        runner = ConversationRunner(mock_conversation)
-
-        # Case 1: No security analyzer, policy inactive
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = False
-        assert runner.is_confirmation_mode_active is False
-
-        # Case 2: Security analyzer exists, but policy inactive
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = False
-        assert runner.is_confirmation_mode_active is False
-
-        # Case 3: No security analyzer, but policy active
-        mock_conversation.agent.security_analyzer = None
-        mock_conversation.confirmation_policy_active = True
-        assert runner.is_confirmation_mode_active is False
-
-        # Case 4: Both security analyzer and policy active
-        mock_conversation.agent.security_analyzer = MagicMock()
-        mock_conversation.confirmation_policy_active = True
-        assert runner.is_confirmation_mode_active is True
