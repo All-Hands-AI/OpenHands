@@ -1,13 +1,13 @@
 """User router for OpenHands Server. For the moment, this simply implements the /me endpoint."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
-from openhands.app_server.config import user_injector
+from openhands.app_server.config import depends_user_context
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.user.user_models import UserInfo
 
 router = APIRouter(prefix='/users', tags=['User'])
-user_dependency = Depends(user_injector())
+user_dependency = depends_user_context()
 
 # Read methods
 

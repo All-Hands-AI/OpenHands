@@ -6,10 +6,10 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Awaitable, Callable
+from typing import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Request
 
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -18,6 +18,7 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
 from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.event.event_service import EventService, EventServiceInjector
 from openhands.app_server.event_callback.event_callback_models import EventKind
+from openhands.app_server.services.injector import InjectorState
 from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
@@ -298,21 +299,20 @@ class FilesystemEventService(EventService):
 
 
 class FilesystemEventServiceInjector(EventServiceInjector):
-    def get_injector(self) -> Callable[..., Awaitable[EventService]]:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[EventService, None]:
         from openhands.app_server.config import (
-            app_conversation_info_injector,
+            get_app_conversation_info_service,
             get_global_config,
         )
 
-        app_conversation_info_dependency = Depends(app_conversation_info_injector())
-        persistence_dir = get_global_config().persistence_dir
+        async with get_app_conversation_info_service(
+            state, request
+        ) as app_conversation_info_service:
+            persistence_dir = get_global_config().persistence_dir
 
-        async def resolve(
-            app_conversation_info_service: AppConversationInfoService = app_conversation_info_dependency,
-        ) -> EventService:
-            return FilesystemEventService(
+            yield FilesystemEventService(
                 app_conversation_info_service=app_conversation_info_service,
                 events_dir=persistence_dir / 'v1' / 'events',
             )
-
-        return resolve

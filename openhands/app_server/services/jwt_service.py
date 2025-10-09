@@ -2,14 +2,16 @@ import hashlib
 import json
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, AsyncGenerator
 
 import jwt
+from fastapi import Request
 from jose import jwe
 from jose.constants import ALGORITHMS
 from pydantic import BaseModel, PrivateAttr
 
 from openhands.agent_server.utils import utc_now
+from openhands.app_server.services.injector import Injector, InjectorState
 from openhands.app_server.utils.encryption_key import (
     EncryptionKey,
     get_default_encryption_keys,
@@ -228,7 +230,7 @@ class JwtService:
             raise Exception(f'Token decryption failed: {str(e)}')
 
 
-class JwtServiceInjector(BaseModel):
+class JwtServiceInjector(BaseModel, Injector[JwtService]):
     persistence_dir: Path
     _jwt_service: JwtService | None = PrivateAttr(default=None)
 
@@ -239,3 +241,8 @@ class JwtServiceInjector(BaseModel):
             jwt_service = JwtService(keys=keys)
             self._jwt_service = jwt_service
         return jwt_service
+
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[JwtService, None]:
+        yield self.get_jwt_service()

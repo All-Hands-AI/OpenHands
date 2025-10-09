@@ -4,16 +4,16 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 
 from openhands.agent_server.models import EventPage, EventSortOrder
-from openhands.app_server.config import event_injector
+from openhands.app_server.config import depends_event_service
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.event_callback.event_callback_models import EventKind
 from openhands.sdk import Event
 
 router = APIRouter(prefix='/events', tags=['Events'])
-event_service_dependency = Depends(event_injector())
+event_service_dependency = depends_event_service()
 
 
 # Read methods

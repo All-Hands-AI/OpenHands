@@ -1,15 +1,15 @@
 from dataclasses import dataclass
-from typing import Callable
 
 from fastapi import Request
 
-from openhands.app_server.user.user_context import UserContext, UserContextInjector
+from openhands.app_server.errors import OpenHandsError
+from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.user.user_models import UserInfo
 from openhands.integrations.provider import ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource
 
 
-@dataclass
+@dataclass(frozen=True)
 class AdminUserContext(UserContext):
     """User context for use in admin operations which allows access beyond the scope of a single user"""
 
@@ -31,19 +31,18 @@ class AdminUserContext(UserContext):
         raise NotImplementedError()
 
 
-class AdminUserContextInjector(UserContextInjector):
-    def get_injector(self) -> Callable:
-        return resolve_admin
-
-    async def get_for_user(self, user_id: str | None) -> UserContext:
-        return AdminUserContext(user_id)
+USER_CONTEXT_ATTR = 'user_context'
+ADMIN = AdminUserContext(user_id=None)
 
 
-def resolve_admin(request: Request) -> UserContext:
-    """Adding this as a dependency to the start of the endpoint means that the
-    services will function in admin mode, with no user filtering."""
-    user_context = getattr(request.state, 'user_context', None)
-    if user_context is None:
-        user_context = AdminUserContext(user_id=None)
-        setattr(request.state, 'user_context', user_context)
-    return user_context
+def as_admin(request: Request):
+    """Service the request as an admin user without restrictions. The endpoint should
+    handle security."""
+    user_context = getattr(request.state, USER_CONTEXT_ATTR, None)
+    if user_context not in (None, ADMIN):
+        raise OpenHandsError(
+            'Non admin context already present! '
+            '(Do you need to move the as_admin dependency to the start of the args?)'
+        )
+    setattr(request.state, USER_CONTEXT_ATTR, ADMIN)
+    return ADMIN

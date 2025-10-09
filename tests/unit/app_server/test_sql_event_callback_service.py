@@ -45,19 +45,19 @@ async def async_engine():
 
 
 @pytest.fixture
-async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create an async session for testing."""
-    async_session_maker = async_sessionmaker(
+async def async_db_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Create an async db_session for testing."""
+    async_db_session_maker = async_sessionmaker(
         async_engine, class_=AsyncSession, expire_on_commit=False
     )
-    async with async_session_maker() as session:
-        yield session
+    async with async_db_session_maker() as db_session:
+        yield db_session
 
 
 @pytest.fixture
-def service(async_session: AsyncSession) -> SQLEventCallbackService:
+def service(async_db_session: AsyncSession) -> SQLEventCallbackService:
     """Create a SQLEventCallbackService instance for testing."""
-    return SQLEventCallbackService(session=async_session)
+    return SQLEventCallbackService(db_session=async_db_session)
 
 
 @pytest.fixture

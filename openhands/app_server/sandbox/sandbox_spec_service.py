@@ -1,12 +1,12 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Awaitable, Callable
 
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
 )
+from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -49,9 +49,7 @@ class SandboxSpecService(ABC):
         return results
 
 
-class SandboxSpecServiceInjector(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_injector(
-        self,
-    ) -> Callable[..., SandboxSpecService | Awaitable[SandboxSpecService]]:
-        """Get a resolver for an instance of sandbox spec service."""
+class SandboxSpecServiceInjector(
+    DiscriminatedUnionMixin, Injector[SandboxSpecService], ABC
+):
+    pass

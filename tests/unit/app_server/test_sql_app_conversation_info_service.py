@@ -57,22 +57,24 @@ async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
         async_engine, class_=AsyncSession, expire_on_commit=False
     )
 
-    async with async_session_maker() as session:
-        yield session
+    async with async_session_maker() as db_session:
+        yield db_session
 
 
 @pytest.fixture
 def service(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance for testing."""
     return SQLAppConversationInfoService(
-        session=async_session, user_context=AdminUserContext(user_id=None)
+        db_session=async_session, user_context=AdminUserContext(user_id=None)
     )
 
 
 @pytest.fixture
 def service_with_user(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance with a user_id for testing."""
-    return SQLAppConversationInfoService(session=async_session, user_id='test_user_123')
+    return SQLAppConversationInfoService(
+        db_session=async_session, user_id='test_user_123'
+    )
 
 
 @pytest.fixture
@@ -475,10 +477,10 @@ class TestSQLAppConversationInfoService:
         """Test that user isolation works correctly."""
         # Create services for different users
         user1_service = SQLAppConversationInfoService(
-            session=async_session, user_context=AdminUserContext(user_id='user1')
+            db_session=async_session, user_context=AdminUserContext(user_id='user1')
         )
         user2_service = SQLAppConversationInfoService(
-            session=async_session, user_context=AdminUserContext(user_id='user2')
+            db_session=async_session, user_context=AdminUserContext(user_id='user2')
         )
 
         # Create conversations for different users

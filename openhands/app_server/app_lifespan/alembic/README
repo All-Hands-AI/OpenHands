@@ -4,7 +4,7 @@ This alembic integration keeps the SQLite database up to date in single user dep
 
 ## Configuration
 
-Uses `DbService` from `get_global_config()` for database connectivity and auto-detects models from the declarative base in `openhands.app_server.utils.sql_utils.Base`.
+Uses `DbSessionInjector` from `get_global_config()` for database connectivity and auto-detects models from the declarative base in `openhands.app_server.utils.sql_utils.Base`.
 
 ## Key Commands
 
