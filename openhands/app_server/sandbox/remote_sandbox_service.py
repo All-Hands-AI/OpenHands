@@ -45,6 +45,21 @@ from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
 polling_task: asyncio.Task | None = None
+POD_STATUS_MAPPING = {
+    'ready': SandboxStatus.RUNNING,
+    'pending': SandboxStatus.STARTING,
+    'running': SandboxStatus.STARTING,
+    'failed': SandboxStatus.ERROR,
+    'unknown': SandboxStatus.ERROR,
+    'crashloopbackoff': SandboxStatus.ERROR,
+}
+STATUS_MAPPING = {
+    'running': SandboxStatus.RUNNING,
+    'paused': SandboxStatus.PAUSED,
+    'stopped': SandboxStatus.MISSING,
+    'starting': SandboxStatus.STARTING,
+    'error': SandboxStatus.ERROR,
+}
 
 
 class StoredRemoteSandbox(Base):  # type: ignore
@@ -74,22 +89,12 @@ class RemoteSandboxService(SandboxService):
     api_url: str
     api_key: str
     web_url: str | None
+    agent_server_url_pattern: str
     resource_factor: int
     runtime_class: str | None
     user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
-
-    def _runtime_status_to_sandbox_status(self, runtime_status: str) -> SandboxStatus:
-        """Convert runtime status to SandboxStatus."""
-        status_mapping = {
-            'running': SandboxStatus.RUNNING,
-            'paused': SandboxStatus.PAUSED,
-            'stopped': SandboxStatus.MISSING,
-            'starting': SandboxStatus.STARTING,
-            'error': SandboxStatus.ERROR,
-        }
-        return status_mapping.get(runtime_status.lower(), SandboxStatus.ERROR)
 
     async def _send_runtime_api_request(
         self, method: str, path: str, **kwargs: Any
@@ -111,13 +116,29 @@ class RemoteSandboxService(SandboxService):
         self, runtime: dict[str, Any] | None, stored: StoredRemoteSandbox
     ) -> SandboxInfo:
         if runtime:
-            session_api_key = runtime['session_api_key']
-            status = self._runtime_status_to_sandbox_status(
-                runtime.get('status', 'error')
-            )
+
+            # Translate status
+            status = None
+            pod_status = (runtime.get('pod_status') or '').lower()
+            if pod_status:
+                status = POD_STATUS_MAPPING.get(pod_status, None)
+            if status is None:
+                runtime_status = runtime.get('status')
+                if runtime_status:
+                    status = STATUS_MAPPING.get(runtime_status.lower(), None)
+            if status is None:
+                status = SandboxStatus.MISSING
+
             session_api_key = runtime['session_api_key']
             if status == SandboxStatus.RUNNING:
-                exposed_urls = [ExposedUrl(name=AGENT_SERVER, url=runtime['url'])]
+                exposed_urls = []
+                url = runtime.get('url', None)
+                if url is None:
+                    # TODO: Update the runtime API and remove this
+                    # Hack - the RuntimeAPI is inconsistent, so we rebuild the url...
+                    # https://runtime.staging.all-hands.dev
+                    url = self.agent_server_url_pattern.format(runtime_id=runtime['runtime_id'])
+                exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
             else:
                 exposed_urls = None
         else:
@@ -125,10 +146,11 @@ class RemoteSandboxService(SandboxService):
             status = SandboxStatus.MISSING
             exposed_urls = None
 
+        sandbox_spec_id = stored.sandbox_spec_id
         return SandboxInfo(
             id=stored.id,
             created_by_user_id=stored.created_by_user_id,
-            sandbox_spec_id=stored.sandbox_spec_id,
+            sandbox_spec_id=sandbox_spec_id,
             status=status,
             session_api_key=session_api_key,
             exposed_urls=exposed_urls,
@@ -141,6 +163,22 @@ class RemoteSandboxService(SandboxService):
         if user_id:
             query = query.where(StoredRemoteSandbox.created_by_user_id == user_id)
         return query
+
+    async def _get_stored_sandbox(self, sandbox_id: str) -> StoredRemoteSandbox | None:
+        stmt = await self._secure_select()
+        stmt = stmt.where(StoredRemoteSandbox.id == sandbox_id)
+        result = await self.db_session.execute(stmt)
+        stored_sandbox = result.scalar_one_or_none()
+        return stored_sandbox
+
+    async def _get_runtime(self, sandbox_id: str) -> dict[str, Any]:
+        response = await self._send_runtime_api_request(
+            'GET',
+            f'/sessions/{sandbox_id}',
+        )
+        response.raise_for_status()
+        runtime_data = response.json()
+        return runtime_data
 
     async def _init_environment(
         self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
@@ -199,32 +237,26 @@ class RemoteSandboxService(SandboxService):
         }
 
         # Convert stored callbacks to domain models
-        items = [
-            self._to_sandbox_info(runtimes_by_session_id.get(s.id), s)
-            for s in stored_sandboxes
-        ]
+        items = []
+        for stored_sandbox in stored_sandboxes:
+            try:
+                sandbox_info = self._to_sandbox_info(runtimes_by_session_id.get(stored_sandbox.id), stored_sandbox)
+                items.append(sandbox_info)
+            except Exception as exc:
+                _logger.exception(f'Error loading sandbox {stored_sandbox.id}: {exc}', stack_info=True)
+
         return SandboxPage(items=items, next_page_id=next_page_id)
 
     async def get_sandbox(self, sandbox_id: str) -> Union[SandboxInfo, None]:
         """Get a single sandbox by checking its corresponding runtime."""
-        stmt = await self._secure_select()
-        stmt = stmt.where(StoredRemoteSandbox.id == sandbox_id)
-        result = await self.db_session.execute(stmt)
-        stored_sandbox = result.scalar_one_or_none()
+        stored_sandbox = await self._get_stored_sandbox(sandbox_id)
         if stored_sandbox is None:
             return None
-
         try:
-            response = await self._send_runtime_api_request(
-                'GET',
-                '/sessions/{sandbox_id}',
-            )
-            response.raise_for_status()
-            runtime_data = response.json()
+            runtime_data = await self._get_runtime(sandbox_id)
         except Exception:
             _logger.exception('Error getting runtime: {sandbox_id}', stack_info=True)
             runtime_data = None
-
         return self._to_sandbox_info(runtime_data, stored_sandbox)
 
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
@@ -247,26 +279,54 @@ class RemoteSandboxService(SandboxService):
             sandbox_id = base62.encodebytes(os.urandom(16))
 
             # get user id
-            user_id = self.user_context.get_user_id()
+            user_id = await self.user_context.get_user_id()
 
             # Store the sandbox
             stored_sandbox = StoredRemoteSandbox(
                 id=sandbox_id,
                 created_by_user_id=user_id,
-                sandbox_spec_id=sandbox_spec_id,
+                sandbox_spec_id=sandbox_spec.id,
                 created_at=utc_now(),
             )
             self.db_session.add(stored_sandbox)
             await self.db_session.commit()
 
             # Prepare environment variables
-            environment = self._init_environment(sandbox_spec, sandbox_id)
+            environment = await self._init_environment(sandbox_spec, sandbox_id)
+
+            #TODO: This is all legacy and should be removed
+            environment['CONVERSATION_MANAGER_CLASS'] = (
+                'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
+            )
+            environment['LOG_JSON'] = '1'
+            environment['SERVE_FRONTEND'] = '0'
+            environment['RUNTIME'] = 'local'
+            environment['USER'] = 'openhands'
+            environment['PERMITTED_CORS_ORIGINS'] = 'http://localhost:3001'
+            environment['port'] = '60000'
+            environment['VSCODE_PORT'] = '60001'
+            environment['WORK_PORT_1'] = '12000'
+            environment['WORK_PORT_2'] = '12001'
+            environment['ALLOW_SET_CONVERSATION_ID'] = '1'
+            environment['FILE_STORE_PATH'] = '/workspace/.openhands/file_store'
+            environment['WORKSPACE_BASE'] = '/workspace/project'
+            environment['WORKSPACE_MOUNT_PATH_IN_SANDBOX'] = '/workspace/project'
+            environment['SANDBOX_CLOSE_DELAY'] = '0'
+            environment['SKIP_DEPENDENCY_CHECK'] = '1'
+            environment['INITIAL_NUM_WARM_SERVERS'] = '1'
+            environment['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
+            environment['WEB_HOST'] = 'http://localhost:3001'
 
             # Prepare start request
             start_request: dict[str, Any] = {
                 'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
-                'command': sandbox_spec.command,
-                'working_dir': sandbox_spec.working_dir,
+
+                # TODO: I need to import the agent server image into runtime api - this is a hack
+                #'command': sandbox_spec.command,
+                #'working_dir': sandbox_spec.working_dir,
+                'command': ["/openhands/micromamba/bin/micromamba","run","-n","openhands","poetry","run","python","-u","-m","openhands.server","60000","--working-dir","/workspace","--plugins","agent_skills","jupyter","vscode","--username","root","--user-id","0"],
+                'working_dir': '/openhands/code/',
+
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,
@@ -285,6 +345,9 @@ class RemoteSandboxService(SandboxService):
             response.raise_for_status()
             runtime_data = response.json()
 
+            #Hack - result doesn't contain this
+            runtime_data['pod_status'] = 'pending'
+
             return self._to_sandbox_info(runtime_data, stored_sandbox)
 
         except httpx.HTTPError as e:
@@ -294,18 +357,18 @@ class RemoteSandboxService(SandboxService):
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox."""
         try:
+            if not await self._get_stored_sandbox(sandbox_id):
+                return False
+            runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
                 'POST',
                 '/resume',
-                json={'runtime_id': sandbox_id},
+                json={'runtime_id': runtime_data['runtime_id']},
             )
-
             if response.status_code == 404:
                 return False
-
             response.raise_for_status()
             return True
-
         except httpx.HTTPError as e:
             _logger.error(f'Error resuming sandbox {sandbox_id}: {e}')
             return False
@@ -313,15 +376,16 @@ class RemoteSandboxService(SandboxService):
     async def pause_sandbox(self, sandbox_id: str) -> bool:
         """Pause a running sandbox."""
         try:
+            if not await self._get_stored_sandbox(sandbox_id):
+                return False
+            runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
                 'POST',
                 '/pause',
-                json={'runtime_id': sandbox_id},
+                json={'runtime_id': runtime_data['runtime_id']},
             )
-
             if response.status_code == 404:
                 return False
-
             response.raise_for_status()
             return True
 
@@ -332,18 +396,20 @@ class RemoteSandboxService(SandboxService):
     async def delete_sandbox(self, sandbox_id: str) -> bool:
         """Delete a sandbox by stopping its runtime."""
         try:
+            stored_sandbox = await self._get_stored_sandbox(sandbox_id)
+            if not stored_sandbox:
+                return False
+            runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
                 'POST',
                 '/stop',
-                json={'runtime_id': sandbox_id},
+                json={'runtime_id': runtime_data['runtime_id']},
             )
-
-            if response.status_code == 404:
-                return False
-
-            response.raise_for_status()
+            if response.status_code != 404:
+                response.raise_for_status()
+            await self.db_session.delete(stored_sandbox)
+            await self.db_session.commit()
             return True
-
         except httpx.HTTPError as e:
             _logger.error(f'Error deleting sandbox {sandbox_id}: {e}')
             return False
@@ -380,8 +446,6 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
                         for runtime in runtimes
                         if runtime['status'] == 'running'
                     }
-                    _logger.debug(f"Got {len(runtimes_by_sandbox_id)} from runtime api.")
-
 
                 # We allow access to all items here
                 setattr(state, USER_CONTEXT_ATTR, ADMIN)
@@ -415,7 +479,7 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
                                 )
                         page_id = page.next_page_id
                         if page_id is None:
-                            _logger.debug(f"Matched Runtimes with {matches} conversations.")
+                            _logger.debug(f"Matched {len(runtimes_by_sandbox_id)} Runtimes with {matches} Conversations.")
                             break
 
             except Exception as exc:
@@ -513,7 +577,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
     polling_interval: int = Field(
-        default=10,
+        default=15,
         description=(
             'The sleep time between poll operations against agent servers when there is '
             'no public facing web_url'
@@ -524,8 +588,16 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
         description='Factor by which to scale resources in sandbox: 1, 2, 4, or 8',
     )
     runtime_class: str = Field(
-        default='sysbox',
-        description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
+        default='gvisor',
+        description='can be "gvisor" or "sysbox" (support docker inside runtime + more stable)',
+    )
+    agent_server_url_pattern: str = Field(
+        default='https://{runtime_id}.staging-runtime.all-hands.dev',
+        description=(
+            'As of writing, the RuntimeAPI is unconsitent on what it returns. This '
+            'pattern allows us to reconstruct an agent server url when the API does '
+            'not return one.'
+        )
     )
 
     async def inject(
@@ -554,10 +626,10 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                     )
                 )
         async with (
-            get_user_context(state) as user_context,
-            get_sandbox_spec_service(state) as sandbox_spec_service,
-            get_httpx_client(state) as httpx_client,
-            get_db_session(state) as db_session,
+            get_user_context(state, request) as user_context,
+            get_sandbox_spec_service(state, request) as sandbox_spec_service,
+            get_httpx_client(state, request) as httpx_client,
+            get_db_session(state, request) as db_session,
         ):
             yield RemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
@@ -566,6 +638,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                 web_url=web_url,
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
+                agent_server_url_pattern=self.agent_server_url_pattern,
                 user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,
