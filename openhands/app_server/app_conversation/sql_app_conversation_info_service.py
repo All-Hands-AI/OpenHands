@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import AsyncGenerator
 from uuid import UUID
 
@@ -348,6 +348,10 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             accumulated_token_usage=token_usage,
         )
 
+        # Get timestamps
+        created_at = self._fix_timezone(stored.created_at)
+        updated_at = self._fix_timezone(stored.last_updated_at)
+
         return AppConversationInfo(
             id=UUID(stored.conversation_id),
             created_by_user_id=stored.user_id if stored.user_id else None,
@@ -362,9 +366,16 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             pr_number=stored.pr_number,
             llm_model=stored.llm_model,
             metrics=metrics,
-            created_at=stored.created_at,
-            updated_at=stored.last_updated_at,
+            created_at=created_at,
+            updated_at=updated_at,
         )
+
+    def _fix_timezone(self, value: datetime) -> datetime:
+        """Sqlite does not stpre timezones - and since we can't update the existing models
+        we assume UTC if the timezone is missing."""
+        if not value.tzinfo:
+            value =value.replace(tzinfo=UTC)
+        return value
 
 
 class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
