@@ -146,7 +146,7 @@ class ProviderHandler:
         """Read-only access to provider tokens."""
         return self._provider_tokens
 
-    def _get_service(self, provider: ProviderType) -> GitService:
+    def get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
@@ -163,7 +163,7 @@ class ProviderHandler:
         """Get user information from the first available provider"""
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_user()
             except Exception:
                 continue
@@ -196,7 +196,7 @@ class ProviderHandler:
         return None
 
     async def get_github_installations(self) -> list[str]:
-        service = cast(InstallationsService, self._get_service(ProviderType.GITHUB))
+        service = cast(InstallationsService, self.get_service(ProviderType.GITHUB))
         try:
             return await service.get_installations()
         except Exception as e:
@@ -205,7 +205,7 @@ class ProviderHandler:
         return []
 
     async def get_bitbucket_workspaces(self) -> list[str]:
-        service = cast(InstallationsService, self._get_service(ProviderType.BITBUCKET))
+        service = cast(InstallationsService, self.get_service(ProviderType.BITBUCKET))
         try:
             return await service.get_installations()
         except Exception as e:
@@ -231,7 +231,7 @@ class ProviderHandler:
             if not page or not per_page:
                 raise ValueError('Failed to provider params for paginating repos')
 
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             return await service.get_paginated_repos(
                 page, per_page, sort, installation_id
             )
@@ -239,7 +239,7 @@ class ProviderHandler:
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 service_repos = await service.get_all_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -252,7 +252,7 @@ class ProviderHandler:
         tasks: list[SuggestedTask] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 service_repos = await service.get_suggested_tasks()
                 tasks.extend(service_repos)
             except Exception as e:
@@ -269,7 +269,7 @@ class ProviderHandler:
     ) -> list[Branch]:
         """Search for branches within a repository using the appropriate provider service."""
         if selected_provider:
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             try:
                 return await service.search_branches(repository, query, per_page)
             except Exception as e:
@@ -281,7 +281,7 @@ class ProviderHandler:
         # If provider not specified, determine provider by verifying repository access
         try:
             repo_details = await self.verify_repo_provider(repository)
-            service = self._get_service(repo_details.git_provider)
+            service = self.get_service(repo_details.git_provider)
             return await service.search_branches(repository, query, per_page)
         except Exception as e:
             logger.warning(f'Error searching branches for {repository}: {e}')
@@ -296,7 +296,7 @@ class ProviderHandler:
         order: str,
     ) -> list[Repository]:
         if selected_provider:
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             public = self._is_repository_url(query, selected_provider)
             user_repos = await service.search_repositories(
                 query, per_page, sort, order, public
@@ -306,7 +306,7 @@ class ProviderHandler:
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 public = self._is_repository_url(query, provider)
                 service_repos = await service.search_repositories(
                     query, per_page, sort, order, public
@@ -454,14 +454,14 @@ class ProviderHandler:
 
         if specified_provider:
             try:
-                service = self._get_service(specified_provider)
+                service = self.get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
                 errors.append(f'{specified_provider.value}: {str(e)}')
 
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
                 errors.append(f'{provider.value}: {str(e)}')
@@ -504,7 +504,7 @@ class ProviderHandler:
         """
         if specified_provider:
             try:
-                service = self._get_service(specified_provider)
+                service = self.get_service(specified_provider)
                 return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(
@@ -513,7 +513,7 @@ class ProviderHandler:
 
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
@@ -543,7 +543,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 result = await service.get_microagents(repository)
                 # Only return early if we got a non-empty result
                 if result:
@@ -587,7 +587,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 result = await service.get_microagent_content(repository, file_path)
                 # If we got content, return it immediately
                 if result:
@@ -691,7 +691,7 @@ class ProviderHandler:
             True if PR is active (open), False if closed/merged, True if can't determine
         """
         try:
-            service = self._get_service(git_provider)
+            service = self.get_service(git_provider)
             return await service.is_pr_open(repository, pr_number)
 
         except Exception as e:

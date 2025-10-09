@@ -35,3 +35,6 @@ class ConversationMetadata:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    # V1 compatibility
+    sandbox_id: str | None = None
+    conversation_version: str | None = None
