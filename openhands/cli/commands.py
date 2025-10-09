@@ -94,8 +94,6 @@ def restart_cli() -> None:
 
 async def prompt_for_restart(config: OpenHandsConfig) -> bool:
     """Prompt user if they want to restart the CLI and return their choice."""
-    print_formatted_text('📝 MCP server configuration updated successfully!')
-    print_formatted_text('The changes will take effect after restarting OpenHands.')
 
     prompt_session = create_prompt_session(config)
 
@@ -117,6 +115,13 @@ async def prompt_for_restart(config: OpenHandsConfig) -> bool:
                     print_formatted_text('Please enter "y" for yes or "n" for no.')
         except (KeyboardInterrupt, EOFError):
             return False
+
+
+async def mcp_prompt_for_restart(config: OpenHandsConfig) -> bool:
+    print_formatted_text('📝 MCP server configuration updated successfully!')
+    print_formatted_text('The changes will take effect after restarting OpenHands.')
+
+    return await prompt_for_restart(config)
 
 
 async def handle_commands(
@@ -282,12 +287,17 @@ async def handle_settings_command(
         ],
     )
 
+    save_settings = False
+
     if modify_settings == 0:
-        await modify_llm_settings_basic(config, settings_store)
+        save_settings = await modify_llm_settings_basic(config, settings_store)
     elif modify_settings == 1:
-        await modify_llm_settings_advanced(config, settings_store)
+        save_settings = await modify_llm_settings_advanced(config, settings_store)
     elif modify_settings == 2:
-        await modify_search_api_settings(config, settings_store)
+        save_settings = await modify_search_api_settings(config, settings_store)
+
+    if save_settings and await prompt_for_restart(config):
+        restart_cli()
 
 
 # FIXME: Currently there's an issue with the actual 'resume' behavior.
@@ -657,7 +667,7 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
     print_formatted_text(f'✓ SSE MCP server added to {config_file_path}: {server.url}')
 
     # Prompt for restart
-    if await prompt_for_restart(config):
+    if await mcp_prompt_for_restart(config):
         restart_cli()
 
 
@@ -741,7 +751,7 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
     )
 
     # Prompt for restart
-    if await prompt_for_restart(config):
+    if await mcp_prompt_for_restart(config):
         restart_cli()
 
 
@@ -793,7 +803,7 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
     )
 
     # Prompt for restart
-    if await prompt_for_restart(config):
+    if await mcp_prompt_for_restart(config):
         restart_cli()
 
 
@@ -878,7 +888,7 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
         )
 
         # Prompt for restart
-        if await prompt_for_restart(config):
+        if await mcp_prompt_for_restart(config):
             restart_cli()
     else:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
