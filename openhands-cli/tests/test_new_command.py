@@ -51,8 +51,8 @@ def test_start_fresh_conversation_missing_agent_spec(
     assert result == mock_conversation
     # Should be called twice: first fails, second succeeds
     assert mock_setup_conversation.call_count == 2
-    # Settings screen should be called once
-    mock_settings_screen.handle_basic_settings.assert_called_once_with(escapable=False)
+    # Settings screen should be called once with first_time=True (new behavior)
+    mock_settings_screen.configure_settings.assert_called_once_with(first_time=True)
 
 
 

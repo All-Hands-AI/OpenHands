@@ -71,7 +71,7 @@ export function GenericDropdownMenu<T>({
           {...getMenuProps({
             ref: menuRef,
             className: cn(
-              "w-full overflow-auto p-1",
+              "w-full overflow-auto p-1 custom-scrollbar-always",
               stickyTopItem || stickyFooterItem
                 ? "max-h-[calc(15rem-3rem)]"
                 : "max-h-60", // Reserve space for sticky items
