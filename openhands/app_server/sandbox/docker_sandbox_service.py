@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import socket
@@ -180,6 +181,8 @@ class DockerSandboxService(SandboxService):
                     f'{app_server_url}{self.health_check_path}'
                 )
                 response.raise_for_status()
+            except asyncio.CancelledError:
+                raise
             except Exception as exc:
                 _logger.info(f'Sandbox server not running: {exc}')
                 sandbox_info.status = SandboxStatus.ERROR
