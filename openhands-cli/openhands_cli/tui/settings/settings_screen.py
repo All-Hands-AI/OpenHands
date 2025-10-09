@@ -128,8 +128,6 @@ class SettingsScreen:
             self.handle_advanced_settings()
 
     def handle_basic_settings(self):
-        print_formatted_text(HTML('\n<green>Setting up your LLM configuration...</green>'))
-        print_formatted_text(HTML('<grey>This will configure the AI model that powers OpenHands.</grey>\n'))
         step_counter = StepCounter(3)
         try:
             provider = choose_llm_provider(step_counter, escapable=True)
@@ -143,7 +141,7 @@ class SettingsScreen:
                 escapable=True,
             )
             save_settings_confirmation()
-        except KeyboardInterrupt as e:
+        except KeyboardInterrupt:
             print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
             return
 
@@ -152,10 +150,6 @@ class SettingsScreen:
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
-        if not escapable:
-            print_formatted_text(HTML('\n<green>Setting up advanced LLM configuration...</green>'))
-            print_formatted_text(HTML('<grey>This allows custom model endpoints and additional features.</grey>\n'))
-
         step_counter = StepCounter(4)
         try:
             custom_model = prompt_custom_model(step_counter)
