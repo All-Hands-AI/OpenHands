@@ -195,6 +195,30 @@ class Metrics:
             self.accumulated_token_usage + other.accumulated_token_usage
         )
 
+    def get_performance_metrics(self) -> str:
+        """Formats the metrics into a string to be displayed."""
+        total_in = self.accumulated_token_usage.prompt_tokens
+        total_out = self.accumulated_token_usage.completion_tokens
+        cache_read = self.accumulated_token_usage.cache_read_tokens
+        cache_write = self.accumulated_token_usage.cache_write_tokens
+        total_tokens = total_in + total_out
+
+        if total_tokens == 0 and self.accumulated_cost == 0:
+            return ''
+
+        parts = ['\n\n**Usage Metrics**']
+        if total_tokens > 0:
+            part = f'- **Tokens:** {total_in} input | {total_out} output'
+            parts.append(part)
+
+        if cache_read > 0 or cache_write > 0:
+            cache_ratio = (cache_read / total_in * 100) if total_in > 0 else 0
+            cache_part = f'- **Cache:** {cache_read} hit ({cache_ratio:.1f}%) | {cache_write} write'
+            parts.append(cache_part)
+
+        parts.append(f'- **Cost:** ${self.accumulated_cost:.6f} (total)')
+        return '\n'.join(parts)
+
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
         return {
