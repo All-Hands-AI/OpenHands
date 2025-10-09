@@ -136,7 +136,7 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             if self.host:
                 password = self.password
                 assert password is not None
-                url = f'postgresql+asyncpg://{self.user}:{password}@{self.host}:{self.port}/{self.name}'
+                url = f'postgresql+asyncpg://{self.user}:{password.get_secret_value()}@{self.host}:{self.port}/{self.name}'
             else:
                 url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
 
