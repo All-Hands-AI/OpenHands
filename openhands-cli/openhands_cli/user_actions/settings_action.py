@@ -18,34 +18,27 @@ class SettingsType(Enum):
 
 
 def settings_type_confirmation(first_time: bool = False) -> SettingsType:
-    if first_time:
-        question = (
-            'Welcome to OpenHands! Let\'s configure your LLM settings.\n'
+    question = (
+            '\nWelcome to OpenHands! Let\'s configure your LLM settings.\n'
             'Choose your preferred setup method:'
         )
-        choices = [
-            'Basic Setup (Recommended) - Choose from popular LLM providers',
-            'Advanced Setup - Custom model configuration with additional options',
-        ]
-        index = cli_confirm(question, choices, escapable=True)
-        options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
-        return options_map.get(index)
-    else:
+    choices = [
+        'LLM (Basic)',
+        'LLM (Advanced)'
+    ]
+    if not first_time:
         question = 'Which settings would you like to modify?'
-        choices = [
-            'LLM (Basic)',
-            'LLM (Advanced)',
-            'Go back',
-        ]
+        choices.append('Go back')
 
-        index = cli_confirm(question, choices, escapable=True)
 
-        if choices[index] == 'Go back':
-            raise KeyboardInterrupt
+    index = cli_confirm(question, choices, escapable=True)
 
-        options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
+    if choices[index] == 'Go back':
+        raise KeyboardInterrupt
 
-        return options_map.get(index)
+    options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
+
+    return options_map.get(index)
 
 
 def choose_llm_provider(step_counter: StepCounter, escapable=True) -> str:

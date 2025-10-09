@@ -43,15 +43,16 @@ def _start_fresh_conversation(resume_conversation_id: str | None = None) -> Base
     """
     conversation = None
     settings_screen = SettingsScreen()
+    try:
+        conversation = setup_conversation(resume_conversation_id)
+        return conversation
+    except MissingAgentSpec:
+        # For first-time users, show the full settings flow with choice between basic/advanced
+        settings_screen.configure_settings(first_time=True)
 
-    while not conversation:
-        try:
-            conversation = setup_conversation(resume_conversation_id)
-        except MissingAgentSpec:
-            # For first-time users, show the full settings flow with choice between basic/advanced
-            settings_screen.configure_first_time_settings()
 
-    return conversation
+    # Try once again after settings setup attempt
+    return setup_conversation(resume_conversation_id)
 
 
 def _restore_tty() -> None:
@@ -90,7 +91,14 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = _start_fresh_conversation(resume_conversation_id)
+    try:
+        conversation = _start_fresh_conversation(resume_conversation_id)
+    except MissingAgentSpec:
+        print_formatted_text(HTML('\n<yellow>Setup is required to use OpenHands CLI.</yellow>'))
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        return
+
+
     display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Track session start time for uptime calculation

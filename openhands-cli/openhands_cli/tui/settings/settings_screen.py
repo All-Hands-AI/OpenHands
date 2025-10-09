@@ -116,9 +116,9 @@ class SettingsScreen:
 
         self.configure_settings()
 
-    def configure_settings(self):
+    def configure_settings(self, first_time=False):
         try:
-            settings_type = settings_type_confirmation()
+            settings_type = settings_type_confirmation(first_time=first_time)
         except KeyboardInterrupt:
             return
 
@@ -127,47 +127,25 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
-    def configure_first_time_settings(self):
-        """Configure settings for first-time users with choice between basic and advanced."""
-        try:
-            settings_type = settings_type_confirmation(first_time=True)
-        except KeyboardInterrupt:
-            # For first-time users, we can't allow them to escape without configuring
-            # So we'll default to basic settings
-            print_formatted_text(HTML('\n<yellow>Using basic settings as default...</yellow>'))
-            settings_type = SettingsType.BASIC
-
-        if settings_type == SettingsType.BASIC:
-            self.handle_basic_settings(escapable=False)
-        elif settings_type == SettingsType.ADVANCED:
-            self.handle_advanced_settings(escapable=False)
-
-    def handle_basic_settings(self, escapable=True):
-        if not escapable:
-            print_formatted_text(HTML('\n<green>Setting up your LLM configuration...</green>'))
-            print_formatted_text(HTML('<grey>This will configure the AI model that powers OpenHands.</grey>\n'))
-
+    def handle_basic_settings(self):
+        print_formatted_text(HTML('\n<green>Setting up your LLM configuration...</green>'))
+        print_formatted_text(HTML('<grey>This will configure the AI model that powers OpenHands.</grey>\n'))
         step_counter = StepCounter(3)
         try:
-            provider = choose_llm_provider(step_counter, escapable=escapable)
-            llm_model = choose_llm_model(step_counter, provider, escapable=escapable)
+            provider = choose_llm_provider(step_counter, escapable=True)
+            llm_model = choose_llm_model(step_counter, provider, escapable=True)
             api_key = prompt_api_key(
                 step_counter,
                 provider,
                 self.conversation.state.agent.llm.api_key
                 if self.conversation
                 else None,
-                escapable=escapable,
+                escapable=True,
             )
             save_settings_confirmation()
-        except KeyboardInterrupt:
-            if escapable:
-                print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
-                return
-            else:
-                # For first-time users, we need to complete the setup
-                print_formatted_text(HTML('\n<yellow>Setup is required to continue. Please complete the configuration.</yellow>'))
-                return self.handle_basic_settings(escapable=False)
+        except KeyboardInterrupt as e:
+            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+            return
 
         # Store the collected settings for persistence
         self._save_llm_settings(f'{provider}/{llm_model}', api_key)
@@ -193,13 +171,8 @@ class SettingsScreen:
             # Confirm save
             save_settings_confirmation()
         except KeyboardInterrupt:
-            if escapable:
-                print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
-                return
-            else:
-                # For first-time users, we need to complete the setup
-                print_formatted_text(HTML('\n<yellow>Setup is required to continue. Please complete the configuration.</yellow>'))
-                return self.handle_advanced_settings(escapable=False)
+            print_formatted_text(HTML('\n<red>Cancelled settings change.</red>'))
+            return
 
         # Store the collected settings for persistence
         self._save_advanced_settings(
