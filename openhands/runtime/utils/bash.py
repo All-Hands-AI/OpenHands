@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import traceback
 import uuid
 from enum import Enum
 from typing import Any
@@ -46,8 +45,8 @@ def split_bash_commands(commands: str) -> list[str]:
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         # If parsing fails, return the original commands
         return [commands]
@@ -165,8 +164,8 @@ def escape_bash_special_chars(command: str) -> str:
         logger.debug(
             f'Failed to parse bash commands for special characters escape\n'
             f'[input]: {command}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         return command
 
