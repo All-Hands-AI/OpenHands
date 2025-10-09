@@ -104,11 +104,13 @@ def start_fresh_conversation(
     """
     conversation = None
     settings_screen = SettingsScreen()
+    try:
+        conversation = setup_conversation(resume_conversation_id)
+        return conversation
+    except MissingAgentSpec:
+        # For first-time users, show the full settings flow with choice between basic/advanced
+        settings_screen.configure_settings(first_time=True)
 
-    while not conversation:
-        try:
-            conversation = setup_conversation(resume_conversation_id)
-        except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
 
-    return conversation
+    # Try once again after settings setup attempt
+    return setup_conversation(resume_conversation_id)
