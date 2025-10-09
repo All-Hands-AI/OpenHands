@@ -1392,7 +1392,13 @@ class WindowsPowershellSession:
                 # Check state using System.Management.Automation.Runspaces namespace
                 # Get the state info object first to avoid potential pythonnet issues with nested access
                 runspace_state_info = self.runspace.RunspaceStateInfo
-                if runspace_state_info.State == RunspaceState.Opened:
+                # Handle both PropertyObject and direct State access
+                if hasattr(runspace_state_info, 'State'):
+                    state = runspace_state_info.State
+                else:
+                    # Fallback for PropertyObject
+                    state = runspace_state_info
+                if state == RunspaceState.Opened:
                     self.runspace.Close()
                 self.runspace.Dispose()
                 logger.info('PowerShell runspace closed and disposed.')

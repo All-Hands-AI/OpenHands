@@ -54,15 +54,21 @@ class JupyterPlugin(Plugin):
                 'export MAMBA_ROOT_PREFIX=/openhands/micromamba;\n'
                 '/openhands/micromamba/bin/micromamba run -n openhands '
             )
+            # For Windows containers, use the workspace path
+            if is_windows:
+                code_repo_path = 'C:\\workspace'
+            else:
+                code_repo_path = '/openhands/code'
         else:
             # LocalRuntime
             prefix = ''
-            code_repo_path = os.environ.get('OPENHANDS_REPO_PATH')
-            if not code_repo_path:
+            code_repo_path_env = os.environ.get('OPENHANDS_REPO_PATH')
+            if code_repo_path_env is None:
                 raise ValueError(
                     'OPENHANDS_REPO_PATH environment variable is not set. '
                     'This is required for the jupyter plugin to work with LocalRuntime.'
                 )
+            code_repo_path = code_repo_path_env
             # The correct environment is ensured by the PATH in LocalRuntime.
             poetry_prefix = f'cd {code_repo_path}\n'
 
@@ -78,7 +84,7 @@ class JupyterPlugin(Plugin):
 
             # Using synchronous subprocess.Popen for Windows as asyncio.create_subprocess_shell
             # has limitations on Windows platforms
-            self.gateway_process = subprocess.Popen(  # type: ignore[ASYNC101] # noqa: ASYNC101
+            self.gateway_process = subprocess.Popen(  # type: ignore[ASYNC101]
                 jupyter_launch_command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -91,19 +97,19 @@ class JupyterPlugin(Plugin):
             output = ''
             while should_continue():
                 if self.gateway_process.stdout is None:
-                    time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                    time.sleep(1)  # type: ignore[ASYNC101]
                     continue
 
                 line = self.gateway_process.stdout.readline()
                 if not line:
-                    time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                    time.sleep(1)  # type: ignore[ASYNC101]
                     continue
 
                 output += line
                 if 'at' in line:
                     break
 
-                time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                time.sleep(1)  # type: ignore[ASYNC101]
                 logger.debug('Waiting for jupyter kernel gateway to start...')
 
             logger.debug(

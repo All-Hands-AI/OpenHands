@@ -253,6 +253,7 @@ runtime_*.tar
 containers/runtime/Dockerfile
 containers/runtime/project.tar.gz
 containers/runtime/code
+containers/runtime/package-lock.json
 **/node_modules/
 
 # test results
