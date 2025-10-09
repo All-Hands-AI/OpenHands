@@ -16,7 +16,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import setup_conversation, start_fresh_conversation
+from openhands_cli.setup import MissingAgentSpec, setup_conversation, start_fresh_conversation
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.status import display_status
@@ -64,7 +64,14 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = start_fresh_conversation(resume_conversation_id)
+    try:
+        conversation = start_fresh_conversation(resume_conversation_id)
+    except MissingAgentSpec:
+        print_formatted_text(HTML('\n<yellow>Setup is required to use OpenHands CLI.</yellow>'))
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        return
+
+
     display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Track session start time for uptime calculation
