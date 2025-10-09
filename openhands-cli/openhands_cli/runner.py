@@ -156,6 +156,8 @@ class ConversationRunner:
                     '<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>'
                 )
             )
+
+            # Remove security analyzer when policy is never confirm
             self.toggle_confirmation_mode()
             return decision
 
@@ -166,6 +168,8 @@ class ConversationRunner:
                     'LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>'
                 )
             )
+
+            # Keep security analyzer, change existing policy
             self.set_confirmation_policy(policy_change)
             return decision
 
