@@ -6,6 +6,8 @@ from pydantic import BaseModel, Field
 
 from openhands.app_server.services.injector import Injector, InjectorState
 
+HTTPX_CLIENT_ATTR = 'httpx_client'
+
 
 class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
     """Injector for a httpx client. By keeping a single httpx client alive in the
@@ -17,8 +19,11 @@ class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
     async def inject(
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[httpx.AsyncClient, None]:
-        httpx_client = getattr(state, 'httpx_client', None)
-        if not httpx_client:
-            httpx_client = httpx.AsyncClient(timeout=self.timeout)
-            setattr(state, 'httpx_client', httpx_client)
-        yield httpx_client
+        httpx_client = getattr(state, HTTPX_CLIENT_ATTR, None)
+        if httpx_client:
+            yield httpx_client
+            return
+        async with httpx.AsyncClient(timeout=self.timeout) as httpx_client:
+            setattr(state, HTTPX_CLIENT_ATTR, httpx_client)
+            yield httpx_client
+            setattr(state, HTTPX_CLIENT_ATTR, None)

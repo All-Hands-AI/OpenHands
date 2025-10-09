@@ -98,7 +98,7 @@ class RemoteSandboxService(SandboxService):
         try:
             url = self.api_url + path
             return await self.httpx_client.request(
-                method, url, headers={'X-Session-API-Key': self.api_key}, **kwargs
+                method, url, headers={'X-API-Key': self.api_key}, **kwargs
             )
         except httpx.TimeoutException:
             _logger.error(f'No response received within timeout for URL: {url}')
@@ -358,68 +358,77 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
         get_app_conversation_info_service,
         get_event_callback_service,
         get_event_service,
-        get_global_config,
         get_httpx_client,
     )
 
-    get_global_config()
-    # session_maker = await db_service().get_async_session_maker()
     while True:
         try:
-            # Get the list of running sandboxes using the runtime api /list endpoint. ...
-            async with httpx.AsyncClient() as httpx_client:
-                response = await httpx_client.get(
-                    f'{api_url}/list', headers={'X-Session-API-Key': api_key}
-                )
-                response.raise_for_status()
-                runtimes = response.json()['runtimes']
-                runtimes_by_sandbox_id = {
-                    runtime['session_id']: runtime
-                    for runtime in runtimes
-                    if runtime['status'] == 'running'
-                }
-
             # Refresh the conversations associated with those sandboxes.
             state = InjectorState()
-            # We allow access to all items here
-            setattr(state, USER_CONTEXT_ATTR, ADMIN)
-            async with (
-                get_app_conversation_info_service(
-                    state
-                ) as app_conversation_info_service,
-                get_event_service(state) as event_service,
-                get_event_callback_service(state) as event_callback_service,
-                get_httpx_client(state) as httpx_client,
-            ):
-                page_id = None
-                while True:
-                    page = await app_conversation_info_service.search_app_conversation_info(
-                        page_id=page_id
-                    )
-                    for app_conversation_info in page.items:
-                        runtime = runtimes_by_sandbox_id.get(
-                            app_conversation_info.sandbox_id
-                        )
-                        if runtime:
-                            await refresh_conversation(
-                                app_conversation_info_service=app_conversation_info_service,
-                                event_service=event_service,
-                                event_callback_service=event_callback_service,
-                                app_conversation_info=app_conversation_info,
-                                runtime=runtime,
-                                httpx_client=httpx_client,
-                            )
-                    page_id = page.next_page_id
-                    if page_id is None:
-                        break
 
+            try:
+                # Get the list of running sandboxes using the runtime api /list endpoint.
+                # (This will not return runtimes that have been stopped for a while)
+                async with get_httpx_client(state) as httpx_client:
+                    response = await httpx_client.get(
+                        f'{api_url}/list', headers={'X-API-Key': api_key}
+                    )
+                    response.raise_for_status()
+                    runtimes = response.json()['runtimes']
+                    runtimes_by_sandbox_id = {
+                        runtime['session_id']: runtime
+                        for runtime in runtimes
+                        if runtime['status'] == 'running'
+                    }
+                    _logger.debug(f"Got {len(runtimes_by_sandbox_id)} from runtime api.")
+
+
+                # We allow access to all items here
+                setattr(state, USER_CONTEXT_ATTR, ADMIN)
+                async with (
+                    get_app_conversation_info_service(
+                        state
+                    ) as app_conversation_info_service,
+                    get_event_service(state) as event_service,
+                    get_event_callback_service(state) as event_callback_service,
+                    get_httpx_client(state) as httpx_client,
+                ):
+                    page_id = None
+                    matches = 0
+                    while True:
+                        page = await app_conversation_info_service.search_app_conversation_info(
+                            page_id=page_id
+                        )
+                        for app_conversation_info in page.items:
+                            runtime = runtimes_by_sandbox_id.get(
+                                app_conversation_info.sandbox_id
+                            )
+                            if runtime:
+                                matches += 1
+                                await refresh_conversation(
+                                    app_conversation_info_service=app_conversation_info_service,
+                                    event_service=event_service,
+                                    event_callback_service=event_callback_service,
+                                    app_conversation_info=app_conversation_info,
+                                    runtime=runtime,
+                                    httpx_client=httpx_client,
+                                )
+                        page_id = page.next_page_id
+                        if page_id is None:
+                            _logger.debug(f"Matched Runtimes with {matches} conversations.")
+                            break
+
+            except Exception as exc:
+                _logger.exception(
+                    f'Error when polling agent servers: {exc}', stack_info=True
+                )
+
+            # Sleep between retries
             await asyncio.sleep(sleep_interval)
+
         except asyncio.CancelledError:
             return
-        except Exception as exc:
-            _logger.exception(
-                f'Error when polling agent servers: {exc}', stack_info=True
-            )
+
 
 
 async def refresh_conversation(
