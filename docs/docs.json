@@ -155,15 +155,7 @@
             "group": "OpenHands Developers",
             "pages": [
               "usage/how-to/development-overview",
-              {
-                "group":"Contribute",
-                "pages": [
-                  "usage/contributing/start-contributing",
-                  "usage/contributing/development-setup",
-                  "usage/contributing/community-guidelines",
-                  "usage/contributing/code-of-conduct"
-                ]
-              },
+              "usage/contributing",
               {
                 "group": "Architecture",
                 "pages": [
