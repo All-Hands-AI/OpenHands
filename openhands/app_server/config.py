@@ -108,82 +108,74 @@ class AppServerConfig(OpenHandsModel):
 
 
 def config_from_env() -> AppServerConfig:
+    # Import defaults...
+    from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
+        LiveStatusAppConversationServiceInjector,
+    )
+    from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
+        SQLAppConversationInfoServiceInjector,
+    )
+    from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
+        SQLAppConversationStartTaskServiceInjector,
+    )
+    from openhands.app_server.event.filesystem_event_service import (
+        FilesystemEventServiceInjector,
+    )
+    from openhands.app_server.event_callback.sql_event_callback_service import (
+        SQLEventCallbackServiceInjector,
+    )
+    from openhands.app_server.sandbox.docker_sandbox_service import (
+        DockerSandboxServiceInjector,
+    )
+    from openhands.app_server.sandbox.docker_sandbox_spec_service import (
+        DockerSandboxSpecServiceInjector,
+    )
+    from openhands.app_server.sandbox.remote_sandbox_service import (
+        RemoteSandboxServiceInjector,
+    )
+    from openhands.app_server.sandbox.remote_sandbox_spec_service import (
+        RemoteSandboxSpecServiceInjector,
+    )
+    from openhands.app_server.user.auth_user_context import (
+        AuthUserContextInjector,
+    )
+
     config: AppServerConfig = from_env(AppServerConfig, 'OH')  # type: ignore
 
     if config.event is None:
-        from openhands.app_server.event.filesystem_event_service import (
-            FilesystemEventServiceInjector,
-        )
-
         config.event = FilesystemEventServiceInjector()
 
     if config.event_callback is None:
-        from openhands.app_server.event_callback.sql_event_callback_service import (
-            SQLEventCallbackServiceInjector,
-        )
-
         config.event_callback = SQLEventCallbackServiceInjector()
 
     if config.sandbox is None:
         # Legacy fallback
         if os.getenv('RUNTIME') == 'remote':
-            from openhands.app_server.sandbox.remote_sandbox_service import (
-                RemoteSandboxServiceInjector,
-            )
-
             config.sandbox = RemoteSandboxServiceInjector(
                 api_key=os.environ['SANDBOX_API_KEY'],
                 api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
             )
         else:
-            from openhands.app_server.sandbox.docker_sandbox_service import (
-                DockerSandboxServiceInjector,
-            )
-
             config.sandbox = DockerSandboxServiceInjector()
 
         if config.sandbox_spec is None:
             if os.getenv('RUNTIME') == 'remote':
-                from openhands.app_server.sandbox.remote_sandbox_spec_service import (
-                    RemoteSandboxSpecServiceInjector,
-                )
-
                 config.sandbox_spec = RemoteSandboxSpecServiceInjector()
             else:
-                from openhands.app_server.sandbox.docker_sandbox_spec_service import (
-                    DockerSandboxSpecServiceInjector,
-                )
-
                 config.sandbox_spec = DockerSandboxSpecServiceInjector()
 
         if config.app_conversation_info is None:
-            from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
-                SQLAppConversationInfoServiceInjector,
-            )
-
             config.app_conversation_info = SQLAppConversationInfoServiceInjector()
 
         if config.app_conversation_start_task is None:
-            from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
-                SQLAppConversationStartTaskServiceInjector,
-            )
-
             config.app_conversation_start_task = (
                 SQLAppConversationStartTaskServiceInjector()
             )
 
         if config.app_conversation is None:
-            from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
-                LiveStatusAppConversationServiceInjector,
-            )
-
             config.app_conversation = LiveStatusAppConversationServiceInjector()
 
         if config.user is None:
-            from openhands.app_server.user.auth_user_context import (
-                AuthUserContextInjector,
-            )
-
             config.user = AuthUserContextInjector()
 
         if config.jwt is None:

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from openhands.app_server.services.injector import Injector, InjectorState
 
 HTTPX_CLIENT_ATTR = 'httpx_client'
+HTTPX_CLIENT_KEEP_OPEN_ATTR = 'httpx_client_keep_open'
 
 
 class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
@@ -23,7 +24,15 @@ class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
         if httpx_client:
             yield httpx_client
             return
-        async with httpx.AsyncClient(timeout=self.timeout) as httpx_client:
+        httpx_client = httpx.AsyncClient(timeout=self.timeout)
+        try:
             setattr(state, HTTPX_CLIENT_ATTR, httpx_client)
             yield httpx_client
-            setattr(state, HTTPX_CLIENT_ATTR, None)
+        finally:
+            # If instructed, do not close the httpx client at the end of the request.
+            if not getattr(state, HTTPX_CLIENT_KEEP_OPEN_ATTR, False):
+                # Clean up the httpx client from request state
+                if hasattr(state, HTTPX_CLIENT_ATTR):
+                    delattr(state, HTTPX_CLIENT_ATTR)
+                await httpx_client.aclose()
+

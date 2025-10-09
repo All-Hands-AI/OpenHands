@@ -7,6 +7,9 @@ from typing import Annotated, AsyncGenerator
 from uuid import UUID
 
 from openhands.app_server.services.db_session_injector import set_db_session_keep_open
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR
+from openhands.app_server.user.user_context import UserContext
 
 # Handle anext compatibility for Python < 3.10
 if sys.version_info >= (3, 10):
@@ -34,10 +37,13 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.config import (
     depends_app_conversation_service,
     depends_db_session,
+    depends_user_context,
+    get_app_conversation_service,
 )
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
 app_conversation_service_dependency = depends_app_conversation_service()
+user_context_dependency = depends_user_context()
 db_session_dependency = depends_db_session()
 
 # Read methods
@@ -166,14 +172,12 @@ async def start_app_conversation(
 @router.post('/stream-start')
 async def stream_app_conversation_start(
     request: AppConversationStartRequest,
-    app_conversation_service: AppConversationService = (
-        app_conversation_service_dependency
-    ),
+    user_context: UserContext = user_context_dependency,
 ) -> list[AppConversationStartTask]:
     """Start an app conversation start task and stream updates from it.
     Leaves the connection open until either the conversation starts or there was an error"""
     response = StreamingResponse(
-        _stream_app_conversation_start(request, app_conversation_service),
+        _stream_app_conversation_start(request, user_context),
         media_type='application/json',
     )
     return response
@@ -207,15 +211,21 @@ async def _consume_remaining(async_iter, db_session: AsyncSession):
 
 async def _stream_app_conversation_start(
     request: AppConversationStartRequest,
-    app_conversation_service: AppConversationService,
+    user_context: UserContext,
 ) -> AsyncGenerator[str, None]:
     """Stream a json list, item by item."""
-    yield '[\n'
-    comma = False
-    async for task in app_conversation_service.start_app_conversation(request):
-        chunk = task.model_dump_json()
-        if comma:
-            chunk = ',\n' + chunk
-        comma = True
-        yield chunk
-    yield ']'
+
+    # Because the original dependencies are closed after the method returns, we need
+    # a new dependency context which will continue intil the stream finishes.
+    state = InjectorState()
+    setattr(state, USER_CONTEXT_ATTR, user_context)
+    async with get_app_conversation_service(state) as app_conversation_service:
+        yield '[\n'
+        comma = False
+        async for task in app_conversation_service.start_app_conversation(request):
+            chunk = task.model_dump_json()
+            if comma:
+                chunk = ',\n' + chunk
+            comma = True
+            yield chunk
+        yield ']'
