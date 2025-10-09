@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from dataclasses import dataclass
@@ -10,8 +11,19 @@ from pydantic import Field
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from openhands.agent_server.models import ConversationInfo, EventPage
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import OpenHandsError, SandboxError
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
+)
+from openhands.app_server.errors import SandboxError
+from openhands.app_server.event.event_service import EventService
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,
@@ -26,11 +38,13 @@ from openhands.app_server.sandbox.sandbox_service import (
 from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.admin_user_context import ADMIN, USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+polling_task: asyncio.Task | None = None
 
 
 class StoredRemoteSandbox(Base):  # type: ignore
@@ -335,11 +349,167 @@ class RemoteSandboxService(SandboxService):
             return False
 
 
+async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
+    """When the app server does not have a public facing url, we poll the agent
+    servers for the most recent data.
+
+    This is because webhook callbacks cannot be invoked."""
+    from openhands.app_server.config import (
+        get_app_conversation_info_service,
+        get_event_callback_service,
+        get_event_service,
+        get_global_config,
+        get_httpx_client,
+    )
+
+    get_global_config()
+    # session_maker = await db_service().get_async_session_maker()
+    while True:
+        try:
+            # Get the list of running sandboxes using the runtime api /list endpoint. ...
+            async with httpx.AsyncClient() as httpx_client:
+                response = await httpx_client.get(
+                    f'{api_url}/list', headers={'X-Session-API-Key': api_key}
+                )
+                response.raise_for_status()
+                runtimes = response.json()['runtimes']
+                runtimes_by_sandbox_id = {
+                    runtime['session_id']: runtime
+                    for runtime in runtimes
+                    if runtime['status'] == 'running'
+                }
+
+            # Refresh the conversations associated with those sandboxes.
+            state = InjectorState()
+            # We allow access to all items here
+            setattr(state, USER_CONTEXT_ATTR, ADMIN)
+            async with (
+                get_app_conversation_info_service(
+                    state
+                ) as app_conversation_info_service,
+                get_event_service(state) as event_service,
+                get_event_callback_service(state) as event_callback_service,
+                get_httpx_client(state) as httpx_client,
+            ):
+                page_id = None
+                while True:
+                    page = await app_conversation_info_service.search_app_conversation_info(
+                        page_id=page_id
+                    )
+                    for app_conversation_info in page.items:
+                        runtime = runtimes_by_sandbox_id.get(
+                            app_conversation_info.sandbox_id
+                        )
+                        if runtime:
+                            await refresh_conversation(
+                                app_conversation_info_service=app_conversation_info_service,
+                                event_service=event_service,
+                                event_callback_service=event_callback_service,
+                                app_conversation_info=app_conversation_info,
+                                runtime=runtime,
+                                httpx_client=httpx_client,
+                            )
+                    page_id = page.next_page_id
+                    if page_id is None:
+                        break
+
+            await asyncio.sleep(sleep_interval)
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:
+            _logger.exception(
+                f'Error when polling agent servers: {exc}', stack_info=True
+            )
+
+
+async def refresh_conversation(
+    app_conversation_info_service: AppConversationInfoService,
+    event_service: EventService,
+    event_callback_service: EventCallbackService,
+    app_conversation_info: AppConversationInfo,
+    runtime: dict[str, Any],
+    httpx_client: httpx.AsyncClient,
+):
+    """Refresh a conversation.
+
+    Grab ConversationInfo and all events from the agent server and make sure they
+    exist in the app server."""
+    _logger.debug(f'Started Refreshing Conversation {app_conversation_info.id}')
+    try:
+        url = runtime['url']
+
+        # TODO: Maybe we can use RemoteConversation here?
+
+        # First get conversation...
+        conversation_url = f'{url}/api/conversations/{app_conversation_info.id.hex}'
+        response = await httpx_client.get(
+            conversation_url, headers={'X-Session-API-Key': runtime['session_api_key']}
+        )
+        response.raise_for_status()
+
+        updated_conversation_info = ConversationInfo.model_validate(response.json())
+
+        # TODO: As of writing, ConversationInfo from AgentServer does not have a title to update...
+        app_conversation_info.updated_at = updated_conversation_info.updated_at
+        # TODO: Update other appropriate attributes...
+
+        await app_conversation_info_service.save_app_conversation_info(
+            app_conversation_info
+        )
+
+        # TODO: It would be nice to have an updated_at__gte filter parameter in the
+        # agent server so that we don't pull the full event list each time
+        event_url = (
+            f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
+        )
+        page_id = None
+        while True:
+            params: dict[str, str] = {}
+            if page_id:
+                params['page_id'] = page_id
+            response = await httpx_client.get(
+                event_url,
+                params=params,
+                headers={'X-Session-API-Key': runtime['session_api_key']},
+            )
+            response.raise_for_status()
+            page = EventPage.model_validate(response.json())
+
+            to_process = []
+            for event in page.items:
+                existing = await event_service.get_event(event.id)
+                if existing is None:
+                    await event_service.save_event(app_conversation_info.id, event)
+                    to_process.append(event)
+
+            for event in to_process:
+                await event_callback_service.execute_callbacks(
+                    app_conversation_info.id, event
+                )
+
+            page_id = page.next_page_id
+            if page_id is None:
+                _logger.debug(
+                    f'Finished Refreshing Conversation {app_conversation_info.id}'
+                )
+                break
+
+    except Exception as exc:
+        _logger.exception(f'Error Refreshing Conversation: {exc}', stack_info=True)
+
+
 class RemoteSandboxServiceInjector(SandboxServiceInjector):
     """Dependency injector for remote sandbox services."""
 
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
+    polling_interval: int = Field(
+        default=10,
+        description=(
+            'The sleep time between poll operations against agent servers when there is '
+            'no public facing web_url'
+        ),
+    )
     resource_factor: int = Field(
         default=1,
         description='Factor by which to scale resources in sandbox: 1, 2, 4, or 8',
@@ -365,8 +535,15 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
         config = get_global_config()
         web_url = config.web_url
         if web_url is None:
-            raise OpenHandsError('A web_url is required!')
-
+            global polling_task
+            if polling_task is None:
+                polling_task = asyncio.create_task(
+                    poll_agent_servers(
+                        api_url=self.api_url,
+                        api_key=self.api_key,
+                        sleep_interval=self.polling_interval,
+                    )
+                )
         async with (
             get_user_context(state) as user_context,
             get_sandbox_spec_service(state) as sandbox_spec_service,

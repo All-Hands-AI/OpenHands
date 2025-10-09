@@ -113,12 +113,14 @@ e2b-code-interpreter = { version = "^2.0.0", optional = true }
 pybase62 = "^1.0.0"
 
 # V1 dependencies
-openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/agent_server", rev = "c9a1ce89efe416720cfde29aa960c8f86f9f223a" }
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "c9a1ce89efe416720cfde29aa960c8f86f9f223a" }
+openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/agent_server", rev = "df195f37d8c93ac5bb53893eb90145910cdb5a51" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "df195f37d8c93ac5bb53893eb90145910cdb5a51" }
 # This refuses to install
-# openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "c9a1ce89efe416720cfde29aa960c8f86f9f223a" }
+# openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "df195f37d8c93ac5bb53893eb90145910cdb5a51" }
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
+pg8000 = "^1.31.5"
+asyncpg = "^0.30.0"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]
