@@ -5,7 +5,7 @@ from typing import Any, Callable
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
-from openhands.llm.model_features import get_features
+from openhands.llm.llm_utils import prepare_reasoning_model_kwargs
 
 
 class StreamingLLM(AsyncLLM):
@@ -55,6 +55,12 @@ class StreamingLLM(AsyncLLM):
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
 
+            # Merge kwargs from the partial function
+            merged_kwargs = {
+                **async_streaming_completion_unwrapped.keywords,
+                **kwargs,
+            }
+
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
 
@@ -64,15 +70,18 @@ class StreamingLLM(AsyncLLM):
                     'The messages list is empty. At least one message is required.'
                 )
 
-            # Set reasoning effort for models that support it
-            if get_features(self.config.model).supports_reasoning_effort:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+            # Handle reasoning model kwargs (remove temperature/top_p, add reasoning_effort)
+            prepare_reasoning_model_kwargs(
+                merged_kwargs, self.config.model, self.config.reasoning_effort
+            )
 
             self.log_prompt(messages)
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_streaming_completion_unwrapped(*args, **kwargs)
+                # Call the underlying function directly with merged kwargs
+                resp = await async_streaming_completion_unwrapped.func(
+                    *args, **merged_kwargs
+                )
 
                 # For streaming we iterate over the chunks
                 async for chunk in resp:

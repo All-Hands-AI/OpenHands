@@ -8,6 +8,7 @@ from typing import Any, Callable, cast
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.llm_utils import prepare_reasoning_model_kwargs
 from openhands.llm.metrics import Metrics
 from openhands.llm.model_features import get_features
 
@@ -131,33 +132,10 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        features = get_features(self.config.model)
-        if features.supports_reasoning_effort:
-            # For Gemini models, only map 'low' to optimized thinking budget
-            # Let other reasoning_effort values pass through to API as-is
-            if 'gemini-2.5-pro' in self.config.model:
-                logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
-                )
-                if self.config.reasoning_effort in {None, 'low', 'none'}:
-                    kwargs['thinking'] = {'budget_tokens': 128}
-                    kwargs['allowed_openai_params'] = ['thinking']
-                    kwargs.pop('reasoning_effort', None)
-                else:
-                    kwargs['reasoning_effort'] = self.config.reasoning_effort
-                logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
-                )
-            elif 'claude-sonnet-4-5' in self.config.model:
-                kwargs.pop(
-                    'reasoning_effort', None
-                )  # don't send reasoning_effort to Claude Sonnet 4.5
-            else:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
-            kwargs.pop(
-                'temperature'
-            )  # temperature is not supported for reasoning models
-            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
+        # Handle reasoning model kwargs (remove temperature/top_p, add reasoning_effort)
+        prepare_reasoning_model_kwargs(
+            kwargs, self.config.model, self.config.reasoning_effort
+        )
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens

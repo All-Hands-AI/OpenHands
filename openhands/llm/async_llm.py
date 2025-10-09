@@ -10,7 +10,7 @@ from openhands.llm.llm import (
     LLM,
     LLM_RETRY_EXCEPTIONS,
 )
-from openhands.llm.model_features import get_features
+from openhands.llm.llm_utils import prepare_reasoning_model_kwargs
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -62,9 +62,13 @@ class AsyncLLM(LLM):
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
 
-            # Set reasoning effort for models that support it
-            if get_features(self.config.model).supports_reasoning_effort:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+            # Merge kwargs from the partial function
+            merged_kwargs = {**async_completion_unwrapped.keywords, **kwargs}
+
+            # Handle reasoning model kwargs (remove temperature/top_p, add reasoning_effort)
+            prepare_reasoning_model_kwargs(
+                merged_kwargs, self.config.model, self.config.reasoning_effort
+            )
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
@@ -90,8 +94,8 @@ class AsyncLLM(LLM):
             stop_check_task = asyncio.create_task(check_stopped())
 
             try:
-                # Directly call and await litellm_acompletion
-                resp = await async_completion_unwrapped(*args, **kwargs)
+                # Call the underlying function directly with merged kwargs
+                resp = await async_completion_unwrapped.func(*args, **merged_kwargs)
 
                 message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)
