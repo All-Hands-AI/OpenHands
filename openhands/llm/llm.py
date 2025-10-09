@@ -36,6 +36,7 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
+from openhands.llm.llm_utils import truncate_content
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -299,6 +300,11 @@ class LLM(RetryMixin, DebugMixin):
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
                 )
+
+            # Apply content truncation based on max_message_chars configuration
+            # This preserves original messages in memory while ensuring LLM receives appropriately sized content
+            messages = self._truncate_messages(messages)
+            kwargs['messages'] = messages
 
             # log the entire LLM prompt
             self.log_prompt(messages)
@@ -795,6 +801,54 @@ class LLM(RetryMixin, DebugMixin):
             self.cost_metric_supported = False
             logger.debug('Cost calculation not supported for this model.')
         return 0.0
+
+    def _truncate_messages(
+        self, messages: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Truncate message content based on max_message_chars configuration.
+
+        This method applies content truncation to messages before sending them to the LLM,
+        preserving the original messages in memory while ensuring the LLM receives
+        appropriately sized content.
+
+        Args:
+            messages: List of message dictionaries to truncate
+
+        Returns:
+            List of message dictionaries with truncated content
+        """
+        truncated_messages = []
+        for message in messages:
+            truncated_message = message.copy()
+
+            # Handle different message content formats
+            if 'content' in message and isinstance(message['content'], str):
+                # Simple string content
+                truncated_message['content'] = truncate_content(
+                    message['content'], self.config.max_message_chars
+                )
+            elif 'content' in message and isinstance(message['content'], list):
+                # List of content items (text, images, etc.)
+                truncated_content = []
+                for content_item in message['content']:
+                    if (
+                        isinstance(content_item, dict)
+                        and content_item.get('type') == 'text'
+                    ):
+                        # Truncate text content
+                        truncated_item = content_item.copy()
+                        truncated_item['text'] = truncate_content(
+                            content_item.get('text', ''), self.config.max_message_chars
+                        )
+                        truncated_content.append(truncated_item)
+                    else:
+                        # Keep non-text content as-is (images, etc.)
+                        truncated_content.append(content_item)
+                truncated_message['content'] = truncated_content
+
+            truncated_messages.append(truncated_message)
+
+        return truncated_messages
 
     def __str__(self) -> str:
         if self.config.api_version:
