@@ -138,7 +138,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # write the pre-commit hook
         await workspace.file_upload(
-            source_path=Path(__file__).parent / 'pre-commit.sh',
+            source_path=Path(__file__).parent / 'git' / 'pre-commit.sh',
             destination_path=PRE_COMMIT_HOOK,
         )
 
