@@ -4,36 +4,15 @@ import { PathComponent } from "../path-component";
 import { getActionContent } from "./get-action-content";
 import { getObservationContent } from "./get-observation-content";
 import i18n from "#/i18n";
+import { OpenHandsEvent } from "#/types/v1/core";
 import {
-  ActionEvent,
-  ExecuteBashAction,
-  ExecuteBashObservation,
-  ObservationEvent,
-  OpenHandsEvent,
-  StrReplaceEditorAction,
-  StrReplaceEditorObservation,
-} from "#/types/v1/core";
-import { isActionEvent, isObservationEvent } from "#/types/v1/type-guards";
-
-const isStrReplaceEditorAction = (
-  event: ActionEvent,
-): event is ActionEvent<StrReplaceEditorAction> =>
-  event.action.kind === "StrReplaceEditorAction";
-
-const isExecuteBashAction = (
-  event: ActionEvent,
-): event is ActionEvent<ExecuteBashAction> =>
-  event.action.kind === "ExecuteBashAction";
-
-const isStrReplaceEditorObservation = (
-  event: ObservationEvent,
-): event is ObservationEvent<StrReplaceEditorObservation> =>
-  event.observation.kind === "StrReplaceEditorObservation";
-
-const isExecuteBashActionObservation = (
-  event: ObservationEvent,
-): event is ObservationEvent<ExecuteBashObservation> =>
-  event.observation.kind === "ExecuteBashObservation";
+  isActionEvent,
+  isExecuteBashAction,
+  isExecuteBashActionObservation,
+  isObservationEvent,
+  isStrReplaceEditorAction,
+  isStrReplaceEditorObservation,
+} from "#/types/v1/type-guards";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";

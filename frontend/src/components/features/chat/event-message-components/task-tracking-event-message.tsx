@@ -1,14 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { isTaskTrackingObservation } from "#/types/core/guards";
 import { GenericEventMessage } from "../generic-event-message";
 import { TaskTrackingObservationContent } from "../task-tracking-observation-content";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { getObservationResult } from "../event-content-helpers/get-observation-result";
+import { ObservationEvent, TaskTrackerObservation } from "#/types/v1/core";
 
 interface TaskTrackingEventMessageProps {
-  event: OpenHandsObservation;
+  event: ObservationEvent<TaskTrackerObservation>;
   shouldShowConfirmationButtons: boolean;
 }
 
@@ -18,11 +17,7 @@ export function TaskTrackingEventMessage({
 }: TaskTrackingEventMessageProps) {
   const { t } = useTranslation();
 
-  if (!isTaskTrackingObservation(event)) {
-    return null;
-  }
-
-  const { command } = event.extras;
+  const { command, task_list: taskList, content } = event.observation;
   let title: React.ReactNode;
   let initiallyExpanded = false;
 
@@ -40,7 +35,15 @@ export function TaskTrackingEventMessage({
     <div>
       <GenericEventMessage
         title={title}
-        details={<TaskTrackingObservationContent event={event} />}
+        details={
+          <TaskTrackingObservationContent
+            event={{
+              command,
+              taskList,
+              content,
+            }}
+          />
+        }
         success={getObservationResult(event)}
         initiallyExpanded={initiallyExpanded}
       />

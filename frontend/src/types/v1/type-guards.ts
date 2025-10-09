@@ -7,8 +7,12 @@ import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 import {
+  ExecuteBashAction,
+  ExecuteBashObservation,
   FinishAction,
   MCPToolObservation,
+  StrReplaceEditorAction,
+  StrReplaceEditorObservation,
   TaskTrackerObservation,
 } from "./core/base";
 
@@ -103,6 +107,26 @@ export const isTaskTrackerObservation = (
 ): event is ObservationEvent<TaskTrackerObservation> =>
   isObservationEvent(event) &&
   event.observation.kind === "TaskTrackerObservation";
+
+export const isStrReplaceEditorAction = (
+  event: ActionEvent,
+): event is ActionEvent<StrReplaceEditorAction> =>
+  event.action.kind === "StrReplaceEditorAction";
+
+export const isExecuteBashAction = (
+  event: ActionEvent,
+): event is ActionEvent<ExecuteBashAction> =>
+  event.action.kind === "ExecuteBashAction";
+
+export const isStrReplaceEditorObservation = (
+  event: ObservationEvent,
+): event is ObservationEvent<StrReplaceEditorObservation> =>
+  event.observation.kind === "StrReplaceEditorObservation";
+
+export const isExecuteBashActionObservation = (
+  event: ObservationEvent,
+): event is ObservationEvent<ExecuteBashObservation> =>
+  event.observation.kind === "ExecuteBashObservation";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS
