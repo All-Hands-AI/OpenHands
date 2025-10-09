@@ -9,14 +9,21 @@ from typing import AsyncGenerator
 from fastapi import Request
 from pydantic import BaseModel, PrivateAttr, SecretStr, model_validator
 from sqlalchemy import Engine, create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
+from sqlalchemy.util import await_only
+
+from openhands.app_server.services.injector import Injector, InjectorState
 
 _logger = logging.getLogger(__name__)
+DB_SESSION_ATTR = 'db_session'
+DB_SESSION_KEEP_OPEN_ATTR = 'db_session_keep_open'
 
 
-class DbService(BaseModel):
+class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
     persistence_dir: Path
     host: str | None = None
     port: int | None = None
@@ -64,11 +71,12 @@ class DbService(BaseModel):
         connector = Connector()
         instance_string = f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}'
         password = self.password
+        assert password is not None
         return connector.connect(
             instance_string,
             'pg8000',
             user=self.user,
-            password=password.get_secret_value() if password else None,
+            password=password.get_secret_value(),
             db=self.name,
         )
 
@@ -79,11 +87,12 @@ class DbService(BaseModel):
         loop = asyncio.get_running_loop()
         async with Connector(loop=loop) as connector:
             password = self.password
+            assert password is not None
             conn = await connector.connect_async(
                 f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}',
                 'asyncpg',
                 user=self.user,
-                password=password.get_secret_value() if password else None,
+                password=password.get_secret_value(),
                 db=self.name,
             )
             return conn
@@ -112,9 +121,23 @@ class DbService(BaseModel):
         )
 
     async def _create_async_gcp_engine(self):
+        from sqlalchemy.dialects.postgresql.asyncpg import (
+            AsyncAdapt_asyncpg_connection,
+        )
+
+        base_engine = self._create_gcp_engine()
+        dbapi = base_engine.dialect.dbapi
+
+        def adapted_creator():
+            return AsyncAdapt_asyncpg_connection(
+                dbapi,
+                await_only(self._create_async_gcp_db_connection()),
+                prepared_statement_cache_size=100,
+            )
+
         return create_async_engine(
             'postgresql+asyncpg://',
-            creator=self._create_async_gcp_creator(),
+            creator=adapted_creator,
             pool_size=self.pool_size,
             max_overflow=self.max_overflow,
             pool_pre_ping=True,
@@ -128,16 +151,37 @@ class DbService(BaseModel):
             async_engine = await self._create_async_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                try:
+                    import asyncpg  # noqa: F401
+                except Exception as e:
+                    raise RuntimeError(
+                        "PostgreSQL driver 'asyncpg' is required for async connections but is not installed."
+                    ) from e
+                password = self.password.get_secret_value() if self.password else None
+                url = URL.create(
+                    'postgresql+asyncpg',
+                    username=self.user or '',
+                    password=password,
+                    host=self.host,
+                    port=self.port,
+                    database=self.name,
+                )
             else:
                 url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
 
-            async_engine = create_async_engine(
-                url,
-                pool_size=self.pool_size,
-                max_overflow=self.max_overflow,
-                pool_pre_ping=True,
-            )
+            if self.host:
+                async_engine = create_async_engine(
+                    url,
+                    pool_size=self.pool_size,
+                    max_overflow=self.max_overflow,
+                    pool_pre_ping=True,
+                )
+            else:
+                async_engine = create_async_engine(
+                    url,
+                    poolclass=NullPool,
+                    pool_pre_ping=True,
+                )
         self._async_engine = async_engine
         return async_engine
 
@@ -149,7 +193,21 @@ class DbService(BaseModel):
             engine = self._create_gcp_engine()
         else:
             if self.host:
-                url = f'postgresql+pg8000://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}'
+                try:
+                    import pg8000  # noqa: F401
+                except Exception as e:
+                    raise RuntimeError(
+                        "PostgreSQL driver 'pg8000' is required for sync connections but is not installed."
+                    ) from e
+                password = self.password.get_secret_value() if self.password else None
+                url = URL.create(
+                    'postgresql+pg8000',
+                    username=self.user or '',
+                    password=password,
+                    host=self.host,
+                    port=self.port,
+                    database=self.name,
+                )
             else:
                 url = f'sqlite:///{self.persistence_dir}/openhands.db'
             engine = create_engine(
@@ -196,9 +254,8 @@ class DbService(BaseModel):
             finally:
                 await session.close()
 
-    async def managed_session_dependency(
-        self,
-        request: Request,
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[AsyncSession, None]:
         """Dependency function that manages database sessions through request state.
 
@@ -213,35 +270,31 @@ class DbService(BaseModel):
         Yields:
             AsyncSession: An async SQL session stored in request state
         """
-        db_session = getattr(request.state, 'db_session', None)
+        db_session = getattr(state, DB_SESSION_ATTR, None)
         if db_session:
             yield db_session
         else:
             # Create a new session and store it in request state
             session_maker = await self.get_async_session_maker()
-            async with session_maker() as db_session:
-                try:
-                    setattr(request.state, 'db_session', db_session)
-                    yield db_session
+            db_session = session_maker()
+            try:
+                setattr(state, DB_SESSION_ATTR, db_session)
+                yield db_session
+                if not getattr(state, DB_SESSION_KEEP_OPEN_ATTR, False):
                     await db_session.commit()
-                except Exception:
-                    _logger.exception('Rolling back SQL due to error', stack_info=True)
-                    await db_session.rollback()
-                    raise
-                finally:
+            except Exception:
+                _logger.exception('Rolling back SQL due to error', stack_info=True)
+                await db_session.rollback()
+                raise
+            finally:
+                # If instructed, do not close the db session at the end of the request.
+                if not getattr(state, DB_SESSION_KEEP_OPEN_ATTR, False):
                     # Clean up the session from request state
-                    if hasattr(request.state, 'db_session'):
-                        delattr(request.state, 'db_session')
+                    if hasattr(state, DB_SESSION_ATTR):
+                        delattr(state, DB_SESSION_ATTR)
                     await db_session.close()
 
-    async def unmanaged_session_dependency(self, request: Request) -> AsyncSession:
-        """Using this dependency before others means that the database session used in
-        the request must be committed / closed manually. This is useful in cases where processing
-        continues after the response is sent."""
-        db_session = getattr(request.state, 'db_session', None)
-        if db_session:
-            return db_session
-        session_maker = await self.get_async_session_maker()
-        db_session = session_maker()
-        setattr(request.state, 'db_session', db_session)
-        return db_session
+
+def set_db_session_keep_open(state: InjectorState, keep_open: bool):
+    """Set whether the connection should be kept open after the request terminates."""
+    setattr(state, DB_SESSION_KEEP_OPEN_ATTR, keep_open)

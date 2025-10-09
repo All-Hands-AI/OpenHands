@@ -30,7 +30,7 @@ class GitAppConversationService(AppConversationService, ABC):
     Sets up repositories and installs hooks"""
 
     init_git_in_empty_workspace: bool
-    user_service: UserContext
+    user_context: UserContext
 
     async def run_setup_scripts(
         self,
@@ -67,7 +67,7 @@ class GitAppConversationService(AppConversationService, ABC):
                 _logger.info('Not initializing a new git repository.')
             return
 
-        remote_repo_url: str = await self.user_service.get_authenticated_git_url(
+        remote_repo_url: str = await self.user_context.get_authenticated_git_url(
             request.selected_repository
         )
         if not remote_repo_url:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Callable
 
+from openhands.app_server.services.injector import Injector
 from openhands.app_server.user.user_models import (
     UserInfo,
 )
@@ -35,11 +35,7 @@ class UserContext(ABC):
         """Get custom secrets and github provider secrets for the conversation."""
 
 
-class UserContextInjector(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_injector(self) -> Callable:
-        """Get a resolver for instances of user service limited to the current user."""
+class UserContextInjector(DiscriminatedUnionMixin, Injector[UserContext], ABC):
+    """Injector for user contexts."""
 
-    @abstractmethod
-    async def get_for_user(self, user_id: str | None) -> UserContext:
-        """ Get a user context for the user with the id given."""
+    pass

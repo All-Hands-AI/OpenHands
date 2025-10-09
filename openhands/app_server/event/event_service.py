@@ -2,11 +2,11 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Callable
 from uuid import UUID
 
 from openhands.agent_server.models import EventPage, EventSortOrder
 from openhands.app_server.event_callback.event_callback_models import EventKind
+from openhands.app_server.services.injector import Injector
 from openhands.sdk import Event
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -55,11 +55,5 @@ class EventService(ABC):
         )
 
 
-class EventServiceManager(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of event service limited to the current user."""
-
-    @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
-        """Get a resolver for an instance of event service for all events."""
+class EventServiceInjector(DiscriminatedUnionMixin, Injector[EventService], ABC):
+    pass

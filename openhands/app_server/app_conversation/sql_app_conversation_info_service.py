@@ -6,13 +6,13 @@ on SQL operations:
 - Batch operations for efficient data retrieval
 - Integration with SandboxService for sandbox information
 - HTTP client integration for agent status retrieval
-- Full async/await support using SQL async sessions
+- Full async/await support using SQL async db_sessions
 
 Security and permission checks are handled by wrapper services.
 
 Key components:
 - SQLAppConversationService: Main service class implementing all operations
-- SQLAppConversationServiceManager: Dependency injection resolver for FastAPI
+- SQLAppConversationInfoServiceInjector: Dependency injection resolver for FastAPI
 """
 
 from __future__ import annotations
@@ -20,31 +20,33 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
-from typing import Callable
+from datetime import UTC, datetime
+from typing import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Request
 from sqlalchemy import Column, DateTime, Float, Integer, Select, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
-    AppConversationInfoServiceManager,
+    AppConversationInfoServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
     AppConversationInfoPage,
     AppConversationSortOrder,
 )
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import (
     Base,
     create_json_type_decorator,
 )
-from openhands.llm.metrics import TokenUsage
+from openhands.integrations.provider import ProviderType
 from openhands.sdk.llm import MetricsSnapshot
+from openhands.sdk.llm.utils.metrics import TokenUsage
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
 logger = logging.getLogger(__name__)
@@ -95,8 +97,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     This allows storing a record of a conversation even after its sandbox ceases to exist
     """
 
-    session: AsyncSession
-    user_id: str | None = None
+    db_session: AsyncSession
+    user_context: UserContext
 
     async def search_app_conversation_info(
         self,
@@ -110,7 +112,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         limit: int = 100,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations without permission checks."""
-        query = self._secure_select()
+        query = await self._secure_select()
 
         query = self._apply_filters(
             query=query,
@@ -149,7 +151,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         # Apply limit and get one extra to check if there are more results
         query = query.limit(limit + 1)
 
-        result = await self.session.execute(query)
+        result = await self.db_session.execute(query)
         rows = result.scalars().all()
 
         # Check if there are more results
@@ -176,9 +178,10 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
         query = select(func.count(StoredConversationMetadata.conversation_id))
-        if self.user_id:
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = query.where(
-                StoredConversationMetadata.created_by_user_id == self.user_id
+                StoredConversationMetadata.created_by_user_id == user_id
             )
 
         query = self._apply_filters(
@@ -190,7 +193,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             updated_at__lt=updated_at__lt,
         )
 
-        result = await self.session.execute(query)
+        result = await self.db_session.execute(query)
         count = result.scalar()
         return count or 0
 
@@ -233,10 +236,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def get_app_conversation_info(
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
-        query = self._secure_select().where(
-            StoredConversationMetadata.conversation_id == conversation_id
+        query = await self._secure_select()
+        query = query.where(
+            StoredConversationMetadata.conversation_id == str(conversation_id)
         )
-        result_set = await self.session.execute(query)
+        result_set = await self.db_session.execute(query)
         result = result_set.scalar_one_or_none()
         if result:
             return self._to_info(result)
@@ -245,14 +249,18 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def batch_get_app_conversation_info(
         self, conversation_ids: list[UUID]
     ) -> list[AppConversationInfo | None]:
-        query = self._secure_select().where(
-            StoredConversationMetadata.conversation_id.in_(conversation_ids)
+        conversation_id_strs = [
+            str(conversation_id) for conversation_id in conversation_ids
+        ]
+        query = await self._secure_select()
+        query = query.where(
+            StoredConversationMetadata.conversation_id.in_(conversation_id_strs)
         )
-        result = await self.session.execute(query)
+        result = await self.db_session.execute(query)
         rows = result.scalars().all()
-        info_by_id = {info.id: info for info in rows}
+        info_by_id = {info.conversation_id: info for info in rows if info}
         results: list[AppConversationInfo | None] = []
-        for conversation_id in conversation_ids:
+        for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
             if info:
                 results.append(self._to_info(info))
@@ -264,24 +272,25 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
-        if self.user_id:
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = select(StoredConversationMetadata).where(
                 StoredConversationMetadata.conversation_id == info.id
             )
-            result = await self.session.execute(query)
+            result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == self.user_id
+            assert existing is None or existing.created_by_user_id == user_id
 
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
 
         stored = StoredConversationMetadata(
-            conversation_id=info.id,
+            conversation_id=str(info.id),
             github_user_id=None,  # TODO: Should we add this to the conversation info?
-            user_id=info.created_by_user_id,
+            user_id=info.created_by_user_id or '',
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
-            git_provider=info.git_provider,
+            git_provider=info.git_provider.value if info.git_provider else None,
             title=info.title,
             last_updated_at=info.updated_at,
             created_at=info.created_at,
@@ -302,16 +311,18 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             sandbox_id=info.sandbox_id,
         )
 
-        await self.session.merge(stored)
-        await self.session.commit()
+        await self.db_session.merge(stored)
+        await self.db_session.commit()
         return info
 
-    def _secure_select(self):
-        query = select(StoredConversationMetadata)
-        if self.user_id:
+    async def _secure_select(self):
+        query = select(StoredConversationMetadata).where(
+            StoredConversationMetadata.conversation_version == 'V1'
+        )
+        user_id = await self.user_context.get_user_id()
+        if user_id:
             query = query.where(
-                StoredConversationMetadata.user_id == self.user_id,
-                StoredConversationMetadata.conversation_version == 'V1',
+                StoredConversationMetadata.user_id == user_id,
             )
         return query
 
@@ -320,66 +331,68 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         sandbox_id = stored.sandbox_id
         assert sandbox_id is not None
 
+        # Rebuild token usage
+        token_usage = TokenUsage(
+            prompt_tokens=stored.prompt_tokens,
+            completion_tokens=stored.completion_tokens,
+            cache_read_tokens=stored.cache_read_tokens,
+            cache_write_tokens=stored.cache_write_tokens,
+            context_window=stored.context_window,
+            per_turn_token=stored.per_turn_token,
+        )
+
         # Rebuild metrics object
         metrics = MetricsSnapshot(
             accumulated_cost=stored.accumulated_cost,
             max_budget_per_task=stored.max_budget_per_task,
-            accumulated_token_usage=TokenUsage(
-                prompt_tokens=stored.prompt_tokens,
-                completion_tokens=stored.completion_tokens,
-                cache_read_tokens=stored.cache_read_tokens,
-                cache_write_tokens=stored.cache_write_tokens,
-                context_window=stored.context_window,
-                per_turn_token=stored.per_turn_token,
-            ),
+            accumulated_token_usage=token_usage,
         )
 
+        # Get timestamps
+        created_at = self._fix_timezone(stored.created_at)
+        updated_at = self._fix_timezone(stored.last_updated_at)
+
         return AppConversationInfo(
-            id=stored.conversation_id,
-            created_by_user_id=stored.user_id,
+            id=UUID(stored.conversation_id),
+            created_by_user_id=stored.user_id if stored.user_id else None,
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
-            git_provider=stored.git_provider,
+            git_provider=ProviderType(stored.git_provider)
+            if stored.git_provider
+            else None,
             title=stored.title,
-            trigger=ConversationTrigger[stored.trigger] if stored.trigger else None,
+            trigger=ConversationTrigger(stored.trigger) if stored.trigger else None,
             pr_number=stored.pr_number,
             llm_model=stored.llm_model,
             metrics=metrics,
-            created_at=stored.created_at,
-            updated_at=stored.last_updated_at,
+            created_at=created_at,
+            updated_at=updated_at,
         )
 
+    def _fix_timezone(self, value: datetime) -> datetime:
+        """Sqlite does not stpre timezones - and since we can't update the existing models
+        we assume UTC if the timezone is missing."""
+        if not value.tzinfo:
+            value =value.replace(tzinfo=UTC)
+        return value
 
-class SQLAppConversationServiceManager(AppConversationInfoServiceManager):
-    def get_unsecured_resolver(self) -> Callable:
+
+class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[AppConversationInfoService, None]:
         # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service
+        from openhands.app_server.config import (
+            get_db_session,
+            get_user_context,
+        )
 
-        # Create dependency at module level to avoid B008
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        def resolve_app_conversation_service(
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationInfoService:
-            return SQLAppConversationInfoService(session=session)
-
-        return resolve_app_conversation_service
-
-    def get_resolver_for_current_user(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service, user_injector
-
-        # Create dependencies at module level to avoid B008
-        user_dependency = Depends(user_injector())
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_app_conversation_service(
-            user_service: UserContext = user_dependency,
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationInfoService:
-            user_id = await user_service.get_user_id()
-            service = SQLAppConversationInfoService(session=session, user_id=user_id)
-            return service
-
-        return resolve_app_conversation_service
+        async with (
+            get_user_context(state, request) as user_context,
+            get_db_session(state, request) as db_session,
+        ):
+            service = SQLAppConversationInfoService(
+                db_session=db_session, user_context=user_context
+            )
+            yield service

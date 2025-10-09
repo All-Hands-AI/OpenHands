@@ -1,8 +1,8 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Callable
 
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxPage
+from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -61,11 +61,5 @@ class SandboxService(ABC):
         """
 
 
-class SandboxServiceManager(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of sandbox service limited to the current user."""
-
-    @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
-        """Get a resolver for all available sandboxes."""
+class SandboxServiceInjector(DiscriminatedUnionMixin, Injector[SandboxService], ABC):
+    pass

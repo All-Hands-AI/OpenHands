@@ -1,10 +1,10 @@
-import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable
+from typing import AsyncGenerator
 
 import docker
 from docker.errors import APIError, NotFound
+from fastapi import Request
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -15,9 +15,9 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
+from openhands.app_server.services.injector import InjectorState
 
 _global_docker_client: docker.DockerClient | None = None
-_logger = logging.getLogger(__name__)
 
 
 def get_docker_client() -> docker.DockerClient:
@@ -128,15 +128,7 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
-    def get_resolver_for_current_user(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.get_unsecured_resolver()
-
-    def get_unsecured_resolver(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.resolve
-
-    def resolve(self) -> SandboxSpecService:
-        return DockerSandboxSpecService()
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[SandboxSpecService, None]:
+        yield DockerSandboxSpecService()

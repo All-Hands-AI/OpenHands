@@ -1,11 +1,11 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Callable
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartTask,
 )
+from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -40,11 +40,7 @@ class AppConversationStartTaskService(ABC):
         """
 
 
-class AppConversationStartTaskServiceManager(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_unsecured_resolver(self) -> Callable:
-        """Get a resolver for an instance of app conversation start task service."""
-
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of app conversation start task service limited to the current user."""
+class AppConversationStartTaskServiceInjector(
+    DiscriminatedUnionMixin, Injector[AppConversationStartTaskService], ABC
+):
+    pass

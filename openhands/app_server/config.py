@@ -2,37 +2,49 @@
 
 import os
 from pathlib import Path
-from typing import Callable
+from typing import AsyncContextManager
 
-from fastapi import Depends
+import httpx
+from fastapi import Depends, Request
 from pydantic import Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.env_parser import from_env
 from openhands.app_server.app_conversation.app_conversation_info_service import (
-    AppConversationInfoServiceManager,
+    AppConversationInfoService,
+    AppConversationInfoServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
-    AppConversationServiceManager,
+    AppConversationService,
+    AppConversationServiceInjector,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
-    AppConversationStartTaskServiceManager,
+    AppConversationStartTaskService,
+    AppConversationStartTaskServiceInjector,
 )
 from openhands.app_server.app_lifespan.app_lifespan_service import AppLifespanService
 from openhands.app_server.app_lifespan.oss_app_lifespan_service import (
     OssAppLifespanService,
 )
-from openhands.app_server.event.event_service import EventServiceManager
+from openhands.app_server.event.event_service import EventService, EventServiceInjector
 from openhands.app_server.event_callback.event_callback_service import (
-    EventCallbackServiceManager,
+    EventCallbackService,
+    EventCallbackServiceInjector,
 )
-from openhands.app_server.sandbox.sandbox_service import SandboxServiceManager
+from openhands.app_server.sandbox.sandbox_service import (
+    SandboxService,
+    SandboxServiceInjector,
+)
 from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
-from openhands.app_server.services.db_service import DbService
-from openhands.app_server.services.httpx_client_manager import HttpxClientManager
-from openhands.app_server.services.jwt_service import JwtService, JwtServiceManager
+from openhands.app_server.services.db_session_injector import (
+    DbSessionInjector,
+)
+from openhands.app_server.services.httpx_client_injector import HttpxClientInjector
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.services.jwt_service import JwtService, JwtServiceInjector
 from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.sdk.utils.models import OpenHandsModel
 
@@ -74,23 +86,110 @@ class AppServerConfig(OpenHandsModel):
         default_factory=get_default_web_url,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
-    # Service managers
-    event: EventServiceManager | None = None
-    event_callback: EventCallbackServiceManager | None = None
-    sandbox: SandboxServiceManager | None = None
+    # Dependency Injection Injectors
+    event: EventServiceInjector | None = None
+    event_callback: EventCallbackServiceInjector | None = None
+    sandbox: SandboxServiceInjector | None = None
     sandbox_spec: SandboxSpecServiceInjector | None = None
-    app_conversation_info: AppConversationInfoServiceManager | None = None
-    app_conversation_start_task: AppConversationStartTaskServiceManager | None = None
-    app_conversation: AppConversationServiceManager | None = None
+    app_conversation_info: AppConversationInfoServiceInjector | None = None
+    app_conversation_start_task: AppConversationStartTaskServiceInjector | None = None
+    app_conversation: AppConversationServiceInjector | None = None
     user: UserContextInjector | None = None
-    jwt: JwtServiceManager | None = None
-    httpx: HttpxClientManager = Field(default_factory=HttpxClientManager)
+    jwt: JwtServiceInjector | None = None
+    httpx: HttpxClientInjector = Field(default_factory=HttpxClientInjector)
+    db_session: DbSessionInjector = Field(
+        default_factory=lambda: DbSessionInjector(
+            persistence_dir=get_default_persistence_dir()
+        )
+    )
 
     # Services
     lifespan: AppLifespanService = Field(default_factory=_get_default_lifespan)
-    db_service: DbService = Field(
-        default_factory=lambda: DbService(persistence_dir=get_default_persistence_dir())
-    )
+
+
+def config_from_env() -> AppServerConfig:
+    config: AppServerConfig = from_env(AppServerConfig, 'OH')  # type: ignore
+
+    if config.event is None:
+        from openhands.app_server.event.filesystem_event_service import (
+            FilesystemEventServiceInjector,
+        )
+
+        config.event = FilesystemEventServiceInjector()
+
+    if config.event_callback is None:
+        from openhands.app_server.event_callback.sql_event_callback_service import (
+            SQLEventCallbackServiceInjector,
+        )
+
+        config.event_callback = SQLEventCallbackServiceInjector()
+
+    if config.sandbox is None:
+        # Legacy fallback
+        if os.getenv('RUNTIME') == 'remote':
+            from openhands.app_server.sandbox.remote_sandbox_service import (
+                RemoteSandboxServiceInjector,
+            )
+
+            config.sandbox = RemoteSandboxServiceInjector(
+                api_key=os.environ['SANDBOX_API_KEY'],
+                api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
+            )
+        else:
+            from openhands.app_server.sandbox.docker_sandbox_service import (
+                DockerSandboxServiceInjector,
+            )
+
+            config.sandbox = DockerSandboxServiceInjector()
+
+        if config.sandbox_spec is None:
+            if os.getenv('RUNTIME') == 'remote':
+                from openhands.app_server.sandbox.remote_sandbox_spec_service import (
+                    RemoteSandboxSpecServiceInjector,
+                )
+
+                config.sandbox_spec = RemoteSandboxSpecServiceInjector()
+            else:
+                from openhands.app_server.sandbox.docker_sandbox_spec_service import (
+                    DockerSandboxSpecServiceInjector,
+                )
+
+                config.sandbox_spec = DockerSandboxSpecServiceInjector()
+
+        if config.app_conversation_info is None:
+            from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
+                SQLAppConversationInfoServiceInjector,
+            )
+
+            config.app_conversation_info = SQLAppConversationInfoServiceInjector()
+
+        if config.app_conversation_start_task is None:
+            from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
+                SQLAppConversationStartTaskServiceInjector,
+            )
+
+            config.app_conversation_start_task = (
+                SQLAppConversationStartTaskServiceInjector()
+            )
+
+        if config.app_conversation is None:
+            from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
+                LiveStatusAppConversationServiceInjector,
+            )
+
+            config.app_conversation = LiveStatusAppConversationServiceInjector()
+
+        if config.user is None:
+            from openhands.app_server.user.auth_user_context import (
+                AuthUserContextInjector,
+            )
+
+            config.user = AuthUserContextInjector()
+
+        if config.jwt is None:
+            config.jwt = JwtServiceInjector(persistence_dir=config.persistence_dir)
+
+    return config
 
 
 _global_config: AppServerConfig | None = None
@@ -101,153 +200,157 @@ def get_global_config() -> AppServerConfig:
     global _global_config
     if _global_config is None:
         # Load configuration from environment...
-        _global_config = from_env(AppServerConfig, 'OH')  # type: ignore
+        _global_config = config_from_env()
 
     return _global_config  # type: ignore
 
 
-def event_manager() -> EventServiceManager:
-    config = get_global_config()
-    event = config.event
-    if event is None:
-        from openhands.app_server.event.filesystem_event_service import (
-            FilesystemEventServiceManager,
-        )
-
-        event = FilesystemEventServiceManager()
-        config.event = event
-    return event
+def get_event_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[EventService]:
+    injector = get_global_config().event
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def event_callback_manager() -> EventCallbackServiceManager:
-    config = get_global_config()
-    event_callback = config.event_callback
-    if event_callback is None:
-        from openhands.app_server.event_callback.sql_event_callback_service import (
-            SQLEventCallbackServiceManager,
-        )
-
-        event_callback = SQLEventCallbackServiceManager()
-        config.event_callback = event_callback
-    return event_callback
+def get_event_callback_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[EventCallbackService]:
+    injector = get_global_config().event_callback
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def sandbox_manager() -> SandboxServiceManager:
-    config = get_global_config()
-    sandbox = config.sandbox
-    if sandbox is None:
-        # Legacy fallback
-        if os.getenv('RUNTIME') == 'remote':
-            from openhands.app_server.sandbox.remote_sandbox_service import (
-                RemoteSandboxServiceManager,
-            )
-
-            sandbox = RemoteSandboxServiceManager(
-                api_key=os.environ['SANDBOX_API_KEY'],
-                api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
-            )
-        else:
-            from openhands.app_server.sandbox.docker_sandbox_service import (
-                DockerSandboxServiceManager,
-            )
-
-            sandbox = DockerSandboxServiceManager()
-        config.sandbox = sandbox
-    return sandbox
+def get_sandbox_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[SandboxService]:
+    injector = get_global_config().sandbox
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def sandbox_spec_injector() -> Callable[..., SandboxSpecService]:
-    config = get_global_config()
-    sandbox_spec = config.sandbox_spec
-    if sandbox_spec is None:
-        if os.getenv('RUNTIME') == 'remote':
-            from openhands.app_server.sandbox.remote_sandbox_spec_service import (
-                RemoteSandboxSpecServiceInjector,
-            )
-
-            sandbox_spec = RemoteSandboxSpecServiceInjector()
-        else:
-            from openhands.app_server.sandbox.docker_sandbox_spec_service import (
-                DockerSandboxSpecServiceInjector,
-            )
-
-            sandbox_spec = DockerSandboxSpecServiceInjector()
-        config.sandbox_spec = sandbox_spec
-    return sandbox_spec.get_injector()
+def get_sandbox_spec_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[SandboxSpecService]:
+    injector = get_global_config().sandbox_spec
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def app_conversation_info_manager() -> AppConversationInfoServiceManager:
-    config = get_global_config()
-    app_conversation_info = config.app_conversation_info
-    if app_conversation_info is None:
-        from openhands.app_server.app_conversation.sql_app_conversation_info_service import (  # noqa: E501
-            SQLAppConversationServiceManager,
-        )
-
-        app_conversation_info = SQLAppConversationServiceManager()
-        config.app_conversation_info = app_conversation_info
-    return app_conversation_info
+def get_app_conversation_info_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[AppConversationInfoService]:
+    injector = get_global_config().app_conversation_info
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def app_conversation_start_task_manager() -> AppConversationStartTaskServiceManager:
-    config = get_global_config()
-    app_conversation_start_task = config.app_conversation_start_task
-    if app_conversation_start_task is None:
-        from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (  # noqa: E501
-            SQLAppConversationStartTaskServiceManager,
-        )
-
-        app_conversation_start_task = SQLAppConversationStartTaskServiceManager()
-        config.app_conversation_start_task = app_conversation_start_task
-    return app_conversation_start_task
+def get_app_conversation_start_task_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[AppConversationStartTaskService]:
+    injector = get_global_config().app_conversation_start_task
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def app_conversation_manager() -> AppConversationServiceManager:
-    config = get_global_config()
-    app_conversation = config.app_conversation
-    if app_conversation is None:
-        from openhands.app_server.app_conversation.live_status_app_conversation_service import (  # noqa: E501
-            LiveStatusAppConversationServiceManager,
-        )
-
-        app_conversation = LiveStatusAppConversationServiceManager()
-        config.app_conversation = app_conversation
-    return app_conversation
+def get_app_conversation_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[AppConversationService]:
+    injector = get_global_config().app_conversation
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def user_injector() -> Callable[..., UserContext]:
-    config = get_global_config()
-    user = config.user
-    if user is None:
-        from openhands.app_server.user.auth_user_context import (
-            AuthUserContextInjector,
-        )
-
-        user = AuthUserContextInjector()
-        config.user = user
-    return user.get_injector()
+def get_user_context(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[UserContext]:
+    injector = get_global_config().user
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def httpx_client_manager() -> HttpxClientManager:
-    config = get_global_config()
-    return config.httpx
+def get_httpx_client(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[httpx.AsyncClient]:
+    return get_global_config().httpx.context(state, request)
 
 
-def resolve_jwt_service(
-    config: AppServerConfig = Depends(get_global_config),
-) -> JwtService:
-    resolver = config.jwt
-    if resolver is None:
-        resolver = JwtServiceManager(persistence_dir=config.persistence_dir)
-        config.jwt = resolver
-    return resolver.get_jwt_service()
+def get_jwt_service(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[JwtService]:
+    injector = get_global_config().jwt
+    assert injector is not None
+    return injector.context(state, request)
 
 
-def app_lifespan() -> AppLifespanService:
+def get_db_session(
+    state: InjectorState, request: Request | None = None
+) -> AsyncContextManager[AsyncSession]:
+    return get_global_config().db_session.context(state, request)
+
+
+def get_app_lifespan_service() -> AppLifespanService:
     config = get_global_config()
     return config.lifespan
 
 
-def db_service() -> DbService:
-    config = get_global_config()
-    return config.db_service
+def depends_event_service():
+    injector = get_global_config().event
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_event_callback_service():
+    injector = get_global_config().event_callback
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_sandbox_service():
+    injector = get_global_config().sandbox
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_sandbox_spec_service():
+    injector = get_global_config().sandbox_spec
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_app_conversation_info_service():
+    injector = get_global_config().app_conversation_info
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_app_conversation_start_task_service():
+    injector = get_global_config().app_conversation_start_task
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_app_conversation_service():
+    injector = get_global_config().app_conversation
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_user_context():
+    injector = get_global_config().user
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_httpx_client():
+    return Depends(get_global_config().httpx.depends)
+
+
+def depends_jwt_service():
+    injector = get_global_config().jwt
+    assert injector is not None
+    return Depends(injector.depends)
+
+
+def depends_db_session():
+    return Depends(get_global_config().db_session.depends)

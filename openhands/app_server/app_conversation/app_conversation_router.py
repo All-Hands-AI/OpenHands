@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Annotated, AsyncGenerator
 from uuid import UUID
 
+from openhands.app_server.services.db_session_injector import set_db_session_keep_open
+
 # Handle anext compatibility for Python < 3.10
 if sys.version_info >= (3, 10):
     from builtins import anext
@@ -16,7 +18,7 @@ else:
         return await async_iterator.__anext__()
 
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -29,13 +31,14 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
-from openhands.app_server.config import app_conversation_manager, db_service
+from openhands.app_server.config import (
+    depends_app_conversation_service,
+    depends_db_session,
+)
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
-app_conversation_service_dependency = Depends(
-    app_conversation_manager().get_resolver_for_current_user()
-)
-unmanaged_session_dependency = Depends(db_service().unmanaged_session_dependency)
+app_conversation_service_dependency = depends_app_conversation_service()
+db_session_dependency = depends_db_session()
 
 # Read methods
 
@@ -143,14 +146,18 @@ async def batch_get_app_conversations(
 
 @router.post('')
 async def start_app_conversation(
-    request: AppConversationStartRequest,
-    db_session: AsyncSession = unmanaged_session_dependency,
+    request: Request,
+    start_request: AppConversationStartRequest,
+    db_session: AsyncSession = db_session_dependency,
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
 ) -> AppConversationStartTask:
+    # Because we are processing after the request finishes, keep the db connection open
+    set_db_session_keep_open(request.state, True)
+
     """Start an app conversation start task and return it."""
-    async_iter = app_conversation_service.start_app_conversation(request)
+    async_iter = app_conversation_service.start_app_conversation(start_request)
     result = await anext(async_iter)
     asyncio.create_task(_consume_remaining(async_iter, db_session))
     return result

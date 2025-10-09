@@ -1,7 +1,8 @@
 import os
 from dataclasses import dataclass
-from typing import Callable
+from typing import AsyncGenerator
 
+from fastapi import Request
 from pydantic import Field
 
 from openhands.app_server.errors import OpenHandsError
@@ -13,6 +14,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
+from openhands.app_server.services.injector import InjectorState
 
 
 @dataclass
@@ -82,12 +84,7 @@ class RemoteSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         description='Preset list of sandbox specs. Falls back to legacy parameter',
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
-        # At present, all specs are available to all users within the system
-        return self.get_unsecured_resolver()
-
-    def get_unsecured_resolver(self) -> Callable:
-        return self._resolve
-
-    def _resolve(self):
-        return RemoteSandboxSpecService(self.specs)
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[SandboxSpecService, None]:
+        yield RemoteSandboxSpecService(self.specs)

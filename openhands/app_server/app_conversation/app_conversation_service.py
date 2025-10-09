@@ -1,7 +1,7 @@
 import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import AsyncGenerator, Callable
+from typing import AsyncGenerator
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -11,6 +11,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
     AppConversationStartTask,
 )
+from openhands.app_server.services.injector import Injector
 from openhands.sdk import Workspace
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -101,7 +102,7 @@ class AppConversationService(ABC):
         yield task
 
 
-class AppConversationServiceManager(DiscriminatedUnionMixin, ABC):
-    @abstractmethod
-    def get_resolver_for_current_user(self) -> Callable:
-        """Get a resolver for an instance of sandbox spec service limited to the current user."""
+class AppConversationServiceInjector(
+    DiscriminatedUnionMixin, Injector[AppConversationService], ABC
+):
+    pass

@@ -6,10 +6,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import Column, String, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,8 +26,9 @@ from openhands.app_server.event_callback.event_callback_result_models import (
 )
 from openhands.app_server.event_callback.event_callback_service import (
     EventCallbackService,
-    EventCallbackServiceManager,
+    EventCallbackServiceInjector,
 )
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
@@ -38,6 +39,8 @@ from openhands.app_server.utils.sql_utils import (
 from openhands.sdk import Event
 
 _logger = logging.getLogger(__name__)
+
+# TODO: Add user level filtering to this class
 
 
 class StoredEventCallback(Base):  # type: ignore
@@ -64,7 +67,7 @@ class StoredEventCallbackResult(Base):  # type: ignore
 class SQLEventCallbackService(EventCallbackService):
     """SQL implementation of EventCallbackService."""
 
-    session: AsyncSession
+    db_session: AsyncSession
 
     async def create_event_callback(
         self, request: CreateEventCallbackRequest
@@ -77,17 +80,17 @@ class SQLEventCallbackService(EventCallbackService):
             event_kind=request.event_kind,
         )
 
-        # Create stored version and add to session
+        # Create stored version and add to db_session
         stored_callback = StoredEventCallback(**event_callback.model_dump())
-        self.session.add(stored_callback)
-        await self.session.commit()
-        await self.session.refresh(stored_callback)
+        self.db_session.add(stored_callback)
+        await self.db_session.commit()
+        await self.db_session.refresh(stored_callback)
         return EventCallback(**row2dict(stored_callback))
 
     async def get_event_callback(self, id: UUID) -> EventCallback | None:
         """Get a single event callback, returning None if not found."""
         stmt = select(StoredEventCallback).where(StoredEventCallback.id == id)
-        result = await self.session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         stored_callback = result.scalar_one_or_none()
         if stored_callback:
             return EventCallback(**row2dict(stored_callback))
@@ -96,14 +99,14 @@ class SQLEventCallbackService(EventCallbackService):
     async def delete_event_callback(self, id: UUID) -> bool:
         """Delete an event callback, returning True if deleted, False if not found."""
         stmt = select(StoredEventCallback).where(StoredEventCallback.id == id)
-        result = await self.session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         stored_callback = result.scalar_one_or_none()
 
         if stored_callback is None:
             return False
 
-        await self.session.delete(stored_callback)
-        await self.session.commit()
+        await self.db_session.delete(stored_callback)
+        await self.db_session.commit()
         return True
 
     async def search_event_callbacks(
@@ -151,7 +154,7 @@ class SQLEventCallbackService(EventCallbackService):
         # Apply limit and get one extra to check if there are more results
         stmt = stmt.limit(limit + 1).order_by(StoredEventCallback.created_at.desc())
 
-        result = await self.session.execute(stmt)
+        result = await self.db_session.execute(stmt)
         stored_callbacks = result.scalars().all()
 
         # Check if there are more results
@@ -184,7 +187,7 @@ class SQLEventCallbackService(EventCallbackService):
                 )
             )
         )
-        result = await self.session.execute(query)
+        result = await self.db_session.execute(query)
         stored_callbacks = result.scalars().all()
         if stored_callbacks:
             callbacks = [EventCallback(**row2dict(cb)) for cb in stored_callbacks]
@@ -194,7 +197,7 @@ class SQLEventCallbackService(EventCallbackService):
                     for callback in callbacks
                 ]
             )
-            await self.session.commit()
+            await self.db_session.commit()
 
     async def execute_callback(
         self, conversation_id: UUID, callback: EventCallback, event: Event
@@ -211,30 +214,18 @@ class SQLEventCallbackService(EventCallbackService):
                 conversation_id=conversation_id,
                 detail=str(exc),
             )
-        self.session.add(stored_result)
+        self.db_session.add(stored_result)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         """Stop using this event callback service."""
         pass
 
 
-class SQLEventCallbackServiceManager(EventCallbackServiceManager):
-    def get_unsecured_resolver(self) -> Callable:
-        from openhands.app_server.config import db_service
+class SQLEventCallbackServiceInjector(EventCallbackServiceInjector):
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[EventCallbackService, None]:
+        from openhands.app_server.config import get_db_session
 
-        # Create dependency at module level to avoid B008
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        def resolve(
-            db_session=_db_dependency,
-        ) -> EventCallbackService:
-            return SQLEventCallbackService(db_session)
-
-        return resolve
-
-    def get_resolver_for_current_user(self) -> Callable:
-        _logger.warning(
-            'Using secured EventCallbackService resolver - '
-            'returning unsecured resolver for now. Eventually filter by conversation'
-        )
-        return self.get_unsecured_resolver()
+        async with get_db_session(state) as db_session:
+            yield SQLEventCallbackService(db_session=db_session)

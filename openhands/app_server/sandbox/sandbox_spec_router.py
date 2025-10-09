@@ -2,9 +2,9 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Query
 
-from openhands.app_server.config import sandbox_spec_injector
+from openhands.app_server.config import depends_sandbox_spec_service
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -14,7 +14,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
 )
 
 router = APIRouter(prefix='/sandbox-specs', tags=['Sandbox'])
-sandbox_spec_service_dependency = Depends(sandbox_spec_injector())
+sandbox_spec_service_dependency = depends_sandbox_spec_service()
 
 
 # Read methods

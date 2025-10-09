@@ -3,13 +3,13 @@ import os
 import socket
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable
+from typing import AsyncGenerator
 
 import base62
 import docker
 import httpx
 from docker.errors import APIError, NotFound
-from fastapi import Depends
+from fastapi import Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.agent_server.utils import utc_now
@@ -25,9 +25,10 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceManager,
+    SandboxServiceInjector,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
+from openhands.app_server.services.injector import InjectorState
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -155,7 +156,7 @@ class DockerSandboxService(SandboxService):
         return SandboxInfo(
             id=container.name,
             created_by_user_id=None,
-            sandbox_spec_id=container.image,
+            sandbox_spec_id=container.image.tags[0],
             status=status,
             session_api_key=session_api_key,
             exposed_urls=exposed_urls,
@@ -367,8 +368,8 @@ class DockerSandboxService(SandboxService):
             return False
 
 
-class DockerSandboxServiceManager(SandboxServiceManager):
-    """Manager / Configuration for docker sandbox services."""
+class DockerSandboxServiceInjector(SandboxServiceInjector):
+    """Dependency injector for docker sandbox services."""
 
     container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000
@@ -400,27 +401,20 @@ class DockerSandboxServiceManager(SandboxServiceManager):
         ),
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
-        # Docker sandboxes are designed for a single user and
-        # don't have security constraints
-        return self.get_unsecured_resolver()
-
-    def get_unsecured_resolver(self) -> Callable:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[SandboxService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
-            httpx_client_manager,
-            sandbox_spec_injector,
+            get_httpx_client,
+            get_sandbox_spec_service,
         )
 
-        # Create dependencies at module level to avoid B008
-        sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
-
-        def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = sandbox_spec_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-        ) -> SandboxService:
-            return DockerSandboxService(
+        async with (
+            get_httpx_client(state) as httpx_client,
+            get_sandbox_spec_service(state) as sandbox_spec_service,
+        ):
+            yield DockerSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 container_name_prefix=self.container_name_prefix,
                 host_port=self.host_port,
@@ -430,5 +424,3 @@ class DockerSandboxServiceManager(SandboxServiceManager):
                 health_check_path=self.health_check_path,
                 httpx_client=httpx_client,
             )
-
-        return resolve_sandbox_service

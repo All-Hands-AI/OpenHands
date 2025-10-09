@@ -1,17 +1,29 @@
+import asyncio
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Callable, Union
+from typing import Any, AsyncGenerator, Union
 
 import base62
 import httpx
-from fastapi import Depends
+from fastapi import Request
 from pydantic import Field
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from openhands.agent_server.models import ConversationInfo, EventPage
 from openhands.agent_server.utils import utc_now
-from openhands.app_server.errors import OpenHandsError, SandboxError
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
+)
+from openhands.app_server.errors import SandboxError
+from openhands.app_server.event.event_service import EventService
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     ExposedUrl,
@@ -21,14 +33,18 @@ from openhands.app_server.sandbox.sandbox_models import (
 )
 from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
-    SandboxServiceManager,
+    SandboxServiceInjector,
 )
+from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.admin_user_context import ADMIN, USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+polling_task: asyncio.Task | None = None
 
 
 class StoredRemoteSandbox(Base):  # type: ignore
@@ -41,7 +57,7 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
     __tablename__ = 'v1_remote_sandbox'
     id = Column(String, primary_key=True)
-    created_by_user_id = Column(String, index=True)
+    created_by_user_id = Column(String, nullable=True, index=True)
     sandbox_spec_id = Column(String, index=True)  # shadows runtime['image']
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
@@ -57,10 +73,10 @@ class RemoteSandboxService(SandboxService):
     sandbox_spec_service: SandboxSpecService
     api_url: str
     api_key: str
-    web_url: str
+    web_url: str | None
     resource_factor: int
     runtime_class: str | None
-    user_id: str | None
+    user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
 
@@ -81,7 +97,9 @@ class RemoteSandboxService(SandboxService):
         """Send a request to the remote runtime API."""
         try:
             url = self.api_url + path
-            return await self.httpx_client.request(method, url, **kwargs)
+            return await self.httpx_client.request(
+                method, url, headers={'X-Session-API-Key': self.api_key}, **kwargs
+            )
         except httpx.TimeoutException:
             _logger.error(f'No response received within timeout for URL: {url}')
             raise
@@ -117,18 +135,33 @@ class RemoteSandboxService(SandboxService):
             created_at=stored.created_at,
         )
 
-    def _secure_select(self):
+    async def _secure_select(self):
         query = select(StoredRemoteSandbox)
-        if self.user_id:
-            query = query.where(StoredRemoteSandbox.created_by_user_id == self.user_id)
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            query = query.where(StoredRemoteSandbox.created_by_user_id == user_id)
         return query
+
+    async def _init_environment(
+        self, sandbox_spec: SandboxSpecInfo, sandbox_id: str
+    ) -> dict[str, str]:
+        """Initialize the environment variables for the sandbox."""
+        environment = sandbox_spec.initial_env.copy()
+
+        # If a public facing url is defined, add a callback to the agent server environment.
+        if self.web_url:
+            environment[WEBHOOK_CALLBACK_VARIABLE] = (
+                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+            )
+
+        return environment
 
     async def search_sandboxes(
         self,
         page_id: str | None = None,
         limit: int = 100,
     ) -> SandboxPage:
-        stmt = self._secure_select()
+        stmt = await self._secure_select()
 
         # Handle pagination
         if page_id is not None:
@@ -174,7 +207,8 @@ class RemoteSandboxService(SandboxService):
 
     async def get_sandbox(self, sandbox_id: str) -> Union[SandboxInfo, None]:
         """Get a single sandbox by checking its corresponding runtime."""
-        stmt = self._secure_select().where(StoredRemoteSandbox.id == sandbox_id)
+        stmt = await self._secure_select()
+        stmt = stmt.where(StoredRemoteSandbox.id == sandbox_id)
         result = await self.db_session.execute(stmt)
         stored_sandbox = result.scalar_one_or_none()
         if stored_sandbox is None:
@@ -196,11 +230,6 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
-            if self.user_id is None:
-                # This is an illegal state - starting a sandbox with an unsecured service
-                # means the sandbox would not be associated with any user
-                raise OpenHandsError('Cannot start a sandbox without a user_id')
-
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -217,10 +246,13 @@ class RemoteSandboxService(SandboxService):
             # Create a unique id
             sandbox_id = base62.encodebytes(os.urandom(16))
 
+            # get user id
+            user_id = self.user_context.get_user_id()
+
             # Store the sandbox
             stored_sandbox = StoredRemoteSandbox(
                 id=sandbox_id,
-                created_by_user_id=self.user_id,
+                created_by_user_id=user_id,
                 sandbox_spec_id=sandbox_spec_id,
                 created_at=utc_now(),
             )
@@ -228,10 +260,7 @@ class RemoteSandboxService(SandboxService):
             await self.db_session.commit()
 
             # Prepare environment variables
-            environment = sandbox_spec.initial_env.copy()
-            environment[WEBHOOK_CALLBACK_VARIABLE] = (
-                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
-            )
+            environment = self._init_environment(sandbox_spec, sandbox_id)
 
             # Prepare start request
             start_request: dict[str, Any] = {
@@ -320,11 +349,167 @@ class RemoteSandboxService(SandboxService):
             return False
 
 
-class RemoteSandboxServiceManager(SandboxServiceManager):
-    """Manager for remote sandbox services."""
+async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
+    """When the app server does not have a public facing url, we poll the agent
+    servers for the most recent data.
+
+    This is because webhook callbacks cannot be invoked."""
+    from openhands.app_server.config import (
+        get_app_conversation_info_service,
+        get_event_callback_service,
+        get_event_service,
+        get_global_config,
+        get_httpx_client,
+    )
+
+    get_global_config()
+    # session_maker = await db_service().get_async_session_maker()
+    while True:
+        try:
+            # Get the list of running sandboxes using the runtime api /list endpoint. ...
+            async with httpx.AsyncClient() as httpx_client:
+                response = await httpx_client.get(
+                    f'{api_url}/list', headers={'X-Session-API-Key': api_key}
+                )
+                response.raise_for_status()
+                runtimes = response.json()['runtimes']
+                runtimes_by_sandbox_id = {
+                    runtime['session_id']: runtime
+                    for runtime in runtimes
+                    if runtime['status'] == 'running'
+                }
+
+            # Refresh the conversations associated with those sandboxes.
+            state = InjectorState()
+            # We allow access to all items here
+            setattr(state, USER_CONTEXT_ATTR, ADMIN)
+            async with (
+                get_app_conversation_info_service(
+                    state
+                ) as app_conversation_info_service,
+                get_event_service(state) as event_service,
+                get_event_callback_service(state) as event_callback_service,
+                get_httpx_client(state) as httpx_client,
+            ):
+                page_id = None
+                while True:
+                    page = await app_conversation_info_service.search_app_conversation_info(
+                        page_id=page_id
+                    )
+                    for app_conversation_info in page.items:
+                        runtime = runtimes_by_sandbox_id.get(
+                            app_conversation_info.sandbox_id
+                        )
+                        if runtime:
+                            await refresh_conversation(
+                                app_conversation_info_service=app_conversation_info_service,
+                                event_service=event_service,
+                                event_callback_service=event_callback_service,
+                                app_conversation_info=app_conversation_info,
+                                runtime=runtime,
+                                httpx_client=httpx_client,
+                            )
+                    page_id = page.next_page_id
+                    if page_id is None:
+                        break
+
+            await asyncio.sleep(sleep_interval)
+        except asyncio.CancelledError:
+            return
+        except Exception as exc:
+            _logger.exception(
+                f'Error when polling agent servers: {exc}', stack_info=True
+            )
+
+
+async def refresh_conversation(
+    app_conversation_info_service: AppConversationInfoService,
+    event_service: EventService,
+    event_callback_service: EventCallbackService,
+    app_conversation_info: AppConversationInfo,
+    runtime: dict[str, Any],
+    httpx_client: httpx.AsyncClient,
+):
+    """Refresh a conversation.
+
+    Grab ConversationInfo and all events from the agent server and make sure they
+    exist in the app server."""
+    _logger.debug(f'Started Refreshing Conversation {app_conversation_info.id}')
+    try:
+        url = runtime['url']
+
+        # TODO: Maybe we can use RemoteConversation here?
+
+        # First get conversation...
+        conversation_url = f'{url}/api/conversations/{app_conversation_info.id.hex}'
+        response = await httpx_client.get(
+            conversation_url, headers={'X-Session-API-Key': runtime['session_api_key']}
+        )
+        response.raise_for_status()
+
+        updated_conversation_info = ConversationInfo.model_validate(response.json())
+
+        # TODO: As of writing, ConversationInfo from AgentServer does not have a title to update...
+        app_conversation_info.updated_at = updated_conversation_info.updated_at
+        # TODO: Update other appropriate attributes...
+
+        await app_conversation_info_service.save_app_conversation_info(
+            app_conversation_info
+        )
+
+        # TODO: It would be nice to have an updated_at__gte filter parameter in the
+        # agent server so that we don't pull the full event list each time
+        event_url = (
+            f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
+        )
+        page_id = None
+        while True:
+            params: dict[str, str] = {}
+            if page_id:
+                params['page_id'] = page_id
+            response = await httpx_client.get(
+                event_url,
+                params=params,
+                headers={'X-Session-API-Key': runtime['session_api_key']},
+            )
+            response.raise_for_status()
+            page = EventPage.model_validate(response.json())
+
+            to_process = []
+            for event in page.items:
+                existing = await event_service.get_event(event.id)
+                if existing is None:
+                    await event_service.save_event(app_conversation_info.id, event)
+                    to_process.append(event)
+
+            for event in to_process:
+                await event_callback_service.execute_callbacks(
+                    app_conversation_info.id, event
+                )
+
+            page_id = page.next_page_id
+            if page_id is None:
+                _logger.debug(
+                    f'Finished Refreshing Conversation {app_conversation_info.id}'
+                )
+                break
+
+    except Exception as exc:
+        _logger.exception(f'Error Refreshing Conversation: {exc}', stack_info=True)
+
+
+class RemoteSandboxServiceInjector(SandboxServiceInjector):
+    """Dependency injector for remote sandbox services."""
 
     api_url: str = Field(description='The API URL for remote runtimes')
     api_key: str = Field(description='The API Key for remote runtimes')
+    polling_interval: int = Field(
+        default=10,
+        description=(
+            'The sleep time between poll operations against agent servers when there is '
+            'no public facing web_url'
+        ),
+    )
     resource_factor: int = Field(
         default=1,
         description='Factor by which to scale resources in sandbox: 1, 2, 4, or 8',
@@ -334,82 +519,45 @@ class RemoteSandboxServiceManager(SandboxServiceManager):
         description='# can be "None" (default to gvisor) or "sysbox" (support docker inside runtime + more stable)',
     )
 
-    def get_resolver_for_current_user(self) -> Callable:
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[SandboxService, None]:
         # Define inline to prevent circular lookup
         from openhands.app_server.config import (
-            db_service,
+            get_db_session,
             get_global_config,
-            httpx_client_manager,
-            sandbox_spec_injector,
-            user_injector,
+            get_httpx_client,
+            get_sandbox_spec_service,
+            get_user_context,
         )
 
+        # If no public facing web url is defined, poll for changes as callbacks will be unavailable.
         config = get_global_config()
         web_url = config.web_url
         if web_url is None:
-            # TODO: Develop a polling protocol so this is not required.
-            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
-        # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        user_dependency = Depends(user_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
-        db_session_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            user_service: UserContext = user_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-            db_session: AsyncSession = db_session_dependency,
-        ) -> SandboxService:
-            user_id = await user_service.get_user_id()
-            return RemoteSandboxService(
+            global polling_task
+            if polling_task is None:
+                polling_task = asyncio.create_task(
+                    poll_agent_servers(
+                        api_url=self.api_url,
+                        api_key=self.api_key,
+                        sleep_interval=self.polling_interval,
+                    )
+                )
+        async with (
+            get_user_context(state) as user_context,
+            get_sandbox_spec_service(state) as sandbox_spec_service,
+            get_httpx_client(state) as httpx_client,
+            get_db_session(state) as db_session,
+        ):
+            yield RemoteSandboxService(
                 sandbox_spec_service=sandbox_spec_service,
                 api_url=self.api_url,
                 api_key=self.api_key,
                 web_url=web_url,
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
-                user_id=user_id,
+                user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,
             )
-
-        return resolve_sandbox_service
-
-    def get_unsecured_resolver(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import (
-            db_service,
-            get_global_config,
-            httpx_client_manager,
-            sandbox_spec_injector,
-        )
-
-        config = get_global_config()
-        web_url = config.web_url
-        if web_url is None:
-            # TODO: Develop a polling protocol so this is not required.
-            raise SandboxError('A web_url is required in order to use RemoteSandboxes!')
-        # Create dependencies at module level to avoid B008
-        _sandbox_spec_dependency = Depends(sandbox_spec_injector())
-        _httpx_client_dependency = Depends(httpx_client_manager().resolve)
-        db_session_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_sandbox_service(
-            sandbox_spec_service: SandboxSpecService = _sandbox_spec_dependency,
-            httpx_client: httpx.AsyncClient = _httpx_client_dependency,
-            db_session: AsyncSession = db_session_dependency,
-        ) -> SandboxService:
-            return RemoteSandboxService(
-                sandbox_spec_service=sandbox_spec_service,
-                api_url=self.api_url,
-                api_key=self.api_key,
-                web_url=web_url,
-                resource_factor=self.resource_factor,
-                runtime_class=self.runtime_class,
-                user_id=None,
-                httpx_client=httpx_client,
-                db_session=db_session,
-            )
-
-        return resolve_sandbox_service

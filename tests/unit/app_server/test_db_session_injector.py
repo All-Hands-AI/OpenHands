@@ -1,4 +1,4 @@
-"""Tests for DbService.
+"""Tests for DbSessionInjector.
 
 This module tests the database service implementation, focusing on:
 - Session management and reuse within request contexts
@@ -30,7 +30,9 @@ sys.modules['asyncpg'] = MagicMock()
 sys.modules['google.cloud.sql.connector'] = MagicMock()
 
 # Import after mocking to avoid import-time issues
-from openhands.app_server.services.db_service import DbService  # noqa: E402
+from openhands.app_server.services.db_session_injector import (  # noqa: E402
+    DbSessionInjector,
+)
 
 
 class MockRequest:
@@ -48,15 +50,15 @@ def temp_persistence_dir():
 
 
 @pytest.fixture
-def basic_db_service(temp_persistence_dir):
-    """Create a basic DbService instance for testing."""
-    return DbService(persistence_dir=temp_persistence_dir)
+def basic_db_session_injector(temp_persistence_dir):
+    """Create a basic DbSessionInjector instance for testing."""
+    return DbSessionInjector(persistence_dir=temp_persistence_dir)
 
 
 @pytest.fixture
-def postgres_db_service(temp_persistence_dir):
-    """Create a DbService instance configured for PostgreSQL."""
-    return DbService(
+def postgres_db_session_injector(temp_persistence_dir):
+    """Create a DbSessionInjector instance configured for PostgreSQL."""
+    return DbSessionInjector(
         persistence_dir=temp_persistence_dir,
         host='localhost',
         port=5432,
@@ -67,9 +69,9 @@ def postgres_db_service(temp_persistence_dir):
 
 
 @pytest.fixture
-def gcp_db_service(temp_persistence_dir):
-    """Create a DbService instance configured for GCP Cloud SQL."""
-    return DbService(
+def gcp_db_session_injector(temp_persistence_dir):
+    """Create a DbSessionInjector instance configured for GCP Cloud SQL."""
+    return DbSessionInjector(
         persistence_dir=temp_persistence_dir,
         gcp_db_instance='test-instance',
         gcp_project='test-project',
@@ -80,12 +82,12 @@ def gcp_db_service(temp_persistence_dir):
     )
 
 
-class TestDbServiceConfiguration:
+class TestDbSessionInjectorConfiguration:
     """Test configuration processing and environment variable handling."""
 
     def test_default_configuration(self, temp_persistence_dir):
         """Test default configuration values."""
-        service = DbService(persistence_dir=temp_persistence_dir)
+        service = DbSessionInjector(persistence_dir=temp_persistence_dir)
 
         assert service.persistence_dir == temp_persistence_dir
         assert service.host is None
@@ -116,7 +118,7 @@ class TestDbServiceConfiguration:
         }
 
         with patch.dict(os.environ, env_vars):
-            service = DbService(persistence_dir=temp_persistence_dir)
+            service = DbSessionInjector(persistence_dir=temp_persistence_dir)
 
             assert service.host == 'env_host'
             assert service.port == 3306
@@ -138,7 +140,7 @@ class TestDbServiceConfiguration:
         }
 
         with patch.dict(os.environ, env_vars):
-            service = DbService(
+            service = DbSessionInjector(
                 persistence_dir=temp_persistence_dir,
                 host='explicit_host',
                 port=5432,
@@ -154,37 +156,37 @@ class TestDbServiceConfiguration:
             assert service.password.get_secret_value() == 'explicit_password'
 
 
-class TestDbServiceConnections:
+class TestDbSessionInjectorConnections:
     """Test database connection string generation and engine creation."""
 
-    def test_sqlite_connection_fallback(self, basic_db_service):
+    def test_sqlite_connection_fallback(self, basic_db_session_injector):
         """Test SQLite connection when no host is defined."""
-        engine = basic_db_service.get_db_engine()
+        engine = basic_db_session_injector.get_db_engine()
 
         assert isinstance(engine, Engine)
-        expected_url = f'sqlite:///{basic_db_service.persistence_dir}/openhands.db'
-        assert str(engine.url) == expected_url
-
-    @pytest.mark.asyncio
-    async def test_sqlite_async_connection_fallback(self, basic_db_service):
-        """Test SQLite async connection when no host is defined."""
-        engine = await basic_db_service.get_async_db_engine()
-
-        assert isinstance(engine, AsyncEngine)
         expected_url = (
-            f'sqlite+aiosqlite:///{basic_db_service.persistence_dir}/openhands.db'
+            f'sqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
         )
         assert str(engine.url) == expected_url
 
-    def test_postgres_connection_with_host(self, postgres_db_service):
+    @pytest.mark.asyncio
+    async def test_sqlite_async_connection_fallback(self, basic_db_session_injector):
+        """Test SQLite async connection when no host is defined."""
+        engine = await basic_db_session_injector.get_async_db_engine()
+
+        assert isinstance(engine, AsyncEngine)
+        expected_url = f'sqlite+aiosqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
+        assert str(engine.url) == expected_url
+
+    def test_postgres_connection_with_host(self, postgres_db_session_injector):
         """Test PostgreSQL connection when host is defined."""
         with patch(
-            'openhands.app_server.services.db_service.create_engine'
+            'openhands.app_server.services.db_session_injector.create_engine'
         ) as mock_create_engine:
             mock_engine = MagicMock()
             mock_create_engine.return_value = mock_engine
 
-            engine = postgres_db_service.get_db_engine()
+            engine = postgres_db_session_injector.get_db_engine()
 
             assert engine == mock_engine
             # Check that create_engine was called with the right parameters
@@ -206,15 +208,17 @@ class TestDbServiceConnections:
             assert call_args[1]['pool_pre_ping']
 
     @pytest.mark.asyncio
-    async def test_postgres_async_connection_with_host(self, postgres_db_service):
+    async def test_postgres_async_connection_with_host(
+        self, postgres_db_session_injector
+    ):
         """Test PostgreSQL async connection when host is defined."""
         with patch(
-            'openhands.app_server.services.db_service.create_async_engine'
+            'openhands.app_server.services.db_session_injector.create_async_engine'
         ) as mock_create_async_engine:
             mock_engine = MagicMock()
             mock_create_async_engine.return_value = mock_engine
 
-            engine = await postgres_db_service.get_async_db_engine()
+            engine = await postgres_db_session_injector.get_async_db_engine()
 
             assert engine == mock_engine
             # Check that create_async_engine was called with the right parameters
@@ -235,82 +239,86 @@ class TestDbServiceConnections:
             assert call_args[1]['max_overflow'] == 10
             assert call_args[1]['pool_pre_ping']
 
-    @patch('openhands.app_server.services.db_service.DbService._create_gcp_engine')
-    def test_gcp_connection_configuration(self, mock_create_gcp_engine, gcp_db_service):
+    @patch(
+        'openhands.app_server.services.db_session_injector.DbSessionInjector._create_gcp_engine'
+    )
+    def test_gcp_connection_configuration(
+        self, mock_create_gcp_engine, gcp_db_session_injector
+    ):
         """Test GCP Cloud SQL connection configuration."""
         mock_engine = MagicMock()
         mock_create_gcp_engine.return_value = mock_engine
 
-        engine = gcp_db_service.get_db_engine()
+        engine = gcp_db_session_injector.get_db_engine()
 
         assert engine == mock_engine
         mock_create_gcp_engine.assert_called_once()
 
     @patch(
-        'openhands.app_server.services.db_service.DbService._create_async_gcp_engine'
+        'openhands.app_server.services.db_session_injector.DbSessionInjector._create_async_gcp_engine'
     )
     @pytest.mark.asyncio
     async def test_gcp_async_connection_configuration(
-        self, mock_create_async_gcp_engine, gcp_db_service
+        self, mock_create_async_gcp_engine, gcp_db_session_injector
     ):
         """Test GCP Cloud SQL async connection configuration."""
         mock_engine = AsyncMock()
         mock_create_async_gcp_engine.return_value = mock_engine
 
-        engine = await gcp_db_service.get_async_db_engine()
+        engine = await gcp_db_session_injector.get_async_db_engine()
 
         assert engine == mock_engine
         mock_create_async_gcp_engine.assert_called_once()
 
 
-class TestDbServiceEngineReuse:
+class TestDbSessionInjectorEngineReuse:
     """Test engine creation and caching behavior."""
 
-    def test_sync_engine_reuse(self, basic_db_service):
+    def test_sync_engine_reuse(self, basic_db_session_injector):
         """Test that sync engines are cached and reused."""
-        engine1 = basic_db_service.get_db_engine()
-        engine2 = basic_db_service.get_db_engine()
+        engine1 = basic_db_session_injector.get_db_engine()
+        engine2 = basic_db_session_injector.get_db_engine()
 
         assert engine1 is engine2
-        assert basic_db_service._engine is engine1
+        assert basic_db_session_injector._engine is engine1
 
     @pytest.mark.asyncio
-    async def test_async_engine_reuse(self, basic_db_service):
+    async def test_async_engine_reuse(self, basic_db_session_injector):
         """Test that async engines are cached and reused."""
-        engine1 = await basic_db_service.get_async_db_engine()
-        engine2 = await basic_db_service.get_async_db_engine()
+        engine1 = await basic_db_session_injector.get_async_db_engine()
+        engine2 = await basic_db_session_injector.get_async_db_engine()
 
         assert engine1 is engine2
-        assert basic_db_service._async_engine is engine1
+        assert basic_db_session_injector._async_engine is engine1
 
-    def test_session_maker_reuse(self, basic_db_service):
+    def test_session_maker_reuse(self, basic_db_session_injector):
         """Test that session makers are cached and reused."""
-        session_maker1 = basic_db_service.get_session_maker()
-        session_maker2 = basic_db_service.get_session_maker()
+        session_maker1 = basic_db_session_injector.get_session_maker()
+        session_maker2 = basic_db_session_injector.get_session_maker()
 
         assert session_maker1 is session_maker2
-        assert basic_db_service._session_maker is session_maker1
+        assert basic_db_session_injector._session_maker is session_maker1
 
     @pytest.mark.asyncio
-    async def test_async_session_maker_reuse(self, basic_db_service):
+    async def test_async_session_maker_reuse(self, basic_db_session_injector):
         """Test that async session makers are cached and reused."""
-        session_maker1 = await basic_db_service.get_async_session_maker()
-        session_maker2 = await basic_db_service.get_async_session_maker()
+        session_maker1 = await basic_db_session_injector.get_async_session_maker()
+        session_maker2 = await basic_db_session_injector.get_async_session_maker()
 
         assert session_maker1 is session_maker2
-        assert basic_db_service._async_session_maker is session_maker1
+        assert basic_db_session_injector._async_session_maker is session_maker1
 
 
-class TestDbServiceSessionManagement:
+class TestDbSessionInjectorSessionManagement:
     """Test session management and reuse within request contexts."""
 
     @pytest.mark.asyncio
-    async def test_managed_session_reuse_within_request(self, basic_db_service):
+    async def test_depends_reuse_within_request(self, basic_db_session_injector):
         """Test that managed sessions are reused within the same request context."""
         request = MockRequest()
 
         # First call should create a new session and store it in request state
-        session_generator1 = basic_db_service.managed_session_dependency(request)
+        session_generator1 = basic_db_session_injector.depends(request)
         session1 = await session_generator1.__anext__()
 
         # Verify session is stored in request state
@@ -318,7 +326,7 @@ class TestDbServiceSessionManagement:
         assert request.state.db_session is session1
 
         # Second call should return the same session from request state
-        session_generator2 = basic_db_service.managed_session_dependency(request)
+        session_generator2 = basic_db_session_injector.depends(request)
         session2 = await session_generator2.__anext__()
 
         assert session1 is session2
@@ -334,13 +342,13 @@ class TestDbServiceSessionManagement:
             pass
 
     @pytest.mark.asyncio
-    async def test_managed_session_cleanup_on_completion(self, basic_db_service):
+    async def test_depends_cleanup_on_completion(self, basic_db_session_injector):
         """Test that managed sessions are properly cleaned up after request completion."""
         request = MockRequest()
 
         # Mock the async session maker and session
         with patch(
-            'openhands.app_server.services.db_service.async_sessionmaker'
+            'openhands.app_server.services.db_session_injector.async_sessionmaker'
         ) as mock_sessionmaker_class:
             mock_session = AsyncMock()
             mock_session_context = AsyncMock()
@@ -351,7 +359,7 @@ class TestDbServiceSessionManagement:
             mock_sessionmaker_class.return_value = mock_sessionmaker
 
             # Use the managed session dependency
-            session_gen = basic_db_service.managed_session_dependency(request)
+            session_gen = basic_db_session_injector.depends(request)
             session = await session_gen.__anext__()
 
             assert hasattr(request.state, 'db_session')
@@ -370,13 +378,13 @@ class TestDbServiceSessionManagement:
             assert session is not None
 
     @pytest.mark.asyncio
-    async def test_managed_session_rollback_on_exception(self, basic_db_service):
+    async def test_depends_rollback_on_exception(self, basic_db_session_injector):
         """Test that managed sessions are rolled back on exceptions."""
         request = MockRequest()
 
         # Mock the async session maker and session
         with patch(
-            'openhands.app_server.services.db_service.async_sessionmaker'
+            'openhands.app_server.services.db_session_injector.async_sessionmaker'
         ) as mock_sessionmaker_class:
             mock_session = AsyncMock()
             mock_session_context = AsyncMock()
@@ -386,7 +394,7 @@ class TestDbServiceSessionManagement:
             mock_sessionmaker.return_value = mock_session_context
             mock_sessionmaker_class.return_value = mock_sessionmaker
 
-            session_gen = basic_db_service.managed_session_dependency(request)
+            session_gen = basic_db_session_injector.depends(request)
             session = await session_gen.__anext__()
 
             # The actual rollback testing would require more complex mocking
@@ -394,71 +402,14 @@ class TestDbServiceSessionManagement:
             assert session is not None
 
     @pytest.mark.asyncio
-    async def test_unmanaged_session_reuse_within_request(self, basic_db_service):
-        """Test that unmanaged sessions are reused when requested first."""
-        request = MockRequest()
-
-        # Mock the async session maker
-        with patch(
-            'openhands.app_server.services.db_service.async_sessionmaker'
-        ) as mock_sessionmaker_class:
-            mock_session = AsyncMock()
-            mock_sessionmaker = MagicMock()
-            mock_sessionmaker.return_value = mock_session
-            mock_sessionmaker_class.return_value = mock_sessionmaker
-
-            # First call should create a new session and store it in request state
-            session1 = await basic_db_service.unmanaged_session_dependency(request)
-
-            # Verify session is stored in request state
-            assert hasattr(request.state, 'db_session')
-            assert request.state.db_session is session1
-
-            # Second call should return the same session from request state
-            session2 = await basic_db_service.unmanaged_session_dependency(request)
-
-            assert session1 is session2
-
-    @pytest.mark.asyncio
-    async def test_unmanaged_session_used_by_managed_dependency(self, basic_db_service):
-        """Test that managed dependency reuses unmanaged session if it exists."""
-        request = MockRequest()
-
-        # Mock the async session maker
-        with patch(
-            'openhands.app_server.services.db_service.async_sessionmaker'
-        ) as mock_sessionmaker_class:
-            mock_session = AsyncMock()
-            mock_sessionmaker = MagicMock()
-            mock_sessionmaker.return_value = mock_session
-            mock_sessionmaker_class.return_value = mock_sessionmaker
-
-            # First, create an unmanaged session
-            unmanaged_session = await basic_db_service.unmanaged_session_dependency(
-                request
-            )
-
-            # Then, use managed dependency - it should return the same session
-            session_generator = basic_db_service.managed_session_dependency(request)
-            managed_session = await session_generator.__anext__()
-
-            assert unmanaged_session is managed_session
-
-            # Clean up generator
-            try:
-                await session_generator.__anext__()
-            except StopAsyncIteration:
-                pass
-
-    @pytest.mark.asyncio
     async def test_async_session_dependency_creates_new_sessions(
-        self, basic_db_service
+        self, basic_db_session_injector
     ):
         """Test that async_session dependency creates new sessions each time."""
-        session_generator1 = basic_db_service.async_session()
+        session_generator1 = basic_db_session_injector.async_session()
         session1 = await session_generator1.__anext__()
 
-        session_generator2 = basic_db_service.async_session()
+        session_generator2 = basic_db_session_injector.async_session()
         session2 = await session_generator2.__anext__()
 
         # These should be different sessions since async_session doesn't use request state
@@ -475,10 +426,10 @@ class TestDbServiceSessionManagement:
             pass
 
 
-class TestDbServiceGCPIntegration:
+class TestDbSessionInjectorGCPIntegration:
     """Test GCP-specific functionality."""
 
-    def test_gcp_connection_creation(self, gcp_db_service):
+    def test_gcp_connection_creation(self, gcp_db_session_injector):
         """Test GCP database connection creation."""
         # Mock the google.cloud.sql.connector module
         with patch.dict('sys.modules', {'google.cloud.sql.connector': MagicMock()}):
@@ -488,7 +439,7 @@ class TestDbServiceGCPIntegration:
             mock_connection = MagicMock()
             mock_connector.connect.return_value = mock_connection
 
-            connection = gcp_db_service._create_gcp_db_connection()
+            connection = gcp_db_session_injector._create_gcp_db_connection()
 
             assert connection == mock_connection
             mock_connector.connect.assert_called_once_with(
@@ -500,7 +451,7 @@ class TestDbServiceGCPIntegration:
             )
 
     @pytest.mark.asyncio
-    async def test_gcp_async_connection_creation(self, gcp_db_service):
+    async def test_gcp_async_connection_creation(self, gcp_db_session_injector):
         """Test GCP async database connection creation."""
         # Mock the google.cloud.sql.connector module
         with patch.dict('sys.modules', {'google.cloud.sql.connector': MagicMock()}):
@@ -513,7 +464,7 @@ class TestDbServiceGCPIntegration:
             mock_connection = AsyncMock()
             mock_connector.connect_async.return_value = mock_connection
 
-            connection = await gcp_db_service._create_async_gcp_db_connection()
+            connection = await gcp_db_session_injector._create_async_gcp_db_connection()
 
             assert connection == mock_connection
             mock_connector.connect_async.assert_called_once_with(
@@ -525,18 +476,18 @@ class TestDbServiceGCPIntegration:
             )
 
 
-class TestDbServiceEdgeCases:
+class TestDbSessionInjectorEdgeCases:
     """Test edge cases and error conditions."""
 
     def test_none_password_handling(self, temp_persistence_dir):
         """Test handling of None password values."""
         with patch(
-            'openhands.app_server.services.db_service.create_engine'
+            'openhands.app_server.services.db_session_injector.create_engine'
         ) as mock_create_engine:
             mock_engine = MagicMock()
             mock_create_engine.return_value = mock_engine
 
-            service = DbService(
+            service = DbSessionInjector(
                 persistence_dir=temp_persistence_dir, host='localhost', password=None
             )
 
@@ -547,20 +498,20 @@ class TestDbServiceEdgeCases:
     def test_empty_string_password_from_env(self, temp_persistence_dir):
         """Test handling of empty string password from environment."""
         with patch.dict(os.environ, {'DB_PASS': ''}):
-            service = DbService(persistence_dir=temp_persistence_dir)
+            service = DbSessionInjector(persistence_dir=temp_persistence_dir)
             assert service.password.get_secret_value() == ''
 
     @pytest.mark.asyncio
-    async def test_multiple_request_contexts_isolated(self, basic_db_service):
+    async def test_multiple_request_contexts_isolated(self, basic_db_session_injector):
         """Test that different request contexts have isolated sessions."""
         request1 = MockRequest()
         request2 = MockRequest()
 
         # Create sessions for different requests
-        session_gen1 = basic_db_service.managed_session_dependency(request1)
+        session_gen1 = basic_db_session_injector.depends(request1)
         session1 = await session_gen1.__anext__()
 
-        session_gen2 = basic_db_service.managed_session_dependency(request2)
+        session_gen2 = basic_db_session_injector.depends(request2)
         session2 = await session_gen2.__anext__()
 
         # Sessions should be different for different requests

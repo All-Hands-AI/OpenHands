@@ -10,7 +10,17 @@ from openhands.app_server.app_lifespan.app_lifespan_service import AppLifespanSe
 
 
 class OssAppLifespanService(AppLifespanService):
+    run_alembic_on_startup: bool = True
+
     async def __aenter__(self):
+        if self.run_alembic_on_startup:
+            self.run_alembic()
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        pass
+
+    def run_alembic(self):
         # Run alembic upgrade head to ensure database is up to date
         alembic_dir = Path(__file__).parent / 'alembic'
         alembic_ini = alembic_dir / 'alembic.ini'
@@ -26,8 +36,3 @@ class OssAppLifespanService(AppLifespanService):
             command.upgrade(alembic_cfg, 'head')
         finally:
             os.chdir(original_cwd)
-
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, traceback):
-        pass

@@ -11,17 +11,17 @@ Security and permission checks are handled by wrapper services.
 
 Key components:
 - SQLAppConversationStartTaskService: Main service class implementing all operations
-- SQLAppConversationStartTaskServiceManager: Dependency injection resolver for FastAPI
+- SQLAppConversationStartTaskServiceInjector: Dependency injection resolver for FastAPI
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import AsyncGenerator
 from uuid import UUID
 
-from fastapi import Depends
+from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
 from sqlalchemy import Column, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,9 +34,9 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
-    AppConversationStartTaskServiceManager,
+    AppConversationStartTaskServiceInjector,
 )
-from openhands.app_server.user.user_context import UserContext
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
@@ -131,37 +131,24 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         return task
 
 
-class SQLAppConversationStartTaskServiceManager(AppConversationStartTaskServiceManager):
-    def get_unsecured_resolver(self) -> Callable:
+class SQLAppConversationStartTaskServiceInjector(
+    AppConversationStartTaskServiceInjector
+):
+    async def inject(
+        self, state: InjectorState, request: Request | None = None
+    ) -> AsyncGenerator[AppConversationStartTaskService, None]:
         # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service
+        from openhands.app_server.config import (
+            get_db_session,
+            get_user_context,
+        )
 
-        # Create dependency at module level to avoid B008
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        def resolve_app_conversation_start_task_service(
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationStartTaskService:
-            return SQLAppConversationStartTaskService(session=session)
-
-        return resolve_app_conversation_start_task_service
-
-    def get_resolver_for_current_user(self) -> Callable:
-        # Define inline to prevent circular lookup
-        from openhands.app_server.config import db_service, user_injector
-
-        # Create dependencies at module level to avoid B008
-        user_dependency = Depends(user_injector())
-        _db_dependency = Depends(db_service().managed_session_dependency)
-
-        async def resolve_app_conversation_start_task_service(
-            user_service: UserContext = user_dependency,
-            session: AsyncSession = _db_dependency,
-        ) -> AppConversationStartTaskService:
-            user_id = await user_service.get_user_id()
+        async with (
+            get_user_context(state, request) as user_context,
+            get_db_session(state, request) as db_session,
+        ):
+            user_id = await user_context.get_user_id()
             service = SQLAppConversationStartTaskService(
-                session=session, user_id=user_id
+                session=db_session, user_id=user_id
             )
-            return service
-
-        return resolve_app_conversation_start_task_service
+            yield service

@@ -5,25 +5,54 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import sys
-
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
+from datetime import datetime
 
 from openhands.sdk import (
+    BaseConversation,
     Message,
     TextContent,
 )
 from openhands.sdk.conversation.state import AgentExecutionStatus
+from prompt_toolkit import print_formatted_text
+from prompt_toolkit.formatted_text import HTML
+
 from openhands_cli.runner import ConversationRunner
 from openhands_cli.setup import MissingAgentSpec, setup_conversation
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
+from openhands_cli.tui.status import display_status
 from openhands_cli.tui.tui import (
     display_help,
     display_welcome,
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 from openhands_cli.user_actions.utils import get_session_prompter
+
+
+
+
+def _start_fresh_conversation(resume_conversation_id: str | None = None) -> BaseConversation:
+    """Start a fresh conversation by creating a new conversation instance.
+    
+    Handles the complete conversation setup process including settings screen
+    if agent configuration is missing.
+
+    Args:
+        resume_conversation_id: Optional conversation ID to resume
+
+    Returns:
+        BaseConversation: A new conversation instance
+    """
+    conversation = None
+    settings_screen = SettingsScreen()
+
+    while not conversation:
+        try:
+            conversation = setup_conversation(resume_conversation_id)
+        except MissingAgentSpec:
+            settings_screen.handle_basic_settings(escapable=False)
+    
+    return conversation
 
 
 def _restore_tty() -> None:
@@ -62,16 +91,11 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = None
-    settings_screen = SettingsScreen()
-
-    while not conversation:
-        try:
-            conversation = setup_conversation(resume_conversation_id)
-        except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
-
+    conversation = _start_fresh_conversation(resume_conversation_id)
     display_welcome(conversation.id, bool(resume_conversation_id))
+
+    # Track session start time for uptime calculation
+    session_start_time = datetime.now()
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
@@ -118,21 +142,28 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 display_welcome(conversation.id)
                 continue
 
+            elif command == '/new':
+                try:
+                    # Start a fresh conversation (no resume ID = new conversation)
+                    conversation = _start_fresh_conversation()
+                    runner = ConversationRunner(conversation)
+                    display_welcome(conversation.id, resume=False)
+                    print_formatted_text(
+                        HTML('<green>✓ Started fresh conversation</green>')
+                    )
+                    continue
+                except Exception as e:
+                    print_formatted_text(
+                        HTML(f'<red>Error starting fresh conversation: {e}</red>')
+                    )
+                    continue
+
             elif command == '/help':
                 display_help()
                 continue
 
             elif command == '/status':
-                print_formatted_text(
-                    HTML(f'<grey>Conversation ID: {conversation.id}</grey>')
-                )
-                print_formatted_text(HTML('<grey>Status: Active</grey>'))
-                confirmation_status = (
-                    'enabled' if conversation.state.confirmation_mode else 'disabled'
-                )
-                print_formatted_text(
-                    HTML(f'<grey>Confirmation mode: {confirmation_status}</grey>')
-                )
+                display_status(conversation, session_start_time=session_start_time)
                 continue
 
             elif command == '/confirm':
