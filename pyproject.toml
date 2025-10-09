@@ -210,8 +210,8 @@ omit = [ "enterprise/tests/*", "**/test_*" ]
 
 [tool.pyright]
 exclude = [
-    "evaluation/evaluation_outputs/**",
-    "**/__pycache__",
-    "**/.git",
-    "**/node_modules"
+  "evaluation/evaluation_outputs/**",
+  "**/__pycache__",
+  "**/.git",
+  "**/node_modules",
 ]
