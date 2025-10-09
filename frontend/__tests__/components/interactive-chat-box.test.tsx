@@ -5,6 +5,18 @@ import { MemoryRouter } from "react-router";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { renderWithProviders } from "../../test-utils";
 import { AgentState } from "#/types/agent-state";
+import { useAgentStore } from "#/stores/agent-store";
+import { useConversationStore } from "#/state/conversation-store";
+
+// Mock the agent store
+vi.mock("#/stores/agent-store", () => ({
+  useAgentStore: vi.fn(),
+}));
+
+// Mock the conversation store
+vi.mock("#/state/conversation-store", () => ({
+  useConversationStore: vi.fn(),
+}));
 
 // Mock React Router hooks
 vi.mock("react-router", async () => {
@@ -47,6 +59,49 @@ describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
   const onStopMock = vi.fn();
 
+  // Helper function to mock stores
+  const mockStores = (agentState: AgentState = AgentState.INIT) => {
+    vi.mocked(useAgentStore).mockReturnValue({
+      curAgentState: agentState,
+      setCurrentAgentState: vi.fn(),
+      reset: vi.fn(),
+    });
+
+    vi.mocked(useConversationStore).mockReturnValue({
+      images: [],
+      files: [],
+      addImages: vi.fn(),
+      addFiles: vi.fn(),
+      clearAllFiles: vi.fn(),
+      addFileLoading: vi.fn(),
+      removeFileLoading: vi.fn(),
+      addImageLoading: vi.fn(),
+      removeImageLoading: vi.fn(),
+      submittedMessage: null,
+      setShouldHideSuggestions: vi.fn(),
+      setSubmittedMessage: vi.fn(),
+      isRightPanelShown: true,
+      selectedTab: "editor" as const,
+      loadingFiles: [],
+      loadingImages: [],
+      messageToSend: null,
+      shouldShownAgentLoading: false,
+      shouldHideSuggestions: false,
+      hasRightPanelToggled: true,
+      setIsRightPanelShown: vi.fn(),
+      setSelectedTab: vi.fn(),
+      setShouldShownAgentLoading: vi.fn(),
+      removeImage: vi.fn(),
+      removeFile: vi.fn(),
+      clearImages: vi.fn(),
+      clearFiles: vi.fn(),
+      clearAllLoading: vi.fn(),
+      setMessageToSend: vi.fn(),
+      resetConversationState: vi.fn(),
+      setHasRightPanelToggled: vi.fn(),
+    });
+  };
+
   // Helper function to render with Router context
   const renderInteractiveChatBox = (props: any, options: any = {}) => {
     return renderWithProviders(
@@ -68,22 +123,12 @@ describe("InteractiveChatBox", () => {
   });
 
   it("should render", () => {
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: false,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.INIT,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.INIT);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     const chatBox = screen.getByTestId("interactive-chat-box");
     expect(chatBox).toBeInTheDocument();
@@ -91,33 +136,12 @@ describe("InteractiveChatBox", () => {
 
   it("should set custom values", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: true,
-        hasSubstantiveAgentActions: true,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.AWAITING_USER_INPUT,
-          },
-          conversation: {
-            isRightPanelShown: true,
-            shouldStopConversation: false,
-            shouldStartConversation: false,
-            images: [],
-            files: [],
-            loadingFiles: [],
-            loadingImages: [],
-            messageToSend: null,
-            shouldShownAgentLoading: false,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.AWAITING_USER_INPUT);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     const textbox = screen.getByTestId("chat-input");
 
@@ -129,22 +153,12 @@ describe("InteractiveChatBox", () => {
 
   it("should display the image previews when images are uploaded", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: false,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.INIT,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.INIT);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     // Create a larger file to ensure it passes validation
     const fileContent = new Array(1024).fill("a").join(""); // 1KB file
@@ -166,22 +180,12 @@ describe("InteractiveChatBox", () => {
 
   it("should remove the image preview when the close button is clicked", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: false,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.INIT,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.INIT);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     const fileContent = new Array(1024).fill("a").join(""); // 1KB file
     const file = new File([fileContent], "chucknorris.png", {
@@ -201,22 +205,12 @@ describe("InteractiveChatBox", () => {
 
   it("should call onSubmit with the message and images", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: false,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.INIT,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.INIT);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     const textarea = screen.getByTestId("chat-input");
 
@@ -242,22 +236,12 @@ describe("InteractiveChatBox", () => {
 
   it("should disable the submit button when agent is loading", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: false,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.LOADING,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.LOADING);
+
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
 
     const button = screen.getByTestId("submit-button");
     expect(button).toBeDisabled();
@@ -268,23 +252,14 @@ describe("InteractiveChatBox", () => {
 
   it("should display the stop button when agent is running and call onStop when clicked", async () => {
     const user = userEvent.setup();
-    renderInteractiveChatBox(
-      {
-        onSubmit: onSubmitMock,
-        onStop: onStopMock,
-        isWaitingForUserInput: false,
-        hasSubstantiveAgentActions: true,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.RUNNING,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.RUNNING);
 
+    renderInteractiveChatBox({
+      onSubmit: onSubmitMock,
+      onStop: onStopMock,
+    });
+
+    // The stop button should be available when agent is running
     const stopButton = screen.getByTestId("stop-button");
     expect(stopButton).toBeInTheDocument();
 
@@ -297,33 +272,12 @@ describe("InteractiveChatBox", () => {
     const onSubmit = vi.fn();
     const onStop = vi.fn();
 
-    const { rerender } = renderInteractiveChatBox(
-      {
-        onSubmit: onSubmit,
-        onStop: onStop,
-        isWaitingForUserInput: true,
-        hasSubstantiveAgentActions: true,
-        optimisticUserMessage: false,
-      },
-      {
-        preloadedState: {
-          agent: {
-            curAgentState: AgentState.AWAITING_USER_INPUT,
-          },
-          conversation: {
-            isRightPanelShown: true,
-            shouldStopConversation: false,
-            shouldStartConversation: false,
-            images: [],
-            files: [],
-            loadingFiles: [],
-            loadingImages: [],
-            messageToSend: null,
-            shouldShownAgentLoading: false,
-          },
-        },
-      },
-    );
+    mockStores(AgentState.AWAITING_USER_INPUT);
+
+    const { rerender } = renderInteractiveChatBox({
+      onSubmit: onSubmit,
+      onStop: onStop,
+    });
 
     // Verify text input has the initial value
     const textarea = screen.getByTestId("chat-input");
@@ -342,13 +296,7 @@ describe("InteractiveChatBox", () => {
     // Simulate parent component updating the value prop
     rerender(
       <MemoryRouter>
-        <InteractiveChatBox
-          onSubmit={onSubmit}
-          onStop={onStop}
-          isWaitingForUserInput={true}
-          hasSubstantiveAgentActions={true}
-          optimisticUserMessage={false}
-        />
+        <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />
       </MemoryRouter>,
     );
 

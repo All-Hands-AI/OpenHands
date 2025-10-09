@@ -20,6 +20,7 @@ interface MCPServerConfig {
   name?: string;
   url?: string;
   api_key?: string;
+  timeout?: number;
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -67,6 +68,7 @@ function MCPSettingsScreen() {
       type: "shttp" as const,
       url: typeof server === "string" ? server : server.url,
       api_key: typeof server === "object" ? server.api_key : undefined,
+      timeout: typeof server === "object" ? server.timeout : undefined,
     })),
   ];
 
@@ -124,7 +126,7 @@ function MCPSettingsScreen() {
 
   if (isLoading) {
     return (
-      <div className="px-11 py-9 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-300 rounded w-1/4 mb-4" />
           <div className="h-4 bg-gray-300 rounded w-1/2 mb-8" />
@@ -135,7 +137,7 @@ function MCPSettingsScreen() {
   }
 
   return (
-    <div className="px-11 py-9 flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
       {view === "list" && (
         <>
           <BrandButton

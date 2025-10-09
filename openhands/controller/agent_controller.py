@@ -4,7 +4,6 @@ import asyncio
 import copy
 import os
 import time
-import traceback
 from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
@@ -285,19 +284,28 @@ class AgentController:
             )
         self._closed = True
 
-    def log(self, level: str, message: str, extra: dict | None = None) -> None:
+    def log(
+        self,
+        level: str,
+        message: str,
+        extra: dict | None = None,
+        exc_info: bool = False,
+    ) -> None:
         """Logs a message to the agent controller's logger.
 
         Args:
             level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
             extra (dict | None, optional): Additional fields to log. Includes session_id by default.
+            exc_info (bool, optional): Whether to include exception info. Defaults to False.
         """
         message = f'[Agent Controller {self.id}] {message}'
         if extra is None:
             extra = {}
         extra_merged = {'session_id': self.id, **extra}
-        getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
+        getattr(logger, level)(
+            message, extra=extra_merged, exc_info=exc_info, stacklevel=2
+        )
 
     async def _react_to_exception(
         self,
@@ -364,8 +372,8 @@ class AgentController:
         except Exception as e:
             self.log(
                 'error',
-                f'Error while running the agent (session ID: {self.id}): {e}. '
-                f'Traceback: {traceback.format_exc()}',
+                f'Error while running the agent (session ID: {self.id}): {e}',
+                exc_info=True,
             )
             reported = RuntimeError(
                 f'There was an unexpected error while running the agent: {e.__class__.__name__}. You can refresh the page or ask the agent to try again.'

@@ -1,13 +1,12 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { useSelector } from "react-redux";
 import { Command, useCommandStore } from "#/state/command-store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
-import { RootState } from "#/store";
+import { useAgentStore } from "#/stores/agent-store";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -38,7 +37,7 @@ const persistentLastCommandIndex = { current: 0 };
 
 export const useTerminal = () => {
   const { send } = useWsClient();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentStore();
   const commands = useCommandStore((state) => state.commands);
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);

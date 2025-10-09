@@ -37,7 +37,7 @@ export function ConversationCardActions({
           event.stopPropagation();
           onContextMenuToggle(!contextMenuOpen);
         }}
-        className="cursor-pointer w-6 h-6 flex flex-row items-center justify-end"
+        className="cursor-pointer w-6 h-6 flex flex-row items-center justify-center translate-x-2.5"
       >
         <EllipsisIcon />
       </button>
