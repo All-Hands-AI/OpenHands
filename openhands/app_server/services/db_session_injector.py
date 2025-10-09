@@ -138,7 +138,9 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
         return create_async_engine(
             'postgresql+asyncpg://',
             creator=adapted_creator,
-            poolclass=NullPool,
+            pool_size=self.pool_size,
+            max_overflow=self.max_overflow,
+            pool_pre_ping=True,
         )
 
     async def get_async_db_engine(self) -> AsyncEngine:
@@ -167,11 +169,19 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             else:
                 url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
 
-            async_engine = create_async_engine(
-                url,
-                poolclass=NullPool,
-                pool_pre_ping=True,
-            )
+            if self.host:
+                async_engine = create_async_engine(
+                    url,
+                    pool_size=self.pool_size,
+                    max_overflow=self.max_overflow,
+                    pool_pre_ping=True,
+                )
+            else:
+                async_engine = create_async_engine(
+                    url,
+                    poolclass=NullPool,
+                    pool_pre_ping=True,
+                )
         self._async_engine = async_engine
         return async_engine
 
