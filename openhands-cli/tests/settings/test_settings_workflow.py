@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from openhands_cli.agent_chat import run_cli_entry
 import pytest
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.settings.store import AgentStore
@@ -177,5 +176,3 @@ def test_workflow_cancellation_at_each_step(tmp_path: Path, step_to_cancel: str)
 
     # No settings should be saved on cancel
     mock_save.assert_not_called()
-
-
