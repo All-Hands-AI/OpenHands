@@ -16,6 +16,7 @@ def make_conv(enabled: bool) -> MagicMock:
     m.id = CONV_ID
     m.agent.security_analyzer = MagicMock() if enabled else None
     m.confirmation_policy_active = enabled
+    m.is_confirmation_mode_active = enabled
     return m
 
 
