@@ -4,9 +4,10 @@ import asyncio
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from jwt import InvalidTokenError
+from openhands.app_server.services.injector import InjectorState
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import ConversationInfo, Success
@@ -23,18 +24,15 @@ from openhands.app_server.config import (
     depends_event_service,
     depends_jwt_service,
     depends_sandbox_service,
+    get_event_callback_service,
     get_global_config,
 )
 from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
-from openhands.app_server.event_callback.event_callback_service import (
-    EventCallbackService,
-)
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
-from openhands.app_server.services.db_session_injector import set_db_session_keep_open
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.admin_user_context import as_admin
+from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR, AdminUserContext, as_admin
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
@@ -42,7 +40,6 @@ from openhands.sdk import Event
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
 sandbox_service_dependency = depends_sandbox_service()
 event_service_dependency = depends_event_service()
-event_callback_service_dependency = depends_event_callback_service()
 app_conversation_info_service_dependency = depends_app_conversation_info_service()
 jwt_dependency = depends_jwt_service()
 config = get_global_config()
@@ -119,21 +116,15 @@ async def on_conversation_update(
 
 @router.post('/{sandbox_id}/events/{conversation_id}')
 async def on_event(
-    request: Request,
     events: list[Event],
     conversation_id: UUID,
     sandbox_info: SandboxInfo = Depends(valid_sandbox),
-    db_session: AsyncSession = db_session_dependency,
     app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     event_service: EventService = event_service_dependency,
-    event_callback_service: EventCallbackService = event_callback_service_dependency,
 ) -> Success:
     """Webhook callback for when event stream events occur."""
 
-    # Because we are processing after the request finishes, keep the db connection open
-    set_db_session_keep_open(request.state, True)
-
-    await valid_conversation(
+    app_conversation_info = await valid_conversation(
         conversation_id, sandbox_info, app_conversation_info_service
     )
 
@@ -144,9 +135,7 @@ async def on_event(
         )
 
         asyncio.create_task(
-            _run_callbacks_in_bg_and_close(
-                event_callback_service, conversation_id, events, db_session
-            )
+            _run_callbacks_in_bg_and_close(conversation_id, app_conversation_info.created_by_user_id, events)
         )
 
     except Exception:
@@ -181,15 +170,16 @@ async def get_secret(
 
 
 async def _run_callbacks_in_bg_and_close(
-    event_callback_service: EventCallbackService,
     conversation_id: UUID,
+    user_id: str | None,
     events: list[Event],
-    db_session: AsyncSession,
 ):
     """Run all callbacks and close the session"""
-    try:
+    state = InjectorState()
+    setattr(state, USER_CONTEXT_ATTR, AdminUserContext(user_id=user_id))
+
+    async with get_event_callback_service(state) as event_callback_service:
         # We don't use asynio.gather here because callbacks must be run in sequence.
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
-    finally:
-        await db_session.close()
+
