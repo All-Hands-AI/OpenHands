@@ -22,7 +22,6 @@ interface UserAssistantEventMessageProps {
     tooltip?: string;
   }>;
   isLastMessage: boolean;
-  isInLast10Actions: boolean;
   config?: { APP_MODE?: string } | null;
   isCheckingFeedback: boolean;
   feedbackData: {
@@ -40,7 +39,6 @@ export function UserAssistantEventMessage({
   microagentPRUrl,
   actions,
   isLastMessage,
-  isInLast10Actions,
   config,
   isCheckingFeedback,
   feedbackData,
@@ -70,9 +68,7 @@ export function UserAssistantEventMessage({
       />
       {isAssistantMessage(event) && event.action === "message" && (
         <LikertScaleWrapper
-          event={event}
-          isLastMessage={isLastMessage}
-          isInLast10Actions={isInLast10Actions}
+          shouldShow={isLastMessage}
           config={config}
           isCheckingFeedback={isCheckingFeedback}
           feedbackData={feedbackData}

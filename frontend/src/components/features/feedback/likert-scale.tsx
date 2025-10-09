@@ -10,7 +10,7 @@ import { ScrollContext } from "#/context/scroll-context";
 const AUTO_SUBMIT_TIMEOUT = 10000;
 
 interface LikertScaleProps {
-  eventId?: number;
+  eventId?: string;
   initiallySubmitted?: boolean;
   initialRating?: number;
   initialReason?: string;

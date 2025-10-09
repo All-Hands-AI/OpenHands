@@ -5,7 +5,7 @@ import { BatchFeedbackData, getFeedbackQueryKey } from "./use-batch-feedback";
 
 export type FeedbackData = BatchFeedbackData;
 
-export const useFeedbackExists = (eventId?: number) => {
+export const useFeedbackExists = (eventId?: string) => {
   const queryClient = useQueryClient();
   const { conversationId } = useConversationId();
   const { data: config } = useConfig();

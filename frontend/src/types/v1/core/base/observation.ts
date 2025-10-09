@@ -6,7 +6,8 @@ import {
   ImageContent,
 } from "./common";
 
-interface MCPToolObservation extends ObservationBase<"MCPToolObservation"> {
+export interface MCPToolObservation
+  extends ObservationBase<"MCPToolObservation"> {
   /**
    * Content returned from the MCP tool converted to LLM Ready TextContent or ImageContent
    */
@@ -21,21 +22,23 @@ interface MCPToolObservation extends ObservationBase<"MCPToolObservation"> {
   tool_name: string;
 }
 
-interface FinishObservation extends ObservationBase<"FinishObservation"> {
+export interface FinishObservation
+  extends ObservationBase<"FinishObservation"> {
   /**
    * Final message sent to the user
    */
   message: string;
 }
 
-interface ThinkObservation extends ObservationBase<"ThinkObservation"> {
+export interface ThinkObservation extends ObservationBase<"ThinkObservation"> {
   /**
    * Confirmation message. DEFAULT: "Your thought has been logged."
    */
   content: string;
 }
 
-interface BrowserObservation extends ObservationBase<"BrowserObservation"> {
+export interface BrowserObservation
+  extends ObservationBase<"BrowserObservation"> {
   /**
    * The output message from the browser operation
    */
@@ -50,7 +53,7 @@ interface BrowserObservation extends ObservationBase<"BrowserObservation"> {
   screenshot_data: string | null;
 }
 
-interface ExecuteBashObservation
+export interface ExecuteBashObservation
   extends ObservationBase<"ExecuteBashObservation"> {
   /**
    * The raw output from the tool.
@@ -78,7 +81,7 @@ interface ExecuteBashObservation
   metadata: CmdOutputMetadata;
 }
 
-interface StrReplaceEditorObservation
+export interface StrReplaceEditorObservation
   extends ObservationBase<"StrReplaceEditorObservation"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
@@ -110,7 +113,7 @@ interface StrReplaceEditorObservation
   error: string | null;
 }
 
-interface TaskTrackerObservation
+export interface TaskTrackerObservation
   extends ObservationBase<"TaskTrackerObservation"> {
   /**
    * The formatted task list or status message.

@@ -1,8 +1,16 @@
 import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
-import { AgentErrorEvent } from "./core/events/observation-event";
+import {
+  AgentErrorEvent,
+  UserRejectObservation,
+} from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
 import type { OpenHandsParsedEvent } from "../core/index";
+import {
+  FinishAction,
+  MCPToolObservation,
+  TaskTrackerObservation,
+} from "./core/base";
 
 /**
  * Type guard to check if an unknown value is a valid BaseEvent
@@ -57,11 +65,12 @@ export const isAgentErrorEvent = (
 export const isUserMessageEvent = (
   event: OpenHandsEvent,
 ): event is MessageEvent =>
-  "llm_message" in event &&
-  typeof event.llm_message === "object" &&
-  event.llm_message !== null &&
-  "role" in event.llm_message &&
-  event.llm_message.role === "user";
+  "llm_message" in event && event.llm_message.role === "user";
+
+export const isAssistantMessageEvent = (
+  event: OpenHandsEvent,
+): event is MessageEvent =>
+  "llm_message" in event && event.llm_message.role === "assistant";
 
 /**
  * Type guard function to check if an event is an action event
@@ -73,6 +82,27 @@ export const isActionEvent = (event: OpenHandsEvent): event is ActionEvent =>
   "tool_call_id" in event &&
   typeof event.tool_name === "string" &&
   typeof event.tool_call_id === "string";
+
+export const isFinishActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<FinishAction> =>
+  isActionEvent(event) && event.action.kind === "FinishAction";
+
+export const isUserRejectObservation = (
+  event: OpenHandsEvent,
+): event is UserRejectObservation =>
+  event.source === "environment" && "rejection_reason" in event;
+
+export const isMCPToolObservation = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<MCPToolObservation> =>
+  isObservationEvent(event) && event.observation.kind === "MCPToolObservation";
+
+export const isTaskTrackerObservation = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<TaskTrackerObservation> =>
+  isObservationEvent(event) &&
+  event.observation.kind === "TaskTrackerObservation";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

@@ -8,7 +8,7 @@ interface MCPToolAction extends ActionBase<"MCPToolAction"> {
   data: Record<string, unknown>;
 }
 
-interface FinishAction extends ActionBase<"FinishAction"> {
+export interface FinishAction extends ActionBase<"FinishAction"> {
   /**
    * Final message to send to the user
    */

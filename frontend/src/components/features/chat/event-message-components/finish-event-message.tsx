@@ -58,9 +58,7 @@ export function FinishEventMessage({
         actions={actions}
       />
       <LikertScaleWrapper
-        event={event}
-        isLastMessage={isLastMessage}
-        isInLast10Actions={isInLast10Actions}
+        shouldShow={isLastMessage}
         config={config}
         isCheckingFeedback={isCheckingFeedback}
         feedbackData={feedbackData}
