@@ -374,7 +374,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         """Sqlite does not stpre timezones - and since we can't update the existing models
         we assume UTC if the timezone is missing."""
         if not value.tzinfo:
-            value =value.replace(tzinfo=UTC)
+            value = value.replace(tzinfo=UTC)
         return value
 
 
