@@ -1,3 +1,8 @@
+import os
+import re
+import subprocess
+from typing import Any
+
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
@@ -23,6 +28,129 @@ from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+
+
+# =================================================
+# SECTION: Git URL update helpers
+# =================================================
+
+
+def get_provider_from_url(url: str) -> ProviderType | None:
+    """Extract provider type from git URL."""
+    if 'github.com' in url:
+        return ProviderType.GITHUB
+    elif 'gitlab.com' in url:
+        return ProviderType.GITLAB
+    elif 'bitbucket.org' in url:
+        return ProviderType.BITBUCKET
+    return None
+
+
+def update_url_with_token(old_url: str, provider: ProviderType, new_token: str) -> str:
+    """Replace token in git URL with new token."""
+    if provider == ProviderType.GITHUB:
+        # Pattern: https://TOKEN@github.com/... or https://x-access-token:TOKEN@github.com/...
+        # Replace with: https://TOKEN@github.com/...
+        url = re.sub(
+            r'https://[^@]+@github\.com',
+            f'https://{new_token}@github.com',
+            old_url,
+        )
+        return url
+    elif provider == ProviderType.GITLAB:
+        # Pattern: https://oauth2:TOKEN@gitlab.com/...
+        url = re.sub(
+            r'https://oauth2:[^@]+@gitlab\.com',
+            f'https://oauth2:{new_token}@gitlab.com',
+            old_url,
+        )
+        return url
+    elif provider == ProviderType.BITBUCKET:
+        # Pattern: https://x-token-auth:TOKEN@bitbucket.org/...
+        url = re.sub(
+            r'https://x-token-auth:[^@]+@bitbucket\.org',
+            f'https://x-token-auth:{new_token}@bitbucket.org',
+            old_url,
+        )
+        return url
+    return old_url
+
+
+async def update_git_remote_urls_with_new_tokens(
+    provider_tokens: dict[ProviderType, Any],
+) -> None:
+    """Update all git remote URLs in workspace with fresh tokens.
+
+    This ensures that when tokens are refreshed on resume, git operations
+    (push, pull, fetch) will use the new valid tokens instead of expired ones.
+    """
+    workspace_root = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace')
+
+    if not os.path.exists(workspace_root):
+        logger.debug(
+            f'Workspace root {workspace_root} does not exist, skipping git URL update'
+        )
+        return
+
+    # Find all git repos in the workspace
+    for root, dirs, files in os.walk(workspace_root):
+        if '.git' not in dirs:
+            continue
+
+        try:
+            # Get current remote URL
+            result = subprocess.run(
+                ['git', '-C', root, 'remote', 'get-url', 'origin'],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=5,
+            )
+            old_url = result.stdout.strip()
+
+            if not old_url:
+                continue
+
+            # Determine which provider this repo uses
+            provider = get_provider_from_url(old_url)
+
+            if not provider or provider not in provider_tokens:
+                continue
+
+            # Get the token for this provider
+            token_info = provider_tokens[provider]
+            if (
+                not token_info
+                or not hasattr(token_info, 'token')
+                or not token_info.token
+            ):
+                continue
+
+            new_token = token_info.token.get_secret_value()
+
+            # Build new URL with fresh token
+            new_url = update_url_with_token(old_url, provider, new_token)
+
+            if new_url != old_url:
+                subprocess.run(
+                    ['git', '-C', root, 'remote', 'set-url', 'origin', new_url],
+                    check=True,
+                    capture_output=True,
+                    timeout=5,
+                )
+                logger.info(
+                    f'Updated git remote URL in {root} for provider {provider.value}'
+                )
+
+        except subprocess.TimeoutExpired:
+            logger.warning(f'Timeout while updating git URL in {root}')
+            continue
+        except subprocess.CalledProcessError as e:
+            logger.debug(f'Failed to update git URL in {root}: {e}')
+            continue
+        except Exception as e:
+            logger.warning(f'Unexpected error updating git URL in {root}: {e}')
+            continue
 
 
 # =================================================
@@ -140,6 +268,11 @@ async def store_provider_tokens(
             update={'provider_tokens': provider_info.provider_tokens}
         )
         await secrets_store.store(updated_secrets)
+
+        # Update git remote URLs with the new tokens to ensure git operations
+        # (push, pull, fetch) use fresh tokens instead of expired ones
+        if provider_info.provider_tokens:
+            await update_git_remote_urls_with_new_tokens(provider_info.provider_tokens)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
