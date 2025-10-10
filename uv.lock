@@ -3933,7 +3933,7 @@ requires-dist = [
     { name = "jupyter-kernel-gateway" },
     { name = "kubernetes", specifier = ">=33.1,<34" },
     { name = "libtmux", specifier = ">=0.37,<0.40" },
-    { name = "litellm", specifier = "!=1.64.4,!=1.67.*,>=1.74.3" },
+    { name = "litellm", specifier = "!=1.64.4,!=1.67.*,>=1.74.3,<1.78.0" },
     { name = "memory-profiler", specifier = ">=0.61,<1" },
     { name = "modal", marker = "extra == 'third-party-runtimes'", specifier = ">=0.66.26,<1.2" },
     { name = "numpy" },
