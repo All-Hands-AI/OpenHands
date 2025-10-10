@@ -1,92 +1,107 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = [
-  "poetry-core",
-]
+build-backend = "hatchling.build"
+requires = [ "hatch-vcs", "hatchling" ]
 
-[tool.poetry]
-name = "enterprise_server"
-version = "0.0.1"
+[project]
+name = "enterprise-server"
 description = "Deploy OpenHands"
-authors = [ "OpenHands" ]
-license = "POLYFORM"
 readme = "README.md"
-repository = "https://github.com/All-Hands-AI/OpenHands"
-packages = [
-  { include = "server" },
-  { include = "storage" },
-  { include = "sync" },
-  { include = "integrations" },
-  { include = "experiments" },
+license = { file = "LICENSE" }
+authors = [ { name = "OpenHands" } ]
+requires-python = ">=3.12,<3.14"
+# uv dependency groups for convenience
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = [ "version" ]
+dependencies = [
+  "alembic>=1.14.1,<2",
+  "asyncpg>=0.30,<0.31",
+  "cloud-sql-python-connector>=1.16,<2",
+  "coredis>=4.22,<5",
+  "ddtrace>=3.5.1,<4",
+  "gspread>=6.1.4,<7",
+  "httpx",
+  "limits>=5.2,<6",
+  "openhands-ai",
+  "pg8000>=1.31.2,<2",
+  "posthog>=6",
+  "prometheus-fastapi-instrumentator>=7.0.2,<8",
+  "psycopg2-binary>=2.9.10,<3",
+  "python-json-logger>=3.2.1,<4",
+  "python-keycloak>=5.3.1,<6",
+  "resend>=2.7,<3",
+  "scikit-learn>=1.7,<2",
+  "shap>=0.48,<0.49",
+  "slack-sdk>=3.35,<4",
+  "sqlalchemy[asyncio]>=2.0.40,<3",
+  "stripe>=11.5,<12",
+  "tenacity>=9.1.2,<10",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.12,<3.14"
-openhands-ai = { path = "../", develop = true }
-gspread = "^6.1.4"
-alembic = "^1.14.1"
-cloud-sql-python-connector = "^1.16.0"
-psycopg2-binary = "^2.9.10"
-pg8000 = "^1.31.2"
-stripe = "^11.5.0"
-prometheus-fastapi-instrumentator = "^7.0.2"
-python-json-logger = "^3.2.1"
-python-keycloak = "^5.3.1"
-asyncpg = "^0.30.0"
-sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
-resend = "^2.7.0"
-tenacity = "^9.1.2"
-slack-sdk = "^3.35.0"
-ddtrace = "3.13.0"                                           #pin to avoid yanked version 3.12.4
-posthog = "^6.0.0"
-limits = "^5.2.0"
-coredis = "^4.22.0"
-httpx = "*"
-scikit-learn = "^1.7.0"
-shap = "^0.48.0"
+[dependency-groups]
+dev = [
+  "build",
+  "mypy==1.13",
+  "pre-commit==4.1",
+  "ruff==0.8.3",
+  "types-requests>=2.32.4.20250611,<3",
+]
 
-[tool.poetry.group.dev.dependencies]
-ruff = "0.8.3"
-mypy = "1.13.0"
-pre-commit = "4.1.0"
-build = "*"
-types-requests = "^2.32.4.20250611"
+test = [
+  "flake8",
+  "gevent",
+  "openai",
+  "opencv-python",
+  "pandas",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-forked",
+  "pytest-xdist",
+  "reportlab",
+]
 
-[tool.poetry.group.test.dependencies]
-pytest = "*"
-pytest-cov = "*"
-pytest-asyncio = "*"
-pytest-forked = "*"
-pytest-xdist = "*"
-flake8 = "*"
-openai = "*"
-opencv-python = "*"
-pandas = "*"
-reportlab = "*"
-gevent = ">=24.2.1,<26.0.0"
+[tool.hatch.version]
+source = "vcs"
 
-[tool.poetry-dynamic-versioning]
-enable = true
-style = "semver"
+[tool.hatch.version.raw-options]
+root = ".."
+
+[tool.hatch.build.targets.sdist]
+include = [ "server", "storage", "sync", "integrations", "experiments" ]
+
+[tool.hatch.build.targets.wheel]
+include = [ "server", "storage", "sync", "integrations", "experiments" ]
 
 [tool.autopep8]
-# autopep8 fights with mypy on line length issue
 ignore = [ "E501" ]
 
 [tool.black]
-# prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
 
 [tool.ruff]
 lint.select = [ "D" ]
-# ignore warnings for missing docstrings
 lint.ignore = [ "D1" ]
 lint.pydocstyle.convention = "google"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = [ "..", "." ]
 
 [tool.coverage.run]
 relative_files = true
 omit = [ "tests/*" ]
+
+[tool.uv.sources]
+openhands-ai = { path = "../", editable = true }
+
+# Configure uv-dynamic-versioning to supply only the version
+
+# [tool.uv-dynamic-versioning]
+# vcs = "git"
+# style = "pep440"
+# read-from = "tag"

@@ -16,7 +16,7 @@ if [ -n "$EXP_NAME" ]; then
 fi
 
 function run_eval() {
-  COMMAND="poetry run python ./evaluation/benchmarks/lca_ci_build_repair/run_infer.py \
+  COMMAND="uv run python ./evaluation/benchmarks/lca_ci_build_repair/run_infer.py \
     --llm-config $MODEL_CONFIG "
 
   # Run the command
