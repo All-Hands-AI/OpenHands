@@ -561,11 +561,9 @@ async def refresh_conversation(
         event_url = (
             f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
         )
-        page_id = None
+        page_id: str | None = None
         while True:
-            params: dict[str, str] = {}
-            if page_id:
-                params['page_id'] = page_id
+            params = {'page_id': page_id} if page_id is not None else {}
             response = await httpx_client.get(
                 event_url,
                 params=params,
