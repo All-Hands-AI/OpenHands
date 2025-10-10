@@ -69,12 +69,20 @@ export const isAgentErrorEvent = (
 export const isUserMessageEvent = (
   event: OpenHandsEvent,
 ): event is MessageEvent =>
-  "llm_message" in event && event.llm_message.role === "user";
+  "llm_message" in event &&
+  typeof event.llm_message === "object" &&
+  event.llm_message !== null &&
+  "role" in event.llm_message &&
+  event.llm_message.role === "user";
 
 export const isAssistantMessageEvent = (
   event: OpenHandsEvent,
 ): event is MessageEvent =>
-  "llm_message" in event && event.llm_message.role === "assistant";
+  "llm_message" in event &&
+  typeof event.llm_message === "object" &&
+  event.llm_message !== null &&
+  "role" in event.llm_message &&
+  event.llm_message.role === "assistant";
 
 /**
  * Type guard function to check if an event is an action event
