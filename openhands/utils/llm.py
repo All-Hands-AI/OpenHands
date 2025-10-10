@@ -86,7 +86,7 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'clarifai/deepseek-ai.deepseek-chat.DeepSeek-R1-0528-Qwen3-8B',
         'clarifai/deepseek-ai.deepseek-chat.DeepSeek-V3_1',
         'clarifai/zai.completion.GLM_4_5',
-        'clarifai/moonshotai.kimi.Kimi-K2-Instruct'
+        'clarifai/moonshotai.kimi.Kimi-K2-Instruct',
     ]
     model_list = clarifai_models + model_list
 
