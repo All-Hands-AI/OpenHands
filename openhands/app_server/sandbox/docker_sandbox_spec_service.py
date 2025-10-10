@@ -42,6 +42,7 @@ class DockerSandboxSpecService(SandboxSpecService):
     """
 
     repository: str
+    tag: str
     command: list[str] | None
     initial_env: dict[str, str]
     working_dir: str
@@ -159,7 +160,7 @@ class DockerSandboxSpecService(SandboxSpecService):
                 # not being tagged
                 loop = asyncio.get_running_loop()
                 await loop.run_in_executor(
-                    None, self.docker_client.images.pull, self.repository
+                    None, self.docker_client.images.pull, self.repository, self.tag
                 )
                 page = await self.search_sandbox_specs()
                 return page.items[0]
@@ -168,12 +169,13 @@ class DockerSandboxSpecService(SandboxSpecService):
         else:
             raise SandboxError(
                 'No sandbox specs available! '
-                f'(Maybe you need to `docker pull {self.repository}:latest`)'
+                f'(Maybe you need to `docker pull {self.repository}:{self.tag}`)'
             )
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     repository: str = 'ghcr.io/all-hands-ai/agent-server'
+    tag: str = 'latest'
     command: list[str] | None = None
     initial_env: dict[str, str] = Field(
         default_factory=lambda: {
@@ -199,6 +201,7 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     ) -> AsyncGenerator[SandboxSpecService, None]:
         yield DockerSandboxSpecService(
             repository=self.repository,
+            tag=self.tag,
             command=self.command,
             initial_env=self.initial_env,
             working_dir=self.working_dir,

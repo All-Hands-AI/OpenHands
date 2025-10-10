@@ -77,6 +77,7 @@ def service(mock_docker_client):
     """Create DockerSandboxSpecService instance for testing."""
     return DockerSandboxSpecService(
         repository='ghcr.io/all-hands-ai/agent-server',
+        tag='latest',
         command=['/usr/local/bin/openhands-agent-server'],
         initial_env={
             'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
@@ -94,6 +95,7 @@ def service_with_pull(mock_docker_client):
     """Create DockerSandboxSpecService instance with pull_if_missing=True."""
     return DockerSandboxSpecService(
         repository='ghcr.io/all-hands-ai/agent-server',
+        tag='latest',
         command=['/usr/local/bin/openhands-agent-server'],
         initial_env={
             'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
@@ -112,6 +114,7 @@ def service_with_date_filter(mock_docker_client):
     filter_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
     return DockerSandboxSpecService(
         repository='ghcr.io/all-hands-ai/agent-server',
+        tag='latest',
         command=['/usr/local/bin/openhands-agent-server'],
         initial_env={
             'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
