@@ -406,6 +406,105 @@ class Runtime(FileEditRuntimeMixin):
             return
         self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    async def _update_git_remote_url_with_fresh_token(
+        self,
+        repo_dir: str,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
+    ) -> None:
+        """Update git remote URL in a repository with fresh token.
+
+        This ensures that git operations (push, pull, fetch) use fresh tokens
+        instead of the ones embedded during clone, which may expire.
+
+        Args:
+            repo_dir: Directory name of the repository (relative to workspace_root)
+            git_provider_tokens: Provider tokens to use for updating the URL
+        """
+        if not git_provider_tokens:
+            return
+
+        try:
+            # Get current remote URL
+            get_url_action = CmdRunAction(
+                command=f'cd {repo_dir} && git remote get-url origin'
+            )
+            obs = await call_sync_from_async(self.run_action, get_url_action)
+
+            if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+                self.log('debug', 'Could not get git remote URL, skipping URL update')
+                return
+
+            old_url = obs.content.strip()
+            if not old_url:
+                return
+
+            # Determine provider from URL
+            provider = None
+            if 'github.com' in old_url:
+                provider = ProviderType.GITHUB
+            elif 'gitlab.com' in old_url:
+                provider = ProviderType.GITLAB
+            elif 'bitbucket.org' in old_url:
+                provider = ProviderType.BITBUCKET
+
+            if not provider or provider not in git_provider_tokens:
+                return
+
+            # Get fresh token
+            token_info = git_provider_tokens[provider]
+            if (
+                not token_info
+                or not hasattr(token_info, 'token')
+                or not token_info.token
+            ):
+                return
+
+            new_token = token_info.token.get_secret_value()
+
+            # Build new URL with fresh token
+            import re
+
+            if provider == ProviderType.GITHUB:
+                new_url = re.sub(
+                    r'https://[^@]+@github\.com',
+                    f'https://{new_token}@github.com',
+                    old_url,
+                )
+            elif provider == ProviderType.GITLAB:
+                new_url = re.sub(
+                    r'https://oauth2:[^@]+@gitlab\.com',
+                    f'https://oauth2:{new_token}@gitlab.com',
+                    old_url,
+                )
+            elif provider == ProviderType.BITBUCKET:
+                new_url = re.sub(
+                    r'https://x-token-auth:[^@]+@bitbucket\.org',
+                    f'https://x-token-auth:{new_token}@bitbucket.org',
+                    old_url,
+                )
+            else:
+                new_url = old_url
+
+            if new_url != old_url:
+                set_url_action = CmdRunAction(
+                    command=f'cd {repo_dir} && git remote set-url origin {new_url}'
+                )
+                obs = await call_sync_from_async(self.run_action, set_url_action)
+
+                if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                    self.log(
+                        'info',
+                        f'Updated git remote URL with fresh {provider.value} token',
+                    )
+                else:
+                    self.log(
+                        'warning',
+                        f'Failed to update git remote URL: {obs.content if isinstance(obs, CmdOutputObservation) else "Unknown error"}',
+                    )
+
+        except Exception as e:
+            self.log('warning', f'Error updating git remote URL: {e}')
+
     async def clone_or_init_repo(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,
@@ -466,6 +565,12 @@ class Runtime(FileEditRuntimeMixin):
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
+
+        # Update git remote URL with fresh token to ensure subsequent git operations succeed
+        await self._update_git_remote_url_with_fresh_token(
+            dir_name, git_provider_tokens
+        )
+
         return dir_name
 
     def maybe_run_setup_script(self):
