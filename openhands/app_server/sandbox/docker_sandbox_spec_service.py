@@ -8,6 +8,7 @@ from fastapi import Request
 from pydantic import Field
 
 from openhands.agent_server.utils import utc_now
+from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -121,6 +122,15 @@ class DockerSandboxSpecService(SandboxSpecService):
             return self._docker_image_to_sandbox_specs(image)
         except (NotFound, APIError):
             return None
+
+    async def get_default_sandbox_spec(self):
+        try:
+            return await super().get_default_sandbox_spec()
+        except SandboxError:
+            raise SandboxError(
+                'No sandbox specs available! '
+                f'(Maybe you need to `docker pull {self.repository}:latest`)'
+            )
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
