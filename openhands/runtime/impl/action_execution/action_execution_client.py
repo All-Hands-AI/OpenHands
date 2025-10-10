@@ -146,7 +146,10 @@ class ActionExecutionClient(Runtime):
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         If recursive is True, recursively list all files in subdirectories.
         """
-        self.log('info', f'[ActionExecutionClient.list_files] Called with path={path}, recursive={recursive}')
+        self.log(
+            'info',
+            f'[ActionExecutionClient.list_files] Called with path={path}, recursive={recursive}',
+        )
         try:
             data: dict[str, str | bool] = {}
             if path is not None:
@@ -154,7 +157,10 @@ class ActionExecutionClient(Runtime):
             # Always include recursive parameter in the request body
             data['recursive'] = recursive
 
-            self.log('debug', f'[ActionExecutionClient.list_files] Sending POST request with data: {data}')
+            self.log(
+                'debug',
+                f'[ActionExecutionClient.list_files] Sending POST request with data: {data}',
+            )
             response = self._send_action_server_request(
                 'POST',
                 f'{self.action_execution_server_url}/list_files',
@@ -164,9 +170,15 @@ class ActionExecutionClient(Runtime):
             assert response.is_closed
             response_json = response.json()
             assert isinstance(response_json, list)
-            self.log('info', f'[ActionExecutionClient.list_files] Received {len(response_json)} files from action server')
+            self.log(
+                'info',
+                f'[ActionExecutionClient.list_files] Received {len(response_json)} files from action server',
+            )
             if response_json:
-                self.log('debug', f'[ActionExecutionClient.list_files] Sample files (first 5): {response_json[:5]}')
+                self.log(
+                    'debug',
+                    f'[ActionExecutionClient.list_files] Sample files (first 5): {response_json[:5]}',
+                )
             return response_json
         except httpx.TimeoutException:
             self.log('error', '[ActionExecutionClient.list_files] Request timed out')

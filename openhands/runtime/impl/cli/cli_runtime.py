@@ -833,7 +833,9 @@ class CLIRuntime(Runtime):
 
         If recursive is True, recursively list all files in subdirectories.
         """
-        logger.info(f"[CLIRuntime.list_files] Called with path={path}, recursive={recursive}")
+        logger.info(
+            f'[CLIRuntime.list_files] Called with path={path}, recursive={recursive}'
+        )
 
         if not self._runtime_initialized:
             raise RuntimeError('Runtime not initialized')
@@ -843,19 +845,25 @@ class CLIRuntime(Runtime):
         else:
             dir_path = self._sanitize_filename(path)
 
-        logger.info(f"[CLIRuntime.list_files] Using directory path: {dir_path}")
+        logger.info(f'[CLIRuntime.list_files] Using directory path: {dir_path}')
 
         try:
             if not os.path.exists(dir_path):
-                logger.warning(f"[CLIRuntime.list_files] Path does not exist: {dir_path}")
+                logger.warning(
+                    f'[CLIRuntime.list_files] Path does not exist: {dir_path}'
+                )
                 return []
 
             if not os.path.isdir(dir_path):
-                logger.info(f"[CLIRuntime.list_files] Path is a file, not directory: {dir_path}")
+                logger.info(
+                    f'[CLIRuntime.list_files] Path is a file, not directory: {dir_path}'
+                )
                 return [dir_path]
 
             if recursive:
-                logger.info(f"[CLIRuntime.list_files] Starting recursive walk of {dir_path}")
+                logger.info(
+                    f'[CLIRuntime.list_files] Starting recursive walk of {dir_path}'
+                )
                 # Recursively list all files
                 all_files = []
                 for root, dirs, filenames in os.walk(dir_path):
@@ -876,15 +884,21 @@ class CLIRuntime(Runtime):
                         else:
                             all_files.append(os.path.join(rel_root, filename))
 
-                logger.info(f"[CLIRuntime.list_files] Recursive walk found {len(all_files)} items")
+                logger.info(
+                    f'[CLIRuntime.list_files] Recursive walk found {len(all_files)} items'
+                )
                 if all_files:
-                    logger.info(f"[CLIRuntime.list_files] Sample files (first 5): {all_files[:5]}")
+                    logger.info(
+                        f'[CLIRuntime.list_files] Sample files (first 5): {all_files[:5]}'
+                    )
                 return sorted(all_files, key=lambda s: s.lower())
             else:
                 # List files in the directory
-                logger.info(f"[CLIRuntime.list_files] Non-recursive listing of {dir_path}")
+                logger.info(
+                    f'[CLIRuntime.list_files] Non-recursive listing of {dir_path}'
+                )
                 files = [os.path.join(dir_path, f) for f in os.listdir(dir_path)]
-                logger.info(f"[CLIRuntime.list_files] Found {len(files)} items")
+                logger.info(f'[CLIRuntime.list_files] Found {len(files)} items')
                 return files
         except Exception as e:
             logger.error(f'[CLIRuntime.list_files] Error listing files: {str(e)}')
