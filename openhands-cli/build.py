@@ -72,6 +72,7 @@ def check_pyinstaller() -> bool:
 def build_executable(
     spec_file: str = 'openhands.spec',
     clean: bool = True,
+    target_arch: str = None,
 ) -> bool:
     """Build the executable using PyInstaller."""
     if clean:
@@ -86,6 +87,11 @@ def build_executable(
     try:
         # Run PyInstaller with uv
         cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
+        
+        # Add target architecture for macOS if specified
+        if target_arch and sys.platform == 'darwin':
+            cmd.extend(['--target-arch', target_arch])
+            print(f'🎯 Building for macOS target architecture: {target_arch}')
 
         print(f'Running: {" ".join(cmd)}')
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -254,6 +260,10 @@ def main() -> int:
         action='store_true',
         help='Install PyInstaller using uv before building',
     )
+    parser.add_argument(
+        '--target-arch',
+        help='Target architecture for macOS builds (x86_64, arm64, universal2)',
+    )
 
     parser.add_argument(
         '--no-build', action='store_true', help='Skip testing the built executable'
@@ -270,7 +280,9 @@ def main() -> int:
         return 1
 
     # Build the executable
-    if not args.no_build and not build_executable(args.spec, clean=not args.no_clean):
+    if not args.no_build and not build_executable(
+        args.spec, clean=not args.no_clean, target_arch=args.target_arch
+    ):
         return 1
 
     # Test the executable
