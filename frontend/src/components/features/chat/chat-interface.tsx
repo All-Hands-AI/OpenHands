@@ -36,7 +36,9 @@ import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 import { isV0Event } from "#/types/v1/type-guards";
-import { ConversationSetupFlow } from "../conversation/conversation-setup-flow";
+import { useStreamStartAppConversation } from "#/hooks/mutation/use-stream-start-app-conversation";
+import { AppConversationStartRequest } from "#/api/open-hands.types";
+import { useConversationSetupStore } from "#/stores/conversation-setup-store";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -47,15 +49,7 @@ function getEntryPoint(
   return "direct";
 }
 
-interface ChatInterfaceProps {
-  isSetupMode?: boolean;
-  conversationId?: string;
-}
-
-export function ChatInterface({
-  isSetupMode,
-  conversationId,
-}: ChatInterfaceProps = {}) {
+export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
   const { errorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages } = useWsClient();
@@ -74,7 +68,47 @@ export function ChatInterface({
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
 
-  const { curAgentState } = useAgentStore();
+  const { curAgentState, setCurrentAgentState } = useAgentStore();
+
+  // Get setup state from store
+  const {
+    isSetupMode,
+    conversationId: setupConversationId,
+    setCurrentTask,
+  } = useConversationSetupStore();
+  const { mutate: startConversation } = useStreamStartAppConversation();
+
+  // Start conversation setup when in setup mode
+  React.useEffect(() => {
+    if (isSetupMode && setupConversationId) {
+      setCurrentAgentState(AgentState.LOADING);
+
+      const request: AppConversationStartRequest = {
+        initial_message: {
+          message: "Hello! I'm ready to help you with your project.",
+          image_urls: [],
+        },
+      };
+
+      startConversation({
+        request,
+        onProgress: (task) => {
+          setCurrentTask(task);
+
+          // When ready, the URL will be updated by conversation-setup-flow or routing logic
+          if (task.status === "READY" && task.app_conversation_id) {
+            setCurrentAgentState(AgentState.INIT);
+          }
+        },
+      });
+    }
+  }, [
+    isSetupMode,
+    setupConversationId,
+    startConversation,
+    setCurrentAgentState,
+    setCurrentTask,
+  ]);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -184,11 +218,6 @@ export function ChatInterface({
   };
 
   const userEventsExist = hasUserEvent(events);
-
-  // If in setup mode, show setup progress instead of regular chat
-  if (isSetupMode && conversationId) {
-    return <ConversationSetupFlow conversationId={conversationId} />;
-  }
 
   return (
     <ScrollProvider value={scrollProviderValue}>

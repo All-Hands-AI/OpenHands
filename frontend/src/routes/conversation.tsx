@@ -28,6 +28,7 @@ import { ConversationName } from "#/components/features/conversation/conversatio
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
+import { useConversationSetupStore } from "#/stores/conversation-setup-store";
 
 function AppContent() {
   useConversationConfig();
@@ -35,10 +36,17 @@ function AppContent() {
   const { conversationId } = useConversationId();
   const location = useLocation();
   const navigate = useNavigate();
+  const { setIsSetupMode, setConversationId } = useConversationSetupStore();
 
   // Check if we're in setup mode
   const searchParams = new URLSearchParams(location.search);
   const isSetupMode = searchParams.get("setup") === "true";
+
+  // Update the store when setup mode changes
+  React.useEffect(() => {
+    setIsSetupMode(isSetupMode);
+    setConversationId(conversationId);
+  }, [isSetupMode, conversationId, setIsSetupMode, setConversationId]);
 
   // Only fetch conversation if NOT in setup mode
   const {
@@ -133,10 +141,7 @@ function AppContent() {
               <ConversationTabs />
             </div>
 
-            <ConversationMain
-              isSetupMode={isSetupMode}
-              conversationId={conversationId}
-            />
+            <ConversationMain />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

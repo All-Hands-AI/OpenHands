@@ -4,15 +4,9 @@ import { cn } from "#/utils/utils";
 
 interface MobileLayoutProps {
   isRightPanelShown: boolean;
-  isSetupMode?: boolean;
-  taskId?: string;
 }
 
-export function MobileLayout({
-  isRightPanelShown,
-  isSetupMode,
-  taskId,
-}: MobileLayoutProps) {
+export function MobileLayout({ isRightPanelShown }: MobileLayoutProps) {
   return (
     <div className="relative flex-1 flex flex-col">
       {/* Chat area - shrinks when panel slides up */}
@@ -22,7 +16,7 @@ export function MobileLayout({
           isRightPanelShown ? "h-160" : "flex-1",
         )}
       >
-        <ChatInterface isSetupMode={isSetupMode} conversationId={taskId} />
+        <ChatInterface />
       </div>
 
       {/* Bottom panel - slides up from bottom */}

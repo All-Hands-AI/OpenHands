@@ -6,15 +6,9 @@ import { useResizablePanels } from "#/hooks/use-resizable-panels";
 
 interface DesktopLayoutProps {
   isRightPanelShown: boolean;
-  isSetupMode?: boolean;
-  conversationId?: string;
 }
 
-export function DesktopLayout({
-  isRightPanelShown,
-  isSetupMode,
-  conversationId,
-}: DesktopLayoutProps) {
+export function DesktopLayout({ isRightPanelShown }: DesktopLayoutProps) {
   const { leftWidth, rightWidth, isDragging, containerRef, handleMouseDown } =
     useResizablePanels({
       defaultLeftWidth: 50,
@@ -41,11 +35,7 @@ export function DesktopLayout({
             transitionProperty: isDragging ? "none" : "all",
           }}
         >
-          <ChatInterfaceWrapper
-            isRightPanelShown={isRightPanelShown}
-            isSetupMode={isSetupMode}
-            conversationId={conversationId}
-          />
+          <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
         </div>
 
         {/* Resize Handle */}

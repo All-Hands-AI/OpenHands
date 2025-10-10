@@ -3,33 +3,13 @@ import { MobileLayout } from "./mobile-layout";
 import { DesktopLayout } from "./desktop-layout";
 import { useConversationStore } from "#/state/conversation-store";
 
-interface ConversationMainProps {
-  isSetupMode?: boolean;
-  conversationId?: string;
-}
-
-export function ConversationMain({
-  isSetupMode,
-  conversationId,
-}: ConversationMainProps) {
+export function ConversationMain() {
   const { width } = useWindowSize();
   const { isRightPanelShown } = useConversationStore();
 
   if (width && width <= 1024) {
-    return (
-      <MobileLayout
-        isRightPanelShown={isRightPanelShown}
-        isSetupMode={isSetupMode}
-        taskId={conversationId}
-      />
-    );
+    return <MobileLayout isRightPanelShown={isRightPanelShown} />;
   }
 
-  return (
-    <DesktopLayout
-      isRightPanelShown={isRightPanelShown}
-      isSetupMode={isSetupMode}
-      conversationId={conversationId}
-    />
-  );
+  return <DesktopLayout isRightPanelShown={isRightPanelShown} />;
 }
