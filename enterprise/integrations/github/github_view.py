@@ -28,7 +28,9 @@ from enterprise.storage.proactive_conversation_store import ProactiveConversatio
 from enterprise.storage.saas_secrets_store import SaasSecretsStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import (
     initialize_conversation,
     start_conversation,
@@ -90,26 +92,49 @@ class GithubIssue(ResolverViewInterface):
     uuid: str | None
     should_extract: bool
     send_summary_instruction: bool
+    title: str
+    description: str
+    previous_comments: list[Comment]
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        user_instructions_template = jinja_env.get_template('issue_labeled_prompt.j2')
+    title: str
+    description: str
+    previous_comments: list[Comment]
+
+    async def _load_resolver_context(self):
+        github_service = GithubServiceImpl(
+            external_auth_id=self.user_info.keycloak_user_id
+        )
+
+        self.previous_comments = await github_service.get_issue_or_pr_comments(
+            self.full_repo_name, self.issue_number
+        )
+
+        (
+            self.title,
+            self.description,
+        ) = await github_service.get_issue_or_pr_title_and_body(
+            self.full_repo_name, self.issue_number
+        )
+
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+        user_instructions_template = jinja_env.get_template('issue_prompt.j2')
 
         user_instructions = user_instructions_template.render(
             issue_number=self.issue_number,
         )
 
+        await self._load_resolver_context()
+
         conversation_instructions_template = jinja_env.get_template(
-            'issue_labeled_conversation_instructions.j2'
+            'issue_conversation_instructions.j2'
         )
         conversation_instructions = conversation_instructions_template.render(
-            username=self.user_info.username,
-            conversation_url=CONVERSATION_URL,
+            issue_title=self.title,
+            issue_body=self.description,
+            previous_comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
-
-    def get_callback_id(self) -> str:
-        return f'github_{self.full_repo_name}_{self.issue_number}_{self.uuid}'
 
     async def _get_user_secrets(self):
         secrets_store = SaasSecretsStore(
@@ -140,7 +165,9 @@ class GithubIssue(ResolverViewInterface):
     ):
         custom_secrets = await self._get_user_secrets()
 
-        user_instructions, conversation_instructions = self._get_instructions(jinja_env)
+        user_instructions, conversation_instructions = await self._get_instructions(
+            jinja_env
+        )
 
         await start_conversation(
             user_id=self.user_info.keycloak_user_id,
@@ -160,8 +187,10 @@ class GithubIssueComment(GithubIssue):
     comment_body: str
     comment_id: int
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        user_instructions_template = jinja_env.get_template('issue_comment_prompt.j2')
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+        user_instructions_template = jinja_env.get_template('issue_prompt.j2')
+
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             issue_comment=self.comment_body
