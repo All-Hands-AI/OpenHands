@@ -73,7 +73,9 @@ class AppConversationService {
       if (buffer.trim()) {
         const trimmedBuffer = buffer.trim();
         if (trimmedBuffer !== "[" && trimmedBuffer !== "]") {
-          const cleanBuffer = trimmedBuffer.replace(/,$/, "");
+          const cleanBuffer = trimmedBuffer
+            .replace(/,?\]$/, "")
+            .replace(/,$/, "");
           if (cleanBuffer) {
             try {
               const task: AppConversationStartTask = JSON.parse(cleanBuffer);

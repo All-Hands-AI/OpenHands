@@ -128,8 +128,13 @@ function AppContent() {
     setCurrentAgentState(AgentState.LOADING);
   });
 
+  const isV1Conversation = conversation?.conversation_version === "V1";
+
   return (
-    <WebSocketProviderWrapper version={0} conversationId={conversationId}>
+    <WebSocketProviderWrapper
+      version={isV1Conversation ? 1 : 0}
+      conversationId={conversationId}
+    >
       <ConversationSubscriptionsProvider>
         <EventHandler>
           <div

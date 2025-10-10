@@ -1,6 +1,6 @@
 import React from "react";
 import posthog from "posthog-js";
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
@@ -57,6 +57,7 @@ export function ChatInterface() {
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const {
     scrollDomToBottom,
@@ -75,6 +76,7 @@ export function ChatInterface() {
     isSetupMode,
     conversationId: setupConversationId,
     setCurrentTask,
+    setIsSetupMode,
   } = useConversationSetupStore();
   const { mutate: startConversation } = useStreamStartAppConversation();
 
@@ -95,9 +97,14 @@ export function ChatInterface() {
         onProgress: (task) => {
           setCurrentTask(task);
 
-          // When ready, the URL will be updated by conversation-setup-flow or routing logic
+          // When ready, navigate to the actual conversation and exit setup mode
           if (task.status === "READY" && task.app_conversation_id) {
             setCurrentAgentState(AgentState.INIT);
+            setIsSetupMode(false);
+            // Replace the URL to remove setup parameter
+            navigate(`/conversations/${task.app_conversation_id}`, {
+              replace: true,
+            });
           }
         },
       });
@@ -108,6 +115,8 @@ export function ChatInterface() {
     startConversation,
     setCurrentAgentState,
     setCurrentTask,
+    setIsSetupMode,
+    navigate,
   ]);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<

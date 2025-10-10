@@ -18,6 +18,7 @@ import {
   isActionEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
+import { useUserConversation } from "#/hooks/query/use-user-conversation";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -34,6 +35,9 @@ export function ConversationWebSocketProvider({
   children: React.ReactNode;
   conversationId?: string;
 }) {
+  const { data: userConversation } = useUserConversation(
+    conversationId || null,
+  );
   const [connectionState, setConnectionState] = useState<
     "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
   >("CONNECTING");
@@ -81,6 +85,9 @@ export function ConversationWebSocketProvider({
 
   const websocketOptions = useMemo(
     () => ({
+      queryParams: {
+        session_api_key: userConversation?.session_api_key || "",
+      },
       onOpen: () => {
         setConnectionState("OPEN");
         removeErrorMessage(); // Clear any previous error messages on successful connection
@@ -100,13 +107,27 @@ export function ConversationWebSocketProvider({
       },
       onMessage: handleMessage,
     }),
-    [handleMessage, setErrorMessage, removeErrorMessage],
+    [
+      userConversation?.session_api_key,
+      handleMessage,
+      setErrorMessage,
+      removeErrorMessage,
+    ],
   );
 
-  const { socket } = useWebSocket(
-    "ws://localhost/events/socket",
-    websocketOptions,
-  );
+  // Extract the host and port from the conversation URL
+  // Expected format: http://localhost:PORT/api/conversations/xxx
+  // We want to construct: ws://localhost:PORT/sockets/events/{conversationId}
+  const socketUrl = useMemo(() => {
+    const url = userConversation?.url || "";
+    const urlMatch = url.match(/^https?:\/\/([^/]+)/);
+    const hostWithPort = urlMatch?.[1] || "localhost";
+
+    return `ws://${hostWithPort}/sockets/events/${conversationId}`;
+  }, [userConversation?.url, conversationId]);
+
+  // Use the custom useWebSocket hook
+  const { socket } = useWebSocket(socketUrl, websocketOptions);
 
   useEffect(() => {
     if (socket) {
