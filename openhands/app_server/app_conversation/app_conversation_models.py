@@ -111,6 +111,13 @@ class AppConversationStartTaskStatus(Enum):
     ERROR = 'ERROR'
 
 
+class AppConversationStartTaskSortOrder(Enum):
+    CREATED_AT = 'CREATED_AT'
+    CREATED_AT_DESC = 'CREATED_AT_DESC'
+    UPDATED_AT = 'UPDATED_AT'
+    UPDATED_AT_DESC = 'UPDATED_AT_DESC'
+
+
 class AppConversationStartTask(BaseModel):
     """Object describing the start process for an app conversation.
 
@@ -134,3 +141,8 @@ class AppConversationStartTask(BaseModel):
     request: AppConversationStartRequest
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+
+class AppConversationStartTaskPage(BaseModel):
+    items: list[AppConversationStartTask]
+    next_page_id: str | None = None

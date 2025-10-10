@@ -1,14 +1,10 @@
-import asyncio
 import logging
-import os
 from dataclasses import dataclass
 from typing import AsyncGenerator, cast
 
 from fastapi import Request
-import httpx
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
-from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
     SandboxSpecInfoPage,
@@ -66,11 +62,15 @@ class RemoteSandboxSpecService(SandboxSpecService):
 
 
 class RemoteSandboxSpecInfo(SandboxSpecInfo):
-    command: list[str] | None = Field(default_factory=lambda: ['/usr/local/bin/agent-server', '--port', '60000'])
-    initial_env: dict[str, str]= Field(default_factory=lambda: {
-        'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-        'LOG_JSON': 'true',
-    })
+    command: list[str] | None = Field(
+        default_factory=lambda: ['/usr/local/bin/agent-server', '--port', '60000']
+    )
+    initial_env: dict[str, str] = Field(
+        default_factory=lambda: {
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
+        }
+    )
     working_dir: str = Field(default='/workspace')
 
 

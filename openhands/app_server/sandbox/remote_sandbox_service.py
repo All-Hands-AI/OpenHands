@@ -116,7 +116,6 @@ class RemoteSandboxService(SandboxService):
         self, runtime: dict[str, Any] | None, stored: StoredRemoteSandbox
     ) -> SandboxInfo:
         if runtime:
-
             # Translate status
             status = None
             pod_status = (runtime.get('pod_status') or '').lower()
@@ -137,7 +136,9 @@ class RemoteSandboxService(SandboxService):
                     # TODO: Update the runtime API and remove this
                     # Hack - the RuntimeAPI is inconsistent, so we rebuild the url...
                     # https://runtime.staging.all-hands.dev
-                    url = self.agent_server_url_pattern.format(runtime_id=runtime['runtime_id'])
+                    url = self.agent_server_url_pattern.format(
+                        runtime_id=runtime['runtime_id']
+                    )
                 exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
             else:
                 exposed_urls = None
@@ -240,10 +241,14 @@ class RemoteSandboxService(SandboxService):
         items = []
         for stored_sandbox in stored_sandboxes:
             try:
-                sandbox_info = self._to_sandbox_info(runtimes_by_session_id.get(stored_sandbox.id), stored_sandbox)
+                sandbox_info = self._to_sandbox_info(
+                    runtimes_by_session_id.get(stored_sandbox.id), stored_sandbox
+                )
                 items.append(sandbox_info)
             except Exception as exc:
-                _logger.exception(f'Error loading sandbox {stored_sandbox.id}: {exc}', stack_info=True)
+                _logger.exception(
+                    f'Error loading sandbox {stored_sandbox.id}: {exc}', stack_info=True
+                )
 
         return SandboxPage(items=items, next_page_id=next_page_id)
 
@@ -317,7 +322,7 @@ class RemoteSandboxService(SandboxService):
             response.raise_for_status()
             runtime_data = response.json()
 
-            #Hack - result doesn't contain this
+            # Hack - result doesn't contain this
             runtime_data['pod_status'] = 'pending'
 
             return self._to_sandbox_info(runtime_data, stored_sandbox)
@@ -451,7 +456,9 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
                                 )
                         page_id = page.next_page_id
                         if page_id is None:
-                            _logger.debug(f"Matched {len(runtimes_by_sandbox_id)} Runtimes with {matches} Conversations.")
+                            _logger.debug(
+                                f'Matched {len(runtimes_by_sandbox_id)} Runtimes with {matches} Conversations.'
+                            )
                             break
 
             except Exception as exc:
@@ -464,7 +471,6 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
 
         except asyncio.CancelledError:
             return
-
 
 
 async def refresh_conversation(
@@ -569,7 +575,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
             'As of writing, the RuntimeAPI is unconsitent on what it returns. This '
             'pattern allows us to reconstruct an agent server url when the API does '
             'not return one.'
-        )
+        ),
     )
 
     async def inject(

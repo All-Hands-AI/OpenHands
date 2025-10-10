@@ -30,12 +30,18 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationPage,
     AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskPage,
+    AppConversationStartTaskSortOrder,
 )
 from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
+from openhands.app_server.app_conversation.app_conversation_start_task_service import (
+    AppConversationStartTaskService,
+)
 from openhands.app_server.config import (
     depends_app_conversation_service,
+    depends_app_conversation_start_task_service,
     depends_db_session,
     depends_user_context,
     get_app_conversation_service,
@@ -43,6 +49,9 @@ from openhands.app_server.config import (
 
 router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
 app_conversation_service_dependency = depends_app_conversation_service()
+app_conversation_start_task_service_dependency = (
+    depends_app_conversation_start_task_service()
+)
 user_context_dependency = depends_user_context()
 db_session_dependency = depends_db_session()
 
@@ -181,6 +190,61 @@ async def stream_app_conversation_start(
         media_type='application/json',
     )
     return response
+
+
+@router.get('/start-tasks/search')
+async def search_app_conversation_start_tasks(
+    conversation_id__eq: Annotated[
+        UUID | None,
+        Query(title='Filter by conversation ID equal to this value'),
+    ] = None,
+    sort_order: Annotated[
+        AppConversationStartTaskSortOrder,
+        Query(title='Sort order for the results'),
+    ] = AppConversationStartTaskSortOrder.CREATED_AT_DESC,
+    page_id: Annotated[
+        str | None,
+        Query(title='Optional next_page_id from the previously returned page'),
+    ] = None,
+    limit: Annotated[
+        int,
+        Query(
+            title='The max number of results in the page',
+            gt=0,
+            lte=100,
+        ),
+    ] = 100,
+    app_conversation_start_task_service: AppConversationStartTaskService = (
+        app_conversation_start_task_service_dependency
+    ),
+) -> AppConversationStartTaskPage:
+    """Search / List conversation start tasks."""
+    assert limit > 0
+    assert limit <= 100
+    return (
+        await app_conversation_start_task_service.search_app_conversation_start_tasks(
+            conversation_id__eq=conversation_id__eq,
+            sort_order=sort_order,
+            page_id=page_id,
+            limit=limit,
+        )
+    )
+
+
+@router.get('/start-tasks/count')
+async def count_app_conversation_start_tasks(
+    conversation_id__eq: Annotated[
+        UUID | None,
+        Query(title='Filter by conversation ID equal to this value'),
+    ] = None,
+    app_conversation_start_task_service: AppConversationStartTaskService = (
+        app_conversation_start_task_service_dependency
+    ),
+) -> int:
+    """Count conversation start tasks matching the given filters."""
+    return await app_conversation_start_task_service.count_app_conversation_start_tasks(
+        conversation_id__eq=conversation_id__eq,
+    )
 
 
 @router.get('/start-tasks')

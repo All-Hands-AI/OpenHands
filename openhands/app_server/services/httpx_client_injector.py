@@ -35,4 +35,3 @@ class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
                 if hasattr(state, HTTPX_CLIENT_ATTR):
                     delattr(state, HTTPX_CLIENT_ATTR)
                 await httpx_client.aclose()
-
