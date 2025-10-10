@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
-from typing import AsyncGenerator
+from typing import AsyncGenerator, cast
 
 from fastapi import Request
 import httpx
@@ -65,31 +65,22 @@ class RemoteSandboxSpecService(SandboxSpecService):
         return self.specs[0]
 
 
-def _get_specs_from_legacy_parameter():
-    """If no config for SnadboxSpecs is defined, build one using the legacy param."""
-    image = os.getenv('SANDBOX_RUNTIME_CONTAINER_IMAGE')
-    if not image:
-        raise OpenHandsError('Please set sandbox specs!')
-    return [
-        SandboxSpecInfo(
-            id=image,
-            command=['/usr/local/bin/agent-server', '--port', '60000'],
-            initial_env={
-                'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-                'LOG_JSON': 'true',
-            },
-            working_dir='/workspace',
-        )
-    ]
+class RemoteSandboxSpecInfo(SandboxSpecInfo):
+    command: list[str] | None = Field(default_factory=lambda: ['/usr/local/bin/agent-server', '--port', '60000'])
+    initial_env: dict[str, str]= Field(default_factory=lambda: {
+        'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+        'LOG_JSON': 'true',
+    })
+    working_dir: str = Field(default='/workspace')
 
 
 class RemoteSandboxSpecServiceInjector(SandboxSpecServiceInjector):
-    specs: list[SandboxSpecInfo] = Field(
-        default_factory=_get_specs_from_legacy_parameter,
-        description='Preset list of sandbox specs. Falls back to legacy parameter',
+    specs: list[RemoteSandboxSpecInfo] = Field(
+        default_factory=list,
+        description='Preset list of sandbox specs',
     )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxSpecService, None]:
-        yield RemoteSandboxSpecService(self.specs)
+        yield RemoteSandboxSpecService(cast(list[SandboxSpecInfo], self.specs))
