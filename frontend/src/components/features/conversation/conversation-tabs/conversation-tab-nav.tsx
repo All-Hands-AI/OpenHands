@@ -27,7 +27,7 @@ export function ConversationTabNav({
           : "hover:text-white hover:bg-[#0D0F11]",
         isActive
           ? "focus-within:text-white focus-within:bg-tertiary"
-          : "focus-within:text-white focus-within:bg-[#0D0F11]",
+          : "focus-within:text-[#9299AA] focus-within:bg-[#0D0F11]",
       )}
     >
       <Icon className={cn("w-5 h-5 text-inherit")} />

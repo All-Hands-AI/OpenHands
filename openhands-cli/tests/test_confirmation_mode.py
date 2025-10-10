@@ -98,6 +98,7 @@ class TestConfirmationMode:
 
         mock_conversation = MagicMock()
         mock_conversation.confirmation_policy_active = False
+        mock_conversation.is_confirmation_mode_active = False
         runner = ConversationRunner(mock_conversation)
 
         # Test enabling confirmation mode
@@ -113,10 +114,11 @@ class TestConfirmationMode:
 
         mock_conversation = MagicMock()
         mock_conversation.confirmation_policy_active = False
+        mock_conversation.is_confirmation_mode_active = False
         runner = ConversationRunner(mock_conversation)
 
         # Verify initial state
-        assert runner.is_confirmation_mode_enabled is False
+        assert runner.is_confirmation_mode_active is False
 
     def test_ask_user_confirmation_empty_actions(self) -> None:
         """Test that ask_user_confirmation returns ACCEPT for empty actions list."""
@@ -373,11 +375,12 @@ class TestConfirmationMode:
         """Test that ConversationRunner disables confirmation mode when NeverConfirm policy is returned."""
         mock_conversation = MagicMock()
         mock_conversation.confirmation_policy_active = True
+        mock_conversation.is_confirmation_mode_active = True
         runner = ConversationRunner(mock_conversation)
 
         # Enable confirmation mode first
         runner.set_confirmation_policy(AlwaysConfirm())
-        assert runner.is_confirmation_mode_enabled is True
+        assert runner.is_confirmation_mode_active is True
 
         # Mock get_unmatched_actions to return some actions
         with patch(
@@ -398,14 +401,26 @@ class TestConfirmationMode:
 
                 # Mock print_formatted_text to avoid output during test
                 with patch('openhands_cli.runner.print_formatted_text'):
-                    result = runner._handle_confirmation_request()
+                    # Mock setup_conversation to avoid real conversation creation
+                    with patch('openhands_cli.runner.setup_conversation') as mock_setup:
+                        # Return a new mock conversation with confirmation mode disabled
+                        new_mock_conversation = MagicMock()
+                        new_mock_conversation.id = mock_conversation.id
+                        new_mock_conversation.is_confirmation_mode_active = False
+                        mock_setup.return_value = new_mock_conversation
+                        
+                        result = runner._handle_confirmation_request()
 
-                    # Verify that confirmation mode was disabled
-                    assert result == UserConfirmation.ACCEPT
-                    # Should have called set_confirmation_policy with NeverConfirm
-                    mock_conversation.set_confirmation_policy.assert_called_with(
-                        NeverConfirm()
-                    )
+                        # Verify that confirmation mode was disabled
+                        assert result == UserConfirmation.ACCEPT
+                        # Should have called setup_conversation to toggle confirmation mode
+                        mock_setup.assert_called_once_with(
+                            mock_conversation.id, include_security_analyzer=False
+                        )
+                        # Should have called set_confirmation_policy with NeverConfirm on new conversation
+                        new_mock_conversation.set_confirmation_policy.assert_called_with(
+                            NeverConfirm()
+                        )
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_auto_confirm_safe(
@@ -432,11 +447,12 @@ class TestConfirmationMode:
         """Test that ConversationRunner sets ConfirmRisky policy when policy_change is provided."""
         mock_conversation = MagicMock()
         mock_conversation.confirmation_policy_active = True
+        mock_conversation.is_confirmation_mode_active = True
         runner = ConversationRunner(mock_conversation)
 
         # Enable confirmation mode first
         runner.set_confirmation_policy(AlwaysConfirm())
-        assert runner.is_confirmation_mode_enabled is True
+        assert runner.is_confirmation_mode_active is True
 
         # Mock get_unmatched_actions to return some actions
         with patch(

@@ -1,9 +1,9 @@
 from enum import Enum
 
+from openhands.sdk.llm import UNVERIFIED_MODELS_EXCLUDING_BEDROCK, VERIFIED_MODELS
 from prompt_toolkit.completion import FuzzyWordCompleter
 from pydantic import SecretStr
 
-from openhands.sdk.llm import UNVERIFIED_MODELS_EXCLUDING_BEDROCK, VERIFIED_MODELS
 from openhands_cli.tui.utils import StepCounter
 from openhands_cli.user_actions.utils import (
     NonEmptyValueValidator,
@@ -17,13 +17,19 @@ class SettingsType(Enum):
     ADVANCED = 'advanced'
 
 
-def settings_type_confirmation() -> SettingsType:
-    question = 'Which settings would you like to modify?'
+def settings_type_confirmation(first_time: bool = False) -> SettingsType:
+    question = (
+            '\nWelcome to OpenHands! Let\'s configure your LLM settings.\n'
+            'Choose your preferred setup method:'
+        )
     choices = [
         'LLM (Basic)',
-        'LLM (Advanced)',
-        'Go back',
+        'LLM (Advanced)'
     ]
+    if not first_time:
+        question = 'Which settings would you like to modify?'
+        choices.append('Go back')
+
 
     index = cli_confirm(question, choices, escapable=True)
 

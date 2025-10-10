@@ -43,7 +43,7 @@ dependencies = [
   "jupyter-kernel-gateway",
   "kubernetes>=33.1,<34",
   "libtmux>=0.37,<0.40",
-  "litellm!=1.64.4,!=1.67.*,>=1.74.3",
+  "litellm!=1.64.4,<1.78.0,!=1.67.*,>=1.74.3",
   "memory-profiler>=0.61,<1",
   "numpy",
   "openai==1.99.9",
