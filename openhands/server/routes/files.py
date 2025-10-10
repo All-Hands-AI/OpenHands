@@ -67,7 +67,11 @@ async def list_files(
     Raises:
         HTTPException: If there's an error listing the files.
     """
+    logger.info(f"[LIST_FILES] Endpoint called - path: {path}, recursive: {recursive}")
+    logger.info(f"[LIST_FILES] Runtime type: {type(conversation.runtime).__name__ if conversation.runtime else 'None'}")
+
     if not conversation.runtime:
+        logger.warning("[LIST_FILES] Runtime not initialized")
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
@@ -75,7 +79,9 @@ async def list_files(
 
     runtime: Runtime = conversation.runtime
     try:
+        logger.info(f"[LIST_FILES] Calling runtime.list_files with path={path}, recursive={recursive}")
         file_list = await call_sync_from_async(runtime.list_files, path, recursive)
+        logger.info(f"[LIST_FILES] Runtime returned {len(file_list)} files")
     except AgentRuntimeUnavailableError as e:
         logger.error(f'Error listing files: {e}')
         return JSONResponse(
@@ -86,6 +92,11 @@ async def list_files(
         file_list = [os.path.join(path, f) for f in file_list]
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
+    logger.info(f"[LIST_FILES] After filtering FILES_TO_IGNORE: {len(file_list)} files")
+
+    # Log first 5 files as examples
+    if file_list:
+        logger.info(f"[LIST_FILES] Sample files: {file_list[:5]}")
 
     async def filter_for_gitignore(file_list: list[str], base_path: str) -> list[str]:
         gitignore_path = os.path.join(base_path, '.gitignore')
@@ -110,6 +121,7 @@ async def list_files(
             content={'error': f'Error filtering files: {e}'},
         )
 
+    logger.info(f"[LIST_FILES] Final response: {len(file_list)} files")
     return file_list
 
 
