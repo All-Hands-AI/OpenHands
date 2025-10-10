@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from enterprise.integrations.models import Message
 from enterprise.integrations.types import ResolverViewInterface, UserData
-from enterprise.integrations.utils import CONVERSATION_URL, HOST, get_oh_labels, has_exact_mention
+from enterprise.integrations.utils import HOST, get_oh_labels, has_exact_mention
 from jinja2 import Environment
 from enterprise.server.auth.token_manager import TokenManager
 from enterprise.server.config import get_config
@@ -10,7 +10,9 @@ from enterprise.storage.database import session_maker
 from enterprise.storage.saas_secrets_store import SaasSecretsStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import create_new_conversation
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
@@ -35,26 +37,45 @@ class GitlabIssue(ResolverViewInterface):
     conversation_id: str
     should_extract: bool
     send_summary_instruction: bool
+    title: str
+    description: str
+    previous_comments: list[Comment]
+    is_mr: bool
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        user_instructions_template = jinja_env.get_template('issue_labeled_prompt.j2')
+    async def _load_resolver_context(self):
+        gitlab_service = GitLabServiceImpl(
+            external_auth_id=self.user_info.keycloak_user_id
+        )
+
+        self.previous_comments = await gitlab_service.get_issue_or_mr_comments(
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
+        )
+
+        (
+            self.title,
+            self.description,
+        ) = await gitlab_service.get_issue_or_mr_title_and_body(
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
+        )
+
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+        user_instructions_template = jinja_env.get_template('issue_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             issue_number=self.issue_number,
         )
 
         conversation_instructions_template = jinja_env.get_template(
-            'issue_labeled_conversation_instructions.j2'
+            'issue_conversation_instructions.j2'
         )
         conversation_instructions = conversation_instructions_template.render(
-            username=self.user_info.username,
-            conversation_url=CONVERSATION_URL,
+            issue_title=self.title,
+            issue_body=self.description,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
-
-    def get_callback_id(self) -> str:
-        return f'gitlab_{self.full_repo_name}_{self.issue_number}'
 
     async def _get_user_secrets(self):
         secrets_store = SaasSecretsStore(
@@ -69,7 +90,9 @@ class GitlabIssue(ResolverViewInterface):
     ):
         custom_secrets = await self._get_user_secrets()
 
-        user_instructions, conversation_instructions = self._get_instructions(jinja_env)
+        user_instructions, conversation_instructions = await self._get_instructions(
+            jinja_env
+        )
         agent_loop_info = await create_new_conversation(
             user_id=self.user_info.keycloak_user_id,
             git_provider_tokens=git_provider_tokens,
@@ -80,7 +103,6 @@ class GitlabIssue(ResolverViewInterface):
             conversation_instructions=conversation_instructions,
             image_urls=None,
             conversation_trigger=ConversationTrigger.RESOLVER,
-            attach_convo_id=True,
             replay_json=None,
         )
         self.conversation_id = agent_loop_info.conversation_id
@@ -93,34 +115,35 @@ class GitlabIssueComment(GitlabIssue):
     discussion_id: str
     confidential: bool
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        user_instructions_template = jinja_env.get_template('issue_comment_prompt.j2')
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+        user_instructions_template = jinja_env.get_template('issue_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             issue_comment=self.comment_body
         )
 
         conversation_instructions_template = jinja_env.get_template(
-            'issue_comment_conversation_instructions.j2'
+            'issue_conversation_instructions.j2'
         )
+
         conversation_instructions = conversation_instructions_template.render(
             issue_number=self.issue_number,
-            username=self.user_info.username,
-            conversation_url=CONVERSATION_URL,
+            issue_title=self.title,
+            issue_body=self.description,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
-
-    def get_callback_id(self) -> str:
-        return f'github_{self.full_repo_name}_{self.issue_number}_{self.discussion_id}'
 
 
 @dataclass
 class GitlabMRComment(GitlabIssueComment):
     branch_name: str
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         user_instructions_template = jinja_env.get_template('mr_update_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             mr_comment=self.comment_body,
@@ -132,21 +155,21 @@ class GitlabMRComment(GitlabIssueComment):
         conversation_instructions = conversation_instructions_template.render(
             mr_number=self.issue_number,
             branch_name=self.branch_name,
+            mr_title=self.title,
+            mr_body=self.description,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
-
-    def get_callback_id(self) -> str:
-        return (
-            f'gitlab_{self.full_repo_name}_mr_{self.issue_number}_{self.discussion_id}'
-        )
 
     async def create_new_conversation(
         self, jinja_env: Environment, git_provider_tokens: PROVIDER_TOKEN_TYPE
     ):
         custom_secrets = await self._get_user_secrets()
 
-        user_instructions, conversation_instructions = self._get_instructions(jinja_env)
+        user_instructions, conversation_instructions = await self._get_instructions(
+            jinja_env
+        )
         agent_loop_info = await create_new_conversation(
             user_id=self.user_info.keycloak_user_id,
             git_provider_tokens=git_provider_tokens,
@@ -168,8 +191,25 @@ class GitlabInlineMRComment(GitlabMRComment):
     file_location: str
     line_number: int
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+    async def _load_resolver_context(self):
+        gitlab_service = GitLabServiceImpl(
+            external_auth_id=self.user_info.keycloak_user_id
+        )
+
+        (
+            self.title,
+            self.description,
+        ) = await gitlab_service.get_issue_or_mr_title_and_body(
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
+        )
+
+        self.previous_comments = await gitlab_service.get_review_thread_comments(
+            str(self.project_id), self.issue_number, self.discussion_id
+        )
+
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         user_instructions_template = jinja_env.get_template('mr_update_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             mr_comment=self.comment_body,
@@ -178,11 +218,15 @@ class GitlabInlineMRComment(GitlabMRComment):
         conversation_instructions_template = jinja_env.get_template(
             'mr_update_conversation_instructions.j2'
         )
+
         conversation_instructions = conversation_instructions_template.render(
             mr_number=self.issue_number,
+            mr_title=self.title,
+            mr_body=self.description,
             branch_name=self.branch_name,
             file_location=self.file_location,
             line_number=self.line_number,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
@@ -298,6 +342,10 @@ class GitlabFactory:
                 conversation_id='',
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
+                is_mr=False,
             )
 
         elif GitlabFactory.is_issue_comment(message):
@@ -324,6 +372,10 @@ class GitlabFactory:
                 conversation_id='',
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
+                is_mr=False,
             )
 
         elif GitlabFactory.is_mr_comment(message):
@@ -352,6 +404,10 @@ class GitlabFactory:
                 send_summary_instruction=True,
                 confidential=GitlabFactory.determine_if_confidential(event_type),
                 branch_name=branch_name,
+                title='',
+                description='',
+                previous_comments=[],
+                is_mr=True,
             )
 
         elif GitlabFactory.is_mr_comment(message, inline=True):
@@ -388,4 +444,8 @@ class GitlabFactory:
                 file_location=file_location,
                 line_number=line_number,
                 comment_body=comment_body,
+                title='',
+                description='',
+                previous_comments=[],
+                is_mr=True,
             )
