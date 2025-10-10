@@ -1,12 +1,10 @@
-import asyncio
 import logging
 import os
 from dataclasses import dataclass
 from typing import AsyncGenerator
 
 from fastapi import Request
-import httpx
-from pydantic import Field, PrivateAttr
+from pydantic import Field
 
 from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.sandbox.sandbox_spec_models import (
