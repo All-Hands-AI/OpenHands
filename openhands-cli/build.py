@@ -84,14 +84,28 @@ def build_executable(
 
     print(f'🔨 Building executable using {spec_file}...')
 
-    try:
-        # Run PyInstaller with uv
-        cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
+    # Handle target architecture for macOS by modifying the spec file
+    original_spec_content = None
+    if target_arch and sys.platform == 'darwin':
+        print(f'🎯 Building for macOS target architecture: {target_arch}')
         
-        # Add target architecture for macOS if specified
-        if target_arch and sys.platform == 'darwin':
-            cmd.extend(['--target-arch', target_arch])
-            print(f'🎯 Building for macOS target architecture: {target_arch}')
+        # Read the original spec file
+        with open(spec_file, 'r') as f:
+            original_spec_content = f.read()
+        
+        # Replace target_arch=None with target_arch='<arch>'
+        modified_spec_content = original_spec_content.replace(
+            'target_arch=None',
+            f"target_arch='{target_arch}'"
+        )
+        
+        # Write the modified spec file
+        with open(spec_file, 'w') as f:
+            f.write(modified_spec_content)
+
+    try:
+        # Run PyInstaller with uv (no --target-arch flag needed with spec file)
+        cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
 
         print(f'Running: {" ".join(cmd)}')
         subprocess.run(cmd, check=True, capture_output=True, text=True)
@@ -119,6 +133,12 @@ def build_executable(
         if e.stderr:
             print('STDERR:', e.stderr)
         return False
+    finally:
+        # Restore the original spec file if we modified it
+        if original_spec_content is not None:
+            with open(spec_file, 'w') as f:
+                f.write(original_spec_content)
+            print(f'🔄 Restored original {spec_file}')
 
 
 # =================================================
