@@ -19,7 +19,6 @@ class StoredSettings(Base):  # type: ignore
     llm_model = Column(String, nullable=True)
     llm_api_key = Column(String, nullable=True)
     llm_base_url = Column(String, nullable=True)
-    litellm_extra_body = Column(String, nullable=True)
     remote_runtime_resource_factor = Column(Integer, nullable=True)
     enable_default_condenser = Column(Boolean, nullable=False, default=True)
     user_consents_to_analytics = Column(Boolean, nullable=True)

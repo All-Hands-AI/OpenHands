@@ -129,6 +129,8 @@ def settings_store(session_maker, mock_config):
                 del item_dict['email_verified']
             if 'secrets_store' in item_dict:
                 del item_dict['secrets_store']
+            if 'litellm_extra_body' in item_dict:
+                del item_dict['litellm_extra_body']
 
             # Continue with the original implementation
             with store.session_maker() as session:

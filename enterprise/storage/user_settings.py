@@ -16,7 +16,6 @@ class UserSettings(Base):  # type: ignore
     llm_api_key = Column(String, nullable=True)
     llm_api_key_for_byor = Column(String, nullable=True)
     llm_base_url = Column(String, nullable=True)
-    litellm_extra_body = Column(String, nullable=True)
     remote_runtime_resource_factor = Column(Integer, nullable=True)
     enable_default_condenser = Column(Boolean, nullable=False, default=True)
     condenser_max_size = Column(Integer, nullable=True)
