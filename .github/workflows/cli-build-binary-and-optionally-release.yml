@@ -12,6 +12,9 @@ on:
     paths:
       - "openhands-cli/**"
 
+permissions:
+  contents: write       # needed to create releases or upload assets
+
 # Cancel previous runs if a new commit is pushed
 concurrency:
   group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
@@ -101,4 +104,4 @@ jobs:
           draft: true
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.CLI_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
