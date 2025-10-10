@@ -54,6 +54,7 @@ dev = [
 
 test = [
   "flake8",
+  "gevent",
   "openai",
   "opencv-python",
   "pandas",
@@ -63,7 +64,6 @@ test = [
   "pytest-forked",
   "pytest-xdist",
   "reportlab",
-  "gevent"
 ]
 
 [tool.hatch.version]
@@ -93,6 +93,10 @@ lint.pydocstyle.convention = "google"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
+[tool.coverage.run]
+relative_files = true
+omit = [ "tests/*" ]
+
 [tool.uv.sources]
 openhands-ai = { path = "../", editable = true }
 
@@ -102,7 +106,3 @@ openhands-ai = { path = "../", editable = true }
 # vcs = "git"
 # style = "pep440"
 # read-from = "tag"
-
-[tool.coverage.run]
-relative_files = true
-omit = [ "tests/*" ]
