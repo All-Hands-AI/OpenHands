@@ -2,7 +2,7 @@
 # flake8: noqa: E501
 
 import os
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI
@@ -14,7 +14,13 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands.server.routes.secrets import app as secrets_app
+from openhands.server.routes.secrets import (
+    app as secrets_app,
+)
+from openhands.server.routes.secrets import (
+    get_provider_from_url,
+    update_url_with_token,
+)
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
@@ -493,3 +499,270 @@ async def test_add_multiple_git_providers_with_hosts(test_client, file_secrets_s
             stored_secrets.provider_tokens[ProviderType.GITLAB].host
             == 'gitlab.enterprise.com'
         )
+
+
+# =================================================
+# SECTION: Tests for git URL helper functions
+# =================================================
+
+
+def test_get_provider_from_url_github():
+    """Test extracting GitHub provider from various URL formats."""
+    assert get_provider_from_url('https://github.com/owner/repo') == ProviderType.GITHUB
+    assert (
+        get_provider_from_url('https://token@github.com/owner/repo')
+        == ProviderType.GITHUB
+    )
+    assert (
+        get_provider_from_url('https://x-access-token:token@github.com/owner/repo')
+        == ProviderType.GITHUB
+    )
+    assert get_provider_from_url('git@github.com:owner/repo.git') == ProviderType.GITHUB
+
+
+def test_get_provider_from_url_gitlab():
+    """Test extracting GitLab provider from various URL formats."""
+    assert get_provider_from_url('https://gitlab.com/owner/repo') == ProviderType.GITLAB
+    assert (
+        get_provider_from_url('https://oauth2:token@gitlab.com/owner/repo')
+        == ProviderType.GITLAB
+    )
+    assert get_provider_from_url('git@gitlab.com:owner/repo.git') == ProviderType.GITLAB
+
+
+def test_get_provider_from_url_bitbucket():
+    """Test extracting Bitbucket provider from various URL formats."""
+    assert (
+        get_provider_from_url('https://bitbucket.org/owner/repo')
+        == ProviderType.BITBUCKET
+    )
+    assert (
+        get_provider_from_url('https://x-token-auth:token@bitbucket.org/owner/repo')
+        == ProviderType.BITBUCKET
+    )
+    assert (
+        get_provider_from_url('git@bitbucket.org:owner/repo.git')
+        == ProviderType.BITBUCKET
+    )
+
+
+def test_get_provider_from_url_unknown():
+    """Test that unknown providers return None."""
+    assert get_provider_from_url('https://example.com/owner/repo') is None
+    assert get_provider_from_url('https://custom-git-server.com/repo') is None
+    assert get_provider_from_url('') is None
+    assert get_provider_from_url('not-a-url') is None
+
+
+def test_update_url_with_token_github():
+    """Test updating GitHub URL with new token - actual logic testing."""
+    # Test standard GitHub format with old token
+    old_url = 'https://old_token@github.com/owner/repo.git'
+    new_url = update_url_with_token(old_url, ProviderType.GITHUB, 'new_token')
+    assert new_url == 'https://new_token@github.com/owner/repo.git'
+    # Verify the actual string replacement worked correctly
+    assert 'old_token' not in new_url
+    assert 'new_token' in new_url
+
+    # Test x-access-token format (should be normalized to simple token format)
+    old_url = 'https://x-access-token:old_token@github.com/owner/repo.git'
+    new_url = update_url_with_token(old_url, ProviderType.GITHUB, 'new_token')
+    assert new_url == 'https://new_token@github.com/owner/repo.git'
+    assert 'old_token' not in new_url
+    assert 'new_token' in new_url
+
+    # Test URL without token (no credentials)
+    url_without_token = 'https://github.com/owner/repo.git'
+    # Should still work - adds token to URL
+    result = update_url_with_token(url_without_token, ProviderType.GITHUB, 'new_token')
+    # This URL has no credentials, so regex won't match and URL returns unchanged
+    assert result == url_without_token
+
+
+def test_update_url_with_token_gitlab():
+    """Test updating GitLab URL with new token - actual logic testing."""
+    # Test GitLab oauth2 format
+    old_url = 'https://oauth2:old_token@gitlab.com/owner/repo.git'
+    new_url = update_url_with_token(old_url, ProviderType.GITLAB, 'new_token')
+    assert new_url == 'https://oauth2:new_token@gitlab.com/owner/repo.git'
+    # Verify the actual replacement
+    assert 'old_token' not in new_url
+    assert 'oauth2:new_token' in new_url
+
+
+def test_update_url_with_token_bitbucket():
+    """Test updating Bitbucket URL with new token - actual logic testing."""
+    # Test Bitbucket x-token-auth format
+    old_url = 'https://x-token-auth:old_token@bitbucket.org/owner/repo.git'
+    new_url = update_url_with_token(old_url, ProviderType.BITBUCKET, 'new_token')
+    assert new_url == 'https://x-token-auth:new_token@bitbucket.org/owner/repo.git'
+    # Verify the actual replacement
+    assert 'old_token' not in new_url
+    assert 'x-token-auth:new_token' in new_url
+
+
+def test_update_url_with_token_unsupported_provider():
+    """Test that unsupported providers return URL unchanged."""
+    url = 'https://token@example.com/owner/repo.git'
+    # Using GITHUB for an example.com URL should not modify it
+    # Actually, it might - let's test with an unknown provider scenario
+    # The function doesn't handle unknown providers, so it returns unchanged
+    # Let's verify the actual behavior for each provider on wrong URLs
+    result = update_url_with_token(url, ProviderType.GITHUB, 'new_token')
+    # Should return unchanged since URL doesn't match github.com pattern
+    assert result == url
+
+
+def test_update_url_with_token_preserves_path():
+    """Test that URL path and .git suffix are preserved correctly."""
+    old_url = 'https://old_token@github.com/owner/repo-name.git'
+    new_url = update_url_with_token(old_url, ProviderType.GITHUB, 'new_token')
+    # Verify path is preserved
+    assert 'owner/repo-name.git' in new_url
+    assert new_url == 'https://new_token@github.com/owner/repo-name.git'
+
+
+@pytest.mark.asyncio
+async def test_add_git_providers_updates_git_remote_urls(
+    test_client, file_secrets_store
+):
+    """Test that adding git providers calls git URL update logic - tests endpoint integration."""
+    # Create initial user secrets
+    user_secrets = UserSecrets()
+    await file_secrets_store.store(user_secrets)
+
+    # Mock the external dependencies but test our real endpoint logic
+    with (
+        patch(
+            'openhands.server.routes.secrets.check_provider_tokens',
+            AsyncMock(return_value=''),
+        ),
+        patch('openhands.server.routes.secrets.os.walk') as mock_walk,
+        patch('openhands.server.routes.secrets.os.path.exists', return_value=True),
+        patch('openhands.server.routes.secrets.subprocess.run') as mock_run,
+    ):
+        # Simulate finding one git repo in workspace
+        mock_walk.return_value = [('/workspace/test-repo', ['.git'], [])]
+
+        # Simulate git remote get-url returning a URL with old token
+        mock_run.return_value = MagicMock(
+            stdout='https://old_token@github.com/owner/repo.git\n',
+            returncode=0,
+        )
+
+        # Add provider with new token via real endpoint
+        add_provider_data = {
+            'provider_tokens': {'github': {'token': 'new_token', 'host': 'github.com'}}
+        }
+        response = test_client.post('/api/add-git-providers', json=add_provider_data)
+        assert response.status_code == 200
+
+        # Verify the tokens were stored (real store interaction)
+        stored_secrets = await file_secrets_store.load()
+        assert ProviderType.GITHUB in stored_secrets.provider_tokens
+        assert (
+            stored_secrets.provider_tokens[ProviderType.GITHUB].token.get_secret_value()
+            == 'new_token'
+        )
+
+        # Verify subprocess was called with correct git commands
+        # Should have: 1) get-url call, 2) set-url call
+        assert mock_run.call_count >= 2
+
+        # Find the set-url call
+        calls = [str(call) for call in mock_run.call_args_list]
+        set_url_calls = [c for c in calls if 'set-url' in c]
+        assert len(set_url_calls) > 0
+
+        # Verify the new token is in the set-url command
+        assert any('new_token' in call for call in set_url_calls)
+
+
+@pytest.mark.asyncio
+async def test_update_git_remote_urls_workspace_not_exists(
+    test_client, file_secrets_store
+):
+    """Test that git URL update handles missing workspace gracefully."""
+    user_secrets = UserSecrets()
+    await file_secrets_store.store(user_secrets)
+
+    with (
+        patch(
+            'openhands.server.routes.secrets.check_provider_tokens',
+            AsyncMock(return_value=''),
+        ),
+        patch(
+            'openhands.server.routes.secrets.os.path.exists', return_value=False
+        ) as mock_exists,
+        patch('openhands.server.routes.secrets.subprocess.run') as mock_run,
+    ):
+        # Add provider
+        add_provider_data = {
+            'provider_tokens': {'github': {'token': 'new_token', 'host': 'github.com'}}
+        }
+        response = test_client.post('/api/add-git-providers', json=add_provider_data)
+        assert response.status_code == 200
+
+        # Verify workspace existence was checked
+        assert mock_exists.called
+
+        # Verify subprocess was NOT called since workspace doesn't exist
+        assert mock_run.call_count == 0
+
+
+@pytest.mark.asyncio
+async def test_update_git_remote_urls_multiple_repos(test_client, file_secrets_store):
+    """Test updating multiple git repos with different providers."""
+    user_secrets = UserSecrets()
+    await file_secrets_store.store(user_secrets)
+
+    with (
+        patch(
+            'openhands.server.routes.secrets.check_provider_tokens',
+            AsyncMock(return_value=''),
+        ),
+        patch('openhands.server.routes.secrets.os.walk') as mock_walk,
+        patch('openhands.server.routes.secrets.os.path.exists', return_value=True),
+        patch('openhands.server.routes.secrets.subprocess.run') as mock_run,
+    ):
+        # Simulate finding two git repos
+        mock_walk.return_value = [
+            ('/workspace/repo1', ['.git'], []),
+            ('/workspace/repo2', ['.git'], []),
+        ]
+
+        # Simulate different remotes for each repo
+        def mock_subprocess_side_effect(*args, **kwargs):
+            cmd = args[0] if args else kwargs.get('command', [])
+            if 'get-url' in cmd:
+                if '/workspace/repo1' in str(cmd):
+                    return MagicMock(
+                        stdout='https://old_github@github.com/owner/repo1.git\n',
+                        returncode=0,
+                    )
+                elif '/workspace/repo2' in str(cmd):
+                    return MagicMock(
+                        stdout='https://oauth2:old_gitlab@gitlab.com/owner/repo2.git\n',
+                        returncode=0,
+                    )
+            return MagicMock(stdout='', returncode=0)
+
+        mock_run.side_effect = mock_subprocess_side_effect
+
+        # Add both providers
+        add_provider_data = {
+            'provider_tokens': {
+                'github': {'token': 'new_github_token', 'host': 'github.com'},
+                'gitlab': {'token': 'new_gitlab_token', 'host': 'gitlab.com'},
+            }
+        }
+        response = test_client.post('/api/add-git-providers', json=add_provider_data)
+        assert response.status_code == 200
+
+        # Verify both tokens were stored
+        stored_secrets = await file_secrets_store.load()
+        assert ProviderType.GITHUB in stored_secrets.provider_tokens
+        assert ProviderType.GITLAB in stored_secrets.provider_tokens
+
+        # Verify subprocess was called multiple times for both repos
+        assert mock_run.call_count >= 4  # At least 2 get-url + 2 set-url calls
