@@ -150,8 +150,8 @@ class ActionExecutionClient(Runtime):
             data: dict[str, str | bool] = {}
             if path is not None:
                 data['path'] = path
-            if recursive:
-                data['recursive'] = recursive
+            # Always include recursive parameter in the request body
+            data['recursive'] = recursive
 
             response = self._send_action_server_request(
                 'POST',
