@@ -1,0 +1,208 @@
+---
+title: Contributing to OpenHands
+description: Join us in building the future of AI-powered software development. Learn how to contribute to OpenHands and make a meaningful impact.
+---
+
+# 🙌 Contributing to OpenHands
+
+Welcome to the OpenHands community! We're building the future of AI-powered software development, and we'd love for you to be part of this journey.
+
+## 🌟 Our Vision: Free as in Freedom
+
+The OpenHands community is built around the belief that **AI and AI agents are going to fundamentally change the way we build software**, and if this is true, we should do everything we can to make sure that the benefits provided by such powerful technology are **accessible to everyone**.
+
+We believe in the power of open source to democratize access to cutting-edge AI technology. Just as the internet transformed how we share information, we envision a world where AI-powered development tools are available to every developer, regardless of their background or resources.
+
+If this resonates with you, we'd love to have you join us in our quest! 🚀
+
+## 🎯 What Can You Build?
+
+There are countless ways to contribute to OpenHands. Whether you're a seasoned developer, a researcher, a designer, or someone just getting started, there's a place for you in our community.
+
+### 🎨 Frontend & UI/UX
+Make OpenHands more beautiful and user-friendly:
+- **React & TypeScript Development** - Improve the web interface
+- **UI/UX Design** - Enhance user experience and accessibility  
+- **Mobile Responsiveness** - Make OpenHands work great on all devices
+- **Component Libraries** - Build reusable UI components
+
+*Small fixes are always welcome! For bigger changes, join our **#eng-ui-ux** channel in [Slack](https://dub.sh/openhands) first.*
+
+### 🤖 Agent Development
+Help make our AI agents smarter and more capable:
+- **Prompt Engineering** - Improve how agents understand and respond
+- **New Agent Types** - Create specialized agents for different tasks
+- **Agent Evaluation** - Develop better ways to measure agent performance
+- **Multi-Agent Systems** - Enable agents to work together
+
+*We use [SWE-bench](https://www.swebench.com/) to evaluate our agents. Join **#evaluation** in [Slack](https://dub.sh/openhands) to learn more.*
+
+### ⚙️ Backend & Infrastructure
+Build the foundation that powers OpenHands:
+- **Python Development** - Core functionality and APIs
+- **Runtime Systems** - Docker containers and sandboxes
+- **Cloud Integrations** - Support for different cloud providers
+- **Performance Optimization** - Make everything faster and more efficient
+
+### 🧪 Testing & Quality Assurance
+Help us maintain high quality:
+- **Unit Testing** - Write tests for new features
+- **Integration Testing** - Ensure components work together
+- **Bug Hunting** - Find and report issues
+- **Performance Testing** - Identify bottlenecks and optimization opportunities
+
+### 📚 Documentation & Education
+Help others learn and contribute:
+- **Technical Documentation** - API docs, guides, and tutorials
+- **Video Tutorials** - Create learning content
+- **Translation** - Make OpenHands accessible in more languages
+- **Community Support** - Help other users and contributors
+
+### 🔬 Research & Innovation
+Push the boundaries of what's possible:
+- **Academic Research** - Publish papers using OpenHands
+- **Benchmarking** - Develop new evaluation methods
+- **Experimental Features** - Try cutting-edge AI techniques
+- **Data Analysis** - Study how developers use AI tools
+
+## 🚀 Getting Started
+
+Ready to contribute? Here's your path to making an impact:
+
+### 1. 🏃‍♂️ Quick Wins
+Start with these easy contributions:
+- **Use OpenHands** and [report issues](https://github.com/All-Hands-AI/OpenHands/issues) you encounter
+- **Give feedback** using the thumbs-up/thumbs-down buttons after each session
+- **Star our repository** on [GitHub](https://github.com/All-Hands-AI/OpenHands)
+- **Share OpenHands** with other developers
+
+### 2. 🔧 Set Up Your Development Environment
+Follow our comprehensive setup guide:
+- **Requirements**: Linux/Mac/WSL, Docker, Python 3.12, Node.js 22+, Poetry 1.8+
+- **Quick setup**: `make build` to get everything ready
+- **Configuration**: `make setup-config` to configure your LLM
+- **Run locally**: `make run` to start the application
+
+*Full details in our [Development Guide](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)*
+
+### 3. 🎯 Find Your First Issue
+Look for beginner-friendly opportunities:
+- Browse [good first issues](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue)
+- Check our [project boards](https://github.com/All-Hands-AI/OpenHands/projects) for organized tasks
+- Ask in [Slack](https://dub.sh/openhands) what needs help
+
+### 4. 🤝 Join the Community
+Connect with other contributors:
+- **[Slack Community](https://dub.sh/openhands)** - Real-time chat with developers and maintainers
+- **[Discord](https://discord.gg/ESHStjSjD4)** - Alternative community platform
+- **[GitHub Discussions](https://github.com/All-Hands-AI/OpenHands/discussions)** - Longer-form conversations
+
+## 📋 How to Contribute Code
+
+### Understanding the Codebase
+Get familiar with our architecture:
+- **[Frontend](https://github.com/All-Hands-AI/OpenHands/tree/main/frontend/README.md)** - React application
+- **[Backend](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/README.md)** - Python core
+- **[Agents](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/agenthub/README.md)** - AI agent implementations
+- **[Runtime](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/runtime/README.md)** - Execution environments
+- **[Evaluation](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/README.md)** - Testing and benchmarks
+
+### Pull Request Process
+We welcome all pull requests! Here's how we evaluate them:
+
+#### 🏃‍♂️ Small Improvements
+- Quick review and approval for obvious improvements
+- Make sure CI tests pass
+- Include clear description of changes
+
+#### 🧠 Core Agent Changes
+We're more careful with agent changes since they affect user experience:
+- **Accuracy** - Does it make the agent better at solving problems?
+- **Efficiency** - Does it improve speed or reduce resource usage?
+- **Code Quality** - Is the code maintainable and well-tested?
+
+*Discuss major changes in [GitHub issues](https://github.com/All-Hands-AI/OpenHands/issues) or [Slack](https://dub.sh/openhands) first!*
+
+### Pull Request Guidelines
+Follow these conventions for smooth reviews:
+
+**Title Format:**
+- `feat: Add new agent capability`
+- `fix: Resolve memory leak in runtime`
+- `docs: Update installation guide`
+- `style: Fix code formatting`
+- `refactor: Simplify authentication logic`
+- `test: Add unit tests for parser`
+
+**Description:**
+- Explain what the PR does and why
+- Link to related issues
+- Include screenshots for UI changes
+- Add changelog entry for user-facing changes
+
+## 🤝 Community Guidelines
+
+### Our Values
+- **Open and Welcoming** - Everyone is welcome regardless of background
+- **Diverse and Inclusive** - We actively encourage diverse perspectives
+- **Collaborative** - We work together to solve problems
+- **Respectful** - We treat everyone with kindness and professionalism
+
+### Code of Conduct
+We follow the [Contributor Covenant Code of Conduct](https://github.com/All-Hands-AI/OpenHands/blob/main/CODE_OF_CONDUCT.md). In summary:
+- Be respectful and inclusive
+- Focus on constructive feedback
+- Help create a welcoming environment
+- Report issues to [contact@all-hands.dev](mailto:contact@all-hands.dev)
+
+### Communication Guidelines
+- **Be patient** - Contributors and maintainers often have other commitments
+- **Be specific** - Include details, links, and context in your questions
+- **Use appropriate channels** - General questions in #general, technical issues in relevant channels
+- **Search first** - Check if your question has been answered before
+
+## 📄 License
+
+OpenHands is released under the **MIT License**, which means:
+
+### ✅ You Can:
+- **Use** OpenHands for any purpose, including commercial projects
+- **Modify** the code to fit your needs
+- **Distribute** copies of OpenHands
+- **Sublicense** and sell copies
+
+### 📋 You Must:
+- **Include** the original copyright notice and license text
+- **Preserve** the license in any substantial portions you use
+
+### 🚫 No Warranty:
+- OpenHands is provided "as is" without warranty
+- Contributors are not liable for any damages
+
+*Full license text: [LICENSE](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE)*
+
+**Special Note:** Content in the `enterprise/` directory has a separate license. See `enterprise/LICENSE` for details.
+
+## 🎯 Next Steps
+
+Ready to make your first contribution?
+
+1. **⭐ Star** our [GitHub repository](https://github.com/All-Hands-AI/OpenHands)
+2. **🔧 Set up** your development environment using our [Development Guide](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)
+3. **💬 Join** our [Slack community](https://dub.sh/openhands) to meet other contributors
+4. **🎯 Find** a [good first issue](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) to work on
+5. **📝 Read** our [Code of Conduct](https://github.com/All-Hands-AI/OpenHands/blob/main/CODE_OF_CONDUCT.md)
+
+## 🆘 Need Help?
+
+Don't hesitate to ask for help:
+- **Slack**: [Join our community](https://dub.sh/openhands) for real-time support
+- **GitHub Issues**: [Open an issue](https://github.com/All-Hands-AI/OpenHands/issues) for bugs or feature requests
+- **GitHub Discussions**: [Start a discussion](https://github.com/All-Hands-AI/OpenHands/discussions) for questions
+- **Email**: Contact us at [contact@all-hands.dev](mailto:contact@all-hands.dev)
+
+---
+
+**Thank you for considering contributing to OpenHands!** Together, we're building tools that will democratize AI-powered software development and make it accessible to developers everywhere. Every contribution, no matter how small, helps us move closer to that vision. 
+
+Welcome to the community! 🎉
