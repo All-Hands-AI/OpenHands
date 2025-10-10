@@ -3,16 +3,18 @@ from logging.config import fileConfig
 
 from alembic import context
 from google.cloud.sql.connector import Connector
-from sqlalchemy import create_engine
-from storage.base import Base
+from sqlalchemy import create_engine, event
 
-target_metadata = Base.metadata
+from storage.base import Base
 
 DB_USER = os.getenv('DB_USER', 'postgres')
 DB_PASS = os.getenv('DB_PASS', 'postgres')
 DB_HOST = os.getenv('DB_HOST', 'localhost')
 DB_PORT = os.getenv('DB_PORT', '5432')
 DB_NAME = os.getenv('DB_NAME', 'openhands')
+DB_SCHEMA = os.getenv('DB_SCHEMA')
+DB_AUTH_TYPE = os.getenv('DB_AUTH_TYPE', 'password')  # 'password' or 'rds-iam'
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')  # AWS region for RDS IAM auth
 
 GCP_DB_INSTANCE = os.getenv('GCP_DB_INSTANCE')
 GCP_PROJECT = os.getenv('GCP_PROJECT')
@@ -20,6 +22,24 @@ GCP_REGION = os.getenv('GCP_REGION')
 
 POOL_SIZE = int(os.getenv('DB_POOL_SIZE', '25'))
 MAX_OVERFLOW = int(os.getenv('DB_MAX_OVERFLOW', '10'))
+
+target_metadata = Base.metadata
+# Set schema for target metadata if DB_SCHEMA is provided
+if DB_SCHEMA:
+    target_metadata.schema = DB_SCHEMA
+
+# RDS IAM authentication setup
+if DB_AUTH_TYPE == 'rds-iam':
+    import boto3
+
+    # boto3 client (reused for token generation)
+    rds = boto3.client('rds', region_name=AWS_REGION)
+
+    def get_auth_token():
+        """Generate a fresh IAM DB auth token."""
+        return rds.generate_db_auth_token(
+            DBHostname=DB_HOST, Port=DB_PORT, DBUsername=DB_USER
+        )
 
 
 def get_engine(database_name=DB_NAME):
@@ -29,29 +49,87 @@ def get_engine(database_name=DB_NAME):
         def get_db_connection():
             connector = Connector()
             instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
-            return connector.connect(
-                instance_string,
-                'pg8000',
-                user=DB_USER,
-                password=DB_PASS.strip(),
-                db=database_name,
-            )
+            connect_kwargs = {
+                'user': DB_USER,
+                'password': DB_PASS.strip(),
+                'db': database_name,
+            }
+            # Note: pg8000 doesn't accept 'options' parameter, so we'll handle schema via SQL
+            # Schema will be set after connection via event listener
+            return connector.connect(instance_string, 'pg8000', **connect_kwargs)
 
-        return create_engine(
+        engine = create_engine(
             'postgresql+pg8000://',
             creator=get_db_connection,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
             pool_pre_ping=True,
         )
+        
+        # Set schema via SQL after connection if specified
+        if DB_SCHEMA:
+            @event.listens_for(engine, 'connect')
+            def set_search_path(dbapi_connection, connection_record):
+                with dbapi_connection.cursor() as cursor:
+                    cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                    dbapi_connection.commit()
+        
+        return engine
     else:
-        url = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database_name}'
-        return create_engine(
-            url,
-            pool_size=POOL_SIZE,
-            max_overflow=MAX_OVERFLOW,
-            pool_pre_ping=True,
-        )
+        if DB_AUTH_TYPE == 'rds-iam':
+            # Build a SQLAlchemy connection URL with a dummy password — token will be injected dynamically
+            # Note: SSL is enabled by default for pg8000 when connecting to RDS
+            # For pg8000, we cannot use URL parameters like options, so schema must be handled differently
+            base_url = (
+                f'postgresql+pg8000://{DB_USER}:dummy-password'
+                f'@{DB_HOST}:{DB_PORT}/{database_name}'
+            )
+            engine = create_engine(
+                base_url,
+                pool_size=POOL_SIZE,
+                max_overflow=MAX_OVERFLOW,
+                pool_pre_ping=True,
+            )
+
+            # Hook: before a connection is made, inject a fresh token
+            @event.listens_for(engine, 'do_connect')
+            def provide_token(dialect, conn_rec, cargs, cparams):
+                token = get_auth_token()
+                # Replace password in connect arguments
+                cparams['password'] = token
+                return dialect.connect(*cargs, **cparams)
+            
+            # Hook: after connection is established, set the schema if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                        dbapi_connection.commit()
+
+            return engine
+        else:
+            # Regular password authentication
+            # Use postgresql:// (default driver) but handle schema via SQL to be safe
+            url = (
+                f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database_name}'
+            )
+            engine = create_engine(
+                url,
+                pool_size=POOL_SIZE,
+                max_overflow=MAX_OVERFLOW,
+                pool_pre_ping=True,
+            )
+            
+            # Set schema via SQL after connection if specified
+            if DB_SCHEMA:
+                @event.listens_for(engine, 'connect')
+                def set_search_path(dbapi_connection, connection_record):
+                    with dbapi_connection.cursor() as cursor:
+                        cursor.execute(f"SET search_path TO {DB_SCHEMA}")
+                        dbapi_connection.commit()
+            
+            return engine
 
 
 engine = get_engine()
@@ -83,6 +161,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={'paramstyle': 'named'},
+        version_table_schema=target_metadata.schema,
     )
 
     with context.begin_transaction():
