@@ -1,14 +1,17 @@
 # Publishes the OpenHands PyPi package
 name: Publish PyPi Package
 
-
 on:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "What are you publishing?"
         required: true
-        default: ''
+        type: choice
+        options:
+          - app server
+          - cli
+        default: app server
   push:
     tags:
       - "*"
@@ -16,8 +19,10 @@ on:
 jobs:
   release:
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    # Only run for tags that don't contain '-cli'
-    if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-cli')
+    # Run when manually dispatched for "app server" OR for tag pushes that don't contain '-cli'
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.reason == 'app server')
+      || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && !contains(github.ref, '-cli'))
     steps:
       - uses: actions/checkout@v4
       - uses: useblacksmith/setup-python@v6
@@ -38,8 +43,10 @@ jobs:
   release-cli:
     name: Publish CLI to PyPI
     runs-on: ubuntu-latest
-    # Only run for tags that contain '-cli'
-    if: startsWith(github.ref, 'refs/tags/') && contains(github.ref, '-cli')
+    # Run when manually dispatched for "cli" OR for tag pushes that contain '-cli'
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.reason == 'cli')
+      || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && contains(github.ref, '-cli'))
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -64,4 +71,4 @@ jobs:
       - name: Publish CLI to PyPI
         working-directory: openhands-cli
         run: |
-          uv publish --token ${{ secrets.PYPI_TOKEN }}
+          uv publish --token ${{ secrets.PYPI_TOKEN_OPENHANDS }}
