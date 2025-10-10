@@ -1,4 +1,5 @@
 import copy
+import json as stdlib_json
 import os
 import time
 import warnings
@@ -307,6 +308,44 @@ class LLM(RetryMixin, DebugMixin):
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
+
+            # Handle custom extra_body configuration
+            if self.config.litellm_extra_body:
+                try:
+                    custom_extra_body = stdlib_json.loads(
+                        self.config.litellm_extra_body
+                    )
+
+                    # Merge with existing extra_body if present
+                    if 'extra_body' in kwargs:
+                        # Deep merge the dictionaries
+                        existing_extra_body = kwargs['extra_body']
+                        if isinstance(existing_extra_body, dict) and isinstance(
+                            custom_extra_body, dict
+                        ):
+                            # Merge metadata if both have it
+                            if (
+                                'metadata' in existing_extra_body
+                                and 'metadata' in custom_extra_body
+                            ):
+                                merged_metadata = {
+                                    **existing_extra_body['metadata'],
+                                    **custom_extra_body['metadata'],
+                                }
+                                custom_extra_body['metadata'] = merged_metadata
+                            # Merge the entire extra_body
+                            kwargs['extra_body'] = {
+                                **existing_extra_body,
+                                **custom_extra_body,
+                            }
+                        else:
+                            kwargs['extra_body'] = custom_extra_body
+                    else:
+                        kwargs['extra_body'] = custom_extra_body
+                except (stdlib_json.JSONDecodeError, TypeError) as e:
+                    logger.warning(
+                        f'Failed to parse litellm_extra_body as JSON: {e}. Ignoring custom extra_body.'
+                    )
 
             # if we're not using litellm proxy, remove the extra_body
             if 'litellm_proxy' not in self.config.model:
