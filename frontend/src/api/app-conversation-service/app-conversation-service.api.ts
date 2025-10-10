@@ -61,6 +61,7 @@ class AppConversationService {
                 const task: AppConversationStartTask = JSON.parse(cleanLine);
                 yield task;
               } catch (error) {
+                // eslint-disable-next-line no-console
                 console.warn("Failed to parse JSON line:", cleanLine, error);
               }
             }
@@ -78,6 +79,7 @@ class AppConversationService {
               const task: AppConversationStartTask = JSON.parse(cleanBuffer);
               yield task;
             } catch (error) {
+              // eslint-disable-next-line no-console
               console.warn("Failed to parse final JSON:", cleanBuffer, error);
             }
           }
