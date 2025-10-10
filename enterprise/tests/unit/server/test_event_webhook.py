@@ -1,4 +1,4 @@
-"""Unit tests for event_webhook.py"""
+"""Unit tests for event_webhook.py."""
 
 import json
 from datetime import datetime

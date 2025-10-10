@@ -1,6 +1,4 @@
-"""
-Unit tests for LinearManager.
-"""
+"""Unit tests for LinearManager."""
 
 import hashlib
 import hmac

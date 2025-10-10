@@ -30,16 +30,12 @@ def fetch_github_issue_context(
     """Fetch full GitHub issue/PR context including title, body, and comments.
 
     Args:
-        full_repo_name: Full repository name in the format 'owner/repo'
-        issue_number: The issue or PR number
+        github_view: GitHub view object containing issue/PR information
         user_token: GitHub user access token
-        max_comments: Maximum number of comments to fetch (default: 10)
-        max_comment_length: Maximum length of each comment to include in the context (default: 500)
 
     Returns:
         A comprehensive string containing the issue/PR context
     """
-
     # Build context string
     context_parts = []
 
@@ -68,7 +64,7 @@ async def summarize_issue_solvability(
     """Generate a solvability summary for an issue using the resolver view interface.
 
     Args:
-        resolver_view: A resolver view interface instance (e.g., GithubIssue, GithubPRComment)
+        github_view: A resolver view interface instance (e.g., GithubIssue, GithubPRComment)
         user_token: GitHub user access token for API access
         timeout: Maximum time in seconds to wait for the result (default: 60.0)
 

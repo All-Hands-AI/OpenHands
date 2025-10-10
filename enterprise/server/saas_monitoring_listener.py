@@ -23,14 +23,10 @@ AGENT_SESSION_START_HISTOGRAM = Histogram(
 
 
 class SaaSMonitoringListener(MonitoringListener):
-    """
-    Forward app signals to Prometheus.
-    """
+    """Forward app signals to Prometheus."""
 
     def on_session_event(self, event: Event) -> None:
-        """
-        Track metrics about events being added to a Session's EventStream.
-        """
+        """Track metrics about events being added to a Session's EventStream."""
         if (
             isinstance(event, AgentStateChangedObservation)
             and event.agent_state == AgentState.ERROR
@@ -42,8 +38,7 @@ class SaaSMonitoringListener(MonitoringListener):
             )
 
     def on_agent_session_start(self, success: bool, duration: float) -> None:
-        """
-        Track an agent session start.
+        """Track an agent session start.
         Success is true if startup completed without error.
         Duration is start time in seconds observed by AgentSession.
         """
@@ -58,8 +53,7 @@ class SaaSMonitoringListener(MonitoringListener):
         )
 
     def on_create_conversation(self) -> None:
-        """
-        Track the beginning of conversation creation.
+        """Track the beginning of conversation creation.
         Does not currently capture whether it succeed.
         """
         CREATE_CONVERSATION_COUNT.inc()

@@ -95,8 +95,7 @@ class SlackNewConversationView(SlackViewInterface):
         return ''
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        "Instructions passed when conversation is first initialized"
-
+        """Instructions passed when conversation is first initialized."""
         user_info: SlackUser = self.slack_to_openhands_user
 
         messages = []
@@ -179,9 +178,7 @@ class SlackNewConversationView(SlackViewInterface):
             await slack_conversation_store.create_slack_conversation(slack_conversation)
 
     async def create_or_update_conversation(self, jinja: Environment) -> str:
-        """
-        Only creates a new conversation
-        """
+        """Only creates a new conversation."""
         self._verify_necessary_values_are_set()
 
         provider_tokens = await self.saas_user_auth.get_provider_tokens()
@@ -246,9 +243,7 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
         return user_message, ''
 
     async def create_or_update_conversation(self, jinja: Environment) -> str:
-        """
-        Send new user message to converation
-        """
+        """Send new user message to converation."""
         user_info: SlackUser = self.slack_to_openhands_user
         saas_user_auth: UserAuth = self.saas_user_auth
         user_id = user_info.keycloak_user_id

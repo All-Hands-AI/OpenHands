@@ -1,5 +1,4 @@
-"""
-This test file verifies that the stripe_service functions properly use the database
+"""This test file verifies that the stripe_service functions properly use the database
 to store and retrieve customer IDs.
 """
 
@@ -35,8 +34,7 @@ def session_maker(engine):
 
 @pytest.mark.asyncio
 async def test_find_customer_id_by_user_id_checks_db_first(session_maker):
-    """Test that find_customer_id_by_user_id checks the database first"""
-
+    """Test that find_customer_id_by_user_id checks the database first."""
     # Set up the mock for the database query result
     with session_maker() as session:
         session.add(
@@ -57,8 +55,7 @@ async def test_find_customer_id_by_user_id_checks_db_first(session_maker):
 
 @pytest.mark.asyncio
 async def test_find_customer_id_by_user_id_falls_back_to_stripe(session_maker):
-    """Test that find_customer_id_by_user_id falls back to Stripe if not found in the database"""
-
+    """Test that find_customer_id_by_user_id falls back to Stripe if not found in the database."""
     # Set up the mock for stripe.Customer.search_async
     mock_customer = stripe.Customer(id='cus_test123')
     mock_search = AsyncMock(return_value=MagicMock(data=[mock_customer]))
@@ -80,8 +77,7 @@ async def test_find_customer_id_by_user_id_falls_back_to_stripe(session_maker):
 
 @pytest.mark.asyncio
 async def test_create_customer_stores_id_in_db(session_maker):
-    """Test that create_customer stores the customer ID in the database"""
-
+    """Test that create_customer stores the customer ID in the database."""
     # Set up the mock for stripe.Customer.search_async
     mock_search = AsyncMock(return_value=MagicMock(data=[]))
     mock_create_async = AsyncMock(return_value=stripe.Customer(id='cus_test123'))

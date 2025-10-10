@@ -1,6 +1,4 @@
-"""
-Shared fixtures for all tests.
-"""
+"""Shared fixtures for all tests."""
 
 from typing import Any
 from unittest.mock import MagicMock
@@ -44,8 +42,7 @@ def feature_embedding() -> FeatureEmbedding:
 
 @pytest.fixture
 def featurizer(mock_llm, features) -> Featurizer:
-    """
-    Create a featurizer for testing.
+    """Create a featurizer for testing.
 
     Mocks out any calls to LLM.completion
     """

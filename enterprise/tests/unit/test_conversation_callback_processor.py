@@ -1,6 +1,4 @@
-"""
-Tests for ConversationCallbackProcessor and ConversationCallback models.
-"""
+"""Tests for ConversationCallbackProcessor and ConversationCallback models."""
 
 import json
 

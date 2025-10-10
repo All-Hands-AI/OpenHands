@@ -54,7 +54,7 @@ slack_team_store = SlackTeamStore.get_instance()
 
 @slack_router.get('/install')
 async def install(state: str = ''):
-    """Forward into slack OAuth. (Most workflows can skip this and jump directly into slack authentication, so we skip OAuth state generation)"""
+    """Forward into slack OAuth. (Most workflows can skip this and jump directly into slack authentication, so we skip OAuth state generation)."""
     url = authorize_url_generator.generate(state=state)
     return RedirectResponse(url)
 
@@ -299,7 +299,7 @@ async def on_event(request: Request, background_tasks: BackgroundTasks):
 
 @slack_router.post('/on-form-interaction')
 async def on_form_interaction(request: Request, background_tasks: BackgroundTasks):
-    """We check the nonce to start a conversation"""
+    """We check the nonce to start a conversation."""
     if not SLACK_WEBHOOKS_ENABLED:
         return JSONResponse({'success': 'slack_webhooks_disabled'})
 

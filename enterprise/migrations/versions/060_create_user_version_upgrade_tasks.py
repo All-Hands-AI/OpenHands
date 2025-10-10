@@ -1,4 +1,4 @@
-"""Create user version upgrade tasks
+"""Create user version upgrade tasks.
 
 Revision ID: 060
 Revises: 059
@@ -22,8 +22,7 @@ depends_on = None
 
 
 def upgrade():
-    """
-    Create maintenance tasks for all users whose user_version is less than
+    """Create maintenance tasks for all users whose user_version is less than
     the current version.
 
     This replaces the functionality of the removed admin maintenance endpoint.
@@ -89,8 +88,7 @@ def upgrade():
 
 
 def downgrade():
-    """
-    No downgrade operation needed as we're just creating tasks.
+    """No downgrade operation needed as we're just creating tasks.
     The tasks themselves will be processed and completed.
 
     If needed, we could delete tasks with this processor type, but that's not necessary

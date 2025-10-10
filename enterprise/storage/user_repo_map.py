@@ -3,9 +3,7 @@ from storage.base import Base
 
 
 class UserRepositoryMap(Base):
-    """
-    Represents a map between user id and repo ids
-    """
+    """Represents a map between user id and repo ids."""
 
     __tablename__ = 'user-repos'
     id = Column(Integer, primary_key=True, autoincrement=True)

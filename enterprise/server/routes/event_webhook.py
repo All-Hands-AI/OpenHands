@@ -54,7 +54,7 @@ async def _process_batch_operations_background(
     batch_ops: list[BatchOperation],
     x_session_api_key: str | None,
 ):
-    """Background task to process batched webhook requests with multiple file operations"""
+    """Background task to process batched webhook requests with multiple file operations."""
     prev_conversation_id = None
     user_id = None
 
@@ -149,7 +149,7 @@ async def on_batch_write(
     background_tasks: BackgroundTasks,
     x_session_api_key: Annotated[str | None, Header()],
 ):
-    """Handle batched webhook requests with multiple file operations in background"""
+    """Handle batched webhook requests with multiple file operations in background."""
     # Add the batch processing to background tasks
     background_tasks.add_task(
         _process_batch_operations_background,
@@ -167,7 +167,7 @@ async def on_write(
     request: Request,
     x_session_api_key: Annotated[str | None, Header()],
 ):
-    """Handle writing conversation events and metadata"""
+    """Handle writing conversation events and metadata."""
     conversation_id, subpath = _parse_conversation_id_and_subpath(path)
     user_id = _get_user_id(conversation_id)
 

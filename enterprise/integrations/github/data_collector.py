@@ -43,8 +43,7 @@ class TriggerType(str, Enum):
 
 
 class GitHubDataCollector:
-    """
-    Saves data on Cloud Resolver Interactions
+    """Saves data on Cloud Resolver Interactions.
 
     1. We always save
         - Resolver trigger (comment or label)
@@ -89,8 +88,7 @@ class GitHubDataCollector:
         self.conversation_id = None
 
     async def _get_repo_node_id(self, repo_id: str, gh_client) -> str:
-        """
-        Get the new GitHub GraphQL node ID for a repository using the GitHub client.
+        """Get the new GitHub GraphQL node ID for a repository using the GitHub client.
 
         Args:
             repo_id: Numeric repository ID as string (e.g., "123456789")
@@ -136,10 +134,7 @@ class GitHubDataCollector:
     def _get_issue_comments(
         self, installation_id: str, repo_name: str, issue_number: int, conversation_id
     ) -> list[dict[str, Any]]:
-        """
-        Retrieve all comments from an issue until a comment with conversation_id is found
-        """
-
+        """Retrieve all comments from an issue until a comment with conversation_id is found."""
         try:
             installation_token = self._get_installation_access_token(installation_id)
 
@@ -167,7 +162,7 @@ class GitHubDataCollector:
             return []
 
     def _save_data(self, path: str, data: dict[str, Any]):
-        """Save data to a path"""
+        """Save data to a path."""
         self.file_store.write(path, json.dumps(data))
 
     def _save_issue(
@@ -175,18 +170,16 @@ class GitHubDataCollector:
         github_view: GithubIssue,
         trigger_type: TriggerType,
     ) -> None:
-        """
-        Save issue data when it's labeled with openhands
+        """Save issue data when it's labeled with openhands.
 
-            1. Save under {conversation_dir}/{conversation_id}/github_data/issue_{issue_number}.json
-            2. Save issue snapshot (title, body, comments)
-            3. Save trigger type (label)
-            4. Save PR opened (if exists, this information comes later when agent has finished its task)
-                - Save commit shas
-                - Save author info
-            5. Was PR merged or closed
+        1. Save under {conversation_dir}/{conversation_id}/github_data/issue_{issue_number}.json
+        2. Save issue snapshot (title, body, comments)
+        3. Save trigger type (label)
+        4. Save PR opened (if exists, this information comes later when agent has finished its task)
+            - Save commit shas
+            - Save author info
+        5. Was PR merged or closed
         """
-
         conversation_id = github_view.conversation_id
 
         if not conversation_id:
@@ -254,7 +247,7 @@ class GitHubDataCollector:
         return commits
 
     def _extract_repo_metadata(self, repo_data: dict) -> dict:
-        """Extract repository metadata from GraphQL response"""
+        """Extract repository metadata from GraphQL response."""
         return {
             'name': repo_data.get('name'),
             'owner': repo_data.get('owner', {}).get('login'),
@@ -264,7 +257,7 @@ class GitHubDataCollector:
         }
 
     def _process_commits_page(self, pr_data: dict, commits: list) -> None:
-        """Process commits from a single GraphQL page"""
+        """Process commits from a single GraphQL page."""
         commit_nodes = pr_data.get('commits', {}).get('nodes', [])
         for commit_node in commit_nodes:
             commit = commit_node['commit']
@@ -287,7 +280,7 @@ class GitHubDataCollector:
             commits.append(commit_data)
 
     def _process_pr_comments_page(self, pr_data: dict, pr_comments: list) -> None:
-        """Process PR comments from a single GraphQL page"""
+        """Process PR comments from a single GraphQL page."""
         comment_nodes = pr_data.get('comments', {}).get('nodes', [])
         for comment in comment_nodes:
             comment_data = {
@@ -301,7 +294,7 @@ class GitHubDataCollector:
     def _process_review_comments_page(
         self, pr_data: dict, review_comments: list
     ) -> None:
-        """Process reviews and review comments from a single GraphQL page"""
+        """Process reviews and review comments from a single GraphQL page."""
         review_nodes = pr_data.get('reviews', {}).get('nodes', [])
         for review in review_nodes:
             # Add the review itself if it has a body
@@ -329,7 +322,7 @@ class GitHubDataCollector:
     def _count_openhands_activity(
         self, commits: list, review_comments: list, pr_comments: list
     ) -> tuple[int, int, int]:
-        """Count OpenHands commits, review comments, and general PR comments"""
+        """Count OpenHands commits, review comments, and general PR comments."""
         openhands_commit_count = 0
         openhands_review_comment_count = 0
         openhands_general_comment_count = 0
@@ -384,8 +377,7 @@ class GitHubDataCollector:
         openhands_review_comment_count: int,
         openhands_general_comment_count: int = 0,
     ) -> dict:
-        """Build the final data structure for JSON storage"""
-
+        """Build the final data structure for JSON storage."""
         is_merged = pr_data['merged']
         merged_by = None
         merge_commit_sha = None
@@ -419,8 +411,7 @@ class GitHubDataCollector:
         }
 
     async def save_full_pr(self, openhands_pr: OpenhandsPR) -> None:
-        """
-        Save PR information including metadata and commit details using GraphQL
+        """Save PR information including metadata and commit details using GraphQL.
 
         Saves:
         - Repo metadata (repo name, languages, contributors)
@@ -606,17 +597,12 @@ class GitHubDataCollector:
         return None
 
     def _is_pr_closed_or_merged(self, payload):
-        """
-        Check if PR was closed (regardless of conversation URL)
-        """
+        """Check if PR was closed (regardless of conversation URL)."""
         action = payload.get('action', '')
         return action == 'closed' and 'pull_request' in payload
 
     def _track_closed_or_merged_pr(self, payload):
-        """
-        Track PR closed/merged event
-        """
-
+        """Track PR closed/merged event."""
         repo_id = str(payload['repository']['id'])
         pr_number = payload['number']
         installation_id = str(payload['installation']['id'])

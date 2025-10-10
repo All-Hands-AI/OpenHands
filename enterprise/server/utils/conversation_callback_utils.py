@@ -34,8 +34,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 async def process_event(
     user_id: str, conversation_id: str, subpath: str, content: dict
 ):
-    """
-    Process a conversation event and invoke any registered callbacks.
+    """Process a conversation event and invoke any registered callbacks.
 
     Args:
         user_id: The user ID associated with the conversation
@@ -72,8 +71,7 @@ async def process_event(
 async def invoke_conversation_callbacks(
     conversation_id: str, observation: AgentStateChangedObservation
 ):
-    """
-    Load and invoke all active callbacks for a conversation.
+    """Load and invoke all active callbacks for a conversation.
 
     Args:
         conversation_id: The conversation ID to process callbacks for
@@ -119,8 +117,7 @@ async def invoke_conversation_callbacks(
 
 
 def update_conversation_metadata(conversation_id: str, content: dict):
-    """
-    Update conversation metadata with new content.
+    """Update conversation metadata with new content.
 
     Args:
         conversation_id: The conversation ID to update
@@ -159,8 +156,7 @@ def update_conversation_metadata(conversation_id: str, content: dict):
 def register_callback_processor(
     conversation_id: str, processor: ConversationCallbackProcessor
 ) -> int:
-    """
-    Register a callback processor for a conversation.
+    """Register a callback processor for a conversation.
 
     Args:
         conversation_id: The conversation ID to register the callback for
@@ -182,8 +178,7 @@ def register_callback_processor(
 def update_active_working_seconds(
     event_store: EventStore, conversation_id: str, user_id: str, file_store: FileStore
 ):
-    """
-    Calculate and update the total active working seconds for a conversation.
+    """Calculate and update the total active working seconds for a conversation.
 
     This function reads all events for the conversation, looks for AgentStateChanged
     observations, and calculates the total time spent in a running state.
@@ -263,8 +258,7 @@ def update_active_working_seconds(
 
 
 def update_agent_state(user_id: str, conversation_id: str, content: bytes):
-    """
-    Update agent state file for a conversation.
+    """Update agent state file for a conversation.
 
     Args:
         user_id: The user ID associated with the conversation

@@ -3,9 +3,7 @@ from storage.base import Base
 
 
 class GithubAppInstallation(Base):  # type: ignore
-    """
-    Represents a Github App Installation with associated token.
-    """
+    """Represents a Github App Installation with associated token."""
 
     __tablename__ = 'github_app_installations'
     id = Column(Integer, primary_key=True, autoincrement=True)

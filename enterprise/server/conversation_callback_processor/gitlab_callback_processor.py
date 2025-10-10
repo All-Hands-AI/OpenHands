@@ -28,8 +28,7 @@ gitlab_manager = GitlabManager(token_manager)
 
 
 class GitlabCallbackProcessor(ConversationCallbackProcessor):
-    """
-    Processor for sending conversation summaries to GitLab.
+    """Processor for sending conversation summaries to GitLab.
 
     This processor is used to send summaries of conversations to GitLab
     when agent state changes occur.
@@ -39,8 +38,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
     send_summary_instruction: bool = True
 
     async def _send_message_to_gitlab(self, message: str) -> None:
-        """
-        Send a message to GitLab.
+        """Send a message to GitLab.
 
         Args:
             message: The message content to send to GitLab
@@ -67,8 +65,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
         callback: ConversationCallback,
         observation: AgentStateChangedObservation,
     ) -> None:
-        """
-        Process a conversation event by sending a summary to GitLab.
+        """Process a conversation event by sending a summary to GitLab.
 
         Args:
             callback: The conversation callback
