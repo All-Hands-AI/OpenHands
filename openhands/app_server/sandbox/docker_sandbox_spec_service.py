@@ -1,5 +1,7 @@
+import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
+import logging
 from typing import AsyncGenerator
 
 import docker
@@ -20,6 +22,7 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
 from openhands.app_server.services.injector import InjectorState
 
 _global_docker_client: docker.DockerClient | None = None
+_logger = logging.getLogger(__name__)
 
 
 def get_docker_client() -> docker.DockerClient:
@@ -42,6 +45,8 @@ class DockerSandboxSpecService(SandboxSpecService):
     command: list[str] | None
     initial_env: dict[str, str]
     working_dir: str
+    pull_if_missing: bool
+    created_at__gte: datetime | None
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
 
     def _docker_image_to_sandbox_specs(self, image) -> SandboxSpecInfo:
@@ -78,7 +83,7 @@ class DockerSandboxSpecService(SandboxSpecService):
             images = self.docker_client.images.list(name=self.repository)
 
             # Convert Docker images to SandboxSpecInfo
-            sandbox_specs = []
+            sandbox_specs: list[SandboxSpecInfo] = []
             for image in images:
                 # Only include images that have tags matching our repository
                 if image.tags:
@@ -89,6 +94,16 @@ class DockerSandboxSpecService(SandboxSpecService):
                             )
                             # Only add once per image, even if multiple matching tags
                             break
+
+            # Filter old images
+            if self.created_at__gte:
+                sandbox_specs = [
+                    sandbox_spec for sandbox_spec in sandbox_specs
+                    if sandbox_spec.created_at >= self.created_at__gte
+                ]
+
+            # Sort by created_at descending
+            sandbox_specs.sort(key=lambda s: s.created_at, reverse=True)
 
             # Apply pagination
             start_idx = 0
@@ -119,14 +134,32 @@ class DockerSandboxSpecService(SandboxSpecService):
         try:
             # Try to get the image by ID (which should be repository:tag)
             image = self.docker_client.images.get(sandbox_spec_id)
-            return self._docker_image_to_sandbox_specs(image)
+            sandbox_spec = self._docker_image_to_sandbox_specs(image)
+            if self.created_at__gte is None or sandbox_spec.created_at >= self.created_at__gte:
+                return sandbox_spec
+            return None
         except (NotFound, APIError):
             return None
 
     async def get_default_sandbox_spec(self):
-        try:
-            return await super().get_default_sandbox_spec()
-        except SandboxError:
+        # If there are specs, pick the most recent one...
+        page = await self.search_sandbox_specs()
+        if page.items:
+            return page.items[0]
+
+        if self.pull_if_missing:
+            try:
+                _logger.info(f"⬇️ Pulling Docker Image {self.repository}")
+                # Pull in a background thread to prevent locking up the main runloop
+                # This actually fails at the moment because the latest images are
+                # not being tagged
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(None, self.docker_client.images.pull, self.repository)
+                page = await self.search_sandbox_specs()
+                return page.items[0]
+            except Exception as exc:
+                raise SandboxError('Error pulling docker image!') from exc
+        else:
             raise SandboxError(
                 'No sandbox specs available! '
                 f'(Maybe you need to `docker pull {self.repository}:latest`)'
@@ -143,6 +176,17 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         }
     )
     working_dir: str = '/home/openhands'
+    pull_if_missing: bool = Field(
+        default=True,
+        description=(
+            "Flag indicating that if docker does not have a suitable image "
+            "one should be pulled."
+        )
+    )
+    created_at__gte: datetime | None = Field(
+        default=datetime.fromisoformat("2025-10-10T00:00:00+00:00"),
+        description="The min age for a suitable image"
+    )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None
@@ -152,4 +196,6 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
             command=self.command,
             initial_env=self.initial_env,
             working_dir=self.working_dir,
+            pull_if_missing=self.pull_if_missing,
+            created_at__gte=self.created_at__gte,
         )
