@@ -1,7 +1,7 @@
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-import logging
 from typing import AsyncGenerator
 
 import docker
@@ -98,7 +98,8 @@ class DockerSandboxSpecService(SandboxSpecService):
             # Filter old images
             if self.created_at__gte:
                 sandbox_specs = [
-                    sandbox_spec for sandbox_spec in sandbox_specs
+                    sandbox_spec
+                    for sandbox_spec in sandbox_specs
                     if sandbox_spec.created_at >= self.created_at__gte
                 ]
 
@@ -135,7 +136,10 @@ class DockerSandboxSpecService(SandboxSpecService):
             # Try to get the image by ID (which should be repository:tag)
             image = self.docker_client.images.get(sandbox_spec_id)
             sandbox_spec = self._docker_image_to_sandbox_specs(image)
-            if self.created_at__gte is None or sandbox_spec.created_at >= self.created_at__gte:
+            if (
+                self.created_at__gte is None
+                or sandbox_spec.created_at >= self.created_at__gte
+            ):
                 return sandbox_spec
             return None
         except (NotFound, APIError):
@@ -149,12 +153,14 @@ class DockerSandboxSpecService(SandboxSpecService):
 
         if self.pull_if_missing:
             try:
-                _logger.info(f"⬇️ Pulling Docker Image {self.repository}")
+                _logger.info(f'⬇️ Pulling Docker Image {self.repository}')
                 # Pull in a background thread to prevent locking up the main runloop
                 # This actually fails at the moment because the latest images are
                 # not being tagged
                 loop = asyncio.get_running_loop()
-                await loop.run_in_executor(None, self.docker_client.images.pull, self.repository)
+                await loop.run_in_executor(
+                    None, self.docker_client.images.pull, self.repository
+                )
                 page = await self.search_sandbox_specs()
                 return page.items[0]
             except Exception as exc:
@@ -179,13 +185,13 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     pull_if_missing: bool = Field(
         default=True,
         description=(
-            "Flag indicating that if docker does not have a suitable image "
-            "one should be pulled."
-        )
+            'Flag indicating that if docker does not have a suitable image '
+            'one should be pulled.'
+        ),
     )
     created_at__gte: datetime | None = Field(
-        default=datetime.fromisoformat("2025-10-10T00:00:00+00:00"),
-        description="The min age for a suitable image"
+        default=datetime.fromisoformat('2025-10-10T00:00:00+00:00'),
+        description='The min age for a suitable image',
     )
 
     async def inject(

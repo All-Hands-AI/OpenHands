@@ -9,7 +9,9 @@ from uuid import UUID
 import httpx
 
 from openhands.app_server.services.db_session_injector import set_db_session_keep_open
-from openhands.app_server.services.httpx_client_injector import set_httpx_client_keep_open
+from openhands.app_server.services.httpx_client_injector import (
+    set_httpx_client_keep_open,
+)
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext
@@ -269,7 +271,9 @@ async def batch_get_app_conversation_start_tasks(
     return start_tasks
 
 
-async def _consume_remaining(async_iter, db_session: AsyncSession, httpx_client: httpx.AsyncClient):
+async def _consume_remaining(
+    async_iter, db_session: AsyncSession, httpx_client: httpx.AsyncClient
+):
     """Consume the remaining items from an async iterator"""
     try:
         while True:

@@ -6,14 +6,17 @@ This module tests the Docker sandbox spec service implementation, focusing on:
 - Pagination and filtering logic
 - Error handling for Docker API failures
 - Edge cases with malformed or missing image data
+- Auto pull images functionality
+- Date-based image filtering
 """
 
-from datetime import datetime
-from unittest.mock import MagicMock, patch
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from docker.errors import APIError, NotFound
 
+from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_spec_service import (
     DockerSandboxSpecService,
     get_docker_client,
@@ -72,7 +75,73 @@ def mock_image_multiple_tags():
 @pytest.fixture
 def service(mock_docker_client):
     """Create DockerSandboxSpecService instance for testing."""
-    return DockerSandboxSpecService(docker_client=mock_docker_client.return_value)
+    return DockerSandboxSpecService(
+        repository='ghcr.io/all-hands-ai/agent-server',
+        command=['/usr/local/bin/openhands-agent-server'],
+        initial_env={
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
+        },
+        working_dir='/home/openhands',
+        pull_if_missing=False,
+        created_at__gte=None,
+        docker_client=mock_docker_client.return_value,
+    )
+
+
+@pytest.fixture
+def service_with_pull(mock_docker_client):
+    """Create DockerSandboxSpecService instance with pull_if_missing=True."""
+    return DockerSandboxSpecService(
+        repository='ghcr.io/all-hands-ai/agent-server',
+        command=['/usr/local/bin/openhands-agent-server'],
+        initial_env={
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
+        },
+        working_dir='/home/openhands',
+        pull_if_missing=True,
+        created_at__gte=None,
+        docker_client=mock_docker_client.return_value,
+    )
+
+
+@pytest.fixture
+def service_with_date_filter(mock_docker_client):
+    """Create DockerSandboxSpecService instance with date filtering."""
+    filter_date = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    return DockerSandboxSpecService(
+        repository='ghcr.io/all-hands-ai/agent-server',
+        command=['/usr/local/bin/openhands-agent-server'],
+        initial_env={
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
+        },
+        working_dir='/home/openhands',
+        pull_if_missing=False,
+        created_at__gte=filter_date,
+        docker_client=mock_docker_client.return_value,
+    )
+
+
+@pytest.fixture
+def mock_old_image():
+    """Create a mock Docker image object with old creation date."""
+    image = MagicMock()
+    image.tags = ['ghcr.io/all-hands-ai/agent-server:old']
+    image.id = 'sha256:old1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
+    image.attrs = {'Created': '2023-12-01T10:30:00.000000000Z'}
+    return image
+
+
+@pytest.fixture
+def mock_new_image():
+    """Create a mock Docker image object with recent creation date."""
+    image = MagicMock()
+    image.tags = ['ghcr.io/all-hands-ai/agent-server:new']
+    image.id = 'sha256:new1234567890abcdef1234567890abcdef1234567890abcdef1234567890ab'
+    image.attrs = {'Created': '2024-06-01T10:30:00.000000000Z'}
+    return image
 
 
 class TestDockerSandboxSpecService:
@@ -95,7 +164,7 @@ class TestDockerSandboxSpecService:
 
         spec_info = result.items[0]
         assert spec_info.id == 'ghcr.io/all-hands-ai/agent-server:latest'
-        assert spec_info.command == '/usr/local/bin/openhands-agent-server'
+        assert spec_info.command == ['/usr/local/bin/openhands-agent-server']
         assert spec_info.working_dir == '/home/openhands'
         assert 'OPENVSCODE_SERVER_ROOT' in spec_info.initial_env
 
@@ -213,7 +282,7 @@ class TestDockerSandboxSpecService:
         # Verify
         assert result is not None
         assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
-        assert result.command == '/usr/local/bin/openhands-agent-server'
+        assert result.command == ['/usr/local/bin/openhands-agent-server']
 
         # Verify Docker client was called correctly
         service.docker_client.images.get.assert_called_once_with(
@@ -252,7 +321,7 @@ class TestDockerSandboxSpecService:
         # Verify
         assert isinstance(result, SandboxSpecInfo)
         assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
-        assert result.command == '/usr/local/bin/openhands-agent-server'
+        assert result.command == ['/usr/local/bin/openhands-agent-server']
         assert result.working_dir == '/home/openhands'
         assert (
             result.initial_env['OPENVSCODE_SERVER_ROOT']
@@ -269,7 +338,7 @@ class TestDockerSandboxSpecService:
         # Verify
         assert isinstance(result, SandboxSpecInfo)
         assert result.id == 'sha256:abcd1'  # First 12 characters of image ID
-        assert result.command == '/usr/local/bin/openhands-agent-server'
+        assert result.command == ['/usr/local/bin/openhands-agent-server']
 
     def test_docker_image_to_sandbox_specs_invalid_created_time(self, service):
         """Test handling of invalid creation timestamp."""
@@ -347,6 +416,248 @@ class TestDockerSandboxSpecService:
         assert (
             result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:latest'
         )  # First matching tag
+
+
+class TestDateFiltering:
+    """Test cases for date-based image filtering functionality."""
+
+    async def test_search_sandbox_specs_filters_by_date(
+        self,
+        service_with_date_filter,
+        mock_docker_client,
+        mock_old_image,
+        mock_new_image,
+    ):
+        """Test that search properly filters images by creation date."""
+        # Setup
+        service_with_date_filter.docker_client.images.list.return_value = [
+            mock_old_image,
+            mock_new_image,
+        ]
+
+        # Execute
+        result = await service_with_date_filter.search_sandbox_specs()
+
+        # Verify - only new image should be included (created after 2024-01-01)
+        assert len(result.items) == 1
+        assert result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:new'
+
+    async def test_search_sandbox_specs_no_date_filter(
+        self, service, mock_docker_client, mock_old_image, mock_new_image
+    ):
+        """Test that search includes all images when no date filter is set."""
+        # Setup
+        service.docker_client.images.list.return_value = [
+            mock_old_image,
+            mock_new_image,
+        ]
+
+        # Execute
+        result = await service.search_sandbox_specs()
+
+        # Verify - both images should be included
+        assert len(result.items) == 2
+        # Should be sorted by creation date descending (newest first)
+        assert result.items[0].id == 'ghcr.io/all-hands-ai/agent-server:new'
+        assert result.items[1].id == 'ghcr.io/all-hands-ai/agent-server:old'
+
+    async def test_search_sandbox_specs_all_images_filtered_out(
+        self, service_with_date_filter, mock_docker_client, mock_old_image
+    ):
+        """Test behavior when all images are filtered out by date."""
+        # Setup - only old image available
+        service_with_date_filter.docker_client.images.list.return_value = [
+            mock_old_image
+        ]
+
+        # Execute
+        result = await service_with_date_filter.search_sandbox_specs()
+
+        # Verify - no images should be included
+        assert len(result.items) == 0
+        assert result.next_page_id is None
+
+    async def test_get_sandbox_spec_respects_date_filter(
+        self, service_with_date_filter, mock_docker_client, mock_old_image
+    ):
+        """Test that get_sandbox_spec respects date filtering."""
+        # Setup
+        service_with_date_filter.docker_client.images.get.return_value = mock_old_image
+
+        # Execute
+        result = await service_with_date_filter.get_sandbox_spec(
+            'ghcr.io/all-hands-ai/agent-server:old'
+        )
+
+        # Verify - should return None because image is too old
+        assert result is None
+
+    async def test_get_sandbox_spec_passes_date_filter(
+        self, service_with_date_filter, mock_docker_client, mock_new_image
+    ):
+        """Test that get_sandbox_spec returns image that passes date filter."""
+        # Setup
+        service_with_date_filter.docker_client.images.get.return_value = mock_new_image
+
+        # Execute
+        result = await service_with_date_filter.get_sandbox_spec(
+            'ghcr.io/all-hands-ai/agent-server:new'
+        )
+
+        # Verify - should return the image because it's new enough
+        assert result is not None
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:new'
+
+
+class TestAutoPullFunctionality:
+    """Test cases for auto pull images functionality."""
+
+    async def test_get_default_sandbox_spec_returns_existing_image(
+        self, service_with_pull, mock_docker_client, mock_image
+    ):
+        """Test that get_default_sandbox_spec returns existing image when available."""
+        # Setup
+        service_with_pull.docker_client.images.list.return_value = [mock_image]
+
+        # Execute
+        result = await service_with_pull.get_default_sandbox_spec()
+
+        # Verify
+        assert result is not None
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
+        # Should not attempt to pull
+        service_with_pull.docker_client.images.pull.assert_not_called()
+
+    async def test_get_default_sandbox_spec_pulls_when_no_images(
+        self, service_with_pull, mock_docker_client, mock_image
+    ):
+        """Test that get_default_sandbox_spec pulls image when none available."""
+        # Setup - first call returns empty, second call returns pulled image
+        service_with_pull.docker_client.images.list.side_effect = [[], [mock_image]]
+
+        # Execute
+        result = await service_with_pull.get_default_sandbox_spec()
+
+        # Verify
+        assert result is not None
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
+        # Should have attempted to pull
+        service_with_pull.docker_client.images.pull.assert_called_once_with(
+            'ghcr.io/all-hands-ai/agent-server'
+        )
+
+    async def test_get_default_sandbox_spec_pull_disabled_raises_error(
+        self, service, mock_docker_client
+    ):
+        """Test that get_default_sandbox_spec raises error when pull is disabled and no images."""
+        # Setup - no images available
+        service.docker_client.images.list.return_value = []
+
+        # Execute & Verify
+        with pytest.raises(SandboxError) as exc_info:
+            await service.get_default_sandbox_spec()
+
+        assert 'No sandbox specs available!' in str(exc_info.value)
+        assert 'docker pull ghcr.io/all-hands-ai/agent-server:latest' in str(
+            exc_info.value
+        )
+        # Should not attempt to pull
+        service.docker_client.images.pull.assert_not_called()
+
+    async def test_get_default_sandbox_spec_pull_fails_raises_error(
+        self, service_with_pull, mock_docker_client
+    ):
+        """Test that get_default_sandbox_spec raises error when pull fails."""
+        # Setup
+        service_with_pull.docker_client.images.list.return_value = []
+        service_with_pull.docker_client.images.pull.side_effect = APIError(
+            'Pull failed'
+        )
+
+        # Execute & Verify
+        with pytest.raises(SandboxError) as exc_info:
+            await service_with_pull.get_default_sandbox_spec()
+
+        assert 'Error pulling docker image!' in str(exc_info.value)
+        # Should have attempted to pull
+        service_with_pull.docker_client.images.pull.assert_called_once_with(
+            'ghcr.io/all-hands-ai/agent-server'
+        )
+
+    @patch('asyncio.get_running_loop')
+    async def test_get_default_sandbox_spec_pull_uses_executor(
+        self, mock_get_loop, service_with_pull, mock_docker_client, mock_image
+    ):
+        """Test that pull operation uses executor to avoid blocking."""
+        # Setup
+        mock_loop = MagicMock()
+        mock_get_loop.return_value = mock_loop
+        mock_loop.run_in_executor = AsyncMock()
+
+        service_with_pull.docker_client.images.list.side_effect = [[], [mock_image]]
+
+        # Execute
+        result = await service_with_pull.get_default_sandbox_spec()
+
+        # Verify
+        assert result is not None
+        # Should have used executor for pull operation
+        mock_loop.run_in_executor.assert_called_once_with(
+            None,
+            service_with_pull.docker_client.images.pull,
+            'ghcr.io/all-hands-ai/agent-server',
+        )
+
+    async def test_get_default_sandbox_spec_respects_date_filter_with_pull(
+        self,
+        service_with_date_filter,
+        mock_docker_client,
+        mock_old_image,
+        mock_new_image,
+    ):
+        """Test that get_default_sandbox_spec respects date filter when pulling."""
+        # Setup service with both date filter and pull enabled
+        service_with_date_filter.pull_if_missing = True
+
+        # First call returns old image (filtered out), second call returns new image after pull
+        service_with_date_filter.docker_client.images.list.side_effect = [
+            [mock_old_image],  # First call - has old image but filtered out
+            [mock_old_image, mock_new_image],  # Second call after pull - has both
+        ]
+
+        # Execute
+        result = await service_with_date_filter.get_default_sandbox_spec()
+
+        # Verify
+        assert result is not None
+        assert (
+            result.id == 'ghcr.io/all-hands-ai/agent-server:new'
+        )  # Should get the new image
+        # Should have attempted to pull because old image was filtered out
+        service_with_date_filter.docker_client.images.pull.assert_called_once_with(
+            'ghcr.io/all-hands-ai/agent-server'
+        )
+
+    async def test_get_default_sandbox_spec_no_pull_after_date_filter(
+        self, service_with_date_filter, mock_docker_client, mock_new_image
+    ):
+        """Test that get_default_sandbox_spec doesn't pull when valid image exists after filtering."""
+        # Setup service with both date filter and pull enabled
+        service_with_date_filter.pull_if_missing = True
+
+        # Return new image that passes date filter
+        service_with_date_filter.docker_client.images.list.return_value = [
+            mock_new_image
+        ]
+
+        # Execute
+        result = await service_with_date_filter.get_default_sandbox_spec()
+
+        # Verify
+        assert result is not None
+        assert result.id == 'ghcr.io/all-hands-ai/agent-server:new'
+        # Should not attempt to pull because valid image exists
+        service_with_date_filter.docker_client.images.pull.assert_not_called()
 
 
 class TestGetDockerClient:
