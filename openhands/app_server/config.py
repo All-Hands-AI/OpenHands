@@ -158,28 +158,28 @@ def config_from_env() -> AppServerConfig:
         else:
             config.sandbox = DockerSandboxServiceInjector()
 
-        if config.sandbox_spec is None:
-            if os.getenv('RUNTIME') == 'remote':
-                config.sandbox_spec = RemoteSandboxSpecServiceInjector()
-            else:
-                config.sandbox_spec = DockerSandboxSpecServiceInjector()
+    if config.sandbox_spec is None:
+        if os.getenv('RUNTIME') == 'remote':
+            config.sandbox_spec = RemoteSandboxSpecServiceInjector()
+        else:
+            config.sandbox_spec = DockerSandboxSpecServiceInjector()
 
-        if config.app_conversation_info is None:
-            config.app_conversation_info = SQLAppConversationInfoServiceInjector()
+    if config.app_conversation_info is None:
+        config.app_conversation_info = SQLAppConversationInfoServiceInjector()
 
-        if config.app_conversation_start_task is None:
-            config.app_conversation_start_task = (
-                SQLAppConversationStartTaskServiceInjector()
-            )
+    if config.app_conversation_start_task is None:
+        config.app_conversation_start_task = (
+            SQLAppConversationStartTaskServiceInjector()
+        )
 
-        if config.app_conversation is None:
-            config.app_conversation = LiveStatusAppConversationServiceInjector()
+    if config.app_conversation is None:
+        config.app_conversation = LiveStatusAppConversationServiceInjector()
 
-        if config.user is None:
-            config.user = AuthUserContextInjector()
+    if config.user is None:
+        config.user = AuthUserContextInjector()
 
-        if config.jwt is None:
-            config.jwt = JwtServiceInjector(persistence_dir=config.persistence_dir)
+    if config.jwt is None:
+        config.jwt = JwtServiceInjector(persistence_dir=config.persistence_dir)
 
     return config
 
