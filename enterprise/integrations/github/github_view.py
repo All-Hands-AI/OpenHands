@@ -96,10 +96,6 @@ class GithubIssue(ResolverViewInterface):
     description: str
     previous_comments: list[Comment]
 
-    title: str
-    description: str
-    previous_comments: list[Comment]
-
     async def _load_resolver_context(self):
         github_service = GithubServiceImpl(
             external_auth_id=self.user_info.keycloak_user_id
@@ -197,7 +193,7 @@ class GithubIssueComment(GithubIssue):
         )
 
         conversation_instructions_template = jinja_env.get_template(
-            'issue_comment_conversation_instructions.j2'
+            'issue_conversation_instructions.j2'
         )
         conversation_instructions = conversation_instructions_template.render(
             issue_number=self.issue_number,
@@ -207,16 +203,15 @@ class GithubIssueComment(GithubIssue):
 
         return user_instructions, conversation_instructions
 
-    def get_callback_id(self) -> str:
-        return f'github_{self.full_repo_name}_{self.issue_number}_{self.comment_id}'
 
 
 @dataclass
 class GithubPRComment(GithubIssueComment):
     branch_name: str
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         user_instructions_template = jinja_env.get_template('pr_update_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             pr_comment=self.comment_body,
@@ -228,6 +223,9 @@ class GithubPRComment(GithubIssueComment):
         conversation_instructions = conversation_instructions_template.render(
             pr_number=self.issue_number,
             branch_name=self.branch_name,
+            pr_title=self.title,
+            pr_body=self.description,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
@@ -235,6 +233,7 @@ class GithubPRComment(GithubIssueComment):
     async def initialize_new_conversation(self) -> ConversationMetadata:
         conversation_metadata: ConversationMetadata = await initialize_conversation(
             user_id=self.user_info.keycloak_user_id,
+            conversation_id=None,
             selected_repository=self.full_repo_name,
             selected_branch=self.branch_name,
             conversation_trigger=ConversationTrigger.RESOLVER,
@@ -249,9 +248,27 @@ class GithubPRComment(GithubIssueComment):
 class GithubInlinePRComment(GithubPRComment):
     file_location: str
     line_number: int
+    comment_node_id: str
 
-    def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
+    async def _load_resolver_context(self):
+        github_service = GithubServiceImpl(
+            external_auth_id=self.user_info.keycloak_user_id
+        )
+
+        (
+            self.title,
+            self.description,
+        ) = await github_service.get_issue_or_pr_title_and_body(
+            self.full_repo_name, self.issue_number
+        )
+
+        self.previous_comments = await github_service.get_review_thread_comments(
+            self.comment_node_id, self.full_repo_name, self.issue_number
+        )
+
+    async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         user_instructions_template = jinja_env.get_template('pr_update_prompt.j2')
+        await self._load_resolver_context()
 
         user_instructions = user_instructions_template.render(
             pr_comment=self.comment_body,
@@ -262,9 +279,12 @@ class GithubInlinePRComment(GithubPRComment):
         )
         conversation_instructions = conversation_instructions_template.render(
             pr_number=self.issue_number,
+            pr_title=self.title,
+            pr_body=self.description,
             branch_name=self.branch_name,
             file_location=self.file_location,
             line_number=self.line_number,
+            comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
@@ -623,6 +643,9 @@ class GithubFactory:
                 uuid=str(uuid4()),
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
             )
 
         elif GithubFactory.is_issue_comment(message):
@@ -645,6 +668,9 @@ class GithubFactory:
                 uuid=None,
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
             )
 
         elif GithubFactory.is_pr_comment(message):
@@ -683,12 +709,16 @@ class GithubFactory:
                 uuid=None,
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
             )
 
         elif GithubFactory.is_inline_pr_comment(message):
             pr_number = payload['pull_request']['number']
             branch_name = payload['pull_request']['head']['ref']
             comment_id = payload['comment']['id']
+            comment_node_id = payload['comment']['node_id']
             file_path = payload['comment']['path']
             line_number = payload['comment']['line']
             logger.info(
@@ -711,6 +741,9 @@ class GithubFactory:
                 uuid=None,
                 should_extract=True,
                 send_summary_instruction=True,
+                title='',
+                description='',
+                previous_comments=[],
             )
 
         else:
