@@ -9,7 +9,7 @@ class StoredSettings(Base):  # type: ignore
     Legacy user settings storage. This should be considered deprecated - use UserSettings isntead
     """
 
-    __tablename__ = "settings"
+    __tablename__ = 'settings'
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     language = Column(String, nullable=True)
     agent = Column(String, nullable=True)
