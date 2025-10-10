@@ -15,6 +15,7 @@ class ConversationTrigger(Enum):
     JIRA = 'jira'
     JIRA_DC = 'jira_dc'
     LINEAR = 'linear'
+    BITBUCKET = 'bitbucket'
 
 
 @dataclass
