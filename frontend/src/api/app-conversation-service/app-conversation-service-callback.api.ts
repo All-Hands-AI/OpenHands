@@ -63,6 +63,7 @@ class AppConversationServiceCallback {
                     allTasks.push(task);
                     onProgress(task);
                   } catch (error) {
+                    // eslint-disable-next-line no-console
                     console.warn(
                       "Failed to parse final JSON:",
                       cleanBuffer,
@@ -94,6 +95,7 @@ class AppConversationServiceCallback {
                   allTasks.push(task);
                   onProgress(task);
                 } catch (error) {
+                  // eslint-disable-next-line no-console
                   console.warn("Failed to parse JSON line:", cleanLine, error);
                 }
               }

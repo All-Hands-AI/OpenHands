@@ -92,6 +92,7 @@ export const useStreamStartAppConversation = () => {
       }
     },
     onError: (error) => {
+      // eslint-disable-next-line no-console
       console.error("Error starting app conversation:", error);
     },
   });
