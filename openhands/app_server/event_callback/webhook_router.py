@@ -7,8 +7,6 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from jwt import InvalidTokenError
-from openhands.app_server.services.injector import InjectorState
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import ConversationInfo, Success
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -20,7 +18,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.config import (
     depends_app_conversation_info_service,
     depends_db_session,
-    depends_event_callback_service,
     depends_event_service,
     depends_jwt_service,
     depends_sandbox_service,
@@ -31,8 +28,13 @@ from openhands.app_server.errors import AuthError
 from openhands.app_server.event.event_service import EventService
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
+from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR, AdminUserContext, as_admin
+from openhands.app_server.user.admin_user_context import (
+    USER_CONTEXT_ATTR,
+    AdminUserContext,
+    as_admin,
+)
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
@@ -135,7 +137,9 @@ async def on_event(
         )
 
         asyncio.create_task(
-            _run_callbacks_in_bg_and_close(conversation_id, app_conversation_info.created_by_user_id, events)
+            _run_callbacks_in_bg_and_close(
+                conversation_id, app_conversation_info.created_by_user_id, events
+            )
         )
 
     except Exception:
@@ -182,4 +186,3 @@ async def _run_callbacks_in_bg_and_close(
         # We don't use asynio.gather here because callbacks must be run in sequence.
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
-
