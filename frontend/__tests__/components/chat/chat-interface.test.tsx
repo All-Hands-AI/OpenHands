@@ -17,8 +17,8 @@ import type { Message } from "#/message";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 import { useWsClient } from "#/context/ws-client-provider";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
@@ -26,8 +26,8 @@ import { OpenHandsAction } from "#/types/core/actions";
 
 // Mock the hooks
 vi.mock("#/context/ws-client-provider");
-vi.mock("#/hooks/use-optimistic-user-message");
-vi.mock("#/hooks/use-ws-error-message");
+vi.mock("#/stores/error-message-store");
+vi.mock("#/stores/optimistic-user-message-store");
 vi.mock("#/hooks/query/use-config");
 vi.mock("#/hooks/mutation/use-get-trajectory");
 vi.mock("#/hooks/mutation/use-upload-files");
@@ -60,7 +60,6 @@ vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
     handleDelete: vi.fn(),
   }),
 }));
-
 
 // Helper function to render with Router context
 const renderChatInterfaceWithRouter = () =>
@@ -109,13 +108,14 @@ describe("ChatInterface - Chat Suggestions", () => {
       parsedEvents: [],
     });
     (
-      useOptimisticUserMessage as unknown as ReturnType<typeof vi.fn>
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({
       setOptimisticUserMessage: vi.fn(),
       getOptimisticUserMessage: vi.fn(() => null),
     });
-    (useWSErrorMessage as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      getErrorMessage: vi.fn(() => null),
+    (
+      useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
       setErrorMessage: vi.fn(),
       removeErrorMessage: vi.fn(),
     });
@@ -203,7 +203,7 @@ describe("ChatInterface - Chat Suggestions", () => {
 
   test("should hide chat suggestions when there is an optimistic user message", () => {
     (
-      useOptimisticUserMessage as unknown as ReturnType<typeof vi.fn>
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({
       setOptimisticUserMessage: vi.fn(),
       getOptimisticUserMessage: vi.fn(() => "Optimistic message"),
@@ -246,13 +246,14 @@ describe("ChatInterface - Empty state", () => {
       parsedEvents: [],
     });
     (
-      useOptimisticUserMessage as unknown as ReturnType<typeof vi.fn>
+      useOptimisticUserMessageStore as unknown as ReturnType<typeof vi.fn>
     ).mockReturnValue({
       setOptimisticUserMessage: vi.fn(),
       getOptimisticUserMessage: vi.fn(() => null),
     });
-    (useWSErrorMessage as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      getErrorMessage: vi.fn(() => null),
+    (
+      useErrorMessageStore as unknown as ReturnType<typeof vi.fn>
+    ).mockReturnValue({
       setErrorMessage: vi.fn(),
       removeErrorMessage: vi.fn(),
     });

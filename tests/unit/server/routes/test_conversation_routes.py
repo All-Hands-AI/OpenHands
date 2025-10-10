@@ -8,7 +8,11 @@ from fastapi.responses import JSONResponse
 
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
 from openhands.microagent.types import MicroagentMetadata, MicroagentType
-from openhands.server.routes.conversation import get_microagents
+from openhands.server.routes.conversation import (
+    AddMessageRequest,
+    add_message,
+    get_microagents,
+)
 from openhands.server.routes.manage_conversations import (
     UpdateConversationRequest,
     update_conversation,
@@ -619,3 +623,112 @@ async def test_update_conversation_no_user_id_no_metadata_user_id():
         # Verify success (should work when both are None)
         assert result is True
         mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_add_message_success():
+    """Test successful message addition to conversation."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request
+    message_request = AddMessageRequest(message='Hello, this is a test message!')
+
+    # Mock the conversation manager
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock()
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 200
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is True
+
+        # Verify that send_event_to_conversation was called
+        mock_manager.send_event_to_conversation.assert_called_once()
+        call_args = mock_manager.send_event_to_conversation.call_args
+        assert call_args[0][0] == 'test_conversation_123'  # conversation ID
+
+        # Verify the message data structure
+        message_data = call_args[0][1]
+        assert message_data['action'] == 'message'
+        assert message_data['args']['content'] == 'Hello, this is a test message!'
+
+
+@pytest.mark.asyncio
+async def test_add_message_conversation_manager_error():
+    """Test add_message when conversation manager raises an exception."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request
+    message_request = AddMessageRequest(message='Test message')
+
+    # Mock the conversation manager to raise an exception
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock(
+            side_effect=Exception('Conversation manager error')
+        )
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 500
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is False
+        assert 'Conversation manager error' in content['error']
+
+
+@pytest.mark.asyncio
+async def test_add_message_empty_message():
+    """Test add_message with an empty message."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request with empty message
+    message_request = AddMessageRequest(message='')
+
+    # Mock the conversation manager
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock()
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 200
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is True
+
+        # Verify that send_event_to_conversation was called with empty content
+        mock_manager.send_event_to_conversation.assert_called_once()
+        call_args = mock_manager.send_event_to_conversation.call_args
+        message_data = call_args[0][1]
+        assert message_data['args']['content'] == ''

@@ -157,7 +157,51 @@ describe("MicroagentManagement", () => {
       owner_type: "organization",
       pushed_at: "2021-10-06T12:00:00Z",
     },
+    {
+      id: "7",
+      full_name: "user/gitlab-repo/openhands-config",
+      git_provider: "gitlab",
+      is_public: true,
+      owner_type: "user",
+      pushed_at: "2021-10-07T12:00:00Z",
+    },
+    {
+      id: "8",
+      full_name: "org/gitlab-org-repo/openhands-config",
+      git_provider: "gitlab",
+      is_public: true,
+      owner_type: "organization",
+      pushed_at: "2021-10-08T12:00:00Z",
+    },
   ];
+
+  // Helper function to filter repositories with OpenHands suffixes
+  const getRepositoriesWithOpenHandsSuffix = (
+    repositories: GitRepository[],
+  ) => {
+    return repositories.filter(
+      (repo) =>
+        repo.full_name.endsWith("/.openhands") ||
+        repo.full_name.endsWith("/openhands-config"),
+    );
+  };
+
+  // Helper functions for mocking search repositories
+  const mockSearchRepositoriesWithData = (data: GitRepository[]) => {
+    mockUseSearchRepositories.mockReturnValue({
+      data,
+      isLoading: false,
+      isError: false,
+    });
+  };
+
+  const mockSearchRepositoriesEmpty = () => {
+    mockUseSearchRepositories.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+  };
 
   const mockMicroagents: RepositoryMicroagent[] = [
     {
@@ -265,11 +309,11 @@ describe("MicroagentManagement", () => {
       isError: false,
     });
 
-    mockUseSearchRepositories.mockReturnValue({
-      data: [],
-      isLoading: false,
-      isError: false,
-    });
+    // Mock the search repositories hook to return repositories with OpenHands suffixes
+    const mockSearchResults =
+      getRepositoriesWithOpenHandsSuffix(mockRepositories);
+
+    mockSearchRepositoriesWithData(mockSearchResults);
 
     // Setup default mock for retrieveUserGitRepositories
     vi.spyOn(GitService, "retrieveUserGitRepositories").mockResolvedValue({
@@ -594,6 +638,9 @@ describe("MicroagentManagement", () => {
       onLoadMore: vi.fn(),
     });
 
+    // Mock empty search results
+    mockSearchRepositoriesEmpty();
+
     renderMicroagentManagement();
 
     // Wait for repositories to be loaded
@@ -782,6 +829,10 @@ describe("MicroagentManagement", () => {
 
     it("should handle empty search results", async () => {
       const user = userEvent.setup();
+
+      // Mock empty search results for this test
+      mockSearchRepositoriesEmpty();
+
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
