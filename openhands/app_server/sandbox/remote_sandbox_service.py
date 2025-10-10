@@ -294,39 +294,11 @@ class RemoteSandboxService(SandboxService):
             # Prepare environment variables
             environment = await self._init_environment(sandbox_spec, sandbox_id)
 
-            #TODO: This is all legacy and should be removed
-            environment['CONVERSATION_MANAGER_CLASS'] = (
-                'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
-            )
-            environment['LOG_JSON'] = '1'
-            environment['SERVE_FRONTEND'] = '0'
-            environment['RUNTIME'] = 'local'
-            environment['USER'] = 'openhands'
-            environment['PERMITTED_CORS_ORIGINS'] = 'http://localhost:3001'
-            environment['port'] = '60000'
-            environment['VSCODE_PORT'] = '60001'
-            environment['WORK_PORT_1'] = '12000'
-            environment['WORK_PORT_2'] = '12001'
-            environment['ALLOW_SET_CONVERSATION_ID'] = '1'
-            environment['FILE_STORE_PATH'] = '/workspace/.openhands/file_store'
-            environment['WORKSPACE_BASE'] = '/workspace/project'
-            environment['WORKSPACE_MOUNT_PATH_IN_SANDBOX'] = '/workspace/project'
-            environment['SANDBOX_CLOSE_DELAY'] = '0'
-            environment['SKIP_DEPENDENCY_CHECK'] = '1'
-            environment['INITIAL_NUM_WARM_SERVERS'] = '1'
-            environment['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
-            environment['WEB_HOST'] = 'http://localhost:3001'
-
             # Prepare start request
             start_request: dict[str, Any] = {
                 'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
-
-                # TODO: I need to import the agent server image into runtime api - this is a hack
-                #'command': sandbox_spec.command,
-                #'working_dir': sandbox_spec.working_dir,
-                'command': ["/openhands/micromamba/bin/micromamba","run","-n","openhands","poetry","run","python","-u","-m","openhands.server","60000","--working-dir","/workspace","--plugins","agent_skills","jupyter","vscode","--username","root","--user-id","0"],
-                'working_dir': '/openhands/code/',
-
+                'command': sandbox_spec.command,
+                'working_dir': sandbox_spec.working_dir,
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,
@@ -399,6 +371,8 @@ class RemoteSandboxService(SandboxService):
             stored_sandbox = await self._get_stored_sandbox(sandbox_id)
             if not stored_sandbox:
                 return False
+            await self.db_session.delete(stored_sandbox)
+            await self.db_session.commit()
             runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
                 'POST',
@@ -407,8 +381,6 @@ class RemoteSandboxService(SandboxService):
             )
             if response.status_code != 404:
                 response.raise_for_status()
-            await self.db_session.delete(stored_sandbox)
-            await self.db_session.commit()
             return True
         except httpx.HTTPError as e:
             _logger.error(f'Error deleting sandbox {sandbox_id}: {e}')

@@ -38,7 +38,7 @@ class DockerSandboxSpecService(SandboxSpecService):
     """
 
     repository: str
-    command: str
+    command: list[str] | None
     initial_env: dict[str, str]
     working_dir: str
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
@@ -125,7 +125,7 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     repository: str = 'ghcr.io/all-hands-ai/agent-server'
-    command: str = '/usr/local/bin/openhands-agent-server'
+    command: list[str] | None = None
     initial_env: dict[str, str] = Field(
         default_factory=lambda: {
             'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',

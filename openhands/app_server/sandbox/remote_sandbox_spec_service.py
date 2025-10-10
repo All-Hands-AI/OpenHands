@@ -73,12 +73,12 @@ def _get_specs_from_legacy_parameter():
     return [
         SandboxSpecInfo(
             id=image,
-            command='/usr/local/bin/openhands-agent-server',
+            command=['/usr/local/bin/agent-server', '--port', '60000'],
             initial_env={
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
                 'LOG_JSON': 'true',
             },
-            working_dir='/home/openhands',
+            working_dir='/workspace',
         )
     ]
 
