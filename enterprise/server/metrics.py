@@ -33,7 +33,8 @@ def metrics_app() -> Callable:
     metrics_callable = make_asgi_app()
 
     async def wrapped_handler(scope, receive, send):
-        """Call _update_metrics before serving Prometheus metrics endpoint.
+        """
+        Call _update_metrics before serving Prometheus metrics endpoint.
         Not wrapped in a `try`, failing would make metrics endpoint unavailable.
         """
         await _update_metrics()

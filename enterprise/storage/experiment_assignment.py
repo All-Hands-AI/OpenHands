@@ -1,4 +1,5 @@
-"""Database model for experiment assignments.
+"""
+Database model for experiment assignments.
 
 This model tracks which experiments a conversation is assigned to and what variant
 they received from PostHog feature flags.

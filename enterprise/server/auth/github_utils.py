@@ -20,7 +20,7 @@ class UserVerifier:
         self._init_sheets_client()
 
     def _init_file_users(self) -> None:
-        """Load users from text file if configured."""
+        """Load users from text file if configured"""
         waitlist = os.getenv('GITHUB_USER_LIST_FILE')
         if not waitlist:
             logger.debug('GITHUB_USER_LIST_FILE not configured')
@@ -40,7 +40,7 @@ class UserVerifier:
             logger.error(f'Error reading user list file {waitlist}', exc_info=True)
 
     def _init_sheets_client(self) -> None:
-        """Initialize Google Sheets client if configured."""
+        """Initialize Google Sheets client if configured"""
         sheet_id = os.getenv('GITHUB_USERS_SHEET_ID')
 
         if not sheet_id:
@@ -58,7 +58,7 @@ class UserVerifier:
         return bool(self.file_users or (self.sheets_client and self.spreadsheet_id))
 
     def is_user_allowed(self, username: str) -> bool:
-        """Check if user is allowed based on file and/or sheet configuration."""
+        """Check if user is allowed based on file and/or sheet configuration"""
         logger.debug(f'Checking if GitHub user {username} is allowed')
         if self.file_users:
             if username.lower() in self.file_users:

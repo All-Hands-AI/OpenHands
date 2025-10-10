@@ -136,7 +136,9 @@ class SaasNestedConversationManager(ConversationManager):
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """Get the running agent loops directly from the remote runtime."""
+        """
+        Get the running agent loops directly from the remote runtime.
+        """
         conversation_ids = await self._get_all_running_conversation_ids()
 
         if filter_to_sids is not None:
@@ -515,7 +517,10 @@ class SaasNestedConversationManager(ConversationManager):
                 )
 
     def _get_user_id_from_conversation(self, conversation_id: str) -> str:
-        """Get user_id from conversation_id."""
+        """
+        Get user_id from conversation_id.
+        """
+
         with session_maker() as session:
             conversation_metadata = (
                 session.query(StoredConversationMetadata)
@@ -889,7 +894,7 @@ class SaasNestedConversationManager(ConversationManager):
         return f'ohcnv:{user_id}:{conversation_id}'
 
     async def _poll_events(self):
-        """Poll events in nested runtimes. This is primarily used in debug / single server environments."""
+        """Poll events in nested runtimes. This is primarily used in debug / single server environments"""
         while should_continue():
             try:
                 await asyncio.sleep(_POLLING_INTERVAL)
@@ -914,7 +919,7 @@ class SaasNestedConversationManager(ConversationManager):
     async def _poll_agent_loop_events(
         self, agent_loop_info: AgentLoopInfo, session: orm.Session
     ):
-        """This method is typically only run in localhost, where the webhook callbacks from the remote runtime are unavailable."""
+        """This method is typically only run in localhost, where the webhook callbacks from the remote runtime are unavailable"""
         if agent_loop_info.status != ConversationStatus.RUNNING:
             return
         conversation_id = agent_loop_info.conversation_id

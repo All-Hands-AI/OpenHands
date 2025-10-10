@@ -1,4 +1,6 @@
-"""Tests for the GitlabCallbackProcessor."""
+"""
+Tests for the GitlabCallbackProcessor.
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 

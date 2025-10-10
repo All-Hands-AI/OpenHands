@@ -1,4 +1,6 @@
-"""Unit tests for JiraManager."""
+"""
+Unit tests for JiraManager.
+"""
 
 import hashlib
 import hmac

@@ -37,7 +37,8 @@ class JiraDcNewConversationView(JiraDcViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         instructions_template = jinja_env.get_template('jira_dc_instructions.j2')
         instructions = instructions_template.render()
 
@@ -53,7 +54,8 @@ class JiraDcNewConversationView(JiraDcViewInterface):
         return instructions, user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Create a new Jira DC conversation."""
+        """Create a new Jira DC conversation"""
+
         if not self.selected_repo:
             raise StartingConvoException('No repository selected for this conversation')
 
@@ -97,7 +99,7 @@ class JiraDcNewConversationView(JiraDcViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Jira DC."""
+        """Get the response message to send back to Jira DC"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [track my progress here|{conversation_link}]."
 
@@ -112,7 +114,8 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         user_msg_template = jinja_env.get_template('jira_dc_existing_conversation.j2')
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
@@ -124,7 +127,8 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
         return '', user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Update an existing Jira conversation."""
+        """Update an existing Jira conversation"""
+
         user_id = self.jira_dc_user.keycloak_user_id
 
         try:
@@ -175,7 +179,7 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Jira."""
+        """Get the response message to send back to Jira"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [continue tracking my progress here|{conversation_link}]."
 
@@ -191,6 +195,7 @@ class JiraDcFactory:
         jira_dc_workspace: JiraDcWorkspace,
     ) -> JiraDcViewInterface:
         """Create appropriate Jira DC view based on the payload."""
+
         if not jira_dc_user or not saas_user_auth or not jira_dc_workspace:
             raise StartingConvoException('User not authenticated with Jira integration')
 

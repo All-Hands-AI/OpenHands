@@ -17,7 +17,8 @@ ADD_DEBUGGING_ROUTES = os.environ.get('ADD_DEBUGGING_ROUTES') in ('1', 'true')
 
 
 def add_debugging_routes(api: FastAPI):
-    """# HERE BE DRAGONS!
+    """
+    # HERE BE DRAGONS!
     Chaos scripts for debugging and stress testing the system.
 
     This module contains endpoints that deliberately stress test and potentially break
@@ -30,6 +31,7 @@ def add_debugging_routes(api: FastAPI):
     - Testing async vs sync database access patterns
     - Simulating event loop blocking
     """
+
     if not ADD_DEBUGGING_ROUTES:
         return
 
@@ -37,7 +39,8 @@ def add_debugging_routes(api: FastAPI):
 
     @chaos_router.get('/pool-stats')
     def pool_stats() -> dict[str, int]:
-        """Returns current database connection pool statistics.
+        """
+        Returns current database connection pool statistics.
 
         This endpoint provides real-time metrics about the SQLAlchemy connection pool:
         - checked_in: Number of connections currently available in the pool
@@ -52,7 +55,8 @@ def add_debugging_routes(api: FastAPI):
 
     @chaos_router.get('/test-db')
     def test_db(num_tests: int = 10, delay: int = 1) -> str:
-        """Stress tests the database connection pool using multiple threads.
+        """
+        Stress tests the database connection pool using multiple threads.
 
         Creates multiple threads that each open a database connection, perform a query,
         hold the connection for the specified delay, and then release it.
@@ -73,7 +77,8 @@ def add_debugging_routes(api: FastAPI):
 
     @chaos_router.get('/a-test-db')
     async def a_chaos_monkey(num_tests: int = 10, delay: int = 1) -> str:
-        """Stress tests the async database connection pool.
+        """
+        Stress tests the async database connection pool.
 
         Similar to /test-db but uses async connections and coroutines instead of threads.
         This endpoint helps compare the behavior of async vs sync connection pools
@@ -88,7 +93,8 @@ def add_debugging_routes(api: FastAPI):
 
     @chaos_router.get('/lock-main-runloop')
     async def lock_main_runloop(duration: int = 10) -> str:
-        """Deliberately blocks the main asyncio event loop.
+        """
+        Deliberately blocks the main asyncio event loop.
 
         This endpoint uses a synchronous sleep operation in an async function,
         which blocks the entire FastAPI server's event loop for the specified duration.
@@ -107,7 +113,8 @@ def add_debugging_routes(api: FastAPI):
 
 
 def _db_check(delay: int):
-    """Executes a single request against the database with an artificial delay.
+    """
+    Executes a single request against the database with an artificial delay.
 
     This helper function:
     1. Opens a database connection from the pool
@@ -134,7 +141,8 @@ def _db_check(delay: int):
 
 
 async def _a_db_check(delay: int):
-    """Executes a single async request against the database with an artificial delay.
+    """
+    Executes a single async request against the database with an artificial delay.
 
     This is the async version of _db_check that:
     1. Opens an async database connection from the pool

@@ -149,7 +149,7 @@ async def test_call_sends_summary_to_jira(
 @pytest.mark.asyncio
 @patch('server.conversation_callback_processor.jira_callback_processor.jira_manager')
 async def test_send_comment_to_jira_workspace_not_found(mock_jira_manager, processor):
-    """Test behavior when workspace is not found."""
+    """Test behavior when workspace is not found"""
     # Setup
     mock_jira_manager.integration_store.get_workspace_by_name = AsyncMock(
         return_value=None
@@ -169,7 +169,7 @@ async def test_send_comment_to_jira_workspace_not_found(mock_jira_manager, proce
 @pytest.mark.asyncio
 @patch('server.conversation_callback_processor.jira_callback_processor.jira_manager')
 async def test_send_comment_to_jira_inactive_workspace(mock_jira_manager, processor):
-    """Test behavior when workspace is inactive."""
+    """Test behavior when workspace is inactive"""
     # Setup
     mock_workspace = MagicMock(status='inactive', svc_acc_api_key='encrypted_key')
     mock_jira_manager.integration_store.get_workspace_by_name = AsyncMock(
@@ -187,7 +187,7 @@ async def test_send_comment_to_jira_inactive_workspace(mock_jira_manager, proces
 @pytest.mark.asyncio
 @patch('server.conversation_callback_processor.jira_callback_processor.jira_manager')
 async def test_send_comment_to_jira_api_error(mock_jira_manager, processor):
-    """Test behavior when API call fails."""
+    """Test behavior when API call fails"""
     # Setup
     mock_workspace = MagicMock(
         status='active',
@@ -222,7 +222,7 @@ async def test_send_comment_to_jira_api_error(mock_jira_manager, processor):
     ],
 )
 async def test_call_ignores_irrelevant_states(processor, agent_state):
-    """Test that processor ignores irrelevant agent states."""
+    """Test that processor ignores irrelevant agent states"""
     callback = MagicMock()
     observation = AgentStateChangedObservation(agent_state=agent_state, content='')
 
@@ -242,7 +242,7 @@ async def test_call_ignores_irrelevant_states(processor, agent_state):
     ],
 )
 async def test_call_processes_relevant_states(processor, agent_state):
-    """Test that processor handles relevant agent states."""
+    """Test that processor handles relevant agent states"""
     callback = MagicMock(conversation_id='conv1')
     observation = AgentStateChangedObservation(agent_state=agent_state, content='')
 
@@ -278,7 +278,7 @@ async def test_call_processes_relevant_states(processor, agent_state):
 async def test_call_handles_empty_last_messages(
     mock_conv_manager, mock_get_last_msg, mock_get_summary_instruction, processor
 ):
-    """Test behavior when there are no last user messages."""
+    """Test behavior when there are no last user messages"""
     callback = MagicMock(conversation_id='conv1')
     observation = AgentStateChangedObservation(
         agent_state=AgentState.FINISHED, content=''
@@ -300,7 +300,7 @@ async def test_call_handles_empty_last_messages(
 async def test_call_handles_exceptions_gracefully(
     mock_get_summary_instruction, processor
 ):
-    """Test that exceptions in callback processing are handled gracefully."""
+    """Test that exceptions in callback processing are handled gracefully"""
     callback = MagicMock(conversation_id='conv1')
     observation = AgentStateChangedObservation(
         agent_state=AgentState.FINISHED, content=''
@@ -314,7 +314,7 @@ async def test_call_handles_exceptions_gracefully(
 @pytest.mark.asyncio
 @patch('server.conversation_callback_processor.jira_callback_processor.jira_manager')
 async def test_send_comment_to_jira_message_construction(mock_jira_manager, processor):
-    """Test that outgoing message is constructed correctly."""
+    """Test that outgoing message is constructed correctly"""
     # Setup
     mock_workspace = MagicMock(
         status='active',
@@ -369,7 +369,7 @@ async def test_call_creates_background_task_for_sending(
     mock_jira_manager,
     processor,
 ):
-    """Test that summary sending is done in background task."""
+    """Test that summary sending is done in background task"""
     callback = MagicMock(conversation_id='conv1')
     observation = AgentStateChangedObservation(
         agent_state=AgentState.AWAITING_USER_INPUT, content=''

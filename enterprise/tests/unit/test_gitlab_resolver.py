@@ -1,5 +1,7 @@
 # mypy: disable-error-code="unreachable"
-"""Tests for the GitLab resolver."""
+"""
+Tests for the GitLab resolver.
+"""
 
 import hashlib
 import json

@@ -19,10 +19,10 @@ from server.auth.constants import (
     GITLAB_APP_CLIENT_ID,
 )
 
-from openhands.core.config.utils import load_openhands_config
 from openhands.integrations.service_types import ProviderType
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.types import AppMode
+from openhands.core.config.utils import load_openhands_config
 
 # Create a function to get config to avoid circular imports
 _config = None
@@ -94,7 +94,7 @@ class SaaSServerConfig(ServerConfig):
         self._get_app_slug()
 
     def _get_app_slug(self):
-        """Retrieves the GitHub App slug using the GitHub API's /app endpoint by generating a JWT for the app.
+        """Retrieves the GitHub App slug using the GitHub API's /app endpoint by generating a JWT for the app
 
         Raises:
             HTTPException: If the request to the GitHub API fails.

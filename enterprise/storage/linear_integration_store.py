@@ -24,6 +24,7 @@ class LinearIntegrationStore:
         status: str = 'active',
     ) -> LinearWorkspace:
         """Create a new Linear workspace with encrypted sensitive data."""
+
         workspace = LinearWorkspace(
             name=name.lower(),
             linear_org_id=linear_org_id,

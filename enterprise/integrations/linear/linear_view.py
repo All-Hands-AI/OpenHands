@@ -34,7 +34,8 @@ class LinearNewConversationView(LinearViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         instructions_template = jinja_env.get_template('linear_instructions.j2')
         instructions = instructions_template.render()
 
@@ -50,7 +51,8 @@ class LinearNewConversationView(LinearViewInterface):
         return instructions, user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Create a new Linear conversation."""
+        """Create a new Linear conversation"""
+
         if not self.selected_repo:
             raise StartingConvoException('No repository selected for this conversation')
 
@@ -94,7 +96,7 @@ class LinearNewConversationView(LinearViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Linear."""
+        """Get the response message to send back to Linear"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [track my progress here]({conversation_link})."
 
@@ -109,7 +111,8 @@ class LinearExistingConversationView(LinearViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         user_msg_template = jinja_env.get_template('linear_existing_conversation.j2')
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
@@ -121,7 +124,8 @@ class LinearExistingConversationView(LinearViewInterface):
         return '', user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Update an existing Linear conversation."""
+        """Update an existing Linear conversation"""
+
         user_id = self.linear_user.keycloak_user_id
 
         try:
@@ -172,13 +176,13 @@ class LinearExistingConversationView(LinearViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Linear."""
+        """Get the response message to send back to Linear"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [continue tracking my progress here]({conversation_link})."
 
 
 class LinearFactory:
-    """Factory for creating Linear views based on message content."""
+    """Factory for creating Linear views based on message content"""
 
     @staticmethod
     async def create_linear_view_from_payload(
@@ -187,7 +191,8 @@ class LinearFactory:
         linear_user: LinearUser,
         linear_workspace: LinearWorkspace,
     ) -> LinearViewInterface:
-        """Create appropriate Linear view based on the message and user state."""
+        """Create appropriate Linear view based on the message and user state"""
+
         if not linear_user or not saas_user_auth or not linear_workspace:
             raise StartingConvoException(
                 'User not authenticated with Linear integration'

@@ -33,9 +33,10 @@ class LegacyCacheEntry:
 
 @dataclass
 class LegacyConversationManager(ConversationManager):
-    """Conversation manager for use while migrating - since existing conversations are not nested!
+    """
+    Conversation manager for use while migrating - since existing conversations are not nested!
     Separate class from SaasNestedConversationManager so it can be easliy removed in a few weeks.
-    (As of 2025-07-23).
+    (As of 2025-07-23)
     """
 
     sio: socketio.AsyncServer
@@ -269,7 +270,8 @@ class LegacyConversationManager(ConversationManager):
             del self._legacy_cache[key]
 
     async def should_start_in_legacy_mode(self, conversation_id: str) -> bool:
-        """Check if a conversation should run in legacy mode by directly checking the runtime.
+        """
+        Check if a conversation should run in legacy mode by directly checking the runtime.
         The /list method does not include stopped conversations even though the PVC for these
         may not yet have been deleted, so we need to check /sessions/{session_id} directly.
         """
@@ -293,7 +295,8 @@ class LegacyConversationManager(ConversationManager):
         return is_legacy
 
     def is_legacy_runtime(self, runtime: dict | None) -> bool:
-        """Determine if a runtime is a legacy runtime based on its command.
+        """
+        Determine if a runtime is a legacy runtime based on its command.
 
         Args:
             runtime: The runtime dictionary or None if not found

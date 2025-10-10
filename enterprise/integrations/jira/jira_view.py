@@ -34,7 +34,8 @@ class JiraNewConversationView(JiraViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         instructions_template = jinja_env.get_template('jira_instructions.j2')
         instructions = instructions_template.render()
 
@@ -50,7 +51,8 @@ class JiraNewConversationView(JiraViewInterface):
         return instructions, user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Create a new Jira conversation."""
+        """Create a new Jira conversation"""
+
         if not self.selected_repo:
             raise StartingConvoException('No repository selected for this conversation')
 
@@ -94,7 +96,7 @@ class JiraNewConversationView(JiraViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Jira."""
+        """Get the response message to send back to Jira"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [track my progress here|{conversation_link}]."
 
@@ -109,7 +111,8 @@ class JiraExistingConversationView(JiraViewInterface):
     conversation_id: str
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        """Instructions passed when conversation is first initialized."""
+        """Instructions passed when conversation is first initialized"""
+
         user_msg_template = jinja_env.get_template('jira_existing_conversation.j2')
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
@@ -121,7 +124,8 @@ class JiraExistingConversationView(JiraViewInterface):
         return '', user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
-        """Update an existing Jira conversation."""
+        """Update an existing Jira conversation"""
+
         user_id = self.jira_user.keycloak_user_id
 
         try:
@@ -171,13 +175,13 @@ class JiraExistingConversationView(JiraViewInterface):
             raise StartingConvoException(f'Failed to create conversation: {str(e)}')
 
     def get_response_msg(self) -> str:
-        """Get the response message to send back to Jira."""
+        """Get the response message to send back to Jira"""
         conversation_link = CONVERSATION_URL.format(self.conversation_id)
         return f"I'm on it! {self.job_context.display_name} can [continue tracking my progress here|{conversation_link}]."
 
 
 class JiraFactory:
-    """Factory for creating Jira views based on message content."""
+    """Factory for creating Jira views based on message content"""
 
     @staticmethod
     async def create_jira_view_from_payload(
@@ -186,7 +190,8 @@ class JiraFactory:
         jira_user: JiraUser,
         jira_workspace: JiraWorkspace,
     ) -> JiraViewInterface:
-        """Create appropriate Jira view based on the message and user state."""
+        """Create appropriate Jira view based on the message and user state"""
+
         if not jira_user or not saas_user_auth or not jira_workspace:
             raise StartingConvoException('User not authenticated with Jira integration')
 

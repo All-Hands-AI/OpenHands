@@ -1,4 +1,6 @@
-"""Shared fixtures for Linear integration tests."""
+"""
+Shared fixtures for Linear integration tests.
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -136,7 +138,7 @@ def sample_repositories():
 
 @pytest.fixture
 def mock_jinja_env():
-    """Mock Jinja2 environment with templates."""
+    """Mock Jinja2 environment with templates"""
     templates = {
         'linear_instructions.j2': 'Test instructions template',
         'linear_new_conversation.j2': 'New conversation: {{issue_key}} - {{issue_title}}\n{{issue_description}}\nUser: {{user_message}}',
@@ -147,7 +149,7 @@ def mock_jinja_env():
 
 @pytest.fixture
 def linear_conversation():
-    """Sample Linear conversation for testing."""
+    """Sample Linear conversation for testing"""
     return LinearConversation(
         conversation_id='conv-123',
         issue_id='test_issue_id',
@@ -160,7 +162,7 @@ def linear_conversation():
 def new_conversation_view(
     sample_job_context, sample_user_auth, sample_linear_user, sample_linear_workspace
 ):
-    """LinearNewConversationView instance for testing."""
+    """LinearNewConversationView instance for testing"""
     return LinearNewConversationView(
         job_context=sample_job_context,
         saas_user_auth=sample_user_auth,
@@ -175,7 +177,7 @@ def new_conversation_view(
 def existing_conversation_view(
     sample_job_context, sample_user_auth, sample_linear_user, sample_linear_workspace
 ):
-    """LinearExistingConversationView instance for testing."""
+    """LinearExistingConversationView instance for testing"""
     return LinearExistingConversationView(
         job_context=sample_job_context,
         saas_user_auth=sample_user_auth,
@@ -188,7 +190,7 @@ def existing_conversation_view(
 
 @pytest.fixture
 def mock_agent_loop_info():
-    """Mock agent loop info."""
+    """Mock agent loop info"""
     mock_info = MagicMock()
     mock_info.conversation_id = 'conv-123'
     mock_info.event_store = []
@@ -197,7 +199,7 @@ def mock_agent_loop_info():
 
 @pytest.fixture
 def mock_conversation_metadata():
-    """Mock conversation metadata."""
+    """Mock conversation metadata"""
     metadata = MagicMock()
     metadata.conversation_id = 'conv-123'
     return metadata
@@ -205,7 +207,7 @@ def mock_conversation_metadata():
 
 @pytest.fixture
 def mock_conversation_store():
-    """Mock conversation store."""
+    """Mock conversation store"""
     store = AsyncMock()
     store.get_metadata.return_value = MagicMock()
     return store
@@ -213,5 +215,5 @@ def mock_conversation_store():
 
 @pytest.fixture
 def mock_conversation_init_data():
-    """Mock conversation initialization data."""
+    """Mock conversation initialization data"""
     return MagicMock()

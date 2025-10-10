@@ -10,7 +10,9 @@ class SlackTeamStore:
     session_maker: sessionmaker
 
     def get_team_bot_token(self, team_id: str) -> str | None:
-        """Get a team's bot access token by team_id."""
+        """
+        Get a team's bot access token by team_id
+        """
         with session_maker() as session:
             team = session.query(SlackTeam).filter(SlackTeam.team_id == team_id).first()
             return team.bot_access_token if team else None
@@ -20,7 +22,9 @@ class SlackTeamStore:
         team_id: str,
         bot_access_token: str,
     ) -> SlackTeam:
-        """Create a new SlackTeam."""
+        """
+        Create a new SlackTeam
+        """
         slack_team = SlackTeam(team_id=team_id, bot_access_token=bot_access_token)
         with session_maker() as session:
             session.query(SlackTeam).filter(SlackTeam.team_id == team_id).delete()

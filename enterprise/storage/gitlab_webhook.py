@@ -13,7 +13,9 @@ class WebhookStatus(IntEnum):
 
 
 class GitlabWebhook(Base):  # type: ignore
-    """Represents a Gitlab webhook configuration for a repository or group."""
+    """
+    Represents a Gitlab webhook configuration for a repository or group.
+    """
 
     __tablename__ = 'gitlab_webhook'
     id = Column(Integer, primary_key=True, autoincrement=True)

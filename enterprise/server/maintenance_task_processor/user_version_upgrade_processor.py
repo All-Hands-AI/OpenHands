@@ -13,7 +13,8 @@ from openhands.core.config import load_openhands_config
 
 
 class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
-    """Processor for upgrading user settings to the current version.
+    """
+    Processor for upgrading user settings to the current version.
 
     This processor takes a list of user IDs and upgrades any users
     whose user_version is less than CURRENT_USER_SETTINGS_VERSION.
@@ -22,7 +23,8 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
     user_ids: List[str]
 
     async def __call__(self, task: MaintenanceTask) -> dict:
-        """Process user version upgrades for the specified user IDs.
+        """
+        Process user version upgrades for the specified user IDs.
 
         Args:
             task: The maintenance task being processed

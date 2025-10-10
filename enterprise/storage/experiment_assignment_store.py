@@ -1,4 +1,5 @@
-"""Store for managing experiment assignments.
+"""
+Store for managing experiment assignments.
 
 This store handles creating and updating experiment assignments for conversations.
 """
@@ -19,7 +20,8 @@ class ExperimentAssignmentStore:
         experiment_name: str,
         variant: str,
     ) -> None:
-        """Update the variant for a specific experiment.
+        """
+        Update the variant for a specific experiment.
 
         Args:
             conversation_id: The conversation ID

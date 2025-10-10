@@ -5,7 +5,8 @@ from storage.base import Base
 
 
 class BillingSession(Base):  # type: ignore
-    """Represents a Stripe billing session for credit purchases.
+    """
+    Represents a Stripe billing session for credit purchases.
     Tracks the status of payment transactions and associated user information.
     """
 

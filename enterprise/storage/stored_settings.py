@@ -5,7 +5,9 @@ from storage.base import Base
 
 
 class StoredSettings(Base):  # type: ignore
-    """Legacy user settings storage. This should be considered deprecated - use UserSettings isntead."""
+    """
+    Legacy user settings storage. This should be considered deprecated - use UserSettings isntead
+    """
 
     __tablename__ = 'settings'
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))

@@ -5,7 +5,8 @@ from storage.base import Base
 
 
 class SubscriptionAccess(Base):  # type: ignore
-    """Represents a user's subscription access record.
+    """
+    Represents a user's subscription access record.
     Tracks subscription status, duration, payment information, and cancellation status.
     """
 

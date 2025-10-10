@@ -73,7 +73,8 @@ class AuthTokenStore:
         ]
         | None = None,
     ) -> Dict[str, str | int] | None:
-        """Load authentication tokens from the database and refresh them if necessary.
+        """
+        Load authentication tokens from the database and refresh them if necessary.
 
         This method retrieves the current authentication tokens for the user and checks if they have expired.
         It uses the provided `check_expiration_and_refresh` function to determine if the tokens need

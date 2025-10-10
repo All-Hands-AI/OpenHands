@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class SolvabilityReport(BaseModel):
-    """Comprehensive report containing solvability predictions and analysis for a single issue.
+    """
+    Comprehensive report containing solvability predictions and analysis for a single issue.
 
     This report includes the solvability score, extracted feature values, feature importance analysis,
     cost metrics (tokens and latency), and metadata about the prediction process. It serves as the

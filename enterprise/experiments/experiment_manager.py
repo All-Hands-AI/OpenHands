@@ -17,9 +17,9 @@ class SaaSExperimentManager(ExperimentManager):
     def run_conversation_variant_test(
         user_id, conversation_id, conversation_settings
     ) -> ConversationInitData:
-        """Run conversation variant test and potentially modify the conversation settings.
-
-        Based on the PostHog feature flags.
+        """
+        Run conversation variant test and potentially modify the conversation settings
+        based on the PostHog feature flags.
 
         Args:
             user_id: The user ID
@@ -53,9 +53,9 @@ class SaaSExperimentManager(ExperimentManager):
     def run_config_variant_test(
         user_id: str | None, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
-        """Run agent config variant test and potentially modify the OpenHands config.
-
-        Based on the current experiment type and PostHog feature flags.
+        """
+        Run agent config variant test and potentially modify the OpenHands config
+        based on the current experiment type and PostHog feature flags.
 
         Args:
             user_id: The user ID

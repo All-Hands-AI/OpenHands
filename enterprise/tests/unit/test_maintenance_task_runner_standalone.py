@@ -1,4 +1,5 @@
-"""Standalone tests for the MaintenanceTaskRunner.
+"""
+Standalone tests for the MaintenanceTaskRunner.
 
 These tests work without OpenHands dependencies and focus on testing the core
 logic and behavior of the task runner using comprehensive mocking.
@@ -656,7 +657,8 @@ class TestMaintenanceTaskRunnerStandalone:
 
 # Additional integration test scenarios that would work with full dependencies
 class TestMaintenanceTaskRunnerIntegration:
-    """Integration test scenarios for when OpenHands dependencies are available.
+    """
+    Integration test scenarios for when OpenHands dependencies are available.
 
     These tests would require:
     1. OpenHands to be installed and available
@@ -665,7 +667,8 @@ class TestMaintenanceTaskRunnerIntegration:
     """
 
     def test_full_runner_workflow_description(self):
-        """Describe the full workflow test that would be implemented with dependencies.
+        """
+        Describe the full workflow test that would be implemented with dependencies.
 
         This test would:
         1. Create a real MaintenanceTaskRunner instance
@@ -679,7 +682,8 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_database_integration_description(self):
-        """Describe database integration test that would be implemented.
+        """
+        Describe database integration test that would be implemented.
 
         This test would:
         1. Use the session_maker fixture from conftest.py
@@ -691,7 +695,8 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_processor_integration_description(self):
-        """Describe processor integration test.
+        """
+        Describe processor integration test.
 
         This test would:
         1. Create real processor instances (UserVersionUpgradeProcessor, etc.)
@@ -703,7 +708,8 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_performance_and_scalability_description(self):
-        """Describe performance test scenarios.
+        """
+        Describe performance test scenarios.
 
         This test would:
         1. Create a large number of pending tasks

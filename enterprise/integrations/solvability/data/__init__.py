@@ -1,4 +1,5 @@
-"""Utilities for loading and managing pre-trained classifiers.
+"""
+Utilities for loading and managing pre-trained classifiers.
 
 Assumes that classifiers are stored adjacent to this file in the `solvability/data` directory, using a simple
 `name + .json` pattern.
@@ -10,7 +11,8 @@ from integrations.solvability.models.classifier import SolvabilityClassifier
 
 
 def load_classifier(name: str) -> SolvabilityClassifier:
-    """Load a classifier by name.
+    """
+    Load a classifier by name.
 
     Args:
         name (str): The name of the classifier to load.
@@ -29,7 +31,8 @@ def load_classifier(name: str) -> SolvabilityClassifier:
 
 
 def available_classifiers() -> list[str]:
-    """List all available classifiers in the data directory.
+    """
+    List all available classifiers in the data directory.
 
     Returns:
         list[str]: A list of classifier names (without the .json extension).

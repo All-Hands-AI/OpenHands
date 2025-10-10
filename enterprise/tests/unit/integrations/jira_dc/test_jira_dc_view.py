@@ -1,4 +1,6 @@
-"""Tests for Jira DC view classes and factory."""
+"""
+Tests for Jira DC view classes and factory.
+"""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,10 +16,10 @@ from openhands.core.schema.agent import AgentState
 
 
 class TestJiraDcNewConversationView:
-    """Tests for JiraDcNewConversationView."""
+    """Tests for JiraDcNewConversationView"""
 
     def test_get_instructions(self, new_conversation_view, mock_jinja_env):
-        """Test _get_instructions method."""
+        """Test _get_instructions method"""
         instructions, user_msg = new_conversation_view._get_instructions(mock_jinja_env)
 
         assert instructions == 'Test Jira DC instructions template'
@@ -35,7 +37,7 @@ class TestJiraDcNewConversationView:
         mock_jinja_env,
         mock_agent_loop_info,
     ):
-        """Test successful conversation creation."""
+        """Test successful conversation creation"""
         mock_create_conversation.return_value = mock_agent_loop_info
         mock_store.create_conversation = AsyncMock()
 
@@ -50,7 +52,7 @@ class TestJiraDcNewConversationView:
     async def test_create_or_update_conversation_no_repo(
         self, new_conversation_view, mock_jinja_env
     ):
-        """Test conversation creation without selected repo."""
+        """Test conversation creation without selected repo"""
         new_conversation_view.selected_repo = None
 
         with pytest.raises(StartingConvoException, match='No repository selected'):
@@ -60,7 +62,7 @@ class TestJiraDcNewConversationView:
     async def test_create_or_update_conversation_failure(
         self, mock_create_conversation, new_conversation_view, mock_jinja_env
     ):
-        """Test conversation creation failure."""
+        """Test conversation creation failure"""
         mock_create_conversation.side_effect = Exception('Creation failed')
 
         with pytest.raises(
@@ -69,7 +71,7 @@ class TestJiraDcNewConversationView:
             await new_conversation_view.create_or_update_conversation(mock_jinja_env)
 
     def test_get_response_msg(self, new_conversation_view):
-        """Test get_response_msg method."""
+        """Test get_response_msg method"""
         response = new_conversation_view.get_response_msg()
 
         assert "I'm on it!" in response
@@ -79,10 +81,10 @@ class TestJiraDcNewConversationView:
 
 
 class TestJiraDcExistingConversationView:
-    """Tests for JiraDcExistingConversationView."""
+    """Tests for JiraDcExistingConversationView"""
 
     def test_get_instructions(self, existing_conversation_view, mock_jinja_env):
-        """Test _get_instructions method."""
+        """Test _get_instructions method"""
         instructions, user_msg = existing_conversation_view._get_instructions(
             mock_jinja_env
         )
@@ -108,7 +110,7 @@ class TestJiraDcExistingConversationView:
         mock_conversation_init_data,
         mock_agent_loop_info,
     ):
-        """Test successful existing conversation update."""
+        """Test successful existing conversation update"""
         # Setup mocks
         mock_store_impl.return_value = mock_conversation_store
         mock_setup_init.return_value = mock_conversation_init_data
@@ -133,7 +135,7 @@ class TestJiraDcExistingConversationView:
     async def test_create_or_update_conversation_no_metadata(
         self, mock_store_impl, existing_conversation_view, mock_jinja_env
     ):
-        """Test conversation update with no metadata."""
+        """Test conversation update with no metadata"""
         mock_store = AsyncMock()
         mock_store.get_metadata.return_value = None
         mock_store_impl.return_value = mock_store
@@ -161,7 +163,7 @@ class TestJiraDcExistingConversationView:
         mock_conversation_init_data,
         mock_agent_loop_info,
     ):
-        """Test conversation update with loading state."""
+        """Test conversation update with loading state"""
         mock_store_impl.return_value = mock_conversation_store
         mock_setup_init.return_value = mock_conversation_init_data
         mock_conversation_manager.maybe_start_agent_loop = AsyncMock(
@@ -184,7 +186,7 @@ class TestJiraDcExistingConversationView:
     async def test_create_or_update_conversation_failure(
         self, mock_store_impl, existing_conversation_view, mock_jinja_env
     ):
-        """Test conversation update failure."""
+        """Test conversation update failure"""
         mock_store_impl.side_effect = Exception('Store error')
 
         with pytest.raises(
@@ -195,7 +197,7 @@ class TestJiraDcExistingConversationView:
             )
 
     def test_get_response_msg(self, existing_conversation_view):
-        """Test get_response_msg method."""
+        """Test get_response_msg method"""
         response = existing_conversation_view.get_response_msg()
 
         assert "I'm on it!" in response
@@ -205,7 +207,7 @@ class TestJiraDcExistingConversationView:
 
 
 class TestJiraDcFactory:
-    """Tests for JiraDcFactory."""
+    """Tests for JiraDcFactory"""
 
     @patch('integrations.jira_dc.jira_dc_view.integration_store')
     async def test_create_jira_dc_view_from_payload_existing_conversation(
@@ -217,7 +219,7 @@ class TestJiraDcFactory:
         sample_jira_dc_workspace,
         jira_dc_conversation,
     ):
-        """Test factory creating existing conversation view."""
+        """Test factory creating existing conversation view"""
         mock_store.get_user_conversations_by_issue_id = AsyncMock(
             return_value=jira_dc_conversation
         )
@@ -241,7 +243,7 @@ class TestJiraDcFactory:
         sample_jira_dc_user,
         sample_jira_dc_workspace,
     ):
-        """Test factory creating new conversation view."""
+        """Test factory creating new conversation view"""
         mock_store.get_user_conversations_by_issue_id = AsyncMock(return_value=None)
 
         view = await JiraDcFactory.create_jira_dc_view_from_payload(
@@ -257,7 +259,7 @@ class TestJiraDcFactory:
     async def test_create_jira_dc_view_from_payload_no_user(
         self, sample_job_context, sample_user_auth, sample_jira_dc_workspace
     ):
-        """Test factory with no Jira DC user."""
+        """Test factory with no Jira DC user"""
         with pytest.raises(StartingConvoException, match='User not authenticated'):
             await JiraDcFactory.create_jira_dc_view_from_payload(
                 sample_job_context,
@@ -269,7 +271,7 @@ class TestJiraDcFactory:
     async def test_create_jira_dc_view_from_payload_no_auth(
         self, sample_job_context, sample_jira_dc_user, sample_jira_dc_workspace
     ):
-        """Test factory with no SaaS auth."""
+        """Test factory with no SaaS auth"""
         with pytest.raises(StartingConvoException, match='User not authenticated'):
             await JiraDcFactory.create_jira_dc_view_from_payload(
                 sample_job_context,
@@ -281,7 +283,7 @@ class TestJiraDcFactory:
     async def test_create_jira_dc_view_from_payload_no_workspace(
         self, sample_job_context, sample_user_auth, sample_jira_dc_user
     ):
-        """Test factory with no workspace."""
+        """Test factory with no workspace"""
         with pytest.raises(StartingConvoException, match='User not authenticated'):
             await JiraDcFactory.create_jira_dc_view_from_payload(
                 sample_job_context,
@@ -292,7 +294,7 @@ class TestJiraDcFactory:
 
 
 class TestJiraDcViewEdgeCases:
-    """Tests for edge cases and error scenarios."""
+    """Tests for edge cases and error scenarios"""
 
     @patch('integrations.jira_dc.jira_dc_view.create_new_conversation')
     @patch('integrations.jira_dc.jira_dc_view.integration_store')
@@ -304,7 +306,7 @@ class TestJiraDcViewEdgeCases:
         mock_jinja_env,
         mock_agent_loop_info,
     ):
-        """Test conversation creation when user has no secrets."""
+        """Test conversation creation when user has no secrets"""
         new_conversation_view.saas_user_auth.get_user_secrets.return_value = None
         mock_create_conversation.return_value = mock_agent_loop_info
         mock_store.create_conversation = AsyncMock()
@@ -328,7 +330,7 @@ class TestJiraDcViewEdgeCases:
         mock_jinja_env,
         mock_agent_loop_info,
     ):
-        """Test conversation creation when store creation fails."""
+        """Test conversation creation when store creation fails"""
         mock_create_conversation.return_value = mock_agent_loop_info
         mock_store.create_conversation = AsyncMock(side_effect=Exception('Store error'))
 
@@ -353,7 +355,7 @@ class TestJiraDcViewEdgeCases:
         mock_conversation_init_data,
         mock_agent_loop_info,
     ):
-        """Test existing conversation with empty observations."""
+        """Test existing conversation with empty observations"""
         mock_store_impl.return_value = mock_conversation_store
         mock_setup_init.return_value = mock_conversation_init_data
         mock_conversation_manager.maybe_start_agent_loop = AsyncMock(
@@ -369,13 +371,13 @@ class TestJiraDcViewEdgeCases:
             )
 
     def test_new_conversation_view_attributes(self, new_conversation_view):
-        """Test new conversation view attribute access."""
+        """Test new conversation view attribute access"""
         assert new_conversation_view.job_context.issue_key == 'PROJ-123'
         assert new_conversation_view.selected_repo == 'company/repo1'
         assert new_conversation_view.conversation_id == 'conv-123'
 
     def test_existing_conversation_view_attributes(self, existing_conversation_view):
-        """Test existing conversation view attribute access."""
+        """Test existing conversation view attribute access"""
         assert existing_conversation_view.job_context.issue_key == 'PROJ-123'
         assert existing_conversation_view.selected_repo == 'company/repo1'
         assert existing_conversation_view.conversation_id == 'conv-123'
@@ -396,7 +398,7 @@ class TestJiraDcViewEdgeCases:
         mock_conversation_init_data,
         mock_agent_loop_info,
     ):
-        """Test existing conversation when message sending fails."""
+        """Test existing conversation when message sending fails"""
         mock_store_impl.return_value = mock_conversation_store
         mock_setup_init.return_value = mock_conversation_init_data
         mock_conversation_manager.maybe_start_agent_loop = AsyncMock(

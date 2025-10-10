@@ -9,7 +9,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 
 @pytest.fixture(autouse=True)
 def mock_call_sync_from_async():
-    """Replace call_sync_from_async with a direct call."""
+    """Replace call_sync_from_async with a direct call"""
 
     def _direct_call(func):
         return func()

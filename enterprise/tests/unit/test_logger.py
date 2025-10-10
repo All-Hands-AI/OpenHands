@@ -12,7 +12,7 @@ from openhands.core.logger import openhands_logger
 
 @pytest.fixture
 def log_output():
-    """Fixture to capture log output."""
+    """Fixture to capture log output"""
     string_io = StringIO()
     logger = logging.Logger('test')
     setup_json_logger(logger, 'INFO', _out=string_io)

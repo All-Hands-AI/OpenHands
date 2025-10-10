@@ -1,4 +1,5 @@
-"""Solvability Models Package.
+"""
+Solvability Models Package
 
 This package contains the core machine learning models and components for predicting
 the solvability of GitHub issues and similar technical problems.
