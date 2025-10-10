@@ -546,7 +546,7 @@ class TestAutoPullFunctionality:
         assert result.id == 'ghcr.io/all-hands-ai/agent-server:latest'
         # Should have attempted to pull
         service_with_pull.docker_client.images.pull.assert_called_once_with(
-            'ghcr.io/all-hands-ai/agent-server'
+            'ghcr.io/all-hands-ai/agent-server', 'latest'
         )
 
     async def test_get_default_sandbox_spec_pull_disabled_raises_error(
@@ -584,7 +584,7 @@ class TestAutoPullFunctionality:
         assert 'Error pulling docker image!' in str(exc_info.value)
         # Should have attempted to pull
         service_with_pull.docker_client.images.pull.assert_called_once_with(
-            'ghcr.io/all-hands-ai/agent-server'
+            'ghcr.io/all-hands-ai/agent-server', 'latest'
         )
 
     @patch('asyncio.get_running_loop')
@@ -609,6 +609,7 @@ class TestAutoPullFunctionality:
             None,
             service_with_pull.docker_client.images.pull,
             'ghcr.io/all-hands-ai/agent-server',
+            'latest',
         )
 
     async def test_get_default_sandbox_spec_respects_date_filter_with_pull(
@@ -638,7 +639,7 @@ class TestAutoPullFunctionality:
         )  # Should get the new image
         # Should have attempted to pull because old image was filtered out
         service_with_date_filter.docker_client.images.pull.assert_called_once_with(
-            'ghcr.io/all-hands-ai/agent-server'
+            'ghcr.io/all-hands-ai/agent-server', 'latest'
         )
 
     async def test_get_default_sandbox_spec_no_pull_after_date_filter(
