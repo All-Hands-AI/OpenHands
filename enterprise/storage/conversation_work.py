@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import Column, Float, Index, Integer, String
-from storage.base import Base
+from enterprise.storage.base import Base
 
 
 class ConversationWork(Base):  # type: ignore

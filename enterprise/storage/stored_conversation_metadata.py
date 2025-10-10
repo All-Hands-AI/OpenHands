@@ -1,8 +1,10 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
-from storage.base import Base
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from enterprise.storage.base import Base
 
 
 class StoredConversationMetadata(Base):  # type: ignore
@@ -12,6 +14,7 @@ class StoredConversationMetadata(Base):  # type: ignore
     )
     github_user_id = Column(String, nullable=True)  # The GitHub user ID
     user_id = Column(String, nullable=False)  # The Keycloak User ID
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
     selected_repository = Column(String, nullable=True)
     selected_branch = Column(String, nullable=True)
     git_provider = Column(
@@ -39,3 +42,6 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     # LLM model used for the conversation
     llm_model = Column(String, nullable=True)
+
+    # Relationships
+    org = relationship('Org', back_populates='conversation_metadata')

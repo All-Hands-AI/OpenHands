@@ -1,25 +1,28 @@
+import uuid
 from datetime import datetime
 
 import pytest
-from server.constants import CURRENT_USER_SETTINGS_VERSION
-from server.maintenance_task_processor.user_version_upgrade_processor import (
+from enterprise.server.constants import ORG_SETTINGS_VERSION
+from enterprise.server.maintenance_task_processor.user_version_upgrade_processor import (
     UserVersionUpgradeProcessor,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from storage.base import Base
+from enterprise.storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
-from storage.billing_session import BillingSession
-from storage.conversation_work import ConversationWork
-from storage.feedback import Feedback
-from storage.github_app_installation import GithubAppInstallation
-from storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
-from storage.stored_conversation_metadata import StoredConversationMetadata
-from storage.stored_offline_token import StoredOfflineToken
-from storage.stored_settings import StoredSettings
-from storage.stripe_customer import StripeCustomer
-from storage.user_settings import UserSettings
+from enterprise.storage.billing_session import BillingSession
+from enterprise.storage.conversation_work import ConversationWork
+from enterprise.storage.feedback import Feedback
+from enterprise.storage.github_app_installation import GithubAppInstallation
+from enterprise.storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
+from enterprise.storage.org import Org
+from enterprise.storage.org_user import OrgUser
+from enterprise.storage.role import Role
+from enterprise.storage.stored_conversation_metadata import StoredConversationMetadata
+from enterprise.storage.stored_offline_token import StoredOfflineToken
+from enterprise.storage.stripe_customer import StripeCustomer
+from enterprise.storage.user import User
 
 
 @pytest.fixture
@@ -85,20 +88,45 @@ def add_minimal_fixtures(session_maker):
                 updated_at=datetime.fromisoformat('2025-03-08'),
             )
         )
-        session.add(StoredSettings(id='mock-user-id', user_consents_to_analytics=True))
+        session.add(
+            Org(
+                id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
+                name='mock-org',
+                org_version=ORG_SETTINGS_VERSION,
+                enable_default_condenser=True,
+                enable_proactive_conversation_starters=True,
+            )
+        )
+        session.add(
+            Role(
+                id=1,
+                name='admin',
+                rank=1,
+            )
+        )
+        session.add(
+            User(
+                id=1,
+                keycloak_user_id='mock-user-id',
+                current_org_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
+                user_consents_to_analytics=True,
+            )
+        )
+        session.add(
+            OrgUser(
+                org_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
+                user_id=1,
+                role_id=1,
+                llm_api_key='mock-api-key',
+                status='active',
+            )
+        )
         session.add(
             StripeCustomer(
                 keycloak_user_id='mock-user-id',
                 stripe_customer_id='mock-stripe-customer-id',
                 created_at=datetime.fromisoformat('2025-03-09'),
                 updated_at=datetime.fromisoformat('2025-03-10'),
-            )
-        )
-        session.add(
-            UserSettings(
-                keycloak_user_id='mock-user-id',
-                user_consents_to_analytics=True,
-                user_version=CURRENT_USER_SETTINGS_VERSION,
             )
         )
         session.add(

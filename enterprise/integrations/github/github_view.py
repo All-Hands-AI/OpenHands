@@ -2,14 +2,15 @@ from uuid import uuid4
 
 from github import Github, GithubIntegration
 from github.Issue import Issue
-from integrations.github.github_types import (
+from enterprise.integrations.github.github_types import (
     WorkflowRun,
     WorkflowRunGroup,
     WorkflowRunStatus,
 )
-from integrations.models import Message
-from integrations.types import ResolverViewInterface, UserData
-from integrations.utils import (
+from enterprise.integrations.models import Message
+from enterprise.integrations.types import ResolverViewInterface, UserData
+from enterprise.integrations.utils import (
+    CONVERSATION_URL,
     ENABLE_PROACTIVE_CONVERSATION_STARTERS,
     HOST,
     HOST_URL,
@@ -18,12 +19,13 @@ from integrations.utils import (
 )
 from jinja2 import Environment
 from pydantic.dataclasses import dataclass
-from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
-from server.auth.token_manager import TokenManager, get_config
-from storage.database import session_maker
-from storage.proactive_conversation_store import ProactiveConversationStore
-from storage.saas_secrets_store import SaasSecretsStore
-from storage.user_settings import UserSettings
+from enterprise.server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
+from enterprise.server.auth.token_manager import TokenManager
+from enterprise.server.config import get_config
+from enterprise.storage.database import session_maker
+from enterprise.storage.org_store import OrgStore
+from enterprise.storage.proactive_conversation_store import ProactiveConversationStore
+from enterprise.storage.saas_secrets_store import SaasSecretsStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -60,18 +62,15 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
     if not user_id:
         return False
 
+    # Check global setting first - if disabled globally, return False
+    if not ENABLE_PROACTIVE_CONVERSATION_STARTERS:
+        return False
+
     def _get_setting():
-        with session_maker() as session:
-            settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == user_id)
-                .first()
-            )
-
-            if not settings or settings.enable_proactive_conversation_starters is None:
-                return False
-
-            return settings.enable_proactive_conversation_starters
+        org = OrgStore.get_current_org_from_keycloak_user_id(user_id)
+        if not org:
+            return False
+        return bool(org.enable_proactive_conversation_starters)
 
     return await call_sync_from_async(_get_setting)
 
@@ -130,6 +129,7 @@ class GithubIssue(ResolverViewInterface):
             issue_body=self.description,
             previous_comments=self.previous_comments,
         )
+
         return user_instructions, conversation_instructions
 
     async def _get_user_secrets(self):
@@ -141,8 +141,7 @@ class GithubIssue(ResolverViewInterface):
         return user_secrets.custom_secrets if user_secrets else None
 
     async def initialize_new_conversation(self) -> ConversationMetadata:
-        # FIXME: Handle if initialize_conversation returns None
-        conversation_metadata: ConversationMetadata = await initialize_conversation(  # type: ignore[assignment]
+        conversation_metadata: ConversationMetadata = await initialize_conversation(
             user_id=self.user_info.keycloak_user_id,
             conversation_id=None,
             selected_repository=self.full_repo_name,
@@ -150,6 +149,7 @@ class GithubIssue(ResolverViewInterface):
             conversation_trigger=ConversationTrigger.RESOLVER,
             git_provider=ProviderType.GITHUB,
         )
+
         self.conversation_id = conversation_metadata.conversation_id
         return conversation_metadata
 
@@ -195,7 +195,6 @@ class GithubIssueComment(GithubIssue):
         conversation_instructions_template = jinja_env.get_template(
             'issue_conversation_instructions.j2'
         )
-
         conversation_instructions = conversation_instructions_template.render(
             issue_number=self.issue_number,
             issue_title=self.title,
@@ -204,6 +203,7 @@ class GithubIssueComment(GithubIssue):
         )
 
         return user_instructions, conversation_instructions
+
 
 
 @dataclass
@@ -232,8 +232,7 @@ class GithubPRComment(GithubIssueComment):
         return user_instructions, conversation_instructions
 
     async def initialize_new_conversation(self) -> ConversationMetadata:
-        # FIXME: Handle if initialize_conversation returns None
-        conversation_metadata: ConversationMetadata = await initialize_conversation(  # type: ignore[assignment]
+        conversation_metadata: ConversationMetadata = await initialize_conversation(
             user_id=self.user_info.keycloak_user_id,
             conversation_id=None,
             selected_repository=self.full_repo_name,
@@ -279,7 +278,6 @@ class GithubInlinePRComment(GithubPRComment):
         conversation_instructions_template = jinja_env.get_template(
             'pr_update_conversation_instructions.j2'
         )
-
         conversation_instructions = conversation_instructions_template.render(
             pr_number=self.issue_number,
             pr_title=self.title,
