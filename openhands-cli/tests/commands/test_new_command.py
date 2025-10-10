@@ -2,36 +2,34 @@
 
 from unittest.mock import MagicMock, patch
 from uuid import UUID
-from openhands_cli.agent_chat import _start_fresh_conversation
-from unittest.mock import MagicMock, patch
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
-from openhands_cli.setup import MissingAgentSpec
+from openhands_cli.setup import MissingAgentSpec, start_fresh_conversation
 from openhands_cli.user_actions import UserConfirmation
 
-@patch('openhands_cli.agent_chat.setup_conversation')
+@patch('openhands_cli.setup.setup_conversation')
 def test_start_fresh_conversation_success(mock_setup_conversation):
-    """Test that _start_fresh_conversation creates a new conversation successfully."""
+    """Test that start_fresh_conversation creates a new conversation successfully."""
     # Mock the conversation object
     mock_conversation = MagicMock()
     mock_conversation.id = UUID('12345678-1234-5678-9abc-123456789abc')
     mock_setup_conversation.return_value = mock_conversation
 
     # Call the function
-    result = _start_fresh_conversation()
+    result = start_fresh_conversation()
 
     # Verify the result
     assert result == mock_conversation
     mock_setup_conversation.assert_called_once_with(None)
 
 
-@patch('openhands_cli.agent_chat.SettingsScreen')
-@patch('openhands_cli.agent_chat.setup_conversation')
+@patch('openhands_cli.setup.SettingsScreen')
+@patch('openhands_cli.setup.setup_conversation')
 def test_start_fresh_conversation_missing_agent_spec(
     mock_setup_conversation,
     mock_settings_screen_class
 ):
-    """Test that _start_fresh_conversation handles MissingAgentSpec exception."""
+    """Test that start_fresh_conversation handles MissingAgentSpec exception."""
     # Mock the SettingsScreen instance
     mock_settings_screen = MagicMock()
     mock_settings_screen_class.return_value = mock_settings_screen
@@ -45,14 +43,14 @@ def test_start_fresh_conversation_missing_agent_spec(
     ]
 
     # Call the function
-    result = _start_fresh_conversation()
+    result = start_fresh_conversation()
 
     # Verify the result
     assert result == mock_conversation
     # Should be called twice: first fails, second succeeds
     assert mock_setup_conversation.call_count == 2
-    # Settings screen should be called once
-    mock_settings_screen.handle_basic_settings.assert_called_once_with(escapable=False)
+    # Settings screen should be called once with first_time=True (new behavior)
+    mock_settings_screen.configure_settings.assert_called_once_with(first_time=True)
 
 
 
@@ -61,9 +59,11 @@ def test_start_fresh_conversation_missing_agent_spec(
 @patch('openhands_cli.agent_chat.exit_session_confirmation')
 @patch('openhands_cli.agent_chat.get_session_prompter')
 @patch('openhands_cli.agent_chat.setup_conversation')
+@patch('openhands_cli.agent_chat.start_fresh_conversation')
 @patch('openhands_cli.agent_chat.ConversationRunner')
 def test_new_command_resets_confirmation_mode(
     mock_runner_cls,
+    mock_start_fresh_conversation,
     mock_setup_conversation,
     mock_get_session_prompter,
     mock_exit_confirm,
@@ -73,11 +73,12 @@ def test_new_command_resets_confirmation_mode(
 
     conv1 = MagicMock(); conv1.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
     conv2 = MagicMock(); conv2.id = UUID('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb')
-    mock_setup_conversation.side_effect = [conv1, conv2]
+    mock_start_fresh_conversation.return_value = conv1
+    mock_setup_conversation.side_effect = [conv2]
 
     # Distinct runner instances for each conversation
-    runner1 = MagicMock(); runner1.is_confirmation_mode_enabled = True
-    runner2 = MagicMock(); runner2.is_confirmation_mode_enabled = False
+    runner1 = MagicMock(); runner1.is_confirmation_mode_active = True
+    runner2 = MagicMock(); runner2.is_confirmation_mode_active = False
     mock_runner_cls.side_effect = [runner1, runner2]
 
     # Real session fed by a pipe (no interactive confirmation now)

@@ -102,6 +102,11 @@ class TestConversationRunner:
         """
         if final_status == AgentExecutionStatus.FINISHED:
             agent.finish_on_step = 1
+        
+        # Add a mock security analyzer to enable confirmation mode
+        from unittest.mock import MagicMock
+        agent.security_analyzer = MagicMock()
+        
         convo = Conversation(agent)
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)

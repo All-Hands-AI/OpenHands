@@ -13,7 +13,8 @@ from server.auth.auth_error import (
     ExpiredError,
     NoCredentialsError,
 )
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from server.logger import logger
 from server.rate_limit import RateLimiter, create_redis_rate_limiter
 from storage.api_key_store import ApiKeyStore
