@@ -6,13 +6,6 @@ from pydantic import BaseModel, Field
 from openhands.agent_server.utils import utc_now
 
 
-class SandboxSpecStatus(Enum):
-    BUILDING = 'BUILDING'
-    READY = 'READY'
-    ERROR = 'ERROR'
-    DELETING = 'DELETING'
-
-
 class SandboxSpecInfo(BaseModel):
     """A template for creating a Sandbox (e.g: A Docker Image vs Container)."""
 

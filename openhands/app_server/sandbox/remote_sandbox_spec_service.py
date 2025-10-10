@@ -1,9 +1,12 @@
+import asyncio
+import logging
 import os
 from dataclasses import dataclass
 from typing import AsyncGenerator
 
 from fastapi import Request
-from pydantic import Field
+import httpx
+from pydantic import Field, PrivateAttr
 
 from openhands.app_server.errors import OpenHandsError
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -15,6 +18,8 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecServiceInjector,
 )
 from openhands.app_server.services.injector import InjectorState
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass

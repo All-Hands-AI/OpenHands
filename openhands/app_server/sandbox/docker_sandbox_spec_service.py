@@ -5,6 +5,7 @@ from typing import AsyncGenerator
 import docker
 from docker.errors import APIError, NotFound
 from fastapi import Request
+from pydantic import Field
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -36,16 +37,11 @@ class DockerSandboxSpecService(SandboxSpecService):
     as the id in the resulting image.
     """
 
+    repository: str
+    command: str
+    initial_env: dict[str, str]
+    working_dir: str
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
-    repository: str = 'ghcr.io/all-hands-ai/agent-server'
-    command: str = '/usr/local/bin/openhands-agent-server'
-    initial_env: dict[str, str] = field(
-        default_factory=lambda: {
-            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-            'LOG_JSON': 'true',
-        }
-    )
-    working_dir: str = '/home/openhands'
 
     def _docker_image_to_sandbox_specs(self, image) -> SandboxSpecInfo:
         """Convert a Docker image to SandboxSpecInfo."""
@@ -128,7 +124,22 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
+    repository: str = 'ghcr.io/all-hands-ai/agent-server'
+    command: str = '/usr/local/bin/openhands-agent-server'
+    initial_env: dict[str, str] = Field(
+        default_factory=lambda: {
+            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'LOG_JSON': 'true',
+        }
+    )
+    working_dir: str = '/home/openhands'
+
     async def inject(
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxSpecService, None]:
-        yield DockerSandboxSpecService()
+        yield DockerSandboxSpecService(
+            repository=self.repository,
+            command=self.command,
+            initial_env=self.initial_env,
+            working_dir=self.working_dir,
+        )
