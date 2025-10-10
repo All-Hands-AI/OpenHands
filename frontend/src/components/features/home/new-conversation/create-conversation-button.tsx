@@ -1,32 +1,21 @@
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { BrandButton } from "../../settings/brand-button";
-import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 
 export function CreateConversationButton() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const {
-    mutate: createConversation,
-    isPending,
-    isSuccess,
-  } = useCreateConversation();
   const isCreatingConversationElsewhere = useIsCreatingConversation();
 
-  // We check for isSuccess because the app might require time to render
-  // into the new conversation screen after the conversation is created.
-  const isCreatingConversation =
-    isPending || isSuccess || isCreatingConversationElsewhere;
+  // We check for isCreatingConversationElsewhere to prevent multiple conversations
+  const isCreatingConversation = isCreatingConversationElsewhere;
 
   const handleCreateConversation = () => {
-    createConversation(
-      {},
-      {
-        onSuccess: (data) => navigate(`/conversations/${data.conversation_id}`),
-      },
-    );
+    const taskId = crypto.randomUUID();
+    // Navigate with a special setup parameter
+    navigate(`/conversations/${taskId}?setup=true`);
   };
 
   return (

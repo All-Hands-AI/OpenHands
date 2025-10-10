@@ -3,10 +3,14 @@ import { ChatInterface } from "../../chat/chat-interface";
 
 interface ChatInterfaceWrapperProps {
   isRightPanelShown: boolean;
+  isSetupMode?: boolean;
+  conversationId?: string;
 }
 
 export function ChatInterfaceWrapper({
   isRightPanelShown,
+  isSetupMode,
+  conversationId,
 }: ChatInterfaceWrapperProps) {
   return (
     <div className="flex justify-center w-full h-full">
@@ -16,7 +20,10 @@ export function ChatInterfaceWrapper({
           isRightPanelShown ? "max-w-4xl" : "max-w-6xl",
         )}
       >
-        <ChatInterface />
+        <ChatInterface
+          isSetupMode={isSetupMode}
+          conversationId={conversationId}
+        />
       </div>
     </div>
   );

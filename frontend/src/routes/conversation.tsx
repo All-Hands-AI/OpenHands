@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
@@ -33,12 +33,25 @@ function AppContent() {
   useConversationConfig();
 
   const { conversationId } = useConversationId();
-  const { data: conversation, isFetched, refetch } = useActiveConversation();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Check if we're in setup mode
+  const searchParams = new URLSearchParams(location.search);
+  const isSetupMode = searchParams.get("setup") === "true";
+
+  // Only fetch conversation if NOT in setup mode
+  const {
+    data: conversation,
+    isFetched,
+    refetch,
+  } = useActiveConversation({
+    enabled: !isSetupMode,
+  });
   const { mutate: startConversation } = useStartConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();
-  const navigate = useNavigate();
   const clearTerminal = useCommandStore((state) => state.clearTerminal);
   const setCurrentAgentState = useAgentStore(
     (state) => state.setCurrentAgentState,
@@ -59,8 +72,9 @@ function AppContent() {
     });
   }, [conversationId, queryClient]);
 
+  // Modified guard logic - don't redirect if in setup mode
   React.useEffect(() => {
-    if (isFetched && !conversation && isAuthed) {
+    if (!isSetupMode && isFetched && !conversation && isAuthed) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
@@ -79,6 +93,7 @@ function AppContent() {
       );
     }
   }, [
+    isSetupMode,
     conversation?.conversation_id,
     conversation?.status,
     isFetched,
@@ -118,7 +133,10 @@ function AppContent() {
               <ConversationTabs />
             </div>
 
-            <ConversationMain />
+            <ConversationMain
+              isSetupMode={isSetupMode}
+              conversationId={conversationId}
+            />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

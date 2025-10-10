@@ -36,6 +36,7 @@ import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 import { isV0Event } from "#/types/v1/type-guards";
+import { ConversationSetupFlow } from "../conversation/conversation-setup-flow";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -46,7 +47,15 @@ function getEntryPoint(
   return "direct";
 }
 
-export function ChatInterface() {
+interface ChatInterfaceProps {
+  isSetupMode?: boolean;
+  conversationId?: string;
+}
+
+export function ChatInterface({
+  isSetupMode,
+  conversationId,
+}: ChatInterfaceProps = {}) {
   const { setMessageToSend } = useConversationStore();
   const { errorMessage } = useErrorMessageStore();
   const { send, isLoadingMessages } = useWsClient();
@@ -175,6 +184,11 @@ export function ChatInterface() {
   };
 
   const userEventsExist = hasUserEvent(events);
+
+  // If in setup mode, show setup progress instead of regular chat
+  if (isSetupMode && conversationId) {
+    return <ConversationSetupFlow conversationId={conversationId} />;
+  }
 
   return (
     <ScrollProvider value={scrollProviderValue}>
