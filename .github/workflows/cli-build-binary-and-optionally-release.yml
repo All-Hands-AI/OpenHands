@@ -1,5 +1,5 @@
 # Workflow that builds and tests the CLI binary executable
-name: CLI - Build and Test Binary
+name: CLI - Build binary and optionally release
 
 # Run on pushes to main branch and CLI tags, and on pull requests when CLI files change
 on:
@@ -11,9 +11,6 @@ on:
   pull_request:
     paths:
       - "openhands-cli/**"
-
-permissions:
-  contents: write       # needed to create releases or upload assets
 
 # Cancel previous runs if a new commit is pushed
 concurrency:
@@ -104,4 +101,4 @@ jobs:
           draft: true
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CLI_RELEASE_TOKEN }}

@@ -25,10 +25,8 @@ dummy_agent = get_default_agent(
     llm=LLM(
         model='dummy-model',
         api_key='dummy-key',
-        metadata=get_llm_metadata(model_name='dummy-model', agent_name='openhands'),
+        metadata=get_llm_metadata(model_name='dummy-model', llm_type='openhands'),
     ),
-    working_dir=WORK_DIR,
-    persistence_dir=PERSISTENCE_DIR,
     cli_mode=True,
 )
 

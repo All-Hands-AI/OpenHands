@@ -216,7 +216,10 @@ export default function MainApp() {
         {config.data?.MAINTENANCE && (
           <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}
-        <div id="root-outlet" className="flex-1 relative overflow-auto">
+        <div
+          id="root-outlet"
+          className="flex-1 relative overflow-auto custom-scrollbar"
+        >
           <EmailVerificationGuard>
             <Outlet />
           </EmailVerificationGuard>
