@@ -197,8 +197,9 @@ class GithubIssueComment(GithubIssue):
         )
         conversation_instructions = conversation_instructions_template.render(
             issue_number=self.issue_number,
-            username=self.user_info.username,
-            conversation_url=CONVERSATION_URL,
+            issue_title=self.title,
+            issue_body=self.description,
+            previous_comments=self.previous_comments,
         )
 
         return user_instructions, conversation_instructions
@@ -729,6 +730,7 @@ class GithubFactory:
                 issue_number=pr_number,
                 branch_name=branch_name,
                 comment_body=payload['comment']['body'],
+                comment_node_id=comment_node_id,
                 comment_id=comment_id,
                 file_location=file_path,
                 line_number=line_number,
