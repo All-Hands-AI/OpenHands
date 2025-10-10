@@ -250,13 +250,13 @@ async def count_app_conversation_start_tasks(
 @router.get('/start-tasks')
 async def batch_get_app_conversation_start_tasks(
     ids: Annotated[list[UUID], Query()],
-    app_conversation_service: AppConversationService = (
-        app_conversation_service_dependency
+    app_conversation_start_task_service: AppConversationStartTaskService = (
+        app_conversation_start_task_service_dependency
     ),
 ) -> list[AppConversationStartTask | None]:
     """Get a batch of start app conversation tasks given their ids. Return None for any missing."""
     assert len(ids) < 100
-    start_tasks = await app_conversation_service.batch_get_app_conversation_start_tasks(
+    start_tasks = await app_conversation_start_task_service.batch_get_app_conversation_start_tasks(
         ids
     )
     return start_tasks

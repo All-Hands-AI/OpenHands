@@ -236,13 +236,6 @@ class LiveStatusAppConversationService(GitAppConversationService):
             task.detail = str(exc)
             yield task
 
-    async def batch_get_app_conversation_start_tasks(
-        self, app_conversation_start_task_ids
-    ):
-        return await self.app_conversation_start_task_service.batch_get_app_conversation_start_tasks(
-            app_conversation_start_task_ids
-        )
-
     async def _build_app_conversations(
         self, app_conversation_infos: Sequence[AppConversationInfo | None]
     ) -> list[AppConversation | None]:
