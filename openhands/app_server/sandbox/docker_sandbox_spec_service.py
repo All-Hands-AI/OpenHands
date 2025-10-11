@@ -16,6 +16,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfoPage,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
+    AGENT_SERVER_VERSION,
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
@@ -175,7 +176,7 @@ class DockerSandboxSpecService(SandboxSpecService):
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     repository: str = 'ghcr.io/all-hands-ai/agent-server'
-    tag: str = 'latest'
+    tag: str = f'{AGENT_SERVER_VERSION[:7]}-python'
     command: list[str] | None = None
     initial_env: dict[str, str] = Field(
         default_factory=lambda: {

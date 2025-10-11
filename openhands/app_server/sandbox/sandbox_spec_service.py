@@ -9,6 +9,10 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
+# The version of the agent server to use for deployments.
+# Typically this will be the same as the values from the pyproject.toml
+AGENT_SERVER_VERSION = 'a436a8ee8f78435d94541e9c0f129357be7e57d9'
+
 
 class SandboxSpecService(ABC):
     """Service for managing Sandbox specs.
