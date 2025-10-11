@@ -25,7 +25,7 @@ function PosthogInit() {
       try {
         const config = await OptionService.getConfig();
         setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
-      } catch (error) {
+      } catch {
         displayErrorToast("Error fetching PostHog client key");
       }
     })();

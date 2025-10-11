@@ -140,7 +140,7 @@ export function useConversationNameContextMenu({
           }
         }
         // VS Code URL not available
-      } catch (error) {
+      } catch {
         // Failed to fetch VS Code URL
       }
     }
