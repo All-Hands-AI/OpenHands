@@ -15,6 +15,7 @@ def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsCo
     llm_config.model = settings.llm_model or ''
     llm_config.api_key = settings.llm_api_key
     llm_config.base_url = settings.llm_base_url
+    llm_config.litellm_extra_body = settings.litellm_extra_body
     config.set_llm_config(llm_config)
     return config
 

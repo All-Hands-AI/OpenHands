@@ -93,6 +93,10 @@ class LLMConfig(BaseModel):
         default=None,
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
+    litellm_extra_body: str | None = Field(
+        default=None,
+        description='Additional parameters to pass in the request body as JSON string. Useful for custom metadata, provider-specific parameters, or routing information.',
+    )
     for_routing: bool = Field(default=False)
 
     model_config = ConfigDict(extra='forbid')
