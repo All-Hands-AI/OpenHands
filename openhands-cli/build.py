@@ -72,6 +72,7 @@ def check_pyinstaller() -> bool:
 def build_executable(
     spec_file: str = 'openhands.spec',
     clean: bool = True,
+    target_arch: str = None,
 ) -> bool:
     """Build the executable using PyInstaller."""
     if clean:
@@ -83,8 +84,27 @@ def build_executable(
 
     print(f'🔨 Building executable using {spec_file}...')
 
+    # Handle target architecture for macOS by modifying the spec file
+    original_spec_content = None
+    if target_arch and sys.platform == 'darwin':
+        print(f'🎯 Building for macOS target architecture: {target_arch}')
+        
+        # Read the original spec file
+        with open(spec_file, 'r') as f:
+            original_spec_content = f.read()
+        
+        # Replace target_arch=None with target_arch='<arch>'
+        modified_spec_content = original_spec_content.replace(
+            'target_arch=None',
+            f"target_arch='{target_arch}'"
+        )
+        
+        # Write the modified spec file
+        with open(spec_file, 'w') as f:
+            f.write(modified_spec_content)
+
     try:
-        # Run PyInstaller with uv
+        # Run PyInstaller with uv (no --target-arch flag needed with spec file)
         cmd = ['uv', 'run', 'pyinstaller', spec_file, '--clean']
 
         print(f'Running: {" ".join(cmd)}')
@@ -113,6 +133,12 @@ def build_executable(
         if e.stderr:
             print('STDERR:', e.stderr)
         return False
+    finally:
+        # Restore the original spec file if we modified it
+        if original_spec_content is not None:
+            with open(spec_file, 'w') as f:
+                f.write(original_spec_content)
+            print(f'🔄 Restored original {spec_file}')
 
 
 # =================================================
@@ -254,6 +280,10 @@ def main() -> int:
         action='store_true',
         help='Install PyInstaller using uv before building',
     )
+    parser.add_argument(
+        '--target-arch',
+        help='Target architecture for macOS builds (x86_64, arm64, universal2)',
+    )
 
     parser.add_argument(
         '--no-build', action='store_true', help='Skip testing the built executable'
@@ -270,7 +300,9 @@ def main() -> int:
         return 1
 
     # Build the executable
-    if not args.no_build and not build_executable(args.spec, clean=not args.no_clean):
+    if not args.no_build and not build_executable(
+        args.spec, clean=not args.no_clean, target_arch=args.target_arch
+    ):
         return 1
 
     # Test the executable
