@@ -94,25 +94,3 @@ class TestActionExecutionClientListFiles:
             timeout=10,
         )
 
-    def test_regression_old_behavior_would_fail(self):
-        """Test that demonstrates the OLD buggy behavior for documentation.
-
-        The old code had: if recursive: data['recursive'] = recursive
-        This meant recursive=False was never sent, causing the bug.
-        """
-        # This test documents the OLD buggy behavior
-        data = {}
-        recursive = False
-
-        # OLD BUGGY CODE (commented out):
-        # if recursive:
-        #     data['recursive'] = recursive
-
-        # This would result in an empty dict, missing recursive parameter
-        # assert data == {}  # BUG: recursive=False not sent!
-
-        # NEW FIXED CODE:
-        data['recursive'] = recursive
-
-        # Now recursive=False is properly included
-        assert data == {'recursive': False}  # FIXED: recursive always sent

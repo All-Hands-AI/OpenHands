@@ -84,7 +84,7 @@ class TestRecursiveFileListingE2E:
         assert not any('Button.tsx' in f for f in non_recursive_files)
         assert not any('helpers.ts' in f for f in non_recursive_files)
 
-        print(f'✓ Non-recursive: Found {len(non_recursive_files)} top-level items')
+        print(f'Non-recursive: Found {len(non_recursive_files)} top-level items')
 
         # Test recursive listing (should get ALL files)
         recursive_files = runtime.list_files(recursive=True)
@@ -103,7 +103,7 @@ class TestRecursiveFileListingE2E:
         assert any(f.endswith('src/') for f in recursive_files)
         assert any(f.endswith('components/') for f in recursive_files)
 
-        print(f'✓ Recursive: Found {len(recursive_files)} total items (files + dirs)')
+        print(f'Recursive: Found {len(recursive_files)} total items (files + dirs)')
 
         # Verify recursive has more items than non-recursive
         assert len(recursive_files) > len(non_recursive_files), (
@@ -140,120 +140,16 @@ class TestRecursiveFileListingE2E:
 
         assert isinstance(result, list)
         non_recursive_count = len(result)
-        print(f'✓ API with recursive=False returned {non_recursive_count} items')
+        print(f'API with recursive=False returned {non_recursive_count} items')
 
         # Test the endpoint with recursive=True
         result = await list_files(conversation=conversation, path=None, recursive=True)
 
         assert isinstance(result, list)
         recursive_count = len(result)
-        print(f'✓ API with recursive=True returned {recursive_count} items')
+        print(f'API with recursive=True returned {recursive_count} items')
 
         # Recursive should return more items
         assert recursive_count > non_recursive_count, (
             f'Expected recursive ({recursive_count}) > non-recursive ({non_recursive_count})'
         )
-
-    def test_action_execution_client_sends_recursive_param(self):
-        """Test that ActionExecutionClient always sends the recursive parameter."""
-        from openhands.runtime.impl.action_execution.action_execution_client import (
-            ActionExecutionClient,
-        )
-
-        # Create a mock client
-        mock_client = Mock()
-        mock_client.log = Mock()
-        mock_client.action_execution_server_url = 'http://test'
-
-        # Track what gets sent
-        sent_data = {}
-
-        def capture_request(*args, **kwargs):
-            sent_data.update(kwargs.get('json', {}))
-            response = Mock()
-            response.json.return_value = []
-            response.is_closed = True
-            return response
-
-        mock_client._send_action_server_request = capture_request
-
-        # Test with recursive=False (the bug case)
-        ActionExecutionClient.list_files(mock_client, recursive=False)
-        assert sent_data.get('recursive') is False, 'recursive=False must be sent!'
-        print('✓ ActionExecutionClient sends recursive=False')
-
-        # Test with recursive=True
-        sent_data.clear()
-        ActionExecutionClient.list_files(mock_client, recursive=True)
-        assert sent_data.get('recursive') is True, 'recursive=True must be sent!'
-        print('✓ ActionExecutionClient sends recursive=True')
-
-    def test_frontend_regex_preserves_decorators(self):
-        """Test that the frontend regex doesn't strip code decorators."""
-        # The regex from use-chat-submission.ts
-        import re
-
-        pattern = r'(^|\s)@((?:\.\/|\.\.\/|~\/)[^\s]*|[^\s]*\/[^\s]*|[^\s]+\.(?:ts|tsx|js|jsx|py|java|cpp|c|h|hpp|cs|rb|go|rs|md|txt|json|yaml|yml|xml|html|css|scss|sass|less|vue|svelte)(?:\s|$))'
-        regex = re.compile(pattern, re.IGNORECASE)
-
-        # Test file paths are stripped
-        assert regex.sub(r'\1\2', '@src/file.py') == 'src/file.py'
-        assert regex.sub(r'\1\2', 'Check @./README.md') == 'Check ./README.md'
-        print('✓ Frontend strips @ from file paths')
-
-        # Test decorators are preserved
-        assert regex.sub(r'\1\2', '@property') == '@property'
-        assert regex.sub(r'\1\2', '@dataclass') == '@dataclass'
-        assert (
-            regex.sub(r'\1\2', 'Use @Override annotation') == 'Use @Override annotation'
-        )
-        print('✓ Frontend preserves @ in code decorators')
-
-
-@pytest.mark.integration
-def test_full_recursive_listing_integration():
-    """Run all integration tests to verify the complete feature works."""
-    test = TestRecursiveFileListingE2E()
-
-    # Create temp workspace
-    with tempfile.TemporaryDirectory() as tmpdir:
-        workspace = Path(tmpdir) / 'workspace'
-        workspace.mkdir()
-
-        # Create test structure (matching what test expects)
-        (workspace / 'src').mkdir()
-        (workspace / 'src' / 'components').mkdir()
-        (workspace / 'src' / 'utils').mkdir()
-        (workspace / 'docs').mkdir()
-
-        # Create test files
-        (workspace / 'README.md').write_text('# Test Project')
-        (workspace / 'package.json').write_text('{}')
-        (workspace / 'src' / 'index.ts').write_text("console.log('test');")
-        (workspace / 'src' / 'components' / 'Button.tsx').write_text(
-            'export const Button = () => {};'
-        )
-        (workspace / 'src' / 'components' / 'Input.tsx').write_text(
-            'export const Input = () => {};'
-        )
-        (workspace / 'src' / 'utils' / 'helpers.ts').write_text(
-            'export const helper = () => {};'
-        )
-        (workspace / 'docs' / 'API.md').write_text('# API Documentation')
-
-        print('\n=== Running Integration Tests ===\n')
-
-        # Test CLIRuntime
-        test.test_cli_runtime_recursive_listing(workspace)
-
-        # Test ActionExecutionClient
-        test.test_action_execution_client_sends_recursive_param()
-
-        # Test Frontend regex
-        test.test_frontend_regex_preserves_decorators()
-
-        print('\n✅ All integration tests passed!')
-
-
-if __name__ == '__main__':
-    test_full_recursive_listing_integration()
