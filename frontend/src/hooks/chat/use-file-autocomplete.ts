@@ -111,6 +111,7 @@ export function useFileAutocomplete(
   const detectTrigger = useCallback((): {
     query: string;
     position: AutocompletePosition;
+    showAbove: boolean;
   } | null => {
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return null;
@@ -139,6 +140,7 @@ export function useFileAutocomplete(
         top: showAbove ? rect.top : rect.bottom,
         left: coords.left,
       },
+      showAbove,
     };
   }, [getCaretCoordinates, shouldShowAbove]);
 
@@ -212,10 +214,6 @@ export function useFileAutocomplete(
       await fetchFiles();
 
       const filtered = filterFiles(triggerData.query, filesCache.current);
-      const showAbove = shouldShowAbove(
-        triggerData.position.top,
-        triggerData.position.top,
-      );
 
       setState({
         isOpen: true,
@@ -223,14 +221,14 @@ export function useFileAutocomplete(
         filteredFiles: filtered,
         selectedIndex: 0,
         position: triggerData.position,
-        showAbove,
+        showAbove: triggerData.showAbove, // Use the correctly calculated value
         query: triggerData.query,
       });
     } else {
       // No @ detected - close autocomplete
       setState((prev) => ({ ...prev, isOpen: false }));
     }
-  }, [inputRef, detectTrigger, fetchFiles, filterFiles, shouldShowAbove]);
+  }, [inputRef, detectTrigger, fetchFiles, filterFiles]);
 
   /**
    * Handle keyboard navigation
