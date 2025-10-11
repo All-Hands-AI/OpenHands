@@ -31,6 +31,9 @@ app = APIRouter(
     prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
 )
 
+# Temporary deployment verification endpoint
+DEPLOYMENT_VERSION = "2024-12-recursive-fix-v1"
+
 
 @app.get(
     '/list-files',
@@ -334,4 +337,16 @@ async def upload_files(
             'uploaded_files': uploaded_files,
             'skipped_files': skipped_files,
         },
+    )
+
+
+@app.get('/deployment-check')
+async def deployment_check():
+    """Temporary endpoint to verify deployment version."""
+    return JSONResponse(
+        content={
+            'version': DEPLOYMENT_VERSION,
+            'recursive_fix': 'deployed',
+            'timestamp': '2024-12-19',
+        }
     )
