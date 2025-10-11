@@ -1,34 +1,30 @@
 import { Trans } from "react-i18next";
-import { OpenHandsAction } from "#/types/core/actions";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
-import { OpenHandsObservation } from "#/types/core/observations";
 import { MonoComponent } from "../mono-component";
 import { PathComponent } from "../path-component";
 import { getActionContent } from "./get-action-content";
 import { getObservationContent } from "./get-observation-content";
 import i18n from "#/i18n";
-
-const hasPathProperty = (
-  obj: Record<string, unknown>,
-): obj is { path: string } => typeof obj.path === "string";
-
-const hasCommandProperty = (
-  obj: Record<string, unknown>,
-): obj is { command: string } => typeof obj.command === "string";
+import { OpenHandsEvent } from "#/types/v1/core";
+import {
+  isActionEvent,
+  isExecuteBashAction,
+  isExecuteBashActionObservation,
+  isObservationEvent,
+  isStrReplaceEditorAction,
+  isStrReplaceEditorObservation,
+} from "#/types/v1/type-guards";
 
 const trimText = (text: string, maxLength: number): string => {
   if (!text) return "";
   return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 };
 
-export const getEventContent = (
-  event: OpenHandsAction | OpenHandsObservation,
-) => {
+export const getEventContent = (event: OpenHandsEvent) => {
   let title: React.ReactNode = "";
   let details: string = "";
 
-  if (isOpenHandsAction(event)) {
-    const actionKey = `ACTION_MESSAGE$${event.action.toUpperCase()}`;
+  if (isActionEvent(event)) {
+    const actionKey = `ACTION_MESSAGE$${event.action.kind.toUpperCase()}`;
 
     // If translation key exists, use Trans component
     if (i18n.exists(actionKey)) {
@@ -36,11 +32,11 @@ export const getEventContent = (
         <Trans
           i18nKey={actionKey}
           values={{
-            path: hasPathProperty(event.args) && event.args.path,
+            path: isStrReplaceEditorAction(event) && event.action.path,
             command:
-              hasCommandProperty(event.args) &&
-              trimText(event.args.command, 80),
-            mcp_tool_name: event.action === "call_tool_mcp" && event.args.name,
+              isExecuteBashAction(event) && trimText(event.action.command, 80),
+            mcp_tool_name:
+              event.action.kind === "MCPToolAction" && event.action.data.name,
           }}
           components={{
             path: <PathComponent />,
@@ -50,13 +46,13 @@ export const getEventContent = (
       );
     } else {
       // For generic actions, just use the uppercase type
-      title = event.action.toUpperCase();
+      title = event.action.kind.toUpperCase();
     }
     details = getActionContent(event);
   }
 
-  if (isOpenHandsObservation(event)) {
-    const observationKey = `OBSERVATION_MESSAGE$${event.observation.toUpperCase()}`;
+  if (isObservationEvent(event)) {
+    const observationKey = `OBSERVATION_MESSAGE$${event.observation.kind.toUpperCase()}`;
 
     // If translation key exists, use Trans component
     if (i18n.exists(observationKey)) {
@@ -64,11 +60,15 @@ export const getEventContent = (
         <Trans
           i18nKey={observationKey}
           values={{
-            path: hasPathProperty(event.extras) && event.extras.path,
+            path:
+              isStrReplaceEditorObservation(event) && event.observation.path,
             command:
-              hasCommandProperty(event.extras) &&
-              trimText(event.extras.command, 80),
-            mcp_tool_name: event.observation === "mcp" && event.extras.name,
+              isExecuteBashActionObservation(event) &&
+              event.observation.command &&
+              trimText(event.observation.command, 80),
+            mcp_tool_name:
+              event.observation.kind === "MCPToolObservation" &&
+              event.observation.tool_name,
           }}
           components={{
             path: <PathComponent />,
@@ -78,7 +78,7 @@ export const getEventContent = (
       );
     } else {
       // For generic observations, just use the uppercase type
-      title = event.observation.toUpperCase();
+      title = event.observation.kind.toUpperCase();
     }
     details = getObservationContent(event);
   }

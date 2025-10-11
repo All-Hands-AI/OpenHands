@@ -18,7 +18,7 @@ import { Typography } from "#/ui/typography";
 interface LaunchMicroagentModalProps {
   onClose: () => void;
   onLaunch: (query: string, target: string, triggers: string[]) => void;
-  eventId: number;
+  eventId: string;
   isLoading: boolean;
   selectedRepo: string;
 }

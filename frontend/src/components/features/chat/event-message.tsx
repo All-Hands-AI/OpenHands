@@ -1,16 +1,4 @@
 import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import {
-  isUserMessage,
-  isErrorObservation,
-  isAssistantMessage,
-  isOpenHandsAction,
-  isFinishAction,
-  isRejectObservation,
-  isMcpObservation,
-  isTaskTrackingObservation,
-} from "#/types/core/guards";
-import { OpenHandsObservation } from "#/types/core/observations";
 import { MicroagentStatus } from "#/types/microagent-status";
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
@@ -24,9 +12,20 @@ import {
   ObservationPairEventMessage,
   GenericEventMessageWrapper,
 } from "./event-message-components";
+import { OpenHandsEvent } from "#/types/v1/core";
+import {
+  isActionEvent,
+  isAgentErrorEvent,
+  isAssistantMessageEvent,
+  isFinishActionEvent,
+  isMCPToolObservation,
+  isTaskTrackerObservation,
+  isUserMessageEvent,
+  isUserRejectObservation,
+} from "#/types/v1/type-guards";
 
 interface EventMessageProps {
-  event: OpenHandsAction | OpenHandsObservation;
+  event: OpenHandsEvent;
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
@@ -77,15 +76,25 @@ export function EventMessage({
   };
 
   // Error observations
-  if (isErrorObservation(event)) {
-    return <ErrorEventMessage event={event} {...commonProps} />;
+  if (isAgentErrorEvent(event)) {
+    return (
+      <ErrorEventMessage
+        event={{
+          errorId: event.error,
+          errorMessage: event.error,
+        }}
+        {...commonProps}
+      />
+    );
   }
 
   // Observation pairs with OpenHands actions
-  if (hasObservationPair && isOpenHandsAction(event)) {
+  if (hasObservationPair && isActionEvent(event)) {
     return (
       <ObservationPairEventMessage
-        event={event}
+        event={{
+          thought: event.thought[0].text,
+        }}
         microagentStatus={microagentStatus}
         microagentConversationId={microagentConversationId}
         microagentPRUrl={microagentPRUrl}
@@ -95,12 +104,13 @@ export function EventMessage({
   }
 
   // Finish actions
-  if (isFinishAction(event)) {
+  if (isFinishActionEvent(event)) {
     return <FinishEventMessage event={event} {...commonProps} />;
   }
 
   // User and assistant messages
-  if (isUserMessage(event) || isAssistantMessage(event)) {
+  // TODO: Split into separate components?
+  if (isUserMessageEvent(event) || isAssistantMessageEvent(event)) {
     return (
       <UserAssistantEventMessage
         event={event}
@@ -111,12 +121,18 @@ export function EventMessage({
   }
 
   // Reject observations
-  if (isRejectObservation(event)) {
-    return <RejectEventMessage event={event} />;
+  if (isUserRejectObservation(event)) {
+    return (
+      <RejectEventMessage
+        event={{
+          message: event.rejection_reason,
+        }}
+      />
+    );
   }
 
   // MCP observations
-  if (isMcpObservation(event)) {
+  if (isMCPToolObservation(event)) {
     return (
       <McpEventMessage
         event={event}
@@ -126,7 +142,7 @@ export function EventMessage({
   }
 
   // Task tracking observations
-  if (isTaskTrackingObservation(event)) {
+  if (isTaskTrackerObservation(event)) {
     return (
       <TaskTrackingEventMessage
         event={event}

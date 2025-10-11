@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "../use-conversation-id";
 
-export const useMicroagentPrompt = (eventId: number) => {
+export const useMicroagentPrompt = (eventId: string) => {
   const { conversationId } = useConversationId();
 
   return useQuery({

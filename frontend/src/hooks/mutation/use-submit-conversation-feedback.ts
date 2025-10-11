@@ -8,7 +8,7 @@ import {
 
 type SubmitConversationFeedbackArgs = {
   rating: number;
-  eventId?: number;
+  eventId?: string;
   reason?: string;
 };
 

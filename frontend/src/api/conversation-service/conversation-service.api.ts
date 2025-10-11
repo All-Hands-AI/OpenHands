@@ -85,7 +85,7 @@ class ConversationService {
   static async submitConversationFeedback(
     conversationId: string,
     rating: number,
-    eventId?: number,
+    eventId?: string,
     reason?: string,
   ): Promise<{ status: string; message: string }> {
     const url = `/feedback/conversation`;
@@ -337,7 +337,7 @@ class ConversationService {
 
   static async getMicroagentPrompt(
     conversationId: string,
-    eventId: number,
+    eventId: string,
   ): Promise<string> {
     const url = `${this.getConversationUrl(conversationId)}/remember-prompt`;
     const { data } = await openHands.get<GetMicroagentPromptResponse>(url, {

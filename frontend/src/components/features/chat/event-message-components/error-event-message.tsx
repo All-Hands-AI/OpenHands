@@ -1,13 +1,11 @@
 import React from "react";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { isErrorObservation } from "#/types/core/guards";
 import { ErrorMessage } from "../error-message";
 import { MicroagentStatusWrapper } from "./microagent-status-wrapper";
 import { LikertScaleWrapper } from "./likert-scale-wrapper";
 import { MicroagentStatus } from "#/types/microagent-status";
 
 interface ErrorEventMessageProps {
-  event: OpenHandsObservation;
+  event: { errorId?: string; errorMessage: string };
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
   microagentPRUrl?: string;
@@ -16,7 +14,6 @@ interface ErrorEventMessageProps {
     onClick: () => void;
     tooltip?: string;
   }>;
-  isLastMessage: boolean;
   isInLast10Actions: boolean;
   config?: { APP_MODE?: string } | null;
   isCheckingFeedback: boolean;
@@ -28,27 +25,19 @@ interface ErrorEventMessageProps {
 }
 
 export function ErrorEventMessage({
-  event,
+  event: { errorId, errorMessage },
   microagentStatus,
   microagentConversationId,
   microagentPRUrl,
   actions,
-  isLastMessage,
   isInLast10Actions,
   config,
   isCheckingFeedback,
   feedbackData,
 }: ErrorEventMessageProps) {
-  if (!isErrorObservation(event)) {
-    return null;
-  }
-
   return (
     <div>
-      <ErrorMessage
-        errorId={event.extras.error_id}
-        defaultMessage={event.message}
-      />
+      <ErrorMessage errorId={errorId} defaultMessage={errorMessage} />
       <MicroagentStatusWrapper
         microagentStatus={microagentStatus}
         microagentConversationId={microagentConversationId}
@@ -56,9 +45,7 @@ export function ErrorEventMessage({
         actions={actions}
       />
       <LikertScaleWrapper
-        event={event}
-        isLastMessage={isLastMessage}
-        isInLast10Actions={isInLast10Actions}
+        shouldShow={isInLast10Actions}
         config={config}
         isCheckingFeedback={isCheckingFeedback}
         feedbackData={feedbackData}

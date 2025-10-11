@@ -1,15 +1,19 @@
-import { TaskTrackingObservation } from "#/types/core/observations";
 import { TaskListSection } from "./task-tracking/task-list-section";
 import { ResultSection } from "./task-tracking/result-section";
+import { TaskTrackerObservation } from "#/types/v1/core";
 
 interface TaskTrackingObservationContentProps {
-  event: TaskTrackingObservation;
+  event: {
+    command: string;
+    taskList: TaskTrackerObservation["task_list"];
+    content: string;
+  };
 }
 
 export function TaskTrackingObservationContent({
   event,
 }: TaskTrackingObservationContentProps) {
-  const { command, task_list: taskList } = event.extras;
+  const { command, taskList } = event;
   const shouldShowTaskList = command === "plan" && taskList.length > 0;
 
   return (

@@ -1,11 +1,10 @@
 import React from "react";
 import ReactJsonView from "@microlink/react-json-view";
 import { useTranslation } from "react-i18next";
-import { MCPObservation } from "#/types/core/observations";
 import { JSON_VIEW_THEME } from "#/utils/constants";
 
 interface MCPObservationContentProps {
-  event: MCPObservation;
+  event: { message: string; arguments: Record<string, unknown> };
 }
 
 export function MCPObservationContent({ event }: MCPObservationContentProps) {
@@ -14,14 +13,14 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
   // Parse the content as JSON if possible
   let outputData: unknown;
   try {
-    outputData = JSON.parse(event.content);
+    outputData = JSON.parse(event.message);
   } catch (e) {
     // If parsing fails, use the raw content
-    outputData = event.content;
+    outputData = event.message;
   }
 
   const hasArguments =
-    event.extras.arguments && Object.keys(event.extras.arguments).length > 0;
+    event.arguments && Object.keys(event.arguments).length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -36,7 +35,7 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
           <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[200px] shadow-inner">
             <ReactJsonView
               name={false}
-              src={event.extras.arguments}
+              src={event.arguments}
               theme={JSON_VIEW_THEME}
               collapsed={1}
               displayDataTypes={false}
@@ -63,7 +62,7 @@ export function MCPObservationContent({ event }: MCPObservationContentProps) {
             />
           ) : (
             <pre className="whitespace-pre-wrap">
-              {event.content.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
+              {event.message.trim() || t("OBSERVATION$MCP_NO_OUTPUT")}
             </pre>
           )}
         </div>

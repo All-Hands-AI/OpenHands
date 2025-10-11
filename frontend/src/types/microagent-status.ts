@@ -6,7 +6,7 @@ export enum MicroagentStatus {
 }
 
 export interface EventMicroagentStatus {
-  eventId: number;
+  eventId: string;
   conversationId: string;
   status: MicroagentStatus;
   prUrl?: string; // Optional PR URL for completed status

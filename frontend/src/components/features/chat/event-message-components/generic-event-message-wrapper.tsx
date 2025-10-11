@@ -1,19 +1,13 @@
-import React from "react";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsObservation } from "#/types/core/observations";
-import { isOpenHandsAction, isOpenHandsObservation } from "#/types/core/guards";
 import { ChatMessage } from "../chat-message";
 import { GenericEventMessage } from "../generic-event-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { getEventContent } from "../event-content-helpers/get-event-content";
 import { getObservationResult } from "../event-content-helpers/get-observation-result";
-
-const hasThoughtProperty = (
-  obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj && !!obj.thought;
+import { OpenHandsEvent } from "#/types/v1/core";
+import { isActionEvent, isObservationEvent } from "#/types/v1/type-guards";
 
 interface GenericEventMessageWrapperProps {
-  event: OpenHandsAction | OpenHandsObservation;
+  event: OpenHandsEvent;
   shouldShowConfirmationButtons: boolean;
 }
 
@@ -23,19 +17,15 @@ export function GenericEventMessageWrapper({
 }: GenericEventMessageWrapperProps) {
   return (
     <div>
-      {isOpenHandsAction(event) &&
-        hasThoughtProperty(event.args) &&
-        event.action !== "think" && (
-          <ChatMessage type="agent" message={event.args.thought} />
-        )}
+      {isActionEvent(event) && event.action.kind !== "ThinkAction" && (
+        <ChatMessage type="agent" message={event.thought[0].text} />
+      )}
 
       <GenericEventMessage
         title={getEventContent(event).title}
         details={getEventContent(event).details}
         success={
-          isOpenHandsObservation(event)
-            ? getObservationResult(event)
-            : undefined
+          isObservationEvent(event) ? getObservationResult(event) : undefined
         }
       />
 

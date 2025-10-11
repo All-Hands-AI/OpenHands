@@ -1,11 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
-import { OpenHandsAction } from "#/types/core/actions";
-import { OpenHandsObservation } from "#/types/core/observations";
 import {
-  isOpenHandsAction,
-  isOpenHandsObservation,
   isOpenHandsEvent,
   isAgentStateChangeObservation,
   isFinishAction,
@@ -24,6 +20,8 @@ import {
 import { AgentState } from "#/types/agent-state";
 import { getFirstPRUrl } from "#/utils/parse-pr-url";
 import MemoryIcon from "#/icons/memory_icon.svg?react";
+import { OpenHandsEvent } from "#/types/v1/core";
+import { isActionEvent, isObservationEvent } from "#/types/v1/type-guards";
 
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
   typeof evt === "object" &&
@@ -37,7 +35,7 @@ const isAgentStatusError = (evt: unknown): boolean =>
   evt.extras.agent_state === AgentState.ERROR;
 
 interface MessagesProps {
-  messages: (OpenHandsAction | OpenHandsObservation)[];
+  messages: OpenHandsEvent[];
   isAwaitingUserConfirmation: boolean;
 }
 
@@ -54,7 +52,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
 
     const optimisticUserMessage = getOptimisticUserMessage();
 
-    const [selectedEventId, setSelectedEventId] = React.useState<number | null>(
+    const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
       null,
     );
     const [showLaunchMicroagentModal, setShowLaunchMicroagentModal] =
@@ -66,10 +64,10 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const { t } = useTranslation();
 
     const actionHasObservationPair = React.useCallback(
-      (event: OpenHandsAction | OpenHandsObservation): boolean => {
-        if (isOpenHandsAction(event)) {
+      (event: OpenHandsEvent): boolean => {
+        if (isActionEvent(event)) {
           return !!messages.some(
-            (msg) => isOpenHandsObservation(msg) && msg.cause === event.id,
+            (msg) => isObservationEvent(msg) && msg.action_id === event.id,
           );
         }
 
@@ -79,7 +77,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     );
 
     const getMicroagentStatusForEvent = React.useCallback(
-      (eventId: number): MicroagentStatus | null => {
+      (eventId: string): MicroagentStatus | null => {
         const statusEntry = microagentStatuses.find(
           (entry) => entry.eventId === eventId,
         );
@@ -89,7 +87,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     );
 
     const getMicroagentConversationIdForEvent = React.useCallback(
-      (eventId: number): string | undefined => {
+      (eventId: string): string | undefined => {
         const statusEntry = microagentStatuses.find(
           (entry) => entry.eventId === eventId,
         );
@@ -99,7 +97,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     );
 
     const getMicroagentPRUrlForEvent = React.useCallback(
-      (eventId: number): string | undefined => {
+      (eventId: string): string | undefined => {
         const statusEntry = microagentStatuses.find(
           (entry) => entry.eventId === eventId,
         );

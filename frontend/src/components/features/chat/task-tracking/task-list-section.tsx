@@ -1,14 +1,10 @@
 import { useTranslation } from "react-i18next";
 import { TaskItem } from "./task-item";
 import { Typography } from "#/ui/typography";
+import { TaskTrackerObservation } from "#/types/v1/core/base/observation";
 
 interface TaskListSectionProps {
-  taskList: Array<{
-    id: string;
-    title: string;
-    status: "todo" | "in_progress" | "done";
-    notes?: string;
-  }>;
+  taskList: TaskTrackerObservation["task_list"];
 }
 
 export function TaskListSection({ taskList }: TaskListSectionProps) {
@@ -25,7 +21,7 @@ export function TaskListSection({ taskList }: TaskListSectionProps) {
       <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
         <div className="space-y-3">
           {taskList.map((task, index) => (
-            <TaskItem key={task.id} task={task} index={index} />
+            <TaskItem key={task.title} task={task} index={index} />
           ))}
         </div>
       </div>
