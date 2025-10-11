@@ -63,12 +63,15 @@ class RemoteSandboxSpecService(SandboxSpecService):
 
 class RemoteSandboxSpecInfo(SandboxSpecInfo):
     command: list[str] | None = Field(
-        default_factory=lambda: ['/usr/local/bin/agent-server', '--port', '60000']
+        default_factory=lambda: ['/usr/local/bin/openhands-agent-server', '--port', '60000']
     )
     initial_env: dict[str, str] = Field(
         default_factory=lambda: {
             'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+            'ENABLE_VNC': '0',
             'LOG_JSON': 'true',
+            'OH_CONVERSATIONS_PATH': '/workspace/conversations',
+            'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
         }
     )
     working_dir: str = Field(default='/workspace')

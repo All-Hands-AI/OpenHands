@@ -303,10 +303,14 @@ class RemoteSandboxService(SandboxService):
             start_request: dict[str, Any] = {
                 'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
                 'command': sandbox_spec.command,
+                #'command': ['python', '-c', 'import time; time.sleep(300)'],
                 'working_dir': sandbox_spec.working_dir,
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,
+                'run_as_user': 1000,
+                'run_as_group': 1000,
+                'fs_group': 1000,
             }
 
             # Add runtime class if specified
