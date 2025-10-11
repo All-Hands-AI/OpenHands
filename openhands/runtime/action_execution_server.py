@@ -1021,9 +1021,7 @@ if __name__ == '__main__':
         path = request_dict.get('path', None)
         recursive = request_dict.get('recursive', False)
 
-        logger.info(
-            f'[ACTION_SERVER.list_files] Received request - path: {path}, recursive: {recursive}'
-        )
+        logger.debug(f'list_files: path={path}, recursive={recursive}')
 
         # Get the full path of the requested directory
         if path is None:
@@ -1033,27 +1031,16 @@ if __name__ == '__main__':
         else:
             full_path = os.path.join(client.initial_cwd, path)
 
-        logger.info(f'[ACTION_SERVER.list_files] Full path: {full_path}')
-
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI
-            logger.warning(
-                f'[ACTION_SERVER.list_files] Path does not exist: {full_path}'
-            )
             return JSONResponse(content=[])
 
         try:
             # Check if the directory exists
             if not os.path.exists(full_path) or not os.path.isdir(full_path):
-                logger.warning(
-                    f'[ACTION_SERVER.list_files] Path not a directory: {full_path}'
-                )
                 return JSONResponse(content=[])
 
             if recursive:
-                logger.info(
-                    f'[ACTION_SERVER.list_files] Starting recursive walk of {full_path}'
-                )
                 # Recursively list all files
                 all_files = []
                 for root, dirs, filenames in os.walk(full_path):
@@ -1078,19 +1065,10 @@ if __name__ == '__main__':
 
                 # Sort all entries
                 all_files.sort(key=lambda s: s.lower())
-                logger.info(
-                    f'[ACTION_SERVER.list_files] Recursive walk found {len(all_files)} items'
-                )
-                if all_files:
-                    logger.info(
-                        f'[ACTION_SERVER.list_files] Sample files (first 5): {all_files[:5]}'
-                    )
+                logger.debug(f'list_files: recursive walk found {len(all_files)} items')
                 return JSONResponse(content=all_files)
             else:
                 # Non-recursive: current behavior
-                logger.info(
-                    f'[ACTION_SERVER.list_files] Non-recursive listing of {full_path}'
-                )
                 entries = os.listdir(full_path)
 
                 # Separate directories and files
@@ -1118,17 +1096,10 @@ if __name__ == '__main__':
 
                 # Combine sorted directories and files
                 sorted_entries = directories + files
-                logger.info(
-                    f'[ACTION_SERVER.list_files] Non-recursive found {len(sorted_entries)} items'
-                )
-                if sorted_entries:
-                    logger.info(
-                        f'[ACTION_SERVER.list_files] Sample entries (first 5): {sorted_entries[:5]}'
-                    )
                 return JSONResponse(content=sorted_entries)
 
         except Exception as e:
-            logger.exception(f'[ACTION_SERVER.list_files] Error listing files: {e}')
+            logger.exception(f'list_files error: {e}')
             return JSONResponse(content=[])
 
     logger.debug(f'Starting action execution API on port {args.port}')
