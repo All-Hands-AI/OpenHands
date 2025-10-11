@@ -510,7 +510,7 @@ async def refresh_conversation(
         while True:
             params: dict[str, str] = {}
             if page_id:
-                params['page_id'] = page_id
+                params['page_id'] = page_id  # type: ignore[unreachable]
             response = await httpx_client.get(
                 event_url,
                 params=params,
