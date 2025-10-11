@@ -1,9 +1,6 @@
 """Test that ActionExecutionClient.list_files always sends recursive parameter."""
 
-import json
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -13,7 +10,9 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
 class TestActionExecutionClientListFiles:
     """Test the list_files method of ActionExecutionClient."""
 
-    @patch('openhands.runtime.impl.action_execution.action_execution_client.send_request')
+    @patch(
+        'openhands.runtime.impl.action_execution.action_execution_client.send_request'
+    )
     def test_list_files_always_includes_recursive_false(self, mock_send_request):
         """Test that recursive=False is explicitly sent in the request body."""
         # Setup
@@ -39,7 +38,9 @@ class TestActionExecutionClientListFiles:
             timeout=10,
         )
 
-    @patch('openhands.runtime.impl.action_execution.action_execution_client.send_request')
+    @patch(
+        'openhands.runtime.impl.action_execution.action_execution_client.send_request'
+    )
     def test_list_files_always_includes_recursive_true(self, mock_send_request):
         """Test that recursive=True is sent in the request body."""
         # Setup
@@ -65,7 +66,9 @@ class TestActionExecutionClientListFiles:
             timeout=10,
         )
 
-    @patch('openhands.runtime.impl.action_execution.action_execution_client.send_request')
+    @patch(
+        'openhands.runtime.impl.action_execution.action_execution_client.send_request'
+    )
     def test_list_files_default_recursive_false(self, mock_send_request):
         """Test that when recursive is not specified, it defaults to False and is still sent."""
         # Setup
