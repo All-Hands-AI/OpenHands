@@ -23,7 +23,7 @@ from uuid import UUID
 
 from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
-from sqlalchemy import Column, String, func, select
+from sqlalchemy import Column, Enum, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import utc_now
@@ -42,7 +42,6 @@ from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
-    create_enum_type_decorator,
     create_json_type_decorator,
     row2dict,
 )
@@ -54,7 +53,7 @@ class StoredAppConversationStartTask(Base):  # type: ignore
     __tablename__ = 'app_conversation_start_task'
     id = Column(SQLUUID, primary_key=True)
     created_by_user_id = Column(String, index=True)
-    status = Column(create_enum_type_decorator(AppConversationStartTaskStatus))
+    status = Column(Enum(AppConversationStartTaskStatus), nullable=True)
     detail = Column(String, nullable=True)
     app_conversation_id = Column(SQLUUID, nullable=True)
     sandbox_id = Column(String, nullable=True)
