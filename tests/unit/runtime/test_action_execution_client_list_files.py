@@ -93,4 +93,3 @@ class TestActionExecutionClientListFiles:
             json={'path': '/test', 'recursive': False},  # Default False is sent
             timeout=10,
         )
-
