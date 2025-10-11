@@ -30,6 +30,7 @@ from openhands.server.shared import (
 from openhands.storage.conversation.conversation_validator import (
     create_conversation_validator,
 )
+from openhands.storage.paths import ConversationPaths
 
 
 @sio.event
@@ -77,7 +78,8 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         try:
             event_store = EventStore(
-                conversation_id, conversation_manager.file_store, user_id
+                ConversationPaths(conversation_id, user_id),
+                conversation_manager.file_store,
             )
         except FileNotFoundError as e:
             logger.error(
