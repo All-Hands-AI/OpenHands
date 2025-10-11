@@ -224,6 +224,16 @@ class SaasUserAuth(UserAuth):
                 await rate_limiter.hit('auth_uid', user_id)
         return instance
 
+    @classmethod
+    async def get_for_user(cls, user_id: str) -> UserAuth:
+        offline_token = await token_manager.load_offline_token(user_id)
+        assert offline_token is not None
+        return SaasUserAuth(
+            user_id=user_id,
+            refresh_token=SecretStr(offline_token),
+            auth_type=AuthType.BEARER,
+        )
+
 
 def get_api_key_from_header(request: Request):
     auth_header = request.headers.get('Authorization')

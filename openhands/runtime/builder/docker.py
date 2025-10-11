@@ -5,12 +5,12 @@ import time
 
 import docker
 
-from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
 from openhands.utils.term_color import TermColor, colorize
+from openhands.version import get_version
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
@@ -131,7 +131,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             'buildx',
             'build',
             '--progress=plain',
-            f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
+            f'--build-arg=OPENHANDS_RUNTIME_VERSION={get_version()}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
             '--load',

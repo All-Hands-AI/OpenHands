@@ -62,6 +62,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def __aenter__(self):
         runtime_cls = get_runtime_cls(self.config.runtime)
         runtime_cls.setup(self.config)
+        return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         runtime_cls = get_runtime_cls(self.config.runtime)
