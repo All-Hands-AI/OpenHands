@@ -1,20 +1,17 @@
 import asyncio
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import AsyncGenerator
 
 import docker
-from docker.errors import APIError, NotFound
 from fastapi import Request
 from pydantic import Field
 
-from openhands.agent_server.utils import utc_now
 from openhands.app_server.errors import SandboxError
-from openhands.app_server.sandbox.preset_sandbox_spec_service import PresetSandboxSpecService
+from openhands.app_server.sandbox.preset_sandbox_spec_service import (
+    PresetSandboxSpecService,
+)
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
-    SandboxSpecInfoPage,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
     AGENT_SERVER_VERSION,
@@ -37,14 +34,14 @@ def get_docker_client() -> docker.DockerClient:
 def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
-            id=f"ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python",
+            id=f'ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python',
             command=['/usr/local/bin/openhands-agent-server', '--port', '60000'],
             initial_env={
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
                 'ENABLE_VNC': '0',
                 'LOG_JSON': 'true',
             },
-            working_dir='/home/openhands'
+            working_dir='/home/openhands',
         )
     ]
 
@@ -73,9 +70,7 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         yield PresetSandboxSpecService(specs=self.specs)
 
     async def pull_missing_specs(self):
-        await asyncio.gather(*[
-            self.pull_spec_if_missing(spec) for spec in self.specs
-        ])
+        await asyncio.gather(*[self.pull_spec_if_missing(spec) for spec in self.specs])
 
     async def pull_spec_if_missing(self, spec: SandboxSpecInfo):
         _logger.debug(f'Checking Docker Image: {spec.id}')

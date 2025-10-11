@@ -1,4 +1,3 @@
-import logging
 from dataclasses import dataclass
 
 from openhands.app_server.sandbox.sandbox_spec_models import (
@@ -8,6 +7,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
 )
+
 
 @dataclass
 class PresetSandboxSpecService(SandboxSpecService):

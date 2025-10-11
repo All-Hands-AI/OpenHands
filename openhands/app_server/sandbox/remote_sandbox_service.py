@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
-import time
 from typing import Any, AsyncGenerator, Union
 
 import base62
@@ -68,7 +67,7 @@ class StoredRemoteSandbox(Base):  # type: ignore
 
     The remote runtime API does not return some variables we need, and does not
     return stopped runtimes in list operations, so we need a local copy. We use
-    the remote api as a source of truth on what is currently running, not was
+    the remote api as a source of truth on what is currently running, not what was
     run historicallly."""
 
     __tablename__ = 'v1_remote_sandbox'
@@ -236,10 +235,12 @@ class RemoteSandboxService(SandboxService):
             next_page_id = str(offset + limit)
 
         # Convert stored callbacks to domain models
-        items = await asyncio.gather(*[
-            self._to_sandbox_info(stored_sandbox)
-            for stored_sandbox in stored_sandboxes
-        ])
+        items = await asyncio.gather(
+            *[
+                self._to_sandbox_info(stored_sandbox)
+                for stored_sandbox in stored_sandboxes
+            ]
+        )
 
         return SandboxPage(items=items, next_page_id=next_page_id)
 
@@ -561,10 +562,13 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
         default='gvisor',
         description='can be "gvisor" or "sysbox" (support docker inside runtime + more stable)',
     )
-    start_sandbox_timeout: int = Field(default=120, description=(
-        "The max time to wait for a sandbox to start before considering it to "
-        "be in an error state."
-    ))
+    start_sandbox_timeout: int = Field(
+        default=120,
+        description=(
+            'The max time to wait for a sandbox to start before considering it to '
+            'be in an error state.'
+        ),
+    )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None

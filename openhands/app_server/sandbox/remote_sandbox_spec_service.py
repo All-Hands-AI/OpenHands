@@ -1,14 +1,13 @@
-import logging
-from dataclasses import dataclass
-from typing import AsyncGenerator, cast
+from typing import AsyncGenerator
 
 from fastapi import Request
 from pydantic import Field
 
-from openhands.app_server.sandbox.preset_sandbox_spec_service import PresetSandboxSpecService
+from openhands.app_server.sandbox.preset_sandbox_spec_service import (
+    PresetSandboxSpecService,
+)
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
-    SandboxSpecInfoPage,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
     AGENT_SERVER_VERSION,
@@ -21,7 +20,7 @@ from openhands.app_server.services.injector import InjectorState
 def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
-            id=f"ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python",
+            id=f'ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python',
             command=['/usr/local/bin/openhands-agent-server', '--port', '60000'],
             initial_env={
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
@@ -30,7 +29,7 @@ def get_default_sandbox_specs():
                 'OH_CONVERSATIONS_PATH': '/workspace/conversations',
                 'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
             },
-            working_dir='/workspace'
+            working_dir='/workspace',
         )
     ]
 
