@@ -361,15 +361,11 @@ class TestDockerSandboxSpecServiceInjector:
         assert isinstance(specs[0], SandboxSpecInfo)
         assert specs[0].id.startswith('ghcr.io/all-hands-ai/agent-server:')
         assert specs[0].id.endswith('-python')
-        assert specs[0].command == [
-            '/usr/local/bin/openhands-agent-server',
-            '--port',
-            '60000',
-        ]
+        assert specs[0].command == ['--port', '8000']
         assert 'OPENVSCODE_SERVER_ROOT' in specs[0].initial_env
-        assert 'ENABLE_VNC' in specs[0].initial_env
+        assert 'OH_ENABLE_VNC' in specs[0].initial_env
         assert 'LOG_JSON' in specs[0].initial_env
-        assert specs[0].working_dir == '/home/openhands'
+        assert specs[0].working_dir == '/home/openhands/workspace'
 
     @patch(
         'openhands.app_server.sandbox.docker_sandbox_spec_service._global_docker_client',
