@@ -29,7 +29,7 @@ def get_default_sandbox_specs():
                 'OH_CONVERSATIONS_PATH': '/workspace/conversations',
                 'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
             },
-            working_dir='/workspace',
+            working_dir='/workspace/projects',
         )
     ]
 

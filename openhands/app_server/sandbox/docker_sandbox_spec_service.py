@@ -40,8 +40,10 @@ def get_default_sandbox_specs():
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
                 'OH_ENABLE_VNC': '0',
                 'LOG_JSON': 'true',
+                'OH_CONVERSATIONS_PATH': '/home/openhands/conversations',
+                'OH_BASH_EVENTS_DIR': '/home/openhands/bash_events',
             },
-            working_dir='/home/openhands',
+            working_dir='/home/openhands/workspace',
         )
     ]
 
