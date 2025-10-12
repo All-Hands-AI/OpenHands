@@ -35,10 +35,10 @@ def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
             id=f'ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python',
-            command=['/usr/local/bin/openhands-agent-server', '--port', '60000'],
+            command=['--port', '8000'],
             initial_env={
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-                'ENABLE_VNC': '0',
+                'OH_ENABLE_VNC': '0',
                 'LOG_JSON': 'true',
             },
             working_dir='/home/openhands',
@@ -83,5 +83,6 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
                 # Pull in a background thread to prevent locking up the main runloop
                 loop = asyncio.get_running_loop()
                 await loop.run_in_executor(None, docker_client.images.pull, spec.id)
+                _logger.info(f'⬇️ Finished Pulling Docker Image: {spec.id}')
         except docker.errors.APIError as exc:
             raise SandboxError(f'Error Getting Docker Image: {spec.id}') from exc

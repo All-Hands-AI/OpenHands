@@ -7044,8 +7044,8 @@ websockets = ">=12"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "a436a8ee8f78435d94541e9c0f129357be7e57d9"
-resolved_reference = "a436a8ee8f78435d94541e9c0f129357be7e57d9"
+reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
+resolved_reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
 subdirectory = "openhands/agent_server"
 
 [[package]]
@@ -7073,8 +7073,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "a436a8ee8f78435d94541e9c0f129357be7e57d9"
-resolved_reference = "a436a8ee8f78435d94541e9c0f129357be7e57d9"
+reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
+resolved_reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
 subdirectory = "openhands/sdk"
 
 [[package]]
@@ -12583,4 +12583,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "74a0aa102f231452ad46d7d05a2467a5d8fd7e7dcdf5796468024e3d128e1218"
+content-hash = "90ae740f15865e77791e259038940ba45652f2639159cad26f2b3292948b32e8"
