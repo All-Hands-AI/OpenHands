@@ -3,7 +3,6 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from pathlib import Path
 from time import time
 from typing import AsyncGenerator, Sequence
 from uuid import UUID
@@ -174,7 +173,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
             agent_server_url = self._get_agent_server_url(sandbox)
 
             # Get the working dir
-            sandbox_spec = await self.sandbox_spec_service.get_sandbox_spec(sandbox.sandbox_spec_id)
+            sandbox_spec = await self.sandbox_spec_service.get_sandbox_spec(
+                sandbox.sandbox_spec_id
+            )
             assert sandbox_spec is not None
 
             # Run setup scripts
@@ -189,7 +190,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
             # Build the start request
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
-                    request.initial_message, request.git_provider, sandbox_spec.working_dir
+                    request.initial_message,
+                    request.git_provider,
+                    sandbox_spec.working_dir,
                 )
             )
 
