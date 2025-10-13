@@ -1,3 +1,8 @@
 """OpenHands package."""
 
-__version__ = '1.0.1'
+from importlib.metadata import version, PackageNotFoundError
+
+try:
+    __version__ = version("openhands")
+except PackageNotFoundError:
+    __version__ = "0.0.0"
