@@ -89,9 +89,9 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
         # Hash the repo if it's too long
         if len(repo) > 32:
             repo_hash = hashlib.md5(repo[:-24].encode()).hexdigest()[:8]
+
             repo = f'{repo_hash}_{repo[-24:]}'  # Use 8 char hash + last 24 chars
-        else:
-            repo = repo.replace('/', '_s_')
+        repo = repo.replace('/', '_s_')
 
         new_tag = f'oh_v{oh_version}_image_{repo}_tag_{tag}'
 

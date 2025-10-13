@@ -97,7 +97,7 @@ function LlmApiKeyManager({
               {llmApiKey.key && (
                 <button
                   type="button"
-                  className="text-white hover:text-gray-300 mr-2"
+                  className="text-white hover:text-gray-300 mr-2 cursor-pointer"
                   aria-label={showLlmApiKey ? "Hide API key" : "Show API key"}
                   title={showLlmApiKey ? "Hide API key" : "Show API key"}
                   onClick={() => setShowLlmApiKey(!showLlmApiKey)}
@@ -111,7 +111,7 @@ function LlmApiKeyManager({
               )}
               <button
                 type="button"
-                className="text-white hover:text-gray-300 mr-2"
+                className="text-white hover:text-gray-300 mr-2 cursor-pointer"
                 aria-label="Copy API key"
                 title="Copy API key"
                 onClick={() => {
