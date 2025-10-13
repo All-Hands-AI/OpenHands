@@ -4,6 +4,8 @@ from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartTask,
+    AppConversationStartTaskPage,
+    AppConversationStartTaskSortOrder,
 )
 from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
@@ -12,7 +14,22 @@ from openhands.sdk.utils.models import DiscriminatedUnionMixin
 class AppConversationStartTaskService(ABC):
     """Service for accessing start tasks for conversations."""
 
-    # TODO: We can add the standard search, count, and batch methods later
+    @abstractmethod
+    async def search_app_conversation_start_tasks(
+        self,
+        conversation_id__eq: UUID | None = None,
+        sort_order: AppConversationStartTaskSortOrder = AppConversationStartTaskSortOrder.CREATED_AT_DESC,
+        page_id: str | None = None,
+        limit: int = 100,
+    ) -> AppConversationStartTaskPage:
+        """Search for conversation start tasks."""
+
+    @abstractmethod
+    async def count_app_conversation_start_tasks(
+        self,
+        conversation_id__eq: UUID | None = None,
+    ) -> int:
+        """Count conversation start tasks."""
 
     @abstractmethod
     async def get_app_conversation_start_task(

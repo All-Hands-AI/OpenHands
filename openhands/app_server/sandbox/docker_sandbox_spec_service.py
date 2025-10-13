@@ -1,24 +1,27 @@
-from dataclasses import dataclass, field
-from datetime import datetime
+import asyncio
+import logging
 from typing import AsyncGenerator
 
 import docker
-from docker.errors import APIError, NotFound
 from fastapi import Request
 from pydantic import Field
 
-from openhands.agent_server.utils import utc_now
+from openhands.app_server.errors import SandboxError
+from openhands.app_server.sandbox.preset_sandbox_spec_service import (
+    PresetSandboxSpecService,
+)
 from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
-    SandboxSpecInfoPage,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
+    AGENT_SERVER_VERSION,
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
 from openhands.app_server.services.injector import InjectorState
 
 _global_docker_client: docker.DockerClient | None = None
+_logger = logging.getLogger(__name__)
 
 
 def get_docker_client() -> docker.DockerClient:
@@ -28,118 +31,60 @@ def get_docker_client() -> docker.DockerClient:
     return _global_docker_client
 
 
-@dataclass
-class DockerSandboxSpecService(SandboxSpecService):
-    """Sandbox spec service for docker images.
-
-    By default, all images with the repository given are loaded and returned, though
-    they may have different tags. The combination of the repository and tag is treated
-    as the id in the resulting image.
-    """
-
-    repository: str
-    command: str
-    initial_env: dict[str, str]
-    working_dir: str
-    docker_client: docker.DockerClient = field(default_factory=get_docker_client)
-
-    def _docker_image_to_sandbox_specs(self, image) -> SandboxSpecInfo:
-        """Convert a Docker image to SandboxSpecInfo."""
-        # Extract repository and tag from image tags
-        # Use the first tag if multiple tags exist, or use the image ID if no tags
-        if image.tags:
-            image_id = image.tags[0]  # Use repository:tag as ID
-        else:
-            image_id = image.id[:12]  # Use short image ID if no tags
-
-        # Parse creation time from image attributes
-        created_str = image.attrs.get('Created', '')
-        try:
-            # Docker timestamps are in ISO format
-            created_at = datetime.fromisoformat(created_str.replace('Z', '+00:00'))
-        except (ValueError, AttributeError):
-            created_at = utc_now()
-
-        return SandboxSpecInfo(
-            id=image_id,
-            command=self.command,
-            created_at=created_at,
-            initial_env=self.initial_env,
-            working_dir=self.working_dir,
+def get_default_sandbox_specs():
+    return [
+        SandboxSpecInfo(
+            id=f'ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python',
+            command=['--port', '8000'],
+            initial_env={
+                'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
+                'OH_ENABLE_VNC': '0',
+                'LOG_JSON': 'true',
+                'OH_CONVERSATIONS_PATH': '/home/openhands/conversations',
+                'OH_BASH_EVENTS_DIR': '/home/openhands/bash_events',
+            },
+            working_dir='/home/openhands/workspace',
         )
-
-    async def search_sandbox_specs(
-        self, page_id: str | None = None, limit: int = 100
-    ) -> SandboxSpecInfoPage:
-        """Search for runtime images."""
-        try:
-            # Get all images that match the repository
-            images = self.docker_client.images.list(name=self.repository)
-
-            # Convert Docker images to SandboxSpecInfo
-            sandbox_specs = []
-            for image in images:
-                # Only include images that have tags matching our repository
-                if image.tags:
-                    for tag in image.tags:
-                        if tag.startswith(self.repository):
-                            sandbox_specs.append(
-                                self._docker_image_to_sandbox_specs(image)
-                            )
-                            # Only add once per image, even if multiple matching tags
-                            break
-
-            # Apply pagination
-            start_idx = 0
-            if page_id:
-                try:
-                    start_idx = int(page_id)
-                except ValueError:
-                    start_idx = 0
-
-            end_idx = start_idx + limit
-            paginated_images = sandbox_specs[start_idx:end_idx]
-
-            # Determine next page ID
-            next_page_id = None
-            if end_idx < len(sandbox_specs):
-                next_page_id = str(end_idx)
-
-            return SandboxSpecInfoPage(
-                items=paginated_images, next_page_id=next_page_id
-            )
-
-        except APIError:
-            # Return empty page if there's an API error
-            return SandboxSpecInfoPage(items=[], next_page_id=None)
-
-    async def get_sandbox_spec(self, sandbox_spec_id: str) -> SandboxSpecInfo | None:
-        """Get a single runtime image info by ID."""
-        try:
-            # Try to get the image by ID (which should be repository:tag)
-            image = self.docker_client.images.get(sandbox_spec_id)
-            return self._docker_image_to_sandbox_specs(image)
-        except (NotFound, APIError):
-            return None
+    ]
 
 
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
-    repository: str = 'ghcr.io/all-hands-ai/agent-server'
-    command: str = '/usr/local/bin/openhands-agent-server'
-    initial_env: dict[str, str] = Field(
-        default_factory=lambda: {
-            'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-            'LOG_JSON': 'true',
-        }
+    specs: list[SandboxSpecInfo] = Field(
+        default_factory=get_default_sandbox_specs,
+        description='Preset list of sandbox specs',
     )
-    working_dir: str = '/home/openhands'
+    pull_if_missing: bool = Field(
+        default=True,
+        description=(
+            'Flag indicating that any missing specs should be pulled from '
+            'remote repositories.'
+        ),
+    )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[SandboxSpecService, None]:
-        yield DockerSandboxSpecService(
-            repository=self.repository,
-            command=self.command,
-            initial_env=self.initial_env,
-            working_dir=self.working_dir,
-        )
+        if self.pull_if_missing:
+            await self.pull_missing_specs()
+            # Prevent repeated checks - more efficient but it does mean if you
+            # delete a docker image outside the app you need to restart
+            self.pull_if_missing = False
+        yield PresetSandboxSpecService(specs=self.specs)
+
+    async def pull_missing_specs(self):
+        await asyncio.gather(*[self.pull_spec_if_missing(spec) for spec in self.specs])
+
+    async def pull_spec_if_missing(self, spec: SandboxSpecInfo):
+        _logger.debug(f'Checking Docker Image: {spec.id}')
+        try:
+            docker_client = get_docker_client()
+            try:
+                docker_client.images.get(spec.id)
+            except docker.errors.ImageNotFound:
+                _logger.info(f'⬇️ Pulling Docker Image: {spec.id}')
+                # Pull in a background thread to prevent locking up the main runloop
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(None, docker_client.images.pull, spec.id)
+                _logger.info(f'⬇️ Finished Pulling Docker Image: {spec.id}')
+        except docker.errors.APIError as exc:
+            raise SandboxError(f'Error Getting Docker Image: {spec.id}') from exc

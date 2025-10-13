@@ -9,6 +9,10 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
 from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
+# The version of the agent server to use for deployments.
+# Typically this will be the same as the values from the pyproject.toml
+AGENT_SERVER_VERSION = 'f8ca02c4a3b847bfc50b3c5e579ce126c511fefc'
+
 
 class SandboxSpecService(ABC):
     """Service for managing Sandbox specs.
@@ -32,7 +36,7 @@ class SandboxSpecService(ABC):
     async def get_default_sandbox_spec(self) -> SandboxSpecInfo:
         """Get the default sandbox spec."""
         page = await self.search_sandbox_specs()
-        if not page:
+        if not page.items:
             raise SandboxError('No sandbox specs available!')
         return page.items[0]
 

@@ -8,7 +8,6 @@ import sys
 from datetime import datetime
 
 from openhands.sdk import (
-    BaseConversation,
     Message,
     TextContent,
 )
@@ -17,7 +16,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import MissingAgentSpec, setup_conversation
+from openhands_cli.setup import MissingAgentSpec, setup_conversation, start_fresh_conversation
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.status import display_status
@@ -27,32 +26,6 @@ from openhands_cli.tui.tui import (
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 from openhands_cli.user_actions.utils import get_session_prompter
-
-
-
-
-def _start_fresh_conversation(resume_conversation_id: str | None = None) -> BaseConversation:
-    """Start a fresh conversation by creating a new conversation instance.
-    
-    Handles the complete conversation setup process including settings screen
-    if agent configuration is missing.
-
-    Args:
-        resume_conversation_id: Optional conversation ID to resume
-
-    Returns:
-        BaseConversation: A new conversation instance
-    """
-    conversation = None
-    settings_screen = SettingsScreen()
-
-    while not conversation:
-        try:
-            conversation = setup_conversation(resume_conversation_id)
-        except MissingAgentSpec:
-            settings_screen.handle_basic_settings(escapable=False)
-    
-    return conversation
 
 
 def _restore_tty() -> None:
@@ -91,7 +64,14 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
-    conversation = _start_fresh_conversation(resume_conversation_id)
+    try:
+        conversation = start_fresh_conversation(resume_conversation_id)
+    except MissingAgentSpec:
+        print_formatted_text(HTML('\n<yellow>Setup is required to use OpenHands CLI.</yellow>'))
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        return
+
+
     display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Track session start time for uptime calculation
@@ -145,7 +125,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             elif command == '/new':
                 try:
                     # Start a fresh conversation (no resume ID = new conversation)
-                    conversation = _start_fresh_conversation()
+                    conversation = setup_conversation()
                     runner = ConversationRunner(conversation)
                     display_welcome(conversation.id, resume=False)
                     print_formatted_text(
@@ -169,7 +149,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             elif command == '/confirm':
                 runner.toggle_confirmation_mode()
                 new_status = (
-                    'enabled' if runner.is_confirmation_mode_enabled else 'disabled'
+                    'enabled' if runner.is_confirmation_mode_active else 'disabled'
                 )
                 print_formatted_text(
                     HTML(f'<yellow>Confirmation mode {new_status}</yellow>')

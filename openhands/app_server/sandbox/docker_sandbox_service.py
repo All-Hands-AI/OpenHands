@@ -295,7 +295,7 @@ class DockerSandboxService(SandboxService):
             # Create and start the container
             container = self.docker_client.containers.run(  # type: ignore[call-overload]
                 image=sandbox_spec.id,
-                command=None,  # Use default command from image
+                command=sandbox_spec.command,  # Use default command from image
                 remove=False,
                 name=container_name,
                 environment=env_vars,

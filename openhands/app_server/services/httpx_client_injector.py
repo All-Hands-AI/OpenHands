@@ -35,3 +35,8 @@ class HttpxClientInjector(BaseModel, Injector[httpx.AsyncClient]):
                 if hasattr(state, HTTPX_CLIENT_ATTR):
                     delattr(state, HTTPX_CLIENT_ATTR)
                 await httpx_client.aclose()
+
+
+def set_httpx_client_keep_open(state: InjectorState, keep_open: bool):
+    """Set whether the connection should be kept open after the request terminates."""
+    setattr(state, HTTPX_CLIENT_KEEP_OPEN_ATTR, keep_open)

@@ -11,7 +11,7 @@ from uuid import UUID
 
 from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
-from sqlalchemy import Column, String, and_, func, or_, select
+from sqlalchemy import Column, Enum, String, and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.app_server.event_callback.event_callback_models import (
@@ -32,7 +32,6 @@ from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
-    create_enum_type_decorator,
     create_json_type_decorator,
     row2dict,
 )
@@ -55,7 +54,7 @@ class StoredEventCallback(Base):  # type: ignore
 class StoredEventCallbackResult(Base):  # type: ignore
     __tablename__ = 'event_callback_result'
     id = Column(SQLUUID, primary_key=True)
-    status = Column(create_enum_type_decorator(EventCallbackResultStatus))
+    status = Column(Enum(EventCallbackResultStatus), nullable=True)
     event_callback_id = Column(SQLUUID, index=True)
     event_id = Column(SQLUUID, index=True)
     conversation_id = Column(SQLUUID, index=True)

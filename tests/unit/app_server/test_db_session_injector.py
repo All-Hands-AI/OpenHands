@@ -198,7 +198,7 @@ class TestDbSessionInjectorConnections:
             assert 'postgresql+pg8000://' in url_str
             assert 'test_user' in url_str
             # Password may be masked in URL string representation
-            assert 'test_password' in url_str or '**********' in url_str
+            assert 'test_password' in url_str or '***' in url_str
             assert 'localhost:5432' in url_str
             assert 'test_db' in url_str
 
@@ -230,7 +230,7 @@ class TestDbSessionInjectorConnections:
             assert 'postgresql+asyncpg://' in url_str
             assert 'test_user' in url_str
             # Password may be masked in URL string representation
-            assert 'test_password' in url_str or '**********' in url_str
+            assert 'test_password' in url_str or '***' in url_str
             assert 'localhost:5432' in url_str
             assert 'test_db' in url_str
 

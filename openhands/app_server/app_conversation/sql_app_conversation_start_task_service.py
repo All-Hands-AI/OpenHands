@@ -23,13 +23,15 @@ from uuid import UUID
 
 from fastapi import Request
 from sqlalchemy import UUID as SQLUUID
-from sqlalchemy import Column, String, func, select
+from sqlalchemy import Column, Enum, String, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import utc_now
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskPage,
+    AppConversationStartTaskSortOrder,
     AppConversationStartTaskStatus,
 )
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
@@ -40,7 +42,6 @@ from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.sql_utils import (
     Base,
     UtcDateTime,
-    create_enum_type_decorator,
     create_json_type_decorator,
     row2dict,
 )
@@ -52,7 +53,7 @@ class StoredAppConversationStartTask(Base):  # type: ignore
     __tablename__ = 'app_conversation_start_task'
     id = Column(SQLUUID, primary_key=True)
     created_by_user_id = Column(String, index=True)
-    status = Column(create_enum_type_decorator(AppConversationStartTaskStatus))
+    status = Column(Enum(AppConversationStartTaskStatus), nullable=True)
     detail = Column(String, nullable=True)
     app_conversation_id = Column(SQLUUID, nullable=True)
     sandbox_id = Column(String, nullable=True)
@@ -70,6 +71,94 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
 
     session: AsyncSession
     user_id: str | None = None
+
+    async def search_app_conversation_start_tasks(
+        self,
+        conversation_id__eq: UUID | None = None,
+        sort_order: AppConversationStartTaskSortOrder = AppConversationStartTaskSortOrder.CREATED_AT_DESC,
+        page_id: str | None = None,
+        limit: int = 100,
+    ) -> AppConversationStartTaskPage:
+        """Search for conversation start tasks."""
+        query = select(StoredAppConversationStartTask)
+
+        # Apply user filter if user_id is set
+        if self.user_id:
+            query = query.where(
+                StoredAppConversationStartTask.created_by_user_id == self.user_id
+            )
+
+        # Apply conversation_id filter
+        if conversation_id__eq is not None:
+            query = query.where(
+                StoredAppConversationStartTask.app_conversation_id
+                == conversation_id__eq
+            )
+
+        # Add sort order
+        if sort_order == AppConversationStartTaskSortOrder.CREATED_AT:
+            query = query.order_by(StoredAppConversationStartTask.created_at)
+        elif sort_order == AppConversationStartTaskSortOrder.CREATED_AT_DESC:
+            query = query.order_by(StoredAppConversationStartTask.created_at.desc())
+        elif sort_order == AppConversationStartTaskSortOrder.UPDATED_AT:
+            query = query.order_by(StoredAppConversationStartTask.updated_at)
+        elif sort_order == AppConversationStartTaskSortOrder.UPDATED_AT_DESC:
+            query = query.order_by(StoredAppConversationStartTask.updated_at.desc())
+
+        # Apply pagination
+        if page_id is not None:
+            try:
+                offset = int(page_id)
+                query = query.offset(offset)
+            except ValueError:
+                # If page_id is not a valid integer, start from beginning
+                offset = 0
+        else:
+            offset = 0
+
+        # Apply limit and get one extra to check if there are more results
+        query = query.limit(limit + 1)
+
+        result = await self.session.execute(query)
+        rows = result.scalars().all()
+
+        # Check if there are more results
+        has_more = len(rows) > limit
+        if has_more:
+            rows = rows[:limit]
+
+        items = [AppConversationStartTask(**row2dict(row)) for row in rows]
+
+        # Calculate next page ID
+        next_page_id = None
+        if has_more:
+            next_page_id = str(offset + limit)
+
+        return AppConversationStartTaskPage(items=items, next_page_id=next_page_id)
+
+    async def count_app_conversation_start_tasks(
+        self,
+        conversation_id__eq: UUID | None = None,
+    ) -> int:
+        """Count conversation start tasks."""
+        query = select(func.count(StoredAppConversationStartTask.id))
+
+        # Apply user filter if user_id is set
+        if self.user_id:
+            query = query.where(
+                StoredAppConversationStartTask.created_by_user_id == self.user_id
+            )
+
+        # Apply conversation_id filter
+        if conversation_id__eq is not None:
+            query = query.where(
+                StoredAppConversationStartTask.app_conversation_id
+                == conversation_id__eq
+            )
+
+        result = await self.session.execute(query)
+        count = result.scalar()
+        return count or 0
 
     async def batch_get_app_conversation_start_tasks(
         self, task_ids: list[UUID]
