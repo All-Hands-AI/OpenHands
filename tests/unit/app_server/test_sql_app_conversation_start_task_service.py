@@ -14,6 +14,7 @@ from sqlalchemy.pool import StaticPool
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
     AppConversationStartTask,
+    AppConversationStartTaskSortOrder,
     AppConversationStartTaskStatus,
 )
 from openhands.app_server.app_conversation.sql_app_conversation_start_task_service import (
@@ -61,15 +62,16 @@ def service(async_session: AsyncSession) -> SQLAppConversationStartTaskService:
 def sample_request() -> AppConversationStartRequest:
     """Create a sample AppConversationStartRequest for testing."""
     return AppConversationStartRequest(
-        agent='CodeActAgent',
-        language='en',
-        args={},
-        confirmation_mode=False,
-        security_analyzer='',
-        microagent_names=[],
-        runtime='local',
-        file_uploads=[],
+        sandbox_id=None,
+        initial_message=None,
+        processors=[],
+        llm_model='gpt-4',
         selected_repository=None,
+        selected_branch=None,
+        git_provider=None,
+        title='Test Conversation',
+        trigger=None,
+        pr_number=[],
     )
 
 
@@ -348,3 +350,292 @@ class TestSQLAppConversationStartTaskService:
         # Verify created_at stays the same but updated_at changes
         assert updated_task.created_at == original_created_at
         assert updated_task.updated_at > original_updated_at
+
+    async def test_search_app_conversation_start_tasks_basic(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test basic search functionality for start tasks."""
+        # Create multiple tasks
+        task1 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            request=sample_request,
+        )
+        task2 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            request=sample_request,
+        )
+
+        # Save tasks
+        await service.save_app_conversation_start_task(task1)
+        await service.save_app_conversation_start_task(task2)
+
+        # Search for all tasks
+        result = await service.search_app_conversation_start_tasks()
+
+        assert len(result.items) == 2
+        assert result.next_page_id is None
+
+        # Verify tasks are returned in descending order by created_at (default)
+        task_ids = [task.id for task in result.items]
+        assert task2.id in task_ids
+        assert task1.id in task_ids
+
+    async def test_search_app_conversation_start_tasks_with_conversation_filter(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test search with conversation_id filter."""
+        conversation_id1 = uuid4()
+        conversation_id2 = uuid4()
+
+        # Create tasks with different conversation IDs
+        task1 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            app_conversation_id=conversation_id1,
+            request=sample_request,
+        )
+        task2 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            app_conversation_id=conversation_id2,
+            request=sample_request,
+        )
+        task3 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            app_conversation_id=None,
+            request=sample_request,
+        )
+
+        # Save tasks
+        await service.save_app_conversation_start_task(task1)
+        await service.save_app_conversation_start_task(task2)
+        await service.save_app_conversation_start_task(task3)
+
+        # Search for tasks with specific conversation ID
+        result = await service.search_app_conversation_start_tasks(
+            conversation_id__eq=conversation_id1
+        )
+
+        assert len(result.items) == 1
+        assert result.items[0].id == task1.id
+        assert result.items[0].app_conversation_id == conversation_id1
+
+    async def test_search_app_conversation_start_tasks_sorting(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test search with different sort orders."""
+        # Create tasks with slight time differences
+        task1 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            request=sample_request,
+        )
+        await service.save_app_conversation_start_task(task1)
+
+        task2 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            request=sample_request,
+        )
+        await service.save_app_conversation_start_task(task2)
+
+        # Test ascending order
+        result_asc = await service.search_app_conversation_start_tasks(
+            sort_order=AppConversationStartTaskSortOrder.CREATED_AT
+        )
+        assert len(result_asc.items) == 2
+        assert result_asc.items[0].id == task1.id  # First created
+        assert result_asc.items[1].id == task2.id  # Second created
+
+        # Test descending order (default)
+        result_desc = await service.search_app_conversation_start_tasks(
+            sort_order=AppConversationStartTaskSortOrder.CREATED_AT_DESC
+        )
+        assert len(result_desc.items) == 2
+        assert result_desc.items[0].id == task2.id  # Most recent first
+        assert result_desc.items[1].id == task1.id  # Older second
+
+    async def test_search_app_conversation_start_tasks_pagination(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test search with pagination."""
+        # Create multiple tasks
+        tasks = []
+        for i in range(5):
+            task = AppConversationStartTask(
+                id=uuid4(),
+                created_by_user_id='user1',
+                status=AppConversationStartTaskStatus.WORKING,
+                request=sample_request,
+            )
+            tasks.append(task)
+            await service.save_app_conversation_start_task(task)
+
+        # Test first page with limit 2
+        result_page1 = await service.search_app_conversation_start_tasks(limit=2)
+        assert len(result_page1.items) == 2
+        assert result_page1.next_page_id == '2'
+
+        # Test second page
+        result_page2 = await service.search_app_conversation_start_tasks(
+            page_id='2', limit=2
+        )
+        assert len(result_page2.items) == 2
+        assert result_page2.next_page_id == '4'
+
+        # Test last page
+        result_page3 = await service.search_app_conversation_start_tasks(
+            page_id='4', limit=2
+        )
+        assert len(result_page3.items) == 1
+        assert result_page3.next_page_id is None
+
+    async def test_count_app_conversation_start_tasks_basic(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test basic count functionality for start tasks."""
+        # Initially no tasks
+        count = await service.count_app_conversation_start_tasks()
+        assert count == 0
+
+        # Create and save tasks
+        task1 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            request=sample_request,
+        )
+        task2 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            request=sample_request,
+        )
+
+        await service.save_app_conversation_start_task(task1)
+        count = await service.count_app_conversation_start_tasks()
+        assert count == 1
+
+        await service.save_app_conversation_start_task(task2)
+        count = await service.count_app_conversation_start_tasks()
+        assert count == 2
+
+    async def test_count_app_conversation_start_tasks_with_filter(
+        self,
+        service: SQLAppConversationStartTaskService,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test count with conversation_id filter."""
+        conversation_id1 = uuid4()
+        conversation_id2 = uuid4()
+
+        # Create tasks with different conversation IDs
+        task1 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            app_conversation_id=conversation_id1,
+            request=sample_request,
+        )
+        task2 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.READY,
+            app_conversation_id=conversation_id2,
+            request=sample_request,
+        )
+        task3 = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            app_conversation_id=conversation_id1,
+            request=sample_request,
+        )
+
+        # Save tasks
+        await service.save_app_conversation_start_task(task1)
+        await service.save_app_conversation_start_task(task2)
+        await service.save_app_conversation_start_task(task3)
+
+        # Count all tasks
+        total_count = await service.count_app_conversation_start_tasks()
+        assert total_count == 3
+
+        # Count tasks for specific conversation
+        conv1_count = await service.count_app_conversation_start_tasks(
+            conversation_id__eq=conversation_id1
+        )
+        assert conv1_count == 2
+
+        conv2_count = await service.count_app_conversation_start_tasks(
+            conversation_id__eq=conversation_id2
+        )
+        assert conv2_count == 1
+
+    async def test_search_and_count_with_user_isolation(
+        self,
+        async_session: AsyncSession,
+        sample_request: AppConversationStartRequest,
+    ):
+        """Test search and count with user isolation."""
+        # Create services for different users
+        user1_service = SQLAppConversationStartTaskService(
+            session=async_session, user_id='user1'
+        )
+        user2_service = SQLAppConversationStartTaskService(
+            session=async_session, user_id='user2'
+        )
+
+        # Create tasks for different users
+        user1_task = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user1',
+            status=AppConversationStartTaskStatus.WORKING,
+            request=sample_request,
+        )
+        user2_task = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id='user2',
+            status=AppConversationStartTaskStatus.WORKING,
+            request=sample_request,
+        )
+
+        # Save tasks using respective services
+        await user1_service.save_app_conversation_start_task(user1_task)
+        await user2_service.save_app_conversation_start_task(user2_task)
+
+        # Test search isolation
+        user1_search = await user1_service.search_app_conversation_start_tasks()
+        assert len(user1_search.items) == 1
+        assert user1_search.items[0].id == user1_task.id
+
+        user2_search = await user2_service.search_app_conversation_start_tasks()
+        assert len(user2_search.items) == 1
+        assert user2_search.items[0].id == user2_task.id
+
+        # Test count isolation
+        user1_count = await user1_service.count_app_conversation_start_tasks()
+        assert user1_count == 1
+
+        user2_count = await user2_service.count_app_conversation_start_tasks()
+        assert user2_count == 1

@@ -1,5 +1,4 @@
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +14,7 @@ class SandboxSpecInfo(BaseModel):
     initial_env: dict[str, str] = Field(
         default_factory=dict, description='Initial Environment Variables'
     )
-    working_dir: str = '/openhands/code'
+    working_dir: str = '/home/openhands/workspace'
 
 
 class SandboxSpecInfoPage(BaseModel):

@@ -87,14 +87,6 @@ class AppConversationService(ABC):
         )
 
     @abstractmethod
-    async def batch_get_app_conversation_start_tasks(
-        self, task_ids: list[UUID]
-    ) -> list[AppConversationStartTask | None]:
-        """Get a batch AppConversationStartTask by id, returning none for those missing.
-
-        Typically used to poll and determine if a conversation started."""
-
-    @abstractmethod
     async def run_setup_scripts(
         self, task: AppConversationStartTask, workspace: Workspace
     ) -> AsyncGenerator[AppConversationStartTask, None]:
