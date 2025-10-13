@@ -1,6 +1,8 @@
 """Event Callback router for OpenHands Server."""
 
 import asyncio
+from dataclasses import dataclass
+
 import logging
 from uuid import UUID
 
@@ -148,29 +150,43 @@ async def on_event(
     return Success()
 
 
-@router.get('/secrets')
-async def get_secret(
+@dataclass
+class AccessTokenPrincipal:
+    user_context: UserContext
+    provider_type: ProviderType
+    user_id: str
+
+
+async def user_context_from_access_token(
     access_token: str = Depends(APIKeyHeader(name='X-Access-Token', auto_error=False)),
     jwt_service: JwtService = jwt_dependency,
-) -> str:
-    """Given an access token, retrieve a user secret. The access token
-    is limited by user and provider type, and may include a timeout, limiting
-    the damage in the event that a token is ever leaked"""
+) -> AccessTokenPrincipal:
     try:
         payload = jwt_service.verify_jws_token(access_token)
         user_id = payload['user_id']
         provider_type = ProviderType[payload['provider_type']]
-        user_injector = config.user
-        assert user_injector is not None
-        user_context = await user_injector.get_for_user(user_id)
-        secret = None
-        if user_context:
-            secret = await user_context.get_latest_token(provider_type)
-        if secret is None:
-            raise HTTPException(404, 'No such provider')
-        return secret
+
+        # Build a UserContext for this specific user without a Request
+        user_auth = await get_user_auth_for_user(user_id)
+        user_context = AuthUserContext(user_auth=user_auth)
+        return AccessTokenPrincipal(
+            user_context=user_context, provider_type=provider_type, user_id=user_id
+        )
     except InvalidTokenError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+
+
+@router.get('/secrets')
+async def get_secret(
+    principal: AccessTokenPrincipal = Depends(user_context_from_access_token),
+) -> str:
+    """Given an access token, retrieve a user secret. The access token
+    is limited by user and provider type, and may include a timeout, limiting
+    the damage in the event that a token is ever leaked"""
+    secret = await principal.user_context.get_latest_token(principal.provider_type)
+    if secret is None:
+        raise HTTPException(404, 'No such provider')
+    return secret
 
 
 async def _run_callbacks_in_bg_and_close(
