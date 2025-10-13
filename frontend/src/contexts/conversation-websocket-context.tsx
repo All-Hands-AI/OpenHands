@@ -18,6 +18,7 @@ import {
   isActionEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -41,6 +42,37 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
+
+  // Get conversation data to build WebSocket URL
+  const { data: conversation } = useActiveConversation();
+
+  // Build WebSocket URL from conversation data
+  const wsUrl = useMemo(() => {
+    if (!conversationId || !conversation) {
+      return null;
+    }
+
+    // Extract base URL and port from conversation.url (e.g., "http://localhost:3000/api/conversations/123")
+    let baseUrl = "";
+    if (conversation.url && !conversation.url.startsWith("/")) {
+      try {
+        const url = new URL(conversation.url);
+        baseUrl = url.host; // e.g., "localhost:3000"
+      } catch {
+        baseUrl = window.location.host;
+      }
+    } else {
+      baseUrl = window.location.host;
+    }
+
+    // Build WebSocket URL: ws://host:port/sockets/events/{conversationId}?session_api_key={key}
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const sessionKey = conversation.session_api_key
+      ? `?session_api_key=${conversation.session_api_key}`
+      : "";
+
+    return `${protocol}//${baseUrl}/sockets/events/${conversationId}${sessionKey}`;
+  }, [conversationId, conversation]);
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
@@ -103,13 +135,13 @@ export function ConversationWebSocketProvider({
     [handleMessage, setErrorMessage, removeErrorMessage],
   );
 
-  const { socket } = useWebSocket(
-    "ws://localhost/events/socket",
-    websocketOptions,
-  );
+  // Build a fallback URL to prevent hook from connecting if conversation data isn't ready
+  const websocketUrl = wsUrl || "ws://localhost/placeholder";
+  const { socket } = useWebSocket(websocketUrl, websocketOptions);
 
   useEffect(() => {
-    if (socket) {
+    // Only process socket updates if we have a valid URL
+    if (socket && wsUrl) {
       // Update state based on socket readyState
       const updateState = () => {
         switch (socket.readyState) {
@@ -133,7 +165,7 @@ export function ConversationWebSocketProvider({
 
       updateState();
     }
-  }, [socket]);
+  }, [socket, wsUrl]);
 
   const contextValue = useMemo(() => ({ connectionState }), [connectionState]);
 
