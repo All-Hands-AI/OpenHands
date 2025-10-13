@@ -76,6 +76,7 @@ export interface Conversation {
   url: string | null;
   session_api_key: string | null;
   pr_number?: number[] | null;
+  conversation_version?: "V0" | "V1";
 }
 
 export interface ResultSet<T> {
@@ -138,4 +139,48 @@ export type GetFilesResponse = string[];
 
 export interface GetFileResponse {
   code: string;
+}
+
+// V1 API Types
+export type SandboxStatus =
+  | "MISSING"
+  | "STARTING"
+  | "RUNNING"
+  | "STOPPED"
+  | "STOPPING"
+  | "ERROR";
+
+export type AgentExecutionStatus =
+  | "AWAITING_USER_INPUT"
+  | "RUNNING"
+  | "AWAITING_USER_CONFIRMATION"
+  | "FINISHED"
+  | "REJECTED"
+  | "ERROR"
+  | "PAUSED"
+  | "STOPPED";
+
+export interface MetricsSnapshot {
+  accumulated_cost: number;
+  model_cost_info?: Record<string, unknown>;
+}
+
+export interface AppConversation {
+  id: string;
+  created_by_user_id: string | null;
+  sandbox_id: string;
+  selected_repository: string | null;
+  selected_branch: string | null;
+  git_provider: Provider | null;
+  title: string | null;
+  trigger?: ConversationTrigger;
+  pr_number: number[];
+  llm_model: string | null;
+  metrics: MetricsSnapshot | null;
+  created_at: string;
+  updated_at: string;
+  sandbox_status: SandboxStatus;
+  agent_status: AgentExecutionStatus | null;
+  conversation_url: string | null;
+  session_api_key: string | null;
 }
