@@ -120,7 +120,7 @@ export function InteractiveChatBox({
 
       // Step 5: Handle failed results
       handleFailedFiles(fileResults, imageResults);
-    } catch (error) {
+    } catch {
       // Clear loading states and show error
       clearLoadingStates(validFiles, validImages);
       displayErrorToast("An unexpected error occurred while processing files");
