@@ -19,7 +19,8 @@ from integrations.utils import (
 from jinja2 import Environment
 from pydantic.dataclasses import dataclass
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from storage.database import session_maker
 from storage.proactive_conversation_store import ProactiveConversationStore
 from storage.saas_secrets_store import SaasSecretsStore

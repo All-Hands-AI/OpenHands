@@ -349,18 +349,48 @@ class SaasNestedConversationManager(ConversationManager):
         api_url: str,
         custom_secrets: MappingProxyType[str, Any] | None,
     ):
-        """Setup custom secrets for the nested conversation."""
+        """Setup custom secrets for the nested conversation.
+
+        Note: When resuming conversations, secrets may already exist in the runtime.
+        We check for specific duplicate error messages to handle this case gracefully.
+        """
         if custom_secrets:
             for key, secret in custom_secrets.items():
-                response = await client.post(
-                    f'{api_url}/api/secrets',
-                    json={
-                        'name': key,
-                        'description': secret.description,
-                        'value': secret.secret.get_secret_value(),
-                    },
-                )
-                response.raise_for_status()
+                try:
+                    response = await client.post(
+                        f'{api_url}/api/secrets',
+                        json={
+                            'name': key,
+                            'description': secret.description,
+                            'value': secret.secret.get_secret_value(),
+                        },
+                    )
+                    response.raise_for_status()
+                    logger.debug(f'Successfully created secret: {key}')
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 400:
+                        # Only ignore if it's actually a duplicate error
+                        try:
+                            error_data = e.response.json()
+                            error_msg = error_data.get('message', '')
+                            # The API returns: "Secret {secret_name} already exists"
+                            if 'already exists' in error_msg:
+                                logger.info(
+                                    f'Secret "{key}" already exists, continuing - ignoring duplicate',
+                                    extra={'api_url': api_url},
+                                )
+                                continue
+                        except (KeyError, ValueError, TypeError):
+                            pass  # If we can't parse JSON, fall through to re-raise
+                    # Re-raise all other errors (including non-duplicate 400s)
+                    logger.error(
+                        f'Failed to setup secret "{key}": HTTP {e.response.status_code}',
+                        extra={
+                            'api_url': api_url,
+                            'response_text': e.response.text[:200],
+                        },
+                    )
+                    raise
 
     def _get_mcp_config(self, user_id: str) -> MCPConfig | None:
         api_key_store = ApiKeyStore.get_instance()
