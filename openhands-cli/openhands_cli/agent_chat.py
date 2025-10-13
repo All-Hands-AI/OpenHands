@@ -54,7 +54,6 @@ def _print_exit_hint(conversation_id: str) -> None:
     )
 
 
-
 def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
 
