@@ -66,7 +66,7 @@ async def create_mcp_clients(
     shttp_servers: list[MCPSHTTPServerConfig],
     conversation_id: str | None = None,
     stdio_servers: list[MCPStdioServerConfig] | None = None,
-    tool_name: str | None = None
+    tool_name: str | None = None,
 ) -> list[MCPClient]:
     import sys
 
