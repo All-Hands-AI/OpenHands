@@ -29,6 +29,8 @@ afterAll(() => mswServer.close());
 function renderWithWebSocketContext(
   children: React.ReactNode,
   conversationId = "test-conversation-default",
+  conversationUrl = "http://localhost:3000/api/conversations/test-conversation-default",
+  sessionApiKey: string | null = null,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -39,7 +41,11 @@ function renderWithWebSocketContext(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ConversationWebSocketProvider conversationId={conversationId}>
+      <ConversationWebSocketProvider
+        conversationId={conversationId}
+        conversationUrl={conversationUrl}
+        sessionApiKey={sessionApiKey}
+      >
         {children}
       </ConversationWebSocketProvider>
     </QueryClientProvider>,

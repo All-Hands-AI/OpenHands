@@ -18,7 +18,7 @@ import {
   isActionEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
-import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { buildWebSocketUrl } from "#/utils/websocket-url";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -31,9 +31,13 @@ const ConversationWebSocketContext = createContext<
 export function ConversationWebSocketProvider({
   children,
   conversationId,
+  conversationUrl,
+  sessionApiKey,
 }: {
   children: React.ReactNode;
   conversationId?: string;
+  conversationUrl?: string | null;
+  sessionApiKey?: string | null;
 }) {
   const [connectionState, setConnectionState] = useState<
     "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
@@ -43,36 +47,11 @@ export function ConversationWebSocketProvider({
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
 
-  // Get conversation data to build WebSocket URL
-  const { data: conversation } = useActiveConversation();
-
-  // Build WebSocket URL from conversation data
-  const wsUrl = useMemo(() => {
-    if (!conversationId || !conversation) {
-      return null;
-    }
-
-    // Extract base URL and port from conversation.url (e.g., "http://localhost:3000/api/conversations/123")
-    let baseUrl = "";
-    if (conversation.url && !conversation.url.startsWith("/")) {
-      try {
-        const url = new URL(conversation.url);
-        baseUrl = url.host; // e.g., "localhost:3000"
-      } catch {
-        baseUrl = window.location.host;
-      }
-    } else {
-      baseUrl = window.location.host;
-    }
-
-    // Build WebSocket URL: ws://host:port/sockets/events/{conversationId}?session_api_key={key}
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const sessionKey = conversation.session_api_key
-      ? `?session_api_key=${conversation.session_api_key}`
-      : "";
-
-    return `${protocol}//${baseUrl}/sockets/events/${conversationId}${sessionKey}`;
-  }, [conversationId, conversation]);
+  // Build WebSocket URL from props
+  const wsUrl = useMemo(
+    () => buildWebSocketUrl(conversationId, conversationUrl, sessionApiKey),
+    [conversationId, conversationUrl, sessionApiKey],
+  );
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
