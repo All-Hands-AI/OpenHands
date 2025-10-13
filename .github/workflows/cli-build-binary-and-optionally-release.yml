@@ -31,7 +31,7 @@ jobs:
             platform: linux
             artifact_name: openhands-cli-linux
           # Build on macOS for macOS users
-          - os: macos-latest
+          - os: macos-15
             platform: macos
             artifact_name: openhands-cli-macos
     runs-on: ${{ matrix.os }}
