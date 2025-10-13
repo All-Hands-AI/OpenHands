@@ -22,8 +22,7 @@ dependencies = [
   "typer>=0.17.4",
 ]
 
-# Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands = "openhands_cli.simple_main:main"
+scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory
