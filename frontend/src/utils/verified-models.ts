@@ -4,6 +4,7 @@ export const VERIFIED_PROVIDERS = [
   "anthropic",
   "openai",
   "mistral",
+  "lemonade",
 ];
 export const VERIFIED_MODELS = [
   "o3-mini-2025-01-31",

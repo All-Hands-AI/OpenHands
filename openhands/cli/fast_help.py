@@ -15,6 +15,8 @@ This implementation addresses GitHub issue #10698, which reported that
 import argparse
 import sys
 
+from openhands.cli.deprecation_warning import display_deprecation_warning
+
 
 def get_fast_cli_parser() -> argparse.ArgumentParser:
     """Create a lightweight argument parser for CLI help command."""
@@ -148,6 +150,7 @@ def handle_fast_commands() -> bool:
     """
     # Handle --help or -h
     if len(sys.argv) == 2 and sys.argv[1] in ('--help', '-h'):
+        display_deprecation_warning()
         parser = get_fast_cli_parser()
 
         # Print top-level help
@@ -165,6 +168,8 @@ def handle_fast_commands() -> bool:
     # Handle --version or -v
     if len(sys.argv) == 2 and sys.argv[1] in ('--version', '-v'):
         import openhands
+
+        display_deprecation_warning()
 
         print(f'OpenHands CLI version: {openhands.get_version()}')
         return True
