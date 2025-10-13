@@ -68,7 +68,7 @@ function SettingsScreen() {
       <SettingsLayout navigationItems={navItems} isSaas={isSaas}>
         <div className="flex flex-col gap-6 h-full">
           <Typography.H2>{t(currentSectionTitle)}</Typography.H2>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto custom-scrollbar-always">
             <Outlet />
           </div>
         </div>
