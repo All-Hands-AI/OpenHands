@@ -30,9 +30,9 @@ from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
-from openhands.app_server.user.admin_user_context import (
+from openhands.app_server.user.specifiy_user_context import (
     USER_CONTEXT_ATTR,
-    AdminUserContext,
+    SpecifyUserContext,
     as_admin,
 )
 from openhands.app_server.user.user_context import UserContext
@@ -180,7 +180,7 @@ async def _run_callbacks_in_bg_and_close(
 ):
     """Run all callbacks and close the session"""
     state = InjectorState()
-    setattr(state, USER_CONTEXT_ATTR, AdminUserContext(user_id=user_id))
+    setattr(state, USER_CONTEXT_ATTR, SpecifyUserContext(user_id=user_id))
 
     async with get_event_callback_service(state) as event_callback_service:
         # We don't use asynio.gather here because callbacks must be run in sequence.

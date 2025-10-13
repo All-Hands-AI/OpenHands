@@ -10,7 +10,7 @@ from openhands.sdk.conversation.secret_source import SecretSource
 
 
 @dataclass(frozen=True)
-class AdminUserContext(UserContext):
+class SpecifyUserContext(UserContext):
     """User context for use in admin operations which allows access beyond the scope of a single user"""
 
     user_id: str | None
@@ -32,7 +32,7 @@ class AdminUserContext(UserContext):
 
 
 USER_CONTEXT_ATTR = 'user_context'
-ADMIN = AdminUserContext(user_id=None)
+ADMIN = SpecifyUserContext(user_id=None)
 
 
 def as_admin(request: Request):

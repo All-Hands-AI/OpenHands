@@ -20,7 +20,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
 )
-from openhands.app_server.user.admin_user_context import AdminUserContext
+from openhands.app_server.user.specifiy_user_context import SpecifyUserContext
 from openhands.app_server.utils.sql_utils import Base
 from openhands.integrations.service_types import ProviderType
 from openhands.sdk.llm import MetricsSnapshot
@@ -65,7 +65,7 @@ async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
 def service(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance for testing."""
     return SQLAppConversationInfoService(
-        db_session=async_session, user_context=AdminUserContext(user_id=None)
+        db_session=async_session, user_context=SpecifyUserContext(user_id=None)
     )
 
 
@@ -477,10 +477,10 @@ class TestSQLAppConversationInfoService:
         """Test that user isolation works correctly."""
         # Create services for different users
         user1_service = SQLAppConversationInfoService(
-            db_session=async_session, user_context=AdminUserContext(user_id='user1')
+            db_session=async_session, user_context=SpecifyUserContext(user_id='user1')
         )
         user2_service = SQLAppConversationInfoService(
-            db_session=async_session, user_context=AdminUserContext(user_id='user2')
+            db_session=async_session, user_context=SpecifyUserContext(user_id='user2')
         )
 
         # Create conversations for different users
