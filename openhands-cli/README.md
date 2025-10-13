@@ -34,3 +34,37 @@ uv run openhands
 ./dist/openhands            # macOS/Linux
 # dist/openhands.exe        # Windows
 ```
+
+## Resuming Conversations
+
+When you exit a conversation, the CLI will display a conversation ID and a hint for resuming:
+
+```
+Conversation ID: 2efacdca-3333-4362-adb6-1d119e9882cd
+Hint: run ./openhands-cli --resume 2efacdca-3333-4362-adb6-1d119e9882cd to resume this conversation.
+```
+
+The CLI automatically detects how it was invoked and provides the appropriate resume command:
+
+- **Built binary**: `./openhands-cli --resume <conversation-id>`
+- **Via uv**: `uv run openhands --resume <conversation-id>`
+- **Installed globally**: `openhands --resume <conversation-id>`
+- **Custom binary name**: `./my-custom-name --resume <conversation-id>`
+
+### Manual Resume Commands
+
+If you need to resume a conversation manually, use one of these patterns:
+
+```bash
+# If using the built binary
+./openhands-cli --resume <conversation-id>
+
+# If using uv run
+uv run openhands --resume <conversation-id>
+
+# If installed globally
+openhands --resume <conversation-id>
+
+# If you renamed the binary
+./your-custom-name --resume <conversation-id>
+```
