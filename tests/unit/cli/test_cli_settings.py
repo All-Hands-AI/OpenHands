@@ -619,6 +619,7 @@ class TestModifyLLMSettingsBasic:
             'claude-sonnet-4-20250514',
             'claude-sonnet-4-5-20250929',
             'claude-opus-4-20250514',
+            'gpt-5-codex',
             'o3',
         ],
     )
@@ -645,6 +646,7 @@ class TestModifyLLMSettingsBasic:
             'openhands/claude-sonnet-4-20250514',
             'openhands/claude-sonnet-4-5-20250929',
             'openhands/claude-opus-4-20250514',
+            'openhands/gpt-5-codex',
             'openhands/o3',
         ]
         mock_organize.return_value = {
@@ -653,6 +655,7 @@ class TestModifyLLMSettingsBasic:
                     'claude-sonnet-4-20250514',
                     'claude-sonnet-4-5-20250929',
                     'claude-opus-4-20250514',
+                    'gpt-5-codex',
                     'o3',
                 ],
                 'separator': '/',
@@ -675,7 +678,7 @@ class TestModifyLLMSettingsBasic:
         # Change provider and model
         mock_confirm.side_effect = [
             0,  # Select openhands (index 0 in ['openhands', 'anthropic'])
-            3,  # Select o3 (index 3 in ['claude-sonnet-4-20250514', 'claude-sonnet-4-5-20250929', 'claude-opus-4-20250514', 'o3'])
+            4,  # Select o3 (index 4 in ['claude-sonnet-4-20250514', 'claude-sonnet-4-5-20250929', 'claude-opus-4-20250514', 'gpt-5-codex', 'o3'])
             0,  # Save settings
         ]
 

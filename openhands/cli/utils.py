@@ -151,6 +151,7 @@ VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
     'gpt-5-2025-08-07',
+    'gpt-5-codex',
     'gpt-5-mini-2025-08-07',
     'o4-mini',
     'gpt-4o',

@@ -26,6 +26,7 @@ export const VERIFIED_MODELS = [
   "kimi-k2-0711-preview",
   "qwen3-coder-480b",
   "gpt-5-2025-08-07",
+  "gpt-5-codex",
   "gpt-5-mini-2025-08-07",
 ];
 
@@ -33,6 +34,7 @@ export const VERIFIED_MODELS = [
 // (e.g., they return `gpt-4o` instead of `openai/gpt-4o`)
 export const VERIFIED_OPENAI_MODELS = [
   "gpt-5-2025-08-07",
+  "gpt-5-codex",
   "gpt-5-mini-2025-08-07",
   "gpt-4o",
   "gpt-4o-mini",
