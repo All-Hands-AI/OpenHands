@@ -25,7 +25,23 @@ jobs:
     name: Build and test binary executable
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        include:
+          # Linux x86_64
+          - os: ubuntu-latest
+            arch: x86_64
+            platform: linux
+          # Linux ARM64
+          - os: ubuntu-latest-arm64
+            arch: arm64
+            platform: linux
+          # macOS x86_64 (Intel)
+          - os: macos-13
+            arch: x86_64
+            platform: macos
+          # macOS ARM64 (Apple Silicon)
+          - os: macos-latest
+            arch: arm64
+            platform: macos
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -52,7 +68,14 @@ jobs:
       - name: Build binary executable
         working-directory: openhands-cli
         run: |
-          ./build.sh --install-pyinstaller | tee output.log
+          # Set build arguments based on platform and architecture
+          BUILD_ARGS="--install-pyinstaller"
+          if [ "${{ matrix.platform }}" = "macos" ]; then
+            BUILD_ARGS="$BUILD_ARGS --target-arch ${{ matrix.arch }}"
+          fi
+
+          echo "🔨 Building with args: $BUILD_ARGS"
+          ./build.sh $BUILD_ARGS | tee output.log
           echo "Full output:"
           cat output.log
 
@@ -67,7 +90,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
-          name: openhands-cli-${{ matrix.os }}
+          name: openhands-cli-${{ matrix.platform }}-${{ matrix.arch }}
           path: openhands-cli/dist/openhands*
           retention-days: 30
 
@@ -88,13 +111,24 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          # Rename binaries to include OS in filename
-          if [ -f artifacts/openhands-cli-ubuntu-latest/openhands ]; then
-            cp artifacts/openhands-cli-ubuntu-latest/openhands release-assets/openhands-linux
-          fi
-          if [ -f artifacts/openhands-cli-macos-latest/openhands ]; then
-            cp artifacts/openhands-cli-macos-latest/openhands release-assets/openhands-macos
-          fi
+          # Rename binaries to include platform and architecture in filename
+          for artifact_dir in artifacts/openhands-cli-*; do
+            if [ -d "$artifact_dir" ]; then
+              # Extract platform and arch from directory name
+              # Format: openhands-cli-{platform}-{arch}
+              dir_name=$(basename "$artifact_dir")
+              platform_arch=${dir_name#openhands-cli-}
+
+              if [ -f "$artifact_dir/openhands" ]; then
+                cp "$artifact_dir/openhands" "release-assets/openhands-$platform_arch"
+                echo "✅ Copied $artifact_dir/openhands to release-assets/openhands-$platform_arch"
+              else
+                echo "⚠️  No openhands binary found in $artifact_dir"
+              fi
+            fi
+          done
+
+          echo "📁 Release assets prepared:"
           ls -la release-assets/
 
       - name: Create GitHub Release
