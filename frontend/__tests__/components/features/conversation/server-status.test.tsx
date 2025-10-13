@@ -6,11 +6,11 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { ServerStatusContextMenu } from "#/components/features/controls/server-status-context-menu";
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 
-// Mock the agent store
-vi.mock("#/stores/agent-store", () => ({
-  useAgentStore: vi.fn(),
+// Mock the agent state hook
+vi.mock("#/hooks/use-agent-state", () => ({
+  useAgentState: vi.fn(),
 }));
 
 // Mock the custom hooks
@@ -66,12 +66,10 @@ vi.mock("react-i18next", async () => {
 });
 
 describe("ServerStatus", () => {
-  // Helper function to mock agent store with specific state
+  // Helper function to mock agent state with specific state
   const mockAgentStore = (agentState: AgentState) => {
-    vi.mocked(useAgentStore).mockReturnValue({
+    vi.mocked(useAgentState).mockReturnValue({
       curAgentState: agentState,
-      setCurrentAgentState: vi.fn(),
-      reset: vi.fn(),
     });
   };
 

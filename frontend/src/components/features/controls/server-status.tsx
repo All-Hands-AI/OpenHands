@@ -9,7 +9,7 @@ import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
 
 export interface ServerStatusProps {
@@ -23,7 +23,7 @@ export function ServerStatus({
 }: ServerStatusProps) {
   const [showContextMenu, setShowContextMenu] = useState(false);
 
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const { t } = useTranslation();
   const { conversationId } = useConversationId();
   const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
