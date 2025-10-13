@@ -106,7 +106,7 @@ def sse_mcp_docker_server():
             log_streamer.close()
 
 
-@pytest.skip('This test is flaky')
+@pytest.mark.skip('This test is flaky')
 def test_default_activated_tools():
     import importlib.resources
 
