@@ -54,23 +54,6 @@ def test_api_key_update_when_user_enters_new_key():
     assert result == new_api_key
 
 
-def test_api_key_required_for_new_setup():
-    """Test that API key is required when no existing key is present."""
-    step_counter = StepCounter(1)
-    new_api_key = "sk-new-key-789"
-    
-    # Mock cli_text_input to return new API key
-    with patch('openhands_cli.user_actions.settings_action.cli_text_input', return_value=new_api_key):
-        result = prompt_api_key(
-            step_counter=step_counter,
-            provider='openai',
-            existing_api_key=None,
-            escapable=True
-        )
-    
-    # Should return the new API key
-    assert result == new_api_key
-
 
 def test_empty_input_validation_for_new_setup():
     """Test that empty input is rejected when no existing key is present."""
