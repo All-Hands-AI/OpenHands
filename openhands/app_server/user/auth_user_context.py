@@ -6,7 +6,7 @@ from pydantic import PrivateAttr
 
 from openhands.app_server.errors import AuthError
 from openhands.app_server.services.injector import InjectorState
-from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR
+from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext, UserContextInjector
 from openhands.app_server.user.user_models import UserInfo
 from openhands.integrations.provider import ProviderHandler, ProviderType
