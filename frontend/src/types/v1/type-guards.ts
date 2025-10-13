@@ -2,6 +2,7 @@ import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
 import { AgentErrorEvent } from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
+import { ConversationStateUpdateEvent } from "./core/events/conversation-state-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -73,6 +74,14 @@ export const isActionEvent = (event: OpenHandsEvent): event is ActionEvent =>
   "tool_call_id" in event &&
   typeof event.tool_name === "string" &&
   typeof event.tool_call_id === "string";
+
+/**
+ * Type guard function to check if an event is a conversation state update event
+ */
+export const isConversationStateUpdateEvent = (
+  event: OpenHandsEvent,
+): event is ConversationStateUpdateEvent =>
+  "kind" in event && event.kind === "ConversationStateUpdateEvent";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

@@ -5,8 +5,8 @@ import { Command, useCommandStore } from "#/state/command-store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
-import { useAgentStore } from "#/stores/agent-store";
 import { useSendMessage } from "#/hooks/use-send-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -37,7 +37,7 @@ const persistentLastCommandIndex = { current: 0 };
 
 export const useTerminal = () => {
   const { send } = useSendMessage();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const commands = useCommandStore((state) => state.commands);
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);

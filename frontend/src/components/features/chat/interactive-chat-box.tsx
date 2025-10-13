@@ -6,7 +6,7 @@ import { AgentState } from "#/types/agent-state";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { GitControlBar } from "./git-control-bar";
 import { useConversationStore } from "#/state/conversation-store";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 import { processFiles, processImages } from "#/utils/file-processing";
 
 interface InteractiveChatBoxProps {
@@ -29,7 +29,7 @@ export function InteractiveChatBox({
     addImageLoading,
     removeImageLoading,
   } = useConversationStore();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const { data: conversation } = useActiveConversation();
 
   // Helper function to validate and filter files

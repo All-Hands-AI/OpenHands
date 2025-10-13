@@ -1,4 +1,13 @@
 import { BaseEvent } from "../base/event";
+import { V1AgentStatus } from "../../agent-status";
+
+/**
+ * Conversation state value types
+ */
+export interface ConversationState {
+  agent_status: V1AgentStatus;
+  // Add other conversation state fields here as needed
+}
 
 // Conversation state update event - contains conversation state updates
 export interface ConversationStateUpdateEvent extends BaseEvent {
@@ -14,9 +23,7 @@ export interface ConversationStateUpdateEvent extends BaseEvent {
   key: string;
 
   /**
-   * Serialized conversation state updates.
-   * For "full_state" key, this contains the complete conversation state.
-   * For field-specific keys, this contains the updated field value.
+   * Conversation state updates
    */
-  value: unknown;
+  value: ConversationState;
 }

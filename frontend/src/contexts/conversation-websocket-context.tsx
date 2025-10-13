@@ -11,11 +11,13 @@ import { useWebSocket } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useV1ConversationStateStore } from "#/stores/v1-conversation-state-store";
 import {
   isV1Event,
   isAgentErrorEvent,
   isUserMessageEvent,
   isActionEvent,
+  isConversationStateUpdateEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
@@ -50,6 +52,7 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
+  const { setAgentStatus } = useV1ConversationStateStore();
 
   // V1 send message function via HTTP POST API
   const sendMessage = useCallback(
@@ -104,13 +107,26 @@ export function ConversationWebSocketProvider({
               queryClient,
             );
           }
+
+          // Handle conversation state updates
+          // TODO: Tests
+          if (isConversationStateUpdateEvent(event)) {
+            setAgentStatus(event.value.agent_status);
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console
         console.warn("Failed to parse WebSocket message as JSON:", error);
       }
     },
-    [addEvent, setErrorMessage, removeOptimisticUserMessage, queryClient],
+    [
+      addEvent,
+      setErrorMessage,
+      removeOptimisticUserMessage,
+      queryClient,
+      conversationId,
+      setAgentStatus,
+    ],
   );
 
   const websocketOptions = useMemo(
