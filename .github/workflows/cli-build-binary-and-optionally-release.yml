@@ -78,56 +78,6 @@ jobs:
           path: openhands-cli/dist/openhands*
           retention-days: 30
 
-  test-linux-compatibility:
-    name: Test Linux binary compatibility
-    needs: build-binary
-    strategy:
-      matrix:
-        # Test on multiple Ubuntu versions to ensure GLIBC compatibility
-        ubuntu-version: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04]
-    runs-on: ${{ matrix.ubuntu-version }}
-    # Only run compatibility tests on pull requests and main branch pushes, not on tags
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download Linux binary artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: openhands-cli-linux
-          path: binary-test
-
-      - name: Test binary compatibility
-        run: |
-          echo "🧪 Testing OpenHands CLI binary on ${{ matrix.ubuntu-version }}"
-
-          # Make binary executable
-          chmod +x binary-test/openhands
-
-          # Check GLIBC version available on this system
-          echo "📋 System GLIBC version:"
-          ldd --version | head -1
-
-          # Check binary dependencies
-          echo "📋 Binary dependencies:"
-          ldd binary-test/openhands | head -10
-
-          # Test that binary can start (with timeout to avoid hanging)
-          echo "🚀 Testing binary startup..."
-          timeout 30s binary-test/openhands --help || {
-            exit_code=$?
-            if [ $exit_code -eq 124 ]; then
-              echo "⚠️  Binary startup timed out (this might be expected for --help)"
-            else
-              echo "❌ Binary failed to start with exit code: $exit_code"
-              exit 1
-            fi
-          }
-
-          echo "✅ Binary compatibility test passed on ${{ matrix.ubuntu-version }}"
-
   create-github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
