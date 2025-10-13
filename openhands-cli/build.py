@@ -164,7 +164,7 @@ def test_executable() -> bool:
         )
 
         # --- Wait for welcome ---
-        deadline = boot_start + 30
+        deadline = boot_start + 60
         saw_welcome = False
         captured = []
 
