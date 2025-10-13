@@ -31,6 +31,7 @@ LITELLM_DEFAULT_MODEL = os.getenv('LITELLM_DEFAULT_MODEL')
 
 # Current user settings version - this should be the latest key in USER_SETTINGS_VERSION_TO_MODEL
 ORG_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
+CURRENT_USER_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
 
 LITE_LLM_API_URL = os.environ.get(
     'LITE_LLM_API_URL', 'https://llm-proxy.app.all-hands.dev'
