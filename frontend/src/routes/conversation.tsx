@@ -15,6 +15,7 @@ import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
@@ -33,6 +34,10 @@ function AppContent() {
   useConversationConfig();
 
   const { conversationId } = useConversationId();
+
+  // Handle both task IDs (task-{uuid}) and regular conversation IDs
+  const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
+
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { mutate: startConversation } = useStartConversation();
   const { data: isAuthed } = useIsAuthed();
@@ -48,6 +53,14 @@ function AppContent() {
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
+
+  // Show task status while polling
+  React.useEffect(() => {
+    if (isTask && taskStatus) {
+      // You can show a toast or update UI with task status
+      console.log(`Task status: ${taskStatus}`, taskDetail);
+    }
+  }, [isTask, taskStatus, taskDetail]);
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -105,8 +118,13 @@ function AppContent() {
     setCurrentAgentState(AgentState.LOADING);
   });
 
+  const isV1Conversation = conversation?.conversation_version === "V1";
+
   return (
-    <WebSocketProviderWrapper version={0} conversationId={conversationId}>
+    <WebSocketProviderWrapper
+      version={isV1Conversation ? 1 : 0}
+      conversationId={conversationId}
+    >
       <ConversationSubscriptionsProvider>
         <EventHandler>
           <div

@@ -113,46 +113,6 @@ class V1ConversationService {
 
     return data[0] || null;
   }
-
-  /**
-   * Poll a start task until it's ready or errors
-   * @param taskId The task UUID
-   * @param onProgress Optional callback for progress updates
-   * @returns The conversation ID when ready
-   */
-  static async pollStartTask(
-    taskId: string,
-    onProgress?: (task: V1AppConversationStartTask) => void,
-  ): Promise<string> {
-    const maxAttempts = 60; // 3 minutes max (3s interval)
-    let attempts = 0;
-
-    while (attempts < maxAttempts) {
-      const task = await this.getStartTask(taskId);
-
-      if (!task) {
-        throw new Error("Start task not found");
-      }
-
-      if (onProgress) {
-        onProgress(task);
-      }
-
-      if (task.status === "READY" && task.app_conversation_id) {
-        return task.app_conversation_id;
-      }
-
-      if (task.status === "ERROR") {
-        throw new Error(task.detail || "Failed to start conversation");
-      }
-
-      // Wait 3 seconds before next poll
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      attempts++;
-    }
-
-    throw new Error("Timeout waiting for conversation to start");
-  }
 }
 
 export default V1ConversationService;
