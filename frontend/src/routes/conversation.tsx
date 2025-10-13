@@ -57,8 +57,11 @@ function AppContent() {
   // Show task status while polling
   React.useEffect(() => {
     if (isTask && taskStatus) {
-      // You can show a toast or update UI with task status
-      console.log(`Task status: ${taskStatus}`, taskDetail);
+      if (taskStatus === "ERROR") {
+        displayErrorToast(
+          taskDetail || "Failed to start the conversation from task.",
+        );
+      }
     }
   }, [isTask, taskStatus, taskDetail]);
 

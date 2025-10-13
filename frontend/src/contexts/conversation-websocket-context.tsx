@@ -19,9 +19,13 @@ import {
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
+import V1ConversationService, {
+  V1SendMessageRequest,
+} from "#/api/conversation-service/v1-conversation-service.api";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
+  sendMessage: (message: V1SendMessageRequest) => Promise<void>;
 }
 
 const ConversationWebSocketContext = createContext<
@@ -46,6 +50,25 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
+
+  // V1 send message function via HTTP POST API
+  const sendMessage = useCallback(
+    async (message: V1SendMessageRequest) => {
+      if (!conversationId) {
+        throw new Error("No conversation ID provided");
+      }
+
+      try {
+        await V1ConversationService.sendMessage(conversationId, message);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to send message";
+        setErrorMessage(errorMessage);
+        throw error;
+      }
+    },
+    [conversationId, setErrorMessage],
+  );
 
   // Build WebSocket URL from props
   const wsUrl = useMemo(
@@ -146,7 +169,10 @@ export function ConversationWebSocketProvider({
     }
   }, [socket, wsUrl]);
 
-  const contextValue = useMemo(() => ({ connectionState }), [connectionState]);
+  const contextValue = useMemo(
+    () => ({ connectionState, sendMessage }),
+    [connectionState, sendMessage],
+  );
 
   return (
     <ConversationWebSocketContext.Provider value={contextValue}>

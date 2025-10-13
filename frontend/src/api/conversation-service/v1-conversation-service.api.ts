@@ -52,7 +52,30 @@ export interface V1AppConversationStartTask {
   updated_at: string;
 }
 
+export interface V1SendMessageResponse {
+  role: "user" | "system" | "assistant" | "tool";
+  content: V1MessageContent[];
+}
+
 class V1ConversationService {
+  /**
+   * Send a message to a V1 conversation
+   * @param conversationId The conversation ID
+   * @param message The message to send
+   * @returns The sent message response
+   */
+  static async sendMessage(
+    conversationId: string,
+    message: V1SendMessageRequest,
+  ): Promise<V1SendMessageResponse> {
+    const { data } = await openHands.post<V1SendMessageResponse>(
+      `/api/conversations/${conversationId}/events`,
+      message,
+    );
+
+    return data;
+  }
+
   /**
    * Create a new V1 conversation using the app-conversations API
    * Returns the start task immediately with app_conversation_id as null.

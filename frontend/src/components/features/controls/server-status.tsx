@@ -10,6 +10,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
 import { useAgentStore } from "#/stores/agent-store";
+import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
 
 export interface ServerStatusProps {
   className?: string;
@@ -25,6 +26,7 @@ export function ServerStatus({
   const { curAgentState } = useAgentStore();
   const { t } = useTranslation();
   const { conversationId } = useConversationId();
+  const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
 
   // Mutation hooks
   const stopConversationMutation = useStopConversation();
@@ -38,6 +40,14 @@ export function ServerStatus({
 
   // Get the appropriate color based on agent status
   const getStatusColor = (): string => {
+    // Show task status if we're polling a task
+    if (isTask && taskStatus) {
+      if (taskStatus === "ERROR") {
+        return "#FF684E";
+      }
+      return "#FFD600";
+    }
+
     if (isStartingStatus) {
       return "#FFD600";
     }
@@ -52,6 +62,24 @@ export function ServerStatus({
 
   // Get the appropriate status text based on agent status
   const getStatusText = (): string => {
+    // Show task status if we're polling a task
+    if (isTask && taskStatus) {
+      if (taskStatus === "ERROR") {
+        return taskDetail || "Error starting conversation";
+      }
+      if (taskStatus === "READY") {
+        return "Ready";
+      }
+      // Format status text: "WAITING_FOR_SANDBOX" -> "Waiting for sandbox"
+      return (
+        taskDetail ||
+        taskStatus
+          .toLowerCase()
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      );
+    }
+
     if (isStartingStatus) {
       return t(I18nKey.COMMON$STARTING);
     }

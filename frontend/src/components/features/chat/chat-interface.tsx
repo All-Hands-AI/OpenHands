@@ -18,6 +18,7 @@ import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
 import { useAgentStore } from "#/stores/agent-store";
+import { useSendMessage } from "#/hooks/use-send-message";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -49,7 +50,8 @@ function getEntryPoint(
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
   const { errorMessage } = useErrorMessageStore();
-  const { send, isLoadingMessages } = useWsClient();
+  const { isLoadingMessages } = useWsClient();
+  const { send } = useSendMessage();
   const storeEvents = useEventStore((state) => state.events);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
