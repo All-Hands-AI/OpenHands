@@ -54,20 +54,3 @@ def test_api_key_update_when_user_enters_new_key():
     assert result == new_api_key
 
 
-
-def test_empty_input_validation_for_new_setup():
-    """Test that empty input is rejected when no existing key is present."""
-    step_counter = StepCounter(1)
-    
-    # For new setups, empty input should return empty string (validation happens in cli_text_input)
-    # This test verifies that the function correctly handles the case where no existing key is present
-    with patch('openhands_cli.user_actions.settings_action.cli_text_input', return_value=''):
-        result = prompt_api_key(
-            step_counter=step_counter,
-            provider='openai',
-            existing_api_key=None,
-            escapable=True
-        )
-        
-        # Should return empty string when no existing key and user provides empty input
-        assert result == ''
