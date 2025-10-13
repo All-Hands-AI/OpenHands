@@ -1,4 +1,5 @@
 import json
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -50,11 +51,52 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
+        # Try mktemp first (Unix/Linux). If it fails, create a temp dir via PowerShell in Windows containers.
         result = self.execute('mktemp -d', self.cwd)
-        script_file = Path(result.content.strip(), Path(file).name)
-        with open(file, 'r') as f:
+
+        temp_dir: str | None = None
+        mktemp_worked = result.exit_code == 0
+        if mktemp_worked:
+            temp_path = result.content.strip()
+            if temp_path and os.path.isabs(temp_path):
+                temp_dir = temp_path
+
+        if temp_dir is None:
+            ps_cmd = (
+                'pwsh -NoProfile -Command '
+                '"$base = $env:TEMP; '
+                '$name = [System.Guid]::NewGuid().ToString(); '
+                '$dir = [System.IO.Path]::Combine($base, $name); '
+                'New-Item -ItemType Directory -Force -Path $dir | Out-Null; '
+                'Write-Output $dir"'
+            )
+            ps_result = self.execute(ps_cmd, self.cwd)
+            if ps_result.exit_code == 0 and ps_result.content.strip():
+                temp_dir = ps_result.content.strip()
+            else:
+                ps_fallback_cmd = (
+                    'pwsh -NoProfile -Command '
+                    '"$base = "C:\\Windows\\Temp"; '
+                    'if (!(Test-Path $base)) { New-Item -ItemType Directory -Path $base | Out-Null }; '
+                    '$name = [System.Guid]::NewGuid().ToString(); '
+                    '$dir = Join-Path $base $name; '
+                    'New-Item -ItemType Directory -Force -Path $dir | Out-Null; '
+                    'Write-Output $dir"'
+                )
+                ps_result2 = self.execute(ps_fallback_cmd, self.cwd)
+                if ps_result2.exit_code == 0 and ps_result2.content.strip():
+                    temp_dir = ps_result2.content.strip()
+
+        if not temp_dir:
+            raise RuntimeError('Failed to create temporary directory for script file')
+
+        script_file = Path(temp_dir, Path(file).name)
+
+        with open(file, 'r', encoding='utf-8') as f:
             self.create_file_fn(str(script_file), f.read())
-            result = self.execute(f'chmod +x "{script_file}"', self.cwd)
+            # Only try chmod on Unix-like systems
+            if mktemp_worked:
+                _ = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
 
     def get_current_branch(self) -> str | None:

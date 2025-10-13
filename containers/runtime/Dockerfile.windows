@@ -1,0 +1,139 @@
+# Dockerfile.windows
+# Windows container version, based on OpenHands runtime requirements
+# Uses chocolatey + Python + poetry for environment management
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+# Set environment variables - compatible with OpenHands runtime
+ENV POETRY_VIRTUALENVS_PATH=C:\\openhands\\poetry \
+    PYTHON_ROOT=C:\\Python312 \
+    LANG=en_US.UTF-8 \
+    LC_ALL=en_US.UTF-8 \
+    PYTHONIOENCODING=utf-8 \
+    PYTHONLEGACYWINDOWSSTDIO=utf-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=C:\\openhands\\.openvscode-server \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    WORK_DIR=C:\\openhands\\workspace \
+    HOST=0.0.0.0 \
+    EXECUTION_SERVER_PORT_RANGE_START=30000 \
+    EXECUTION_SERVER_PORT_RANGE_END=34999 \
+    VSCODE_PORT_RANGE_START=35000 \
+    VSCODE_PORT_RANGE_END=39999 \
+    APP_PORT_RANGE_1_START=40000 \
+    APP_PORT_RANGE_1_END=44999 \
+    APP_PORT_RANGE_2_START=45000 \
+    APP_PORT_RANGE_2_END=49151 \
+    # OpenHands runtime specific environment variables
+    PIP_BREAK_SYSTEM_PACKAGES=1
+
+# Install Chocolatey and batch install all required tools
+RUN powershell -Command " \
+    # Install Chocolatey \
+    Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')); \
+    \
+    # Set environment variables \
+    $env:ChocolateyInstall = \"$($env:ALLUSERSPROFILE)\\chocolatey\"; \
+    $env:PATH = \"$env:ChocolateyInstall\\bin;$env:PATH\"; \
+    \
+    # Batch install all tools \
+    Write-Host 'Installing all required tools...'; \
+    choco install git curl wget 7zip python312 vcredist-all -y --limit-output --no-progress --force; \
+    \
+    # Install PowerShell 7 \
+    Write-Host 'Installing PowerShell 7...'; \
+    choco install powershell-core --version=7.5.2 -y --limit-output --no-progress --force; \
+    \
+    # Install .NET 9 Runtime \
+    Write-Host 'Installing .NET 9 Runtime...'; \
+    choco install dotnet-runtime --version=9.0.0 -y --limit-output --no-progress --force; \
+    \
+    Write-Host 'All tools installed successfully'"
+
+# Create directory structure
+RUN pwsh -Command " \
+    New-Item -ItemType Directory -Path C:\\openhands\\poetry, C:\\openhands\\code, C:\\openhands\\workspace, C:\\openhands\\logs -Force"
+
+# Install Poetry and pythonnet (parallel execution, no waiting for permission setup)
+RUN pwsh -Command " \
+    python -m pip install --upgrade pip poetry pythonnet; \
+    python -m poetry config virtualenvs.path 'C:\\openhands\\poetry'; \
+    python -m poetry config virtualenvs.create true; \
+    python -m poetry config virtualenvs.in-project false"
+
+# Batch set all directory permissions (one-time completion, avoid multiple icacls calls)
+RUN pwsh -Command " \
+    # Use single icacls command to set all permissions, reduce system calls \
+    icacls 'C:\\openhands' /grant 'ContainerUser:(OI)(CI)F' /T /Q; \
+    icacls 'C:\\openhands' /grant 'Everyone:(OI)(CI)F' /T /Q; \
+    Write-Host 'Permissions set successfully'"
+
+# Set working directory - compatible with OpenHands runtime
+WORKDIR C:\\openhands\\code
+
+# Set PYTHONPATH environment variable
+ENV PYTHONPATH=C:\\openhands\\code;C:\\openhands\\code\\openhands
+
+# Create basic openhands directory structure
+RUN pwsh -Command " \
+    New-Item -ItemType Directory -Path C:\\openhands\\code\\openhands -Force; \
+    New-Item -ItemType File -Path C:\\openhands\\code\\openhands\\__init__.py -Force"
+
+# Copy dependency files first to leverage Docker cache
+COPY pyproject.toml poetry.lock* ./
+
+# Install dependencies (this layer will be cached unless dependency files change)
+RUN pwsh -Command " \
+    if (Test-Path 'pyproject.toml') { \
+        python -m poetry install --only main --no-interaction --no-root; \
+        python -m poetry install --only runtime --no-interaction --no-root; \
+    }"
+
+# Install playwright and browser (if needed) - execute before code copy to leverage cache
+RUN pwsh -Command " \
+    python -m pip install playwright; \
+    python -m playwright install --with-deps chromium"
+
+# Copy OpenHands runtime code (this layer will be rebuilt when code changes)
+COPY openhands openhands/
+
+# Set environment variables and final permissions (merge steps)
+RUN pwsh -Command " \
+    # Set OH_INTERPRETER_PATH \
+    $pythonPath = python -c 'import sys; print(sys.executable)'; \
+    [Environment]::SetEnvironmentVariable('OH_INTERPRETER_PATH', $pythonPath, 'Machine'); \
+    \
+    # Create python3 symlink to support python3 command \
+    Copy-Item 'C:\\Python312\\python.exe' 'C:\\Python312\\python3.exe'; \
+    \
+    # Ensure all files have correct permissions (one-time setup) \
+    icacls 'C:\\openhands\\code\\openhands\\__init__.py' /grant 'Everyone:F' /Q; \
+    Write-Host 'Final permissions and environment setup completed'"
+
+# Clear cache
+RUN pwsh -Command " \
+    python -m poetry cache clear --all . -n"
+
+# Use Windows container default user
+USER ContainerUser
+
+# Expose port ranges - compatible with OpenHands DockerRuntime
+# Note: actual ports are dynamically allocated, this just declares port ranges
+EXPOSE 30000-34999 35000-39999 40000-44999 45000-49151
+
+# Startup command - compatible with OpenHands runtime
+# Use poetry to run action_execution_server
+CMD ["pwsh", "-Command", "& { \
+    $port = $env:port; \
+    if (-not $port) { $port = 30000 }; \
+    python -m poetry run python -u -m openhands.runtime.action_execution_server $port \
+    --working-dir C:\\workspace \
+    --username openhands \
+    --user-id 1000 \
+    --no-enable-browser \
+}"]

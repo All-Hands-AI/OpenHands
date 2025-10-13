@@ -98,6 +98,12 @@ jobs:
           PYTHONPATH: ".;$env:PYTHONPATH"
           TEST_RUNTIME: local
           DEBUG: "1"
+      - name: Run Windows runtime tests with WindowsDockerRuntime
+        run: $env:TEST_RUNTIME="windowsdockerruntime"; poetry run pytest -svv tests/runtime/test_bash.py
+        env:
+          PYTHONPATH: ".;$env:PYTHONPATH"
+          TEST_RUNTIME: windowsdockerruntime
+          DEBUG: "1"
   test-enterprise:
     name: Enterprise Python Unit Tests
     runs-on: blacksmith-4vcpu-ubuntu-2404

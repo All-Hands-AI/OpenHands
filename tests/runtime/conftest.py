@@ -14,6 +14,7 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.impl.docker.windows_docker_runtime import WindowsDockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -122,14 +123,24 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
-    runtime = TEST_RUNTIME
-    if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
+    runtime = TEST_RUNTIME.lower()
+    if runtime in ('docker', 'eventstream'):
         return [DockerRuntime]
-    elif runtime.lower() == 'local':
+    elif runtime == 'windowsdockerruntime':
+        try:
+            import docker  # type: ignore
+
+            info = docker.from_env().info()
+            if str(info.get('OSType', '')).lower() != 'windows':
+                return ['SKIP_WINDOWS_DOCKER']
+        except Exception:
+            return ['SKIP_WINDOWS_DOCKER']
+        return [WindowsDockerRuntime]
+    elif runtime == 'local':
         return [LocalRuntime]
-    elif runtime.lower() == 'remote':
+    elif runtime == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'cli':
+    elif runtime == 'cli':
         return [CLIRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
@@ -164,6 +175,8 @@ def runtime_setup_session():
 # which cause errors (especially outside GitHub actions).
 @pytest.fixture(scope='module', params=get_runtime_classes())
 def runtime_cls(request):
+    if request.param == 'SKIP_WINDOWS_DOCKER':
+        pytest.skip('WindowsDockerRuntime is not supported in this environment')
     time.sleep(1)
     return request.param
 
@@ -239,7 +252,11 @@ def _load_runtime(
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
+    # Use Windows path inside Windows containers
+    if runtime_cls is WindowsDockerRuntime:
+        config.workspace_mount_path_in_sandbox = 'C:\\workspace'
+    else:
+        config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
@@ -256,6 +273,16 @@ def _load_runtime(
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image
         config.sandbox.runtime_container_image = None
+
+    # If using WindowsDockerRuntime, force a fixed prebuilt image instead of dynamic build
+    if runtime_cls is WindowsDockerRuntime:
+        # Allow override via env, fallback to provided default image
+        config.sandbox.runtime_container_image = os.environ.get(
+            'WINDOWS_RUNTIME_IMAGE',
+            'shx815666/openhands-windows-runtime:latest',
+        )
+        # Ensure we don't attempt a build path
+        config.sandbox.base_container_image = None
 
     if override_mcp_config is not None:
         config.mcp = override_mcp_config
