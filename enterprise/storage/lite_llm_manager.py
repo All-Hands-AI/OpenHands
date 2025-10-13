@@ -8,8 +8,8 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 from pydantic import SecretStr
-from enterprise.server.auth.token_manager import TokenManager
-from enterprise.server.constants import (
+from server.auth.token_manager import TokenManager
+from server.constants import (
     DEFAULT_INITIAL_BUDGET,
     LITE_LLM_API_KEY,
     LITE_LLM_API_URL,
@@ -17,8 +17,8 @@ from enterprise.server.constants import (
     ORG_SETTINGS_VERSION,
     get_default_litellm_model,
 )
-from enterprise.server.logger import logger
-from enterprise.storage.user_settings import UserSettings
+from server.logger import logger
+from storage.user_settings import UserSettings
 
 from openhands.server.settings import Settings
 

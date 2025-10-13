@@ -5,12 +5,12 @@ SQLAlchemy model for Organization.
 from uuid import uuid4
 
 from pydantic import SecretStr
-from enterprise.server.constants import DEFAULT_BILLING_MARGIN
+from server.constants import DEFAULT_BILLING_MARGIN
 from sqlalchemy import JSON, Boolean, Column, Float, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
-from enterprise.storage.encrypt_utils import decrypt_value, encrypt_value
+from storage.base import Base
+from storage.encrypt_utils import decrypt_value, encrypt_value
 
 
 class Org(Base):  # type: ignore

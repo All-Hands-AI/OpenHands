@@ -2,27 +2,27 @@ import uuid
 from datetime import datetime
 
 import pytest
-from enterprise.server.constants import ORG_SETTINGS_VERSION
-from enterprise.server.maintenance_task_processor.user_version_upgrade_processor import (
+from server.constants import ORG_SETTINGS_VERSION
+from server.maintenance_task_processor.user_version_upgrade_processor import (
     UserVersionUpgradeProcessor,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from enterprise.storage.base import Base
+from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
-from enterprise.storage.billing_session import BillingSession
-from enterprise.storage.conversation_work import ConversationWork
-from enterprise.storage.feedback import Feedback
-from enterprise.storage.github_app_installation import GithubAppInstallation
-from enterprise.storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
-from enterprise.storage.org import Org
-from enterprise.storage.org_user import OrgUser
-from enterprise.storage.role import Role
-from enterprise.storage.stored_conversation_metadata import StoredConversationMetadata
-from enterprise.storage.stored_offline_token import StoredOfflineToken
-from enterprise.storage.stripe_customer import StripeCustomer
-from enterprise.storage.user import User
+from storage.billing_session import BillingSession
+from storage.conversation_work import ConversationWork
+from storage.feedback import Feedback
+from storage.github_app_installation import GithubAppInstallation
+from storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
+from storage.org import Org
+from storage.org_user import OrgUser
+from storage.role import Role
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_offline_token import StoredOfflineToken
+from storage.stripe_customer import StripeCustomer
+from storage.user import User
 
 
 @pytest.fixture

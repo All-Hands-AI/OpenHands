@@ -7,7 +7,7 @@ import typing
 import jwt
 import requests  # type: ignore
 from fastapi import HTTPException
-from enterprise.server.auth.constants import (
+from server.auth.constants import (
     BITBUCKET_APP_CLIENT_ID,
     ENABLE_ENTERPRISE_SSO,
     ENABLE_JIRA,

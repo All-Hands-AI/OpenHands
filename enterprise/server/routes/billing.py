@@ -6,16 +6,16 @@ from decimal import Decimal
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
-from enterprise.integrations import stripe_service
+from integrations import stripe_service
 from pydantic import BaseModel
-from enterprise.server.constants import (
+from server.constants import (
     STRIPE_API_KEY,
 )
-from enterprise.server.logger import logger
-from enterprise.storage.billing_session import BillingSession
-from enterprise.storage.database import session_maker
-from enterprise.storage.lite_llm_manager import LiteLlmManager
-from enterprise.storage.user_store import UserStore
+from server.logger import logger
+from storage.billing_session import BillingSession
+from storage.database import session_maker
+from storage.lite_llm_manager import LiteLlmManager
+from storage.user_store import UserStore
 
 from openhands.server.user_auth import get_user_id
 

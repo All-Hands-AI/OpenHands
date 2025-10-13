@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class StoredConversationMetadata(Base):  # type: ignore

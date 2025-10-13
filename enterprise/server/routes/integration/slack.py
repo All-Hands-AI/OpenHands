@@ -10,32 +10,32 @@ from fastapi.responses import (
     PlainTextResponse,
     RedirectResponse,
 )
-from enterprise.integrations.models import Message, SourceType
-from enterprise.integrations.slack.slack_manager import SlackManager
-from enterprise.integrations.utils import (
+from integrations.models import Message, SourceType
+from integrations.slack.slack_manager import SlackManager
+from integrations.utils import (
     HOST_URL,
 )
-from enterprise.server.auth.constants import (
+from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
     KEYCLOAK_SERVER_URL_EXT,
 )
-from enterprise.server.auth.token_manager import TokenManager
-from enterprise.server.constants import (
+from server.auth.token_manager import TokenManager
+from server.constants import (
     SLACK_CLIENT_ID,
     SLACK_CLIENT_SECRET,
     SLACK_SIGNING_SECRET,
     SLACK_WEBHOOKS_ENABLED,
 )
-from enterprise.server.logger import logger
+from server.logger import logger
 from slack_sdk.oauth import AuthorizeUrlGenerator
 from slack_sdk.signature import SignatureVerifier
 from slack_sdk.web.async_client import AsyncWebClient
-from enterprise.storage.database import session_maker
-from enterprise.storage.slack_team_store import SlackTeamStore
-from enterprise.storage.slack_user import SlackUser
-from enterprise.storage.user_settings import UserSettings
-from enterprise.storage.user_store import UserStore
+from storage.database import session_maker
+from storage.slack_team_store import SlackTeamStore
+from storage.slack_user import SlackUser
+from storage.user_settings import UserSettings
+from storage.user_store import UserStore
 
 from openhands.integrations.service_types import ProviderType
 from openhands.server.shared import config, sio

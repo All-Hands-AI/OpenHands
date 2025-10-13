@@ -1,12 +1,12 @@
 from unittest.mock import patch
 
 # Mock the database module before importing OrgUserStore
-with patch('enterprise.storage.database.engine'), patch('enterprise.storage.database.a_engine'):
-    from enterprise.storage.org import Org
-    from enterprise.storage.org_user import OrgUser
-    from enterprise.storage.org_user_store import OrgUserStore
-    from enterprise.storage.role import Role
-    from enterprise.storage.user import User
+with patch('storage.database.engine'), patch('storage.database.a_engine'):
+    from storage.org import Org
+    from storage.org_user import OrgUser
+    from storage.org_user_store import OrgUserStore
+    from storage.role import Role
+    from storage.user import User
 
 
 def test_get_org_users(session_maker):

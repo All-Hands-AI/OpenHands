@@ -9,8 +9,7 @@ from integrations.github.github_types import (
 )
 from integrations.models import Message
 from integrations.types import ResolverViewInterface, UserData
-from enterprise.integrations.utils import (
-    CONVERSATION_URL,
+from integrations.utils import (
     ENABLE_PROACTIVE_CONVERSATION_STARTERS,
     HOST,
     HOST_URL,

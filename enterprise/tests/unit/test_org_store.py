@@ -5,9 +5,9 @@ import pytest
 from pydantic import SecretStr
 
 # Mock the database module before importing OrgStore
-with patch('enterprise.storage.database.engine'), patch('enterprise.storage.database.a_engine'):
-    from enterprise.storage.org import Org
-    from enterprise.storage.org_store import OrgStore
+with patch('storage.database.engine'), patch('storage.database.a_engine'):
+    from storage.org import Org
+    from storage.org_store import OrgStore
 
 from openhands.storage.data_models.settings import Settings
 
@@ -175,7 +175,7 @@ def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
         session.add(org)
         session.flush()
 
-        from enterprise.storage.user import User
+        from storage.user import User
 
         user = User(keycloak_user_id='test-user', current_org_id=org.id)
         session.add(user)

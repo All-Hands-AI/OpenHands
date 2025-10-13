@@ -5,8 +5,8 @@ Store class for managing organization-user relationships.
 from typing import Optional
 from uuid import UUID
 
-from enterprise.storage.database import session_maker
-from enterprise.storage.org_user import OrgUser
+from storage.database import session_maker
+from storage.org_user import OrgUser
 
 
 class OrgUserStore:

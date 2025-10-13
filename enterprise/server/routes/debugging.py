@@ -5,8 +5,8 @@ from threading import Thread
 
 from fastapi import APIRouter, FastAPI
 from sqlalchemy import func, select
-from enterprise.storage.database import a_session_maker, engine, session_maker
-from enterprise.storage.user import User
+from storage.database import a_session_maker, engine, session_maker
+from storage.user import User
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.async_utils import wait_all

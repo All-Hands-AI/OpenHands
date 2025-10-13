@@ -13,7 +13,7 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class User(Base):  # type: ignore

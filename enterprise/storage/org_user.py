@@ -5,8 +5,8 @@ SQLAlchemy model for Organization-User relationship.
 from pydantic import SecretStr
 from sqlalchemy import UUID, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
-from enterprise.storage.encrypt_utils import decrypt_value, encrypt_value
+from storage.base import Base
+from storage.encrypt_utils import decrypt_value, encrypt_value
 
 
 class OrgUser(Base):  # type: ignore

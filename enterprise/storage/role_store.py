@@ -4,8 +4,8 @@ Store class for managing roles.
 
 from typing import List, Optional
 
-from enterprise.storage.database import session_maker
-from enterprise.storage.role import Role
+from storage.database import session_maker
+from storage.role import Role
 
 
 class RoleStore:

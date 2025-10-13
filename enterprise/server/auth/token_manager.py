@@ -9,7 +9,7 @@ import httpx
 import jwt
 from cryptography.fernet import Fernet
 from jwt.exceptions import DecodeError
-from enterprise.server.auth.constants import (
+from server.auth.constants import (
     BITBUCKET_APP_CLIENT_ID,
     BITBUCKET_APP_CLIENT_SECRET,
     GITHUB_APP_CLIENT_ID,
@@ -25,10 +25,10 @@ from server.config import get_config
 from server.logger import logger
 from sqlalchemy import String as SQLString
 from sqlalchemy import type_coerce
-from enterprise.storage.auth_token_store import AuthTokenStore
-from enterprise.storage.database import session_maker
-from enterprise.storage.github_app_installation import GithubAppInstallation
-from enterprise.storage.offline_token_store import OfflineTokenStore
+from storage.auth_token_store import AuthTokenStore
+from storage.database import session_maker
+from storage.github_app_installation import GithubAppInstallation
+from storage.offline_token_store import OfflineTokenStore
 from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
 from keycloak.exceptions import (

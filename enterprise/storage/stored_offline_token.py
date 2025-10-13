@@ -1,5 +1,5 @@
 from sqlalchemy import Column, DateTime, String, text
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class StoredOfflineToken(Base):

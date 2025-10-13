@@ -1,6 +1,6 @@
 from sqlalchemy import JSON, Column, DateTime, Enum, Integer, String, Text
 from sqlalchemy.sql import func
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class Feedback(Base):  # type: ignore

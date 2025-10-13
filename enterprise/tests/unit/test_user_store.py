@@ -5,9 +5,9 @@ import pytest
 from pydantic import SecretStr
 
 # Mock the database module before importing UserStore
-with patch('enterprise.storage.database.engine'), patch('enterprise.storage.database.a_engine'):
-    from enterprise.storage.user import User
-    from enterprise.storage.user_store import UserStore
+with patch('storage.database.engine'), patch('storage.database.a_engine'):
+    from storage.user import User
+    from storage.user_store import UserStore
 
 from openhands.storage.data_models.settings import Settings
 

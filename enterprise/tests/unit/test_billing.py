@@ -5,8 +5,8 @@ import pytest
 import stripe
 from fastapi import HTTPException, Request, status
 from httpx import Response
-from enterprise.server.routes import billing
-from enterprise.server.routes.billing import (
+from server.routes import billing
+from server.routes.billing import (
     CreateBillingSessionResponse,
     CreateCheckoutSessionRequest,
     GetCreditsResponse,
@@ -20,7 +20,7 @@ from enterprise.server.routes.billing import (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.datastructures import URL
-from enterprise.storage.stripe_customer import Base as StripeCustomerBase
+from storage.stripe_customer import Base as StripeCustomerBase
 
 
 @pytest.fixture

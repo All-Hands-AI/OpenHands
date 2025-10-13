@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
 # Mock the database module before importing RoleStore
-with patch('enterprise.storage.database.engine'), patch('enterprise.storage.database.a_engine'):
-    from enterprise.storage.role import Role
-    from enterprise.storage.role_store import RoleStore
+with patch('storage.database.engine'), patch('storage.database.a_engine'):
+    from storage.role import Role
+    from storage.role_store import RoleStore
 
 
 def test_get_role_by_id(session_maker):

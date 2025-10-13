@@ -5,9 +5,9 @@ import pytest
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import SecretStr
-from enterprise.server.auth.auth_error import AuthError
-from enterprise.server.auth.saas_user_auth import SaasUserAuth
-from enterprise.server.routes.auth import (
+from server.auth.auth_error import AuthError
+from server.auth.saas_user_auth import SaasUserAuth
+from server.routes.auth import (
     authenticate,
     keycloak_callback,
     keycloak_offline_callback,

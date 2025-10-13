@@ -5,10 +5,10 @@ Test that the models are correctly defined.
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from enterprise.storage.base import Base
-from enterprise.storage.org import Org
-from enterprise.storage.org_user import OrgUser
-from enterprise.storage.user import User
+from storage.base import Base
+from storage.org import Org
+from storage.org_user import OrgUser
+from storage.user import User
 
 
 @pytest.fixture

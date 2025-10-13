@@ -4,7 +4,7 @@ from base64 import b64decode, b64encode
 
 from cryptography.fernet import Fernet
 from pydantic import SecretStr
-from enterprise.server.config import get_config
+from server.config import get_config
 
 _fernet = None
 

@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from sqlalchemy import DECIMAL, Column, DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class BillingSession(Base):  # type: ignore

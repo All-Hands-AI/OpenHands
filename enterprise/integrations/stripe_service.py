@@ -1,13 +1,13 @@
 from uuid import UUID
 
 import stripe
-from enterprise.server.constants import STRIPE_API_KEY
-from enterprise.server.logger import logger
+from server.constants import STRIPE_API_KEY
+from server.logger import logger
 from sqlalchemy.orm import Session
-from enterprise.storage.database import session_maker
-from enterprise.storage.org import Org
-from enterprise.storage.org_store import OrgStore
-from enterprise.storage.stripe_customer import StripeCustomer
+from storage.database import session_maker
+from storage.org import Org
+from storage.org_store import OrgStore
+from storage.stripe_customer import StripeCustomer
 
 stripe.api_key = STRIPE_API_KEY
 

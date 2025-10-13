@@ -5,7 +5,7 @@ from types import MappingProxyType
 import jwt
 from fastapi import Request
 from pydantic import SecretStr
-from enterprise.server.auth.auth_error import (
+from server.auth.auth_error import (
     AuthError,
     BearerTokenError,
     CookieError,

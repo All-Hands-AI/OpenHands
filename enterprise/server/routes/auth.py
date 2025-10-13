@@ -6,20 +6,20 @@ from urllib.parse import quote
 import posthog
 from fastapi import APIRouter, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
-from enterprise.server.auth.auth_utils import user_verifier
-from enterprise.server.auth.constants import (
+from server.auth.auth_utils import user_verifier
+from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
     KEYCLOAK_SERVER_URL_EXT,
 )
-from enterprise.server.auth.saas_user_auth import SaasUserAuth
-from enterprise.server.auth.token_manager import TokenManager
-from enterprise.server.config import sign_token
-from enterprise.server.constants import IS_FEATURE_ENV
-from enterprise.storage.database import session_maker
-from enterprise.storage.user import User
-from enterprise.storage.user_settings import UserSettings
-from enterprise.storage.user_store import UserStore
+from server.auth.saas_user_auth import SaasUserAuth
+from server.auth.token_manager import TokenManager
+from server.config import sign_token
+from server.constants import IS_FEATURE_ENV
+from storage.database import session_maker
+from storage.user import User
+from storage.user_settings import UserSettings
+from storage.user_store import UserStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType

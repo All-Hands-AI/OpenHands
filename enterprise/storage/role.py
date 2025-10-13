@@ -4,7 +4,7 @@ SQLAlchemy model for Role.
 
 from sqlalchemy import Column, Identity, Integer, String
 from sqlalchemy.orm import relationship
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class Role(Base):  # type: ignore

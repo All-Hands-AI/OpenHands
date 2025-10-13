@@ -1,6 +1,6 @@
-from openhands.enterprise.server.constants import DEFAULT_BILLING_MARGIN
+from openhands.server.constants import DEFAULT_BILLING_MARGIN
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Identity, Integer, String
-from openhands.enterprise.storage.base import Base
+from openhands.storage.base import Base
 
 
 class UserSettings(Base):  # type: ignore
