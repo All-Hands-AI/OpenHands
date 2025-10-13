@@ -20,9 +20,9 @@ from enterprise.server.auth.constants import (
     KEYCLOAK_SERVER_URL,
     KEYCLOAK_SERVER_URL_EXT,
 )
-from enterprise.server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
-from enterprise.server.config import get_config
-from enterprise.server.logger import logger
+from server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
+from server.config import get_config
+from server.logger import logger
 from sqlalchemy import String as SQLString
 from sqlalchemy import type_coerce
 from enterprise.storage.auth_token_store import AuthTokenStore

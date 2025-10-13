@@ -12,15 +12,15 @@ from enterprise.server.auth.auth_error import (
     ExpiredError,
     NoCredentialsError,
 )
-from enterprise.server.auth.token_manager import TokenManager
-from enterprise.server.config import get_config
-from enterprise.server.logger import logger
-from enterprise.server.rate_limit import RateLimiter, create_redis_rate_limiter
-from enterprise.storage.api_key_store import ApiKeyStore
-from enterprise.storage.auth_tokens import AuthTokens
-from enterprise.storage.database import session_maker
-from enterprise.storage.saas_secrets_store import SaasSecretsStore
-from enterprise.storage.saas_settings_store import SaasSettingsStore
+from server.auth.token_manager import TokenManager
+from server.config import get_config
+from server.logger import logger
+from server.rate_limit import RateLimiter, create_redis_rate_limiter
+from storage.api_key_store import ApiKeyStore
+from storage.auth_tokens import AuthTokens
+from storage.database import session_maker
+from storage.saas_secrets_store import SaasSecretsStore
+from storage.saas_settings_store import SaasSettingsStore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from keycloak.exceptions import KeycloakError
