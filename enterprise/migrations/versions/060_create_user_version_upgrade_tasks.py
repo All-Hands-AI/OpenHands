@@ -20,6 +20,7 @@ down_revision = '059'
 branch_labels = None
 depends_on = None
 
+# TODO: decide whether to modify this for orgs or users
 
 def upgrade():
     """
