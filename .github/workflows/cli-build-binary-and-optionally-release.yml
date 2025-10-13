@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         include:
-          # Build on Ubuntu 20.04 for maximum GLIBC compatibility (GLIBC 2.31)
+          # Build on Ubuntu 22.04 for maximum GLIBC compatibility (GLIBC 2.31)
           - os: ubuntu-22.04
             platform: linux
             artifact_name: openhands-cli-linux
