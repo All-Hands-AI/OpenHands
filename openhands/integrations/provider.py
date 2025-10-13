@@ -20,12 +20,15 @@ from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+from openhands.integrations.protocols.microagent_management_client import (
+    MicroagentManagementClient,
+    MicroagentParseError,
+)
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
     InstallationsService,
-    MicroagentParseError,
     PaginatedBranchesResponse,
     ProviderType,
     Repository,
@@ -543,7 +546,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = cast(MicroagentManagementClient, self._get_service(provider))
                 result = await service.get_microagents(repository)
                 # Only return early if we got a non-empty result
                 if result:
@@ -587,7 +590,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = cast(MicroagentManagementClient, self._get_service(provider))
                 result = await service.get_microagent_content(repository, file_path)
                 # If we got content, return it immediately
                 if result:
