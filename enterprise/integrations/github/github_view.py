@@ -2,13 +2,13 @@ from uuid import uuid4
 
 from github import Github, GithubIntegration
 from github.Issue import Issue
-from enterprise.integrations.github.github_types import (
+from integrations.github.github_types import (
     WorkflowRun,
     WorkflowRunGroup,
     WorkflowRunStatus,
 )
-from enterprise.integrations.models import Message
-from enterprise.integrations.types import ResolverViewInterface, UserData
+from integrations.models import Message
+from integrations.types import ResolverViewInterface, UserData
 from enterprise.integrations.utils import (
     CONVERSATION_URL,
     ENABLE_PROACTIVE_CONVERSATION_STARTERS,
@@ -19,13 +19,13 @@ from enterprise.integrations.utils import (
 )
 from jinja2 import Environment
 from pydantic.dataclasses import dataclass
-from enterprise.server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
-from enterprise.server.auth.token_manager import TokenManager
-from enterprise.server.config import get_config
-from enterprise.storage.database import session_maker
-from enterprise.storage.org_store import OrgStore
-from enterprise.storage.proactive_conversation_store import ProactiveConversationStore
-from enterprise.storage.saas_secrets_store import SaasSecretsStore
+from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
+from server.auth.token_manager import TokenManager
+from server.config import get_config
+from storage.database import session_maker
+from storage.org_store import OrgStore
+from storage.proactive_conversation_store import ProactiveConversationStore
+from storage.saas_secrets_store import SaasSecretsStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl

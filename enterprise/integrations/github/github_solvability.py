@@ -2,20 +2,20 @@ import asyncio
 import time
 
 from github import Github
-from enterprise.integrations.github.github_view import (
+from integrations.github.github_view import (
     GithubInlinePRComment,
     GithubIssueComment,
     GithubPRComment,
     GithubViewType,
 )
-from enterprise.integrations.solvability.data import load_classifier
-from enterprise.integrations.solvability.models.report import SolvabilityReport
-from enterprise.integrations.solvability.models.summary import SolvabilitySummary
-from enterprise.integrations.utils import ENABLE_SOLVABILITY_ANALYSIS
+from integrations.solvability.data import load_classifier
+from integrations.solvability.models.report import SolvabilityReport
+from integrations.solvability.models.summary import SolvabilitySummary
+from integrations.utils import ENABLE_SOLVABILITY_ANALYSIS
 from pydantic import ValidationError
-from enterprise.server.auth.token_manager import get_config
-from enterprise.storage.database import session_maker
-from enterprise.storage.saas_settings_store import SaasSettingsStore
+from server.config import get_config
+from storage.database import session_maker
+from storage.saas_settings_store import SaasSettingsStore
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger

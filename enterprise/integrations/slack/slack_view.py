@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
-from enterprise.integrations.models import Message
-from enterprise.integrations.slack.slack_types import SlackViewInterface, StartingConvoException
-from enterprise.integrations.utils import CONVERSATION_URL, get_final_agent_observation
+from integrations.models import Message
+from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
+from integrations.utils import CONVERSATION_URL, get_final_agent_observation
 from jinja2 import Environment
 from slack_sdk import WebClient
-from enterprise.storage.slack_conversation import SlackConversation
-from enterprise.storage.slack_conversation_store import SlackConversationStore
-from enterprise.storage.slack_team_store import SlackTeamStore
-from enterprise.storage.slack_user import SlackUser
+from storage.slack_conversation import SlackConversation
+from storage.slack_conversation_store import SlackConversationStore
+from storage.slack_team_store import SlackTeamStore
+from storage.slack_user import SlackUser
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
