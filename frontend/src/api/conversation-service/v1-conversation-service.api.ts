@@ -1,6 +1,8 @@
+import axios from "axios";
 import { openHands } from "../open-hands-axios";
-import { ConversationTrigger } from "../open-hands.types";
+import { ConversationTrigger, GetVSCodeUrlResponse } from "../open-hands.types";
 import { Provider } from "#/types/settings";
+import { buildHttpBaseUrl } from "#/utils/websocket-url";
 
 // V1 API Types for requests
 export interface V1MessageContent {
@@ -135,6 +137,42 @@ class V1ConversationService {
     );
 
     return data[0] || null;
+  }
+
+  /**
+   * Get the VSCode URL for a V1 conversation
+   * Uses the custom runtime URL from the conversation
+   * Note: V1 endpoint doesn't require conversationId in the URL path - it's identified via session API key header
+   *
+   * @param _conversationId The conversation ID (not used in V1, kept for interface compatibility)
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param sessionApiKey Session API key for authentication (required for V1)
+   * @returns VSCode URL response
+   */
+  static async getVSCodeUrl(
+    _conversationId: string,
+    conversationUrl: string | null | undefined,
+    sessionApiKey?: string | null,
+  ): Promise<GetVSCodeUrlResponse> {
+    // Build the HTTP base URL from conversationUrl (same as WebSocket connection)
+    const baseUrl = buildHttpBaseUrl(conversationUrl);
+
+    // Add base_url query parameter to tell the backend what host:port to use
+    // instead of defaulting to port 8001
+    const url = `${baseUrl}/api/vscode/url`;
+
+    // Add session API key header (required for V1 to identify conversation)
+    const headers: Record<string, string> = {};
+    if (sessionApiKey) {
+      headers["X-Session-API-Key"] = sessionApiKey;
+    }
+
+    // V1 API returns {url: '...'} instead of {vscode_url: '...'}
+    // Map it to match the expected interface
+    const { data } = await axios.get<{ url: string | null }>(url, { headers });
+    return {
+      vscode_url: data.url,
+    };
   }
 }
 
