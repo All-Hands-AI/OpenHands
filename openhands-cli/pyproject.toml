@@ -24,7 +24,6 @@ dependencies = [
   "typer>=0.17.4",
 ]
 
-# TODO: remove once agent-sdk packages are pinned to released versions
 scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
