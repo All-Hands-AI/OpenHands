@@ -96,5 +96,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "9c5a939c3a6dfdd25984e5ca406170024b83a338" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "9c5a939c3a6dfdd25984e5ca406170024b83a338" }
