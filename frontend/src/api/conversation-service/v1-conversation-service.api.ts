@@ -140,6 +140,38 @@ class V1ConversationService {
   }
 
   /**
+   * Search for start tasks (ongoing tasks that haven't completed yet)
+   * Use this to find tasks that were started but the user navigated away
+   *
+   * @param selectedRepository Optional repository filter
+   * @param trigger Optional trigger filter
+   * @param limit Maximum number of tasks to return
+   * @returns Array of start tasks
+   */
+  static async searchStartTasks(
+    selectedRepository?: string,
+    trigger?: ConversationTrigger,
+    limit: number = 100,
+  ): Promise<V1AppConversationStartTask[]> {
+    const params = new URLSearchParams();
+    params.append("limit", limit.toString());
+
+    if (selectedRepository) {
+      params.append("selected_repository", selectedRepository);
+    }
+
+    if (trigger) {
+      params.append("trigger", trigger);
+    }
+
+    const { data } = await openHands.get<V1AppConversationStartTask[]>(
+      `/api/v1/app-conversations/start-tasks/search?${params.toString()}`,
+    );
+
+    return data;
+  }
+
+  /**
    * Get the VSCode URL for a V1 conversation
    * Uses the custom runtime URL from the conversation
    * Note: V1 endpoint doesn't require conversationId in the URL path - it's identified via session API key header
