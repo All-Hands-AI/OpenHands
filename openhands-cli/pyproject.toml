@@ -24,6 +24,7 @@ dependencies = [
   "typer>=0.17.4",
 ]
 
+# TODO: remove once agent-sdk packages are pinned to released versions
 scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
@@ -42,6 +43,9 @@ dev = [
   "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = [ "openhands_cli" ]
