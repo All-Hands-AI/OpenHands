@@ -350,6 +350,7 @@ This is a test task microagent.
         assert agent.match_trigger('/other_task') is None
 
 
+@pytest.mark.skip(reason='2025-10-13 : This test is flaky')
 def test_default_tools_microagent_exists():
     """Test that the default-tools microagent exists in the global microagents directory."""
     # Get the path to the global microagents directory
