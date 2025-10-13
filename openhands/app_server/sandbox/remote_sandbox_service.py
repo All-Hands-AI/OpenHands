@@ -506,7 +506,7 @@ async def refresh_conversation(
         event_url = (
             f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
         )
-        page_id: str | None = None
+        page_id = None
         while True:
             params: dict[str, str] = {}
             if page_id:
