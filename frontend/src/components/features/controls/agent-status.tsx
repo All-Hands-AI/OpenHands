@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useStatusStore } from "#/state/status-store";
-import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { getStatusCode } from "#/utils/status";
 import { ChatStopButton } from "../chat/chat-stop-button";
@@ -13,6 +12,7 @@ import { AgentLoading } from "./agent-loading";
 import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
 import { useAgentState } from "#/hooks/use-agent-state";
+import { useWebSocketStatus } from "#/hooks/use-websocket-status";
 
 export interface AgentStatusProps {
   className?: string;
@@ -31,7 +31,7 @@ export function AgentStatus({
   const { setShouldShownAgentLoading } = useConversationStore();
   const { curAgentState } = useAgentState();
   const { curStatusMessage } = useStatusStore();
-  const { webSocketStatus } = useWsClient();
+  const webSocketStatus = useWebSocketStatus();
   const { data: conversation } = useActiveConversation();
 
   const statusCode = getStatusCode(

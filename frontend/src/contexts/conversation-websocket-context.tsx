@@ -21,9 +21,7 @@ import {
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
-import V1ConversationService, {
-  V1SendMessageRequest,
-} from "#/api/conversation-service/v1-conversation-service.api";
+import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.api";
 
 interface ConversationWebSocketContextType {
   connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
@@ -53,25 +51,6 @@ export function ConversationWebSocketProvider({
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { setAgentStatus } = useV1ConversationStateStore();
-
-  // V1 send message function via HTTP POST API
-  const sendMessage = useCallback(
-    async (message: V1SendMessageRequest) => {
-      if (!conversationId) {
-        throw new Error("No conversation ID provided");
-      }
-
-      try {
-        await V1ConversationService.sendMessage(conversationId, message);
-      } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to send message";
-        setErrorMessage(errorMessage);
-        throw error;
-      }
-    },
-    [conversationId, setErrorMessage],
-  );
 
   // Build WebSocket URL from props
   const wsUrl = useMemo(
@@ -157,6 +136,28 @@ export function ConversationWebSocketProvider({
   const websocketUrl = wsUrl || "ws://localhost/placeholder";
   const { socket } = useWebSocket(websocketUrl, websocketOptions);
 
+  // V1 send message function via WebSocket
+  const sendMessage = useCallback(
+    async (message: V1SendMessageRequest) => {
+      if (!socket || socket.readyState !== WebSocket.OPEN) {
+        const error = "WebSocket is not connected";
+        setErrorMessage(error);
+        throw new Error(error);
+      }
+
+      try {
+        // Send message through WebSocket as JSON
+        socket.send(JSON.stringify(message));
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to send message";
+        setErrorMessage(errorMessage);
+        throw error;
+      }
+    },
+    [socket, setErrorMessage],
+  );
+
   useEffect(() => {
     // Only process socket updates if we have a valid URL
     if (socket && wsUrl) {
@@ -198,12 +199,9 @@ export function ConversationWebSocketProvider({
 }
 
 export const useConversationWebSocket =
-  (): ConversationWebSocketContextType => {
+  (): ConversationWebSocketContextType | null => {
     const context = useContext(ConversationWebSocketContext);
-    if (context === undefined) {
-      throw new Error(
-        "useConversationWebSocket must be used within a ConversationWebSocketProvider",
-      );
-    }
-    return context;
+    // Return null instead of throwing when not in provider
+    // This allows the hook to be called conditionally based on conversation version
+    return context || null;
   };

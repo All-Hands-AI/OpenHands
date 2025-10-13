@@ -1,24 +1,25 @@
 import { useCallback } from "react";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
-import { useConversationId } from "#/hooks/use-conversation-id";
+import { useConversationWebSocket } from "#/contexts/conversation-websocket-context";
 
 /**
  * Unified hook for sending messages that works with both V0 and V1 conversations
  * - For V0 conversations: Uses Socket.IO WebSocket via useWsClient
- * - For V1 conversations: Uses HTTP POST API directly
+ * - For V1 conversations: Uses native WebSocket via ConversationWebSocketProvider
  */
 export function useSendMessage() {
   const { data: conversation } = useActiveConversation();
-  const { conversationId } = useConversationId();
   const { send: v0Send } = useWsClient();
+
+  // Get V1 context (will be null if not in V1 provider)
+  const v1Context = useConversationWebSocket();
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
   const send = useCallback(
     async (event: Record<string, unknown>) => {
-      if (isV1Conversation) {
+      if (isV1Conversation && v1Context) {
         // V1: Convert V0 event format to V1 message format
         const { action, args } = event as {
           action: string;
@@ -53,8 +54,8 @@ export function useSendMessage() {
             });
           }
 
-          // Send via V1 API
-          await V1ConversationService.sendMessage(conversationId, {
+          // Send via V1 WebSocket context (uses correct host/port)
+          await v1Context.sendMessage({
             role: "user",
             content,
           });
@@ -68,7 +69,7 @@ export function useSendMessage() {
         v0Send(event);
       }
     },
-    [isV1Conversation, conversationId, v0Send],
+    [isV1Conversation, v1Context, v0Send],
   );
 
   return { send };
