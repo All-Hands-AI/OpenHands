@@ -1,5 +1,4 @@
 import React from "react";
-import { useEffectOnce } from "./use-effect-once";
 
 export interface WebSocketHookOptions {
   queryParams?: Record<string, string>;
@@ -26,33 +25,45 @@ export const useWebSocket = <T = string>(
   const attemptCountRef = React.useRef(0);
   const reconnectTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const shouldReconnectRef = React.useRef(true); // Only set to false by disconnect()
+  // Track which WebSocket instances are allowed to reconnect using a WeakSet
+  const allowedToReconnectRef = React.useRef<WeakSet<WebSocket>>(new WeakSet());
+
+  // Store options in a ref to avoid reconnecting when callbacks change
+  const optionsRef = React.useRef(options);
+  React.useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   const connectWebSocket = React.useCallback(() => {
     // Build URL with query parameters if provided
     let wsUrl = url;
-    if (options?.queryParams) {
-      const params = new URLSearchParams(options.queryParams);
+    if (optionsRef.current?.queryParams) {
+      const params = new URLSearchParams(optionsRef.current.queryParams);
       wsUrl = `${url}?${params.toString()}`;
     }
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
+    // Mark this WebSocket instance as allowed to reconnect
+    allowedToReconnectRef.current.add(ws);
 
     ws.onopen = (event) => {
       setIsConnected(true);
       setError(null); // Clear any previous errors
       setIsReconnecting(false);
       attemptCountRef.current = 0; // Reset attempt count on successful connection
-      options?.onOpen?.(event);
+      optionsRef.current?.onOpen?.(event);
     };
 
     ws.onmessage = (event) => {
       setLastMessage(event.data);
       setMessages((prev) => [...prev, event.data]);
-      options?.onMessage?.(event);
+      optionsRef.current?.onMessage?.(event);
     };
 
     ws.onclose = (event) => {
+      // Check if this specific WebSocket instance is allowed to reconnect
+      const canReconnect = allowedToReconnectRef.current.has(ws);
       setIsConnected(false);
       // If the connection closes with an error code, treat it as an error
       if (event.code !== 1000) {
@@ -62,17 +73,22 @@ export const useWebSocket = <T = string>(
             `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
           ),
         );
-        // Also call onError handler for error closures
-        options?.onError?.(event);
+        // Also call onError handler for error closures (only if allowed to reconnect)
+        if (canReconnect) {
+          optionsRef.current?.onError?.(event);
+        }
       }
-      options?.onClose?.(event);
+      optionsRef.current?.onClose?.(event);
 
       // Attempt reconnection if enabled and allowed
-      const reconnectEnabled = options?.reconnect?.enabled ?? false;
-      const maxAttempts = options?.reconnect?.maxAttempts ?? Infinity;
+      // IMPORTANT: Only reconnect if this specific instance is allowed to reconnect
+      const reconnectEnabled = optionsRef.current?.reconnect?.enabled ?? false;
+      const maxAttempts =
+        optionsRef.current?.reconnect?.maxAttempts ?? Infinity;
 
       if (
         reconnectEnabled &&
+        canReconnect &&
         shouldReconnectRef.current &&
         attemptCountRef.current < maxAttempts
       ) {
@@ -82,21 +98,28 @@ export const useWebSocket = <T = string>(
         reconnectTimeoutRef.current = setTimeout(() => {
           connectWebSocket();
         }, 3000); // 3 second delay
-      } else if (attemptCountRef.current >= maxAttempts) {
+      } else {
         setIsReconnecting(false);
       }
     };
 
     ws.onerror = (event) => {
       setIsConnected(false);
-      options?.onError?.(event);
+      optionsRef.current?.onError?.(event);
     };
-  }, [url, options]);
+  }, [url]);
 
-  useEffectOnce(() => {
+  React.useEffect(() => {
+    // Reset shouldReconnect flag and attempt count when creating a new connection
+    shouldReconnectRef.current = true;
+    attemptCountRef.current = 0;
+
     connectWebSocket();
 
     return () => {
+      // Disable reconnection on unmount to prevent reconnection attempts
+      // This must be set BEFORE closing the socket, so the onclose handler sees it
+      shouldReconnectRef.current = false;
       // Clear any pending reconnection timeouts
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
@@ -104,12 +127,22 @@ export const useWebSocket = <T = string>(
       }
       // Close the WebSocket connection
       if (wsRef.current) {
-        wsRef.current.close();
+        const { readyState } = wsRef.current;
+        // Remove this WebSocket from the allowed list BEFORE closing
+        // so its onclose handler won't try to reconnect
+        allowedToReconnectRef.current.delete(wsRef.current);
+        // Only close if not already closed/closing
+        if (
+          readyState === WebSocket.CONNECTING ||
+          readyState === WebSocket.OPEN
+        ) {
+          console.log("[useWebSocket] Closing WebSocket connection");
+          wsRef.current.close();
+        }
+        wsRef.current = null;
       }
-      // Only disable reconnection if it's being explicitly unmounted
-      // Note: shouldReconnectRef is only set to false via disconnect()
     };
-  });
+  }, [url, connectWebSocket]);
 
   const sendMessage = React.useCallback(
     (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
@@ -128,6 +161,8 @@ export const useWebSocket = <T = string>(
       reconnectTimeoutRef.current = null;
     }
     if (wsRef.current) {
+      // Remove from allowed list before closing
+      allowedToReconnectRef.current.delete(wsRef.current);
       wsRef.current.close();
     }
   }, []);
