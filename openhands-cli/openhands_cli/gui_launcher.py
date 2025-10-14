@@ -113,19 +113,10 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
     pull_cmd = ['docker', 'pull', runtime_image]
     print_formatted_text(HTML(_format_docker_command_for_logging(pull_cmd)))
     try:
-        subprocess.run(
-            pull_cmd,
-            check=True,
-            timeout=300,  # 5 minutes timeout
-        )
+        subprocess.run(pull_cmd, check=True)
     except subprocess.CalledProcessError:
         print_formatted_text(
             HTML('<ansired>❌ Failed to pull runtime image.</ansired>')
-        )
-        sys.exit(1)
-    except subprocess.TimeoutExpired:
-        print_formatted_text(
-            HTML('<ansired>❌ Timeout while pulling runtime image.</ansired>')
         )
         sys.exit(1)
 

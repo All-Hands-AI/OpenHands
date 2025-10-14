@@ -57,8 +57,6 @@ def display_banner(conversation_id: str, resume: bool = False) -> None:
         style=DEFAULT_STYLE,
     )
 
-    print_formatted_text(HTML(f'<grey>OpenHands CLI v{__version__}</grey>'))
-
     print_formatted_text('')
     if not resume:
         print_formatted_text(
