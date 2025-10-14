@@ -97,7 +97,7 @@ export const useReoTracking = () => {
   React.useEffect(() => {
     const initReo = async () => {
       if (
-        config?.APP_MODE === "oss" &&
+        config?.APP_MODE === "saas" &&
         isProductionDomain() &&
         !reoService.isInitialized()
       ) {
@@ -111,7 +111,7 @@ export const useReoTracking = () => {
   // Identify user when user data is available and we're in SaaS mode on correct domain
   React.useEffect(() => {
     if (
-      config?.APP_MODE !== "oss" ||
+      config?.APP_MODE !== "saas" ||
       !isProductionDomain() ||
       !user ||
       hasIdentified ||
