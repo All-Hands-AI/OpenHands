@@ -15,8 +15,7 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
-# Using Git URLs for dependencies so installs from PyPI pull from GitHub
-# TODO: pin package versions once agent-sdk has published PyPI packages
+
 dependencies = [
   "openhands-sdk==1.0.0a1",
   "openhands-tools==1.0.0a1",
@@ -42,9 +41,6 @@ dev = [
   "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = [ "openhands_cli" ]
