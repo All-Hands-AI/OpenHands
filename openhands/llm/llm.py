@@ -1,4 +1,5 @@
 import copy
+import json as _json
 import os
 import time
 import warnings
@@ -194,12 +195,23 @@ class LLM(RetryMixin, DebugMixin):
         ):
             kwargs.pop('top_p', None)
 
-        self._completion = partial(
-            litellm_completion,
+        # Apply extra headers from env if defined
+        _extra_headers_env = os.getenv('LLM_EXTRA_HEADERS')
+        _extra_headers = None
+        if _extra_headers_env:
+            try:
+                _extra_headers = _json.loads(_extra_headers_env)
+                if not isinstance(_extra_headers, dict):
+                    logger.warning('LLM_EXTRA_HEADERS must be a JSON object; ignoring')
+                    _extra_headers = None
+            except Exception as _e:
+                logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
+
+        partial_kwargs = dict(
             model=self.config.model,
-            api_key=self.config.api_key.get_secret_value()
-            if self.config.api_key
-            else None,
+            api_key=(
+                self.config.api_key.get_secret_value() if self.config.api_key else None
+            ),
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -207,6 +219,13 @@ class LLM(RetryMixin, DebugMixin):
             drop_params=self.config.drop_params,
             seed=self.config.seed,
             **kwargs,
+        )
+        if _extra_headers is not None:
+            partial_kwargs['extra_headers'] = _extra_headers
+
+        self._completion = partial(
+            litellm_completion,
+            **partial_kwargs,
         )
 
         self._completion_unwrapped = self._completion
