@@ -37,6 +37,7 @@ import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 import { isV0Event } from "#/types/v1/type-guards";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -49,6 +50,7 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
+  const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
   const { send } = useSendMessage();
@@ -78,6 +80,8 @@ export function ChatInterface() {
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
+
+  const isV1Conversation = conversation?.conversation_version === "V1";
 
   const events = storeEvents
     .filter(isV0Event)
@@ -195,7 +199,7 @@ export function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
         >
-          {isLoadingMessages && (
+          {isLoadingMessages && !isV1Conversation && (
             <div className="flex justify-center">
               <LoadingSpinner size="small" />
             </div>
