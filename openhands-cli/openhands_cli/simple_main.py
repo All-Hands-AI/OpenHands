@@ -20,6 +20,20 @@ from prompt_toolkit.formatted_text import HTML
 from openhands_cli.argparsers.main_parser import create_main_parser
 
 
+def _build_initial_task_from_args(args) -> str | None:
+    # Precedence: --file content if provided and readable; else --task; else None
+    if args.file:
+        try:
+            with open(args.file, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception:
+            # Fall back to --task if file unreadable
+            if args.task:
+                return args.task
+            return None
+    return args.task
+
+
 def main() -> None:
     """Main entry point for the OpenHands CLI.
 
@@ -41,8 +55,9 @@ def main() -> None:
             # Import agent_chat only when needed
             from openhands_cli.agent_chat import run_cli_entry
 
+            initial_task = _build_initial_task_from_args(args)
             # Start agent chat
-            run_cli_entry(resume_conversation_id=args.resume)
+            run_cli_entry(resume_conversation_id=args.resume, initial_user_message=initial_task)
     except KeyboardInterrupt:
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except EOFError:

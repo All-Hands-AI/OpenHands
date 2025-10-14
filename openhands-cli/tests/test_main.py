@@ -25,8 +25,10 @@ class TestMainEntryPoint:
         # Should complete without raising an exception (graceful exit)
         simple_main.main()
 
-        # Should call run_cli_entry with no resume conversation ID
-        mock_run_agent_chat.assert_called_once_with(resume_conversation_id=None)
+        # Should call run_cli_entry with no resume conversation ID and no initial message
+        mock_run_agent_chat.assert_called_once_with(
+            resume_conversation_id=None, initial_user_message=None
+        )
 
     @patch('openhands_cli.agent_chat.run_cli_entry')
     @patch('sys.argv', ['openhands'])
@@ -88,8 +90,30 @@ class TestMainEntryPoint:
 
         # Should call run_cli_entry with the provided resume conversation ID
         mock_run_agent_chat.assert_called_once_with(
-            resume_conversation_id='test-conversation-id'
+            resume_conversation_id='test-conversation-id', initial_user_message=None
         )
+
+
+@pytest.mark.parametrize(
+    "argv,expected_kwargs",
+    [
+        (['openhands', '--file', __file__], {"resume_conversation_id": None, "initial_user_message": open(__file__, 'r', encoding='utf-8').read()}),
+    ],
+)
+@pytest.mark.filterwarnings('ignore:.*')
+def test_main_cli_calls_run_cli_entry_file(monkeypatch, argv, expected_kwargs):
+    monkeypatch.setattr(sys, "argv", argv, raising=False)
+    called = {}
+    fake_agent_chat = SimpleNamespace(
+        run_cli_entry=lambda **kw: called.setdefault("kwargs", kw)
+    )
+    monkeypatch.setitem(sys.modules, "openhands_cli.agent_chat", fake_agent_chat)
+    main()
+    # Compare only presence of keys since file content can be large
+    assert set(called["kwargs"].keys()) == set(expected_kwargs.keys())
+    assert called["kwargs"]["resume_conversation_id"] is None
+    assert isinstance(called["kwargs"]["initial_user_message"], str) and len(called["kwargs"]["initial_user_message"]) > 0
+
 
 
 
@@ -97,8 +121,10 @@ class TestMainEntryPoint:
 @pytest.mark.parametrize(
     "argv,expected_kwargs",
     [
-        (['openhands'], {"resume_conversation_id": None}),
-        (['openhands', '--resume', 'test-id'], {"resume_conversation_id": 'test-id'}),
+        (['openhands'], {"resume_conversation_id": None, "initial_user_message": None}),
+        (['openhands', '--resume', 'test-id'], {"resume_conversation_id": 'test-id', "initial_user_message": None}),
+        (['openhands', '--task', 'do x'], {"resume_conversation_id": None, "initial_user_message": 'do x'}),
+        (['openhands', '--file', 'nonexistent.txt'], {"resume_conversation_id": None, "initial_user_message": None}),
     ],
 )
 def test_main_cli_calls_run_cli_entry(monkeypatch, argv, expected_kwargs):

@@ -54,8 +54,7 @@ def _print_exit_hint(conversation_id: str) -> None:
     )
 
 
-
-def run_cli_entry(resume_conversation_id: str | None = None) -> None:
+def run_cli_entry(resume_conversation_id: str | None = None, initial_user_message: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
 
 
@@ -81,6 +80,12 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
     session = get_session_prompter()
+
+    # If an initial message is provided, send it once before entering the prompt loop
+    if initial_user_message:
+        runner.process_message(
+            Message(role='user', content=[TextContent(text=initial_user_message)])
+        )
 
     # Main chat loop
     while True:

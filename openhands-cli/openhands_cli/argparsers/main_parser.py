@@ -19,6 +19,8 @@ Use 'serve' subcommand to launch the GUI server instead.
 Examples:
   openhands                           # Start CLI mode
   openhands --resume conversation-id  # Resume a conversation in CLI mode
+  openhands --task "Fix the bug"      # Start CLI mode with an initial task message
+  openhands --file path/to/file.py    # Start CLI mode with file content as initial context
   openhands serve                     # Launch GUI server
   openhands serve --gpu               # Launch GUI server with GPU support
 """
@@ -28,7 +30,20 @@ Examples:
     parser.add_argument(
         '--resume',
         type=str,
+        default=None,
         help='Conversation ID to resume'
+    )
+    parser.add_argument(
+        '--task',
+        type=str,
+        default=None,
+        help='Initial user task/message to send when the session starts'
+    )
+    parser.add_argument(
+        '--file',
+        type=str,
+        default=None,
+        help='Path to a file whose contents will be sent as the initial user message (takes precedence over --task)'
     )
     
     # Only serve as subcommand
