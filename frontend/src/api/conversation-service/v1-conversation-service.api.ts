@@ -59,6 +59,11 @@ export interface V1SendMessageResponse {
   content: V1MessageContent[];
 }
 
+export interface V1AppConversationStartTaskPage {
+  items: V1AppConversationStartTask[];
+  next_page_id: string | null;
+}
+
 class V1ConversationService {
   /**
    * Send a message to a V1 conversation
@@ -143,32 +148,23 @@ class V1ConversationService {
    * Search for start tasks (ongoing tasks that haven't completed yet)
    * Use this to find tasks that were started but the user navigated away
    *
-   * @param selectedRepository Optional repository filter
-   * @param trigger Optional trigger filter
-   * @param limit Maximum number of tasks to return
+   * Note: Backend only supports filtering by limit. To filter by repository/trigger,
+   * filter the results client-side after fetching.
+   *
+   * @param limit Maximum number of tasks to return (max 100)
    * @returns Array of start tasks
    */
   static async searchStartTasks(
-    selectedRepository?: string,
-    trigger?: ConversationTrigger,
     limit: number = 100,
   ): Promise<V1AppConversationStartTask[]> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());
 
-    if (selectedRepository) {
-      params.append("selected_repository", selectedRepository);
-    }
-
-    if (trigger) {
-      params.append("trigger", trigger);
-    }
-
-    const { data } = await openHands.get<V1AppConversationStartTask[]>(
+    const { data } = await openHands.get<V1AppConversationStartTaskPage>(
       `/api/v1/app-conversations/start-tasks/search?${params.toString()}`,
     );
 
-    return data;
+    return data.items;
   }
 
   /**

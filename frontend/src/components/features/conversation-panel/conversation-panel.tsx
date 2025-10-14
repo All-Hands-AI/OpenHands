@@ -3,6 +3,7 @@ import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
+import { useStartTasks } from "#/hooks/query/use-start-tasks";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
@@ -15,6 +16,7 @@ import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { ConversationCard } from "./conversation-card/conversation-card";
+import { StartTaskCard } from "./start-task-card";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -49,6 +51,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     isFetchingNextPage,
     fetchNextPage,
   } = usePaginatedConversations();
+
+  // Fetch in-progress start tasks
+  const { data: startTasks } = useStartTasks();
 
   // Flatten all pages into a single array of conversations
   const conversations = data?.pages.flatMap((page) => page.results) ?? [];
@@ -131,13 +136,24 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           <p className="text-danger">{error.message}</p>
         </div>
       )}
-      {!isFetching && conversations?.length === 0 && (
+      {!isFetching && conversations?.length === 0 && !startTasks?.length && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-neutral-400">
             {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
           </p>
         </div>
       )}
+      {/* Render in-progress start tasks first */}
+      {startTasks?.map((task) => (
+        <NavLink
+          key={task.id}
+          to={`/conversations/task-${task.id}`}
+          onClick={onClose}
+        >
+          <StartTaskCard task={task} />
+        </NavLink>
+      ))}
+      {/* Then render completed conversations */}
       {conversations?.map((project) => (
         <NavLink
           key={project.conversation_id}
