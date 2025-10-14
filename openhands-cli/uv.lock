@@ -1281,7 +1281,7 @@ wheels = [
 [[package]]
 name = "litellm"
 version = "1.77.7"
-source = { git = "https://github.com/BerriAI/litellm.git?rev=v1.77.7.dev9#763d2f8ccdd8412dbe6d4ac0e136d9ac34dcd4c0" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "click" },
@@ -1295,6 +1295,10 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "tiktoken" },
     { name = "tokenizers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/4b/4e9a204462687ca3796cc0fdaefbd624d7b2216edd4ad243d60a3b95127e/litellm-1.77.7.tar.gz", hash = "sha256:e3398fb2575b98726e787c0a1481daed5938d58cafdcd96fbca80c312221af3e", size = 10401706, upload-time = "2025-10-05T00:22:37.646Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/50/53df2244d4aca2af73d2f2c6ad21c731cf24bd0dbe89d896184a1eaa874f/litellm-1.77.7-py3-none-any.whl", hash = "sha256:1b3a1b17bd521a0ad25226fb62a912602c803922aabb4a16adf83834673be574", size = 9223061, upload-time = "2025-10-05T00:22:34.112Z" },
 ]
 
 [[package]]
@@ -1652,8 +1656,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=50b094a92817e448ec4352d2950df4f19edd5a9f" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=50b094a92817e448ec4352d2950df4f19edd5a9f" },
+    { name = "openhands-sdk", specifier = "==1.0.0a1" },
+    { name = "openhands-tools", specifier = "==1.0.0a1" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1676,8 +1680,8 @@ dev = [
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=50b094a92817e448ec4352d2950df4f19edd5a9f#50b094a92817e448ec4352d2950df4f19edd5a9f" }
+version = "1.0.0a1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
@@ -1688,11 +1692,15 @@ dependencies = [
     { name = "tenacity" },
     { name = "websockets" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/2a/e7/cb20717af15f630fed492f2004fbe6223863089720a9c36b92352965c2a9/openhands_sdk-1.0.0a1.tar.gz", hash = "sha256:814193c4c402ea1f2a0cf4aefcf66a2de5ccf6104231f70719e85ef0a335ef3e", size = 889, upload-time = "2025-10-14T17:08:38.773Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/cb/bc/eb52b7d699a3ca35cb5ad8394586881cc8e2e7cd062ee681e2feb8bb4546/openhands_sdk-1.0.0a1-py3-none-any.whl", hash = "sha256:debbc4cc0a26e7e3ea4fe77a1275a3b722448df46f258ab3c16caaed8aafee55", size = 1227, upload-time = "2025-10-14T17:08:37.854Z" },
+]
 
 [[package]]
 name = "openhands-tools"
-version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=50b094a92817e448ec4352d2950df4f19edd5a9f#50b094a92817e448ec4352d2950df4f19edd5a9f" }
+version = "1.0.0a1"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
@@ -1702,6 +1710,10 @@ dependencies = [
     { name = "libtmux" },
     { name = "openhands-sdk" },
     { name = "pydantic" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6e/07/9fda9bc606c0020efce56ddcb87db05fd91cbd0cd50e66aa58b5b11683bc/openhands_tools-1.0.0a1.tar.gz", hash = "sha256:f041106eb84a3a8f311f9911408d1d18abf26a51e2cbee44298c337dfb11d446", size = 802, upload-time = "2025-10-14T17:08:40.084Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/0b/9084d6349e9bf00f6fbab97f20ea8ace5610c4f863d55a1e17a25d40961e/openhands_tools-1.0.0a1-py3-none-any.whl", hash = "sha256:4ed0df0b905fa9db57d76998a7e7d422940b2fbe88233c642df028e41cdf9d2e", size = 1187, upload-time = "2025-10-14T17:08:39.235Z" },
 ]
 
 [[package]]
