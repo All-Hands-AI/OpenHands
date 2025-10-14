@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from storage.database import session_maker
 from storage.org import Org
 from storage.org_store import OrgStore
+from storage.org_user import OrgUser
 from storage.user import User
 from storage.user_settings import UserSettings
 from storage.user_store import UserStore
@@ -41,7 +42,7 @@ class SaasSettingsStore(OssSettingsStore):
                 return None
 
         org_id = user.current_org_id
-        org_user = None
+        org_user: OrgUser = None
         for ou in user.org_users:
             if ou.org_id == org_id:
                 org_user = ou
@@ -56,17 +57,31 @@ class SaasSettingsStore(OssSettingsStore):
             return None
         kwargs = {
             **{
-                c.name: getattr(org, c.name)
+                normalized: getattr(org, c.name)
                 for c in Org.__table__.columns
-                if c.name in Settings.model_fields
+                if (
+                    normalized := c.name.removeprefix('_default_')
+                    .removeprefix('default_')
+                    .lstrip('_')
+                )
+                in Settings.model_fields
             },
             **{
-                c.name: getattr(user, c.name)
+                normalized: getattr(user, c.name)
                 for c in User.__table__.columns
-                if c.name in Settings.model_fields
+                if (normalized := c.name.lstrip('_')) in Settings.model_fields
             },
         }
         kwargs['llm_api_key'] = org_user.llm_api_key
+        if org_user.max_iterations:
+            kwargs['max_iterations'] = org_user.max_iterations
+        if org_user.llm_model:
+            kwargs['llm_model'] = org_user.llm_model
+        if org_user.llm_api_key_for_byor:
+            kwargs['llm_api_key_for_byor'] = org_user.llm_api_key_for_byor
+        if org_user.llm_base_url:
+            kwargs['llm_base_url'] = org_user.llm_base_url
+
         settings = Settings(**kwargs)
         return settings
 
