@@ -84,8 +84,8 @@ def run_cli_entry(resume_conversation_id: str | None = None, initial_user_messag
     runner = ConversationRunner(conversation)
     session = get_session_prompter()
 
-    # If an initial message was provided, send it once
-    if initial_user_message and initial_user_message.strip():
+    # If an initial message was provided and we're not resuming, send it once
+    if (not resume_conversation_id) and initial_user_message and initial_user_message.strip():
         runner.process_message(
             Message(role='user', content=[TextContent(text=initial_user_message)])
         )
