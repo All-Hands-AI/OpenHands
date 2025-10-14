@@ -29,7 +29,8 @@ class StreamingLLM(AsyncLLM):
             except Exception as _e:
                 logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
 
-        _partial_kwargs = dict(
+        self._async_streaming_completion = partial(
+            self._call_acompletion,
             model=self.config.model,
             api_key=self.config.api_key.get_secret_value()
             if self.config.api_key
@@ -42,14 +43,8 @@ class StreamingLLM(AsyncLLM):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
-            stream=True,  # Ensure streaming is enabled
-        )
-        if _extra_headers is not None:
-            _partial_kwargs['extra_headers'] = _extra_headers
-
-        self._async_streaming_completion = partial(
-            self._call_acompletion,
-            **_partial_kwargs,
+            stream=True,
+            **({'extra_headers': _extra_headers} if _extra_headers is not None else {}),
         )
 
         async_streaming_completion_unwrapped = self._async_streaming_completion

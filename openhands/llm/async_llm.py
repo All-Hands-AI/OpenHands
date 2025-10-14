@@ -1,9 +1,9 @@
 import asyncio
+import json as _json
+import os
 from functools import partial
 from typing import Any, Callable
 
-import os
-import json as _json
 from litellm import acompletion as litellm_acompletion
 
 from openhands.core.exceptions import UserCancelledError
@@ -34,7 +34,8 @@ class AsyncLLM(LLM):
             except Exception as _e:
                 logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
 
-        _partial_kwargs = dict(
+        self._async_completion = partial(
+            self._call_acompletion,
             model=self.config.model,
             api_key=self.config.api_key.get_secret_value()
             if self.config.api_key
@@ -48,13 +49,7 @@ class AsyncLLM(LLM):
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
-        )
-        if _extra_headers is not None:
-            _partial_kwargs['extra_headers'] = _extra_headers
-
-        self._async_completion = partial(
-            self._call_acompletion,
-            **_partial_kwargs,
+            **({'extra_headers': _extra_headers} if _extra_headers is not None else {}),
         )
 
         async_completion_unwrapped = self._async_completion
