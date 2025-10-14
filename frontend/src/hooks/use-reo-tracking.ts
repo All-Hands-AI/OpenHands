@@ -3,7 +3,7 @@ import { useConfig } from "./query/use-config";
 import { useGitUser } from "./query/use-git-user";
 import { getLoginMethod, LoginMethod } from "#/utils/local-storage";
 import reoService, { ReoIdentity } from "#/utils/reo";
-import { PRODUCT_URL } from "#/utils/constants";
+import { isProductionDomain } from "#/utils/utils";
 
 /**
  * Maps login method to Reo identity type
@@ -83,12 +83,6 @@ const buildReoIdentity = (
     company: user.company || undefined,
   };
 };
-
-/**
- * Checks if the current domain is the production domain
- */
-const isProductionDomain = (): boolean =>
-  window.location.origin === PRODUCT_URL.PRODUCTION;
 
 /**
  * Hook to handle Reo.dev tracking integration
