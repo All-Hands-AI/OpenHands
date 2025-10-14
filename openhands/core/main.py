@@ -1,6 +1,8 @@
 import asyncio
 import json
 import os
+import signal
+import sys
 from pathlib import Path
 from typing import Callable, Protocol
 
@@ -88,6 +90,9 @@ async def run_controller(
           saved as JSON for analysis.
         - Budget control: Execution is limited by config.max_iterations and
           config.max_budget_per_task.
+        - Signal handling: SIGINT (Ctrl+C) is handled gracefully:
+          * First SIGINT: Initiates graceful shutdown and saves trajectory
+          * Second SIGINT: Forces immediate exit
 
     Example:
         >>> config = load_openhands_config()
@@ -174,6 +179,28 @@ async def run_controller(
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
 
+    # Set up signal handler for graceful shutdown
+    sigint_count = 0
+    graceful_shutdown_requested = False
+
+    def signal_handler(signum, frame):
+        """Handle SIGINT signals for graceful shutdown."""
+        nonlocal sigint_count, graceful_shutdown_requested
+        sigint_count += 1
+
+        if sigint_count == 1:
+            logger.info('Received SIGINT (Ctrl+C). Initiating graceful shutdown...')
+            logger.info('Press Ctrl+C again to force immediate exit.')
+            graceful_shutdown_requested = True
+            # Raise KeyboardInterrupt to break out of the main loop
+            raise KeyboardInterrupt('Graceful shutdown requested')
+        else:
+            logger.info('Received second SIGINT. Forcing immediate exit...')
+            sys.exit(1)
+
+    # Register the signal handler
+    signal.signal(signal.SIGINT, signal_handler)
+
     # start event is a MessageAction with the task, either resumed or new
     if initial_state is not None and initial_state.last_error:
         # we're resuming the previous session
@@ -214,6 +241,11 @@ async def run_controller(
 
     try:
         await run_agent_until_done(controller, runtime, memory, end_states)
+    except KeyboardInterrupt:
+        logger.info('KeyboardInterrupt caught in main loop')
+        if graceful_shutdown_requested:
+            logger.info('Graceful shutdown requested. Saving trajectory before exit...')
+        # The trajectory will be saved in the normal flow below
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 
@@ -231,6 +263,8 @@ async def run_controller(
 
     # save trajectories if applicable
     if config.save_trajectory_path is not None:
+        if graceful_shutdown_requested:
+            logger.info('Saving trajectory due to graceful shutdown...')
         # if save_trajectory_path is a folder, use session id as file name
         if os.path.isdir(config.save_trajectory_path):
             file_path = os.path.join(config.save_trajectory_path, sid + '.json')
@@ -240,6 +274,10 @@ async def run_controller(
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
         with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
+        if graceful_shutdown_requested:
+            logger.info(
+                f'Trajectory successfully saved to {file_path} during graceful shutdown'
+            )
 
     return state
 
