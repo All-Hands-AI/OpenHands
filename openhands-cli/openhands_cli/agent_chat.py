@@ -7,26 +7,6 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 import sys
 from datetime import datetime
 
-from openhands.sdk import (
-    Message,
-    TextContent,
-)
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import HTML
-
-from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import MissingAgentSpec, setup_conversation, start_fresh_conversation
-from openhands_cli.tui.settings.mcp_screen import MCPScreen
-from openhands_cli.tui.settings.settings_screen import SettingsScreen
-from openhands_cli.tui.status import display_status
-from openhands_cli.tui.tui import (
-    display_help,
-    display_welcome,
-)
-from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
-from openhands_cli.user_actions.utils import get_session_prompter
-
 
 def _restore_tty() -> None:
     """
@@ -43,6 +23,9 @@ def _restore_tty() -> None:
 
 def _print_exit_hint(conversation_id: str) -> None:
     """Print a resume hint with the current conversation ID."""
+    from prompt_toolkit import print_formatted_text
+    from prompt_toolkit.formatted_text import HTML
+
     print_formatted_text(
         HTML(f'<grey>Conversation ID:</grey> <yellow>{conversation_id}</yellow>')
     )
@@ -66,6 +49,20 @@ def run_cli_entry(resume_conversation_id: str | None = None, initial_user_messag
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
+
+    # Lazy imports to keep tests lightweight
+    from prompt_toolkit import print_formatted_text
+    from prompt_toolkit.formatted_text import HTML
+    from openhands.sdk import Message, TextContent
+    from openhands.sdk.conversation.state import AgentExecutionStatus
+    from openhands_cli.runner import ConversationRunner
+    from openhands_cli.setup import MissingAgentSpec, setup_conversation, start_fresh_conversation
+    from openhands_cli.tui.settings.mcp_screen import MCPScreen
+    from openhands_cli.tui.settings.settings_screen import SettingsScreen
+    from openhands_cli.tui.status import display_status
+    from openhands_cli.tui.tui import display_help, display_welcome
+    from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
+    from openhands_cli.user_actions.utils import get_session_prompter
 
     try:
         conversation = start_fresh_conversation(resume_conversation_id)
