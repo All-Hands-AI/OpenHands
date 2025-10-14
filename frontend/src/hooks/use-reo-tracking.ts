@@ -3,6 +3,7 @@ import { useConfig } from "./query/use-config";
 import { useGitUser } from "./query/use-git-user";
 import { getLoginMethod, LoginMethod } from "#/utils/local-storage";
 import reoService, { ReoIdentity } from "#/utils/reo";
+import { PRODUCT_URL } from "#/utils/constants";
 
 /**
  * Maps login method to Reo identity type
@@ -84,6 +85,12 @@ const buildReoIdentity = (
 };
 
 /**
+ * Checks if the current domain is the production domain
+ */
+const isProductionDomain = (): boolean =>
+  window.location.origin === PRODUCT_URL.PRODUCTION;
+
+/**
  * Hook to handle Reo.dev tracking integration
  * Only active in SaaS mode
  */
@@ -92,10 +99,14 @@ export const useReoTracking = () => {
   const { data: user } = useGitUser();
   const [hasIdentified, setHasIdentified] = React.useState(false);
 
-  // Initialize Reo.dev when in SaaS mode
+  // Initialize Reo.dev when in SaaS mode and on the correct domain
   React.useEffect(() => {
     const initReo = async () => {
-      if (config?.APP_MODE === "saas" && !reoService.isInitialized()) {
+      if (
+        config?.APP_MODE === "oss" &&
+        isProductionDomain() &&
+        !reoService.isInitialized()
+      ) {
         await reoService.init();
       }
     };
@@ -103,10 +114,11 @@ export const useReoTracking = () => {
     initReo();
   }, [config?.APP_MODE]);
 
-  // Identify user when user data is available and we're in SaaS mode
+  // Identify user when user data is available and we're in SaaS mode on correct domain
   React.useEffect(() => {
     if (
-      config?.APP_MODE !== "saas" ||
+      config?.APP_MODE !== "oss" ||
+      !isProductionDomain() ||
       !user ||
       hasIdentified ||
       !reoService.isInitialized()
