@@ -289,11 +289,25 @@ async def create_subscription_checkout_session(
 
     customer_id = await stripe_service.find_or_create_customer(user_id)
     subscription_price_data = SUBSCRIPTION_PRICE_DATA[billing_session_type.value]
+
+    # Get the validated Stripe price ID
+    try:
+        price_id = await stripe_service.get_pro_subscription_price_id()
+    except ValueError as e:
+        logger.error(
+            'create_subscription_checkout_session: Invalid Stripe price configuration',
+            extra={'user_id': user_id, 'error': str(e)}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='Subscription service is temporarily unavailable. Please try again later.',
+        )
+
     checkout_session = await stripe.checkout.Session.create_async(
         customer=customer_id,
         line_items=[
             {
-                'price_data': subscription_price_data,
+                'price': price_id,
                 'quantity': 1,
             }
         ],

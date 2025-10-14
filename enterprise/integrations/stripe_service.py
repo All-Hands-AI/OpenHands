@@ -1,6 +1,6 @@
 import stripe
 from server.auth.token_manager import TokenManager
-from server.constants import STRIPE_API_KEY
+from server.constants import STRIPE_API_KEY, STRIPE_PRO_SUBSCRIPTION_PRICE_ID
 from server.logger import logger
 from storage.database import session_maker
 from storage.stripe_customer import StripeCustomer
@@ -71,3 +71,64 @@ async def has_payment_method(user_id: str) -> bool:
         f'has_payment_method:{user_id}:{customer_id}:{bool(payment_methods.data)}'
     )
     return bool(payment_methods.data)
+
+
+async def validate_stripe_price_id(price_id: str) -> bool:
+    """
+    Validate that the Stripe price ID exists and is active.
+
+    Args:
+        price_id: The Stripe price ID to validate
+
+    Returns:
+        bool: True if the price exists and is active, False otherwise
+    """
+    if not price_id:
+        logger.error('validate_stripe_price_id: No price ID provided')
+        return False
+
+    try:
+        price = await stripe.Price.retrieve_async(price_id)
+        is_active = price.active
+        logger.info(
+            'validate_stripe_price_id',
+            extra={
+                'price_id': price_id,
+                'is_active': is_active,
+                'unit_amount': price.unit_amount,
+                'currency': price.currency,
+            }
+        )
+        return is_active
+    except stripe.InvalidRequestError as e:
+        logger.error(
+            'validate_stripe_price_id: Invalid price ID',
+            extra={'price_id': price_id, 'error': str(e)}
+        )
+        return False
+    except Exception as e:
+        logger.error(
+            'validate_stripe_price_id: Unexpected error',
+            extra={'price_id': price_id, 'error': str(e)}
+        )
+        return False
+
+
+async def get_pro_subscription_price_id() -> str:
+    """
+    Get the Pro subscription price ID with validation.
+
+    Returns:
+        str: The validated price ID
+
+    Raises:
+        ValueError: If the price ID is not configured or invalid
+    """
+    if not STRIPE_PRO_SUBSCRIPTION_PRICE_ID:
+        raise ValueError('STRIPE_PRO_SUBSCRIPTION_PRICE_ID environment variable is not set')
+
+    is_valid = await validate_stripe_price_id(STRIPE_PRO_SUBSCRIPTION_PRICE_ID)
+    if not is_valid:
+        raise ValueError(f'Invalid or inactive Stripe price ID: {STRIPE_PRO_SUBSCRIPTION_PRICE_ID}')
+
+    return STRIPE_PRO_SUBSCRIPTION_PRICE_ID
