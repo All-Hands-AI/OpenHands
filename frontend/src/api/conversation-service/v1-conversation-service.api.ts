@@ -66,6 +66,35 @@ export interface V1AppConversationStartTaskPage {
 
 class V1ConversationService {
   /**
+   * Build headers for V1 API requests that require session authentication
+   * @param sessionApiKey Session API key for authentication
+   * @returns Headers object with X-Session-API-Key if provided
+   */
+  private static buildSessionHeaders(
+    sessionApiKey?: string | null,
+  ): Record<string, string> {
+    const headers: Record<string, string> = {};
+    if (sessionApiKey) {
+      headers["X-Session-API-Key"] = sessionApiKey;
+    }
+    return headers;
+  }
+
+  /**
+   * Build the full URL for V1 runtime-specific endpoints
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param path The API path (e.g., "/api/vscode/url")
+   * @returns Full URL to the runtime endpoint
+   */
+  private static buildRuntimeUrl(
+    conversationUrl: string | null | undefined,
+    path: string,
+  ): string {
+    const baseUrl = buildHttpBaseUrl(conversationUrl);
+    return `${baseUrl}${path}`;
+  }
+
+  /**
    * Send a message to a V1 conversation
    * @param conversationId The conversation ID
    * @param message The message to send
@@ -182,18 +211,8 @@ class V1ConversationService {
     conversationUrl: string | null | undefined,
     sessionApiKey?: string | null,
   ): Promise<GetVSCodeUrlResponse> {
-    // Build the HTTP base URL from conversationUrl (same as WebSocket connection)
-    const baseUrl = buildHttpBaseUrl(conversationUrl);
-
-    // Add base_url query parameter to tell the backend what host:port to use
-    // instead of defaulting to port 8001
-    const url = `${baseUrl}/api/vscode/url`;
-
-    // Add session API key header (required for V1 to identify conversation)
-    const headers: Record<string, string> = {};
-    if (sessionApiKey) {
-      headers["X-Session-API-Key"] = sessionApiKey;
-    }
+    const url = this.buildRuntimeUrl(conversationUrl, "/api/vscode/url");
+    const headers = this.buildSessionHeaders(sessionApiKey);
 
     // V1 API returns {url: '...'} instead of {vscode_url: '...'}
     // Map it to match the expected interface
@@ -201,6 +220,34 @@ class V1ConversationService {
     return {
       vscode_url: data.url,
     };
+  }
+
+  /**
+   * Pause a V1 conversation
+   * Uses the custom runtime URL from the conversation
+   *
+   * @param conversationId The conversation ID
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param sessionApiKey Session API key for authentication (required for V1)
+   * @returns Success response
+   */
+  static async pauseConversation(
+    conversationId: string,
+    conversationUrl: string | null | undefined,
+    sessionApiKey?: string | null,
+  ): Promise<{ success: boolean }> {
+    const url = this.buildRuntimeUrl(
+      conversationUrl,
+      `/api/conversations/${conversationId}/pause`,
+    );
+    const headers = this.buildSessionHeaders(sessionApiKey);
+
+    const { data } = await axios.post<{ success: boolean }>(
+      url,
+      {},
+      { headers },
+    );
+    return data;
   }
 }
 
