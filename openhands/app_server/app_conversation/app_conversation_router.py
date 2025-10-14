@@ -13,7 +13,7 @@ from openhands.app_server.services.httpx_client_injector import (
     set_httpx_client_keep_open,
 )
 from openhands.app_server.services.injector import InjectorState
-from openhands.app_server.user.admin_user_context import USER_CONTEXT_ATTR
+from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext
 
 # Handle anext compatibility for Python < 3.10

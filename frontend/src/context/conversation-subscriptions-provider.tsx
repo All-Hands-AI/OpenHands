@@ -275,7 +275,7 @@ export function ConversationSubscriptionsProvider({
         setActiveConversationIds((prev) =>
           prev.includes(conversationId) ? prev : [...prev, conversationId],
         );
-      } catch (error) {
+      } catch {
         // Clean up the event handler if there was an error
         delete eventHandlersRef.current[conversationId];
       }

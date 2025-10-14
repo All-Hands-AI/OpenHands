@@ -4,7 +4,7 @@ requires = [ "hatchling>=1.25" ]
 
 [project]
 name = "openhands"
-version = "1.0.0"
+version = "1.0.1"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
 license = { text = "MIT" }
@@ -22,8 +22,7 @@ dependencies = [
   "typer>=0.17.4",
 ]
 
-# Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands = "openhands_cli.simple_main:main"
+scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory
@@ -96,5 +95,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }
