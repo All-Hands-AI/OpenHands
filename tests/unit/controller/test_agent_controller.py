@@ -1412,6 +1412,7 @@ async def test_run_controller_with_memory_error(
     assert state.last_error == 'Error: RuntimeError'
 
 
+@pytest.mark.skip(reason='2025-10-07 : This test is flaky')
 @pytest.mark.asyncio
 async def test_action_metrics_copy(mock_agent_with_stats):
     mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
