@@ -22,5 +22,4 @@ export const useStartTasks = (limit = 10) =>
       ),
     staleTime: 1000 * 60 * 1, // 1 minute (short since these are in-progress)
     gcTime: 1000 * 60 * 5, // 5 minutes
-    refetchInterval: 5000, // Poll every 5 seconds to show progress
   });
