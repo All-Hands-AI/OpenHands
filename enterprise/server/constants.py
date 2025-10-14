@@ -37,6 +37,12 @@ LITE_LLM_API_URL = os.environ.get(
 )
 LITE_LLM_TEAM_ID = os.environ.get('LITE_LLM_TEAM_ID', None)
 LITE_LLM_API_KEY = os.environ.get('LITE_LLM_API_KEY', None)
+
+DEFAULT_INITIAL_BUDGET = float(os.environ.get('DEFAULT_INITIAL_BUDGET', '20'))
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', None)
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', None)
+STRIPE_PRO_SUBSCRIPTION_PRICE_ID = os.environ.get('STRIPE_PRO_SUBSCRIPTION_PRICE_ID', None)
+
 SUBSCRIPTION_PRICE_DATA = {
     'MONTHLY_SUBSCRIPTION': {
         'price_id': STRIPE_PRO_SUBSCRIPTION_PRICE_ID,
@@ -49,11 +55,6 @@ SUBSCRIPTION_PRICE_DATA = {
         'recurring': {'interval': 'month', 'interval_count': 1},
     },
 }
-
-DEFAULT_INITIAL_BUDGET = float(os.environ.get('DEFAULT_INITIAL_BUDGET', '20'))
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', None)
-STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', None)
-STRIPE_PRO_SUBSCRIPTION_PRICE_ID = os.environ.get('STRIPE_PRO_SUBSCRIPTION_PRICE_ID', None)
 REQUIRE_PAYMENT = os.environ.get('REQUIRE_PAYMENT', '0') in ('1', 'true')
 
 SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', None)
