@@ -28,7 +28,7 @@ class UserStore:
         keycloak_user_id: str,
         user_info: dict,
         role_id: Optional[int] = None,
-    ) -> User:
+    ) -> User | None:
         """Create a new user."""
         with session_maker() as session:
             # create personal org
@@ -43,6 +43,9 @@ class UserStore:
             settings = await UserStore.create_default_settings(
                 org_id=str(org.id), keycloak_user_id=keycloak_user_id
             )
+
+            if not settings:
+                return None
 
             org_kwargs = OrgStore.get_kwargs_from_settings(settings)
             for key, value in org_kwargs.items():
@@ -214,7 +217,7 @@ class UserStore:
         settings = await LiteLlmManager.create_entries(
             org_id, keycloak_user_id, settings
         )
-        if settings is None:
+        if not settings:
             logger.info(
                 'UserStore:create_default_settings:litellm_create_failed',
                 extra={'org_id': org_id},

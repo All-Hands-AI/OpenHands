@@ -102,9 +102,10 @@ class SaasUserAuth(UserAuth):
             return settings
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
-        settings.email = self.email
-        settings.email_verified = self.email_verified
-        self._settings = settings
+        if settings:
+            settings.email = self.email
+            settings.email_verified = self.email_verified
+            self._settings = settings
         return settings
 
     async def get_secrets_store(self):
@@ -139,9 +140,8 @@ class SaasUserAuth(UserAuth):
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         logger.debug('saas_user_auth_get_provider_tokens')
-        provider_tokens = self.provider_tokens
-        if provider_tokens is not None:
-            return provider_tokens
+        if self.provider_tokens is not None:
+            return self.provider_tokens
         provider_tokens = {}
         access_token = await self.get_access_token()
         if not access_token:
@@ -187,9 +187,8 @@ class SaasUserAuth(UserAuth):
                         session.commit()
                     raise
 
-            provider_tokens = MappingProxyType(provider_tokens)
-            self.provider_tokens = provider_tokens
-            return provider_tokens
+            self.provider_tokens = MappingProxyType(provider_tokens)
+            return self.provider_tokens
         except Exception as e:
             # Any error refreshing tokens means we need to log in again
             raise AuthError() from e

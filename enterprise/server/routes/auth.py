@@ -150,6 +150,15 @@ async def keycloak_callback(
             # new user
             user = await UserStore.create_user(user_id, user_info)
 
+    if not user:
+        logger.error(f'Failed to authenticate user {user_info["preferred_username"]}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                'error': f'Failed to authenticate user {user_info["preferred_username"]}'
+            },
+        )
+
     logger.info(f'Logging in user {user.keycloak_user_id} in org {user.current_org_id}')
 
     # default to github IDP for now.
