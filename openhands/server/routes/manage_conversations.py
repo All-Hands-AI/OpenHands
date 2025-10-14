@@ -462,6 +462,7 @@ async def start_conversation(
     providers_set: ProvidersSetModel,
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationResponse:
@@ -471,7 +472,22 @@ async def start_conversation(
     to start a conversation. If the conversation is already running, it will
     return the existing agent loop info.
     """
-    logger.info(f'Starting conversation: {conversation_id}')
+    logger.info(
+        f'Starting conversation: {conversation_id}',
+        extra={'session_id': conversation_id},
+    )
+
+    # Log token fetch status
+    if provider_tokens:
+        logger.info(
+            f'/start endpoint: Fetched provider tokens: {list(provider_tokens.keys())}',
+            extra={'session_id': conversation_id},
+        )
+    else:
+        logger.warning(
+            '/start endpoint: No provider tokens fetched (provider_tokens is None/empty)',
+            extra={'session_id': conversation_id},
+        )
 
     try:
         # Check that the conversation exists
@@ -488,7 +504,7 @@ async def start_conversation(
 
         # Set up conversation init data with provider information
         conversation_init_data = await setup_init_conversation_settings(
-            user_id, conversation_id, providers_set.providers_set or []
+            user_id, conversation_id, providers_set.providers_set or [], provider_tokens
         )
 
         # Start the agent loop

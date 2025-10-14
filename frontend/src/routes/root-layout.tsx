@@ -24,6 +24,7 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
+import { useReoTracking } from "#/hooks/use-reo-tracking";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
@@ -95,6 +96,9 @@ export default function MainApp() {
 
   // Handle authentication callback and set login method after successful authentication
   useAuthCallback();
+
+  // Initialize Reo.dev tracking in SaaS mode
+  useReoTracking();
 
   React.useEffect(() => {
     // Don't change language when on TOS page
@@ -212,7 +216,10 @@ export default function MainApp() {
         {config.data?.MAINTENANCE && (
           <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}
-        <div id="root-outlet" className="flex-1 relative overflow-auto">
+        <div
+          id="root-outlet"
+          className="flex-1 relative overflow-auto custom-scrollbar"
+        >
           <EmailVerificationGuard>
             <Outlet />
           </EmailVerificationGuard>
