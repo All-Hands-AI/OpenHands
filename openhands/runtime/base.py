@@ -4,6 +4,7 @@ import copy
 import json
 import os
 import random
+import re
 import shutil
 import string
 import tempfile
@@ -462,8 +463,6 @@ class Runtime(FileEditRuntimeMixin):
             new_token = token_info.token.get_secret_value()
 
             # Build new URL with fresh token
-            import re
-
             if provider == ProviderType.GITHUB:
                 new_url = re.sub(
                     r'https://[^@]+@github\.com',
