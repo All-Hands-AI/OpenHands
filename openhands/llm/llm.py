@@ -59,6 +59,24 @@ class LLM(RetryMixin, DebugMixin):
         config: an LLMConfig object specifying the configuration of the LLM.
     """
 
+    def _get_extra_headers(self) -> dict[str, Any] | None:
+        """Read and validate extra headers from LLM_EXTRA_HEADERS env.
+
+        Returns a dict if valid JSON object, otherwise None.
+        """
+        _extra_headers_env = os.getenv('LLM_EXTRA_HEADERS')
+        if not _extra_headers_env:
+            return None
+        try:
+            _extra_headers = _json.loads(_extra_headers_env)
+            if not isinstance(_extra_headers, dict):
+                logger.warning('LLM_EXTRA_HEADERS must be a JSON object; ignoring')
+                return None
+            return _extra_headers
+        except Exception as _e:
+            logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
+            return None
+
     def __init__(
         self,
         config: LLMConfig,
@@ -196,17 +214,7 @@ class LLM(RetryMixin, DebugMixin):
             kwargs.pop('top_p', None)
 
         # Apply extra headers from env if defined
-        _extra_headers_env = os.getenv('LLM_EXTRA_HEADERS')
-        _extra_headers = None
-        if _extra_headers_env:
-            try:
-                _extra_headers = _json.loads(_extra_headers_env)
-                if not isinstance(_extra_headers, dict):
-                    logger.warning('LLM_EXTRA_HEADERS must be a JSON object; ignoring')
-                    _extra_headers = None
-            except Exception as _e:
-                logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
-
+        _extra_headers = self._get_extra_headers()
         if _extra_headers is not None:
             kwargs['extra_headers'] = _extra_headers
 

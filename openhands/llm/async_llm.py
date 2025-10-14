@@ -1,6 +1,4 @@
 import asyncio
-import json as _json
-import os
 from functools import partial
 from typing import Any, Callable
 
@@ -23,16 +21,7 @@ class AsyncLLM(LLM):
         super().__init__(*args, **kwargs)
 
         # Apply extra headers from env if defined
-        _extra_headers_env = os.getenv('LLM_EXTRA_HEADERS')
-        _extra_headers = None
-        if _extra_headers_env:
-            try:
-                _extra_headers = _json.loads(_extra_headers_env)
-                if not isinstance(_extra_headers, dict):
-                    logger.warning('LLM_EXTRA_HEADERS must be a JSON object; ignoring')
-                    _extra_headers = None
-            except Exception as _e:
-                logger.warning(f'Failed parsing LLM_EXTRA_HEADERS: {_e}')
+        _extra_headers = self._get_extra_headers()
 
         self._async_completion = partial(
             self._call_acompletion,
