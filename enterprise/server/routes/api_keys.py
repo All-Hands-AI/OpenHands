@@ -20,8 +20,8 @@ async def get_byor_key_from_db(user_id: str) -> str | None:
         if not org:
             return None
         return (
-            org.llm_api_key_for_byor.get_secret_value()
-            if org.llm_api_key_for_byor
+            org.default_llm_api_key_for_byor.get_secret_value()
+            if org.default_llm_api_key_for_byor
             else None
         )
 

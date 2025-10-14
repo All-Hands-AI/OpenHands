@@ -226,8 +226,8 @@ class UserStore:
     @staticmethod
     def get_kwargs_from_settings(settings: Settings):
         kwargs = {
-            c.name: getattr(settings, c.name)
+            c.name: getattr(settings, normalized)
             for c in User.__table__.columns
-            if hasattr(settings, c.name)
+            if (normalized := c.name.lstrip('_')) and hasattr(settings, normalized)
         }
         return kwargs

@@ -204,7 +204,6 @@ class GithubIssueComment(GithubIssue):
         return user_instructions, conversation_instructions
 
 
-
 @dataclass
 class GithubPRComment(GithubIssueComment):
     branch_name: str

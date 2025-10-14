@@ -22,6 +22,7 @@ depends_on = None
 
 # TODO: decide whether to modify this for orgs or users
 
+
 def upgrade():
     """
     Create maintenance tasks for all users whose user_version is less than

@@ -105,9 +105,14 @@ class OrgStore:
     @staticmethod
     def get_kwargs_from_settings(settings: Settings):
         kwargs = {
-            c.name: getattr(settings, c.name)
+            c.name: getattr(settings, normalized)
             for c in Org.__table__.columns
-            if hasattr(settings, c.name)
+            if (
+                normalized := c.name.removeprefix('_default_')
+                .removeprefix('default_')
+                .lstrip('_')
+            )
+            and hasattr(settings, normalized)
         }
         return kwargs
 
@@ -126,7 +131,7 @@ class OrgStore:
             max_budget=None,
         )
         org.org_version = ORG_SETTINGS_VERSION
-        org.llm_model = get_default_litellm_model()
+        org.default_llm_model = get_default_litellm_model()
         if session:
             session.commit()
             session.refresh(org)

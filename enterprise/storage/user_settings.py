@@ -1,6 +1,5 @@
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Identity, Integer, String
-
 from server.constants import DEFAULT_BILLING_MARGIN
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Identity, Integer, String
 from storage.base import Base
 
 

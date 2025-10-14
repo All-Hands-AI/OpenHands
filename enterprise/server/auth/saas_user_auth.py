@@ -4,6 +4,7 @@ from types import MappingProxyType
 
 import jwt
 from fastapi import Request
+from keycloak.exceptions import KeycloakError
 from pydantic import SecretStr
 from server.auth.auth_error import (
     AuthError,
@@ -23,7 +24,6 @@ from storage.saas_secrets_store import SaasSecretsStore
 from storage.saas_settings_store import SaasSettingsStore
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
-from keycloak.exceptions import KeycloakError
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
