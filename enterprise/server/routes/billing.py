@@ -296,7 +296,7 @@ async def create_subscription_checkout_session(
     except ValueError as e:
         logger.error(
             'create_subscription_checkout_session: Invalid Stripe price configuration',
-            extra={'user_id': user_id, 'error': str(e)}
+            extra={'user_id': user_id, 'error': str(e)},
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

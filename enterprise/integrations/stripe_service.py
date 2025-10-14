@@ -97,19 +97,19 @@ async def validate_stripe_price_id(price_id: str) -> bool:
                 'is_active': is_active,
                 'unit_amount': price.unit_amount,
                 'currency': price.currency,
-            }
+            },
         )
         return is_active
     except stripe.InvalidRequestError as e:
         logger.error(
             'validate_stripe_price_id: Invalid price ID',
-            extra={'price_id': price_id, 'error': str(e)}
+            extra={'price_id': price_id, 'error': str(e)},
         )
         return False
     except Exception as e:
         logger.error(
             'validate_stripe_price_id: Unexpected error',
-            extra={'price_id': price_id, 'error': str(e)}
+            extra={'price_id': price_id, 'error': str(e)},
         )
         return False
 
@@ -125,10 +125,14 @@ async def get_pro_subscription_price_id() -> str:
         ValueError: If the price ID is not configured or invalid
     """
     if not STRIPE_PRO_SUBSCRIPTION_PRICE_ID:
-        raise ValueError('STRIPE_PRO_SUBSCRIPTION_PRICE_ID environment variable is not set')
+        raise ValueError(
+            'STRIPE_PRO_SUBSCRIPTION_PRICE_ID environment variable is not set'
+        )
 
     is_valid = await validate_stripe_price_id(STRIPE_PRO_SUBSCRIPTION_PRICE_ID)
     if not is_valid:
-        raise ValueError(f'Invalid or inactive Stripe price ID: {STRIPE_PRO_SUBSCRIPTION_PRICE_ID}')
+        raise ValueError(
+            f'Invalid or inactive Stripe price ID: {STRIPE_PRO_SUBSCRIPTION_PRICE_ID}'
+        )
 
     return STRIPE_PRO_SUBSCRIPTION_PRICE_ID
