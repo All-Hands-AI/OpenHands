@@ -29,6 +29,7 @@ import { ConversationName } from "#/components/features/conversation/conversatio
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
+import { useErrorMessageStore } from "#/stores/error-message-store";
 
 function AppContent() {
   useConversationConfig();
@@ -50,6 +51,9 @@ function AppContent() {
   );
   const clearJupyter = useJupyterStore((state) => state.clearJupyter);
   const queryClient = useQueryClient();
+  const removeErrorMessage = useErrorMessageStore(
+    (state) => state.removeErrorMessage,
+  );
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
@@ -107,11 +111,14 @@ function AppContent() {
     clearJupyter();
     resetConversationState();
     setCurrentAgentState(AgentState.LOADING);
+    // Clear any error messages from previous conversations
+    removeErrorMessage();
   }, [
     conversationId,
     clearTerminal,
     setCurrentAgentState,
     resetConversationState,
+    removeErrorMessage,
   ]);
 
   useEffectOnce(() => {
