@@ -56,10 +56,10 @@ def main() -> None:
 
             initial_user_message = _build_initial_user_message(args)
             # Start agent chat
-            run_cli_entry(
-                resume_conversation_id=args.resume,
-                initial_user_message=initial_user_message,
-            )
+            kwargs = {"resume_conversation_id": args.resume}
+            if initial_user_message:
+                kwargs["initial_user_message"] = initial_user_message
+            run_cli_entry(**kwargs)
     except KeyboardInterrupt:
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except EOFError:
