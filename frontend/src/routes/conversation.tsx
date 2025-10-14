@@ -130,26 +130,36 @@ function AppContent() {
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
+  const content = (
+    <ConversationSubscriptionsProvider>
+      <EventHandler>
+        <div
+          data-testid="app-route"
+          className="p-3 md:p-0 flex flex-col h-full gap-3"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4.5 pt-2 lg:pt-0">
+            <ConversationName />
+            <ConversationTabs />
+          </div>
+
+          <ConversationMain />
+        </div>
+      </EventHandler>
+    </ConversationSubscriptionsProvider>
+  );
+
+  // Wait for conversation data to load before rendering WebSocket provider
+  // This prevents the provider from unmounting/remounting when version changes from 0 to 1
+  if (!conversation) {
+    return content;
+  }
+
   return (
     <WebSocketProviderWrapper
       version={isV1Conversation ? 1 : 0}
       conversationId={conversationId}
     >
-      <ConversationSubscriptionsProvider>
-        <EventHandler>
-          <div
-            data-testid="app-route"
-            className="p-3 md:p-0 flex flex-col h-full gap-3"
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4.5 pt-2 lg:pt-0">
-              <ConversationName />
-              <ConversationTabs />
-            </div>
-
-            <ConversationMain />
-          </div>
-        </EventHandler>
-      </ConversationSubscriptionsProvider>
+      {content}
     </WebSocketProviderWrapper>
   );
 }

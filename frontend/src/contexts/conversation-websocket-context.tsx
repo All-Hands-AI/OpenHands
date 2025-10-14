@@ -7,7 +7,7 @@ import React, {
   useMemo,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useWebSocket } from "#/hooks/use-websocket";
+import { useWebSocket, WebSocketHookOptions } from "#/hooks/use-websocket";
 import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
@@ -108,8 +108,9 @@ export function ConversationWebSocketProvider({
     ],
   );
 
-  const websocketOptions = useMemo(
+  const websocketOptions: WebSocketHookOptions = useMemo(
     () => ({
+      reconnect: { enabled: true },
       onOpen: () => {
         setConnectionState("OPEN");
         removeErrorMessage(); // Clear any previous error messages on successful connection
