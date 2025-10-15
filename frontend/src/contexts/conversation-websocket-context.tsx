@@ -12,6 +12,7 @@ import { useEventStore } from "#/stores/use-event-store";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useV1ConversationStateStore } from "#/stores/v1-conversation-state-store";
+import { useCommandStore } from "#/state/command-store";
 import {
   isV1Event,
   isAgentErrorEvent,
@@ -20,6 +21,8 @@ import {
   isConversationStateUpdateEvent,
   isFullStateConversationStateUpdateEvent,
   isAgentStatusConversationStateUpdateEvent,
+  isExecuteBashActionEvent,
+  isExecuteBashObservationEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
@@ -53,6 +56,7 @@ export function ConversationWebSocketProvider({
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { setAgentStatus } = useV1ConversationStateStore();
+  const { appendInput, appendOutput } = useCommandStore();
 
   // Build WebSocket URL from props
   const wsUrl = useMemo(
@@ -99,6 +103,16 @@ export function ConversationWebSocketProvider({
               setAgentStatus(event.value);
             }
           }
+
+          // Handle ExecuteBashAction events - add command as input to terminal
+          if (isExecuteBashActionEvent(event)) {
+            appendInput(event.action.command);
+          }
+
+          // Handle ExecuteBashObservation events - add output to terminal
+          if (isExecuteBashObservationEvent(event)) {
+            appendOutput(event.observation.output);
+          }
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -112,6 +126,8 @@ export function ConversationWebSocketProvider({
       queryClient,
       conversationId,
       setAgentStatus,
+      appendInput,
+      appendOutput,
     ],
   );
 

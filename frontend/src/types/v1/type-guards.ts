@@ -1,4 +1,10 @@
-import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
+import {
+  OpenHandsEvent,
+  ObservationEvent,
+  BaseEvent,
+  ExecuteBashAction,
+  ExecuteBashObservation,
+} from "./core";
 import { AgentErrorEvent } from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
@@ -78,6 +84,23 @@ export const isActionEvent = (event: OpenHandsEvent): event is ActionEvent =>
   "tool_call_id" in event &&
   typeof event.tool_name === "string" &&
   typeof event.tool_call_id === "string";
+
+/**
+ * Type guard function to check if an action event is an ExecuteBashAction
+ */
+export const isExecuteBashActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<ExecuteBashAction> =>
+  isActionEvent(event) && event.action.kind === "ExecuteBashAction";
+
+/**
+ * Type guard function to check if an observation event is an ExecuteBashObservation
+ */
+export const isExecuteBashObservationEvent = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<ExecuteBashObservation> =>
+  isObservationEvent(event) &&
+  event.observation.kind === "ExecuteBashObservation";
 
 /**
  * Type guard function to check if an event is a conversation state update event

@@ -22,7 +22,7 @@ interface ThinkAction extends ActionBase<"ThinkAction"> {
   thought: string;
 }
 
-interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
+export interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
   /**
    * The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process.
    */

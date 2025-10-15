@@ -400,4 +400,98 @@ describe("Conversation WebSocket Handler", () => {
     it.todo("should send user actions through WebSocket when connected");
     it.todo("should handle send attempts when disconnected");
   });
+
+  // 8. Terminal I/O Tests (ExecuteBashAction and ExecuteBashObservation)
+  describe("Terminal I/O Integration", () => {
+    it("should append command to store when ExecuteBashAction event is received", async () => {
+      const { createMockExecuteBashActionEvent } = await import(
+        "#/mocks/mock-ws-helpers"
+      );
+      const { useCommandStore } = await import("#/state/command-store");
+
+      // Clear the command store before test
+      useCommandStore.getState().clearTerminal();
+
+      // Create a mock ExecuteBashAction event
+      const mockBashActionEvent = createMockExecuteBashActionEvent("npm test");
+
+      // Set up MSW to send the event when connection is established
+      mswServer.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+          // Send the mock event after connection
+          client.send(JSON.stringify(mockBashActionEvent));
+        }),
+      );
+
+      // Render with WebSocket context (we don't need a component, just need the provider to be active)
+      renderWithWebSocketContext(<ConnectionStatusComponent />);
+
+      // Wait for connection
+      await waitFor(() => {
+        expect(screen.getByTestId("connection-state")).toHaveTextContent(
+          "OPEN",
+        );
+      });
+
+      // Wait for the command to be added to the store
+      await waitFor(() => {
+        const { commands } = useCommandStore.getState();
+        expect(commands.length).toBe(1);
+      });
+
+      // Verify the command was added with correct type and content
+      const { commands } = useCommandStore.getState();
+      expect(commands[0].type).toBe("input");
+      expect(commands[0].content).toBe("npm test");
+    });
+
+    it("should append output to store when ExecuteBashObservation event is received", async () => {
+      const { createMockExecuteBashObservationEvent } = await import(
+        "#/mocks/mock-ws-helpers"
+      );
+      const { useCommandStore } = await import("#/state/command-store");
+
+      // Clear the command store before test
+      useCommandStore.getState().clearTerminal();
+
+      // Create a mock ExecuteBashObservation event
+      const mockBashObservationEvent = createMockExecuteBashObservationEvent(
+        "PASS  tests/example.test.js\n  ✓ should work (2 ms)",
+        "npm test",
+      );
+
+      // Set up MSW to send the event when connection is established
+      mswServer.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+          // Send the mock event after connection
+          client.send(JSON.stringify(mockBashObservationEvent));
+        }),
+      );
+
+      // Render with WebSocket context
+      renderWithWebSocketContext(<ConnectionStatusComponent />);
+
+      // Wait for connection
+      await waitFor(() => {
+        expect(screen.getByTestId("connection-state")).toHaveTextContent(
+          "OPEN",
+        );
+      });
+
+      // Wait for the output to be added to the store
+      await waitFor(() => {
+        const { commands } = useCommandStore.getState();
+        expect(commands.length).toBe(1);
+      });
+
+      // Verify the output was added with correct type and content
+      const { commands } = useCommandStore.getState();
+      expect(commands[0].type).toBe("output");
+      expect(commands[0].content).toBe(
+        "PASS  tests/example.test.js\n  ✓ should work (2 ms)",
+      );
+    });
+  });
 });
