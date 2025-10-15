@@ -15,13 +15,13 @@ class MockController:
         return {'test': 'trajectory', 'events': [{'action': 'test'}]}
 
 
-def test_signal_handler_first_sigint():
+def test_sigint_handler_first_signal():
     """Test that first SIGINT triggers graceful shutdown."""
     # Set up signal handler variables (simulating the function scope)
     sigint_count = 0
     shutdown_event = asyncio.Event()
 
-    def signal_handler():
+    def sigint_handler():
         """Handle SIGINT signals for graceful shutdown."""
         nonlocal sigint_count
         sigint_count += 1
@@ -32,20 +32,20 @@ def test_signal_handler_first_sigint():
             sys.exit(1)
 
     # Test first SIGINT
-    signal_handler()
+    sigint_handler()
 
     assert shutdown_event.is_set() is True
     assert sigint_count == 1
 
 
-def test_signal_handler_second_sigint():
+def test_sigint_handler_second_signal():
     """Test that second SIGINT forces immediate exit."""
     # Set up signal handler variables (simulating the function scope)
     sigint_count = 1  # Simulate first SIGINT already received
     shutdown_event = asyncio.Event()
     shutdown_event.set()  # Simulate first SIGINT already processed
 
-    def signal_handler():
+    def sigint_handler():
         """Handle SIGINT signals for graceful shutdown."""
         nonlocal sigint_count
         sigint_count += 1
@@ -57,8 +57,22 @@ def test_signal_handler_second_sigint():
 
     # Test second SIGINT
     with patch('sys.exit') as mock_exit:
-        signal_handler()
+        sigint_handler()
         mock_exit.assert_called_once_with(1)
+
+
+def test_sigterm_handler():
+    """Test that SIGTERM triggers graceful shutdown."""
+    shutdown_event = asyncio.Event()
+
+    def sigterm_handler():
+        """Handle SIGTERM signals for graceful shutdown."""
+        shutdown_event.set()
+
+    # Test SIGTERM
+    sigterm_handler()
+
+    assert shutdown_event.is_set() is True
 
 
 def test_trajectory_saving_during_graceful_shutdown():

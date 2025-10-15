@@ -68,6 +68,7 @@ async def run_controller(
     Signal Handling:
         - First SIGINT (Ctrl+C): Initiates graceful shutdown, saves trajectory if enabled
         - Second SIGINT: Forces immediate exit via sys.exit(1)
+        - SIGTERM: Always initiates graceful shutdown (common in production/containers)
         - Uses asyncio-safe signal handling to avoid race conditions
 
     Args:
@@ -184,11 +185,11 @@ async def run_controller(
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
 
-    # Set up asyncio-safe signal handler for graceful shutdown
+    # Set up asyncio-safe signal handlers for graceful shutdown
     sigint_count = 0
     shutdown_event = asyncio.Event()
 
-    def signal_handler():
+    def sigint_handler():
         """Handle SIGINT signals for graceful shutdown."""
         nonlocal sigint_count
         sigint_count += 1
@@ -201,9 +202,15 @@ async def run_controller(
             logger.info('Received second SIGINT. Forcing immediate exit...')
             sys.exit(1)
 
-    # Register the asyncio signal handler (safer for async contexts)
+    def sigterm_handler():
+        """Handle SIGTERM signals for graceful shutdown."""
+        logger.info('Received SIGTERM. Initiating graceful shutdown...')
+        shutdown_event.set()
+
+    # Register the asyncio signal handlers (safer for async contexts)
     loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGINT, signal_handler)
+    loop.add_signal_handler(signal.SIGINT, sigint_handler)
+    loop.add_signal_handler(signal.SIGTERM, sigterm_handler)
 
     # start event is a MessageAction with the task, either resumed or new
     if initial_state is not None and initial_state.last_error:
