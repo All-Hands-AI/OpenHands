@@ -65,6 +65,11 @@ async def run_controller(
 
     It's only used when you launch openhands backend directly via cmdline.
 
+    Signal Handling:
+        - First SIGINT (Ctrl+C): Initiates graceful shutdown, saves trajectory if enabled
+        - Second SIGINT: Forces immediate exit via sys.exit(1)
+        - Uses asyncio-safe signal handling to avoid race conditions
+
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
@@ -179,27 +184,26 @@ async def run_controller(
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
 
-    # Set up signal handler for graceful shutdown
+    # Set up asyncio-safe signal handler for graceful shutdown
     sigint_count = 0
-    graceful_shutdown_requested = False
+    shutdown_event = asyncio.Event()
 
-    def signal_handler(signum, frame):
+    def signal_handler():
         """Handle SIGINT signals for graceful shutdown."""
-        nonlocal sigint_count, graceful_shutdown_requested
+        nonlocal sigint_count
         sigint_count += 1
 
         if sigint_count == 1:
             logger.info('Received SIGINT (Ctrl+C). Initiating graceful shutdown...')
             logger.info('Press Ctrl+C again to force immediate exit.')
-            graceful_shutdown_requested = True
-            # Raise KeyboardInterrupt to break out of the main loop
-            raise KeyboardInterrupt('Graceful shutdown requested')
+            shutdown_event.set()
         else:
             logger.info('Received second SIGINT. Forcing immediate exit...')
             sys.exit(1)
 
-    # Register the signal handler
-    signal.signal(signal.SIGINT, signal_handler)
+    # Register the asyncio signal handler (safer for async contexts)
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGINT, signal_handler)
 
     # start event is a MessageAction with the task, either resumed or new
     if initial_state is not None and initial_state.last_error:
@@ -240,12 +244,29 @@ async def run_controller(
     ]
 
     try:
-        await run_agent_until_done(controller, runtime, memory, end_states)
-    except KeyboardInterrupt:
-        logger.info('KeyboardInterrupt caught in main loop')
-        if graceful_shutdown_requested:
+        # Create a task for the main agent loop
+        agent_task = asyncio.create_task(
+            run_agent_until_done(controller, runtime, memory, end_states)
+        )
+
+        # Wait for either the agent to complete or shutdown signal
+        done, pending = await asyncio.wait(
+            [agent_task, asyncio.create_task(shutdown_event.wait())],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        # Cancel any pending tasks
+        for task in pending:
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+        # Check if shutdown was requested
+        if shutdown_event.is_set():
             logger.info('Graceful shutdown requested. Saving trajectory before exit...')
-        # The trajectory will be saved in the normal flow below
+
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 
@@ -263,7 +284,7 @@ async def run_controller(
 
     # save trajectories if applicable
     if config.save_trajectory_path is not None:
-        if graceful_shutdown_requested:
+        if shutdown_event.is_set():
             logger.info('Saving trajectory due to graceful shutdown...')
         # if save_trajectory_path is a folder, use session id as file name
         if os.path.isdir(config.save_trajectory_path):
@@ -274,7 +295,7 @@ async def run_controller(
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
         with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
-        if graceful_shutdown_requested:
+        if shutdown_event.is_set():
             logger.info(
                 f'Trajectory successfully saved to {file_path} during graceful shutdown'
             )
