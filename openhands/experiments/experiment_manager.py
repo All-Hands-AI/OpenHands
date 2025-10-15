@@ -32,9 +32,9 @@ def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
 
 class ExperimentManager:
     @staticmethod
-    def run_conversation_variant_test__v1(
+    def run_agent_variant_tests__v1(
         user_id: str | None, conversation_id: UUID, agent: Agent
-    ):
+    ) -> Agent:
         return agent
 
     @staticmethod

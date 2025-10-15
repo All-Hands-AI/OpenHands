@@ -465,7 +465,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         # TODO: run experiment manager condenser + system prompt
         conversation_id = uuid4()
-        agent = ExperimentManagerImpl.run_conversation_variant_test__v1(
+        agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
 

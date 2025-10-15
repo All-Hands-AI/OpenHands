@@ -229,4 +229,4 @@ def handle_condenser_max_step_experiment__v1(
     condenser_llm = agent.llm.model_copy(update={"service_id": "condenser"})
     condenser = LLMSummarizingCondenser(llm=condenser_llm, max_size=condenser_max_size, keep_first=4)
 
-    return agent.model_copy(update={condenser})
+    return agent.model_copy(update={"condenser": condenser})

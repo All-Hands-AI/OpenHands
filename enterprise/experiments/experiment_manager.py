@@ -17,11 +17,11 @@ from openhands.sdk import Agent
 
 class SaaSExperimentManager(ExperimentManager):
     @staticmethod
-    def run_conversation_variant_test__v1(
+    def run_agent_variant_tests__v1(
         user_id: str | None,
         conversation_id: UUID,
         agent: Agent
-    ):
+    ) -> Agent:
 
         if not ENABLE_EXPERIMENT_MANAGER:
             logger.info(
@@ -30,11 +30,18 @@ class SaaSExperimentManager(ExperimentManager):
             )
             return agent
 
-        handle_condenser_max_step_experiment__v1(
+        agent = handle_condenser_max_step_experiment__v1(
             user_id,
             conversation_id,
             agent
         )
+
+        agent = agent.model_copy(update={
+            "system_prompt_filename": "system_prompt_long_horizon.j2"
+            }
+        )
+
+        return agent
 
 
     @staticmethod
