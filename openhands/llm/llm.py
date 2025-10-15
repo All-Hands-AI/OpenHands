@@ -355,14 +355,18 @@ class LLM(RetryMixin, DebugMixin):
                     # Convert SecretStr to string if needed
                     if hasattr(api_key, 'get_secret_value'):
                         api_key = api_key.get_secret_value()
-                    
+
                     responses_kwargs = {
                         'model': kwargs.get('model', self.config.model),
                         'input': responses_items,
                         'api_key': api_key,
                         'base_url': kwargs.get('base_url', self.config.base_url),
-                        'api_version': kwargs.get('api_version', self.config.api_version),
-                        'custom_llm_provider': kwargs.get('custom_llm_provider', self.config.custom_llm_provider),
+                        'api_version': kwargs.get(
+                            'api_version', self.config.api_version
+                        ),
+                        'custom_llm_provider': kwargs.get(
+                            'custom_llm_provider', self.config.custom_llm_provider
+                        ),
                         'timeout': kwargs.get('timeout', self.config.timeout),
                         'seed': kwargs.get('seed'),
                     }
