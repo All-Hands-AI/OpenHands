@@ -1,11 +1,15 @@
+from http.client import HTTPException
 import warnings
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Annotated, Optional
 from urllib.parse import quote
 
 import posthog
-from fastapi import APIRouter, Request, Response, status
+from server.routes.event_webhook import _get_session_api_key, _get_user_id
+from fastapi import APIRouter, Request, Response, status, Header
 from fastapi.responses import JSONResponse, RedirectResponse
+from openhands.integrations.provider import ProviderHandler
+from openhands.server.services.conversation_service import create_provider_tokens_object
 from server.auth.auth_utils import user_verifier
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
@@ -22,7 +26,7 @@ from storage.user_settings import UserSettings
 from storage.user_store import UserStore
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.service_types import ProviderType
+from openhands.integrations.service_types import ProviderType, TokenResponse
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token
 from openhands.server.user_auth.user_auth import get_user_auth
@@ -406,3 +410,31 @@ async def logout(request: Request):
         # We still want to clear the cookie and return success
 
     return response
+
+
+@api_router.get('/refresh-tokens', response_model=TokenResponse)
+async def refresh_tokens(
+    request: Request,
+    provider: ProviderType,
+    sid: str,
+    x_session_api_key: Annotated[str | None, Header(alias='X-Session-API-Key')],
+) -> TokenResponse:
+    """Return the latest token for a given provider."""
+    user_id = _get_user_id(sid)
+    session_api_key = await _get_session_api_key(user_id, sid)
+    if session_api_key != x_session_api_key:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Forbidden')
+
+    logger.info(f'Refreshing token for conversation {sid}')
+    provider_handler = ProviderHandler(
+        create_provider_tokens_object([provider]), external_auth_id=user_id
+    )
+    service = provider_handler.get_service(provider)
+    token = await service.get_latest_token()
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No token found for provider '{provider}'",
+        )
+
+    return TokenResponse(token=token.get_secret_value())
