@@ -422,7 +422,7 @@ async def test_create_customer_setup_session_success():
 
     with (
         patch(
-            'integrations.stripe_service.find_or_create_customer',
+            'integrations.stripe_service.find_or_create_customer_by_user_id',
             AsyncMock(return_value=mock_customer),
         ),
         patch('stripe.checkout.Session.create_async', mock_create),

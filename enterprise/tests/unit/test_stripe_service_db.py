@@ -9,11 +9,10 @@ import pytest
 import stripe
 from integrations.stripe_service import (
     find_customer_id_by_user_id,
-    find_or_create_customer,
+    find_or_create_customer_by_user_id,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from storage.stored_settings import Base as StoredBase
 from storage.stripe_customer import Base as StripeCustomerBase
 from storage.stripe_customer import StripeCustomer
 from storage.user_settings import Base as UserBase
@@ -22,7 +21,6 @@ from storage.user_settings import Base as UserBase
 @pytest.fixture
 def engine():
     engine = create_engine('sqlite:///:memory:')
-    StoredBase.metadata.create_all(engine)
     UserBase.metadata.create_all(engine)
     StripeCustomerBase.metadata.create_all(engine)
     return engine
@@ -96,7 +94,7 @@ async def test_create_customer_stores_id_in_db(session_maker):
         ),
     ):
         # Call the function
-        result = await find_or_create_customer('test-user-id')
+        result = await find_or_create_customer_by_user_id('test-user-id')
 
     # Verify the result
     assert result == 'cus_test123'
