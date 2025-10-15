@@ -44,6 +44,7 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
+from openhands.mcp.mcp_call_handler import MCPCallHandler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -84,6 +85,7 @@ class ActionExecutionClient(Runtime):
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
+        self.mcp_call_handler = MCPCallHandler(sid)
         super().__init__(
             config,
             event_stream,
@@ -456,16 +458,10 @@ class ActionExecutionClient(Runtime):
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         import sys
 
-        from openhands.events.observation import ErrorObservation
-
         # Check if we're on Windows - MCP is disabled on Windows
         if sys.platform == 'win32':
             self.log('info', 'MCP functionality is disabled on Windows')
             return ErrorObservation('MCP functionality is not available on Windows')
-
-        # Import here to avoid circular imports
-        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
-        from openhands.mcp.utils import create_mcp_clients
 
         # Get the updated MCP config
         updated_mcp_config = self.get_mcp_config()
@@ -474,17 +470,9 @@ class ActionExecutionClient(Runtime):
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
         )
 
-        # Create clients for this specific operation
-        mcp_clients = await create_mcp_clients(
-            updated_mcp_config.sse_servers,
-            updated_mcp_config.shttp_servers,
-            self.sid,
-            action.name,
-        )
-
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
-        result = await call_tool_mcp_handler(mcp_clients, action)
+        result = await self.mcp_call_handler.call_tool_mcp(action, updated_mcp_config)
         return result
 
     def close(self) -> None:
