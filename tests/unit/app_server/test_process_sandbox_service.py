@@ -6,6 +6,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import psutil
 import pytest
 
 from openhands.app_server.sandbox.process_sandbox_service import (
@@ -55,12 +56,12 @@ def temp_dir():
 def process_sandbox_service(mock_httpx_client, temp_dir):
     """Create a ProcessSandboxService instance for testing."""
     return ProcessSandboxService(
+        user_id='test-user-id',
         sandbox_spec_service=MockSandboxSpecService(),
         base_working_dir=temp_dir,
         base_port=9000,
         python_executable='python',
-        action_server_module='openhands.runtime.action_execution_server',
-        default_user='testuser',
+        agent_server_module='openhands.agent_server',
         health_check_path='/alive',
         httpx_client=mock_httpx_client,
     )
@@ -75,55 +76,14 @@ class TestProcessSandboxService:
         assert port >= process_sandbox_service.base_port
         assert port < process_sandbox_service.base_port + 10000
 
-    @patch('pwd.getpwnam')
-    def test_get_user_info_existing_user(self, mock_getpwnam, process_sandbox_service):
-        """Test getting user info for existing user."""
-        mock_user = MagicMock()
-        mock_user.pw_uid = 1000
-        mock_user.pw_gid = 1000
-        mock_getpwnam.return_value = mock_user
-
-        uid, gid = process_sandbox_service._get_user_info('testuser')
-        assert uid == 1000
-        assert gid == 1000
-
-    @patch('pwd.getpwnam')
-    @patch('os.getuid')
-    @patch('os.getgid')
-    def test_get_user_info_nonexistent_user(
-        self, mock_getgid, mock_getuid, mock_getpwnam, process_sandbox_service
-    ):
-        """Test getting user info for non-existent user."""
-        mock_getpwnam.side_effect = KeyError('User not found')
-        mock_getuid.return_value = 1001
-        mock_getgid.return_value = 1001
-
-        uid, gid = process_sandbox_service._get_user_info('nonexistent')
-        assert uid == 1001
-        assert gid == 1001
-
     @patch('os.makedirs')
-    @patch('os.chown')
-    @patch('os.chmod')
-    def test_create_sandbox_directory(
-        self, mock_chmod, mock_chown, mock_makedirs, process_sandbox_service
-    ):
+    def test_create_sandbox_directory(self, mock_makedirs, process_sandbox_service):
         """Test creating a sandbox directory."""
-        with patch.object(
-            process_sandbox_service, '_get_user_info', return_value=(1000, 1000)
-        ):
-            sandbox_dir = process_sandbox_service._create_sandbox_directory(
-                'test-id', 'testuser'
-            )
+        sandbox_dir = process_sandbox_service._create_sandbox_directory('test-id')
 
-            expected_dir = os.path.join(
-                process_sandbox_service.base_working_dir, 'test-id'
-            )
-            assert sandbox_dir == expected_dir
-
-            mock_makedirs.assert_called_once_with(expected_dir, exist_ok=True)
-            mock_chown.assert_called_once_with(expected_dir, 1000, 1000)
-            mock_chmod.assert_called_once_with(expected_dir, 0o755)
+        expected_dir = os.path.join(process_sandbox_service.base_working_dir, 'test-id')
+        assert sandbox_dir == expected_dir
+        mock_makedirs.assert_called_once_with(expected_dir, exist_ok=True)
 
     @pytest.mark.asyncio
     async def test_wait_for_server_ready_success(self, process_sandbox_service):
@@ -155,13 +115,13 @@ class TestProcessSandboxService:
         """Test getting process status for running process."""
         mock_process = MagicMock()
         mock_process.is_running.return_value = True
-        mock_process.status.return_value = 'running'
+        mock_process.status.return_value = psutil.STATUS_RUNNING
         mock_process_class.return_value = mock_process
 
         process_info = ProcessInfo(
             pid=1234,
             port=9000,
-            user='testuser',
+            user_id='test-user-id',
             working_dir='/tmp/test',
             session_api_key='test-key',
             created_at=datetime.now(),
@@ -183,7 +143,7 @@ class TestProcessSandboxService:
         process_info = ProcessInfo(
             pid=1234,
             port=9000,
-            user='testuser',
+            user_id='test-user-id',
             working_dir='/tmp/test',
             session_api_key='test-key',
             created_at=datetime.now(),
@@ -225,6 +185,136 @@ class TestProcessSandboxService:
         result = await process_sandbox_service.delete_sandbox('nonexistent')
         assert result is False
 
+    @patch('psutil.Process')
+    def test_get_process_status_paused(
+        self, mock_process_class, process_sandbox_service
+    ):
+        """Test getting process status for paused process."""
+        mock_process = MagicMock()
+        mock_process.is_running.return_value = True
+        mock_process.status.return_value = psutil.STATUS_STOPPED
+        mock_process_class.return_value = mock_process
+
+        process_info = ProcessInfo(
+            pid=1234,
+            port=9000,
+            user_id='test-user-id',
+            working_dir='/tmp/test',
+            session_api_key='test-key',
+            created_at=datetime.now(),
+            sandbox_spec_id='test-spec',
+        )
+
+        status = process_sandbox_service._get_process_status(process_info)
+        assert status == SandboxStatus.PAUSED
+
+    @patch('psutil.Process')
+    def test_get_process_status_starting(
+        self, mock_process_class, process_sandbox_service
+    ):
+        """Test getting process status for starting process."""
+        mock_process = MagicMock()
+        mock_process.is_running.return_value = True
+        mock_process.status.return_value = psutil.STATUS_SLEEPING
+        mock_process_class.return_value = mock_process
+
+        process_info = ProcessInfo(
+            pid=1234,
+            port=9000,
+            user_id='test-user-id',
+            working_dir='/tmp/test',
+            session_api_key='test-key',
+            created_at=datetime.now(),
+            sandbox_spec_id='test-spec',
+        )
+
+        status = process_sandbox_service._get_process_status(process_info)
+        assert status == SandboxStatus.STARTING
+
+    @patch('psutil.Process')
+    def test_get_process_status_access_denied(
+        self, mock_process_class, process_sandbox_service
+    ):
+        """Test getting process status when access is denied."""
+        mock_process_class.side_effect = psutil.AccessDenied(1234)
+
+        process_info = ProcessInfo(
+            pid=1234,
+            port=9000,
+            user_id='test-user-id',
+            working_dir='/tmp/test',
+            session_api_key='test-key',
+            created_at=datetime.now(),
+            sandbox_spec_id='test-spec',
+        )
+
+        status = process_sandbox_service._get_process_status(process_info)
+        assert status == SandboxStatus.MISSING
+
+    @pytest.mark.asyncio
+    async def test_process_to_sandbox_info_error_status(self, process_sandbox_service):
+        """Test converting process info to sandbox info when server is not responding."""
+        # Mock a process that's running but server is not responding
+        with patch.object(
+            process_sandbox_service,
+            '_get_process_status',
+            return_value=SandboxStatus.RUNNING,
+        ):
+            # Mock httpx client to return error response
+            mock_response = MagicMock()
+            mock_response.status_code = 500
+            process_sandbox_service.httpx_client.get.return_value = mock_response
+
+            process_info = ProcessInfo(
+                pid=1234,
+                port=9000,
+                user_id='test-user-id',
+                working_dir='/tmp/test',
+                session_api_key='test-key',
+                created_at=datetime.now(),
+                sandbox_spec_id='test-spec',
+            )
+
+            sandbox_info = await process_sandbox_service._process_to_sandbox_info(
+                'test-sandbox', process_info
+            )
+
+            assert sandbox_info.status == SandboxStatus.ERROR
+            assert sandbox_info.session_api_key is None
+            assert sandbox_info.exposed_urls is None
+
+    @pytest.mark.asyncio
+    async def test_process_to_sandbox_info_exception(self, process_sandbox_service):
+        """Test converting process info to sandbox info when httpx raises exception."""
+        # Mock a process that's running but httpx raises exception
+        with patch.object(
+            process_sandbox_service,
+            '_get_process_status',
+            return_value=SandboxStatus.RUNNING,
+        ):
+            # Mock httpx client to raise exception
+            process_sandbox_service.httpx_client.get.side_effect = Exception(
+                'Connection failed'
+            )
+
+            process_info = ProcessInfo(
+                pid=1234,
+                port=9000,
+                user_id='test-user-id',
+                working_dir='/tmp/test',
+                session_api_key='test-key',
+                created_at=datetime.now(),
+                sandbox_spec_id='test-spec',
+            )
+
+            sandbox_info = await process_sandbox_service._process_to_sandbox_info(
+                'test-sandbox', process_info
+            )
+
+            assert sandbox_info.status == SandboxStatus.ERROR
+            assert sandbox_info.session_api_key is None
+            assert sandbox_info.exposed_urls is None
+
 
 class TestProcessSandboxServiceInjector:
     """Test cases for ProcessSandboxServiceInjector."""
@@ -235,22 +325,19 @@ class TestProcessSandboxServiceInjector:
 
         assert injector.base_working_dir == '/tmp/openhands-sandboxes'
         assert injector.base_port == 8000
-        assert injector.default_user == 'openhands'
         assert injector.health_check_path == '/alive'
-        assert (
-            injector.action_server_module == 'openhands.runtime.action_execution_server'
-        )
+        assert injector.agent_server_module == 'openhands.agent_server'
 
     def test_custom_values(self):
         """Test custom configuration values."""
         injector = ProcessSandboxServiceInjector(
             base_working_dir='/custom/path',
             base_port=9000,
-            default_user='custom_user',
             health_check_path='/health',
+            agent_server_module='custom.agent.module',
         )
 
         assert injector.base_working_dir == '/custom/path'
         assert injector.base_port == 9000
-        assert injector.default_user == 'custom_user'
         assert injector.health_check_path == '/health'
+        assert injector.agent_server_module == 'custom.agent.module'
