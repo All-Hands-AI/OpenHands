@@ -61,7 +61,7 @@ protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer op
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 
-libtmux = ">=0.37,<0.40"
+libtmux = ">=0.46.2"
 pygithub = "^2.5.0"
 joblib = "*"
 openhands-aci = "0.3.2"
@@ -110,6 +110,17 @@ runloop-api-client = { version = "0.50.0", optional = true }
 daytona = { version = "0.24.2", optional = true }
 httpx-aiohttp = "^0.1.8"
 e2b-code-interpreter = { version = "^2.0.0", optional = true }
+pybase62 = "^1.0.0"
+
+# V1 dependencies
+openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/agent_server", rev = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc" }
+# This refuses to install
+# openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc" }
+python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
+sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
+pg8000 = "^1.31.5"
+asyncpg = "^0.30.0"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]
