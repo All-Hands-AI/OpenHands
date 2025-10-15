@@ -107,16 +107,16 @@ async def test_websocket_initialization_logs_at_debug_level(
     conversation_stats,
 ):
     """Test that waiting for websocket connection during initialization logs at DEBUG level.
-    
+
     This test verifies that the session correctly waits for the websocket client to join
     the room during initialization, and that it logs at DEBUG level (not WARNING) since
     this is expected behavior, not an error condition.
     """
     config = OpenHandsConfig()
-    
+
     # Mock sio.manager.rooms to simulate no client connected initially
     mock_sio.manager.rooms.get.return_value = {}
-    
+
     session = Session(
         sid='test-sid',
         file_store=InMemoryFileStore({}),
@@ -126,15 +126,16 @@ async def test_websocket_initialization_logs_at_debug_level(
         sio=mock_sio,
         user_id='test-user',
     )
-    
+
     # Mock the logger to capture log calls
-    with patch.object(session.logger, 'debug') as mock_debug, \
-         patch.object(session.logger, 'warning') as mock_warning:
-        
+    with (
+        patch.object(session.logger, 'debug') as mock_debug,
+        patch.object(session.logger, 'warning') as mock_warning,
+    ):
         # Simulate sending an event before websocket is fully connected
         # This should trigger the waiting logic
         test_data = {'event': 'test'}
-        
+
         # After first check, simulate client joining the room
         def side_effect(*args, **kwargs):
             # Return empty dict first time (no client), then return client on second call
@@ -142,20 +143,28 @@ async def test_websocket_initialization_logs_at_debug_level(
                 return {}
             else:
                 return {'room_key': True}
-        
+
         mock_sio.manager.rooms.get.side_effect = side_effect
-        
+
         await session._send(test_data)
-        
+
         # Verify that debug was called (not warning)
         # The message should contain "There is no listening client in the current room"
-        debug_calls = [call for call in mock_debug.call_args_list 
-                      if 'There is no listening client in the current room' in str(call)]
-        assert len(debug_calls) > 0, "Expected debug log for websocket waiting"
-        
+        debug_calls = [
+            call
+            for call in mock_debug.call_args_list
+            if 'There is no listening client in the current room' in str(call)
+        ]
+        assert len(debug_calls) > 0, 'Expected debug log for websocket waiting'
+
         # Verify that warning was NOT called for this message
-        warning_calls = [call for call in mock_warning.call_args_list 
-                        if 'There is no listening client in the current room' in str(call)]
-        assert len(warning_calls) == 0, "Should not log at WARNING level for normal initialization"
-    
+        warning_calls = [
+            call
+            for call in mock_warning.call_args_list
+            if 'There is no listening client in the current room' in str(call)
+        ]
+        assert len(warning_calls) == 0, (
+            'Should not log at WARNING level for normal initialization'
+        )
+
     await session.close()
