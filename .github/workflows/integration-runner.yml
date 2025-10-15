@@ -56,9 +56,9 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: poetry install --with dev,test,runtime,evaluation
 
-      - name: Configure config.toml for testing with GPT-5-Codex
+      - name: Configure config.toml for testing with Haiku
         env:
-          LLM_MODEL: "litellm_proxy/gpt-5-codex"
+          LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           MAX_ITERATIONS: 10
@@ -72,51 +72,21 @@ jobs:
       - name: Build environment
         run: make build
 
-      - name: Run integration test evaluation for GPT-5-Codex
+      - name: Run integration test evaluation for Haiku
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'gpt5_codex_run'
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'haiku_run'
 
           # get integration tests report
-          REPORT_FILE_GPT5_CODEX=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*gpt5_codex*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE_GPT5_CODEX"
-          echo "INTEGRATION_TEST_REPORT_GPT5_CODEX<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE_GPT5_CODEX >> $GITHUB_ENV
+          REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE_HAIKU"
+          echo "INTEGRATION_TEST_REPORT_HAIKU<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Wait a little bit
-        run: sleep 10
-
-      - name: Configure config.toml for testing with GPT-5-Codex
-        env:
-          LLM_MODEL: "gpt-5-codex"
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          MAX_ITERATIONS: 10
-        run: |
-          echo "[llm.eval]" > config.toml
-          echo "model = \"$LLM_MODEL\"" >> config.toml
-          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
-          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
-          echo "temperature = 0.0" >> config.toml
-
-      - name: Run integration test evaluation for GPT-5-Codex
-        env:
-          SANDBOX_FORCE_REBUILD_RUNTIME: True
-        run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'gpt5_codex_run'
-
-          # get integration tests report
-          REPORT_FILE_GPT5_CODEX=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*gpt5_codex*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE_GPT5_CODEX"
-          echo "INTEGRATION_TEST_REPORT_GPT5_CODEX<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE_GPT5_CODEX >> $GITHUB_ENV
-          echo >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
-      - name: Wait a little bit (again)
         run: sleep 10
 
       - name: Configure config.toml for testing with DeepSeek
@@ -215,9 +185,9 @@ jobs:
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
               Commit: ${{ github.sha }}
-              **Integration Tests Report (GPT-5-Codex)**
-              GPT-5-Codex LLM Test Results:
-              ${{ env.INTEGRATION_TEST_REPORT_GPT5_CODEX }}
+              **Integration Tests Report (Haiku)**
+              Haiku LLM Test Results:
+              ${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
               ---
               **Integration Tests Report (DeepSeek)**
               DeepSeek LLM Test Results:
@@ -226,4 +196,4 @@ jobs:
               **Integration Tests Report VisualBrowsing (DeepSeek)**
               ${{ env.INTEGRATION_TEST_REPORT_VISUALBROWSING_DEEPSEEK }}
               ---
-              Download testing outputs (includes GPT-5-Codex and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
+              Download testing outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
