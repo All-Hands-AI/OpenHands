@@ -76,9 +76,6 @@ def test_trajectory_saving_during_graceful_shutdown():
 
         # Simulate trajectory saving logic from run_controller
         if config.save_trajectory_path is not None:
-            if shutdown_event.is_set():
-                # This would log: 'Saving trajectory due to graceful shutdown...'
-                pass
             # if save_trajectory_path is a folder, use session id as file name
             if os.path.isdir(config.save_trajectory_path):
                 file_path = os.path.join(config.save_trajectory_path, sid + '.json')
@@ -88,9 +85,6 @@ def test_trajectory_saving_during_graceful_shutdown():
             histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
             with open(file_path, 'w') as f:
                 json.dump(histories, f, indent=4)
-            if shutdown_event.is_set():
-                # This would log: 'Trajectory successfully saved...'
-                pass
 
         # Verify the file was created and contains expected content
         expected_file = os.path.join(temp_dir, 'test_session_123.json')
@@ -118,9 +112,6 @@ def test_trajectory_saving_with_file_path():
 
         # Simulate trajectory saving logic from run_controller
         if config.save_trajectory_path is not None:
-            if shutdown_event.is_set():
-                # This would log: 'Saving trajectory due to graceful shutdown...'
-                pass
             # if save_trajectory_path is a folder, use session id as file name
             if os.path.isdir(config.save_trajectory_path):
                 final_path = os.path.join(config.save_trajectory_path, 'sid.json')
@@ -130,9 +121,6 @@ def test_trajectory_saving_with_file_path():
             histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
             with open(final_path, 'w') as f:
                 json.dump(histories, f, indent=4)
-            if shutdown_event.is_set():
-                # This would log: 'Trajectory successfully saved...'
-                pass
 
         # Verify the file was created at the specified path
         assert os.path.exists(file_path)

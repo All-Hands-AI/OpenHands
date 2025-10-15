@@ -265,7 +265,7 @@ async def run_controller(
 
         # Check if shutdown was requested
         if shutdown_event.is_set():
-            logger.info('Graceful shutdown requested. Saving trajectory before exit...')
+            logger.info('Graceful shutdown requested.')
 
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
@@ -284,8 +284,6 @@ async def run_controller(
 
     # save trajectories if applicable
     if config.save_trajectory_path is not None:
-        if shutdown_event.is_set():
-            logger.info('Saving trajectory due to graceful shutdown...')
         # if save_trajectory_path is a folder, use session id as file name
         if os.path.isdir(config.save_trajectory_path):
             file_path = os.path.join(config.save_trajectory_path, sid + '.json')
@@ -295,10 +293,7 @@ async def run_controller(
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
         with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
-        if shutdown_event.is_set():
-            logger.info(
-                f'Trajectory successfully saved to {file_path} during graceful shutdown'
-            )
+        logger.info(f'Trajectory saved to {file_path}')
 
     return state
 
