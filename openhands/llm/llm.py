@@ -270,7 +270,12 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['messages'] = messages
 
             # handle conversion of to non-function calling messages if needed
-            original_fncall_messages = copy.deepcopy(messages)
+            try:
+                original_fncall_messages = copy.deepcopy(messages)
+            except RecursionError:
+                # If deepcopy fails due to circular references, use a shallow copy
+                # This is safer and should be sufficient for most use cases
+                original_fncall_messages = copy.copy(messages)
             mock_fncall_tools = None
             # if the agent or caller has defined tools, and we mock via prompting, convert the messages
             if mock_function_calling and 'tools' in kwargs:
