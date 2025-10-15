@@ -38,6 +38,12 @@ call APIs, and yes—even copy code snippets from StackOverflow.
 
 Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for OpenHands Cloud](https://app.all-hands.dev) to get started.
 
+
+> [!IMPORTANT]
+> **Upcoming change**: We are renaming our GitHub Org from `All-Hands-AI` to `OpenHands` on October 20th, 2025.
+> Check the [tracking issue](https://github.com/All-Hands-AI/OpenHands/issues/11376) for more information.
+
+
 > [!IMPORTANT]
 > Using OpenHands for work? We'd love to chat! Fill out
 > [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
