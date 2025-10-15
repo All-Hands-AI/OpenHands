@@ -171,14 +171,14 @@ class TomCodeActAgent(CodeActAgent):
 
             elif action.use_user_message and latest_user_message:
                 consultation_result = self.tom_consult_agent(
-                    query_text=f"I am SWE agent. {action.content}. I need to consult ToM agent about the user's message: {latest_user_message.content}",
+                    query_text=f"I am SWE agent. {action.content} I need to consult ToM agent about the user's message: {latest_user_message.content}",
                     formatted_messages=formatted_messages,
                     state=state,
                     is_user_query=True,
                 )
             elif action.custom_query:
                 consultation_result = self.tom_consult_agent(
-                    query_text=f'I am SWE agent. {action.content}. I need to consult ToM agent: {action.custom_query}',
+                    query_text=f'I am SWE agent. {action.content} I need to consult ToM agent: {action.custom_query}',
                     formatted_messages=formatted_messages,
                     state=state,
                     is_user_query=False,
