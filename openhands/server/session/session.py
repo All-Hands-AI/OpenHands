@@ -400,7 +400,7 @@ class WebSession:
                         )
                     ):
                         break
-                    self.logger.warning(
+                    self.logger.debug(
                         f'There is no listening client in the current room,'
                         f' waiting for the {_waiting_times}th attempt: {self.sid}'
                     )
