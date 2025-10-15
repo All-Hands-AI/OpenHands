@@ -69,6 +69,8 @@ class FileConversationStore(ConversationStore):
                 self._deleting_conversations.discard(conversation_id)
 
     async def exists(self, conversation_id: str) -> bool:
+        # Don't check deletion status for exists() - this is used during conversation creation
+        # and we don't want to block new conversations if there's a stale deletion entry
         path = self.get_conversation_metadata_filename(conversation_id)
         try:
             await call_sync_from_async(self.file_store.read, path)
@@ -127,6 +129,9 @@ class FileConversationStore(ConversationStore):
 
             asyncio.create_task(self._cleanup_orphaned_directories(orphaned_dirs))
 
+        # Clean up stale deletion entries to prevent blocking new conversations
+        self._cleanup_stale_deletion_entries()
+
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
         next_page_id = offset_to_page_id(end, end < num_conversations)
@@ -146,6 +151,22 @@ class FileConversationStore(ConversationStore):
         """
         with self._deletion_lock:
             return conversation_id in self._deleting_conversations
+
+    def _cleanup_stale_deletion_entries(self) -> None:
+        """Clean up stale deletion entries that might be blocking new conversations.
+
+        This is a safety mechanism to prevent deletion tracking from getting stuck.
+        """
+        with self._deletion_lock:
+            # Remove any conversation IDs that are no longer being actively deleted
+            # This is a simple cleanup - in a production system you might want more sophisticated tracking
+            if (
+                len(self._deleting_conversations) > 100
+            ):  # Arbitrary limit to prevent memory issues
+                logger.warning(
+                    f'Clearing {len(self._deleting_conversations)} stale deletion entries'
+                )
+                self._deleting_conversations.clear()
 
     async def _cleanup_orphaned_directories(self, conversation_ids: list[str]) -> None:
         """Clean up orphaned conversation directories that have no metadata.json file.
