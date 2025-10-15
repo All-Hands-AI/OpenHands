@@ -374,7 +374,7 @@ class LLM(RetryMixin, DebugMixin):
                     resp = responses_to_completion_format(responses_result)
                 else:
                     # Use regular completion API
-                    resp = litellm_completion(*args, **kwargs)
+                    resp = self._completion(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
