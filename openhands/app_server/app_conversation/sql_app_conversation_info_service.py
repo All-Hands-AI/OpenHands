@@ -25,8 +25,18 @@ from typing import AsyncGenerator
 from uuid import UUID
 
 from fastapi import Request
-from sqlalchemy import Column, DateTime, Float, Integer, Select, String, func, select
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    Integer,
+    Select,
+    String,
+    func,
+    select,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import relationship
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -88,6 +98,9 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
+
+    # Relationship back to org
+    org = relationship('Org', back_populates='conversation_metadata')
 
 
 @dataclass
