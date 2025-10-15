@@ -19,6 +19,7 @@ from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
+from litellm import responses as litellm_responses
 from litellm.exceptions import (
     APIConnectionError,
     RateLimitError,
@@ -36,9 +37,19 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
+from openhands.llm.responses_converter import (
+    messages_to_responses_items,
+    responses_to_completion_format,
+)
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
+
+# Models that only support the Responses API (not Completion API)
+RESPONSES_API_ONLY_MODELS = [
+    'gpt-5-codex',
+    'openhands/gpt-5-codex',
+]
 
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
@@ -328,7 +339,37 @@ class LLM(RetryMixin, DebugMixin):
                     message=r'.*content=.*upload.*',
                     category=DeprecationWarning,
                 )
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                # Check if this model requires the Responses API
+                if self.requires_responses_api():
+                    # Convert messages to Responses API format
+                    responses_items = messages_to_responses_items(kwargs['messages'])
+
+                    # Prepare kwargs for responses API
+                    responses_kwargs = {
+                        'model': kwargs.get('model', self.config.model),
+                        'input': responses_items,
+                        'api_key': kwargs.get('api_key'),
+                        'base_url': kwargs.get('base_url'),
+                        'api_version': kwargs.get('api_version'),
+                        'custom_llm_provider': kwargs.get('custom_llm_provider'),
+                        'timeout': kwargs.get('timeout'),
+                        'seed': kwargs.get('seed'),
+                    }
+
+                    # Remove None values
+                    responses_kwargs = {
+                        k: v for k, v in responses_kwargs.items() if v is not None
+                    }
+
+                    # Call the Responses API
+                    responses_result = litellm_responses(**responses_kwargs)
+
+                    # Convert back to completion format
+                    resp = responses_to_completion_format(responses_result)
+                else:
+                    # Use regular completion API
+                    resp = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -537,6 +578,14 @@ class LLM(RetryMixin, DebugMixin):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             return not self.config.disable_vision and self._supports_vision()
+
+    def requires_responses_api(self) -> bool:
+        """Check if the current model requires the Responses API instead of Completion API."""
+        return any(
+            self.config.model.lower().endswith(model.lower())
+            or self.config.model.lower() == model.lower()
+            for model in RESPONSES_API_ONLY_MODELS
+        )
 
     def _supports_vision(self) -> bool:
         """Acquire from litellm if model is vision capable.
