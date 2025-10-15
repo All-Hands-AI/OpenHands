@@ -5,21 +5,23 @@ import { I18nKey } from "#/i18n/declaration";
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
-import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
+import { useUnifiedStartConversation } from "#/hooks/mutation/use-unified-start-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { useUnifiedStopConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
 
 export interface ServerStatusProps {
   className?: string;
   conversationStatus: ConversationStatus | null;
+  isPausing?: boolean;
 }
 
 export function ServerStatus({
   className = "",
   conversationStatus,
+  isPausing = false,
 }: ServerStatusProps) {
   const [showContextMenu, setShowContextMenu] = useState(false);
 
@@ -29,8 +31,8 @@ export function ServerStatus({
   const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
 
   // Mutation hooks
-  const stopConversationMutation = useStopConversation();
-  const startConversationMutation = useStartConversation();
+  const stopConversationMutation = useUnifiedStopConversation();
+  const startConversationMutation = useUnifiedStartConversation();
   const { providers } = useUserProviders();
 
   const isStartingStatus =
@@ -38,8 +40,16 @@ export function ServerStatus({
 
   const isStopStatus = conversationStatus === "STOPPED";
 
+  // Combine prop isPausing with local mutation state
+  const isActuallyPausing = isPausing || stopConversationMutation.isPending;
+
   // Get the appropriate color based on agent status
   const getStatusColor = (): string => {
+    // Show pausing status
+    if (isActuallyPausing) {
+      return "#FFD600";
+    }
+
     // Show task status if we're polling a task
     if (isTask && taskStatus) {
       if (taskStatus === "ERROR") {
@@ -62,6 +72,11 @@ export function ServerStatus({
 
   // Get the appropriate status text based on agent status
   const getStatusText = (): string => {
+    // Show pausing status
+    if (isActuallyPausing) {
+      return t(I18nKey.COMMON$STOPPING);
+    }
+
     // Show task status if we're polling a task
     if (isTask && taskStatus) {
       if (taskStatus === "ERROR") {

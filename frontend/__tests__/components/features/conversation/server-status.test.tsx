@@ -17,14 +17,14 @@ vi.mock("#/hooks/use-agent-state", () => ({
 const mockStartConversationMutate = vi.fn();
 const mockStopConversationMutate = vi.fn();
 
-vi.mock("#/hooks/mutation/use-start-conversation", () => ({
-  useStartConversation: () => ({
+vi.mock("#/hooks/mutation/use-unified-start-conversation", () => ({
+  useUnifiedStartConversation: () => ({
     mutate: mockStartConversationMutate,
   }),
 }));
 
-vi.mock("#/hooks/mutation/use-stop-conversation", () => ({
-  useStopConversation: () => ({
+vi.mock("#/hooks/mutation/use-unified-stop-conversation", () => ({
+  useUnifiedStopConversation: () => ({
     mutate: mockStopConversationMutate,
   }),
 }));

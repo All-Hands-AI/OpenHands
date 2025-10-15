@@ -27,9 +27,9 @@ import { ConversationMain } from "#/components/features/conversation/conversatio
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
-import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useUnifiedStartConversation } from "#/hooks/mutation/use-unified-start-conversation";
 
 function AppContent() {
   useConversationConfig();
@@ -40,7 +40,8 @@ function AppContent() {
   const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
 
   const { data: conversation, isFetched, refetch } = useActiveConversation();
-  const { mutate: startConversation } = useStartConversation();
+  const { mutate: startConversation, isPending: isStarting } =
+    useUnifiedStartConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();
@@ -85,8 +86,8 @@ function AppContent() {
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
-    } else if (conversation?.status === "STOPPED") {
-      // If conversation is STOPPED, attempt to start it
+    } else if (conversation?.status === "STOPPED" && !isStarting) {
+      // If conversation is STOPPED and not already starting, attempt to start it
       startConversation(
         { conversationId: conversation.conversation_id, providers },
         {
@@ -104,6 +105,10 @@ function AppContent() {
     isFetched,
     isAuthed,
     providers,
+    isStarting,
+    startConversation,
+    navigate,
+    refetch,
   ]);
 
   React.useEffect(() => {

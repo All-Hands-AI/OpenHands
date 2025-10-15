@@ -6,7 +6,7 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 import { useStartTasks } from "#/hooks/query/use-start-tasks";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { useUnifiedStopConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -59,7 +59,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const conversations = data?.pages.flatMap((page) => page.results) ?? [];
 
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: stopConversation } = useStopConversation();
+  const { mutate: stopConversation } = useUnifiedStopConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
   // Set up infinite scroll
