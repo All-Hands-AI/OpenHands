@@ -204,7 +204,13 @@ class GitHubReposMixin(GitHubMixinBase):
         return False
 
     async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str, public: bool
+        self,
+        query: str,
+        per_page: int,
+        sort: str,
+        order: str,
+        public: bool,
+        app_mode: AppMode,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
         params = {
@@ -231,7 +237,10 @@ class GitHubReposMixin(GitHubMixinBase):
         elif not public:
             # Expand search scope to include user's repositories and organizations the app has access to
             user = await self.get_user()
-            user_orgs = await self.get_organizations_from_installations()
+            if app_mode == AppMode.SAAS:
+                user_orgs = await self.get_organizations_from_installations()
+            else:
+                user_orgs = await self.get_user_organizations()
 
             # Search in user repos and org repos separately
             all_repos = []

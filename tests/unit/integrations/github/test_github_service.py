@@ -285,7 +285,12 @@ async def test_github_search_repositories_with_organizations():
         ) as mock_request,
     ):
         repositories = await service.search_repositories(
-            query='openhands', per_page=10, sort='stars', order='desc', public=False
+            query='openhands',
+            per_page=10,
+            sort='stars',
+            order='desc',
+            public=False,
+            app_mode=AppMode.SAAS,
         )
 
         # Verify that separate requests were made for user and each organization
