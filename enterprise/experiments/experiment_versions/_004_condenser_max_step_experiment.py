@@ -6,17 +6,19 @@ different max_size values for the condenser configuration.
 """
 
 from uuid import UUID
+
 import posthog
 from experiments.constants import EXPERIMENT_CONDENSER_MAX_STEP
 from server.constants import IS_FEATURE_ENV
 from storage.experiment_assignment_store import ExperimentAssignmentStore
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.sdk import Agent
 from openhands.sdk.context.condenser import (
     LLMSummarizingCondenser,
 )
+from openhands.server.session.conversation_init_data import ConversationInitData
+
 
 def _get_condenser_max_step_variant(user_id, conversation_id):
     """
@@ -196,16 +198,12 @@ def handle_condenser_max_step_experiment(
     return conversation_settings
 
 
-
 def handle_condenser_max_step_experiment__v1(
     user_id: str | None,
     conversation_id: UUID,
     agent: Agent,
 ) -> Agent:
-
-    conversation_id = str(conversation_id)
-
-    enabled_variant = _get_condenser_max_step_variant(user_id, conversation_id)
+    enabled_variant = _get_condenser_max_step_variant(user_id, str(conversation_id))
 
     if enabled_variant is None:
         return agent
@@ -226,7 +224,9 @@ def handle_condenser_max_step_experiment__v1(
         )
         return agent
 
-    condenser_llm = agent.llm.model_copy(update={"service_id": "condenser"})
-    condenser = LLMSummarizingCondenser(llm=condenser_llm, max_size=condenser_max_size, keep_first=4)
+    condenser_llm = agent.llm.model_copy(update={'service_id': 'condenser'})
+    condenser = LLMSummarizingCondenser(
+        llm=condenser_llm, max_size=condenser_max_size, keep_first=4
+    )
 
-    return agent.model_copy(update={"condenser": condenser})
+    return agent.model_copy(update={'condenser': condenser})
