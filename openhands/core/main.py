@@ -277,15 +277,50 @@ async def run_controller(
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 
-    # save session when we're about to close
-    if config.file_store is not None and config.file_store != 'memory':
-        end_state = controller.get_state()
-        # NOTE: the saved state does not include delegates events
-        end_state.save_to_session(
-            event_stream.sid, event_stream.file_store, event_stream.user_id
-        )
+    # Perform graceful cleanup
+    try:
+        # save session when we're about to close
+        if config.file_store is not None and config.file_store != 'memory':
+            end_state = controller.get_state()
+            # NOTE: the saved state does not include delegates events
+            end_state.save_to_session(
+                event_stream.sid, event_stream.file_store, event_stream.user_id
+            )
 
-    await controller.close(set_stop_state=False)
+        await controller.close(set_stop_state=False)
+
+        # Close runtime to clean up server processes and threads
+        if runtime:
+            runtime.close()
+
+        # Close event stream to clean up background threads and loops
+        if event_stream:
+            event_stream.close()
+
+        # Cancel any remaining asyncio tasks
+        current_task = asyncio.current_task()
+        pending_tasks = [
+            task for task in asyncio.all_tasks() if task is not current_task
+        ]
+        if pending_tasks:
+            logger.info(f'Cancelling {len(pending_tasks)} pending tasks...')
+            for task in pending_tasks:
+                task.cancel()
+
+            # Wait for tasks to complete or be cancelled
+            if pending_tasks:
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(*pending_tasks, return_exceptions=True),
+                        timeout=3.0,
+                    )
+                except asyncio.TimeoutError:
+                    logger.warning('Some tasks did not complete within timeout')
+                except Exception:
+                    pass  # Expected for cancelled tasks
+
+    except Exception as e:
+        logger.warning(f'Error during graceful cleanup: {e}')
 
     state = controller.get_state()
 

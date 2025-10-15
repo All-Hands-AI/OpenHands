@@ -77,9 +77,14 @@ class EventStream(EventStore):
 
     def close(self) -> None:
         self._stop_flag.set()
-        if self._queue_thread.is_alive():
-            self._queue_thread.join()
 
+        # Join the queue thread with timeout
+        if self._queue_thread.is_alive():
+            self._queue_thread.join(timeout=5.0)
+            if self._queue_thread.is_alive():
+                logger.warning('Queue thread did not terminate within timeout')
+
+        # Clean up all subscribers
         subscriber_ids = list(self._subscribers.keys())
         for subscriber_id in subscriber_ids:
             callback_ids = list(self._subscribers[subscriber_id].keys())
@@ -88,7 +93,10 @@ class EventStream(EventStore):
 
         # Clear queue
         while not self._queue.empty():
-            self._queue.get()
+            try:
+                self._queue.get_nowait()
+            except queue.Empty:
+                break
 
     def _clean_up_subscriber(self, subscriber_id: str, callback_id: str) -> None:
         if subscriber_id not in self._subscribers:
@@ -97,32 +105,45 @@ class EventStream(EventStore):
         if callback_id not in self._subscribers[subscriber_id]:
             logger.warning(f'Callback not found during cleanup: {callback_id}')
             return
+
+        # Clean up asyncio loop
         if (
             subscriber_id in self._thread_loops
             and callback_id in self._thread_loops[subscriber_id]
         ):
             loop = self._thread_loops[subscriber_id][callback_id]
-            current_task = asyncio.current_task(loop)
-            pending = [
-                task for task in asyncio.all_tasks(loop) if task is not current_task
-            ]
-            for task in pending:
-                task.cancel()
             try:
-                loop.stop()
-                loop.close()
+                # Cancel all tasks in the loop
+                if not loop.is_closed():
+                    pending = asyncio.all_tasks(loop)
+                    for task in pending:
+                        task.cancel()
+
+                    # Stop the loop if it's running
+                    if loop.is_running():
+                        loop.call_soon_threadsafe(loop.stop)
+
+                    # Close the loop
+                    if not loop.is_closed():
+                        loop.close()
             except Exception as e:
                 logger.warning(
                     f'Error closing loop for {subscriber_id}/{callback_id}: {e}'
                 )
             del self._thread_loops[subscriber_id][callback_id]
 
+        # Clean up thread pool
         if (
             subscriber_id in self._thread_pools
             and callback_id in self._thread_pools[subscriber_id]
         ):
             pool = self._thread_pools[subscriber_id][callback_id]
-            pool.shutdown()
+            try:
+                pool.shutdown(wait=True, cancel_futures=True)
+            except Exception as e:
+                logger.warning(
+                    f'Error shutting down thread pool for {subscriber_id}/{callback_id}: {e}'
+                )
             del self._thread_pools[subscriber_id][callback_id]
 
         del self._subscribers[subscriber_id][callback_id]
