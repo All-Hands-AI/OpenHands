@@ -7,7 +7,6 @@ each running within a dedicated directory.
 import asyncio
 import logging
 import os
-import pwd
 import socket
 import subprocess
 import sys
@@ -424,7 +423,7 @@ class ProcessSandboxServiceInjector(SandboxServiceInjector):
         async with (
             get_httpx_client(state, request) as httpx_client,
             get_sandbox_spec_service(state, request) as sandbox_spec_service,
-            get_user_context(state, request) as user_context
+            get_user_context(state, request) as user_context,
         ):
             user_id = await user_context.get_user_id()
             yield ProcessSandboxService(
