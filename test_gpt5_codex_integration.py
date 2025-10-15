@@ -29,7 +29,7 @@ def test_gpt5_codex_real_api():
     config = LLMConfig(
         model='gpt-5-codex',
         api_key=api_key,
-        base_url='https://api.openai.com/v1',
+        base_url=os.getenv('LLM_BASE_URL'),
     )
     
     llm = LLM(config=config, service_id='integration_test')
@@ -96,7 +96,7 @@ def test_gpt5_mini_real_api():
     config = LLMConfig(
         model='gpt-5-mini',
         api_key=api_key,
-        base_url='https://api.openai.com/v1',
+        base_url=os.getenv('LLM_BASE_URL'),
     )
     
     llm = LLM(config=config, service_id='integration_test')

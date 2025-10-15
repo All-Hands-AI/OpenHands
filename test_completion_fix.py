@@ -21,7 +21,6 @@ def test_gpt5_mini_routing():
     config = LLMConfig(
         model='gpt-5-mini',
         api_key='fake-key',
-        base_url='https://api.openai.com/v1',
     )
     
     llm = LLM(config=config, service_id='test')
@@ -40,7 +39,6 @@ def test_gpt5_codex_routing():
     config = LLMConfig(
         model='gpt-5-codex',
         api_key='fake-key',
-        base_url='https://api.openai.com/v1',
     )
     
     llm = LLM(config=config, service_id='test')

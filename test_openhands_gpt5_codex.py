@@ -38,7 +38,7 @@ def test_openhands_with_gpt5_codex():
             llm=LLMConfig(
                 model='gpt-5-codex',
                 api_key=api_key,
-                base_url='https://api.openai.com/v1',
+                base_url=os.getenv('LLM_BASE_URL'),
             ),
             runtime='local',
             max_iterations=10,
