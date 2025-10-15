@@ -903,7 +903,7 @@ class AgentController:
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
                     or 'input length and `max_tokens` exceed context limit' in error_str
-                    or 'please reduce the length of either one' in error_str
+                    or 'please reduce the length of' in error_str
                     or 'the request exceeds the available context size' in error_str
                     or 'context length exceeded' in error_str
                     # For OpenRouter context window errors
@@ -923,6 +923,8 @@ class AgentController:
                         raise LLMContextWindowExceedError()
                 else:
                     raise e
+            except Exception as e:
+                logger.warning(f'Error while getting action from LLM: {e}')
 
         if action.runnable:
             if self.state.confirmation_mode and (
