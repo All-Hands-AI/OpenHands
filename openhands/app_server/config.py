@@ -130,6 +130,9 @@ def config_from_env() -> AppServerConfig:
     from openhands.app_server.sandbox.docker_sandbox_spec_service import (
         DockerSandboxSpecServiceInjector,
     )
+    from openhands.app_server.sandbox.process_sandbox_service import (
+        ProcessSandboxServiceInjector,
+    )
     from openhands.app_server.sandbox.remote_sandbox_service import (
         RemoteSandboxServiceInjector,
     )
@@ -155,12 +158,17 @@ def config_from_env() -> AppServerConfig:
                 api_key=os.environ['SANDBOX_API_KEY'],
                 api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
             )
+        elif os.getenv('RUNTIME') == 'process':
+            config.sandbox = ProcessSandboxServiceInjector()
         else:
             config.sandbox = DockerSandboxServiceInjector()
 
     if config.sandbox_spec is None:
         if os.getenv('RUNTIME') == 'remote':
             config.sandbox_spec = RemoteSandboxSpecServiceInjector()
+        elif os.getenv('RUNTIME') == 'process':
+            # Process sandbox can use Docker sandbox specs since they define the same structure
+            config.sandbox_spec = DockerSandboxSpecServiceInjector()
         else:
             config.sandbox_spec = DockerSandboxSpecServiceInjector()
 
