@@ -1,3 +1,5 @@
+from uuid import UUID
+from enterprise.experiments.experiment_versions._004_condenser_max_step_experiment import handle_condenser_max_step_experiment__v1
 from experiments.constants import (
     ENABLE_EXPERIMENT_MANAGER,
 )
@@ -10,9 +12,31 @@ from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.sdk import Agent
 
 
 class SaaSExperimentManager(ExperimentManager):
+    @staticmethod
+    def run_conversation_variant_test__v1(
+        user_id: str | None,
+        conversation_id: UUID,
+        agent: Agent
+    ):
+
+        if not ENABLE_EXPERIMENT_MANAGER:
+            logger.info(
+                'experiment_manager:run_conversation_variant_test:skipped',
+                extra={'reason': 'experiment_manager_disabled'},
+            )
+            return agent
+
+        handle_condenser_max_step_experiment__v1(
+            user_id,
+            conversation_id,
+            agent
+        )
+
+
     @staticmethod
     def run_conversation_variant_test(
         user_id, conversation_id, conversation_settings

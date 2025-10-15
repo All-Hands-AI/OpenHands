@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from time import time
 from typing import AsyncGenerator, Sequence
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
@@ -52,6 +52,7 @@ from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
@@ -461,7 +462,15 @@ class LiveStatusAppConversationService(GitAppConversationService):
             service_id='agent',
         )
         agent = get_default_agent(llm=llm)
+
+        # TODO: run experiment manager condenser + system prompt
+        conversation_id = uuid4()
+        agent = ExperimentManagerImpl.run_conversation_variant_test__v1(
+            user.id, conversation_id, agent
+        )
+
         start_conversation_request = StartConversationRequest(
+            conversation_id=conversation_id,
             agent=agent,
             workspace=workspace,
             confirmation_policy=AlwaysConfirm()
