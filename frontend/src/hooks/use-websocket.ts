@@ -136,7 +136,6 @@ export const useWebSocket = <T = string>(
           readyState === WebSocket.CONNECTING ||
           readyState === WebSocket.OPEN
         ) {
-          console.log("[useWebSocket] Closing WebSocket connection");
           wsRef.current.close();
         }
         wsRef.current = null;

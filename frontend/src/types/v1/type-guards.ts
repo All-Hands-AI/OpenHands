@@ -2,7 +2,11 @@ import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
 import { AgentErrorEvent } from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
-import { ConversationStateUpdateEvent } from "./core/events/conversation-state-event";
+import {
+  ConversationStateUpdateEvent,
+  ConversationStateUpdateEventAgentStatus,
+  ConversationStateUpdateEventFullState,
+} from "./core/events/conversation-state-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -82,6 +86,15 @@ export const isConversationStateUpdateEvent = (
   event: OpenHandsEvent,
 ): event is ConversationStateUpdateEvent =>
   "kind" in event && event.kind === "ConversationStateUpdateEvent";
+
+export const isFullStateConversationStateUpdateEvent = (
+  event: ConversationStateUpdateEvent,
+): event is ConversationStateUpdateEventFullState => event.key === "full_state";
+
+export const isAgentStatusConversationStateUpdateEvent = (
+  event: ConversationStateUpdateEvent,
+): event is ConversationStateUpdateEventAgentStatus =>
+  event.key === "agent_status";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

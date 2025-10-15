@@ -18,6 +18,8 @@ import {
   isUserMessageEvent,
   isActionEvent,
   isConversationStateUpdateEvent,
+  isFullStateConversationStateUpdateEvent,
+  isAgentStatusConversationStateUpdateEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
@@ -90,7 +92,12 @@ export function ConversationWebSocketProvider({
           // Handle conversation state updates
           // TODO: Tests
           if (isConversationStateUpdateEvent(event)) {
-            setAgentStatus(event.value.agent_status);
+            if (isFullStateConversationStateUpdateEvent(event)) {
+              setAgentStatus(event.value.agent_status);
+            }
+            if (isAgentStatusConversationStateUpdateEvent(event)) {
+              setAgentStatus(event.value);
+            }
           }
         }
       } catch (error) {
