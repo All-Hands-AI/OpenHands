@@ -8,7 +8,7 @@ from experiments.experiment_versions import (
     handle_system_prompt_experiment,
 )
 
-from enterprise.experiments.experiment_versions._004_condenser_max_step_experiment import (
+from experiments.experiment_versions._004_condenser_max_step_experiment import (
     handle_condenser_max_step_experiment__v1,
 )
 from openhands.core.config.openhands_config import OpenHandsConfig
