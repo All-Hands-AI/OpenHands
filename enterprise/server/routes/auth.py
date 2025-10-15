@@ -1,10 +1,12 @@
 from http.client import HTTPException
 import warnings
 from datetime import datetime, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 from urllib.parse import quote
 
 import posthog
+from pydantic import SecretStr
+from enterprise.server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from fastapi import APIRouter, Request, Response, status, Header
 from fastapi.responses import JSONResponse, RedirectResponse
@@ -86,25 +88,25 @@ def get_cookie_domain(request: Request) -> str | None:
     )
 
 
-def get_cookie_samesite(request: Request) -> str:
+def get_cookie_samesite(request: Request) -> Literal['lax', 'strict']:
     # for localhost and feature/staging stacks we set it to 'lax' as the cookie domain won't allow 'strict'
     return (
         'lax'
         if request.url.hostname == 'localhost'
-        or request.url.hostname.endswith('staging.all-hands.dev')
+        or (request.url.hostname or '').endswith('staging.all-hands.dev')
         else 'strict'
     )
 
 
 @oauth_router.get('/keycloak/callback')
 async def keycloak_callback(
+    request: Request,
     code: Optional[str] = None,
     state: Optional[str] = None,
     error: Optional[str] = None,
     error_description: Optional[str] = None,
-    request: Request = None,
 ):
-    redirect_url = state if state else request.base_url
+    redirect_url: str = state if state else str(request.base_url)
     if not code:
         # check if this is a forward from the account linking page
         if (
@@ -260,6 +262,11 @@ async def keycloak_callback(
         secure=True if scheme == 'https' else False,
         accepted_tos=has_accepted_tos,
     )
+
+    # Sync GitLab repos & set up webhooks
+    # Use Keycloak access token (first-time users lack offline token at this stage)
+    # Normally, offline token is used to fetch GitLab token via user_id
+    schedule_gitlab_repo_sync(user_id, SecretStr(keycloak_access_token))
     return response
 
 
