@@ -346,14 +346,19 @@ class LLM(RetryMixin, DebugMixin):
                     responses_items = messages_to_responses_items(kwargs['messages'])
 
                     # Prepare kwargs for responses API
+                    api_key = kwargs.get('api_key', self.config.api_key)
+                    # Convert SecretStr to string if needed
+                    if hasattr(api_key, 'get_secret_value'):
+                        api_key = api_key.get_secret_value()
+                    
                     responses_kwargs = {
                         'model': kwargs.get('model', self.config.model),
                         'input': responses_items,
-                        'api_key': kwargs.get('api_key'),
-                        'base_url': kwargs.get('base_url'),
-                        'api_version': kwargs.get('api_version'),
-                        'custom_llm_provider': kwargs.get('custom_llm_provider'),
-                        'timeout': kwargs.get('timeout'),
+                        'api_key': api_key,
+                        'base_url': kwargs.get('base_url', self.config.base_url),
+                        'api_version': kwargs.get('api_version', self.config.api_version),
+                        'custom_llm_provider': kwargs.get('custom_llm_provider', self.config.custom_llm_provider),
+                        'timeout': kwargs.get('timeout', self.config.timeout),
                         'seed': kwargs.get('seed'),
                     }
 
@@ -369,7 +374,7 @@ class LLM(RetryMixin, DebugMixin):
                     resp = responses_to_completion_format(responses_result)
                 else:
                     # Use regular completion API
-                    resp = self._completion_unwrapped(*args, **kwargs)
+                    resp = litellm_completion(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
