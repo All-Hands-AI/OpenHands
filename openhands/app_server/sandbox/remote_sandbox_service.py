@@ -92,6 +92,7 @@ class RemoteSandboxService(SandboxService):
     resource_factor: int
     runtime_class: str | None
     start_sandbox_timeout: int
+    max_num_sandboxes: int
     user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
@@ -254,6 +255,9 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
+            # Enforce sandbox limits by cleaning up old sandboxes
+            await self.cleanup_old_sandboxes(self.max_num_sandboxes)
+
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -569,6 +573,10 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
             'be in an error state.'
         ),
     )
+    max_num_sandboxes: int = Field(
+        default=10,
+        description='Maximum number of sandboxes allowed to run simultaneously',
+    )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None
@@ -609,6 +617,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
                 start_sandbox_timeout=self.start_sandbox_timeout,
+                max_num_sandboxes=self.max_num_sandboxes,
                 user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,

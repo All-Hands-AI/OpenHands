@@ -72,6 +72,7 @@ class DockerSandboxService(SandboxService):
     exposed_ports: list[ExposedPort]
     health_check_path: str | None
     httpx_client: httpx.AsyncClient
+    max_num_sandboxes: int
     docker_client: docker.DockerClient = field(default_factory=get_docker_client)
 
     def _find_unused_port(self) -> int:
@@ -245,6 +246,9 @@ class DockerSandboxService(SandboxService):
 
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox."""
+        # Enforce sandbox limits by cleaning up old sandboxes
+        await self.cleanup_old_sandboxes(self.max_num_sandboxes)
+
         if sandbox_spec_id is None:
             sandbox_spec = await self.sandbox_spec_service.get_default_sandbox_spec()
         else:
@@ -377,6 +381,10 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
     container_url_pattern: str = 'http://localhost:{port}'
     host_port: int = 3000
     container_name_prefix: str = 'oh-agent-server-'
+    max_num_sandboxes: int = Field(
+        default=3,
+        description='Maximum number of sandboxes allowed to run simultaneously',
+    )
     mounts: list[VolumeMount] = Field(default_factory=list)
     exposed_ports: list[ExposedPort] = Field(
         default_factory=lambda: [
@@ -426,4 +434,5 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
                 exposed_ports=self.exposed_ports,
                 health_check_path=self.health_check_path,
                 httpx_client=httpx_client,
+                max_num_sandboxes=self.max_num_sandboxes,
             )
