@@ -1,7 +1,6 @@
 import asyncio
 import os
 
-from google.cloud.sql.connector import Connector
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -26,6 +25,8 @@ def _get_db_engine():
     if GCP_DB_INSTANCE:  # GCP environments
 
         def get_db_connection():
+            from google.cloud.sql.connector import Connector
+
             connector = Connector()
             instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
             return connector.connect(
@@ -52,6 +53,8 @@ def _get_db_engine():
 
 
 async def async_creator():
+    from google.cloud.sql.connector import Connector
+
     loop = asyncio.get_running_loop()
     async with Connector(loop=loop) as connector:
         conn = await connector.connect_async(

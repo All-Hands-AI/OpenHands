@@ -13,7 +13,6 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
 from openhands.integrations.service_types import GitService, ProviderType
-from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import ConversationStoreImpl, config, server_config
 from openhands.server.types import AppMode
 from openhands.server.user_auth import (
@@ -24,7 +23,7 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 mcp_server = FastMCP(
-    'mcp', stateless_http=True, dependencies=get_dependencies(), mask_error_details=True
+    'mcp', stateless_http=True, mask_error_details=True, dependencies=None
 )
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'

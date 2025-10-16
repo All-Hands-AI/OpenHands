@@ -424,7 +424,7 @@ async def refresh_tokens(
     provider_handler = ProviderHandler(
         create_provider_tokens_object([provider]), external_auth_id=user_id
     )
-    service = provider_handler._get_service(provider)
+    service = provider_handler.get_service(provider)
     token = await service.get_latest_token()
     if not token:
         raise HTTPException(
