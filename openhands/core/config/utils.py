@@ -12,7 +12,6 @@ import toml
 from dotenv import load_dotenv
 from pydantic import BaseModel, SecretStr, ValidationError
 
-from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.arg_utils import get_headless_parser
@@ -377,11 +376,6 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: OpenHandsConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
-    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use SANDBOX_VOLUMES instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'"
-        )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
@@ -785,9 +779,10 @@ def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = get_headless_parser()
     args = parser.parse_args()
+    from openhands import get_version
 
     if args.version:
-        print(f'OpenHands version: {__version__}')
+        print(f'OpenHands version: {get_version()}')
         sys.exit(0)
 
     return args
