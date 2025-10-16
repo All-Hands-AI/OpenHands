@@ -13,7 +13,8 @@ from server.auth.auth_error import (
     ExpiredError,
     NoCredentialsError,
 )
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from server.logger import logger
 from server.rate_limit import RateLimiter, create_redis_rate_limiter
 from storage.api_key_store import ApiKeyStore
@@ -222,6 +223,16 @@ class SaasUserAuth(UserAuth):
                 # Will raise if rate limit is reached.
                 await rate_limiter.hit('auth_uid', user_id)
         return instance
+
+    @classmethod
+    async def get_for_user(cls, user_id: str) -> UserAuth:
+        offline_token = await token_manager.load_offline_token(user_id)
+        assert offline_token is not None
+        return SaasUserAuth(
+            user_id=user_id,
+            refresh_token=SecretStr(offline_token),
+            auth_type=AuthType.BEARER,
+        )
 
 
 def get_api_key_from_header(request: Request):
