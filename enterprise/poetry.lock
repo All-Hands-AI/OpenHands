@@ -5536,8 +5536,8 @@ websockets = ">=12"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
-resolved_reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
+reference = "08cf609a996523c0199c61c768d74417b7e96109"
+resolved_reference = "08cf609a996523c0199c61c768d74417b7e96109"
 subdirectory = "openhands/agent_server"
 
 [[package]]
@@ -5582,8 +5582,8 @@ memory-profiler = "^0.61.0"
 numpy = "*"
 openai = "1.99.9"
 openhands-aci = "0.3.2"
-openhands-agent-server = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc", subdirectory = "openhands/agent_server"}
-openhands-sdk = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc", subdirectory = "openhands/sdk"}
+openhands-agent-server = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "08cf609a996523c0199c61c768d74417b7e96109", subdirectory = "openhands/agent_server"}
+openhands-sdk = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "08cf609a996523c0199c61c768d74417b7e96109", subdirectory = "openhands/sdk"}
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 pathspec = "^0.12.1"
@@ -5662,8 +5662,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
-resolved_reference = "f8ca02c4a3b847bfc50b3c5e579ce126c511fefc"
+reference = "08cf609a996523c0199c61c768d74417b7e96109"
+resolved_reference = "08cf609a996523c0199c61c768d74417b7e96109"
 subdirectory = "openhands/sdk"
 
 [[package]]
