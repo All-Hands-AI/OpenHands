@@ -29,12 +29,14 @@ from sqlalchemy import (
     Column,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     Select,
     String,
     func,
     select,
 )
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import relationship
 
@@ -98,6 +100,9 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
+
+    # Foreign key to org table
+    org_id = Column(PostgreSQLUUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
 
     # Relationship back to org
     org = relationship('Org', back_populates='conversation_metadata')
