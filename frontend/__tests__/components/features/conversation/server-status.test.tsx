@@ -41,6 +41,19 @@ vi.mock("#/hooks/use-user-providers", () => ({
   }),
 }));
 
+vi.mock("#/hooks/query/use-task-or-conversation", () => ({
+  useTaskOrConversation: () => ({
+    isTask: false,
+    taskId: null,
+    conversationId: "test-conversation-id",
+    task: null,
+    taskStatus: null,
+    taskDetail: null,
+    taskError: null,
+    isLoadingTask: false,
+  }),
+}));
+
 // Mock react-i18next
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
