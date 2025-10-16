@@ -84,7 +84,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
       <ContextMenuListItem
         testId="create-pr-button"
         onClick={onCreatePR}
-        className={contextMenuListItemClassName}
+        className={`${contextMenuListItemClassName} bg-black hover:bg-black`}
       >
         <ToolsContextMenuIconText
           icon={<PrIcon width={16} height={16} />}
