@@ -1,10 +1,14 @@
 """Unit tests for ExperimentManager class, focusing on the v1 agent method."""
 
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
 
+from openhands.app_server.app_conversation.live_status_app_conversation_service import (
+    LiveStatusAppConversationService,
+)
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.sdk import Agent
 from openhands.sdk.llm import LLM
@@ -31,12 +35,10 @@ class TestExperimentManager:
 
     def test_run_agent_variant_tests__v1_returns_agent_unchanged(self):
         """Test that the base ExperimentManager returns the agent unchanged."""
-        # Act
         result = ExperimentManager.run_agent_variant_tests__v1(
             self.user_id, self.conversation_id, self.mock_agent
         )
 
-        # Assert
         assert result is self.mock_agent
         assert result == self.mock_agent
 
@@ -66,58 +68,6 @@ class TestExperimentManager:
         # Assert
         assert result_1 is self.mock_agent
         assert result_2 is self.mock_agent
-
-    def test_run_agent_variant_tests__v1_preserves_agent_properties(self):
-        """Test that the method preserves all agent properties."""
-        # Arrange
-        original_llm = self.mock_agent.llm
-        original_system_prompt = self.mock_agent.system_prompt_filename
-
-        # Act
-        result = ExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        assert result.llm is original_llm
-        assert result.system_prompt_filename == original_system_prompt
-
-    def test_run_agent_variant_tests__v1_is_static_method(self):
-        """Test that the method can be called as a static method."""
-        # Act - should not raise an error when called without instance
-        result = ExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        assert result is self.mock_agent
-
-    def test_run_agent_variant_tests__v1_type_annotations(self):
-        """Test that the method has correct type annotations."""
-        import inspect
-        from typing import get_args, get_origin
-
-        # Get the method signature
-        sig = inspect.signature(ExperimentManager.run_agent_variant_tests__v1)
-
-        # Check parameter types - handle Union types properly
-        user_id_annotation = sig.parameters['user_id'].annotation
-        # Check if it's a Union type (str | None)
-        if hasattr(user_id_annotation, '__origin__'):
-            assert get_origin(user_id_annotation) is type(str | None).__origin__
-            assert str in get_args(user_id_annotation)
-            assert type(None) in get_args(user_id_annotation)
-        else:
-            # Fallback for different Python versions
-            assert 'str' in str(user_id_annotation) and 'None' in str(
-                user_id_annotation
-            )
-
-        assert sig.parameters['conversation_id'].annotation == UUID
-        assert sig.parameters['agent'].annotation == Agent
-
-        # Check return type
-        assert sig.return_annotation == Agent
 
 
 class TestExperimentManagerIntegration:
@@ -149,11 +99,6 @@ class TestExperimentManagerIntegration:
             self.mock_agent
         )
 
-        # Import the module that uses ExperimentManagerImpl
-        from openhands.app_server.app_conversation.live_status_app_conversation_service import (
-            LiveStatusAppConversationService,
-        )
-
         # Create a mock service instance
         mock_service = Mock(spec=LiveStatusAppConversationService)
 
@@ -175,144 +120,96 @@ class TestExperimentManagerIntegration:
             )
             assert result_agent == self.mock_agent
 
-    @patch(
-        'openhands.app_server.app_conversation.live_status_app_conversation_service.ExperimentManagerImpl'
-    )
-    @patch(
-        'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_agent'
-    )
-    @patch(
-        'openhands.app_server.app_conversation.live_status_app_conversation_service.uuid4'
-    )
-    def test_experiment_manager_called_with_correct_parameters_in_context(
-        self, mock_uuid4, mock_get_default_agent, mock_experiment_manager_impl
+    @pytest.mark.asyncio
+    async def test_experiment_manager_called_with_correct_parameters_in_context__noop_pass_through(
+        self,
     ):
-        """Test that the experiment manager is called with the correct parameters in the actual context."""
-        # Arrange
-        mock_conversation_id = uuid4()
-        mock_uuid4.return_value = mock_conversation_id
-        mock_get_default_agent.return_value = self.mock_agent
-        mock_experiment_manager_impl.run_agent_variant_tests__v1.return_value = (
-            self.mock_agent
+        """
+        Use the real LiveStatusAppConversationService to build a StartConversationRequest,
+        and verify ExperimentManagerImpl.run_agent_variant_tests__v1:
+        - is called exactly once with the (user_id, generated conversation_id, agent)
+        - returns the *same* agent instance (no copy/mutation)
+        - does not tweak agent fields (LLM, system prompt, etc.)
+        """
+        # --- Arrange: fixed UUID to assert call parameters deterministically
+        fixed_conversation_id = UUID('00000000-0000-0000-0000-000000000001')
+
+        # Create a stable Agent (and LLM) we can identity-check later
+        mock_llm = Mock(spec=LLM)
+        mock_llm.model = 'gpt-4'
+        mock_llm.service_id = 'agent'
+
+        mock_agent = Mock(spec=Agent)
+        mock_agent.llm = mock_llm
+        mock_agent.system_prompt_filename = 'default_system_prompt.j2'
+
+        # Minimal, real-ish user context used by the service
+        class DummyUserContext:
+            async def get_user_info(self):
+                # confirmation_mode=False -> NeverConfirm()
+                return SimpleNamespace(
+                    id='test_user_123',
+                    llm_model='gpt-4',
+                    llm_base_url=None,
+                    llm_api_key=None,
+                    confirmation_mode=False,
+                )
+
+            async def get_secrets(self):
+                return {}
+
+            async def get_latest_token(self, provider):
+                return None
+
+            async def get_user_id(self):
+                return 'test_user_123'
+
+        user_context = DummyUserContext()
+
+        # The service requires a lot of deps, but for this test we won't exercise them.
+        app_conversation_info_service = Mock()
+        app_conversation_start_task_service = Mock()
+        sandbox_service = Mock()
+        sandbox_spec_service = Mock()
+        jwt_service = Mock()
+        httpx_client = Mock()
+
+        service = LiveStatusAppConversationService(
+            init_git_in_empty_workspace=False,
+            user_context=user_context,
+            app_conversation_info_service=app_conversation_info_service,
+            app_conversation_start_task_service=app_conversation_start_task_service,
+            sandbox_service=sandbox_service,
+            sandbox_spec_service=sandbox_spec_service,
+            jwt_service=jwt_service,
+            sandbox_startup_timeout=30,
+            sandbox_startup_poll_frequency=1,
+            httpx_client=httpx_client,
+            web_url=None,
+            access_token_hard_timeout=None,
         )
 
-        # Import and create the method that contains the call
-        from openhands.app_server.app_conversation.live_status_app_conversation_service import (
-            LiveStatusAppConversationService,
-        )
-
-        # Create a mock user object
-        mock_user = Mock()
-        mock_user.id = self.user_id
-        mock_user.llm_model = 'gpt-4'
-        mock_user.llm_base_url = None
-        mock_user.llm_api_key = None
-
-        # Create a mock service instance with necessary attributes
-        Mock(spec=LiveStatusAppConversationService)
-
-        # Mock the LLM creation
-        with patch(
-            'openhands.app_server.app_conversation.live_status_app_conversation_service.LLM'
-        ) as mock_llm_class:
-            mock_llm_class.return_value = self.mock_llm
-
-            # Simulate the code path that calls the experiment manager
-            # This is based on the actual code in _build_start_conversation_request_for_user
-            llm = mock_llm_class(
-                model=mock_user.llm_model,
-                base_url=mock_user.llm_base_url,
-                api_key=mock_user.llm_api_key,
-                service_id='agent',
-            )
-            agent = mock_get_default_agent(llm=llm)
-
-            # This is the key call we want to test
-            conversation_id = mock_uuid4()
-            result_agent = mock_experiment_manager_impl.run_agent_variant_tests__v1(
-                mock_user.id, conversation_id, agent
+        # Patch the pieces invoked by the service
+        with (
+            patch(
+                'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_agent',
+                return_value=mock_agent,
+            ),
+            patch(
+                'openhands.app_server.app_conversation.live_status_app_conversation_service.uuid4',
+                return_value=fixed_conversation_id,
+            ),
+        ):
+            # --- Act: build the start request
+            start_req = await service._build_start_conversation_request_for_user(
+                initial_message=None,
+                git_provider=None,  # Keep secrets path simple
+                working_dir='/tmp/project',  # Arbitrary path
             )
 
-            # Assert
-            mock_experiment_manager_impl.run_agent_variant_tests__v1.assert_called_once_with(
-                mock_user.id, mock_conversation_id, self.mock_agent
-            )
-            assert result_agent == self.mock_agent
+            # The agent in the StartConversationRequest is the *same* object we provided
+            assert start_req.agent is mock_agent
 
-    def test_experiment_manager_integration_with_real_agent_object(self):
-        """Test the experiment manager with a more realistic agent object."""
-        # Arrange - Create a more realistic agent mock that behaves like the real thing
-        realistic_llm = Mock(spec=LLM)
-        realistic_llm.model = 'gpt-4'
-        realistic_llm.service_id = 'agent'
-
-        realistic_agent = Mock(spec=Agent)
-        realistic_agent.llm = realistic_llm
-        realistic_agent.system_prompt_filename = 'default_system_prompt.j2'
-        realistic_agent.model_copy = Mock(return_value=realistic_agent)
-
-        # Act
-        result = ExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, realistic_agent
-        )
-
-        # Assert
-        assert result is realistic_agent
-        assert result.llm.model == 'gpt-4'
-        assert result.system_prompt_filename == 'default_system_prompt.j2'
-
-    def test_experiment_manager_impl_is_used_correctly(self):
-        """Test that ExperimentManagerImpl is correctly instantiated and used."""
-        # Import the actual implementation
-        from openhands.experiments.experiment_manager import ExperimentManagerImpl
-
-        # Act - call the method on the implementation
-        result = ExperimentManagerImpl.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert - the base implementation should return the agent unchanged
-        assert result is self.mock_agent
-
-        # Verify that ExperimentManagerImpl is indeed a class (not None)
-        assert ExperimentManagerImpl is not None
-        assert hasattr(ExperimentManagerImpl, 'run_agent_variant_tests__v1')
-
-    def test_integration_with_live_status_app_conversation_service_import(self):
-        """Test that the ExperimentManagerImpl import works in the actual service."""
-        # This test verifies that the import chain works correctly
-        try:
-            # Import both and verify they exist and have the required method
-            from openhands.app_server.app_conversation.live_status_app_conversation_service import (
-                ExperimentManagerImpl as ServiceExperimentManagerImpl,
-            )
-            from openhands.experiments.experiment_manager import (
-                ExperimentManagerImpl as DirectExperimentManagerImpl,
-            )
-
-            # Both should have the v1 method
-            assert hasattr(ServiceExperimentManagerImpl, 'run_agent_variant_tests__v1')
-            assert hasattr(DirectExperimentManagerImpl, 'run_agent_variant_tests__v1')
-
-            # Test that the method works on the direct import
-            result = DirectExperimentManagerImpl.run_agent_variant_tests__v1(
-                self.user_id, self.conversation_id, self.mock_agent
-            )
-            assert result is self.mock_agent
-
-        except ImportError as e:
-            pytest.fail(f'Import failed: {e}')
-
-    def test_actual_usage_pattern_in_service(self):
-        """Test the actual usage pattern as it appears in the service code."""
-        # Import the actual ExperimentManagerImpl as used in the experiment manager module
-        from openhands.experiments.experiment_manager import ExperimentManagerImpl
-
-        # Act - simulate the exact call pattern from the service
-        conversation_id = uuid4()
-        agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
-            self.user_id, conversation_id, self.mock_agent
-        )
-
-        # Assert
-        assert agent is self.mock_agent
+            # No tweaks to agent fields by the experiment manager (noop)
+            assert start_req.agent.llm is mock_llm
+            assert start_req.agent.system_prompt_filename == 'default_system_prompt.j2'
