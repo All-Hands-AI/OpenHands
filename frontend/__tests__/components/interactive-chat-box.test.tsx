@@ -100,14 +100,13 @@ describe("InteractiveChatBox", () => {
   };
 
   // Helper function to render with Router context
-  const renderInteractiveChatBox = (props: any, options: any = {}) => {
-    return renderWithProviders(
+  const renderInteractiveChatBox = (props: any, options: any = {}) =>
+    renderWithProviders(
       <MemoryRouter>
         <InteractiveChatBox {...props} />
       </MemoryRouter>,
       options,
     );
-  };
 
   beforeAll(() => {
     global.URL.createObjectURL = vi
@@ -152,7 +151,6 @@ describe("InteractiveChatBox", () => {
 
     renderInteractiveChatBox({
       onSubmit: onSubmitMock,
-      
     });
 
     // Create a larger file to ensure it passes validation
@@ -179,7 +177,6 @@ describe("InteractiveChatBox", () => {
 
     renderInteractiveChatBox({
       onSubmit: onSubmitMock,
-      
     });
 
     const fileContent = new Array(1024).fill("a").join(""); // 1KB file
@@ -204,7 +201,6 @@ describe("InteractiveChatBox", () => {
 
     renderInteractiveChatBox({
       onSubmit: onSubmitMock,
-      
     });
 
     const textarea = screen.getByTestId("chat-input");
@@ -235,7 +231,6 @@ describe("InteractiveChatBox", () => {
 
     renderInteractiveChatBox({
       onSubmit: onSubmitMock,
-      
     });
 
     const button = screen.getByTestId("submit-button");
@@ -252,7 +247,7 @@ describe("InteractiveChatBox", () => {
     mockStores(AgentState.AWAITING_USER_INPUT);
 
     const { rerender } = renderInteractiveChatBox({
-      onSubmit: onSubmit,
+      onSubmit,
     });
 
     // Verify text input has the initial value
