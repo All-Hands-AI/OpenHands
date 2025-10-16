@@ -89,8 +89,8 @@ class OpenHandsConfig(BaseModel):
     )
 
     # Deprecated parameters - will be removed in a future version
-    workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path: str | None = Field(default=None)
+    workspace_mount_rewrite: str | None = Field(default=None)
     # End of deprecated parameters
 
     cache_dir: str = Field(default='/tmp/cache')
