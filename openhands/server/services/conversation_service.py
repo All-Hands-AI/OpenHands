@@ -69,10 +69,14 @@ async def initialize_conversation(
     try:
         conversation_metadata = await conversation_store.get_metadata(conversation_id)
         return conversation_metadata
-    except Exception:
-        pass
-
-    return None
+    except FileNotFoundError:
+        # Conversation doesn't exist, this is expected for new conversations
+        logger.debug(f'Conversation {conversation_id} not found, will create new one')
+        return None
+    except Exception as e:
+        # Log other errors but don't silently fail
+        logger.error(f'Error loading conversation metadata for {conversation_id}: {e}')
+        return None
 
 
 async def start_conversation(
