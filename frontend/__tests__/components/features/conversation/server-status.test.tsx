@@ -66,6 +66,10 @@ vi.mock("react-i18next", async () => {
 });
 
 describe("ServerStatus", () => {
+  // Mock functions for handlers
+  const mockHandleStop = vi.fn();
+  const mockHandleResumeAgent = vi.fn();
+
   // Helper function to mock agent state with specific state
   const mockAgentStore = (agentState: AgentState) => {
     vi.mocked(useAgentState).mockReturnValue({
@@ -83,20 +87,42 @@ describe("ServerStatus", () => {
 
     // Test RUNNING status
     const { rerender } = renderWithProviders(
-      <ServerStatus conversationStatus="RUNNING" />,
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
     );
     expect(screen.getByText("Running")).toBeInTheDocument();
 
     // Test STOPPED status
-    rerender(<ServerStatus conversationStatus="STOPPED" />);
+    rerender(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Server Stopped")).toBeInTheDocument();
 
     // Test STARTING status (shows "Running" due to agent state being RUNNING)
-    rerender(<ServerStatus conversationStatus="STARTING" />);
+    rerender(
+      <ServerStatus
+        conversationStatus="STARTING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Running")).toBeInTheDocument();
 
     // Test null status (shows "Running" due to agent state being RUNNING)
-    rerender(<ServerStatus conversationStatus={null} />);
+    rerender(
+      <ServerStatus
+        conversationStatus={null}
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Running")).toBeInTheDocument();
   });
 
@@ -106,7 +132,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -126,7 +158,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -146,7 +184,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="STARTING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STARTING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -168,7 +212,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -190,7 +240,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -210,7 +266,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -230,7 +292,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -248,7 +316,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus={null} />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus={null}
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusText = screen.getByText("Running");
     expect(statusText).toBeInTheDocument();
