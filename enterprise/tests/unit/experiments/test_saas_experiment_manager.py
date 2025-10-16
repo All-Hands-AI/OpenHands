@@ -1,389 +1,136 @@
-"""Unit tests for SaaSExperimentManager class, focusing on the v1 agent method."""
+# tests/test_condenser_max_step_experiment_v1.py
 
-from unittest.mock import Mock, patch
-from uuid import UUID, uuid4
-
-import pytest
+from unittest.mock import patch
+from uuid import uuid4
 
 from experiments.experiment_manager import SaaSExperimentManager
-from openhands.sdk import Agent
-from openhands.sdk.llm import LLM
+
+# SUT imports (update the module path if needed)
+from experiments.experiment_versions._004_condenser_max_step_experiment import (
+    handle_condenser_max_step_experiment__v1,
+)
+from pydantic import SecretStr
+
+from openhands.sdk import LLM, Agent
+from openhands.sdk.context.condenser import LLMSummarizingCondenser
 
 
-class TestSaaSExperimentManager:
-    """Test cases for SaaSExperimentManager core functionality."""
-
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.user_id = 'test_user_123'
-        self.conversation_id = uuid4()
-
-        # Create a mock LLM
-        self.mock_llm = Mock(spec=LLM)
-        self.mock_llm.model = 'gpt-4'
-        self.mock_llm.service_id = 'agent'
-
-        # Create a mock Agent
-        self.mock_agent = Mock(spec=Agent)
-        self.mock_agent.llm = self.mock_llm
-        self.mock_agent.system_prompt_filename = 'default_system_prompt.j2'
-        self.mock_agent.model_copy = Mock(return_value=self.mock_agent)
-
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_run_agent_variant_tests__v1_with_experiment_enabled(
-        self, mock_condenser_experiment
-    ):
-        """Test that the method processes experiments when enabled."""
-        # Arrange
-        mock_condenser_experiment.return_value = self.mock_agent
-
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        mock_condenser_experiment.assert_called_once_with(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-        # Verify system prompt is updated
-        self.mock_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-        assert result is self.mock_agent
-
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', False)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_run_agent_variant_tests__v1_with_experiment_disabled(
-        self, mock_condenser_experiment
-    ):
-        """Test that the method returns agent unchanged when experiments are disabled."""
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        mock_condenser_experiment.assert_not_called()
-        self.mock_agent.model_copy.assert_not_called()
-        assert result is self.mock_agent
-
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_run_agent_variant_tests__v1_with_none_user_id(
-        self, mock_condenser_experiment
-    ):
-        """Test that the method works with None user_id."""
-        # Arrange
-        mock_condenser_experiment.return_value = self.mock_agent
-
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            None, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        mock_condenser_experiment.assert_called_once_with(
-            None, self.conversation_id, self.mock_agent
-        )
-        assert result is self.mock_agent
-
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_run_agent_variant_tests__v1_with_different_conversation_ids(
-        self, mock_condenser_experiment
-    ):
-        """Test that the method works with different conversation IDs."""
-        # Arrange
-        conversation_id_1 = uuid4()
-        conversation_id_2 = uuid4()
-        mock_condenser_experiment.return_value = self.mock_agent
-
-        # Act
-        result_1 = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, conversation_id_1, self.mock_agent
-        )
-        result_2 = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, conversation_id_2, self.mock_agent
-        )
-
-        # Assert
-        assert mock_condenser_experiment.call_count == 2
-        mock_condenser_experiment.assert_any_call(
-            self.user_id, conversation_id_1, self.mock_agent
-        )
-        mock_condenser_experiment.assert_any_call(
-            self.user_id, conversation_id_2, self.mock_agent
-        )
-        assert result_1 is self.mock_agent
-        assert result_2 is self.mock_agent
-
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_run_agent_variant_tests__v1_preserves_agent_properties(
-        self, mock_condenser_experiment
-    ):
-        """Test that the method preserves agent properties through the experiment chain."""
-        # Arrange
-        mock_condenser_experiment.return_value = self.mock_agent
-
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        assert result.llm is self.mock_llm
-        # Verify the system prompt is updated to the long horizon version
-        self.mock_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-
-    def test_run_agent_variant_tests__v1_is_static_method(self):
-        """Test that the method is a static method."""
-        # Act & Assert
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-        assert result is self.mock_agent
-
-    def test_run_agent_variant_tests__v1_type_annotations(self):
-        """Test that the method has correct type annotations."""
-        import inspect
-        from typing import get_args, get_origin
-
-        # Get the method signature
-        sig = inspect.signature(SaaSExperimentManager.run_agent_variant_tests__v1)
-
-        # Check parameter types - handle Union types properly
-        user_id_annotation = sig.parameters['user_id'].annotation
-        # Check if it's a Union type (str | None)
-        if hasattr(user_id_annotation, '__origin__'):
-            assert get_origin(user_id_annotation) is type(str | None).__origin__
-            assert str in get_args(user_id_annotation)
-            assert type(None) in get_args(user_id_annotation)
-        else:
-            # Fallback for different Python versions
-            assert 'str' in str(user_id_annotation) and 'None' in str(
-                user_id_annotation
-            )
-
-        assert sig.parameters['conversation_id'].annotation == UUID
-        assert sig.parameters['agent'].annotation == Agent
-
-        # Check return type
-        assert sig.return_annotation == Agent
+def make_agent() -> Agent:
+    """Build a minimal valid Agent."""
+    llm = LLM(
+        service_id='primary-llm',
+        model='provider/model',
+        api_key=SecretStr('sk-test'),
+    )
+    return Agent(llm=llm)
 
 
-class TestSaaSExperimentManagerIntegration:
-    """Integration tests for SaaSExperimentManager with other components."""
+def _patch_variant(monkeypatch, return_value):
+    """Patch the internal variant getter to return a specific value."""
+    monkeypatch.setattr(
+        'experiments.experiment_versions._004_condenser_max_step_experiment._get_condenser_max_step_variant',
+        lambda user_id, conv_id: return_value,
+        raising=True,
+    )
 
-    def setup_method(self):
-        """Set up test fixtures."""
-        self.user_id = 'test_user_123'
-        self.conversation_id = uuid4()
 
-        # Create a mock LLM
-        self.mock_llm = Mock(spec=LLM)
-        self.mock_llm.model = 'gpt-4'
-        self.mock_llm.service_id = 'agent'
+def test_control_variant_sets_condenser_with_max_size_120(monkeypatch):
+    _patch_variant(monkeypatch, 'control')
+    agent = make_agent()
+    conv_id = uuid4()
 
-        # Create a mock Agent
-        self.mock_agent = Mock(spec=Agent)
-        self.mock_agent.llm = self.mock_llm
-        self.mock_agent.system_prompt_filename = 'default_system_prompt.j2'
-        self.mock_agent.model_copy = Mock(return_value=self.mock_agent)
+    result = handle_condenser_max_step_experiment__v1('user-1', conv_id, agent)
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_condenser_experiment_integration(self, mock_condenser_experiment):
-        """Test integration with condenser max step experiment."""
-        # Arrange
-        modified_agent = Mock(spec=Agent)
-        modified_agent.llm = self.mock_llm
-        modified_agent.system_prompt_filename = 'default_system_prompt.j2'
-        modified_agent.model_copy = Mock(return_value=modified_agent)
-        mock_condenser_experiment.return_value = modified_agent
+    # Should be a new Agent instance with a condenser installed
+    assert result is not agent
+    assert isinstance(result.condenser, LLMSummarizingCondenser)
 
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
+    # The condenser should have its own LLM (service_id overridden to "condenser")
+    assert result.condenser.llm.service_id == 'condenser'
+    # The original agent LLM remains unchanged
+    assert agent.llm.service_id == 'primary-llm'
 
-        # Assert
-        mock_condenser_experiment.assert_called_once_with(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-        # Verify system prompt update is applied to the modified agent
-        modified_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-        assert result is modified_agent
+    # Control: max_size = 120, keep_first = 4
+    assert result.condenser.max_size == 120
+    assert result.condenser.keep_first == 4
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    @patch('experiments.experiment_manager.logger')
-    def test_logging_when_experiment_disabled(
-        self, mock_logger, mock_condenser_experiment
-    ):
-        """Test that appropriate logging occurs when experiments are disabled."""
-        # Arrange
-        with patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', False):
-            # Act
-            result = SaaSExperimentManager.run_agent_variant_tests__v1(
-                self.user_id, self.conversation_id, self.mock_agent
-            )
 
-            # Assert
-            mock_logger.info.assert_called_once_with(
-                'experiment_manager:run_conversation_variant_test:skipped',
-                extra={'reason': 'experiment_manager_disabled'},
-            )
-            mock_condenser_experiment.assert_not_called()
-            assert result is self.mock_agent
+def test_treatment_variant_sets_condenser_with_max_size_80(monkeypatch):
+    _patch_variant(monkeypatch, 'treatment')
+    agent = make_agent()
+    conv_id = uuid4()
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_system_prompt_update_behavior(self, mock_condenser_experiment):
-        """Test that system prompt is always updated to long horizon version."""
-        # Arrange
-        mock_condenser_experiment.return_value = self.mock_agent
+    result = handle_condenser_max_step_experiment__v1('user-2', conv_id, agent)
 
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
+    assert result is not agent
+    assert isinstance(result.condenser, LLMSummarizingCondenser)
+    assert result.condenser.llm.service_id == 'condenser'
+    assert result.condenser.max_size == 80
+    assert result.condenser.keep_first == 4
 
-        # Assert
-        self.mock_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-        assert result is self.mock_agent
 
-    def test_experiment_manager_inheritance(self):
-        """Test that SaaSExperimentManager properly inherits from ExperimentManager."""
-        from openhands.experiments.experiment_manager import ExperimentManager
+def test_none_variant_returns_original_agent_without_changes(monkeypatch):
+    _patch_variant(monkeypatch, None)
+    agent = make_agent()
+    conv_id = uuid4()
 
-        # Assert
-        assert issubclass(SaaSExperimentManager, ExperimentManager)
-        assert hasattr(SaaSExperimentManager, 'run_agent_variant_tests__v1')
+    result = handle_condenser_max_step_experiment__v1('user-3', conv_id, agent)
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_experiment_chain_execution_order(self, mock_condenser_experiment):
-        """Test that experiments are executed in the correct order."""
-        # Arrange
-        intermediate_agent = Mock(spec=Agent)
-        intermediate_agent.llm = self.mock_llm
-        intermediate_agent.system_prompt_filename = 'default_system_prompt.j2'
-        final_agent = Mock(spec=Agent)
-        final_agent.llm = self.mock_llm
-        final_agent.system_prompt_filename = 'system_prompt_long_horizon.j2'
+    # No changes—same instance and no condenser attribute added
+    assert result is agent
+    assert getattr(result, 'condenser', None) is None
 
-        mock_condenser_experiment.return_value = intermediate_agent
-        intermediate_agent.model_copy.return_value = final_agent
 
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
+def test_unknown_variant_returns_original_agent_without_changes(monkeypatch):
+    _patch_variant(monkeypatch, 'weird-variant')
+    agent = make_agent()
+    conv_id = uuid4()
 
-        # Assert - verify execution order
-        # 1. First, condenser experiment is called
-        mock_condenser_experiment.assert_called_once_with(
-            self.user_id, self.conversation_id, self.mock_agent
-        )
-        # 2. Then, system prompt is updated
-        intermediate_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-        # 3. Final result is the agent with updated system prompt
-        assert result is final_agent
+    result = handle_condenser_max_step_experiment__v1('user-4', conv_id, agent)
 
-    def test_import_verification(self):
-        """Test that all required imports are available and working."""
-        # This test verifies that the import chain works correctly
-        try:
-            # Import and verify they exist and have the required method
-            from experiments.experiment_manager import SaaSExperimentManager
+    assert result is agent
+    assert getattr(result, 'condenser', None) is None
 
-            # Should have the v1 method
-            assert hasattr(SaaSExperimentManager, 'run_agent_variant_tests__v1')
 
-            # Test that the method works on the direct import
-            mock_agent = Mock(spec=Agent)
-            result = SaaSExperimentManager.run_agent_variant_tests__v1(
-                self.user_id, self.conversation_id, mock_agent
-            )
-            assert result is mock_agent
+@patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
+@patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', False)
+def test_run_agent_variant_tests_v1_noop_when_manager_disabled(
+    mock_handle_condenser,
+):
+    """If ENABLE_EXPERIMENT_MANAGER is False, the method returns the exact same agent and does not call the handler."""
+    agent = make_agent()
+    conv_id = uuid4()
 
-        except ImportError as e:
-            pytest.fail(f'Import failed: {e}')
+    result = SaaSExperimentManager.run_agent_variant_tests__v1(
+        user_id='user-123',
+        conversation_id=conv_id,
+        agent=agent,
+    )
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_realistic_agent_object_handling(self, mock_condenser_experiment):
-        """Test the experiment manager with a more realistic agent object."""
-        # Arrange - Create a more realistic agent mock that behaves like the real thing
-        realistic_llm = Mock(spec=LLM)
-        realistic_llm.model = 'gpt-4'
-        realistic_llm.service_id = 'agent'
-        realistic_llm.model_copy = Mock(return_value=realistic_llm)
+    # Same object returned (no copy)
+    assert result is agent
+    # Handler should not have been called
+    mock_handle_condenser.assert_not_called()
 
-        realistic_agent = Mock(spec=Agent)
-        realistic_agent.llm = realistic_llm
-        realistic_agent.system_prompt_filename = 'default_system_prompt.j2'
 
-        # Create the final agent with updated system prompt
-        final_agent = Mock(spec=Agent)
-        final_agent.llm = realistic_llm
-        final_agent.system_prompt_filename = 'system_prompt_long_horizon.j2'
+@patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
+def test_run_agent_variant_tests_v1_calls_handler_and_sets_system_prompt(monkeypatch):
+    """When enabled, it should call the condenser experiment handler and set the long-horizon system prompt."""
+    agent = make_agent()
+    conv_id = uuid4()
 
-        realistic_agent.model_copy = Mock(return_value=final_agent)
-        mock_condenser_experiment.return_value = realistic_agent
+    _patch_variant(monkeypatch, 'treatment')
 
-        # Act
-        result = SaaSExperimentManager.run_agent_variant_tests__v1(
-            self.user_id, self.conversation_id, realistic_agent
-        )
+    result: Agent = SaaSExperimentManager.run_agent_variant_tests__v1(
+        user_id='user-abc',
+        conversation_id=conv_id,
+        agent=agent,
+    )
 
-        # Assert
-        mock_condenser_experiment.assert_called_once_with(
-            self.user_id, self.conversation_id, realistic_agent
-        )
-        realistic_agent.model_copy.assert_called_once_with(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
-        assert result is final_agent
-        assert result.llm.model == 'gpt-4'
-        assert result.system_prompt_filename == 'system_prompt_long_horizon.j2'
+    # Should be a different instance than the original (copied after handler runs)
+    assert result is not agent
+    assert result.system_prompt_filename == 'system_prompt_long_horizon.j2'
 
-    @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
-    @patch('experiments.experiment_manager.handle_condenser_max_step_experiment__v1')
-    def test_experiment_with_edge_case_inputs(self, mock_condenser_experiment):
-        """Test the experiment manager with edge case inputs."""
-        # Arrange
-        mock_condenser_experiment.return_value = self.mock_agent
-
-        # Test with empty string user_id
-        result1 = SaaSExperimentManager.run_agent_variant_tests__v1(
-            '', self.conversation_id, self.mock_agent
-        )
-
-        # Test with very long user_id
-        long_user_id = 'a' * 1000
-        result2 = SaaSExperimentManager.run_agent_variant_tests__v1(
-            long_user_id, self.conversation_id, self.mock_agent
-        )
-
-        # Assert
-        assert result1 is self.mock_agent
-        assert result2 is self.mock_agent
-        assert mock_condenser_experiment.call_count == 2
-        mock_condenser_experiment.assert_any_call(
-            '', self.conversation_id, self.mock_agent
-        )
-        mock_condenser_experiment.assert_any_call(
-            long_user_id, self.conversation_id, self.mock_agent
-        )
+    # The condenser returned by the handler must be preserved after the system-prompt override copy
+    assert isinstance(result.condenser, LLMSummarizingCondenser)
+    assert result.condenser.max_size == 80
