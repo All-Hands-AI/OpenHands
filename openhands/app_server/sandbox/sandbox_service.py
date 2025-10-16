@@ -1,7 +1,11 @@
 import asyncio
 from abc import ABC, abstractmethod
 
-from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxPage
+from openhands.app_server.sandbox.sandbox_models import (
+    SandboxInfo,
+    SandboxPage,
+    SandboxStatus,
+)
 from openhands.app_server.services.injector import Injector
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
@@ -59,6 +63,61 @@ class SandboxService(ABC):
 
         Return False if the sandbox did not exist.
         """
+
+    async def cleanup_old_sandboxes(self, max_num_sandboxes: int) -> list[str]:
+        """Stop the oldest sandboxes if there are more than max_num_sandboxes running.
+
+        Args:
+            max_num_sandboxes: Maximum number of sandboxes to keep running
+
+        Returns:
+            List of sandbox IDs that were stopped
+        """
+        if max_num_sandboxes <= 0:
+            raise ValueError('max_num_sandboxes must be greater than 0')
+
+        # Get all sandboxes (we'll search through all pages)
+        all_sandboxes = []
+        page_id = None
+
+        while True:
+            page = await self.search_sandboxes(page_id=page_id, limit=100)
+            all_sandboxes.extend(page.items)
+
+            if page.next_page_id is None:
+                break
+            page_id = page.next_page_id
+
+        # Filter to only running sandboxes
+        running_sandboxes = [
+            sandbox
+            for sandbox in all_sandboxes
+            if sandbox.status == SandboxStatus.RUNNING
+        ]
+
+        # If we're within the limit, no cleanup needed
+        if len(running_sandboxes) <= max_num_sandboxes:
+            return []
+
+        # Sort by creation time (oldest first)
+        running_sandboxes.sort(key=lambda x: x.created_at)
+
+        # Determine how many to stop
+        num_to_stop = len(running_sandboxes) - max_num_sandboxes
+        sandboxes_to_stop = running_sandboxes[:num_to_stop]
+
+        # Stop the oldest sandboxes
+        stopped_sandbox_ids = []
+        for sandbox in sandboxes_to_stop:
+            try:
+                success = await self.delete_sandbox(sandbox.id)
+                if success:
+                    stopped_sandbox_ids.append(sandbox.id)
+            except Exception:
+                # Continue trying to stop other sandboxes even if one fails
+                pass
+
+        return stopped_sandbox_ids
 
 
 class SandboxServiceInjector(DiscriminatedUnionMixin, Injector[SandboxService], ABC):
