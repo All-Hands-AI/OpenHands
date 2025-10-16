@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import os
 import tempfile
@@ -41,7 +40,6 @@ class GitAppConversationService(AppConversationService, ABC):
         task.status = AppConversationStartTaskStatus.PREPARING_REPOSITORY
         yield task
         await self.clone_or_init_git_repo(task, workspace)
-        await self.upload_git_scripts(workspace)
 
         task.status = AppConversationStartTaskStatus.RUNNING_SETUP_SCRIPT
         yield task
@@ -151,13 +149,3 @@ class GitAppConversationService(AppConversationService, ABC):
             return
 
         _logger.info('Git pre-commit hook installed successfully')
-
-    async def upload_git_scripts(self, workspace: AsyncRemoteWorkspace):
-        """Add scripts which will be used by the frontend for git operations."""
-        await asyncio.gather(*[
-            workspace.file_upload(
-                source_path=Path(__file__).parent / 'git' / file,
-                destination_path=f'{workspace.working_dir}/{file}',
-            )
-            for file in ['git_changes.py', 'git_diff.py']
-        ])
