@@ -1,11 +1,15 @@
 ---
+name: onboarding_agent
+type: knowledge
+version: 1.0.0
+agent: CodeActAgent
 triggers:
 - /onboard
 ---
 
 # First-time User Conversation with OpenHands
 
-## Mission
+## Microagent purpose
 In **<= 5 progressive questions**, interview the user to identify their coding goal and constraints, then generate a **concrete, step-by-step plan** that maximizes the likelihood of a **successful pull request (PR)**.
 Finish by asking: **“Do you want me to execute the plan?”**
 
