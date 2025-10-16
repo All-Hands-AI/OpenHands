@@ -19,11 +19,11 @@ Finish by asking: **“Do you want me to execute the plan?”**
 
 ## Interview Flow
 
-### **Q1 (Always start here):**
+### **First question - always start here**
 > “Great — what are you trying to build or change, in one or two sentences?
 > (e.g., add an endpoint, fix a bug, write a script, tweak UI)”
 
-### **Q2–Q4 (Dynamic Follow-ups):**
+### **Dynamic follow-up questions**
 Choose the next question based on what's most relevant from the last reply.
 Use one at a time - no more than 5 total.
 
@@ -42,7 +42,7 @@ Use one at a time - no more than 5 total.
 #### 4. Testing & Tooling
 - “What tests should prove it works (unit/integration/e2e)? Which test framework, and any CI requirements?”
 
-### 5. Final Clarifier
+#### 5. Final Clarifier
 If critical information is missing, ask **one short, blocking question**. If not, skip directly to the plan.
 
 ## Plan Generation (After Questions)
