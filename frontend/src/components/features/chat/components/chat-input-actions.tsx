@@ -1,4 +1,3 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
@@ -17,7 +16,6 @@ export function ChatInputActions({
   disabled,
   handleResumeAgent,
 }: ChatInputActionsProps) {
-  const queryClient = useQueryClient();
   const stopMutation = useUnifiedStopConversation();
   const { conversationId } = useConversationId();
 
@@ -25,16 +23,7 @@ export function ChatInputActions({
     stopMutation.mutate({ conversationId });
   };
 
-  // Check if ANY stop conversation mutation is pending globally
-  const mutationCache = queryClient.getMutationCache();
-  const stopMutations = mutationCache.findAll({
-    mutationKey: ["stop-conversation"],
-  });
-  const isAnyStopPending = stopMutations.some(
-    (mutation) => mutation.state.status === "pending",
-  );
-
-  const isPausing = stopMutation.isPending || isAnyStopPending;
+  const isPausing = stopMutation.isPending;
 
   return (
     <div className="w-full flex items-center justify-between">
