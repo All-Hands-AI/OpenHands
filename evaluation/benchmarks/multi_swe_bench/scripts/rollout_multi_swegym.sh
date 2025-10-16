@@ -111,15 +111,10 @@ for run_idx in $(seq 1 $N_RUNS); do
         echo "### Evaluating on $OUTPUT_FILE ... ###"
         OUTPUT_CONFIG_FILE="${OUTPUT_FILE%.jsonl}_config.json"
         export EVAL_SKIP_BUILD_ERRORS=true
-        pip install multi-swe-bench --quiet --disable-pip-version-check > /dev/null 2>&1
         COMMAND="poetry run python ./evaluation/benchmarks/multi_swe_bench/scripts/eval/update_multi_swe_bench_config.py --input $OUTPUT_FILE --output $OUTPUT_CONFIG_FILE --dataset $EVAL_DATASET;
-        python -m multi_swe_bench.harness.run_evaluation --config $OUTPUT_CONFIG_FILE
+        poetry run python -m multi_swe_bench.harness.run_evaluation --config $OUTPUT_CONFIG_FILE
         "
 
-        if [ -n "$EVAL_LIMIT" ]; then
-        echo "EVAL_LIMIT: $EVAL_LIMIT"
-        COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
-        fi
         echo "Running command: $COMMAND"
         # Run the command
         eval $COMMAND
