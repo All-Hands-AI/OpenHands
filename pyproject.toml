@@ -88,9 +88,9 @@ dependencies = [
   # This refuses to install
   # openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "08cf609a996523c0199c61c768d74417b7e96109" }
   "python-jose[cryptography]>=3.3",
-  "sqlalchemy[asyncio]==^2.0.40",
-  "pg8000==^1.31.5",
-  "asyncpg==^0.30.0"
+  "sqlalchemy[asyncio]>=2.0.40,<3",
+  "pg8000>=1.31.5,<2",
+  "asyncpg>=0.30.0,<1",
 ]
 
 optional-dependencies.third_party_runtimes = [
@@ -161,6 +161,9 @@ testgeneval = [
   "rouge>=1.0.1,<2",
   "tree-sitter-python>=0.23.6,<0.24",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.sdist]
 include = [
