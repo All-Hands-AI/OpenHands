@@ -39,6 +39,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
+  const [selectedConversationVersion, setSelectedConversationVersion] =
+    React.useState<"V0" | "V1" | undefined>(undefined);
   const [openContextMenuId, setOpenContextMenuId] = React.useState<
     string | null
   >(null);
@@ -75,9 +77,13 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     setSelectedConversationId(conversationId);
   };
 
-  const handleStopConversation = (conversationId: string) => {
+  const handleStopConversation = (
+    conversationId: string,
+    version?: "V0" | "V1",
+  ) => {
     setConfirmStopModalVisible(true);
     setSelectedConversationId(conversationId);
+    setSelectedConversationVersion(version);
   };
 
   const handleConversationTitleChange = async (
@@ -111,7 +117,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation({ conversationId: selectedConversationId });
+      stopConversation({
+        conversationId: selectedConversationId,
+        version: selectedConversationVersion,
+      });
     }
   };
 
@@ -162,7 +171,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         >
           <ConversationCard
             onDelete={() => handleDeleteProject(project.conversation_id)}
-            onStop={() => handleStopConversation(project.conversation_id)}
+            onStop={() =>
+              handleStopConversation(
+                project.conversation_id,
+                project.conversation_version,
+              )
+            }
             onChangeTitle={(title) =>
               handleConversationTitleChange(project.conversation_id, title)
             }

@@ -28,11 +28,17 @@ export const useUnifiedStopConversation = () => {
 
   return useMutation({
     mutationKey: ["stop-conversation"],
-    mutationFn: async (variables: { conversationId: string }) => {
-      const version = getConversationVersionFromQueryCache(
-        queryClient,
-        variables.conversationId,
-      );
+    mutationFn: async (variables: {
+      conversationId: string;
+      version?: "V0" | "V1";
+    }) => {
+      // Use provided version or fallback to cache lookup
+      const version =
+        variables.version ||
+        getConversationVersionFromQueryCache(
+          queryClient,
+          variables.conversationId,
+        );
 
       if (version === "V1") {
         return stopV1Conversation(variables.conversationId);

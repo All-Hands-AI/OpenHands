@@ -33,11 +33,15 @@ export const useUnifiedStartConversation = () => {
     mutationFn: async (variables: {
       conversationId: string;
       providers?: Provider[];
+      version?: "V0" | "V1";
     }) => {
-      const version = getConversationVersionFromQueryCache(
-        queryClient,
-        variables.conversationId,
-      );
+      // Use provided version or fallback to cache lookup
+      const version =
+        variables.version ||
+        getConversationVersionFromQueryCache(
+          queryClient,
+          variables.conversationId,
+        );
 
       if (version === "V1") {
         return startV1Conversation(variables.conversationId);
