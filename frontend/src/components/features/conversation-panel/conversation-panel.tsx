@@ -190,6 +190,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             createdAt={project.created_at}
             conversationStatus={project.status}
             conversationId={project.conversation_id}
+            conversationVersion={project.conversation_version}
             contextMenuOpen={openContextMenuId === project.conversation_id}
             onContextMenuToggle={(isOpen) =>
               setOpenContextMenuId(isOpen ? project.conversation_id : null)
