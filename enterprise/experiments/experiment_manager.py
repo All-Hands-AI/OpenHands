@@ -2,6 +2,7 @@ from uuid import UUID
 
 from experiments.constants import (
     ENABLE_EXPERIMENT_MANAGER,
+    EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
 )
 from experiments.experiment_versions import (
     handle_condenser_max_step_experiment,
@@ -34,9 +35,10 @@ class SaaSExperimentManager(ExperimentManager):
             user_id, conversation_id, agent
         )
 
-        agent = agent.model_copy(
-            update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
-        )
+        if EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT:
+            agent = agent.model_copy(
+                update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
+            )
 
         return agent
 
