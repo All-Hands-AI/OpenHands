@@ -62,6 +62,7 @@ dependencies = [
   "prompt-toolkit>=3.0.50,<4",
   "protobuf>=5,<6",
   "psutil",
+  "pybase62>=1,<2",
   "pygithub>=2.5,<3",
   "pyjwt>=2.9,<3",
   "pylatexenc",

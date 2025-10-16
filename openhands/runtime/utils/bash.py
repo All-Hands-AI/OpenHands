@@ -198,6 +198,7 @@ class BashSession:
         self.username = username
         self._initialized = False
         self.max_memory_mb = max_memory_mb
+        self._closed = False
 
     def initialize(self) -> None:
         self.server = libtmux.Server()
@@ -231,7 +232,7 @@ class BashSession:
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
-        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), global_=True)
+        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
         self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.active_window
@@ -254,7 +255,6 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
-        self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
