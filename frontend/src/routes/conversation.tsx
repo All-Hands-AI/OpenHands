@@ -1,10 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
-import { useEffectOnce } from "#/hooks/use-effect-once";
 import { useJupyterStore } from "#/state/jupyter-store";
 import { useConversationStore } from "#/state/conversation-store";
 import { useAgentStore } from "#/stores/agent-store";
@@ -27,9 +25,9 @@ import { ConversationMain } from "#/components/features/conversation/conversatio
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
-import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useUnifiedStartConversation } from "#/hooks/mutation/use-unified-start-conversation";
 
 function AppContent() {
   useConversationConfig();
@@ -40,7 +38,8 @@ function AppContent() {
   const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
 
   const { data: conversation, isFetched, refetch } = useActiveConversation();
-  const { mutate: startConversation } = useStartConversation();
+  const { mutate: startConversation, isPending: isStarting } =
+    useUnifiedStartConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();
@@ -50,83 +49,100 @@ function AppContent() {
     (state) => state.setCurrentAgentState,
   );
   const clearJupyter = useJupyterStore((state) => state.clearJupyter);
-  const queryClient = useQueryClient();
   const removeErrorMessage = useErrorMessageStore(
     (state) => state.removeErrorMessage,
   );
 
+  // Track which conversation ID we've auto-started to prevent auto-restart after manual stop
+  const processedConversationId = React.useRef<string | null>(null);
+
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
-
-  // Show task status while polling
-  React.useEffect(() => {
-    if (isTask && taskStatus) {
-      if (taskStatus === "ERROR") {
-        displayErrorToast(
-          taskDetail || "Failed to start the conversation from task.",
-        );
-      }
-    }
-  }, [isTask, taskStatus, taskDetail]);
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
 
-  // Force fresh conversation data when navigating to prevent stale cache issues
+  // 1. Cleanup Effect - runs when navigating to a different conversation
   React.useEffect(() => {
-    queryClient.invalidateQueries({
-      queryKey: ["user", "conversation", conversationId],
-    });
-  }, [conversationId, queryClient]);
+    clearTerminal();
+    clearJupyter();
+    resetConversationState();
+    setCurrentAgentState(AgentState.LOADING);
+    removeErrorMessage();
 
+    // Reset tracking ONLY if we're navigating to a DIFFERENT conversation
+    // Don't reset on StrictMode remounts (conversationId is the same)
+    if (processedConversationId.current !== conversationId) {
+      processedConversationId.current = null;
+    }
+  }, [
+    conversationId,
+    clearTerminal,
+    clearJupyter,
+    resetConversationState,
+    setCurrentAgentState,
+    removeErrorMessage,
+  ]);
+
+  // 2. Task Error Display Effect
   React.useEffect(() => {
-    if (isFetched && !conversation && isAuthed) {
+    if (isTask && taskStatus === "ERROR") {
+      displayErrorToast(
+        taskDetail || "Failed to start the conversation from task.",
+      );
+    }
+  }, [isTask, taskStatus, taskDetail]);
+
+  // 3. Auto-start Effect - handles conversation not found and auto-starting STOPPED conversations
+  React.useEffect(() => {
+    // Wait for data to be fetched
+    if (!isFetched || !isAuthed) return;
+
+    // Handle conversation not found
+    if (!conversation) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
       navigate("/");
-    } else if (conversation?.status === "STOPPED") {
-      // If conversation is STOPPED, attempt to start it
+      return;
+    }
+
+    const currentConversationId = conversation.conversation_id;
+    const currentStatus = conversation.status;
+
+    // Skip if we've already processed this conversation
+    if (processedConversationId.current === currentConversationId) {
+      return;
+    }
+
+    // Mark as processed immediately to prevent duplicate calls
+    processedConversationId.current = currentConversationId;
+
+    // Auto-start STOPPED conversations on initial load only
+    if (currentStatus === "STOPPED" && !isStarting) {
       startConversation(
-        { conversationId: conversation.conversation_id, providers },
+        { conversationId: currentConversationId, providers },
         {
           onError: (error) => {
             displayErrorToast(`Failed to start conversation: ${error.message}`);
-            // Refetch the conversation to ensure UI consistency
             refetch();
           },
         },
       );
     }
+    // NOTE: conversation?.status is intentionally NOT in dependencies
+    // We only want to run when conversation ID changes, not when status changes
+    // This prevents duplicate calls when stale cache data is replaced with fresh data
   }, [
     conversation?.conversation_id,
-    conversation?.status,
     isFetched,
     isAuthed,
+    isStarting,
     providers,
+    startConversation,
+    navigate,
+    refetch,
   ]);
-
-  React.useEffect(() => {
-    clearTerminal();
-    clearJupyter();
-    resetConversationState();
-    setCurrentAgentState(AgentState.LOADING);
-    // Clear any error messages from previous conversations
-    removeErrorMessage();
-  }, [
-    conversationId,
-    clearTerminal,
-    setCurrentAgentState,
-    resetConversationState,
-    removeErrorMessage,
-  ]);
-
-  useEffectOnce(() => {
-    clearTerminal();
-    clearJupyter();
-    resetConversationState();
-    setCurrentAgentState(AgentState.LOADING);
-  });
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 

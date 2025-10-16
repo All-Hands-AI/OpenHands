@@ -8,7 +8,6 @@ import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { AgentState } from "#/types/agent-state";
 import { isOpenHandsAction, isActionOrObservation } from "#/types/core/guards";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
@@ -170,11 +169,6 @@ export function ChatInterface() {
     setMessageToSend("");
   };
 
-  const handleStop = () => {
-    posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
@@ -265,10 +259,7 @@ export function ChatInterface() {
 
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
-          <InteractiveChatBox
-            onSubmit={handleSendMessage}
-            onStop={handleStop}
-          />
+          <InteractiveChatBox onSubmit={handleSendMessage} />
         </div>
 
         {config?.APP_MODE !== "saas" && (

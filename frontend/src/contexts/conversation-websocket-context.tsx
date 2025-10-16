@@ -51,6 +51,9 @@ export function ConversationWebSocketProvider({
   const [connectionState, setConnectionState] = useState<
     "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
   >("CONNECTING");
+  // Track if we've ever successfully connected
+  // Don't show errors until after first successful connection
+  const hasConnectedRef = React.useRef(false);
   const queryClient = useQueryClient();
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
@@ -63,6 +66,11 @@ export function ConversationWebSocketProvider({
     () => buildWebSocketUrl(conversationId, conversationUrl, sessionApiKey),
     [conversationId, conversationUrl, sessionApiKey],
   );
+
+  // Reset hasConnected flag when conversation changes
+  useEffect(() => {
+    hasConnectedRef.current = false;
+  }, [conversationId]);
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
@@ -137,12 +145,14 @@ export function ConversationWebSocketProvider({
       reconnect: { enabled: true },
       onOpen: () => {
         setConnectionState("OPEN");
+        hasConnectedRef.current = true; // Mark that we've successfully connected
         removeErrorMessage(); // Clear any previous error messages on successful connection
       },
       onClose: (event: CloseEvent) => {
         setConnectionState("CLOSED");
-        // Set error message for unexpected disconnects (not normal closure)
-        if (event.code !== 1000) {
+        // Only show error message if we've previously connected successfully
+        // This prevents showing errors during initial connection attempts (e.g., when auto-starting a conversation)
+        if (event.code !== 1000 && hasConnectedRef.current) {
           setErrorMessage(
             `Connection lost: ${event.reason || "Unexpected disconnect"}`,
           );
@@ -150,7 +160,10 @@ export function ConversationWebSocketProvider({
       },
       onError: () => {
         setConnectionState("CLOSED");
-        setErrorMessage("Failed to connect to server");
+        // Only show error message if we've previously connected successfully
+        if (hasConnectedRef.current) {
+          setErrorMessage("Failed to connect to server");
+        }
       },
       onMessage: handleMessage,
     }),

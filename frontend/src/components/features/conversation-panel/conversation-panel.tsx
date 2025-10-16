@@ -6,7 +6,7 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 import { useStartTasks } from "#/hooks/query/use-start-tasks";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { useUnifiedStopConversation } from "#/hooks/mutation/use-unified-stop-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -39,6 +39,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
+  const [selectedConversationVersion, setSelectedConversationVersion] =
+    React.useState<"V0" | "V1" | undefined>(undefined);
   const [openContextMenuId, setOpenContextMenuId] = React.useState<
     string | null
   >(null);
@@ -59,7 +61,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const conversations = data?.pages.flatMap((page) => page.results) ?? [];
 
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: stopConversation } = useStopConversation();
+  const { mutate: stopConversation } = useUnifiedStopConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
   // Set up infinite scroll
@@ -75,9 +77,13 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     setSelectedConversationId(conversationId);
   };
 
-  const handleStopConversation = (conversationId: string) => {
+  const handleStopConversation = (
+    conversationId: string,
+    version?: "V0" | "V1",
+  ) => {
     setConfirmStopModalVisible(true);
     setSelectedConversationId(conversationId);
+    setSelectedConversationVersion(version);
   };
 
   const handleConversationTitleChange = async (
@@ -111,7 +117,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation({ conversationId: selectedConversationId });
+      stopConversation({
+        conversationId: selectedConversationId,
+        version: selectedConversationVersion,
+      });
     }
   };
 
@@ -162,7 +171,12 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
         >
           <ConversationCard
             onDelete={() => handleDeleteProject(project.conversation_id)}
-            onStop={() => handleStopConversation(project.conversation_id)}
+            onStop={() =>
+              handleStopConversation(
+                project.conversation_id,
+                project.conversation_version,
+              )
+            }
             onChangeTitle={(title) =>
               handleConversationTitleChange(project.conversation_id, title)
             }
@@ -176,6 +190,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             createdAt={project.created_at}
             conversationStatus={project.status}
             conversationId={project.conversation_id}
+            conversationVersion={project.conversation_version}
             contextMenuOpen={openContextMenuId === project.conversation_id}
             onContextMenuToggle={(isOpen) =>
               setOpenContextMenuId(isOpen ? project.conversation_id : null)

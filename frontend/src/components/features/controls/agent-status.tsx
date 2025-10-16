@@ -19,6 +19,7 @@ export interface AgentStatusProps {
   handleStop: () => void;
   handleResumeAgent: () => void;
   disabled?: boolean;
+  isPausing?: boolean;
 }
 
 export function AgentStatus({
@@ -26,6 +27,7 @@ export function AgentStatus({
   handleStop,
   handleResumeAgent,
   disabled = false,
+  isPausing = false,
 }: AgentStatusProps) {
   const { t } = useTranslation();
   const { setShouldShownAgentLoading } = useConversationStore();
@@ -43,6 +45,7 @@ export function AgentStatus({
   );
 
   const shouldShownAgentLoading =
+    isPausing ||
     curAgentState === AgentState.INIT ||
     curAgentState === AgentState.LOADING ||
     webSocketStatus === "CONNECTING";
