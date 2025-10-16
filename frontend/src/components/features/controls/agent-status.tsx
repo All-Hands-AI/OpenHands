@@ -61,8 +61,11 @@ export function AgentStatus({
   }, [shouldShownAgentLoading, setShouldShownAgentLoading]);
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      <span className="text-[11px] text-white font-normal leading-5">
+    <div className={cn("flex items-center gap-1 min-w-0", className)}>
+      <span
+        className="text-[11px] text-white font-normal leading-5 flex-1 min-w-0 max-w-full whitespace-normal break-words"
+        title={t(statusCode)}
+      >
         {t(statusCode)}
       </span>
       <div
