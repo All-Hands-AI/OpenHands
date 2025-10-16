@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from anyio import get_cancelled_exc_class
 from fastapi import FastAPI
+from fastapi.routing import Mount
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 
@@ -107,13 +108,15 @@ class MCPProxyManager:
         mcp_app = close_on_double_start(
             self.proxy.http_app(path='/sse', transport='sse')
         )
-        app.mount('/mcp', mcp_app)
-
         # Remove any existing mounts at root path
-        if '/mcp' in app.routes:
-            app.routes.remove('/mcp')
+        for route in list(app.routes):
+            if isinstance(route, Mount) and route.path in ('/mcp', '/'):
+                app.routes.remove(route)
+                logger.info(f'Remove existing mounts at {route.path}')
 
+        app.mount('/mcp', mcp_app)
         app.mount('/', mcp_app)
+
         logger.info('Mounted FastMCP Proxy app at /mcp')
 
     async def update_and_remount(
