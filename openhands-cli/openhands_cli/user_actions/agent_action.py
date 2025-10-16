@@ -1,3 +1,4 @@
+import html
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk.security.confirmation_policy import (
@@ -37,7 +38,7 @@ def ask_user_confirmation(
             or '[unknown action]'
         )
         print_formatted_text(
-            HTML(f'<grey>  {i}. {tool_name}: {action_content}...</grey>')
+            HTML(f'<grey>  {i}. {tool_name}: {html.escape(action_content)}...</grey>')
         )
 
     question = 'Choose an option:'

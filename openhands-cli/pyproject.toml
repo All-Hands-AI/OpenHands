@@ -4,7 +4,7 @@ requires = [ "hatchling>=1.25" ]
 
 [project]
 name = "openhands"
-version = "0.1.0"
+version = "1.0.1"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
 license = { text = "MIT" }
@@ -15,15 +15,16 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+# Using Git URLs for dependencies so installs from PyPI pull from GitHub
+# TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk",
-  "openhands-tools",
+  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@50b094a92817e448ec4352d2950df4f19edd5a9f#subdirectory=openhands/sdk",
+  "openhands-tools @ git+https://github.com/All-Hands-AI/agent-sdk.git@50b094a92817e448ec4352d2950df4f19edd5a9f#subdirectory=openhands/tools",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
 
-# Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands = "openhands_cli.simple_main:main"
+scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory
@@ -41,6 +42,9 @@ dev = [
   "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = [ "openhands_cli" ]
@@ -96,5 +100,5 @@ disallow_untyped_defs = true
 ignore_missing_imports = true
 
 [tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "3ce74a16565be0e3f7e7617174bd0323e866597f" }
+openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }
+openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }

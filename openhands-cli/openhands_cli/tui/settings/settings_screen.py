@@ -67,9 +67,7 @@ class SettingsScreen:
                 (
                     '   Confirmation Mode',
                     'Enabled'
-                    if not isinstance(
-                        self.conversation.state.confirmation_policy, NeverConfirm
-                    )
+                    if self.conversation.is_confirmation_mode_active
                     else 'Disabled',
                 ),
                 (
