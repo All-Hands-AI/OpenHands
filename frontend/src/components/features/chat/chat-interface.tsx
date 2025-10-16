@@ -13,7 +13,7 @@ import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
-import { Messages } from "./messages";
+import { Messages as V0Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
@@ -31,12 +31,17 @@ import {
   hasUserEvent,
   shouldRenderEvent,
 } from "./event-content-helpers/should-render-event";
+import {
+  Messages as V1Messages,
+  hasUserEvent as hasV1UserEvent,
+  shouldRenderEvent as shouldRenderV1Event,
+} from "#/components/v1/chat";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
-import { isV0Event } from "#/types/v1/type-guards";
+import { isV0Event, isV1Event } from "#/types/v1/type-guards";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 function getEntryPoint(
@@ -83,10 +88,17 @@ export function ChatInterface() {
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
-  const events = storeEvents
+  // Filter V0 events
+  const v0Events = storeEvents
     .filter(isV0Event)
     .filter(isActionOrObservation)
     .filter(shouldRenderEvent);
+
+  // Filter V1 events
+  const v1Events = storeEvents.filter(isV1Event).filter(shouldRenderV1Event);
+
+  // Combined events count for tracking
+  const totalEvents = v0Events.length + v1Events.length;
 
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(
@@ -99,7 +111,8 @@ export function ChatInterface() {
             isOpenHandsAction(event) &&
             event.source === "agent" &&
             event.action !== "system",
-        ),
+        ) ||
+      storeEvents.filter(isV1Event).some((event) => event.source === "agent"),
     [storeEvents],
   );
 
@@ -111,7 +124,7 @@ export function ChatInterface() {
     // Create mutable copies of the arrays
     const images = [...originalImages];
     const files = [...originalFiles];
-    if (events.length === 0) {
+    if (totalEvents === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
@@ -122,7 +135,7 @@ export function ChatInterface() {
       });
     } else {
       posthog.capture("user_message_sent", {
-        session_message_count: events.length,
+        session_message_count: totalEvents,
         current_message_length: content.length,
       });
     }
@@ -180,7 +193,9 @@ export function ChatInterface() {
     onChatBodyScroll,
   };
 
-  const userEventsExist = hasUserEvent(events);
+  const v0UserEventsExist = hasUserEvent(v0Events);
+  const v1UserEventsExist = hasV1UserEvent(v1Events);
+  const userEventsExist = v0UserEventsExist || v1UserEventsExist;
 
   return (
     <ScrollProvider value={scrollProviderValue}>
@@ -205,9 +220,18 @@ export function ChatInterface() {
             </div>
           )}
 
-          {!isLoadingMessages && userEventsExist && (
-            <Messages
-              messages={events}
+          {!isLoadingMessages && v0UserEventsExist && (
+            <V0Messages
+              messages={v0Events}
+              isAwaitingUserConfirmation={
+                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+              }
+            />
+          )}
+
+          {v1UserEventsExist && (
+            <V1Messages
+              messages={v1Events}
               isAwaitingUserConfirmation={
                 curAgentState === AgentState.AWAITING_USER_CONFIRMATION
               }
@@ -219,7 +243,7 @@ export function ChatInterface() {
           <div className="flex justify-between relative">
             <div className="flex items-center gap-1">
               <ConfirmationModeEnabled />
-              {events.length > 0 && (
+              {totalEvents > 0 && (
                 <TrajectoryActions
                   onPositiveFeedback={() =>
                     onClickShareFeedbackActionButton("positive")

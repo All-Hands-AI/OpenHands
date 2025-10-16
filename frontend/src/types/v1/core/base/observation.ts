@@ -78,6 +78,39 @@ export interface ExecuteBashObservation
   metadata: CmdOutputMetadata;
 }
 
+interface FileEditorObservation
+  extends ObservationBase<"FileEditorObservation"> {
+  /**
+   * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
+   */
+  command: "view" | "create" | "str_replace" | "insert" | "undo_edit";
+  /**
+   * The output message from the tool for the LLM to see.
+   */
+  output: string;
+  /**
+   * The file path that was edited.
+   */
+  path: string | null;
+  /**
+   * Indicates if the file previously existed. If not, it was created.
+   */
+  prev_exist: boolean;
+  /**
+   * The content of the file before the edit.
+   */
+  old_content: string | null;
+  /**
+   * The content of the file after the edit.
+   */
+  new_content: string | null;
+  /**
+   * Error message if any.
+   */
+  error: string | null;
+}
+
+// Keep StrReplaceEditorObservation as a separate interface for backward compatibility
 interface StrReplaceEditorObservation
   extends ObservationBase<"StrReplaceEditorObservation"> {
   /**
@@ -132,5 +165,6 @@ export type Observation =
   | ThinkObservation
   | BrowserObservation
   | ExecuteBashObservation
+  | FileEditorObservation
   | StrReplaceEditorObservation
   | TaskTrackerObservation;

@@ -41,6 +41,37 @@ export interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
   reset: boolean;
 }
 
+interface FileEditorAction extends ActionBase<"FileEditorAction"> {
+  /**
+   * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
+   */
+  command: "view" | "create" | "str_replace" | "insert" | "undo_edit";
+  /**
+   * Absolute path to file or directory.
+   */
+  path: string;
+  /**
+   * Required parameter of `create` command, with the content of the file to be created.
+   */
+  file_text: string | null;
+  /**
+   * Required parameter of `str_replace` command containing the string in `path` to replace.
+   */
+  old_str: string | null;
+  /**
+   * Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.
+   */
+  new_str: string | null;
+  /**
+   * Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`. Must be >= 1.
+   */
+  insert_line: number | null;
+  /**
+   * Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.
+   */
+  view_range: [number, number] | null;
+}
+
 interface StrReplaceEditorAction extends ActionBase<"StrReplaceEditorAction"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
@@ -169,6 +200,7 @@ export type Action =
   | FinishAction
   | ThinkAction
   | ExecuteBashAction
+  | FileEditorAction
   | StrReplaceEditorAction
   | TaskTrackerAction
   | BrowserNavigateAction
