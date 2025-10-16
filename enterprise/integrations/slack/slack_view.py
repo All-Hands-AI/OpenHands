@@ -200,7 +200,6 @@ class SlackNewConversationView(SlackViewInterface):
             if conversation_instructions
             else None,
             image_urls=None,
-            attach_convo_id=True,
             replay_json=None,
             conversation_trigger=ConversationTrigger.SLACK,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
