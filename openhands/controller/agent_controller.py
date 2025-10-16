@@ -923,8 +923,6 @@ class AgentController:
                         raise LLMContextWindowExceedError()
                 else:
                     raise e
-            except Exception as e:
-                logger.warning(f'Error while getting action from LLM: {e}')
 
         if action.runnable:
             if self.state.confirmation_mode and (
