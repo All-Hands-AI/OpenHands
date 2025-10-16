@@ -412,7 +412,7 @@ class WebSession:
 
                     # Log every 2 seconds to reduce spam
                     if _waiting_times % (20 if sleep_duration == 0.1 else 2) == 0:
-                        self.logger.warning(
+                        self.logger.debug(
                             f'There is no listening client in the current room,'
                             f' waiting for the {_waiting_times}th attempt (timeout: {client_wait_timeout}s): {self.sid}'
                         )
