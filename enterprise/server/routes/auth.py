@@ -6,7 +6,7 @@ from urllib.parse import quote
 
 import posthog
 from pydantic import SecretStr
-from enterprise.server.auth.gitlab_sync import schedule_gitlab_repo_sync
+from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from fastapi import APIRouter, Request, Response, status, Header
 from fastapi.responses import JSONResponse, RedirectResponse
