@@ -270,7 +270,9 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
             raise StartingConvoException('Conversation no longer exists.')
 
         provider_tokens = await saas_user_auth.get_provider_tokens()
-        providers_set = list(provider_tokens.keys())
+
+        # Should we raise here if there are no provider tokens?
+        providers_set = list(provider_tokens.keys()) if provider_tokens else []
 
         conversation_init_data = await setup_init_conversation_settings(
             user_id, self.conversation_id, providers_set
