@@ -114,6 +114,7 @@ def test_run_agent_variant_tests_v1_noop_when_manager_disabled(
 
 
 @patch('experiments.experiment_manager.ENABLE_EXPERIMENT_MANAGER', True)
+@patch('experiments.experiment_manager.EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT', True)
 def test_run_agent_variant_tests_v1_calls_handler_and_sets_system_prompt(monkeypatch):
     """When enabled, it should call the condenser experiment handler and set the long-horizon system prompt."""
     agent = make_agent()
