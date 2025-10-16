@@ -11,13 +11,9 @@ import { processFiles, processImages } from "#/utils/file-processing";
 
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
-  onStop: () => void;
 }
 
-export function InteractiveChatBox({
-  onSubmit,
-  onStop,
-}: InteractiveChatBoxProps) {
+export function InteractiveChatBox({ onSubmit }: InteractiveChatBoxProps) {
   const {
     images,
     files,
@@ -145,7 +141,6 @@ export function InteractiveChatBox({
       <CustomChatInput
         disabled={isDisabled}
         onSubmit={handleSubmit}
-        onStop={onStop}
         onFilesPaste={handleUpload}
         conversationStatus={conversation?.status || null}
       />

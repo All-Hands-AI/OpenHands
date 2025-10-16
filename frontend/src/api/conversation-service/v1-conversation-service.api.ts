@@ -64,6 +64,41 @@ export interface V1AppConversationStartTaskPage {
   next_page_id: string | null;
 }
 
+export type V1SandboxStatus =
+  | "MISSING"
+  | "STARTING"
+  | "RUNNING"
+  | "STOPPED"
+  | "PAUSED";
+
+export type V1AgentExecutionStatus =
+  | "RUNNING"
+  | "AWAITING_USER_INPUT"
+  | "AWAITING_USER_CONFIRMATION"
+  | "FINISHED"
+  | "PAUSED"
+  | "STOPPED";
+
+export interface V1AppConversation {
+  id: string;
+  created_by_user_id: string | null;
+  sandbox_id: string;
+  selected_repository: string | null;
+  selected_branch: string | null;
+  git_provider: Provider | null;
+  title: string | null;
+  trigger: ConversationTrigger | null;
+  pr_number: number[];
+  llm_model: string | null;
+  metrics: unknown | null;
+  created_at: string;
+  updated_at: string;
+  sandbox_status: V1SandboxStatus;
+  agent_status: V1AgentExecutionStatus | null;
+  conversation_url: string | null;
+  session_api_key: string | null;
+}
+
 class V1ConversationService {
   /**
    * Build headers for V1 API requests that require session authentication
@@ -246,6 +281,62 @@ class V1ConversationService {
       url,
       {},
       { headers },
+    );
+    return data;
+  }
+
+  /**
+   * Pause a V1 sandbox
+   * Calls the /api/v1/sandboxes/{id}/pause endpoint
+   *
+   * @param sandboxId The sandbox ID to pause
+   * @returns Success response
+   */
+  static async pauseSandbox(sandboxId: string): Promise<{ success: boolean }> {
+    const { data } = await openHands.post<{ success: boolean }>(
+      `/api/v1/sandboxes/${sandboxId}/pause`,
+      {},
+    );
+    return data;
+  }
+
+  /**
+   * Resume a V1 sandbox
+   * Calls the /api/v1/sandboxes/{id}/resume endpoint
+   *
+   * @param sandboxId The sandbox ID to resume
+   * @returns Success response
+   */
+  static async resumeSandbox(sandboxId: string): Promise<{ success: boolean }> {
+    const { data } = await openHands.post<{ success: boolean }>(
+      `/api/v1/sandboxes/${sandboxId}/resume`,
+      {},
+    );
+    return data;
+  }
+
+  /**
+   * Batch get V1 app conversations by their IDs
+   * Returns null for any missing conversations
+   *
+   * @param ids Array of conversation IDs (max 100)
+   * @returns Array of conversations or null for missing ones
+   */
+  static async batchGetAppConversations(
+    ids: string[],
+  ): Promise<(V1AppConversation | null)[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    if (ids.length > 100) {
+      throw new Error("Cannot request more than 100 conversations at once");
+    }
+
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("ids", id));
+
+    const { data } = await openHands.get<(V1AppConversation | null)[]>(
+      `/api/v1/app-conversations?${params.toString()}`,
     );
     return data;
   }

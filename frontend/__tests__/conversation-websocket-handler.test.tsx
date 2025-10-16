@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { screen, waitFor, render } from "@testing-library/react";
+import { screen, waitFor, render, cleanup } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import {
@@ -19,11 +19,27 @@ import { conversationWebSocketTestSetup } from "./helpers/msw-websocket-setup";
 // MSW WebSocket mock setup
 const { wsLink, server: mswServer } = conversationWebSocketTestSetup();
 
-beforeAll(() => mswServer.listen());
+beforeAll(() => {
+  // The global MSW server from vitest.setup.ts is already running
+  // We just need to start our WebSocket-specific server
+  mswServer.listen({ onUnhandledRequest: "bypass" });
+});
+
 afterEach(() => {
   mswServer.resetHandlers();
+  // Clean up any React components
+  cleanup();
 });
-afterAll(() => mswServer.close());
+
+afterAll(async () => {
+  // Close the WebSocket MSW server
+  mswServer.close();
+
+  // Give time for any pending WebSocket connections to close
+  await new Promise((resolve) => {
+    setTimeout(resolve, 100);
+  });
+});
 
 // Helper function to render components with ConversationWebSocketProvider
 function renderWithWebSocketContext(

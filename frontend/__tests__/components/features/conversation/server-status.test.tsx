@@ -17,14 +17,14 @@ vi.mock("#/hooks/use-agent-state", () => ({
 const mockStartConversationMutate = vi.fn();
 const mockStopConversationMutate = vi.fn();
 
-vi.mock("#/hooks/mutation/use-start-conversation", () => ({
-  useStartConversation: () => ({
+vi.mock("#/hooks/mutation/use-unified-start-conversation", () => ({
+  useUnifiedStartConversation: () => ({
     mutate: mockStartConversationMutate,
   }),
 }));
 
-vi.mock("#/hooks/mutation/use-stop-conversation", () => ({
-  useStopConversation: () => ({
+vi.mock("#/hooks/mutation/use-unified-stop-conversation", () => ({
+  useUnifiedStopConversation: () => ({
     mutate: mockStopConversationMutate,
   }),
 }));
@@ -79,6 +79,10 @@ vi.mock("react-i18next", async () => {
 });
 
 describe("ServerStatus", () => {
+  // Mock functions for handlers
+  const mockHandleStop = vi.fn();
+  const mockHandleResumeAgent = vi.fn();
+
   // Helper function to mock agent state with specific state
   const mockAgentStore = (agentState: AgentState) => {
     vi.mocked(useAgentState).mockReturnValue({
@@ -96,20 +100,42 @@ describe("ServerStatus", () => {
 
     // Test RUNNING status
     const { rerender } = renderWithProviders(
-      <ServerStatus conversationStatus="RUNNING" />,
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
     );
     expect(screen.getByText("Running")).toBeInTheDocument();
 
     // Test STOPPED status
-    rerender(<ServerStatus conversationStatus="STOPPED" />);
+    rerender(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Server Stopped")).toBeInTheDocument();
 
     // Test STARTING status (shows "Running" due to agent state being RUNNING)
-    rerender(<ServerStatus conversationStatus="STARTING" />);
+    rerender(
+      <ServerStatus
+        conversationStatus="STARTING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Running")).toBeInTheDocument();
 
     // Test null status (shows "Running" due to agent state being RUNNING)
-    rerender(<ServerStatus conversationStatus={null} />);
+    rerender(
+      <ServerStatus
+        conversationStatus={null}
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
     expect(screen.getByText("Running")).toBeInTheDocument();
   });
 
@@ -119,7 +145,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -139,7 +171,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -159,7 +197,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="STARTING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STARTING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     expect(statusContainer).toBeInTheDocument();
@@ -176,12 +220,18 @@ describe("ServerStatus", () => {
     const user = userEvent.setup();
 
     // Clear previous calls
-    mockStopConversationMutate.mockClear();
+    mockHandleStop.mockClear();
 
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -189,21 +239,25 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    expect(mockStopConversationMutate).toHaveBeenCalledWith({
-      conversationId: "test-conversation-id",
-    });
+    expect(mockHandleStop).toHaveBeenCalledTimes(1);
   });
 
   it("should call start conversation mutation when start server is clicked", async () => {
     const user = userEvent.setup();
 
     // Clear previous calls
-    mockStartConversationMutate.mockClear();
+    mockHandleResumeAgent.mockClear();
 
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -211,10 +265,7 @@ describe("ServerStatus", () => {
     const startButton = screen.getByTestId("start-server-button");
     await user.click(startButton);
 
-    expect(mockStartConversationMutate).toHaveBeenCalledWith({
-      conversationId: "test-conversation-id",
-      providers: [],
-    });
+    expect(mockHandleResumeAgent).toHaveBeenCalledTimes(1);
   });
 
   it("should close context menu after stop server action", async () => {
@@ -223,7 +274,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="RUNNING"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Running").closest("div");
     await user.click(statusContainer!);
@@ -232,9 +289,7 @@ describe("ServerStatus", () => {
     await user.click(stopButton);
 
     // Context menu should be closed (handled by the component)
-    expect(mockStopConversationMutate).toHaveBeenCalledWith({
-      conversationId: "test-conversation-id",
-    });
+    expect(mockHandleStop).toHaveBeenCalledTimes(1);
   });
 
   it("should close context menu after start server action", async () => {
@@ -243,7 +298,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return STOPPED state
     mockAgentStore(AgentState.STOPPED);
 
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus="STOPPED"
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
     await user.click(statusContainer!);
@@ -261,7 +322,13 @@ describe("ServerStatus", () => {
     // Mock agent store to return RUNNING state
     mockAgentStore(AgentState.RUNNING);
 
-    renderWithProviders(<ServerStatus conversationStatus={null} />);
+    renderWithProviders(
+      <ServerStatus
+        conversationStatus={null}
+        handleStop={mockHandleStop}
+        handleResumeAgent={mockHandleResumeAgent}
+      />,
+    );
 
     const statusText = screen.getByText("Running");
     expect(statusText).toBeInTheDocument();
