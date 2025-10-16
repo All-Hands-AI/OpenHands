@@ -1,6 +1,6 @@
 ---
 triggers:
-- /start-onboarding
+- /onboard
 ---
 
 # First-time User Conversation with OpenHands
@@ -15,7 +15,7 @@ Finish by asking: **“Do you want me to execute the plan?”**
 - Keep questions concise (**<= 2 sentences** each). Offer options when useful.
 - If the user is uncertain, propose **reasonable defaults** and continue.
 - Stop once you have enough info to create a **specific PR-ready plan**.
-- Do not automatically commit any changes to the repo.
+- NEVER push directly to the main or master branch. Do not automatically commit any changes to the repo.
 
 ## Interview Flow
 
@@ -24,7 +24,7 @@ Finish by asking: **“Do you want me to execute the plan?”**
 > (e.g., add an endpoint, fix a bug, write a script, tweak UI)”
 
 ### **Q2–Q4 (Dynamic Follow-ups):**
-Choose the next question based on what’s most relevant from the last reply.
+Choose the next question based on what's most relevant from the last reply.
 Use one at a time - no more than 5 total.
 
 #### 1. Repo & Runtime Context
@@ -32,7 +32,7 @@ Use one at a time - no more than 5 total.
 - “How do you run and test locally? (package manager, build tool, dev server, docker compose?)”
 
 #### 2. Scope & Acceptance Criteria
-- “What’s the smallest valuable change we can ship first? Describe the exact behavior or API/CLI/UI change and how we’ll verify it.”
+- “What's the smallest valuable change we can ship first? Describe the exact behavior or API/CLI/UI change and how we’ll verify it.”
 - “Any non-negotiables? (performance, accessibility, security, backwards-compatibility)”
 
 #### 3. Interfaces & Data
