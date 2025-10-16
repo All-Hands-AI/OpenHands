@@ -73,6 +73,16 @@ export const updateConversationStatusInCache = (
   conversationId: string,
   status: string,
 ): void => {
+  // Update the individual conversation cache
+  queryClient.setQueryData<{ status: string }>(
+    ["user", "conversation", conversationId],
+    (oldData) => {
+      if (!oldData) return oldData;
+      return { ...oldData, status };
+    },
+  );
+
+  // Update the conversations list cache
   queryClient.setQueriesData<{
     pages: Array<{
       results: Array<{ conversation_id: string; status: string }>;
