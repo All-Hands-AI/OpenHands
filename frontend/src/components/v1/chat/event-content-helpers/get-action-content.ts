@@ -6,6 +6,20 @@ import {
   ExecuteBashAction,
   FileEditorAction,
   StrReplaceEditorAction,
+  MCPToolAction,
+  ThinkAction,
+  FinishAction,
+  TaskTrackerAction,
+  BrowserNavigateAction,
+  BrowserClickAction,
+  BrowserTypeAction,
+  BrowserGetStateAction,
+  BrowserGetContentAction,
+  BrowserScrollAction,
+  BrowserGoBackAction,
+  BrowserListTabsAction,
+  BrowserSwitchTabAction,
+  BrowserCloseTabAction,
 } from "#/types/v1/core/base/action";
 
 const getRiskText = (risk: SecurityRisk) => {
@@ -70,7 +84,7 @@ const getExecuteBashActionContent = (event: ActionEvent): string => {
 };
 
 // Tool Actions
-const getMCPToolActionContent = (action: ActionEvent["action"]): string => {
+const getMCPToolActionContent = (action: MCPToolAction): string => {
   // Early return if action doesn't have data property
   if (!("data" in action)) {
     return getNoContentActionContent();
@@ -83,7 +97,7 @@ const getMCPToolActionContent = (action: ActionEvent["action"]): string => {
 };
 
 // Simple Actions
-const getThinkActionContent = (action: ActionEvent["action"]): string => {
+const getThinkActionContent = (action: ThinkAction): string => {
   // Early return if action doesn't have thought property
   if (!("thought" in action)) {
     return getNoContentActionContent();
@@ -92,7 +106,7 @@ const getThinkActionContent = (action: ActionEvent["action"]): string => {
   return action.thought;
 };
 
-const getFinishActionContent = (action: ActionEvent["action"]): string => {
+const getFinishActionContent = (action: FinishAction): string => {
   // Early return if action doesn't have message property
   if (!("message" in action)) {
     return getNoContentActionContent();
@@ -102,7 +116,7 @@ const getFinishActionContent = (action: ActionEvent["action"]): string => {
 };
 
 // Complex Actions
-const getTaskTrackerActionContent = (action: ActionEvent["action"]): string => {
+const getTaskTrackerActionContent = (action: TaskTrackerAction): string => {
   // Early return if action doesn't have required properties
   if (!("command" in action && "task_list" in action)) {
     return getNoContentActionContent();
@@ -136,7 +150,19 @@ const getTaskTrackerActionContent = (action: ActionEvent["action"]): string => {
 };
 
 // Browser Actions
-const getBrowserActionContent = (action: ActionEvent["action"]): string => {
+type BrowserAction =
+  | BrowserNavigateAction
+  | BrowserClickAction
+  | BrowserTypeAction
+  | BrowserGetStateAction
+  | BrowserGetContentAction
+  | BrowserScrollAction
+  | BrowserGoBackAction
+  | BrowserListTabsAction
+  | BrowserSwitchTabAction
+  | BrowserCloseTabAction;
+
+const getBrowserActionContent = (action: BrowserAction): string => {
   // Early return if action doesn't have kind property
   if (!("kind" in action)) {
     return getNoContentActionContent();
@@ -181,16 +207,16 @@ export const getActionContent = (event: ActionEvent): string => {
       );
 
     case "MCPToolAction":
-      return getMCPToolActionContent(action);
+      return getMCPToolActionContent(action as MCPToolAction);
 
     case "ThinkAction":
-      return getThinkActionContent(action);
+      return getThinkActionContent(action as ThinkAction);
 
     case "FinishAction":
-      return getFinishActionContent(action);
+      return getFinishActionContent(action as FinishAction);
 
     case "TaskTrackerAction":
-      return getTaskTrackerActionContent(action);
+      return getTaskTrackerActionContent(action as TaskTrackerAction);
 
     case "BrowserNavigateAction":
     case "BrowserClickAction":
@@ -202,7 +228,7 @@ export const getActionContent = (event: ActionEvent): string => {
     case "BrowserListTabsAction":
     case "BrowserSwitchTabAction":
     case "BrowserCloseTabAction":
-      return getBrowserActionContent(action);
+      return getBrowserActionContent(action as BrowserAction);
 
     default:
       return getDefaultEventContent(event);

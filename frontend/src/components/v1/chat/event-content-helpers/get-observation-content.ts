@@ -2,9 +2,21 @@ import { ObservationEvent } from "#/types/v1/core";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
+import {
+  MCPToolObservation,
+  FinishObservation,
+  ThinkObservation,
+  BrowserObservation,
+  ExecuteBashObservation,
+  FileEditorObservation,
+  StrReplaceEditorObservation,
+  TaskTrackerObservation,
+} from "#/types/v1/core/base/observation";
 
 // File Editor Observations
-const getFileEditorObservationContent = (event: ObservationEvent): string => {
+const getFileEditorObservationContent = (
+  event: ObservationEvent<FileEditorObservation | StrReplaceEditorObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have required properties
@@ -31,7 +43,9 @@ const getFileEditorObservationContent = (event: ObservationEvent): string => {
 };
 
 // Command Observations
-const getExecuteBashObservationContent = (event: ObservationEvent): string => {
+const getExecuteBashObservationContent = (
+  event: ObservationEvent<ExecuteBashObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have output property
@@ -49,7 +63,9 @@ const getExecuteBashObservationContent = (event: ObservationEvent): string => {
 };
 
 // Tool Observations
-const getBrowserObservationContent = (event: ObservationEvent): string => {
+const getBrowserObservationContent = (
+  event: ObservationEvent<BrowserObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have required properties
@@ -72,7 +88,9 @@ const getBrowserObservationContent = (event: ObservationEvent): string => {
   return contentDetails;
 };
 
-const getMCPToolObservationContent = (event: ObservationEvent): string => {
+const getMCPToolObservationContent = (
+  event: ObservationEvent<MCPToolObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have required properties
@@ -108,7 +126,9 @@ const getMCPToolObservationContent = (event: ObservationEvent): string => {
 };
 
 // Complex Observations
-const getTaskTrackerObservationContent = (event: ObservationEvent): string => {
+const getTaskTrackerObservationContent = (
+  event: ObservationEvent<TaskTrackerObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have required properties
@@ -152,7 +172,9 @@ const getTaskTrackerObservationContent = (event: ObservationEvent): string => {
 };
 
 // Simple Observations
-const getThinkObservationContent = (event: ObservationEvent): string => {
+const getThinkObservationContent = (
+  event: ObservationEvent<ThinkObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have content property
@@ -169,7 +191,9 @@ const getThinkObservationContent = (event: ObservationEvent): string => {
   return "";
 };
 
-const getFinishObservationContent = (event: ObservationEvent): string => {
+const getFinishObservationContent = (
+  event: ObservationEvent<FinishObservation>,
+): string => {
   const { observation } = event;
 
   // Early return if observation doesn't have message property
@@ -186,25 +210,41 @@ export const getObservationContent = (event: ObservationEvent): string => {
   switch (observationType) {
     case "FileEditorObservation":
     case "StrReplaceEditorObservation":
-      return getFileEditorObservationContent(event);
+      return getFileEditorObservationContent(
+        event as ObservationEvent<
+          FileEditorObservation | StrReplaceEditorObservation
+        >,
+      );
 
     case "ExecuteBashObservation":
-      return getExecuteBashObservationContent(event);
+      return getExecuteBashObservationContent(
+        event as ObservationEvent<ExecuteBashObservation>,
+      );
 
     case "BrowserObservation":
-      return getBrowserObservationContent(event);
+      return getBrowserObservationContent(
+        event as ObservationEvent<BrowserObservation>,
+      );
 
     case "MCPToolObservation":
-      return getMCPToolObservationContent(event);
+      return getMCPToolObservationContent(
+        event as ObservationEvent<MCPToolObservation>,
+      );
 
     case "TaskTrackerObservation":
-      return getTaskTrackerObservationContent(event);
+      return getTaskTrackerObservationContent(
+        event as ObservationEvent<TaskTrackerObservation>,
+      );
 
     case "ThinkObservation":
-      return getThinkObservationContent(event);
+      return getThinkObservationContent(
+        event as ObservationEvent<ThinkObservation>,
+      );
 
     case "FinishObservation":
-      return getFinishObservationContent(event);
+      return getFinishObservationContent(
+        event as ObservationEvent<FinishObservation>,
+      );
 
     default:
       return getDefaultEventContent(event);
