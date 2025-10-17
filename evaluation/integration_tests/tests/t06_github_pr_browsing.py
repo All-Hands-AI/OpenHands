@@ -6,7 +6,7 @@ from openhands.runtime.base import Runtime
 
 
 class Test(BaseIntegrationTest):
-    INSTRUCTION = 'Look at https://github.com/All-Hands-AI/OpenHands/pull/8, and tell me what is happening there and what did @asadm suggest.'
+    INSTRUCTION = 'Look at https://github.com/OpenHands/OpenHands/pull/8, and tell me what is happening there and what did @asadm suggest.'
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
