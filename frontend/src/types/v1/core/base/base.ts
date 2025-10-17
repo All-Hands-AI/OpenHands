@@ -3,6 +3,7 @@ type EventType =
   | "Finish"
   | "Think"
   | "ExecuteBash"
+  | "FileEditor"
   | "StrReplaceEditor"
   | "TaskTracker";
 
