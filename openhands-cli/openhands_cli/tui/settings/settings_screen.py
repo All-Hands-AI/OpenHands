@@ -1,5 +1,12 @@
 import os
 
+from openhands.sdk import LLM, BaseConversation, LocalFileStore
+from openhands.sdk.security.confirmation_policy import NeverConfirm
+from openhands.tools.preset.default import get_default_agent
+from prompt_toolkit import HTML, print_formatted_text
+from prompt_toolkit.shortcuts import print_container
+from prompt_toolkit.widgets import Frame, TextArea
+
 from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 from openhands_cli.pt_style import COLOR_GREY
@@ -16,13 +23,6 @@ from openhands_cli.user_actions.settings_action import (
     save_settings_confirmation,
     settings_type_confirmation,
 )
-from prompt_toolkit import HTML, print_formatted_text
-from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.widgets import Frame, TextArea
-
-from openhands.sdk import LLM, BaseConversation, LocalFileStore
-from openhands.sdk.security.confirmation_policy import NeverConfirm
-from openhands.tools.preset.default import get_default_agent
 
 
 class SettingsScreen:
@@ -67,9 +67,7 @@ class SettingsScreen:
                 (
                     '   Confirmation Mode',
                     'Enabled'
-                    if not isinstance(
-                        self.conversation.state.confirmation_policy, NeverConfirm
-                    )
+                    if self.conversation.is_confirmation_mode_active
                     else 'Disabled',
                 ),
                 (
@@ -116,9 +114,9 @@ class SettingsScreen:
 
         self.configure_settings()
 
-    def configure_settings(self):
+    def configure_settings(self, first_time=False):
         try:
-            settings_type = settings_type_confirmation()
+            settings_type = settings_type_confirmation(first_time=first_time)
         except KeyboardInterrupt:
             return
 
@@ -127,18 +125,18 @@ class SettingsScreen:
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
 
-    def handle_basic_settings(self, escapable=True):
+    def handle_basic_settings(self):
         step_counter = StepCounter(3)
         try:
-            provider = choose_llm_provider(step_counter, escapable=escapable)
-            llm_model = choose_llm_model(step_counter, provider, escapable=escapable)
+            provider = choose_llm_provider(step_counter, escapable=True)
+            llm_model = choose_llm_model(step_counter, provider, escapable=True)
             api_key = prompt_api_key(
                 step_counter,
                 provider,
                 self.conversation.state.agent.llm.api_key
                 if self.conversation
                 else None,
-                escapable=escapable,
+                escapable=True,
             )
             save_settings_confirmation()
         except KeyboardInterrupt:

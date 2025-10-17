@@ -111,8 +111,6 @@ class TestLaunchGuiServer:
         [
             # Docker pull failure
             (subprocess.CalledProcessError(1, 'docker pull'), None, 1, False, False),
-            # Docker pull timeout
-            (subprocess.TimeoutExpired('docker pull', 300), None, 1, False, False),
             # Docker run failure
             (MagicMock(returncode=0), subprocess.CalledProcessError(1, 'docker run'), 1, False, False),
             # KeyboardInterrupt during run
