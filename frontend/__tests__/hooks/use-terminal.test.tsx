@@ -13,6 +13,22 @@ vi.mock("#/context/ws-client-provider", () => ({
   }),
 }));
 
+// Mock useActiveConversation
+vi.mock("#/hooks/query/use-active-conversation", () => ({
+  useActiveConversation: () => ({
+    data: {
+      id: "test-conversation-id",
+      conversation_version: "V0",
+    },
+    isFetched: true,
+  }),
+}));
+
+// Mock useConversationWebSocket (returns null for V0 conversations)
+vi.mock("#/contexts/conversation-websocket-context", () => ({
+  useConversationWebSocket: () => null,
+}));
+
 function TestTerminalComponent() {
   const ref = useTerminal();
   return <div ref={ref} />;

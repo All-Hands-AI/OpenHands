@@ -1,7 +1,18 @@
-import { OpenHandsEvent, ObservationEvent, BaseEvent } from "./core";
+import {
+  OpenHandsEvent,
+  ObservationEvent,
+  BaseEvent,
+  ExecuteBashAction,
+  ExecuteBashObservation,
+} from "./core";
 import { AgentErrorEvent } from "./core/events/observation-event";
 import { MessageEvent } from "./core/events/message-event";
 import { ActionEvent } from "./core/events/action-event";
+import {
+  ConversationStateUpdateEvent,
+  ConversationStateUpdateEventAgentStatus,
+  ConversationStateUpdateEventFullState,
+} from "./core/events/conversation-state-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -16,14 +27,7 @@ export function isBaseEvent(value: unknown): value is BaseEvent {
     "id" in value &&
     "timestamp" in value &&
     "source" in value &&
-    typeof value.id === "string" &&
-    value.id.length > 0 &&
-    typeof value.timestamp === "string" &&
-    value.timestamp.length > 0 &&
-    typeof value.source === "string" &&
-    (value.source === "agent" ||
-      value.source === "user" ||
-      value.source === "environment")
+    "kind" in value
   );
 }
 
@@ -73,6 +77,40 @@ export const isActionEvent = (event: OpenHandsEvent): event is ActionEvent =>
   "tool_call_id" in event &&
   typeof event.tool_name === "string" &&
   typeof event.tool_call_id === "string";
+
+/**
+ * Type guard function to check if an action event is an ExecuteBashAction
+ */
+export const isExecuteBashActionEvent = (
+  event: OpenHandsEvent,
+): event is ActionEvent<ExecuteBashAction> =>
+  isActionEvent(event) && event.action.kind === "ExecuteBashAction";
+
+/**
+ * Type guard function to check if an observation event is an ExecuteBashObservation
+ */
+export const isExecuteBashObservationEvent = (
+  event: OpenHandsEvent,
+): event is ObservationEvent<ExecuteBashObservation> =>
+  isObservationEvent(event) &&
+  event.observation.kind === "ExecuteBashObservation";
+
+/**
+ * Type guard function to check if an event is a conversation state update event
+ */
+export const isConversationStateUpdateEvent = (
+  event: OpenHandsEvent,
+): event is ConversationStateUpdateEvent =>
+  "kind" in event && event.kind === "ConversationStateUpdateEvent";
+
+export const isFullStateConversationStateUpdateEvent = (
+  event: ConversationStateUpdateEvent,
+): event is ConversationStateUpdateEventFullState => event.key === "full_state";
+
+export const isAgentStatusConversationStateUpdateEvent = (
+  event: ConversationStateUpdateEvent,
+): event is ConversationStateUpdateEventAgentStatus =>
+  event.key === "agent_status";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

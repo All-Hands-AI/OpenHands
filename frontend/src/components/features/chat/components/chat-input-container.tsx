@@ -15,7 +15,6 @@ interface ChatInputContainerProps {
   chatInputRef: React.RefObject<HTMLDivElement | null>;
   handleFileIconClick: (isDisabled: boolean) => void;
   handleSubmit: () => void;
-  handleStop: (onStop?: () => void) => void;
   handleResumeAgent: () => void;
   onDragOver: (e: React.DragEvent, isDisabled: boolean) => void;
   onDragLeave: (e: React.DragEvent, isDisabled: boolean) => void;
@@ -25,7 +24,6 @@ interface ChatInputContainerProps {
   onKeyDown: (e: React.KeyboardEvent) => void;
   onFocus?: () => void;
   onBlur?: () => void;
-  onStop?: () => void;
 }
 
 export function ChatInputContainer({
@@ -38,7 +36,6 @@ export function ChatInputContainer({
   chatInputRef,
   handleFileIconClick,
   handleSubmit,
-  handleStop,
   handleResumeAgent,
   onDragOver,
   onDragLeave,
@@ -48,7 +45,6 @@ export function ChatInputContainer({
   onKeyDown,
   onFocus,
   onBlur,
-  onStop,
 }: ChatInputContainerProps) {
   return (
     <div
@@ -80,9 +76,7 @@ export function ChatInputContainer({
       <ChatInputActions
         conversationStatus={conversationStatus}
         disabled={disabled}
-        handleStop={handleStop}
         handleResumeAgent={handleResumeAgent}
-        onStop={onStop}
       />
     </div>
   );

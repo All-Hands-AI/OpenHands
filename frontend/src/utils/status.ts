@@ -1,4 +1,4 @@
-import { WebSocketStatus } from "#/context/ws-client-provider";
+import { V0_WebSocketStatus } from "#/context/ws-client-provider";
 import { I18nKey } from "#/i18n/declaration";
 import { AgentState } from "#/types/agent-state";
 import { ConversationStatus } from "#/types/conversation-status";
@@ -43,7 +43,7 @@ export const AGENT_STATUS_MAP: {
 };
 
 export function getIndicatorColor(
-  webSocketStatus: WebSocketStatus,
+  webSocketStatus: V0_WebSocketStatus,
   conversationStatus: ConversationStatus | null,
   runtimeStatus: RuntimeStatus | null,
   agentState: AgentState | null,
@@ -99,7 +99,7 @@ export function getIndicatorColor(
 
 export function getStatusCode(
   statusMessage: StatusMessage,
-  webSocketStatus: WebSocketStatus,
+  webSocketStatus: V0_WebSocketStatus,
   conversationStatus: ConversationStatus | null,
   runtimeStatus: RuntimeStatus | null,
   agentState: AgentState | null,

@@ -10,7 +10,7 @@ import { MicroagentsModalHeader } from "./microagents-modal-header";
 import { MicroagentsLoadingState } from "./microagents-loading-state";
 import { MicroagentsEmptyState } from "./microagents-empty-state";
 import { MicroagentItem } from "./microagent-item";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 interface MicroagentsModalProps {
   onClose: () => void;
@@ -18,7 +18,7 @@ interface MicroagentsModalProps {
 
 export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );

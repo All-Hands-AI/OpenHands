@@ -21,6 +21,7 @@ interface ConversationCardProps {
   createdAt?: string; // ISO 8601
   conversationStatus?: ConversationStatus;
   conversationId?: string; // Optional conversation ID for VS Code URL
+  conversationVersion?: "V0" | "V1";
   contextMenuOpen?: boolean;
   onContextMenuToggle?: (isOpen: boolean) => void;
 }
@@ -39,6 +40,7 @@ export function ConversationCard({
   createdAt,
   conversationId,
   conversationStatus,
+  conversationVersion,
   contextMenuOpen = false,
   onContextMenuToggle,
 }: ConversationCardProps) {
@@ -117,6 +119,7 @@ export function ConversationCard({
           titleMode={titleMode}
           onTitleSave={onTitleSave}
           conversationStatus={conversationStatus}
+          conversationVersion={conversationVersion}
         />
 
         {hasContextMenu && (

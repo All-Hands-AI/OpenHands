@@ -5,12 +5,12 @@ import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { VSCODE_IN_NEW_TAB } from "#/utils/feature-flags";
 import { WaitingForRuntimeMessage } from "#/components/features/chat/waiting-for-runtime-message";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 function VSCodeTab() {
   const { t } = useTranslation();
   const { data, isLoading, error } = useVSCodeUrl();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [isCrossProtocol, setIsCrossProtocol] = useState(false);

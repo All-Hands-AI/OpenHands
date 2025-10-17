@@ -28,7 +28,12 @@ import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useEventStore } from "#/stores/use-event-store";
 
-export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
+/**
+ * @deprecated Use `V1_WebSocketConnectionState` from `conversation-websocket-context.tsx` instead.
+ * This type is for legacy V0 conversations only.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type V0_WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -69,7 +74,7 @@ const isMessageAction = (
   isUserMessage(event) || isAssistantMessage(event);
 
 interface UseWsClient {
-  webSocketStatus: WebSocketStatus;
+  webSocketStatus: V0_WebSocketStatus;
   isLoadingMessages: boolean;
   send: (event: Record<string, unknown>) => void;
 }
@@ -132,7 +137,7 @@ export function WsClientProvider({
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [webSocketStatus, setWebSocketStatus] =
-    React.useState<WebSocketStatus>("DISCONNECTED");
+    React.useState<V0_WebSocketStatus>("DISCONNECTED");
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const { providers } = useUserProviders();
 

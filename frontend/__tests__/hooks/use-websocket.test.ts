@@ -12,7 +12,7 @@ import { ws } from "msw";
 import { setupServer } from "msw/node";
 import { useWebSocket } from "#/hooks/use-websocket";
 
-describe.skip("useWebSocket", () => {
+describe("useWebSocket", () => {
   // MSW WebSocket mock setup
   const wsLink = ws.link("ws://acme.com/ws");
 

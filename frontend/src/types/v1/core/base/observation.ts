@@ -50,7 +50,7 @@ interface BrowserObservation extends ObservationBase<"BrowserObservation"> {
   screenshot_data: string | null;
 }
 
-interface ExecuteBashObservation
+export interface ExecuteBashObservation
   extends ObservationBase<"ExecuteBashObservation"> {
   /**
    * The raw output from the tool.

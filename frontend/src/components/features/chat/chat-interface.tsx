@@ -8,7 +8,6 @@ import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { AgentState } from "#/types/agent-state";
 import { isOpenHandsAction, isActionOrObservation } from "#/types/core/guards";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
@@ -17,7 +16,8 @@ import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
-import { useAgentStore } from "#/stores/agent-store";
+import { useSendMessage } from "#/hooks/use-send-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -36,6 +36,7 @@ import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
 import { isV0Event } from "#/types/v1/type-guards";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -48,8 +49,10 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
+  const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
-  const { send, isLoadingMessages } = useWsClient();
+  const { isLoadingMessages } = useWsClient();
+  const { send } = useSendMessage();
   const storeEvents = useEventStore((state) => state.events);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
@@ -65,7 +68,7 @@ export function ChatInterface() {
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
 
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -76,6 +79,8 @@ export function ChatInterface() {
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
+
+  const isV1Conversation = conversation?.conversation_version === "V1";
 
   const events = storeEvents
     .filter(isV0Event)
@@ -151,11 +156,6 @@ export function ChatInterface() {
     setMessageToSend("");
   };
 
-  const handleStop = () => {
-    posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
@@ -193,7 +193,7 @@ export function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
         >
-          {isLoadingMessages && (
+          {isLoadingMessages && !isV1Conversation && (
             <div className="flex justify-center">
               <LoadingSpinner size="small" />
             </div>
@@ -235,10 +235,7 @@ export function ChatInterface() {
 
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
-          <InteractiveChatBox
-            onSubmit={handleSendMessage}
-            onStop={handleStop}
-          />
+          <InteractiveChatBox onSubmit={handleSendMessage} />
         </div>
 
         {config?.APP_MODE !== "saas" && (

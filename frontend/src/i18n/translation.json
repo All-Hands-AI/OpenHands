@@ -12111,6 +12111,22 @@
     "de": "Wird gestartet",
     "uk": "Запуск"
   },
+  "COMMON$STOPPING": {
+    "en": "Stopping...",
+    "ja": "停止中...",
+    "zh-CN": "停止中...",
+    "zh-TW": "停止中...",
+    "ko-KR": "중지 중...",
+    "no": "Stopper...",
+    "it": "Arresto...",
+    "pt": "Parando...",
+    "es": "Deteniendo...",
+    "ar": "جارٍ الإيقاف...",
+    "fr": "Arrêt...",
+    "tr": "Durduruluyor...",
+    "de": "Wird gestoppt...",
+    "uk": "Зупинка..."
+  },
   "MICROAGENT_MANAGEMENT$ERROR": {
     "en": "The system has encountered an error. Please try again later.",
     "ja": "システムでエラーが発生しました。後でもう一度お試しください。",
