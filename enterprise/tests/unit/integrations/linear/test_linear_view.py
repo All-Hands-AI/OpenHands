@@ -141,7 +141,7 @@ class TestLinearExistingConversationView:
         mock_store_impl.return_value = mock_store
 
         with pytest.raises(
-            StartingConvoException, match='Conversation no longer exists'
+            StartingConvoException, match='Conversation is still starting'
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env
