@@ -42,11 +42,6 @@ const getNoContentActionContent = (): string => "";
 const getFileEditorActionContent = (
   action: FileEditorAction | StrReplaceEditorAction,
 ): string => {
-  // Early return if action doesn't have required properties
-  if (!("command" in action && "file_text" in action && "path" in action)) {
-    return getNoContentActionContent();
-  }
-
   // Early return if not a create command or no file text
   if (action.command !== "create" || !action.file_text) {
     return getNoContentActionContent();
