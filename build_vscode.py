@@ -2,7 +2,7 @@ import os
 import pathlib
 import subprocess
 
-# This script is intended to be run by Poetry during the build process.
+# This script is intended to be run during the build process.
 
 # Define the expected name of the .vsix file based on the extension's package.json
 # This should match the name and version in openhands-vscode/package.json
@@ -93,18 +93,18 @@ def build_vscode_extension():
 
 
 def build(setup_kwargs):
-    """This function is called by Poetry during the build process.
-    `setup_kwargs` is a dictionary that will be passed to `setuptools.setup()`.
+    """This function is called by the build backend (PEP 517) during the build process.
+    `setup_kwargs` will be forwarded to the underlying build backend (e.g., setuptools).
     """
-    print('--- Running custom Poetry build script (build_vscode.py) ---')
+    print('--- Running custom build script (build_vscode.py) ---')
 
     # Build the VS Code extension and place the .vsix file
     build_vscode_extension()
 
-    # Poetry will handle including files based on pyproject.toml `include` patterns.
-    # Ensure openhands/integrations/vscode/*.vsix is included there.
+    # The build backend will include files based on your pyproject.toml configuration.
+    # Ensure openhands/integrations/vscode/*.vsix is included.
 
-    print('--- Custom Poetry build script (build_vscode.py) finished ---')
+    print('--- Custom build script (build_vscode.py) finished ---')
 
 
 if __name__ == '__main__':

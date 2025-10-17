@@ -116,7 +116,7 @@ class Event:
         return None
 
     @tool_call_metadata.setter
-    def tool_call_metadata(self, value: ToolCallMetadata) -> None:
+    def tool_call_metadata(self, value: ToolCallMetadata | None) -> None:
         self._tool_call_metadata = value
 
     # optional field, the id of the response from the LLM

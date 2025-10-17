@@ -180,7 +180,7 @@ async def get_user_by_id(keycloak_admin, user_id: str) -> Optional[Dict[str, Any
         user = keycloak_admin.get_user(user_id)
         if user:
             logger.debug(
-                f"Found user in Keycloak: {user.get('username')}, {user.get('email')}"
+                f'Found user in Keycloak: {user.get("username")}, {user.get("email")}'
             )
             return user
         else:
@@ -207,7 +207,7 @@ def get_user_info(
     if user_id in user_info_cache:
         user_info = user_info_cache[user_id]
         logger.debug(
-            f"Found user info in cache: {user_info.get('username')}, {user_info.get('email')}"
+            f'Found user info in cache: {user_info.get("username")}, {user_info.get("email")}'
         )
         return user_info
     else:

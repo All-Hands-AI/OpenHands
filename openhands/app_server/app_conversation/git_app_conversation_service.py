@@ -117,8 +117,8 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # Check if there's an existing pre-commit hook
         with tempfile.TemporaryFile(mode='w+t') as temp_file:
-            result = workspace.file_download(PRE_COMMIT_HOOK, str(temp_file))
-            if result.get('success'):
+            result = await workspace.file_download(PRE_COMMIT_HOOK, str(temp_file))
+            if result.success:
                 _logger.info('Preserving existing pre-commit hook')
                 # an existing pre-commit hook exists
                 if 'This hook was installed by OpenHands' not in temp_file.read():

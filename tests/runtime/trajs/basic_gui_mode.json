@@ -200,7 +200,7 @@
         "username": "openhands",
         "hostname": "18f4db943d2f",
         "working_dir": "/workspace",
-        "py_interpreter_path": "/openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python",
+        "py_interpreter_path": "/openhands/uv/openhands-ai-5O4_aCHf-py3.12/bin/python",
         "prefix": "",
         "suffix": "\n[The command completed with exit code 0.]"
       },

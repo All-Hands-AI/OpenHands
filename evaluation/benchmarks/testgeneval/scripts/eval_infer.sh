@@ -29,7 +29,7 @@ fi
 
 echo "... Evaluating on $INPUT_FILE ..."
 
-COMMAND="poetry run python evaluation/benchmarks/testgeneval/eval_infer.py \
+COMMAND="uv run python evaluation/benchmarks/testgeneval/eval_infer.py \
   --eval-num-workers $NUM_WORKERS \
   --input-file $INPUT_FILE \
   --dataset $DATASET \
@@ -50,4 +50,4 @@ echo $COMMAND
 eval $COMMAND
 
 # update the output with evaluation results
-# poetry run python evaluation/benchmarks/testgeneval/scripts/eval/update_output_with_eval.py $INPUT_FILE
+# uv run python evaluation/benchmarks/testgeneval/scripts/eval/update_output_with_eval.py $INPUT_FILE

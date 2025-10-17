@@ -28,17 +28,12 @@ jobs:
       - uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
-      - name: Install Poetry
-        uses: snok/install-poetry@v1.4.1
-        with:
-          virtualenvs-in-project: true
-          virtualenvs-path: ~/.virtualenvs
-      - name: Install Poetry Dependencies
-        run: poetry install --no-interaction --no-root
-      - name: Build poetry project
-        run: ./build.sh
-      - name: publish
-        run: poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
+      - name: Build package
+        run: uv build
+      - name: Publish package to PyPI
+        run: uv publish --token ${{ secrets.PYPI_TOKEN }}
 
   release-cli:
     name: Publish CLI to PyPI

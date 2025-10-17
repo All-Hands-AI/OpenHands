@@ -74,13 +74,13 @@ export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
 ## Summarize Results
 
 ```bash
-poetry run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+uv run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
 ```
 
 Full example:
 
 ```bash
-poetry run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
+uv run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
 ```
 
 This will list the instances that passed and the instances that failed. For each

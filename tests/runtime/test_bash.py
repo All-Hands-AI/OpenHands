@@ -217,12 +217,12 @@ def test_multiline_commands(temp_dir, runtime_cls):
         else:
             # Original Linux bash version
             # single multiline command
-            obs = _run_cmd_action(runtime, 'echo \\\n -e "foo"')
+            obs = _run_cmd_action(runtime, 'echo -e "foo"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'foo' in obs.content
 
             # test multiline echo
-            obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
+            obs = _run_cmd_action(runtime, 'echo -e "hello\\nworld"')
             assert obs.exit_code == 0, 'The exit code should be 0.'
             assert 'hello\nworld' in obs.content
 
@@ -258,7 +258,7 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
         if is_windows():
             obs = _run_cmd_action(runtime, 'Write-Output "hello`nworld"')
         else:
-            obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
+            obs = _run_cmd_action(runtime, 'echo -e "hello\\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
         assert 'hello\nworld' in obs.content
@@ -317,14 +317,12 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     else:
         cmds = [
             'ls -l',
-            'echo -e "hello\nworld"',
-            """echo -e "hello it's me\"""",
-            """echo \\
-    -e 'hello' \\
-    world""",
-            """echo -e 'hello\\nworld\\nare\\nyou\\nthere?'""",
-            """echo -e 'hello\nworld\nare\nyou\n\nthere?'""",
-            """echo -e 'hello\nworld "'""",
+            'echo -e "hello\\nworld"',
+            'echo "hello it\'s me"',
+            'echo "hello world"',
+            'echo -e "hello\\nworld\\nare\\nyou\\nthere?"',
+            'echo -e "hello\\nworld\\nare\\nyou\\n\\nthere?"',
+            'echo -e "hello\\nworld \\""',
         ]
     joined_cmds = '\n'.join(cmds)
 
@@ -350,8 +348,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
         else:
             assert 'total 0' in results[0]  # ls -l
         assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
-        assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
-        assert 'hello world' in results[3]  # echo -e 'hello' world
+        assert "hello it's me" in results[2]  # echo "hello it\'s me"
+        assert 'hello world' in results[3]  # echo "hello world"
         assert (
             'hello\nworld\nare\nyou\nthere?' in results[4]
         )  # echo -e 'hello\nworld\nare\nyou\nthere?'
@@ -380,8 +378,8 @@ def test_cliruntime_multiple_newline_commands(temp_dir, run_as_openhands):
     else:
         cmds = [
             'echo "hello"',  # A command that will always work
-            'echo -e "hello\nworld"',
-            """echo -e "hello it's me\"""",
+            'echo -e "hello\\nworld"',
+            'echo "hello it\'s me"',
         ]
         expected_outputs = [
             'hello',  # Simple string output
@@ -1151,7 +1149,7 @@ def test_stress_long_output_with_soft_and_hard_timeout(
 
             # Check action_execution_server mem
             mem_action = CmdRunAction(
-                'ps aux | awk \'{printf "%8.1f KB  %s\\n", $6, $0}\' | sort -nr | grep "action_execution_server" | grep "/openhands/poetry" | grep -v grep | awk \'{print $1}\''
+                'ps aux | awk \'{printf "%8.1f KB  %s\\n", $6, $0}\' | sort -nr | grep "action_execution_server" | grep "/openhands/uv" | grep -v grep | awk \'{print $1}\''
             )
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0

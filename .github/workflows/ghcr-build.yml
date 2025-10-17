@@ -116,17 +116,17 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
-          cache: poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
+          python-version: '3.12'
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
+      - name: Install Python dependencies using uv
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - name: Install OpenHands
+        run: uv pip install -e .
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: uv run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -139,11 +139,11 @@ jobs:
         run: |
 
           ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
-
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
           echo "DOCKER_TAGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.tags | join(",")')" >> $GITHUB_ENV
           echo "DOCKER_PLATFORM=$(echo "$DOCKER_BUILD_JSON" | jq -r '.platform')" >> $GITHUB_ENV
           echo "DOCKER_BUILD_ARGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.build_args | join(",")')" >> $GITHUB_ENV
+
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
         uses: useblacksmith/build-push-action@v1
@@ -154,6 +154,7 @@ jobs:
           build-args: ${{ env.DOCKER_BUILD_ARGS }}
           context: containers/runtime
           provenance: false
+
       # Forked repos can't push to GHCR, so we just build in order to populate the cache for rebuilding
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
@@ -285,35 +286,30 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: poetry
-      - name: Install Python dependencies using Poetry
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
+      - name: Install Python dependencies using uv
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install OpenHands
+        run: uv pip install -e .
       - name: Run docker runtime tests
         shell: bash
         run: |
-          # We install pytest-xdist in order to run tests across CPUs
-          poetry run pip install pytest-xdist
-
-          # Install to be able to retry on failures for flaky tests
-          poetry run pip install pytest-rerunfailures
-
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
           # Setting RUN_AS_OPENHANDS to false means use root.
           # That should mean SANDBOX_USER_ID is ignored but some tests do not check for RUN_AS_OPENHANDS.
 
-          TEST_RUNTIME=docker \
-          SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
-          TEST_IN_CI=true \
+          PYTHONPATH=".:$PYTHONPATH" \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
+          SANDBOX_USER_ID=$(id -u) \
+          TEST_IN_CI=true \
+          TEST_RUNTIME=docker \
+          uv run --group test pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -347,32 +343,25 @@ jobs:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           context: containers/runtime
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
+      - uses: hynek/setup-cached-uv@v2
+        name: Setup uv
+      - name: Install Python dependencies using uv
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
+      - name: Install OpenHands
+        run: uv pip install -e .
       - name: Run runtime tests
         shell: bash
         run: |
           # We install pytest-xdist in order to run tests across CPUs
-          poetry run pip install pytest-xdist
-
-          # Install to be able to retry on failures for flaky tests
-          poetry run pip install pytest-rerunfailures
-
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
 
-          TEST_RUNTIME=docker \
-          SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
-          TEST_IN_CI=true \
+          PYTHONPATH=".:$PYTHONPATH" \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
+          SANDBOX_USER_ID=$(id -u) \
+          TEST_IN_CI=true \
+          TEST_RUNTIME=docker \
+          uv run  --group test pytest -n 0 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
