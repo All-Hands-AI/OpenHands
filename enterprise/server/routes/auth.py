@@ -1,3 +1,4 @@
+import uuid
 import warnings
 from datetime import datetime, timezone
 from typing import Annotated, Literal, Optional
@@ -20,7 +21,9 @@ from server.config import sign_token
 from server.constants import IS_FEATURE_ENV
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
+from storage.user import User
 from storage.user_settings import UserSettings
+from storage.user_store import UserStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
@@ -80,7 +83,7 @@ def get_cookie_domain(request: Request) -> str | None:
     # for now just use the full hostname except for staging stacks.
     return (
         None
-        if (request.url.hostname or '').endswith('staging.all-hand.dev')
+        if request.url.hostname.endswith('staging.all-hand.dev')
         else request.url.hostname
     )
 
@@ -138,6 +141,32 @@ async def keycloak_callback(
         )
 
     user_id = user_info['sub']
+    user = UserStore.get_user_by_id(user_id)
+    if not user:
+        user_settings = None
+        with session_maker() as session:
+            user_settings = (
+                session.query(UserSettings)
+                .filter(UserSettings.keycloak_user_id == user_id)
+                .first()
+            )
+        if user_settings:
+            user = await UserStore.migrate_user(user_id, user_settings, user_info)
+        else:
+            # new user
+            user = await UserStore.create_user(user_id, user_info)
+
+    if not user:
+        logger.error(f'Failed to authenticate user {user_info["preferred_username"]}')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={
+                'error': f'Failed to authenticate user {user_info["preferred_username"]}'
+            },
+        )
+
+    logger.info(f'Logging in user {str(user.id)} in org {user.current_org_id}')
+
     # default to github IDP for now.
     # TODO: remove default once Keycloak is updated universally with the new attribute.
     idp: str = user_info.get('identity_provider', ProviderType.GITHUB.value)
@@ -174,17 +203,19 @@ async def keycloak_callback(
     posthog_user_id = f'FEATURE_{user_id}' if IS_FEATURE_ENV else user_id
 
     try:
-        posthog.set(
-            distinct_id=posthog_user_id,
-            properties={
-                'user_id': posthog_user_id,
-                'original_user_id': user_id,
-                'is_feature_env': IS_FEATURE_ENV,
+        posthog.identify(
+            posthog_user_id,
+            {
+                '$set': {
+                    'user_id': posthog_user_id,  # Explicitly set as property
+                    'original_user_id': user_id,  # Store the original user_id
+                    'is_feature_env': IS_FEATURE_ENV,  # Track if this is a feature environment
+                }
             },
         )
     except Exception as e:
         logger.error(
-            'auth:posthog_set:failed',
+            'auth:posthog_identify:failed',
             extra={
                 'user_id': user_id,
                 'error': str(e),
@@ -212,17 +243,7 @@ async def keycloak_callback(
             f'&state={state}'
         )
 
-    has_accepted_tos = False
-    with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
-        )
-        has_accepted_tos = (
-            user_settings is not None and user_settings.accepted_tos is not None
-        )
-
+    has_accepted_tos = user.accepted_tos is not None
     # If the user hasn't accepted the TOS, redirect to the TOS page
     if not has_accepted_tos:
         encoded_redirect_url = quote(redirect_url, safe='')
@@ -341,24 +362,15 @@ async def accept_tos(request: Request):
 
     # Update user settings with TOS acceptance
     with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
-        )
-
-        if user_settings:
-            user_settings.accepted_tos = datetime.now(timezone.utc)
-            session.merge(user_settings)
-        else:
-            # Create user settings if they don't exist
-            user_settings = UserSettings(
-                keycloak_user_id=user_id,
-                accepted_tos=datetime.now(timezone.utc),
-                user_version=0,  # This will trigger a migration to the latest version on next load
+        user = session.query(User).filter(User.id == uuid.UUID(user_id)).first()
+        if not user:
+            session.rollback()
+            logger.error('User for {user_id} not found.')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'User does not exist'},
             )
-            session.add(user_settings)
-
+        user.accepted_tos = datetime.now(timezone.utc)
         session.commit()
 
     logger.info(f'User {user_id} accepted TOS')
