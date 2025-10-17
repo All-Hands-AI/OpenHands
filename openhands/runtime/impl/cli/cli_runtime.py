@@ -47,6 +47,7 @@ from openhands.events.observation import (
 )
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.llm.llm_registry import LLMRegistry
+from openhands.mcp.mcp_call_handler import MCPCallHandler
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
@@ -158,6 +159,7 @@ class CLIRuntime(Runtime):
         # Initialize PowerShell session on Windows
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
+        self.mcp_call_handler = MCPCallHandler(sid)
 
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
@@ -699,8 +701,6 @@ class CLIRuntime(Runtime):
             return ErrorObservation('MCP functionality is not available on Windows')
 
         # Import here to avoid circular imports
-        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
-        from openhands.mcp.utils import create_mcp_clients
 
         try:
             # Get the MCP config for this runtime
@@ -721,26 +721,12 @@ class CLIRuntime(Runtime):
                 f'stdio={len(mcp_config.stdio_servers)}',
             )
 
-            # Create clients for this specific operation
-            mcp_clients = await create_mcp_clients(
-                mcp_config.sse_servers,
-                mcp_config.shttp_servers,
-                self.sid,
-                mcp_config.stdio_servers,
-            )
-
-            if not mcp_clients:
-                self.log('warning', 'No MCP clients could be created')
-                return ErrorObservation(
-                    'No MCP clients could be created - check server configurations'
-                )
-
             # Call the tool and return the result
             self.log(
                 'debug',
                 f'Executing MCP tool: {action.name} with arguments: {action.arguments}',
             )
-            result = await call_tool_mcp_handler(mcp_clients, action)
+            result = await self.mcp_call_handler.call_tool_mcp(action, mcp_config)
             self.log('debug', f'MCP tool {action.name} executed successfully')
             return result
 
