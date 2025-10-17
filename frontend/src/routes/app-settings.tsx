@@ -18,6 +18,10 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
 import { useConfig } from "#/hooks/query/use-config";
 import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import QuestionCircleIcon from "#/icons/question-circle.svg?react";
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -25,6 +29,7 @@ function AppSettingsScreen() {
   const { mutate: saveSettings, isPending } = useSaveSettings();
   const { data: settings, isLoading } = useSettings();
   const { data: config } = useConfig();
+  const { data: resources } = useAIConfigOptions();
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
     React.useState(false);
@@ -48,6 +53,39 @@ function AppSettingsScreen() {
     React.useState(false);
   const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
     React.useState(false);
+  const [
+    confirmationModeSwitchHasChanged,
+    setConfirmationModeSwitchHasChanged,
+  ] = React.useState(false);
+  const [securityAnalyzerHasChanged, setSecurityAnalyzerHasChanged] =
+    React.useState(false);
+
+  // Track confirmation mode state to control security analyzer visibility
+  const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
+    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
+  );
+
+  // Track selected security analyzer for form submission
+  const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
+    React.useState(
+      settings?.SECURITY_ANALYZER === null
+        ? "none"
+        : (settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER),
+    );
+
+  // Update confirmation mode state when settings change
+  React.useEffect(() => {
+    if (settings?.CONFIRMATION_MODE !== undefined) {
+      setConfirmationModeEnabled(settings.CONFIRMATION_MODE);
+    }
+  }, [settings?.CONFIRMATION_MODE]);
+
+  // Update selected security analyzer state when settings change
+  React.useEffect(() => {
+    if (settings?.SECURITY_ANALYZER !== undefined) {
+      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
+    }
+  }, [settings?.SECURITY_ANALYZER]);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -80,6 +118,12 @@ function AppSettingsScreen() {
       formData.get("git-user-email-input")?.toString() ||
       DEFAULT_SETTINGS.GIT_USER_EMAIL;
 
+    const confirmationMode =
+      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
+    const securityAnalyzer = formData
+      .get("security-analyzer-input")
+      ?.toString();
+
     saveSettings(
       {
         LANGUAGE: language,
@@ -90,6 +134,11 @@ function AppSettingsScreen() {
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
         GIT_USER_NAME: gitUserName,
         GIT_USER_EMAIL: gitUserEmail,
+        CONFIRMATION_MODE: confirmationMode,
+        SECURITY_ANALYZER:
+          securityAnalyzer === "none"
+            ? null
+            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: () => {
@@ -105,9 +154,12 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
+          setSolvabilityAnalysisSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
           setGitUserNameHasChanged(false);
           setGitUserEmailHasChanged(false);
+          setConfirmationModeSwitchHasChanged(false);
+          setSecurityAnalyzerHasChanged(false);
         },
       },
     );
@@ -167,6 +219,64 @@ function AppSettingsScreen() {
     setGitUserEmailHasChanged(value !== currentValue);
   };
 
+  const checkIfConfirmationModeSwitchHasChanged = (checked: boolean) => {
+    const currentConfirmationMode = !!settings?.CONFIRMATION_MODE;
+    setConfirmationModeSwitchHasChanged(checked !== currentConfirmationMode);
+    setConfirmationModeEnabled(checked);
+
+    // When confirmation mode is enabled, set default security analyzer to "llm" if not already set
+    if (checked && !selectedSecurityAnalyzer) {
+      setSelectedSecurityAnalyzer(DEFAULT_SETTINGS.SECURITY_ANALYZER);
+      setSecurityAnalyzerHasChanged(true);
+    }
+  };
+
+  const checkIfSecurityAnalyzerHasChanged = (value: string) => {
+    const currentValue = settings?.SECURITY_ANALYZER || "none";
+    setSecurityAnalyzerHasChanged(value !== currentValue);
+  };
+
+  const getSecurityAnalyzerOptions = () => {
+    const analyzers = resources?.securityAnalyzers || [];
+    const orderedItems = [];
+
+    // Add LLM analyzer first
+    if (analyzers.includes("llm")) {
+      orderedItems.push({
+        key: "llm",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT),
+      });
+    }
+
+    // Add None option second
+    orderedItems.push({
+      key: "none",
+      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
+    });
+
+    // Add Invariant analyzer third
+    if (analyzers.includes("invariant")) {
+      orderedItems.push({
+        key: "invariant",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
+      });
+    }
+
+    // Add any other analyzers that might exist
+    analyzers.forEach((analyzer) => {
+      if (!["llm", "invariant", "none"].includes(analyzer)) {
+        // For unknown analyzers, use the analyzer name as fallback
+        // In the future, add specific i18n keys for new analyzers
+        orderedItems.push({
+          key: analyzer,
+          label: analyzer, // TODO: Add i18n support for new analyzers
+        });
+      }
+    });
+
+    return orderedItems;
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
@@ -175,7 +285,9 @@ function AppSettingsScreen() {
     !solvabilityAnalysisSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged &&
     !gitUserNameHasChanged &&
-    !gitUserEmailHasChanged;
+    !gitUserEmailHasChanged &&
+    !confirmationModeSwitchHasChanged &&
+    !securityAnalyzerHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -211,6 +323,66 @@ function AppSettingsScreen() {
           >
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
+
+          {/* Confirmation mode and security analyzer */}
+          <div className="flex items-center gap-2">
+            <SettingsSwitch
+              testId="enable-confirmation-mode-switch"
+              name="enable-confirmation-mode-switch"
+              onToggle={checkIfConfirmationModeSwitchHasChanged}
+              defaultIsToggled={settings.CONFIRMATION_MODE}
+              isBeta
+            >
+              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+            </SettingsSwitch>
+            <TooltipButton
+              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+              className="text-[#9099AC] hover:text-white cursor-help"
+            >
+              <QuestionCircleIcon width={16} height={16} />
+            </TooltipButton>
+          </div>
+
+          {confirmationModeEnabled && (
+            <>
+              <div className="w-full max-w-[680px]">
+                <SettingsDropdownInput
+                  testId="security-analyzer-input"
+                  name="security-analyzer-display"
+                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+                  items={getSecurityAnalyzerOptions()}
+                  placeholder={t(
+                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                  )}
+                  selectedKey={selectedSecurityAnalyzer || "none"}
+                  isClearable={false}
+                  onSelectionChange={(key) => {
+                    const newValue = key?.toString() || "";
+                    setSelectedSecurityAnalyzer(newValue);
+                    checkIfSecurityAnalyzerHasChanged(newValue);
+                  }}
+                  onInputChange={(value) => {
+                    // Handle when input is cleared
+                    if (!value) {
+                      setSelectedSecurityAnalyzer("");
+                      checkIfSecurityAnalyzerHasChanged("");
+                    }
+                  }}
+                  wrapperClassName="w-full"
+                />
+                {/* Hidden input to store the actual key value for form submission */}
+                <input
+                  type="hidden"
+                  name="security-analyzer-input"
+                  value={selectedSecurityAnalyzer || ""}
+                />
+              </div>
+              <p className="text-xs text-tertiary-alt max-w-[680px]">
+                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
+              </p>
+            </>
+          )}
 
           {config?.APP_MODE === "saas" && (
             <SettingsSwitch
