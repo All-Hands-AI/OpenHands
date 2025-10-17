@@ -747,6 +747,7 @@ fi
                     self.provider_handler.get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
+                    is_optional=True,
                 )
             except AuthenticationError as e:
                 self.log(
