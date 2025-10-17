@@ -450,13 +450,18 @@ class TestDockerSandboxService:
         mock_container.status = 'paused'
         service.docker_client.containers.get.return_value = mock_container
 
-        # Execute
-        result = await service.resume_sandbox('oh-test-abc123')
+        with patch.object(
+            service, 'cleanup_old_sandboxes', return_value=[]
+        ) as mock_cleanup:
+            # Execute
+            result = await service.resume_sandbox('oh-test-abc123')
 
         # Verify
         assert result is True
         mock_container.unpause.assert_called_once()
         mock_container.start.assert_not_called()
+        # Verify cleanup was called with the correct limit
+        mock_cleanup.assert_called_once_with(3)
 
     async def test_resume_sandbox_from_exited(self, service):
         """Test resuming an exited sandbox."""
@@ -465,22 +470,32 @@ class TestDockerSandboxService:
         mock_container.status = 'exited'
         service.docker_client.containers.get.return_value = mock_container
 
-        # Execute
-        result = await service.resume_sandbox('oh-test-abc123')
+        with patch.object(
+            service, 'cleanup_old_sandboxes', return_value=[]
+        ) as mock_cleanup:
+            # Execute
+            result = await service.resume_sandbox('oh-test-abc123')
 
         # Verify
         assert result is True
         mock_container.start.assert_called_once()
         mock_container.unpause.assert_not_called()
+        # Verify cleanup was called with the correct limit
+        mock_cleanup.assert_called_once_with(3)
 
     async def test_resume_sandbox_wrong_prefix(self, service):
         """Test resuming sandbox with wrong prefix."""
-        # Execute
-        result = await service.resume_sandbox('wrong-prefix-abc123')
+        with patch.object(
+            service, 'cleanup_old_sandboxes', return_value=[]
+        ) as mock_cleanup:
+            # Execute
+            result = await service.resume_sandbox('wrong-prefix-abc123')
 
         # Verify
         assert result is False
         service.docker_client.containers.get.assert_not_called()
+        # Verify cleanup was still called
+        mock_cleanup.assert_called_once_with(3)
 
     async def test_resume_sandbox_not_found(self, service):
         """Test resuming non-existent sandbox."""
@@ -489,11 +504,16 @@ class TestDockerSandboxService:
             'Container not found'
         )
 
-        # Execute
-        result = await service.resume_sandbox('oh-test-abc123')
+        with patch.object(
+            service, 'cleanup_old_sandboxes', return_value=[]
+        ) as mock_cleanup:
+            # Execute
+            result = await service.resume_sandbox('oh-test-abc123')
 
         # Verify
         assert result is False
+        # Verify cleanup was still called
+        mock_cleanup.assert_called_once_with(3)
 
     async def test_pause_sandbox_success(self, service):
         """Test pausing a running sandbox."""

@@ -319,6 +319,9 @@ class DockerSandboxService(SandboxService):
 
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox."""
+        # Enforce sandbox limits by cleaning up old sandboxes
+        await self.cleanup_old_sandboxes(self.max_num_sandboxes)
+
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
                 return False
