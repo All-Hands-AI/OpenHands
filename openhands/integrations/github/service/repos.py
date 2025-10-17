@@ -92,6 +92,7 @@ class GitHubReposMixin(GitHubMixinBase):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ):
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:
@@ -101,6 +102,7 @@ class GitHubReposMixin(GitHubMixinBase):
         else:
             url = f'{self.BASE_URL}/user/repos'
             params['sort'] = sort
+            params['direction'] = order  # GitHub uses 'direction' for asc/desc
             response, headers = await self._make_request(url, params)
 
         next_link: str = headers.get('Link', '')
@@ -109,7 +111,7 @@ class GitHubReposMixin(GitHubMixinBase):
         ]
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
@@ -141,7 +143,7 @@ class GitHubReposMixin(GitHubMixinBase):
                 all_repos.sort(key=self.parse_pushed_at_date, reverse=True)
         else:
             # Original behavior for non-SaaS mode
-            params = {'per_page': str(PER_PAGE), 'sort': sort}
+            params = {'per_page': str(PER_PAGE), 'sort': sort, 'direction': order}
             url = f'{self.BASE_URL}/user/repos'
 
             # Fetch user repositories
