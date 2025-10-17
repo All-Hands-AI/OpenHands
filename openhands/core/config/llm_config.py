@@ -94,6 +94,10 @@ class LLMConfig(BaseModel):
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
     for_routing: bool = Field(default=False)
+    completion_kwargs: dict[str, Any] | None = Field(
+        default=None,
+        description='Custom kwargs to pass to litellm.completion',
+    )
 
     model_config = ConfigDict(extra='forbid')
 
