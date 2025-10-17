@@ -64,14 +64,14 @@ class SandboxService(ABC):
         Return False if the sandbox did not exist.
         """
 
-    async def cleanup_old_sandboxes(self, max_num_sandboxes: int) -> list[str]:
+    async def pause_old_sandboxes(self, max_num_sandboxes: int) -> list[str]:
         """Stop the oldest sandboxes if there are more than max_num_sandboxes running.
 
         Args:
             max_num_sandboxes: Maximum number of sandboxes to keep running
 
         Returns:
-            List of sandbox IDs that were stopped
+            List of sandbox IDs that were paused
         """
         if max_num_sandboxes <= 0:
             raise ValueError('max_num_sandboxes must be greater than 0')
@@ -102,22 +102,22 @@ class SandboxService(ABC):
         # Sort by creation time (oldest first)
         running_sandboxes.sort(key=lambda x: x.created_at)
 
-        # Determine how many to stop
-        num_to_stop = len(running_sandboxes) - max_num_sandboxes
-        sandboxes_to_stop = running_sandboxes[:num_to_stop]
+        # Determine how many to pause
+        num_to_pause = len(running_sandboxes) - max_num_sandboxes
+        sandboxes_to_pause = running_sandboxes[:num_to_pause]
 
         # Stop the oldest sandboxes
-        stopped_sandbox_ids = []
-        for sandbox in sandboxes_to_stop:
+        paused_sandbox_ids = []
+        for sandbox in sandboxes_to_pause:
             try:
-                success = await self.delete_sandbox(sandbox.id)
+                success = await self.pause_sandbox(sandbox.id)
                 if success:
-                    stopped_sandbox_ids.append(sandbox.id)
+                    paused_sandbox_ids.append(sandbox.id)
             except Exception:
-                # Continue trying to stop other sandboxes even if one fails
+                # Continue trying to pause other sandboxes even if one fails
                 pass
 
-        return stopped_sandbox_ids
+        return paused_sandbox_ids
 
 
 class SandboxServiceInjector(DiscriminatedUnionMixin, Injector[SandboxService], ABC):

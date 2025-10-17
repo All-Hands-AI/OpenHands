@@ -247,7 +247,7 @@ class DockerSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox."""
         # Enforce sandbox limits by cleaning up old sandboxes
-        await self.cleanup_old_sandboxes(self.max_num_sandboxes)
+        await self.pause_old_sandboxes(self.max_num_sandboxes - 1)
 
         if sandbox_spec_id is None:
             sandbox_spec = await self.sandbox_spec_service.get_default_sandbox_spec()
@@ -320,7 +320,7 @@ class DockerSandboxService(SandboxService):
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox."""
         # Enforce sandbox limits by cleaning up old sandboxes
-        await self.cleanup_old_sandboxes(self.max_num_sandboxes)
+        await self.pause_old_sandboxes(self.max_num_sandboxes - 1)
 
         try:
             if not sandbox_id.startswith(self.container_name_prefix):
