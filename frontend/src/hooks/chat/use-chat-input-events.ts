@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { isMobileDevice } from "#/utils/utils";
+import { useVirtualKeyboard } from "#/hooks/use-virtual-keyboard";
 import {
   ensureCursorVisible,
   clearEmptyContent,
@@ -17,6 +17,7 @@ export const useChatInputEvents = (
   onFocus?: () => void,
   onBlur?: () => void,
 ) => {
+  const { isKeyboardVisible } = useVirtualKeyboard();
   // Handle input events
   const handleInput = useCallback(() => {
     smartResize();
@@ -74,13 +75,13 @@ export const useChatInputEvents = (
         return;
       }
 
-      // Original submit logic - only for desktop without shift key
-      if (!isMobileDevice() && !e.shiftKey && !disabled) {
+      // If the users are using a virtual keyboard, don't submit the message, they will need to click on the send button.
+      if (!isKeyboardVisible() && !e.shiftKey && !disabled) {
         e.preventDefault();
         handleSubmit();
       }
     },
-    [checkIsContentEmpty, increaseHeightForEmptyContent],
+    [checkIsContentEmpty, increaseHeightForEmptyContent, isKeyboardVisible],
   );
 
   // Handle blur events to ensure placeholder shows when empty
