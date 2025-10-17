@@ -6,7 +6,7 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 import { useStartTasks } from "#/hooks/query/use-start-tasks";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
-import { useUnifiedStopConversation } from "#/hooks/mutation/use-unified-stop-conversation";
+import { useUnifiedPauseConversationSandbox } from "#/hooks/mutation/use-unified-stop-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { ConfirmStopModal } from "./confirm-stop-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
@@ -16,7 +16,7 @@ import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { ConversationCard } from "./conversation-card/conversation-card";
-import { StartTaskCard } from "./start-task-card";
+import { StartTaskCard } from "./start-task-card/start-task-card";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -61,7 +61,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const conversations = data?.pages.flatMap((page) => page.results) ?? [];
 
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: stopConversation } = useUnifiedStopConversation();
+  const { mutate: pauseConversationSandbox } =
+    useUnifiedPauseConversationSandbox();
   const { mutate: updateConversation } = useUpdateConversation();
 
   // Set up infinite scroll
@@ -117,7 +118,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation({
+      pauseConversationSandbox({
         conversationId: selectedConversationId,
         version: selectedConversationVersion,
       });

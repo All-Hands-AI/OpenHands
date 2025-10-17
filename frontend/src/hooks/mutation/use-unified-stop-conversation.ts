@@ -4,24 +4,24 @@ import toast from "react-hot-toast";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import {
   getConversationVersionFromQueryCache,
-  stopV1Conversation,
+  pauseV1ConversationSandbox,
   stopV0Conversation,
   updateConversationStatusInCache,
   invalidateConversationQueries,
 } from "./conversation-mutation-utils";
 
 /**
- * Unified hook that automatically routes to the correct stop conversation implementation
- * based on the conversation version (V0 or V1).
+ * Unified hook that automatically routes to the correct pause conversation sandbox
+ * implementation based on the conversation version (V0 or V1).
  *
  * This hook checks the cached conversation data to determine the version, then calls
  * the appropriate API directly. Returns a single useMutation instance that all components share.
  *
  * Usage is the same as useStopConversation:
- * const { mutate: stopConversation } = useUnifiedStopConversation();
+ * const { mutate: stopConversation } = useUnifiedPauseConversationSandbox();
  * stopConversation({ conversationId: "some-id" });
  */
-export const useUnifiedStopConversation = () => {
+export const useUnifiedPauseConversationSandbox = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const params = useParams<{ conversationId: string }>();
@@ -41,7 +41,7 @@ export const useUnifiedStopConversation = () => {
         );
 
       if (version === "V1") {
-        return stopV1Conversation(variables.conversationId);
+        return pauseV1ConversationSandbox(variables.conversationId);
       }
 
       return stopV0Conversation(variables.conversationId);

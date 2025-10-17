@@ -41,8 +41,8 @@ vi.mock("#/hooks/use-user-providers", () => ({
   }),
 }));
 
-vi.mock("#/hooks/query/use-task-or-conversation", () => ({
-  useTaskOrConversation: () => ({
+vi.mock("#/hooks/query/use-task-polling", () => ({
+  useTaskPolling: () => ({
     isTask: false,
     taskId: null,
     conversationId: "test-conversation-id",

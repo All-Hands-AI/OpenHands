@@ -5,24 +5,24 @@ import { useErrorMessageStore } from "#/stores/error-message-store";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import {
   getConversationVersionFromQueryCache,
-  startV1Conversation,
+  resumeV1ConversationSandbox,
   startV0Conversation,
   updateConversationStatusInCache,
   invalidateConversationQueries,
 } from "./conversation-mutation-utils";
 
 /**
- * Unified hook that automatically routes to the correct start conversation implementation
+ * Unified hook that automatically routes to the correct resume conversation sandbox implementation
  * based on the conversation version (V0 or V1).
  *
  * This hook checks the cached conversation data to determine the version, then calls
  * the appropriate API directly. Returns a single useMutation instance that all components share.
  *
  * Usage is the same as useStartConversation:
- * const { mutate: startConversation } = useUnifiedStartConversation();
+ * const { mutate: startConversation } = useUnifiedResumeConversationSandbox();
  * startConversation({ conversationId: "some-id", providers: [...] });
  */
-export const useUnifiedStartConversation = () => {
+export const useUnifiedResumeConversationSandbox = () => {
   const queryClient = useQueryClient();
   const removeErrorMessage = useErrorMessageStore(
     (state) => state.removeErrorMessage,
@@ -44,7 +44,7 @@ export const useUnifiedStartConversation = () => {
         );
 
       if (version === "V1") {
-        return startV1Conversation(variables.conversationId);
+        return resumeV1ConversationSandbox(variables.conversationId);
       }
 
       return startV0Conversation(variables.conversationId, variables.providers);

@@ -6,7 +6,7 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
 import { useAgentState } from "#/hooks/use-agent-state";
-import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 export interface ServerStatusProps {
   className?: string;
@@ -27,7 +27,7 @@ export function ServerStatus({
 
   const { curAgentState } = useAgentState();
   const { t } = useTranslation();
-  const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
+  const { isTask, taskStatus, taskDetail } = useTaskPolling();
 
   const isStartingStatus =
     curAgentState === AgentState.LOADING || curAgentState === AgentState.INIT;
