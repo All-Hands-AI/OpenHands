@@ -19,11 +19,6 @@ const getFileEditorObservationContent = (
 ): string => {
   const { observation } = event;
 
-  // Early return if observation doesn't have required properties
-  if (!("command" in observation && "output" in observation)) {
-    return "";
-  }
-
   const successMessage = getObservationResult(event) === "success";
 
   // For view commands or successful edits with content changes, format as code block
@@ -48,11 +43,6 @@ const getExecuteBashObservationContent = (
 ): string => {
   const { observation } = event;
 
-  // Early return if observation doesn't have output property
-  if (!("output" in observation)) {
-    return "";
-  }
-
   let { output } = observation;
 
   if (output.length > MAX_CONTENT_LENGTH) {
@@ -67,11 +57,6 @@ const getBrowserObservationContent = (
   event: ObservationEvent<BrowserObservation>,
 ): string => {
   const { observation } = event;
-
-  // Early return if observation doesn't have required properties
-  if (!("output" in observation)) {
-    return "";
-  }
 
   let contentDetails = "";
 
@@ -92,17 +77,6 @@ const getMCPToolObservationContent = (
   event: ObservationEvent<MCPToolObservation>,
 ): string => {
   const { observation } = event;
-
-  // Early return if observation doesn't have required properties
-  if (
-    !(
-      "content" in observation &&
-      "tool_name" in observation &&
-      "is_error" in observation
-    )
-  ) {
-    return "";
-  }
 
   // Extract text content from the observation
   const textContent = observation.content
@@ -130,11 +104,6 @@ const getTaskTrackerObservationContent = (
   event: ObservationEvent<TaskTrackerObservation>,
 ): string => {
   const { observation } = event;
-
-  // Early return if observation doesn't have required properties
-  if (!("command" in observation && "task_list" in observation)) {
-    return "";
-  }
 
   const { command, task_list: taskList } = observation;
   let content = `**Command:** \`${command}\``;
@@ -176,31 +145,13 @@ const getThinkObservationContent = (
   event: ObservationEvent<ThinkObservation>,
 ): string => {
   const { observation } = event;
-
-  // Early return if observation doesn't have content property
-  if (!("content" in observation)) {
-    return "";
-  }
-
-  // Type guard: ThinkObservation.content is always a string
-  if (typeof observation.content === "string") {
-    return observation.content || "";
-  }
-
-  // If it's an array (from MCPToolObservation), return empty string
-  return "";
+  return observation.content || "";
 };
 
 const getFinishObservationContent = (
   event: ObservationEvent<FinishObservation>,
 ): string => {
   const { observation } = event;
-
-  // Early return if observation doesn't have message property
-  if (!("message" in observation)) {
-    return "";
-  }
-
   return observation.message || "";
 };
 

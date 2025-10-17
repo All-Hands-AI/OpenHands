@@ -57,15 +57,10 @@ const getFileEditorActionContent = (
 };
 
 // Command Actions
-const getExecuteBashActionContent = (event: ActionEvent): string => {
-  const { action } = event;
-
-  // Early return if action doesn't have command property
-  if (!("command" in action)) {
-    return getNoContentActionContent();
-  }
-
-  let content = `Command:\n\`${action.command}\``;
+const getExecuteBashActionContent = (
+  event: ActionEvent<ExecuteBashAction>,
+): string => {
+  let content = `Command:\n\`${event.action.command}\``;
 
   // Add security risk information if it's HIGH or MEDIUM
   if (
@@ -80,11 +75,6 @@ const getExecuteBashActionContent = (event: ActionEvent): string => {
 
 // Tool Actions
 const getMCPToolActionContent = (action: MCPToolAction): string => {
-  // Early return if action doesn't have data property
-  if (!("data" in action)) {
-    return getNoContentActionContent();
-  }
-
   // For V1, the tool name is in the event's tool_name property, not in the action
   let details = `**MCP Tool Call**\n\n`;
   details += `**Arguments:**\n\`\`\`json\n${JSON.stringify(action.data, null, 2)}\n\`\`\``;
@@ -92,31 +82,13 @@ const getMCPToolActionContent = (action: MCPToolAction): string => {
 };
 
 // Simple Actions
-const getThinkActionContent = (action: ThinkAction): string => {
-  // Early return if action doesn't have thought property
-  if (!("thought" in action)) {
-    return getNoContentActionContent();
-  }
+const getThinkActionContent = (action: ThinkAction): string => action.thought;
 
-  return action.thought;
-};
-
-const getFinishActionContent = (action: FinishAction): string => {
-  // Early return if action doesn't have message property
-  if (!("message" in action)) {
-    return getNoContentActionContent();
-  }
-
-  return action.message.trim();
-};
+const getFinishActionContent = (action: FinishAction): string =>
+  action.message.trim();
 
 // Complex Actions
 const getTaskTrackerActionContent = (action: TaskTrackerAction): string => {
-  // Early return if action doesn't have required properties
-  if (!("command" in action && "task_list" in action)) {
-    return getNoContentActionContent();
-  }
-
   let content = `**Command:** \`${action.command}\``;
 
   // Handle plan command with task list
@@ -158,11 +130,6 @@ type BrowserAction =
   | BrowserCloseTabAction;
 
 const getBrowserActionContent = (action: BrowserAction): string => {
-  // Early return if action doesn't have kind property
-  if (!("kind" in action)) {
-    return getNoContentActionContent();
-  }
-
   switch (action.kind) {
     case "BrowserNavigateAction":
       if ("url" in action) {
@@ -202,16 +169,16 @@ export const getActionContent = (event: ActionEvent): string => {
       );
 
     case "MCPToolAction":
-      return getMCPToolActionContent(action as MCPToolAction);
+      return getMCPToolActionContent(action);
 
     case "ThinkAction":
-      return getThinkActionContent(action as ThinkAction);
+      return getThinkActionContent(action);
 
     case "FinishAction":
-      return getFinishActionContent(action as FinishAction);
+      return getFinishActionContent(action);
 
     case "TaskTrackerAction":
-      return getTaskTrackerActionContent(action as TaskTrackerAction);
+      return getTaskTrackerActionContent(action);
 
     case "BrowserNavigateAction":
     case "BrowserClickAction":
@@ -223,7 +190,7 @@ export const getActionContent = (event: ActionEvent): string => {
     case "BrowserListTabsAction":
     case "BrowserSwitchTabAction":
     case "BrowserCloseTabAction":
-      return getBrowserActionContent(action as BrowserAction);
+      return getBrowserActionContent(action);
 
     default:
       return getDefaultEventContent(event);
