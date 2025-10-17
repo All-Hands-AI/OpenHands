@@ -16,7 +16,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
-        "session-key-abc",
       );
 
       expect(result).toBe(
@@ -33,7 +32,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "https://example.com:8080/api/conversations/conv-123",
-        "session-key-abc",
       );
 
       expect(result).toBe(
@@ -50,7 +48,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-456",
         "http://agent-server.com:9000/api/conversations/conv-456",
-        null,
       );
 
       expect(result).toBe("ws://agent-server.com:9000/sockets/events/conv-456");
@@ -69,7 +66,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
-        "my-secret-key",
       );
 
       expect(result).toContain("?session_api_key=my-secret-key");
@@ -79,7 +75,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
-        null,
       );
 
       expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
@@ -90,7 +85,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
-        undefined,
       );
 
       expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
@@ -105,7 +99,7 @@ describe("buildWebSocketUrl", () => {
         host: "fallback-host:4000",
       });
 
-      const result = buildWebSocketUrl("conv-123", null, null);
+      const result = buildWebSocketUrl("conv-123", null);
 
       expect(result).toBe("ws://fallback-host:4000/sockets/events/conv-123");
     });
@@ -116,7 +110,7 @@ describe("buildWebSocketUrl", () => {
         host: "fallback-host:4000",
       });
 
-      const result = buildWebSocketUrl("conv-123", undefined, null);
+      const result = buildWebSocketUrl("conv-123", undefined);
 
       expect(result).toBe("ws://fallback-host:4000/sockets/events/conv-123");
     });
@@ -130,7 +124,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "/api/conversations/conv-123",
-        null,
       );
 
       expect(result).toBe("ws://fallback-host:4000/sockets/events/conv-123");
@@ -142,7 +135,7 @@ describe("buildWebSocketUrl", () => {
         host: "fallback-host:4000",
       });
 
-      const result = buildWebSocketUrl("conv-123", "not-a-valid-url", null);
+      const result = buildWebSocketUrl("conv-123", "not-a-valid-url");
 
       expect(result).toBe("ws://fallback-host:4000/sockets/events/conv-123");
     });
@@ -160,7 +153,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         undefined,
         "http://localhost:8080/api/conversations/conv-123",
-        "session-key",
       );
 
       expect(result).toBeNull();
@@ -170,7 +162,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "",
         "http://localhost:8080/api/conversations/conv-123",
-        "session-key",
       );
 
       expect(result).toBeNull();
@@ -180,7 +171,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://example.com:12345/api/conversations/conv-123",
-        null,
       );
 
       expect(result).toBe("ws://example.com:12345/sockets/events/conv-123");
@@ -190,7 +180,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://example.com/api/conversations/conv-123",
-        null,
       );
 
       expect(result).toBe("ws://example.com/sockets/events/conv-123");
@@ -200,7 +189,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123-abc_def",
         "http://localhost:8080/api/conversations/conv-123-abc_def",
-        null,
       );
 
       expect(result).toBe(
@@ -212,7 +200,6 @@ describe("buildWebSocketUrl", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
-        "key-with-special_chars.123",
       );
 
       expect(result).toContain("?session_api_key=key-with-special_chars.123");

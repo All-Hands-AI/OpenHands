@@ -69,8 +69,8 @@ export function ConversationWebSocketProvider({
 
   // Build WebSocket URL from props
   const wsUrl = useMemo(
-    () => buildWebSocketUrl(conversationId, conversationUrl, sessionApiKey),
-    [conversationId, conversationUrl, sessionApiKey],
+    () => buildWebSocketUrl(conversationId, conversationUrl),
+    [conversationId, conversationUrl],
   );
 
   // Reset hasConnected flag when conversation changes
@@ -145,8 +145,18 @@ export function ConversationWebSocketProvider({
     ],
   );
 
-  const websocketOptions: WebSocketHookOptions = useMemo(
-    () => ({
+  const websocketOptions: WebSocketHookOptions = useMemo(() => {
+    const queryParams: Record<string, string | boolean> = {
+      resend_all: true,
+    };
+
+    // Add session_api_key if available
+    if (sessionApiKey) {
+      queryParams.session_api_key = sessionApiKey;
+    }
+
+    return {
+      queryParams,
       reconnect: { enabled: true },
       onOpen: () => {
         setConnectionState("OPEN");
@@ -171,9 +181,8 @@ export function ConversationWebSocketProvider({
         }
       },
       onMessage: handleMessage,
-    }),
-    [handleMessage, setErrorMessage, removeErrorMessage],
-  );
+    };
+  }, [handleMessage, setErrorMessage, removeErrorMessage, sessionApiKey]);
 
   // Build a fallback URL to prevent hook from connecting if conversation data isn't ready
   const websocketUrl = wsUrl || "ws://localhost/placeholder";
