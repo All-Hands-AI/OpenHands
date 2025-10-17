@@ -35,7 +35,7 @@ afterAll(async () => {
   // Close the WebSocket MSW server
   mswServer.close();
 
-  // Give time for any pending WebSocket connections to close
+  // Give time for any pending WebSocket connections to close. This is very important to prevent serious memory leaks
   await new Promise((resolve) => {
     setTimeout(resolve, 100);
   });
