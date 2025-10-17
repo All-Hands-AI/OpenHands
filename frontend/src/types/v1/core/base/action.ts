@@ -8,7 +8,7 @@ interface MCPToolAction extends ActionBase<"MCPToolAction"> {
   data: Record<string, unknown>;
 }
 
-interface FinishAction extends ActionBase<"FinishAction"> {
+export interface FinishAction extends ActionBase<"FinishAction"> {
   /**
    * Final message to send to the user
    */
@@ -41,7 +41,7 @@ export interface ExecuteBashAction extends ActionBase<"ExecuteBashAction"> {
   reset: boolean;
 }
 
-interface FileEditorAction extends ActionBase<"FileEditorAction"> {
+export interface FileEditorAction extends ActionBase<"FileEditorAction"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
    */
@@ -72,7 +72,8 @@ interface FileEditorAction extends ActionBase<"FileEditorAction"> {
   view_range: [number, number] | null;
 }
 
-interface StrReplaceEditorAction extends ActionBase<"StrReplaceEditorAction"> {
+export interface StrReplaceEditorAction
+  extends ActionBase<"StrReplaceEditorAction"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
    */

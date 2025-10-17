@@ -1,5 +1,6 @@
 import React from "react";
-import { OpenHandsEvent, MessageEvent } from "#/types/v1/core";
+import { OpenHandsEvent, MessageEvent, ActionEvent } from "#/types/v1/core";
+import { FinishAction } from "#/types/v1/core/base/action";
 import {
   isActionEvent,
   isObservationEvent,
@@ -88,7 +89,12 @@ export function EventMessage({
 
   // Finish actions
   if (isActionEvent(event) && event.action.kind === "FinishAction") {
-    return <FinishEventMessage event={event} {...commonProps} />;
+    return (
+      <FinishEventMessage
+        event={event as ActionEvent<FinishAction>}
+        {...commonProps}
+      />
+    );
   }
 
   // Message events (user and assistant messages)

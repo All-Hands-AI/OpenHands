@@ -1,5 +1,6 @@
 import React from "react";
 import { ActionEvent } from "#/types/v1/core";
+import { FinishAction } from "#/types/v1/core/base/action";
 import { ChatMessage } from "../../../features/chat/chat-message";
 import { MicroagentStatusWrapper } from "../../../features/chat/event-message-components/microagent-status-wrapper";
 // TODO: Implement V1 LikertScaleWrapper when API supports V1 event IDs
@@ -8,7 +9,7 @@ import { getEventContent } from "../event-content-helpers/get-event-content";
 import { MicroagentStatus } from "#/types/microagent-status";
 
 interface FinishEventMessageProps {
-  event: ActionEvent;
+  event: ActionEvent<FinishAction>;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
   microagentPRUrl?: string;
@@ -26,10 +27,6 @@ export function FinishEventMessage({
   microagentPRUrl,
   actions,
 }: FinishEventMessageProps) {
-  if (event.action.kind !== "FinishAction") {
-    return null;
-  }
-
   return (
     <>
       <ChatMessage

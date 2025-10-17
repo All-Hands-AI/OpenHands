@@ -2,6 +2,11 @@ import { ActionEvent } from "#/types/v1/core";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 import { SecurityRisk } from "#/types/v1/core/base/common";
+import {
+  ExecuteBashAction,
+  FileEditorAction,
+  StrReplaceEditorAction,
+} from "#/types/v1/core/base/action";
 
 const getRiskText = (risk: SecurityRisk) => {
   switch (risk) {
@@ -20,7 +25,9 @@ const getRiskText = (risk: SecurityRisk) => {
 const getNoContentActionContent = (): string => "";
 
 // File Editor Actions
-const getFileEditorActionContent = (action: ActionEvent["action"]): string => {
+const getFileEditorActionContent = (
+  action: FileEditorAction | StrReplaceEditorAction,
+): string => {
   // Early return if action doesn't have required properties
   if (!("command" in action && "file_text" in action && "path" in action)) {
     return getNoContentActionContent();
@@ -169,7 +176,9 @@ export const getActionContent = (event: ActionEvent): string => {
       return getFileEditorActionContent(action);
 
     case "ExecuteBashAction":
-      return getExecuteBashActionContent(event);
+      return getExecuteBashActionContent(
+        event as ActionEvent<ExecuteBashAction>,
+      );
 
     case "MCPToolAction":
       return getMCPToolActionContent(action);

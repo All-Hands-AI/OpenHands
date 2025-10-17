@@ -82,7 +82,6 @@ export function ConversationWebSocketProvider({
     (messageEvent: MessageEvent) => {
       try {
         const event = JSON.parse(messageEvent.data);
-        console.log("event", event);
         // Use type guard to validate v1 event structure
         if (isV1Event(event)) {
           addEvent(event);

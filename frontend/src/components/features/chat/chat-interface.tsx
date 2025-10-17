@@ -97,7 +97,7 @@ export function ChatInterface() {
   const v1Events = storeEvents.filter(isV1Event).filter(shouldRenderV1Event);
 
   // Combined events count for tracking
-  const totalEvents = v0Events.length + v1Events.length;
+  const totalEvents = v0Events.length || v1Events.length;
 
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(
