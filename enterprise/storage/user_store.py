@@ -2,6 +2,7 @@
 Store class for managing users.
 """
 
+import uuid
 from typing import Optional
 
 from integrations.stripe_service import migrate_customer
@@ -33,12 +34,12 @@ class UserStore:
         with session_maker() as session:
             # create personal org
             org = Org(
+                id=uuid.UUID(keycloak_user_id),
                 name=f'user_{keycloak_user_id}_org',
                 contact_name=user_info['preferred_username'],
                 contact_email=user_info['email'],
             )
             session.add(org)
-            session.flush()  # Flush to get the generated org.id
 
             settings = await UserStore.create_default_settings(
                 org_id=str(org.id), keycloak_user_id=keycloak_user_id
@@ -54,13 +55,12 @@ class UserStore:
 
             user_kwargs = UserStore.get_kwargs_from_settings(settings)
             user = User(
-                keycloak_user_id=keycloak_user_id,
+                id=uuid.UUID(keycloak_user_id),
                 current_org_id=org.id,
                 role_id=role_id,
                 **user_kwargs,
             )
             session.add(user)
-            session.flush()  # Flush to get the generated user.id
 
             role = RoleStore.get_role_by_name('admin')
 
@@ -98,12 +98,12 @@ class UserStore:
         with session_maker() as session:
             # create personal org
             org = Org(
+                id=uuid.UUID(keycloak_user_id),
                 name=f'user_{keycloak_user_id}_org',
                 contact_name=user_info['preferred_username'],
                 contact_email=user_info['email'],
             )
             session.add(org)
-            session.flush()  # Flush to get the generated org.id
 
             await LiteLlmManager.migrate_entries(
                 str(org.id), keycloak_user_id, decrypted_user_settings
@@ -126,12 +126,12 @@ class UserStore:
                 if c.name != 'id' and hasattr(decrypted_user_settings, c.name)
             }
             user = User(
+                id=uuid.UUID(keycloak_user_id),
                 current_org_id=org.id,
                 role_id=None,
                 **user_kwargs,
             )
             session.add(user)
-            session.flush()  # Flush to get the generated user.id
 
             role = RoleStore.get_role_by_name('admin')
 
@@ -150,24 +150,13 @@ class UserStore:
             return user
 
     @staticmethod
-    def get_user_by_id(user_id: int) -> Optional[User]:
-        """Get user by ID."""
-        with session_maker() as session:
-            return (
-                session.query(User)
-                .options(joinedload(User.org_users))
-                .filter(User.id == user_id)
-                .first()
-            )
-
-    @staticmethod
-    def get_user_by_keycloak_id(keycloak_user_id: str) -> Optional[User]:
+    def get_user_by_id(keycloak_user_id: str) -> Optional[User]:
         """Get user by Keycloak user ID."""
         with session_maker() as session:
             return (
                 session.query(User)
                 .options(joinedload(User.org_users))
-                .filter(User.keycloak_user_id == keycloak_user_id)
+                .filter(User.id == uuid.UUID(keycloak_user_id))
                 .first()
             )
 

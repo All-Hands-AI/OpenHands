@@ -302,7 +302,6 @@ async def test_create_default_settings_require_payment_disabled(
         assert settings.language == 'en'
 
 
-
 @pytest.mark.asyncio
 async def test_create_default_lite_llm_settings_no_api_config(settings_store):
     with (

@@ -181,7 +181,7 @@ async def keycloak_callback(
 
     user_info = await token_manager.get_user_info(keycloak_access_token)
     keycloak_user_id = user_info['sub']
-    user = UserStore.get_user_by_keycloak_id(keycloak_user_id)
+    user = UserStore.get_user_by_id(keycloak_user_id)
     if not user:
         user_settings = None
         with session_maker() as session:

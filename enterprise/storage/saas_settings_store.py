@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 
 from server.logger import logger
@@ -25,7 +26,7 @@ class SaasSettingsStore(OssSettingsStore):
     ENCRYPT_VALUES = ['llm_api_key', 'llm_api_key_for_byor', 'search_api_key']
 
     async def load(self) -> Settings | None:
-        user = UserStore.get_user_by_keycloak_id(self.user_id)
+        user = UserStore.get_user_by_id(self.user_id)
         if not user:
             # Check if we need to migrate from user_settings
             user_settings = None
@@ -94,7 +95,7 @@ class SaasSettingsStore(OssSettingsStore):
             user = (
                 session.query(User)
                 .options(joinedload(User.org_users))
-                .filter(User.keycloak_user_id == self.user_id)
+                .filter(User.id == uuid.UUID(self.user_id))
             ).first()
 
             if not user:

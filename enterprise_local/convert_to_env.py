@@ -119,6 +119,7 @@ lines.append('LITE_LLM_API_URL=https://llm-proxy.eval.all-hands.dev')
 lines.append('LITELLM_DEFAULT_MODEL=litellm_proxy/claude-sonnet-4-20250514')
 lines.append(f'LITE_LLM_API_KEY={lite_llm_api_key}')
 lines.append('LOCAL_DEPLOYMENT=true')
+lines.append('DB_HOST=localhost')
 
 with open(output_env_file, 'a') as env_file:
     env_file.write('\n'.join(lines))

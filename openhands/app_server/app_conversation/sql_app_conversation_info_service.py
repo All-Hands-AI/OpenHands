@@ -33,10 +33,10 @@ from sqlalchemy import (
     Integer,
     Select,
     String,
+    UUID as SQL_UUID,
     func,
     select,
 )
-from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import relationship
 
@@ -71,6 +71,7 @@ class StoredConversationMetadata(Base):  # type: ignore
     )
     github_user_id = Column(String, nullable=True)  # The GitHub user ID
     user_id = Column(String, nullable=False)  # The Keycloak User ID
+    org_id = Column(SQL_UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
     selected_repository = Column(String, nullable=True)
     selected_branch = Column(String, nullable=True)
     git_provider = Column(
@@ -100,9 +101,6 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
-
-    # Foreign key to org table
-    org_id = Column(PostgreSQLUUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
 
     # Relationship back to org
     org = relationship('Org', back_populates='conversation_metadata')

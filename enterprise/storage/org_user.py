@@ -15,7 +15,7 @@ class OrgUser(Base):  # type: ignore
     __tablename__ = 'org_user'
 
     org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('user.id'), primary_key=True)
     role_id = Column(Integer, ForeignKey('role.id'), nullable=False)
     _llm_api_key = Column(String, nullable=False)
     max_iterations = Column(Integer, nullable=True)

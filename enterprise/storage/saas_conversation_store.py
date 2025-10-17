@@ -36,7 +36,7 @@ class SaasConversationStore(ConversationStore):
     def __init__(self, user_id: str, session_maker: sessionmaker):
         self.user_id = user_id
         self.session_maker = session_maker
-        user = UserStore.get_user_by_keycloak_id(user_id)
+        user = UserStore.get_user_by_id(user_id)
         if not user:
             logger.error(f'No user found by ID {user_id}')
             raise ValueError(f'No user found by ID {user_id}')

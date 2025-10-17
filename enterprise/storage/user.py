@@ -2,13 +2,14 @@
 SQLAlchemy model for User.
 """
 
+from uuid import uuid4
+
 from sqlalchemy import (
     UUID,
     Boolean,
     Column,
     DateTime,
     ForeignKey,
-    Identity,
     Integer,
     String,
 )
@@ -21,8 +22,7 @@ class User(Base):  # type: ignore
 
     __tablename__ = 'user'
 
-    id = Column(Integer, Identity(), primary_key=True)
-    keycloak_user_id = Column(String, nullable=False, unique=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     current_org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
     role_id = Column(Integer, ForeignKey('role.id'), nullable=True)
     accepted_tos = Column(DateTime, nullable=True)

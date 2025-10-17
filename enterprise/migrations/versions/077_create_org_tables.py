@@ -88,8 +88,12 @@ def upgrade() -> None:
     # Create user table with user-specific settings fields
     op.create_table(
         'user',
-        sa.Column('id', sa.Integer, sa.Identity(), primary_key=True),
-        sa.Column('keycloak_user_id', sa.String, nullable=False),
+        sa.Column(
+            'id',
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text('gen_random_uuid()'),
+        ),
         sa.Column('current_org_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('role_id', sa.Integer, nullable=True),
         sa.Column('accepted_tos', sa.DateTime, nullable=True),
@@ -104,14 +108,13 @@ def upgrade() -> None:
             ['current_org_id'], ['org.id'], name='current_org_fkey'
         ),
         sa.ForeignKeyConstraint(['role_id'], ['role.id'], name='user_role_fkey'),
-        sa.UniqueConstraint('keycloak_user_id', name='user_keycloak_user_id_unique'),
     )
 
     # Create org_user table (junction table for many-to-many relationship)
     op.create_table(
         'org_user',
         sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('user_id', sa.Integer, nullable=False),
+        sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('role_id', sa.Integer, nullable=False),
         sa.Column('_llm_api_key', sa.String, nullable=False),
         sa.Column('max_iterations', sa.Integer, nullable=True),
@@ -123,11 +126,6 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['user_id'], ['user.id'], name='ou_user_fkey'),
         sa.ForeignKeyConstraint(['role_id'], ['role.id'], name='ou_role_fkey'),
         sa.PrimaryKeyConstraint('org_id', 'user_id'),
-    )
-
-    # Create indexes for better performance
-    op.create_index(
-        'ix_user_keycloak_user_id', 'user', ['keycloak_user_id'], unique=True
     )
 
     # Add org_id column to existing tables

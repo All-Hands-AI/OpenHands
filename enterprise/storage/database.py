@@ -27,7 +27,6 @@ MAX_OVERFLOW = int(os.environ.get('DB_MAX_OVERFLOW', '10'))
 
 def _get_db_engine():
     if GCP_DB_INSTANCE:  # GCP environments
-        from google.cloud.sql.connector import Connector
 
         def get_db_connection():
             from google.cloud.sql.connector import Connector

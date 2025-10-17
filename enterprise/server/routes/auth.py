@@ -1,34 +1,34 @@
-from http.client import HTTPException
+import uuid
 import warnings
 from datetime import datetime, timezone
 from typing import Annotated, Literal, Optional
 from urllib.parse import quote
 
 import posthog
-from pydantic import SecretStr
-from server.auth.gitlab_sync import schedule_gitlab_repo_sync
-from server.routes.event_webhook import _get_session_api_key, _get_user_id
-from fastapi import APIRouter, Request, Response, status, Header
+from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
-from openhands.integrations.provider import ProviderHandler
-from openhands.server.services.conversation_service import create_provider_tokens_object
+from pydantic import SecretStr
 from server.auth.auth_utils import user_verifier
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
     KEYCLOAK_SERVER_URL_EXT,
 )
+from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth
 from server.auth.token_manager import TokenManager
 from server.config import sign_token
 from server.constants import IS_FEATURE_ENV
+from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
 from storage.user import User
 from storage.user_settings import UserSettings
 from storage.user_store import UserStore
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.provider import ProviderHandler
 from openhands.integrations.service_types import ProviderType, TokenResponse
+from openhands.server.services.conversation_service import create_provider_tokens_object
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token
 from openhands.server.user_auth.user_auth import get_user_auth
@@ -141,7 +141,7 @@ async def keycloak_callback(
         )
 
     user_id = user_info['sub']
-    user = UserStore.get_user_by_keycloak_id(user_id)
+    user = UserStore.get_user_by_id(user_id)
     if not user:
         user_settings = None
         with session_maker() as session:
@@ -165,7 +165,7 @@ async def keycloak_callback(
             },
         )
 
-    logger.info(f'Logging in user {user.keycloak_user_id} in org {user.current_org_id}')
+    logger.info(f'Logging in user {str(user.id)} in org {user.current_org_id}')
 
     # default to github IDP for now.
     # TODO: remove default once Keycloak is updated universally with the new attribute.
@@ -362,7 +362,7 @@ async def accept_tos(request: Request):
 
     # Update user settings with TOS acceptance
     with session_maker() as session:
-        user = session.query(User).filter(User.keycloak_user_id == user_id).first()
+        user = session.query(User).filter(User.id == uuid.UUID(user_id)).first()
         if not user:
             session.rollback()
             logger.error('User for {user_id} not found.')
