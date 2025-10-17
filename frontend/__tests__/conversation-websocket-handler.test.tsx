@@ -37,7 +37,7 @@ afterAll(async () => {
 
   // Give time for any pending WebSocket connections to close. This is very important to prevent serious memory leaks
   await new Promise((resolve) => {
-    setTimeout(resolve, 100);
+    setTimeout(resolve, 500);
   });
 });
 

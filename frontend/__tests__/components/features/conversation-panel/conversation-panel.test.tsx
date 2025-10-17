@@ -11,7 +11,7 @@ import { Conversation } from "#/api/open-hands.types";
 // Mock the unified stop conversation hook
 const mockStopConversationMutate = vi.fn();
 vi.mock("#/hooks/mutation/use-unified-stop-conversation", () => ({
-  useUnifiedStopConversation: () => ({
+  useUnifiedPauseConversationSandbox: () => ({
     mutate: mockStopConversationMutate,
   }),
 }));
