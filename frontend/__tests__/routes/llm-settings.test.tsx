@@ -105,9 +105,16 @@ describe("Content", () => {
       });
     });
 
+  });
+
+  describe("Advanced form", () => {
     it("should conditionally show security analyzer based on confirmation mode", async () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
+
+      // Enable advanced mode first
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      await userEvent.click(advancedSwitch);
 
       const confirmation = screen.getByTestId(
         "enable-confirmation-mode-switch",
@@ -135,9 +142,7 @@ describe("Content", () => {
         screen.queryByTestId("security-analyzer-input"),
       ).not.toBeInTheDocument();
     });
-  });
 
-  describe("Advanced form", () => {
     it("should render the advanced form if the switch is toggled", async () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
@@ -615,7 +620,7 @@ describe("Form submission", () => {
       expect.objectContaining({
         llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
-        confirmation_mode: true, // Confirmation mode is now a basic setting, should be preserved
+        confirmation_mode: false, // Confirmation mode is now an advanced setting, should be cleared when saving basic settings
       }),
     );
   });
@@ -776,9 +781,6 @@ describe("SaaS mode", () => {
       const modelInput = screen.getByTestId("llm-model-input");
       const apiKeyInput = screen.getByTestId("llm-api-key-input");
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-      const confirmationModeSwitch = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
       const submitButton = screen.getByTestId("submit-button");
 
       // Inputs should be disabled
@@ -786,8 +788,12 @@ describe("SaaS mode", () => {
       expect(modelInput).toBeDisabled();
       expect(apiKeyInput).toBeDisabled();
       expect(advancedSwitch).toBeDisabled();
-      expect(confirmationModeSwitch).toBeDisabled();
       expect(submitButton).toBeDisabled();
+
+      // Confirmation mode switch is in advanced view, so it's not visible in basic view
+      expect(
+        screen.queryByTestId("enable-confirmation-mode-switch"),
+      ).not.toBeInTheDocument();
 
       // Try to interact with inputs - they should not respond
       await userEvent.click(providerInput);
@@ -935,19 +941,17 @@ describe("SaaS mode", () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
-      // Verify that form elements are disabled for unsubscribed users
-      const confirmationModeSwitch = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
+      // Verify that basic form elements are disabled for unsubscribed users
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
       const submitButton = screen.getByTestId("submit-button");
 
-      expect(confirmationModeSwitch).not.toBeChecked();
-      expect(confirmationModeSwitch).toBeDisabled();
+      expect(advancedSwitch).toBeDisabled();
       expect(submitButton).toBeDisabled();
 
-      // Try to click the disabled confirmation mode switch - it should not change state
-      await userEvent.click(confirmationModeSwitch);
-      expect(confirmationModeSwitch).not.toBeChecked(); // Should remain unchecked
+      // Confirmation mode switch is in advanced view, which can't be accessed when form is disabled
+      expect(
+        screen.queryByTestId("enable-confirmation-mode-switch"),
+      ).not.toBeInTheDocument();
 
       // Try to submit the form - button should remain disabled
       await userEvent.click(submitButton);
@@ -1107,14 +1111,17 @@ describe("SaaS mode", () => {
       const providerInput = screen.getByTestId("llm-provider-input");
       const modelInput = screen.getByTestId("llm-model-input");
       const apiKeyInput = screen.getByTestId("llm-api-key-input");
-      const confirmationModeSwitch = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
 
       expect(providerInput).toBeDisabled();
       expect(modelInput).toBeDisabled();
       expect(apiKeyInput).toBeDisabled();
-      expect(confirmationModeSwitch).toBeDisabled();
+      expect(advancedSwitch).toBeDisabled();
+
+      // Confirmation mode switch is in advanced view, which can't be accessed when form is disabled
+      expect(
+        screen.queryByTestId("enable-confirmation-mode-switch"),
+      ).not.toBeInTheDocument();
     });
   });
 });
