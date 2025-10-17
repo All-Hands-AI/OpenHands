@@ -19,6 +19,8 @@ from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     VSCODE,
+    WORKER_1,
+    WORKER_2,
     ExposedUrl,
     SandboxInfo,
     SandboxPage,
@@ -141,12 +143,18 @@ class DockerSandboxService(SandboxService):
                             None,
                         )
                         if exposed_port:
+                            url = self.container_url_pattern.format(
+                                port=host_port
+                            )
+
+                            # VSCode URLs require the api_key and working dir
+                            if exposed_port.name == VSCODE:
+                                url += f"/?tkn={session_api_key}&folder={container.WorkingDir}"
+
                             exposed_urls.append(
                                 ExposedUrl(
                                     name=exposed_port.name,
-                                    url=self.container_url_pattern.format(
-                                        port=host_port
-                                    ),
+                                    url=url,
                                 )
                             )
 
@@ -394,6 +402,20 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
                 ),
                 container_port=8001,
             ),
+            ExposedPort(
+                name=WORKER_1,
+                description=(
+                    'The first port on which the agent should start application servers.'
+                ),
+                container_port=8011,
+            ),
+            ExposedPort(
+                name=WORKER_2,
+                description=(
+                    'The first port on which the agent should start application servers.'
+                ),
+                container_port=8012,
+            )
         ]
     )
     health_check_path: str | None = Field(
