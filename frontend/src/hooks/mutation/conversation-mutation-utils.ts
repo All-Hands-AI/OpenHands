@@ -36,9 +36,9 @@ const fetchV1ConversationSandboxId = async (
 };
 
 /**
- * Stops a V1 conversation by fetching the sandbox_id and pausing it
+ * Pause a V1 conversation sandbox by fetching the sandbox_id and pausing it
  */
-export const stopV1Conversation = async (conversationId: string) => {
+export const pauseV1ConversationSandbox = async (conversationId: string) => {
   const sandboxId = await fetchV1ConversationSandboxId(conversationId);
   return V1ConversationService.pauseSandbox(sandboxId);
 };
@@ -50,9 +50,9 @@ export const stopV0Conversation = async (conversationId: string) =>
   ConversationService.stopConversation(conversationId);
 
 /**
- * Starts a V1 conversation by fetching the sandbox_id and resuming it
+ * Resumes a V1 conversation sandbox by fetching the sandbox_id and resuming it
  */
-export const startV1Conversation = async (conversationId: string) => {
+export const resumeV1ConversationSandbox = async (conversationId: string) => {
   const sandboxId = await fetchV1ConversationSandboxId(conversationId);
   return V1ConversationService.resumeSandbox(sandboxId);
 };

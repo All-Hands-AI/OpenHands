@@ -12,7 +12,7 @@ import { AgentLoading } from "./agent-loading";
 import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
 import { useAgentState } from "#/hooks/use-agent-state";
-import { useWebSocketStatus } from "#/hooks/use-websocket-status";
+import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
 
 export interface AgentStatusProps {
   className?: string;
@@ -33,7 +33,7 @@ export function AgentStatus({
   const { setShouldShownAgentLoading } = useConversationStore();
   const { curAgentState } = useAgentState();
   const { curStatusMessage } = useStatusStore();
-  const webSocketStatus = useWebSocketStatus();
+  const webSocketStatus = useUnifiedWebSocketStatus();
   const { data: conversation } = useActiveConversation();
 
   const statusCode = getStatusCode(

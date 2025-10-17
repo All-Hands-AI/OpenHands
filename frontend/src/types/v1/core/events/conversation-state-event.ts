@@ -1,5 +1,5 @@
 import { BaseEvent } from "../base/event";
-import { V1AgentStatus } from "../../agent-status";
+import { V1AgentStatus } from "../base/common";
 
 /**
  * Conversation state value types

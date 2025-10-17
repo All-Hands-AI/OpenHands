@@ -26,10 +26,17 @@ import {
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
-import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.api";
+import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type V1_WebSocketConnectionState =
+  | "CONNECTING"
+  | "OPEN"
+  | "CLOSED"
+  | "CLOSING";
 
 interface ConversationWebSocketContextType {
-  connectionState: "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING";
+  connectionState: V1_WebSocketConnectionState;
   sendMessage: (message: V1SendMessageRequest) => Promise<void>;
 }
 
@@ -48,9 +55,8 @@ export function ConversationWebSocketProvider({
   conversationUrl?: string | null;
   sessionApiKey?: string | null;
 }) {
-  const [connectionState, setConnectionState] = useState<
-    "CONNECTING" | "OPEN" | "CLOSED" | "CLOSING"
-  >("CONNECTING");
+  const [connectionState, setConnectionState] =
+    useState<V1_WebSocketConnectionState>("CONNECTING");
   // Track if we've ever successfully connected
   // Don't show errors until after first successful connection
   const hasConnectedRef = React.useRef(false);

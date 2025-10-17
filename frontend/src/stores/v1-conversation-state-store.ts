@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { V1AgentStatus } from "#/types/v1/agent-status";
+import { V1AgentStatus } from "#/types/v1/core/base/common";
 
 interface V1ConversationStateStore {
   agent_status: V1AgentStatus | null;

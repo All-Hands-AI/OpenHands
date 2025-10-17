@@ -3,7 +3,7 @@ import { useAgentStore } from "#/stores/agent-store";
 import { useV1ConversationStateStore } from "#/stores/v1-conversation-state-store";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { AgentState } from "#/types/agent-state";
-import { V1AgentStatus } from "#/types/v1/agent-status";
+import { V1AgentStatus } from "#/types/v1/core/base/common";
 
 /**
  * Maps V1 agent status to V0 AgentState

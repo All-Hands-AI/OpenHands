@@ -13,7 +13,7 @@ import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useTaskOrConversation } from "#/hooks/query/use-task-or-conversation";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
@@ -27,7 +27,7 @@ import { ConversationName } from "#/components/features/conversation/conversatio
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { useErrorMessageStore } from "#/stores/error-message-store";
-import { useUnifiedStartConversation } from "#/hooks/mutation/use-unified-start-conversation";
+import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 
 function AppContent() {
   useConversationConfig();
@@ -35,11 +35,11 @@ function AppContent() {
   const { conversationId } = useConversationId();
 
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
-  const { isTask, taskStatus, taskDetail } = useTaskOrConversation();
+  const { isTask, taskStatus, taskDetail } = useTaskPolling();
 
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { mutate: startConversation, isPending: isStarting } =
-    useUnifiedStartConversation();
+    useUnifiedResumeConversationSandbox();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
   const { resetConversationState } = useConversationStore();

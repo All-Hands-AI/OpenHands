@@ -5,16 +5,21 @@ import V1ConversationService from "#/api/conversation-service/v1-conversation-se
 import { useConversationId } from "#/hooks/use-conversation-id";
 
 /**
- * Hook that handles both task IDs and conversation IDs in the conversationId param
- * - If the conversationId starts with "task-", it polls the V1 start task until ready
- * - Once ready, it navigates to the actual conversation ID
- * - Returns task data while polling, then conversation data after navigation
+ * Hook that polls V1 conversation start tasks and navigates when ready.
+ *
+ * This hook:
+ * - Detects if the conversationId URL param is a task ID (format: "task-{uuid}")
+ * - Polls the V1 start task API every 3 seconds until status is READY or ERROR
+ * - Automatically navigates to the conversation URL when the task becomes READY
+ * - Exposes task status and details for UI components to show loading states and errors
  *
  * URL patterns:
- * - /conversations/task-{uuid} → Polls start task
- * - /conversations/{uuid or hex} → Normal conversation polling (handled by useActiveConversation)
+ * - /conversations/task-{uuid} → Polls start task, then navigates to /conversations/{conversation-id}
+ * - /conversations/{uuid or hex} → No polling (handled by useActiveConversation)
+ *
+ * Note: This hook does NOT fetch conversation data. It only handles task polling and navigation.
  */
-export const useTaskOrConversation = () => {
+export const useTaskPolling = () => {
   const { conversationId } = useConversationId();
   const navigate = useNavigate();
 

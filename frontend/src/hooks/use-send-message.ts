@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useConversationWebSocket } from "#/contexts/conversation-websocket-context";
+import { V1MessageContent } from "#/api/conversation-service/v1-conversation-service.types";
 
 /**
  * Unified hook for sending messages that works with both V0 and V1 conversations
@@ -33,11 +34,7 @@ export function useSendMessage() {
 
         if (action === "message" && args?.content) {
           // Build V1 message content array
-          const content: Array<{
-            type: "text" | "image_url";
-            text?: string;
-            image_url?: { url: string };
-          }> = [
+          const content: Array<V1MessageContent> = [
             {
               type: "text",
               text: args.content,

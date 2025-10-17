@@ -2,9 +2,9 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { Tools } from "../../controls/tools";
-import { useUnifiedStopConversation } from "#/hooks/mutation/use-unified-stop-conversation";
+import { useUnifiedPauseConversationSandbox } from "#/hooks/mutation/use-unified-stop-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { useUnifiedStartConversation } from "#/hooks/mutation/use-unified-start-conversation";
+import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
 interface ChatInputActionsProps {
@@ -18,21 +18,21 @@ export function ChatInputActions({
   disabled,
   handleResumeAgent,
 }: ChatInputActionsProps) {
-  const stopMutation = useUnifiedStopConversation();
-  const startMutation = useUnifiedStartConversation();
+  const pauseConversationSandboxMutation = useUnifiedPauseConversationSandbox();
+  const resumeConversationSandboxMutation =
+    useUnifiedResumeConversationSandbox();
   const { conversationId } = useConversationId();
-
   const { providers } = useUserProviders();
 
   const handleStopClick = () => {
-    stopMutation.mutate({ conversationId });
+    pauseConversationSandboxMutation.mutate({ conversationId });
   };
 
   const handleStartClick = () => {
-    startMutation.mutate({ conversationId, providers });
+    resumeConversationSandboxMutation.mutate({ conversationId, providers });
   };
 
-  const isPausing = stopMutation.isPending;
+  const isPausing = pauseConversationSandboxMutation.isPending;
 
   return (
     <div className="w-full flex items-center justify-between">
