@@ -295,8 +295,8 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
         if not agent_state or agent_state == AgentState.LOADING:
             raise StartingConvoException('Conversation is still starting')
 
-        user_msg, _ = self._get_instructions(jinja)
-        user_msg = MessageAction(content=user_msg)
+        instructions, _ = self._get_instructions(jinja)
+        user_msg = MessageAction(content=instructions)
         await conversation_manager.send_event_to_conversation(
             self.conversation_id, event_to_dict(user_msg)
         )

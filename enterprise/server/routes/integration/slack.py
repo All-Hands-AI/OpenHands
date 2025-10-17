@@ -80,6 +80,14 @@ async def install_callback(
             status_code=400,
         )
 
+    if not config.jwt_secret:
+        logger.error('slack_install_callback_error JWT not configured.')
+        return _html_response(
+            title='Error',
+            description=html.escape('JWT not configured'),
+            status_code=500,
+        )
+
     try:
         client = AsyncWebClient()  # no prepared token needed for this
         # Complete the installation by calling oauth.v2.access API method
@@ -149,6 +157,14 @@ async def keycloak_callback(
             title='Error',
             description=html.escape(error or 'No code provided'),
             status_code=400,
+        )
+
+    if not config.jwt_secret:
+        logger.error('problem_retrieving_keycloak_tokens JWT not configured.')
+        return _html_response(
+            title='Error',
+            description=html.escape('JWT not configured'),
+            status_code=500,
         )
 
     payload: dict[str, str] = jwt.decode(
