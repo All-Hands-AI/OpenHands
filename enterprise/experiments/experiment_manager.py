@@ -1,18 +1,47 @@
+from uuid import UUID
+
 from experiments.constants import (
     ENABLE_EXPERIMENT_MANAGER,
+    EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
 )
 from experiments.experiment_versions import (
     handle_condenser_max_step_experiment,
     handle_system_prompt_experiment,
 )
+from experiments.experiment_versions._004_condenser_max_step_experiment import (
+    handle_condenser_max_step_experiment__v1,
+)
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.experiments.experiment_manager import ExperimentManager
+from openhands.sdk import Agent
 from openhands.server.session.conversation_init_data import ConversationInitData
 
 
 class SaaSExperimentManager(ExperimentManager):
+    @staticmethod
+    def run_agent_variant_tests__v1(
+        user_id: str | None, conversation_id: UUID, agent: Agent
+    ) -> Agent:
+        if not ENABLE_EXPERIMENT_MANAGER:
+            logger.info(
+                'experiment_manager:run_conversation_variant_test:skipped',
+                extra={'reason': 'experiment_manager_disabled'},
+            )
+            return agent
+
+        agent = handle_condenser_max_step_experiment__v1(
+            user_id, conversation_id, agent
+        )
+
+        if EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT:
+            agent = agent.model_copy(
+                update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
+            )
+
+        return agent
+
     @staticmethod
     def run_conversation_variant_test(
         user_id, conversation_id, conversation_settings
