@@ -55,7 +55,7 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
         if self.user is None:
             self.user = os.getenv('DB_USER', 'postgres')
         if self.password is None:
-            self.password = SecretStr(os.getenv('DB_PASS', 'postgres'))
+            self.password = SecretStr(os.getenv('DB_PASS', 'postgres').strip())
         if self.gcp_db_instance is None:
             self.gcp_db_instance = os.getenv('GCP_DB_INSTANCE')
         if self.gcp_project is None:

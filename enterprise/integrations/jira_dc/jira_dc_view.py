@@ -135,8 +135,10 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
             conversation_store = await ConversationStoreImpl.get_instance(
                 config, user_id
             )
-            metadata = await conversation_store.get_metadata(self.conversation_id)
-            if not metadata:
+
+            try:
+                await conversation_store.get_metadata(self.conversation_id)
+            except FileNotFoundError:
                 raise StartingConvoException('Conversation no longer exists.')
 
             provider_tokens = await self.saas_user_auth.get_provider_tokens()
