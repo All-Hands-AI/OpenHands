@@ -147,9 +147,15 @@ class RemoteSandboxService(SandboxService):
                 url = runtime.get('url', None)
                 if url:
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
-                    exposed_urls.append(ExposedUrl(name=VSCODE, url=_build_service_url(url, 'vscode')))
-                    exposed_urls.append(ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1')))
-                    exposed_urls.append(ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2')))
+                    exposed_urls.append(
+                        ExposedUrl(name=VSCODE, url=_build_service_url(url, 'vscode'))
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'))
+                    )
             else:
                 exposed_urls = None
         else:
@@ -392,7 +398,6 @@ class RemoteSandboxService(SandboxService):
 def _build_service_url(url: str, service_name: str):
     scheme, host_and_path = url.split('://')
     return scheme + '://' + service_name + '-' + host_and_path
-
 
 
 async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):

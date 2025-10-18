@@ -126,6 +126,10 @@ class DockerSandboxService(SandboxService):
         session_api_key = None
 
         if status == SandboxStatus.RUNNING:
+            # Get session API key first
+            env = self._get_container_env_vars(container)
+            session_api_key = env.get(SESSION_API_KEY_VARIABLE)
+
             # Get the first exposed port mapping
             exposed_urls = []
             port_bindings = container.attrs.get('NetworkSettings', {}).get('Ports', {})
@@ -143,13 +147,11 @@ class DockerSandboxService(SandboxService):
                             None,
                         )
                         if exposed_port:
-                            url = self.container_url_pattern.format(
-                                port=host_port
-                            )
+                            url = self.container_url_pattern.format(port=host_port)
 
                             # VSCode URLs require the api_key and working dir
                             if exposed_port.name == VSCODE:
-                                url += f"/?tkn={session_api_key}&folder={container.WorkingDir}"
+                                url += f'/?tkn={session_api_key}&folder={container.WorkingDir}'
 
                             exposed_urls.append(
                                 ExposedUrl(
@@ -157,10 +159,6 @@ class DockerSandboxService(SandboxService):
                                     url=url,
                                 )
                             )
-
-            # Get session API key
-            env = self._get_container_env_vars(container)
-            session_api_key = env[SESSION_API_KEY_VARIABLE]
 
         return SandboxInfo(
             id=container.name,
@@ -415,7 +413,7 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
                     'The first port on which the agent should start application servers.'
                 ),
                 container_port=8012,
-            )
+            ),
         ]
     )
     health_check_path: str | None = Field(
