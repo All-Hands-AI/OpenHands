@@ -53,7 +53,7 @@ async def test_mount_to_app_removes_existing_mounts(manager: MCPProxyManager):
         if isinstance(route, Mount) and route.path == '/mcp'
     ]
     now_root_mounts = [
-        route for route in app.routes if isinstance(route, Mount) and route.path == '/'
+        route for route in app.routes if isinstance(route, Mount) and route.path == ''
     ]
 
     assert len(now_mcp_mounts) == 1, 'There should be one /mcp mount'

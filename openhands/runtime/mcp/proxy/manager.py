@@ -110,7 +110,7 @@ class MCPProxyManager:
         )
         # Remove any existing mounts at root path
         for route in list(app.routes):
-            if isinstance(route, Mount) and route.path in ('/mcp', '/'):
+            if isinstance(route, Mount) and route.path in ('/mcp', ''):
                 app.routes.remove(route)
                 logger.info(f'Remove existing mounts at {route.path}')
 
