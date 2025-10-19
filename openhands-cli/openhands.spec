@@ -33,7 +33,6 @@ a = Analysis(
         *collect_data_files('fastmcp'),
         *collect_data_files('mcp'),
         # Include all data files from openhands.sdk (templates, configs, etc.)
-        # This ensures we never miss future prompt templates or other data files
         *collect_data_files('openhands.sdk'),
         # Include package metadata for importlib.metadata
         *copy_metadata('fastmcp'),
