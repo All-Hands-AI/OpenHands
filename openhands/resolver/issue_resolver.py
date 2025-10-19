@@ -222,7 +222,7 @@ class IssueResolver:
             and not is_experimental
         ):
             runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+                f'ghcr.io/openhands/runtime:{openhands.__version__}-nikolaik'
             )
 
         # Convert container image values to string or None

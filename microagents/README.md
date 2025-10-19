@@ -66,7 +66,7 @@ Key characteristics:
 - **Reusable**: Knowledge can be applied across multiple projects
 - **Versioned**: Support multiple versions of tools/frameworks
 
-You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/All-Hands-AI/OpenHands/tree/main/microagents/github.md).
+You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/OpenHands/OpenHands/tree/main/microagents/github.md).
 
 ### 2. Repository Agents
 
@@ -82,7 +82,7 @@ Key features:
 - **Always active**: Automatically loaded for the repository
 - **Locally maintained**: Updated with the project
 
-You can see an example of a repo agent in [the agent for the OpenHands repo itself](https://github.com/All-Hands-AI/OpenHands/blob/main/.openhands/microagents/repo.md).
+You can see an example of a repo agent in [the agent for the OpenHands repo itself](https://github.com/OpenHands/OpenHands/blob/main/.openhands/microagents/repo.md).
 
 
 ## Contributing
