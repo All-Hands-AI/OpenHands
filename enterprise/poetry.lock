@@ -1977,14 +1977,14 @@ devel = ["colorama", "json-spec", "jsonschema", "pylint", "pytest", "pytest-benc
 
 [[package]]
 name = "fastmcp"
-version = "2.12.0"
+version = "2.12.5"
 description = "The fast, Pythonic way to build MCP servers and clients."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "fastmcp-2.12.0-py3-none-any.whl", hash = "sha256:f57d4a32b7761da3a4842ba8d70cf1b1a6c3791eda27fd3252780ecfa8f87cff"},
-    {file = "fastmcp-2.12.0.tar.gz", hash = "sha256:c7d6ec0fe3fa8d10061d08b40ebf6a4f916034a47ff3188dfd81c25e143ac18e"},
+    {file = "fastmcp-2.12.5-py3-none-any.whl", hash = "sha256:b1e542f9b83dbae7cecfdc9c73b062f77074785abda9f2306799116121344133"},
+    {file = "fastmcp-2.12.5.tar.gz", hash = "sha256:2dfd02e255705a4afe43d26caddbc864563036e233dbc6870f389ee523b39a6a"},
 ]
 
 [package.dependencies]
@@ -1992,8 +1992,7 @@ authlib = ">=1.5.2"
 cyclopts = ">=3.0.0"
 exceptiongroup = ">=1.2.2"
 httpx = ">=0.28.1"
-mcp = ">=1.12.4,<2.0.0"
-openai = ">=1.95.1"
+mcp = ">=1.12.4,<1.17.0"
 openapi-core = ">=0.19.5"
 openapi-pydantic = ">=0.5.1"
 pydantic = {version = ">=2.11.7", extras = ["email"]}
@@ -2002,6 +2001,7 @@ python-dotenv = ">=1.1.0"
 rich = ">=13.9.4"
 
 [package.extras]
+openai = ["openai (>=1.102.0)"]
 websockets = ["websockets (>=15.0.1)"]
 
 [[package]]
@@ -5536,8 +5536,8 @@ websockets = ">=12"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "5d06622db011bfcb782d9916214caeb411ac290b"
-resolved_reference = "5d06622db011bfcb782d9916214caeb411ac290b"
+reference = "738f4241cf23719db238a882bd734bfd790f0ff9"
+resolved_reference = "738f4241cf23719db238a882bd734bfd790f0ff9"
 subdirectory = "openhands/agent_server"
 
 [[package]]
@@ -5562,7 +5562,7 @@ deprecated = "*"
 dirhash = "*"
 docker = "*"
 fastapi = "*"
-fastmcp = "^2.5.2"
+fastmcp = "^2.12.4"
 google-api-python-client = "^2.164.0"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
@@ -5582,8 +5582,8 @@ memory-profiler = "^0.61.0"
 numpy = "*"
 openai = "1.99.9"
 openhands-aci = "0.3.2"
-openhands-agent-server = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "5d06622db011bfcb782d9916214caeb411ac290b", subdirectory = "openhands/agent_server"}
-openhands-sdk = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "5d06622db011bfcb782d9916214caeb411ac290b", subdirectory = "openhands/sdk"}
+openhands-agent-server = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "738f4241cf23719db238a882bd734bfd790f0ff9", subdirectory = "openhands/agent_server"}
+openhands-sdk = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "738f4241cf23719db238a882bd734bfd790f0ff9", subdirectory = "openhands/sdk"}
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 pathspec = "^0.12.1"
@@ -5662,8 +5662,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "5d06622db011bfcb782d9916214caeb411ac290b"
-resolved_reference = "5d06622db011bfcb782d9916214caeb411ac290b"
+reference = "738f4241cf23719db238a882bd734bfd790f0ff9"
+resolved_reference = "738f4241cf23719db238a882bd734bfd790f0ff9"
 subdirectory = "openhands/sdk"
 
 [[package]]
