@@ -86,6 +86,10 @@ class AppServerConfig(OpenHandsModel):
         default_factory=get_default_web_url,
         description='The URL where OpenHands is running (e.g., http://localhost:3000)',
     )
+    agent_server_image: str = Field(
+        default='ghcr.io/all-hands-ai/agent-server:ab36fd6-python',
+        description=('The name / tag of the agent server image to use'),
+    )
     # Dependency Injection Injectors
     event: EventServiceInjector | None = None
     event_callback: EventCallbackServiceInjector | None = None
