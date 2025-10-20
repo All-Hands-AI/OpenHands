@@ -19,7 +19,7 @@ classifiers = [
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
   "openhands-sdk==1.0.0a2",
-  "openhands-tools>=1.0.0a2",
+  "openhands-tools==1.0.0a2",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
