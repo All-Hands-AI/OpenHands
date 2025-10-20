@@ -91,11 +91,11 @@ def mock_running_container():
     container.name = 'oh-test-abc123'
     container.status = 'running'
     container.image.tags = ['spec456']
-    container.WorkingDir = '/workspace'
     container.attrs = {
         'Created': '2024-01-15T10:30:00.000000000Z',
         'Config': {
-            'Env': ['OH_SESSION_API_KEYS_0=session_key_123', 'OTHER_VAR=other_value']
+            'Env': ['OH_SESSION_API_KEYS_0=session_key_123', 'OTHER_VAR=other_value'],
+            'WorkingDir': '/workspace'
         },
         'NetworkSettings': {
             'Ports': {
