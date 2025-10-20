@@ -16,6 +16,7 @@ export const VERIFIED_MODELS = [
   "claude-3-7-sonnet-20250219",
   "claude-sonnet-4-20250514",
   "claude-sonnet-4-5-20250929",
+  "claude-haiku-4-5-20251001",
   "claude-opus-4-20250514",
   "claude-opus-4-1-20250805",
   "gemini-2.5-pro",
@@ -55,6 +56,7 @@ export const VERIFIED_ANTHROPIC_MODELS = [
   "claude-3-7-sonnet-20250219",
   "claude-sonnet-4-20250514",
   "claude-sonnet-4-5-20250929",
+  "claude-haiku-4-5-20251001",
   "claude-opus-4-20250514",
   "claude-opus-4-1-20250805",
 ];
@@ -72,6 +74,7 @@ export const VERIFIED_MISTRAL_MODELS = [
 export const VERIFIED_OPENHANDS_MODELS = [
   "claude-sonnet-4-20250514",
   "claude-sonnet-4-5-20250929",
+  "claude-haiku-4-5-20251001",
   "gpt-5-2025-08-07",
   "gpt-5-mini-2025-08-07",
   "claude-opus-4-20250514",
