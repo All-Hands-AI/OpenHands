@@ -26,6 +26,9 @@ from openhands.app_server.event_callback.event_callback_service import (
 )
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
+    VSCODE,
+    WORKER_1,
+    WORKER_2,
     ExposedUrl,
     SandboxInfo,
     SandboxPage,
@@ -144,6 +147,17 @@ class RemoteSandboxService(SandboxService):
                 url = runtime.get('url', None)
                 if url:
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
+                    vscode_url = (
+                        _build_service_url(url, 'vscode')
+                        + f'/?tkn={session_api_key}&folder={runtime["working_dir"]}'
+                    )
+                    exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'))
+                    )
             else:
                 exposed_urls = None
         else:
@@ -381,6 +395,11 @@ class RemoteSandboxService(SandboxService):
         except httpx.HTTPError as e:
             _logger.error(f'Error deleting sandbox {sandbox_id}: {e}')
             return False
+
+
+def _build_service_url(url: str, service_name: str):
+    scheme, host_and_path = url.split('://')
+    return scheme + '://' + service_name + '-' + host_and_path
 
 
 async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):

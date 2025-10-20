@@ -94,7 +94,8 @@ def mock_running_container():
     container.attrs = {
         'Created': '2024-01-15T10:30:00.000000000Z',
         'Config': {
-            'Env': ['OH_SESSION_API_KEYS_0=session_key_123', 'OTHER_VAR=other_value']
+            'Env': ['OH_SESSION_API_KEYS_0=session_key_123', 'OTHER_VAR=other_value'],
+            'WorkingDir': '/workspace',
         },
         'NetworkSettings': {
             'Ports': {
@@ -629,7 +630,10 @@ class TestDockerSandboxService:
         assert agent_url.url == 'http://localhost:12345'
 
         vscode_url = next(url for url in result.exposed_urls if url.name == VSCODE)
-        assert vscode_url.url == 'http://localhost:12346'
+        assert (
+            vscode_url.url
+            == 'http://localhost:12346/?tkn=session_key_123&folder=/workspace'
+        )
 
     async def test_container_to_sandbox_info_invalid_created_time(self, service):
         """Test conversion with invalid creation timestamp."""

@@ -19,6 +19,8 @@ from openhands.app_server.sandbox.docker_sandbox_spec_service import get_docker_
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
     VSCODE,
+    WORKER_1,
+    WORKER_2,
     ExposedUrl,
     SandboxInfo,
     SandboxPage,
@@ -124,6 +126,10 @@ class DockerSandboxService(SandboxService):
         session_api_key = None
 
         if status == SandboxStatus.RUNNING:
+            # Get session API key first
+            env = self._get_container_env_vars(container)
+            session_api_key = env.get(SESSION_API_KEY_VARIABLE)
+
             # Get the first exposed port mapping
             exposed_urls = []
             port_bindings = container.attrs.get('NetworkSettings', {}).get('Ports', {})
@@ -141,18 +147,18 @@ class DockerSandboxService(SandboxService):
                             None,
                         )
                         if exposed_port:
+                            url = self.container_url_pattern.format(port=host_port)
+
+                            # VSCode URLs require the api_key and working dir
+                            if exposed_port.name == VSCODE:
+                                url += f'/?tkn={session_api_key}&folder={container.attrs["Config"]["WorkingDir"]}'
+
                             exposed_urls.append(
                                 ExposedUrl(
                                     name=exposed_port.name,
-                                    url=self.container_url_pattern.format(
-                                        port=host_port
-                                    ),
+                                    url=url,
                                 )
                             )
-
-            # Get session API key
-            env = self._get_container_env_vars(container)
-            session_api_key = env[SESSION_API_KEY_VARIABLE]
 
         return SandboxInfo(
             id=container.name,
@@ -393,6 +399,20 @@ class DockerSandboxServiceInjector(SandboxServiceInjector):
                     'The port on which the VSCode server runs within the container'
                 ),
                 container_port=8001,
+            ),
+            ExposedPort(
+                name=WORKER_1,
+                description=(
+                    'The first port on which the agent should start application servers.'
+                ),
+                container_port=8011,
+            ),
+            ExposedPort(
+                name=WORKER_2,
+                description=(
+                    'The first port on which the agent should start application servers.'
+                ),
+                container_port=8012,
             ),
         ]
     )
