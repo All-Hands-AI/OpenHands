@@ -306,7 +306,7 @@ class TestConfirmationMode:
     ) -> None:
         """Test that ask_user_confirmation falls back to DEFER when reason input is cancelled."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.return_value = ('', True)  # User cancelled reason input
+        mock_cli_text_input.side_effect = KeyboardInterrupt()  # User cancelled reason input
 
         mock_action = MagicMock()
         mock_action.tool_name = 'bash'

@@ -62,21 +62,8 @@ def ask_user_confirmation(
     elif index == 1:
         # Handle "Reject" option with optional reason
         try:
-            reason_result = cli_text_input(
-                'Reason (ENTER to reject without reason): '
-            )
-        except Exception:
-            return ConfirmationResult(decision=UserConfirmation.DEFER)
-
-        # Support both string return and (reason, cancelled) tuple for tests
-        cancelled = False
-        if isinstance(reason_result, tuple) and len(reason_result) >= 1:
-            reason = reason_result[0] or ''
-            cancelled = bool(reason_result[1]) if len(reason_result) > 1 else False
-        else:
-            reason = str(reason_result or '').strip()
-
-        if cancelled:
+            reason = cli_text_input('Reason (ENTER to reject without reason): ').strip()
+        except (EOFError, KeyboardInterrupt):
             return ConfirmationResult(decision=UserConfirmation.DEFER)
 
         return ConfirmationResult(decision=UserConfirmation.REJECT, reason=reason)
