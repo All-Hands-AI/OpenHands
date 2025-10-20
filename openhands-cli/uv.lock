@@ -1281,7 +1281,7 @@ wheels = [
 [[package]]
 name = "litellm"
 version = "1.77.7"
-source = { git = "https://github.com/BerriAI/litellm.git?rev=v1.77.7.dev9#763d2f8ccdd8412dbe6d4ac0e136d9ac34dcd4c0" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "click" },
@@ -1295,6 +1295,10 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "tiktoken" },
     { name = "tokenizers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5a/4b/4e9a204462687ca3796cc0fdaefbd624d7b2216edd4ad243d60a3b95127e/litellm-1.77.7.tar.gz", hash = "sha256:e3398fb2575b98726e787c0a1481daed5938d58cafdcd96fbca80c312221af3e", size = 10401706, upload-time = "2025-10-05T00:22:37.646Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/50/53df2244d4aca2af73d2f2c6ad21c731cf24bd0dbe89d896184a1eaa874f/litellm-1.77.7-py3-none-any.whl", hash = "sha256:1b3a1b17bd521a0ad25226fb62a912602c803922aabb4a16adf83834673be574", size = 9223061, upload-time = "2025-10-05T00:22:34.112Z" },
 ]
 
 [[package]]
@@ -1652,8 +1656,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=50b094a92817e448ec4352d2950df4f19edd5a9f" },
-    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=50b094a92817e448ec4352d2950df4f19edd5a9f" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=4ffaa97a9a438b913b73696e192b5575419407bc" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=4ffaa97a9a438b913b73696e192b5575419407bc" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1676,8 +1680,8 @@ dev = [
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=50b094a92817e448ec4352d2950df4f19edd5a9f#50b094a92817e448ec4352d2950df4f19edd5a9f" }
+version = "1.0.0a1"
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=4ffaa97a9a438b913b73696e192b5575419407bc#4ffaa97a9a438b913b73696e192b5575419407bc" }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
@@ -1691,8 +1695,8 @@ dependencies = [
 
 [[package]]
 name = "openhands-tools"
-version = "1.0.0"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=50b094a92817e448ec4352d2950df4f19edd5a9f#50b094a92817e448ec4352d2950df4f19edd5a9f" }
+version = "1.0.0a1"
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Ftools&rev=4ffaa97a9a438b913b73696e192b5575419407bc#4ffaa97a9a438b913b73696e192b5575419407bc" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
