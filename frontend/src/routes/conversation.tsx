@@ -30,12 +30,14 @@ import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper"
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { I18nKey } from "#/i18n/declaration";
+import { useEventStore } from "#/stores/use-event-store";
 
 function AppContent() {
   useConversationConfig();
 
   const { t } = useTranslation();
   const { conversationId } = useConversationId();
+  const clearEvents = useEventStore((state) => state.clearEvents);
 
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
   const { isTask, taskStatus, taskDetail } = useTaskPolling();
@@ -72,6 +74,7 @@ function AppContent() {
     resetConversationState();
     setCurrentAgentState(AgentState.LOADING);
     removeErrorMessage();
+    clearEvents();
 
     // Reset tracking ONLY if we're navigating to a DIFFERENT conversation
     // Don't reset on StrictMode remounts (conversationId is the same)
@@ -85,6 +88,7 @@ function AppContent() {
     resetConversationState,
     setCurrentAgentState,
     removeErrorMessage,
+    clearEvents,
   ]);
 
   // 2. Task Error Display Effect
