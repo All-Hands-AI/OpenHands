@@ -21,6 +21,7 @@ interface ConversationCardProps {
   createdAt?: string; // ISO 8601
   conversationStatus?: ConversationStatus;
   conversationId?: string; // Optional conversation ID for VS Code URL
+  conversationVersion?: "V0" | "V1";
   contextMenuOpen?: boolean;
   onContextMenuToggle?: (isOpen: boolean) => void;
 }
@@ -39,6 +40,7 @@ export function ConversationCard({
   createdAt,
   conversationId,
   conversationStatus,
+  conversationVersion,
   contextMenuOpen = false,
   onContextMenuToggle,
 }: ConversationCardProps) {
@@ -108,7 +110,6 @@ export function ConversationCard({
       className={cn(
         "relative h-auto w-full p-3.5 border-b border-neutral-600 cursor-pointer",
         "data-[context-menu-open=false]:hover:bg-[#454545]",
-        conversationStatus === "ARCHIVED" && "opacity-60",
       )}
     >
       <div className="flex items-center justify-between w-full">
@@ -117,6 +118,7 @@ export function ConversationCard({
           titleMode={titleMode}
           onTitleSave={onTitleSave}
           conversationStatus={conversationStatus}
+          conversationVersion={conversationVersion}
         />
 
         {hasContextMenu && (
@@ -138,6 +140,7 @@ export function ConversationCard({
         selectedRepository={selectedRepository}
         lastUpdatedAt={lastUpdatedAt}
         createdAt={createdAt}
+        conversationStatus={conversationStatus}
       />
     </div>
   );
