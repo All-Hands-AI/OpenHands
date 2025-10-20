@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "../use-conversation-id";
 import { AgentState } from "#/types/agent-state";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 export const useConversationMicroagents = () => {
   const { conversationId } = useConversationId();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
 
   return useQuery({
     queryKey: ["conversation", conversationId, "microagents"],
