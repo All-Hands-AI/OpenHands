@@ -95,7 +95,7 @@ def mock_running_container():
         'Created': '2024-01-15T10:30:00.000000000Z',
         'Config': {
             'Env': ['OH_SESSION_API_KEYS_0=session_key_123', 'OTHER_VAR=other_value'],
-            'WorkingDir': '/workspace'
+            'WorkingDir': '/workspace',
         },
         'NetworkSettings': {
             'Ports': {

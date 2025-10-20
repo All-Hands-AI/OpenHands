@@ -151,7 +151,7 @@ class DockerSandboxService(SandboxService):
 
                             # VSCode URLs require the api_key and working dir
                             if exposed_port.name == VSCODE:
-                                url += f'/?tkn={session_api_key}&folder={container.attrs['Config']['WorkingDir']}'
+                                url += f'/?tkn={session_api_key}&folder={container.attrs["Config"]["WorkingDir"]}'
 
                             exposed_urls.append(
                                 ExposedUrl(

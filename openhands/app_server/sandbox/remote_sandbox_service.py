@@ -148,12 +148,10 @@ class RemoteSandboxService(SandboxService):
                 if url:
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
                     vscode_url = (
-                        _build_service_url(url, 'vscode') +
-                        f'/?tkn={session_api_key}&folder={runtime['working_dir']}'
+                        _build_service_url(url, 'vscode')
+                        + f'/?tkn={session_api_key}&folder={runtime["working_dir"]}'
                     )
-                    exposed_urls.append(
-                        ExposedUrl(name=VSCODE, url=vscode_url)
-                    )
+                    exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
                     exposed_urls.append(
                         ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
                     )
