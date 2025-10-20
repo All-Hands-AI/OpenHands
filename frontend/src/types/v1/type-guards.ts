@@ -63,16 +63,22 @@ export const isAgentErrorEvent = (
   typeof event.error === "string";
 
 /**
+ * Type guard function to check if an event is a message event (user or assistant)
+ */
+export const isMessageEvent = (event: OpenHandsEvent): event is MessageEvent =>
+  "llm_message" in event &&
+  typeof event.llm_message === "object" &&
+  event.llm_message !== null &&
+  "role" in event.llm_message &&
+  "content" in event.llm_message;
+
+/**
  * Type guard function to check if an event is a user message event
  */
 export const isUserMessageEvent = (
   event: OpenHandsEvent,
 ): event is MessageEvent =>
-  "llm_message" in event &&
-  typeof event.llm_message === "object" &&
-  event.llm_message !== null &&
-  "role" in event.llm_message &&
-  event.llm_message.role === "user";
+  isMessageEvent(event) && event.llm_message.role === "user";
 
 /**
  * Type guard function to check if an event is an action event
