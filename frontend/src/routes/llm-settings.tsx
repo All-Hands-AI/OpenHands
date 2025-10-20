@@ -9,8 +9,6 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
-import QuestionCircleIcon from "#/icons/question-circle.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/ui/help-link";
@@ -87,9 +85,7 @@ function LlmSettingsScreen() {
     searchApiKey: false,
     baseUrl: false,
     agent: false,
-    confirmationMode: false,
     enableDefaultCondenser: false,
-    securityAnalyzer: false,
     condenserMaxSize: false,
   });
 
@@ -97,19 +93,6 @@ function LlmSettingsScreen() {
   const [currentSelectedModel, setCurrentSelectedModel] = React.useState<
     string | null
   >(null);
-
-  // Track confirmation mode state to control security analyzer visibility
-  const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
-    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
-  );
-
-  // Track selected security analyzer for form submission
-  const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
-    React.useState(
-      settings?.SECURITY_ANALYZER === null
-        ? "none"
-        : (settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER),
-    );
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -142,20 +125,6 @@ function LlmSettingsScreen() {
     }
   }, [settings?.LLM_MODEL]);
 
-  // Update confirmation mode state when settings change
-  React.useEffect(() => {
-    if (settings?.CONFIRMATION_MODE !== undefined) {
-      setConfirmationModeEnabled(settings.CONFIRMATION_MODE);
-    }
-  }, [settings?.CONFIRMATION_MODE]);
-
-  // Update selected security analyzer state when settings change
-  React.useEffect(() => {
-    if (settings?.SECURITY_ANALYZER !== undefined) {
-      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
-    }
-  }, [settings?.SECURITY_ANALYZER]);
-
   // Handle URL parameters for SaaS subscription redirects
   React.useEffect(() => {
     const checkout = searchParams.get("checkout");
@@ -177,9 +146,7 @@ function LlmSettingsScreen() {
       searchApiKey: false,
       baseUrl: false,
       agent: false,
-      confirmationMode: false,
       enableDefaultCondenser: false,
-      securityAnalyzer: false,
       condenserMaxSize: false,
     });
   };
@@ -197,11 +164,6 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
-    const confirmationMode =
-      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
-    const securityAnalyzer = formData
-      .get("security-analyzer-input")
-      ?.toString();
 
     const fullLlmModel = provider && model && `${provider}/${model}`;
 
@@ -210,11 +172,6 @@ function LlmSettingsScreen() {
         LLM_MODEL: fullLlmModel,
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
-        CONFIRMATION_MODE: confirmationMode,
-        SECURITY_ANALYZER:
-          securityAnalyzer === "none"
-            ? null
-            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -234,8 +191,6 @@ function LlmSettingsScreen() {
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
-    const confirmationMode =
-      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
     const condenserMaxSizeStr = formData
@@ -249,10 +204,6 @@ function LlmSettingsScreen() {
         ? Math.max(20, condenserMaxSizeRaw)
         : undefined;
 
-    const securityAnalyzer = formData
-      .get("security-analyzer-input")
-      ?.toString();
-
     saveSettings(
       {
         LLM_MODEL: model,
@@ -260,14 +211,9 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
-        CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         CONDENSER_MAX_SIZE:
           condenserMaxSize ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
-        SECURITY_ANALYZER:
-          securityAnalyzer === "none"
-            ? null
-            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -284,9 +230,7 @@ function LlmSettingsScreen() {
       searchApiKey: false,
       baseUrl: false,
       agent: false,
-      confirmationMode: false,
       enableDefaultCondenser: false,
-      securityAnalyzer: false,
       condenserMaxSize: false,
     });
   };
@@ -347,24 +291,6 @@ function LlmSettingsScreen() {
     }));
   };
 
-  const handleConfirmationModeIsDirty = (isToggled: boolean) => {
-    const confirmationModeIsDirty = isToggled !== settings?.CONFIRMATION_MODE;
-    setDirtyInputs((prev) => ({
-      ...prev,
-      confirmationMode: confirmationModeIsDirty,
-    }));
-    setConfirmationModeEnabled(isToggled);
-
-    // When confirmation mode is enabled, set default security analyzer to "llm" if not already set
-    if (isToggled && !selectedSecurityAnalyzer) {
-      setSelectedSecurityAnalyzer(DEFAULT_SETTINGS.SECURITY_ANALYZER);
-      setDirtyInputs((prev) => ({
-        ...prev,
-        securityAnalyzer: true,
-      }));
-    }
-  };
-
   const handleEnableDefaultCondenserIsDirty = (isToggled: boolean) => {
     const enableDefaultCondenserIsDirty =
       isToggled !== settings?.ENABLE_DEFAULT_CONDENSER;
@@ -386,57 +312,7 @@ function LlmSettingsScreen() {
     }));
   };
 
-  const handleSecurityAnalyzerIsDirty = (securityAnalyzer: string) => {
-    const securityAnalyzerIsDirty =
-      securityAnalyzer !== settings?.SECURITY_ANALYZER;
-    setDirtyInputs((prev) => ({
-      ...prev,
-      securityAnalyzer: securityAnalyzerIsDirty,
-    }));
-  };
-
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
-
-  const getSecurityAnalyzerOptions = () => {
-    const analyzers = resources?.securityAnalyzers || [];
-    const orderedItems = [];
-
-    // Add LLM analyzer first
-    if (analyzers.includes("llm")) {
-      orderedItems.push({
-        key: "llm",
-        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT),
-      });
-    }
-
-    // Add None option second
-    orderedItems.push({
-      key: "none",
-      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
-    });
-
-    // Add Invariant analyzer third
-    if (analyzers.includes("invariant")) {
-      orderedItems.push({
-        key: "invariant",
-        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
-      });
-    }
-
-    // Add any other analyzers that might exist
-    analyzers.forEach((analyzer) => {
-      if (!["llm", "invariant", "none"].includes(analyzer)) {
-        // For unknown analyzers, use the analyzer name as fallback
-        // In the future, add specific i18n keys for new analyzers
-        orderedItems.push({
-          key: analyzer,
-          label: analyzer, // TODO: Add i18n support for new analyzers
-        });
-      }
-    });
-
-    return orderedItems;
-  };
 
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
@@ -687,67 +563,6 @@ function LlmSettingsScreen() {
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
               </SettingsSwitch>
             </div>
-          )}
-
-          {/* Confirmation mode and security analyzer - always visible */}
-          <div className="flex items-center gap-2">
-            <SettingsSwitch
-              testId="enable-confirmation-mode-switch"
-              name="enable-confirmation-mode-switch"
-              onToggle={handleConfirmationModeIsDirty}
-              defaultIsToggled={settings.CONFIRMATION_MODE}
-              isBeta
-              isDisabled={shouldShowUpgradeBanner}
-            >
-              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-            </SettingsSwitch>
-            <TooltipButton
-              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              className="text-[#9099AC] hover:text-white cursor-help"
-            >
-              <QuestionCircleIcon width={16} height={16} />
-            </TooltipButton>
-          </div>
-
-          {confirmationModeEnabled && (
-            <>
-              <div className="w-full max-w-[680px]">
-                <SettingsDropdownInput
-                  testId="security-analyzer-input"
-                  name="security-analyzer-display"
-                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={getSecurityAnalyzerOptions()}
-                  placeholder={t(
-                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
-                  )}
-                  selectedKey={selectedSecurityAnalyzer || "none"}
-                  isClearable={false}
-                  onSelectionChange={(key) => {
-                    const newValue = key?.toString() || "";
-                    setSelectedSecurityAnalyzer(newValue);
-                    handleSecurityAnalyzerIsDirty(newValue);
-                  }}
-                  onInputChange={(value) => {
-                    // Handle when input is cleared
-                    if (!value) {
-                      setSelectedSecurityAnalyzer("");
-                      handleSecurityAnalyzerIsDirty("");
-                    }
-                  }}
-                  wrapperClassName="w-full"
-                />
-                {/* Hidden input to store the actual key value for form submission */}
-                <input
-                  type="hidden"
-                  name="security-analyzer-input"
-                  value={selectedSecurityAnalyzer || ""}
-                />
-              </div>
-              <p className="text-xs text-tertiary-alt max-w-[680px]">
-                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
-              </p>
-            </>
           )}
         </div>
 
