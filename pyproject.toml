@@ -115,7 +115,6 @@ pybase62 = "^1.0.0"
 # V1 dependencies
 openhands-agent-server = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
 openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-sdk", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
-# This refuses to install
 openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-tools", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
