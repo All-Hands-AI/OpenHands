@@ -456,10 +456,12 @@ class ActionExecutionClient(Runtime):
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
+        import sys
+
         # Check if we're on Windows - MCP is disabled on Windows
-        # if sys.platform == 'win32':
-        #     self.log('info', 'MCP functionality is disabled on Windows')
-        #     return ErrorObservation('MCP functionality is not available on Windows')
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
 
         # Get the updated MCP config
         updated_mcp_config = self.get_mcp_config()
