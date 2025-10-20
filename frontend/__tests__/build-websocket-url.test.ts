@@ -7,7 +7,7 @@ describe("buildWebSocketUrl", () => {
   });
 
   describe("Basic URL construction", () => {
-    it("should build WebSocket URL with conversation ID, URL, and session key", () => {
+    it("should build WebSocket URL with conversation ID and URL", () => {
       vi.stubGlobal("location", {
         protocol: "http:",
         host: "localhost:3000",
@@ -18,9 +18,7 @@ describe("buildWebSocketUrl", () => {
         "http://localhost:8080/api/conversations/conv-123",
       );
 
-      expect(result).toBe(
-        "ws://localhost:8080/sockets/events/conv-123?session_api_key=session-key-abc",
-      );
+      expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
     });
 
     it("should use wss:// protocol when window.location.protocol is https:", () => {
@@ -34,9 +32,7 @@ describe("buildWebSocketUrl", () => {
         "https://example.com:8080/api/conversations/conv-123",
       );
 
-      expect(result).toBe(
-        "wss://example.com:8080/sockets/events/conv-123?session_api_key=session-key-abc",
-      );
+      expect(result).toBe("wss://example.com:8080/sockets/events/conv-123");
     });
 
     it("should extract host and port from conversation URL", () => {
@@ -54,7 +50,7 @@ describe("buildWebSocketUrl", () => {
     });
   });
 
-  describe("Session API key handling", () => {
+  describe("Query parameters handling", () => {
     beforeEach(() => {
       vi.stubGlobal("location", {
         protocol: "http:",
@@ -62,32 +58,14 @@ describe("buildWebSocketUrl", () => {
       });
     });
 
-    it("should include session_api_key query parameter when provided", () => {
-      const result = buildWebSocketUrl(
-        "conv-123",
-        "http://localhost:8080/api/conversations/conv-123",
-      );
-
-      expect(result).toContain("?session_api_key=my-secret-key");
-    });
-
-    it("should not include session_api_key query parameter when null", () => {
+    it("should not include query parameters in the URL (handled by useWebSocket hook)", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
       );
 
       expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
-      expect(result).not.toContain("session_api_key");
-    });
-
-    it("should not include session_api_key query parameter when undefined", () => {
-      const result = buildWebSocketUrl(
-        "conv-123",
-        "http://localhost:8080/api/conversations/conv-123",
-      );
-
-      expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
+      expect(result).not.toContain("?");
       expect(result).not.toContain("session_api_key");
     });
   });
@@ -196,13 +174,14 @@ describe("buildWebSocketUrl", () => {
       );
     });
 
-    it("should handle session keys with special characters", () => {
+    it("should build URL without query parameters", () => {
       const result = buildWebSocketUrl(
         "conv-123",
         "http://localhost:8080/api/conversations/conv-123",
       );
 
-      expect(result).toContain("?session_api_key=key-with-special_chars.123");
+      expect(result).toBe("ws://localhost:8080/sockets/events/conv-123");
+      expect(result).not.toContain("?");
     });
   });
 });
