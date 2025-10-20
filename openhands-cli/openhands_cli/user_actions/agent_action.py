@@ -62,7 +62,7 @@ def ask_user_confirmation(
     elif index == 1:
         # Handle "Reject" option with optional reason
         try:
-            reason = cli_text_input('Reason (ENTER to reject without reason): ').strip()
+            reason = cli_text_input('Reason (and let OpenHands know why): ').strip()
         except (EOFError, KeyboardInterrupt):
             return ConfirmationResult(decision=UserConfirmation.DEFER)
 
