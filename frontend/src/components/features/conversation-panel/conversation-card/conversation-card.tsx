@@ -110,7 +110,6 @@ export function ConversationCard({
       className={cn(
         "relative h-auto w-full p-3.5 border-b border-neutral-600 cursor-pointer",
         "data-[context-menu-open=false]:hover:bg-[#454545]",
-        conversationStatus === "ARCHIVED" && "opacity-60",
       )}
     >
       <div className="flex items-center justify-between w-full">
@@ -141,6 +140,7 @@ export function ConversationCard({
         selectedRepository={selectedRepository}
         lastUpdatedAt={lastUpdatedAt}
         createdAt={createdAt}
+        conversationStatus={conversationStatus}
       />
     </div>
   );

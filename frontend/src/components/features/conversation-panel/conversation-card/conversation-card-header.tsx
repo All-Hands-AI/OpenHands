@@ -19,6 +19,8 @@ export function ConversationCardHeader({
   conversationStatus,
   conversationVersion,
 }: ConversationCardHeaderProps) {
+  const isConversationArchived = conversationStatus === "ARCHIVED";
+
   return (
     <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
       {/* Status Indicator */}
@@ -30,11 +32,15 @@ export function ConversationCardHeader({
         </div>
       )}
       {/* Version Badge */}
-      <ConversationVersionBadge version={conversationVersion} />
+      <ConversationVersionBadge
+        version={conversationVersion}
+        isConversationArchived={isConversationArchived}
+      />
       <ConversationCardTitle
         title={title}
         titleMode={titleMode}
         onSave={onTitleSave}
+        isConversationArchived={isConversationArchived}
       />
       {/* Status Badges */}
       {conversationStatus && (
