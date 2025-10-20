@@ -411,6 +411,7 @@ LOQUACIOUS_LOGGERS = [
     'socketio',
     'socketio.client',
     'socketio.server',
+    'aiosqlite',
 ]
 
 for logger_name in LOQUACIOUS_LOGGERS:
@@ -580,6 +581,23 @@ def get_uvicorn_json_log_config() -> dict:
             'uvicorn.access': {
                 'handlers': ['access'],
                 'level': 'INFO',
+                'propagate': False,
+            },
+            # Suppress LiteLLM loggers to prevent them from leaking through root logger
+            # This is necessary because logging.config.dictConfig() resets the .disabled flag
+            'LiteLLM': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Router': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Proxy': {
+                'handlers': [],
+                'level': 'CRITICAL',
                 'propagate': False,
             },
         },

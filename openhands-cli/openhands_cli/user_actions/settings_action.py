@@ -123,9 +123,15 @@ def prompt_api_key(
         validator = NonEmptyValueValidator()
 
     question = helper_text + step_counter.next_step(question)
-    return cli_text_input(
+    user_input = cli_text_input(
         question, escapable=escapable, validator=validator, is_password=True
     )
+    
+    # If user pressed ENTER with existing key (empty input), return the existing key
+    if existing_api_key and not user_input.strip():
+        return existing_api_key.get_secret_value()
+    
+    return user_input
 
 
 # Advanced settings functions
