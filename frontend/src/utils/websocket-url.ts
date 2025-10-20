@@ -31,16 +31,14 @@ export function buildHttpBaseUrl(
 }
 
 /**
- * Builds the WebSocket URL for V1 conversations
+ * Builds the WebSocket URL for V1 conversations (without query params)
  * @param conversationId The conversation ID
  * @param conversationUrl The conversation URL containing host/port (e.g., "http://localhost:3000/api/conversations/123")
- * @param sessionApiKey The session API key for authentication
  * @returns WebSocket URL or null if inputs are invalid
  */
 export function buildWebSocketUrl(
   conversationId: string | undefined,
   conversationUrl: string | null | undefined,
-  sessionApiKey: string | null | undefined,
 ): string | null {
   if (!conversationId) {
     return null;
@@ -48,9 +46,9 @@ export function buildWebSocketUrl(
 
   const baseHost = extractBaseHost(conversationUrl);
 
-  // Build WebSocket URL: ws://host:port/sockets/events/{conversationId}?session_api_key={key}
+  // Build WebSocket URL: ws://host:port/sockets/events/{conversationId}
+  // Note: Query params should be passed via the useWebSocket hook options
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  const sessionKey = sessionApiKey ? `?session_api_key=${sessionApiKey}` : "";
 
-  return `${protocol}//${baseHost}/sockets/events/${conversationId}${sessionKey}`;
+  return `${protocol}//${baseHost}/sockets/events/${conversationId}`;
 }

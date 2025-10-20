@@ -1,7 +1,7 @@
 import React from "react";
 
 export interface WebSocketHookOptions {
-  queryParams?: Record<string, string>;
+  queryParams?: Record<string, string | boolean>;
   onOpen?: (event: Event) => void;
   onClose?: (event: CloseEvent) => void;
   onMessage?: (event: MessageEvent) => void;
@@ -38,7 +38,16 @@ export const useWebSocket = <T = string>(
     // Build URL with query parameters if provided
     let wsUrl = url;
     if (optionsRef.current?.queryParams) {
-      const params = new URLSearchParams(optionsRef.current.queryParams);
+      const stringParams = Object.entries(
+        optionsRef.current.queryParams,
+      ).reduce(
+        (acc, [key, value]) => {
+          acc[key] = String(value);
+          return acc;
+        },
+        {} as Record<string, string>,
+      );
+      const params = new URLSearchParams(stringParams);
       wsUrl = `${url}?${params.toString()}`;
     }
 

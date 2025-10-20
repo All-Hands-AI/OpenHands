@@ -27,14 +27,7 @@ export function isBaseEvent(value: unknown): value is BaseEvent {
     "id" in value &&
     "timestamp" in value &&
     "source" in value &&
-    typeof value.id === "string" &&
-    value.id.length > 0 &&
-    typeof value.timestamp === "string" &&
-    value.timestamp.length > 0 &&
-    typeof value.source === "string" &&
-    (value.source === "agent" ||
-      value.source === "user" ||
-      value.source === "environment")
+    "kind" in value
   );
 }
 
