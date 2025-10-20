@@ -18,8 +18,8 @@ classifiers = [
 # Using Git URLs for dependencies so installs from PyPI pull from GitHub
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk==1.0.0a2",
-  "openhands-tools==1.0.0a2",
+  "openhands-sdk==1.0.0a3",
+  "openhands-tools==1.0.0a3",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
@@ -101,6 +101,6 @@ ignore_missing_imports = true
 
 # UNCOMMENT TO USE EXACT COMMIT FROM AGENT-SDK
 
-[tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-sdk", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-tools", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
+# [tool.uv.sources]
+# openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-sdk", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
+# openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-tools", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
