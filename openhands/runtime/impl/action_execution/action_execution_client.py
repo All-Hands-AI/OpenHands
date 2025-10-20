@@ -456,12 +456,10 @@ class ActionExecutionClient(Runtime):
         return updated_mcp_config
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
-        import sys
-
         # Check if we're on Windows - MCP is disabled on Windows
-        if sys.platform == 'win32':
-            self.log('info', 'MCP functionality is disabled on Windows')
-            return ErrorObservation('MCP functionality is not available on Windows')
+        # if sys.platform == 'win32':
+        #     self.log('info', 'MCP functionality is disabled on Windows')
+        #     return ErrorObservation('MCP functionality is not available on Windows')
 
         # Get the updated MCP config
         updated_mcp_config = self.get_mcp_config()
@@ -469,10 +467,15 @@ class ActionExecutionClient(Runtime):
             'debug',
             f'Creating MCP clients with servers: {updated_mcp_config.sse_servers}',
         )
+        # Import here to avoid circular imports
+        from openhands.mcp.utils import call_tool_mcp_direct
 
+        mcp_client = self.mcp_call_handler.get_mcp_client(
+            action, updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers
+        )
         # Call the tool and return the result
         # No need for try/finally since disconnect() is now just resetting state
-        result = await self.mcp_call_handler.call_tool_mcp(action, updated_mcp_config)
+        result = await call_tool_mcp_direct(mcp_client, action)
         return result
 
     def close(self) -> None:

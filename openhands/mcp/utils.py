@@ -271,6 +271,9 @@ async def call_tool_mcp_direct(mcp_client: MCPClient, action: MCPAction) -> Obse
         logger.info('MCP functionality is disabled on Windows')
         return ErrorObservation('MCP functionality is not available on Windows')
 
+    if mcp_client is None:
+        raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
+
     try:
         # Call the tool - this will create a new connection internally
         response = await mcp_client.call_tool(action.name, action.arguments)

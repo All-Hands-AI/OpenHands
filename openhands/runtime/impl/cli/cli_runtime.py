@@ -721,12 +721,28 @@ class CLIRuntime(Runtime):
                 f'stdio={len(mcp_config.stdio_servers)}',
             )
 
+            mcp_client = self.mcp_call_handler.get_mcp_client(
+                action,
+                mcp_config.sse_servers,
+                mcp_config.shttp_servers,
+                mcp_config.stdio_servers,
+            )
+
+            if not mcp_client:
+                self.log('warning', 'No MCP clients could be created')
+                return ErrorObservation(
+                    'No MCP clients could be created - check server configurations'
+                )
+
             # Call the tool and return the result
             self.log(
                 'debug',
                 f'Executing MCP tool: {action.name} with arguments: {action.arguments}',
             )
-            result = await self.mcp_call_handler.call_tool_mcp(action, mcp_config)
+            # Import here to avoid circular imports
+            from openhands.mcp.utils import call_tool_mcp_direct
+
+            result = await call_tool_mcp_direct(mcp_client, action)
             self.log('debug', f'MCP tool {action.name} executed successfully')
             return result
 
