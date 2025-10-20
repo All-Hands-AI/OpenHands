@@ -28,6 +28,7 @@ def get_default_sandbox_specs():
                 'OH_ENABLE_VNC': '0',
                 'OH_CONVERSATIONS_PATH': '/workspace/conversations',
                 'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
+                'OH_VSCODE_PORT': '60001',
             },
             working_dir='/workspace/projects',
         )
