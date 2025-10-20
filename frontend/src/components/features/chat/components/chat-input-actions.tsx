@@ -6,6 +6,10 @@ import { useUnifiedPauseConversationSandbox } from "#/hooks/mutation/use-unified
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useSendMessage } from "#/hooks/use-send-message";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { AgentState } from "#/types/agent-state";
 
 interface ChatInputActionsProps {
   conversationStatus: ConversationStatus | null;
@@ -18,14 +22,28 @@ export function ChatInputActions({
   disabled,
   handleResumeAgent,
 }: ChatInputActionsProps) {
+  const { data: conversation } = useActiveConversation();
   const pauseConversationSandboxMutation = useUnifiedPauseConversationSandbox();
   const resumeConversationSandboxMutation =
     useUnifiedResumeConversationSandbox();
   const { conversationId } = useConversationId();
   const { providers } = useUserProviders();
+  const { send } = useSendMessage();
+
+  const isV1Conversation = conversation?.conversation_version === "V1";
 
   const handleStopClick = () => {
     pauseConversationSandboxMutation.mutate({ conversationId });
+  };
+
+  const handlePauseAgent = () => {
+    if (isV1Conversation) {
+      // V1: Empty function for now
+      return;
+    }
+
+    // V0: Send agent state change event to stop the agent
+    send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
   const handleStartClick = () => {
@@ -47,7 +65,7 @@ export function ChatInputActions({
       </div>
       <AgentStatus
         className="ml-2 md:ml-3"
-        handleStop={handleStopClick}
+        handleStop={handlePauseAgent}
         handleResumeAgent={handleResumeAgent}
         disabled={disabled}
         isPausing={isPausing}

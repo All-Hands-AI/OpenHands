@@ -1,5 +1,7 @@
 import { Tooltip } from "@heroui/react";
+import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationVersionBadgeProps {
   version?: "V0" | "V1";
@@ -8,12 +10,14 @@ interface ConversationVersionBadgeProps {
 export function ConversationVersionBadge({
   version,
 }: ConversationVersionBadgeProps) {
+  const { t } = useTranslation();
+
   if (!version) return null;
 
   const tooltipText =
     version === "V1"
-      ? "Conversation API Version 1 (New)"
-      : "Conversation API Version 0 (Legacy)";
+      ? t(I18nKey.CONVERSATION$VERSION_V1_NEW)
+      : t(I18nKey.CONVERSATION$VERSION_V0_LEGACY);
 
   return (
     <Tooltip content={tooltipText} placement="top">

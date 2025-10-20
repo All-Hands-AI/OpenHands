@@ -71,10 +71,12 @@ export function ServerStatus({
     // Show task status if we're polling a task
     if (isTask && taskStatus) {
       if (taskStatus === "ERROR") {
-        return taskDetail || "Error starting conversation";
+        return (
+          taskDetail || t(I18nKey.CONVERSATION$ERROR_STARTING_CONVERSATION)
+        );
       }
       if (taskStatus === "READY") {
-        return "Ready";
+        return t(I18nKey.CONVERSATION$READY);
       }
       // Format status text: "WAITING_FOR_SANDBOX" -> "Waiting for sandbox"
       return (

@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
@@ -28,10 +29,12 @@ import { ConversationTabs } from "#/components/features/conversation/conversatio
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
+import { I18nKey } from "#/i18n/declaration";
 
 function AppContent() {
   useConversationConfig();
 
+  const { t } = useTranslation();
   const { conversationId } = useConversationId();
 
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
@@ -88,10 +91,10 @@ function AppContent() {
   React.useEffect(() => {
     if (isTask && taskStatus === "ERROR") {
       displayErrorToast(
-        taskDetail || "Failed to start the conversation from task.",
+        taskDetail || t(I18nKey.CONVERSATION$FAILED_TO_START_FROM_TASK),
       );
     }
-  }, [isTask, taskStatus, taskDetail]);
+  }, [isTask, taskStatus, taskDetail, t]);
 
   // 3. Auto-start Effect - handles conversation not found and auto-starting STOPPED conversations
   React.useEffect(() => {
@@ -100,9 +103,7 @@ function AppContent() {
 
     // Handle conversation not found
     if (!conversation) {
-      displayErrorToast(
-        "This conversation does not exist, or you do not have permission to access it.",
-      );
+      displayErrorToast(t(I18nKey.CONVERSATION$NOT_EXIST_OR_NO_PERMISSION));
       navigate("/");
       return;
     }
@@ -124,7 +125,11 @@ function AppContent() {
         { conversationId: currentConversationId, providers },
         {
           onError: (error) => {
-            displayErrorToast(`Failed to start conversation: ${error.message}`);
+            displayErrorToast(
+              t(I18nKey.CONVERSATION$FAILED_TO_START_WITH_ERROR, {
+                error: error.message,
+              }),
+            );
             refetch();
           },
         },
@@ -142,6 +147,7 @@ function AppContent() {
     startConversation,
     navigate,
     refetch,
+    t,
   ]);
 
   const isV1Conversation = conversation?.conversation_version === "V1";

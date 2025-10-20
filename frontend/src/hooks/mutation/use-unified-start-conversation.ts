@@ -1,8 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { Provider } from "#/types/settings";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
+import { I18nKey } from "#/i18n/declaration";
 import {
   getConversationVersionFromQueryCache,
   resumeV1ConversationSandbox,
@@ -23,6 +25,7 @@ import {
  * startConversation({ conversationId: "some-id", providers: [...] });
  */
 export const useUnifiedResumeConversationSandbox = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const removeErrorMessage = useErrorMessageStore(
     (state) => state.removeErrorMessage,
@@ -50,7 +53,7 @@ export const useUnifiedResumeConversationSandbox = () => {
       return startV0Conversation(variables.conversationId, variables.providers);
     },
     onMutate: async () => {
-      toast.loading("Starting conversation...", TOAST_OPTIONS);
+      toast.loading(t(I18nKey.TOAST$STARTING_CONVERSATION), TOAST_OPTIONS);
 
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([
@@ -62,7 +65,7 @@ export const useUnifiedResumeConversationSandbox = () => {
     },
     onError: (_, __, context) => {
       toast.dismiss();
-      toast.error("Failed to start conversation", TOAST_OPTIONS);
+      toast.error(t(I18nKey.TOAST$FAILED_TO_START_CONVERSATION), TOAST_OPTIONS);
 
       if (context?.previousConversations) {
         queryClient.setQueryData(
@@ -76,7 +79,7 @@ export const useUnifiedResumeConversationSandbox = () => {
     },
     onSuccess: (_, variables) => {
       toast.dismiss();
-      toast.success("Conversation started", TOAST_OPTIONS);
+      toast.success(t(I18nKey.TOAST$CONVERSATION_STARTED), TOAST_OPTIONS);
 
       // Clear error messages when starting/resuming conversation
       removeErrorMessage();

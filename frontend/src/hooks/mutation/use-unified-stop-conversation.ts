@@ -1,7 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
+import { I18nKey } from "#/i18n/declaration";
 import {
   getConversationVersionFromQueryCache,
   pauseV1ConversationSandbox,
@@ -22,6 +24,7 @@ import {
  * stopConversation({ conversationId: "some-id" });
  */
 export const useUnifiedPauseConversationSandbox = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const params = useParams<{ conversationId: string }>();
@@ -47,7 +50,7 @@ export const useUnifiedPauseConversationSandbox = () => {
       return stopV0Conversation(variables.conversationId);
     },
     onMutate: async () => {
-      toast.loading("Stopping conversation...", TOAST_OPTIONS);
+      toast.loading(t(I18nKey.TOAST$STOPPING_CONVERSATION), TOAST_OPTIONS);
 
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([
@@ -59,7 +62,7 @@ export const useUnifiedPauseConversationSandbox = () => {
     },
     onError: (_, __, context) => {
       toast.dismiss();
-      toast.error("Failed to stop conversation", TOAST_OPTIONS);
+      toast.error(t(I18nKey.TOAST$FAILED_TO_STOP_CONVERSATION), TOAST_OPTIONS);
 
       if (context?.previousConversations) {
         queryClient.setQueryData(
@@ -73,7 +76,7 @@ export const useUnifiedPauseConversationSandbox = () => {
     },
     onSuccess: (_, variables) => {
       toast.dismiss();
-      toast.success("Conversation stopped", TOAST_OPTIONS);
+      toast.success(t(I18nKey.TOAST$CONVERSATION_STOPPED), TOAST_OPTIONS);
 
       updateConversationStatusInCache(
         queryClient,
