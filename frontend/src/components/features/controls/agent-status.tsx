@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useStatusStore } from "#/state/status-store";
-import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { getStatusCode } from "#/utils/status";
 import { ChatStopButton } from "../chat/chat-stop-button";
@@ -12,13 +11,15 @@ import { cn } from "#/utils/utils";
 import { AgentLoading } from "./agent-loading";
 import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
+import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
 
 export interface AgentStatusProps {
   className?: string;
   handleStop: () => void;
   handleResumeAgent: () => void;
   disabled?: boolean;
+  isPausing?: boolean;
 }
 
 export function AgentStatus({
@@ -26,12 +27,13 @@ export function AgentStatus({
   handleStop,
   handleResumeAgent,
   disabled = false,
+  isPausing = false,
 }: AgentStatusProps) {
   const { t } = useTranslation();
   const { setShouldShownAgentLoading } = useConversationStore();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const { curStatusMessage } = useStatusStore();
-  const { webSocketStatus } = useWsClient();
+  const webSocketStatus = useUnifiedWebSocketStatus();
   const { data: conversation } = useActiveConversation();
 
   const statusCode = getStatusCode(
@@ -43,6 +45,7 @@ export function AgentStatus({
   );
 
   const shouldShownAgentLoading =
+    isPausing ||
     curAgentState === AgentState.INIT ||
     curAgentState === AgentState.LOADING ||
     webSocketStatus === "CONNECTING";
