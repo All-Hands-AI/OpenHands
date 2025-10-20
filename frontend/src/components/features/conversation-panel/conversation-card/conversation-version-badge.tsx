@@ -5,10 +5,12 @@ import { I18nKey } from "#/i18n/declaration";
 
 interface ConversationVersionBadgeProps {
   version?: "V0" | "V1";
+  isConversationArchived?: boolean;
 }
 
 export function ConversationVersionBadge({
   version,
+  isConversationArchived,
 }: ConversationVersionBadgeProps) {
   const { t } = useTranslation();
 
@@ -27,6 +29,7 @@ export function ConversationVersionBadge({
           version === "V1"
             ? "bg-green-500/20 text-green-500"
             : "bg-neutral-500/20 text-neutral-400",
+          isConversationArchived && "opacity-60",
         )}
       >
         {version}
