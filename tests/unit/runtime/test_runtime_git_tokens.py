@@ -372,17 +372,18 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
-    assert (
-        f'git clone https://{github_token}@github.com/owner/repo.git repo' in clone_cmd
-    )
+    assert f'https://{github_token}@github.com/owner/repo.git' in clone_cmd
+    expected_repo_path = str(runtime.workspace_root / 'repo')
+    assert expected_repo_path in clone_cmd
 
     # Check that the second command is the checkout
     checkout_cmd = runtime.run_action_calls[1].command
-    assert 'cd repo' in checkout_cmd
+    assert f'cd {expected_repo_path}' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
 
     # Check that the third command sets the remote URL immediately after clone
     set_url_cmd = runtime.run_action_calls[2].command
+    assert f'cd {expected_repo_path}' in set_url_cmd
     assert 'git remote set-url origin' in set_url_cmd
     assert github_token in set_url_cmd
 
@@ -411,15 +412,18 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone with the correct URL format without token
     clone_cmd = runtime.run_action_calls[0].command
-    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
+    expected_repo_path = str(runtime.workspace_root / 'repo')
+    assert 'git clone https://github.com/owner/repo.git' in clone_cmd
+    assert expected_repo_path in clone_cmd
 
     # Check that the second command is the checkout
     checkout_cmd = runtime.run_action_calls[1].command
-    assert 'cd repo' in checkout_cmd
+    assert f'cd {expected_repo_path}' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
 
     # Check that the third command sets the remote URL after clone
     set_url_cmd = runtime.run_action_calls[2].command
+    assert f'cd {expected_repo_path}' in set_url_cmd
     assert 'git remote set-url origin' in set_url_cmd
 
     assert result == 'repo'
@@ -456,18 +460,18 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
-    assert (
-        f'git clone https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git repo'
-        in clone_cmd
-    )
+    expected_repo_path = str(runtime.workspace_root / 'repo')
+    assert f'https://oauth2:{gitlab_token}@gitlab.com/owner/repo.git' in clone_cmd
+    assert expected_repo_path in clone_cmd
 
     # Check that the second command is the checkout
     checkout_cmd = runtime.run_action_calls[1].command
-    assert 'cd repo' in checkout_cmd
+    assert f'cd {expected_repo_path}' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
 
     # Check that the third command sets the remote URL immediately after clone
     set_url_cmd = runtime.run_action_calls[2].command
+    assert f'cd {expected_repo_path}' in set_url_cmd
     assert 'git remote set-url origin' in set_url_cmd
     assert gitlab_token in set_url_cmd
 
@@ -496,12 +500,16 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
 
     # Check that the first command is the git clone
     clone_cmd = runtime.run_action_calls[0].command
+    expected_repo_path = str(runtime.workspace_root / 'repo')
+    assert 'git clone https://github.com/owner/repo.git' in clone_cmd
+    assert expected_repo_path in clone_cmd
 
     # Check that the second command contains the correct branch checkout
     checkout_cmd = runtime.run_action_calls[1].command
-    assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
-    assert 'cd repo' in checkout_cmd
+    assert f'cd {expected_repo_path}' in checkout_cmd
     assert 'git checkout feature-branch' in checkout_cmd
-    assert 'git remote set-url origin' in runtime.run_action_calls[2].command
+    set_url_cmd = runtime.run_action_calls[2].command
+    assert f'cd {expected_repo_path}' in set_url_cmd
+    assert 'git remote set-url origin' in set_url_cmd
     assert 'git checkout -b' not in checkout_cmd  # Should not create a new branch
     assert result == 'repo'
