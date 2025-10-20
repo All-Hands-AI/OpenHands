@@ -262,7 +262,24 @@ class VerifyWebhookStatus:
         webhook_store = await GitlabWebhookStore.get_instance()
 
         # Load chunks of rows that need processing (webhook_exists == False)
-        webhooks_to_process = await self.fetch_rows(webhook_store)
+        try:
+            webhooks_to_process = await self.fetch_rows(webhook_store)
+        except Exception as e:
+            # Check if this is a table not found error (likely due to missing migration)
+            if 'does not exist' in str(e) and ('gitlab_webhook' in str(e) or 'gitlab-webhook' in str(e)):
+                logger.error(
+                    'gitlab_webhook table does not exist. This usually means database migration 032 '
+                    'or later has not been applied. Please run database migrations: alembic upgrade head',
+                    extra={
+                        'error_type': type(e).__name__,
+                        'error_message': str(e),
+                        'migration_needed': '032_add_status_column_to_gitlab_webhook.py',
+                    },
+                )
+                # Return early to avoid continuous error logging
+                return
+            # Re-raise other exceptions
+            raise
 
         logger.info(
             'Processing webhook chunks',
