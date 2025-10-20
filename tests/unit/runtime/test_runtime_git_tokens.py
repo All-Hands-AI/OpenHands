@@ -365,11 +365,10 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
     # Verify that git clone, checkout, and git remote URL update were called
-    assert len(runtime.run_action_calls) == 4  # clone, checkout, get-url, set-url
+    assert len(runtime.run_action_calls) == 3  # clone, checkout, set-url
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
     assert isinstance(runtime.run_action_calls[1], CmdRunAction)
     assert isinstance(runtime.run_action_calls[2], CmdRunAction)
-    assert isinstance(runtime.run_action_calls[3], CmdRunAction)
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
@@ -382,12 +381,8 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
     assert 'cd repo' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
 
-    # Check that the third command gets the remote URL
-    get_url_cmd = runtime.run_action_calls[2].command
-    assert 'git remote get-url origin' in get_url_cmd
-
-    # Check that the fourth command sets the remote URL with fresh token
-    set_url_cmd = runtime.run_action_calls[3].command
+    # Check that the third command sets the remote URL immediately after clone
+    set_url_cmd = runtime.run_action_calls[2].command
     assert 'git remote set-url origin' in set_url_cmd
     assert github_token in set_url_cmd
 
@@ -408,10 +403,11 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', None)
 
-    # Verify that git clone and checkout were called as separate commands
-    assert len(runtime.run_action_calls) == 2
+    # Verify that git clone, checkout, and remote update were called
+    assert len(runtime.run_action_calls) == 3  # clone, checkout, set-url
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
     assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[2], CmdRunAction)
 
     # Check that the first command is the git clone with the correct URL format without token
     clone_cmd = runtime.run_action_calls[0].command
@@ -421,6 +417,10 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     checkout_cmd = runtime.run_action_calls[1].command
     assert 'cd repo' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
+
+    # Check that the third command sets the remote URL after clone
+    set_url_cmd = runtime.run_action_calls[2].command
+    assert 'git remote set-url origin' in set_url_cmd
 
     assert result == 'repo'
 
@@ -449,11 +449,10 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     result = await runtime.clone_or_init_repo(git_provider_tokens, 'owner/repo', None)
 
     # Verify that git clone, checkout, and git remote URL update were called
-    assert len(runtime.run_action_calls) == 4  # clone, checkout, get-url, set-url
+    assert len(runtime.run_action_calls) == 3  # clone, checkout, set-url
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
     assert isinstance(runtime.run_action_calls[1], CmdRunAction)
     assert isinstance(runtime.run_action_calls[2], CmdRunAction)
-    assert isinstance(runtime.run_action_calls[3], CmdRunAction)
 
     # Check that the first command is the git clone with the correct URL format with token
     clone_cmd = runtime.run_action_calls[0].command
@@ -467,12 +466,8 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
     assert 'cd repo' in checkout_cmd
     assert 'git checkout -b openhands-workspace-' in checkout_cmd
 
-    # Check that the third command gets the remote URL
-    get_url_cmd = runtime.run_action_calls[2].command
-    assert 'git remote get-url origin' in get_url_cmd
-
-    # Check that the fourth command sets the remote URL with fresh token
-    set_url_cmd = runtime.run_action_calls[3].command
+    # Check that the third command sets the remote URL immediately after clone
+    set_url_cmd = runtime.run_action_calls[2].command
     assert 'git remote set-url origin' in set_url_cmd
     assert gitlab_token in set_url_cmd
 
@@ -493,10 +488,11 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB)
     result = await runtime.clone_or_init_repo(None, 'owner/repo', 'feature-branch')
 
-    # Verify that git clone and checkout were called as separate commands
-    assert len(runtime.run_action_calls) == 2
+    # Verify that git clone, checkout, and remote update were called
+    assert len(runtime.run_action_calls) == 3  # clone, checkout, set-url
     assert isinstance(runtime.run_action_calls[0], CmdRunAction)
     assert isinstance(runtime.run_action_calls[1], CmdRunAction)
+    assert isinstance(runtime.run_action_calls[2], CmdRunAction)
 
     # Check that the first command is the git clone
     clone_cmd = runtime.run_action_calls[0].command
@@ -506,5 +502,6 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     assert 'git clone https://github.com/owner/repo.git repo' in clone_cmd
     assert 'cd repo' in checkout_cmd
     assert 'git checkout feature-branch' in checkout_cmd
+    assert 'git remote set-url origin' in runtime.run_action_calls[2].command
     assert 'git checkout -b' not in checkout_cmd  # Should not create a new branch
     assert result == 'repo'
