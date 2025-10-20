@@ -1855,8 +1855,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", specifier = "==1.0.0a2" },
-    { name = "openhands-tools", specifier = "==1.0.0a2" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-sdk&rev=512399d896521aee3131eea4bb59087fb9dfa243" },
+    { name = "openhands-tools", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-tools&rev=512399d896521aee3131eea4bb59087fb9dfa243" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
@@ -1880,7 +1880,7 @@ dev = [
 [[package]]
 name = "openhands-sdk"
 version = "1.0.0a2"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-sdk&rev=512399d896521aee3131eea4bb59087fb9dfa243#512399d896521aee3131eea4bb59087fb9dfa243" }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },
@@ -1891,15 +1891,11 @@ dependencies = [
     { name = "tenacity" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/17/f0eeb78230659ee86401d0278cf5871d8152067ac9cd6bbed770a1147a90/openhands_sdk-1.0.0a2.tar.gz", hash = "sha256:c6df399436165f225a108841946c655e859df4c495a0ad8c1e07a2f6e64e8052", size = 143650, upload-time = "2025-10-17T21:47:55.245Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/70/80dad701f25d57958df6c36a0cc6c32e5e1782da255b96a5d9246c6b32eb/openhands_sdk-1.0.0a2-py3-none-any.whl", hash = "sha256:d7446a7b41977fa087cc8080ed00d77d18b99389f2bedcb1c1df5a4514520bcb", size = 189911, upload-time = "2025-10-17T21:47:54.272Z" },
-]
 
 [[package]]
 name = "openhands-tools"
 version = "1.0.0a2"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-tools&rev=512399d896521aee3131eea4bb59087fb9dfa243#512399d896521aee3131eea4bb59087fb9dfa243" }
 dependencies = [
     { name = "bashlex" },
     { name = "binaryornot" },
@@ -1909,10 +1905,6 @@ dependencies = [
     { name = "libtmux" },
     { name = "openhands-sdk" },
     { name = "pydantic" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/eb/c9/c8e8971c4e69989e82342de8fd138d8f0bc1c24d874d216ccd634d59cb16/openhands_tools-1.0.0a2.tar.gz", hash = "sha256:5f32a0ab4370bbd48d655a5ac7162a778e5cc12417ae10102248e73bd3b4ccad", size = 59276, upload-time = "2025-10-17T21:47:56.69Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c5/4d/bc6891098199736f6711a28b71e3a2b53d66ee27c18f057248454e8d41bb/openhands_tools-1.0.0a2-py3-none-any.whl", hash = "sha256:4b7af7e8b728f603ee3666f1b33c8d0931b2ea949c2fa47106138d876fbdcc4d", size = 78816, upload-time = "2025-10-17T21:47:55.933Z" },
 ]
 
 [[package]]
