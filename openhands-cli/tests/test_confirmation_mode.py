@@ -165,7 +165,7 @@ class TestConfirmationMode:
         assert result.reason == ''
         assert result.policy_change is None
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (ENTER to reject without reason): ')
+        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_y_shorthand(self, mock_cli_confirm: Any) -> None:
@@ -198,7 +198,7 @@ class TestConfirmationMode:
         assert isinstance(result, ConfirmationResult)
         assert result.reason == ''
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (ENTER to reject without reason): ')
+        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
 
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
     def test_ask_user_confirmation_invalid_then_yes(
@@ -297,7 +297,7 @@ class TestConfirmationMode:
         assert result.decision == UserConfirmation.REJECT
         assert result.reason == 'This action is too risky'
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (ENTER to reject without reason): ')
+        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
 
     @patch('openhands_cli.user_actions.agent_action.cli_text_input')
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
@@ -317,7 +317,7 @@ class TestConfirmationMode:
         assert isinstance(result, ConfirmationResult)
         assert result.reason == ''
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (ENTER to reject without reason): ')
+        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
 
     @patch('openhands_cli.user_actions.agent_action.cli_text_input')
     @patch('openhands_cli.user_actions.agent_action.cli_confirm')
@@ -337,7 +337,7 @@ class TestConfirmationMode:
         assert isinstance(result, ConfirmationResult)
         assert result.reason == ''  # Should be empty after stripping whitespace
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (ENTER to reject without reason): ')
+        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
 
     def test_user_confirmation_is_escapable_e2e(
         self, monkeypatch: pytest.MonkeyPatch
@@ -434,7 +434,7 @@ class TestConfirmationMode:
                         new_mock_conversation.id = mock_conversation.id
                         new_mock_conversation.is_confirmation_mode_active = False
                         mock_setup.return_value = new_mock_conversation
-                        
+
                         result = runner._handle_confirmation_request()
 
                         # Verify that confirmation mode was disabled
