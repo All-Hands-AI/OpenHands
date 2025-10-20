@@ -765,7 +765,6 @@ class UpdateConversationRequest(BaseModel):
 
 
 async def _update_v1_conversation(
-    conversation_id: str,
     conversation_uuid: uuid.UUID,
     new_title: str,
     user_id: str | None,
@@ -775,7 +774,6 @@ async def _update_v1_conversation(
     """Update a V1 conversation title.
 
     Args:
-        conversation_id: The conversation ID as a string
         conversation_uuid: The conversation ID as a UUID
         new_title: The new title to set
         user_id: The authenticated user ID
@@ -785,8 +783,9 @@ async def _update_v1_conversation(
     Returns:
         JSONResponse on error, True on success
     """
+    conversation_id = str(conversation_uuid)
     logger.info(
-        f'Updating V1 conversation {conversation_id}',
+        f'Updating V1 conversation {conversation_uuid}',
         extra={'session_id': conversation_id, 'user_id': user_id},
     )
 
@@ -802,7 +801,7 @@ async def _update_v1_conversation(
     # Validate that the user owns this conversation
     if user_id and app_conversation_info.created_by_user_id != user_id:
         logger.warning(
-            f'User {user_id} attempted to update V1 conversation {conversation_id} owned by {app_conversation_info.created_by_user_id}',
+            f'User {user_id} attempted to update V1 conversation {conversation_uuid} owned by {app_conversation_info.created_by_user_id}',
             extra={'session_id': conversation_id, 'user_id': user_id},
         )
         return JSONResponse(
@@ -827,7 +826,7 @@ async def _update_v1_conversation(
     except AssertionError:
         # This happens when user doesn't own the conversation
         logger.warning(
-            f'User {user_id} attempted to update V1 conversation {conversation_id} - permission denied',
+            f'User {user_id} attempted to update V1 conversation {conversation_uuid} - permission denied',
             extra={'session_id': conversation_id, 'user_id': user_id},
         )
         return JSONResponse(
@@ -850,12 +849,12 @@ async def _update_v1_conversation(
     except Exception as e:
         # Log the error but don't fail the database update
         logger.warning(
-            f'Failed to update agent-server for conversation {conversation_id}: {e}',
+            f'Failed to update agent-server for conversation {conversation_uuid}: {e}',
             extra={'session_id': conversation_id, 'user_id': user_id},
         )
 
     logger.info(
-        f'Successfully updated V1 conversation {conversation_id} title from "{original_title}" to "{app_conversation_info.title}"',
+        f'Successfully updated V1 conversation {conversation_uuid} title from "{original_title}" to "{app_conversation_info.title}"',
         extra={'session_id': conversation_id, 'user_id': user_id},
     )
 
@@ -978,7 +977,6 @@ async def update_conversation(
     try:
         conversation_uuid = uuid.UUID(conversation_id)
         result = await _update_v1_conversation(
-            conversation_id=conversation_id,
             conversation_uuid=conversation_uuid,
             new_title=new_title,
             user_id=user_id,
