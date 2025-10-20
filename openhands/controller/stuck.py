@@ -381,6 +381,82 @@ class StuckDetector:
 
         return False
 
+    def analyze_loop_pattern(self, filtered_history: list[Event]) -> dict:
+        """Analyze the loop pattern and return information about where it starts.
+        
+        Args:
+            filtered_history: List of filtered events to analyze
+            
+        Returns:
+            dict: Information about the loop pattern including start index and type
+        """
+        result = {
+            'loop_detected': False,
+            'loop_start_index': -1,
+            'loop_type': None,
+            'loop_length': 0,
+            'suggested_recovery_point': -1
+        }
+        
+        if len(filtered_history) < 3:
+            return result
+            
+        # Check for repeating action-observation patterns
+        for pattern_length in range(2, min(6, len(filtered_history) // 2)):
+            # Check if the last pattern_length events repeat
+            recent_events = filtered_history[-pattern_length:]
+            previous_events = filtered_history[-2*pattern_length:-pattern_length]
+            
+            if len(recent_events) == pattern_length and len(previous_events) == pattern_length:
+                # Check if the two sequences are identical
+                sequences_match = True
+                for i in range(pattern_length):
+                    if not self._eq_no_pid(recent_events[i], previous_events[i]):
+                        sequences_match = False
+                        break
+                
+                if sequences_match:
+                    result['loop_detected'] = True
+                    result['loop_start_index'] = len(filtered_history) - 2 * pattern_length
+                    result['loop_type'] = f'repeating_pattern_{pattern_length}'
+                    result['loop_length'] = pattern_length
+                    result['suggested_recovery_point'] = len(filtered_history) - 2 * pattern_length
+                    return result
+        
+        # Check for monologue loops
+        agent_message_actions = [
+            (i, event)
+            for i, event in enumerate(filtered_history)
+            if isinstance(event, MessageAction) and event.source == EventSource.AGENT
+        ]
+        
+        if len(agent_message_actions) >= 3:
+            last_agent_message_actions = agent_message_actions[-3:]
+            
+            if all(
+                (last_agent_message_actions[0][1] == action[1])
+                for action in last_agent_message_actions
+            ):
+                # Check if there are no observations between repeated messages
+                start_index = last_agent_message_actions[0][0]
+                end_index = last_agent_message_actions[-1][0]
+                
+                has_observation_between = False
+                for event in filtered_history[start_index + 1 : end_index]:
+                    if isinstance(event, Observation):
+                        has_observation_between = True
+                        break
+                
+                if not has_observation_between:
+                    result['loop_detected'] = True
+                    result['loop_start_index'] = start_index
+                    result['loop_type'] = 'monologue'
+                    result['loop_length'] = 3
+                    result['suggested_recovery_point'] = start_index
+                    return result
+        
+        return result
+
     def _eq_no_pid(self, obj1: Event, obj2: Event) -> bool:
         if isinstance(obj1, IPythonRunCellAction) and isinstance(
             obj2, IPythonRunCellAction

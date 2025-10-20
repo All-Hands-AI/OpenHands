@@ -25,6 +25,7 @@ from litellm.exceptions import (  # noqa
 )
 
 from openhands.controller.agent import Agent
+from openhands.controller.loop_recovery import LoopRecoveryManager
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.controller.state.state_tracker import StateTracker
@@ -188,6 +189,9 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        # loop recovery manager
+        self._loop_recovery_manager = LoopRecoveryManager(self)
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
@@ -854,7 +858,13 @@ class AgentController:
 
         # Synchronize spend across all llm services with the budget flag
         self.state_tracker.sync_budget_flag_with_metrics()
-        if self._is_stuck():
+
+        # Check for loops and attempt recovery if detected
+        if await self._handle_loop_detection():
+            # Recovery was successful, continue with next iteration
+            return
+        elif self._is_stuck():
+            # Recovery failed or not attempted, use original behavior
             await self._react_to_exception(
                 AgentStuckInLoopError('Agent got stuck in a loop')
             )
@@ -1083,6 +1093,57 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck(self.headless_mode)
+
+    async def _handle_loop_detection(self) -> bool:
+        """Handles loop detection and attempts recovery if possible.
+
+        Returns:
+            bool: True if recovery was successful and agent should continue,
+                  False if recovery failed or was not attempted.
+        """
+        # Check if we're in a loop
+        if not self._stuck_detector.is_stuck(self.headless_mode):
+            return False
+
+        # Get filtered history for analysis
+        if not self.headless_mode:
+            # In interactive mode, only look at history after the last user message
+            last_user_msg_idx = -1
+            for i, event in enumerate(reversed(self.state.history)):
+                if (
+                    isinstance(event, MessageAction)
+                    and event.source == EventSource.USER
+                ):
+                    last_user_msg_idx = len(self.state.history) - i - 1
+                    break
+
+            history_to_check = self.state.history[last_user_msg_idx + 1 :]
+        else:
+            # In headless mode, look at all history
+            history_to_check = self.state.history
+
+        # Filter out user messages and null events
+        filtered_history = [
+            event
+            for event in history_to_check
+            if not (
+                # Filter works elegantly in both modes:
+                # - In headless: actively filters out user messages from full history
+                # - In non-headless: no-op since we already sliced after last user message
+                (isinstance(event, MessageAction) and event.source == EventSource.USER)
+                # there might be some NullAction or NullObservation in the history at least for now
+                or isinstance(event, (NullAction, NullObservation))
+            )
+        ]
+
+        # Attempt recovery
+        recovery_successful = await self._loop_recovery_manager.handle_loop_detection(filtered_history)
+
+        if recovery_successful:
+            logger.info("Loop recovery successful, continuing execution")
+            return True
+
+        return False
 
     def _prepare_metrics_for_frontend(self, action: Action) -> None:
         """Create a minimal metrics object for frontend display and log it.

@@ -428,18 +428,32 @@ def display_command_output(output: str) -> None:
     else:
         formatted_output = '\n'.join(formatted_lines)
 
-    container = Frame(
-        TextArea(
-            text=formatted_output,
-            read_only=True,
-            style=COLOR_GREY,
-            wrap_lines=True,
-        ),
-        title=title,
-        style=f'fg:{COLOR_GREY}',
-    )
-    print_formatted_text('')
-    print_container(container)
+    # Check if we're in loop recovery mode by looking at the call stack
+    import inspect
+    import traceback
+    stack = traceback.extract_stack()
+    in_recovery = any('loop_recovery' in frame.filename for frame in stack)
+    
+    if in_recovery:
+        # In loop recovery mode, use simple print to avoid prompt_toolkit conflicts
+        print(f"\n┌─ {title} ─" + "─" * (80 - len(title) - 5) + "┐")
+        for line in formatted_output.split('\n'):
+            print(f"│{line:<80}│")
+        print("└" + "─" * 80 + "┘")
+    else:
+        # Normal mode: use prompt_toolkit for display
+        container = Frame(
+            TextArea(
+                text=formatted_output,
+                read_only=True,
+                style=COLOR_GREY,
+                wrap_lines=True,
+            ),
+            title=title,
+            style=f'fg:{COLOR_GREY}',
+        )
+        print_formatted_text('')
+        print_container(container)
 
 
 def display_file_edit(event: FileEditObservation) -> None:
