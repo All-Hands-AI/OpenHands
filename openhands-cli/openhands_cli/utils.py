@@ -2,6 +2,8 @@
 
 import os
 from typing import Any
+from openhands.tools.preset.default import get_default_agent
+from openhands.sdk import LLM
 
 
 def get_llm_metadata(
@@ -55,3 +57,15 @@ def get_llm_metadata(
     if user_id is not None:
         metadata['trace_user_id'] = user_id
     return metadata
+
+
+
+def get_default_cli_agent(
+    llm: LLM
+):
+    agent = get_default_agent(
+        llm=llm,
+        cli_mode = True,
+        add_security_analyzer = True
+    )
+    return agent

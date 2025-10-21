@@ -9,7 +9,7 @@ from openhands_cli.user_actions.settings_action import SettingsType
 from pydantic import SecretStr
 
 from openhands.sdk import LLM, Conversation, LocalFileStore
-from openhands.tools.preset.default import get_default_agent
+from openhands_cli.utils import get_default_cli_agent
 
 
 def read_json(path: Path) -> dict:
@@ -30,7 +30,7 @@ def make_screen_with_conversation(model='openai/gpt-4o-mini', api_key='sk-xyz'):
 def seed_file(path: Path, model: str = 'openai/gpt-4o-mini', api_key: str = 'sk-old'):
     store = AgentStore()
     store.file_store = LocalFileStore(root=str(path))
-    agent = get_default_agent(
+    agent = get_default_cli_agent(
         llm=LLM(model=model, api_key=SecretStr(api_key), usage_id='test-service')
     )
     store.save(agent)
