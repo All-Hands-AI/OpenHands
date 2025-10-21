@@ -44,8 +44,7 @@ def ask_user_confirmation(
     question = 'Choose an option:'
     options = [
         'Yes, proceed',
-        'No, reject (w/o reason)',
-        'No, reject with reason',
+        'Reject',
         "Always proceed (don't ask again)",
     ]
 
@@ -61,32 +60,18 @@ def ask_user_confirmation(
     if index == 0:
         return ConfirmationResult(decision=UserConfirmation.ACCEPT)
     elif index == 1:
-        return ConfirmationResult(decision=UserConfirmation.REJECT)
-    elif index == 2:
+        # Handle "Reject" option with optional reason
         try:
-            reason_result = cli_text_input(
-                'Please enter your reason for rejecting these actions: '
-            )
-        except Exception:
-            return ConfirmationResult(decision=UserConfirmation.DEFER)
-
-        # Support both string return and (reason, cancelled) tuple for tests
-        cancelled = False
-        if isinstance(reason_result, tuple) and len(reason_result) >= 1:
-            reason = reason_result[0] or ''
-            cancelled = bool(reason_result[1]) if len(reason_result) > 1 else False
-        else:
-            reason = str(reason_result or '').strip()
-
-        if cancelled:
+            reason = cli_text_input('Reason (and let OpenHands know why): ').strip()
+        except (EOFError, KeyboardInterrupt):
             return ConfirmationResult(decision=UserConfirmation.DEFER)
 
         return ConfirmationResult(decision=UserConfirmation.REJECT, reason=reason)
-    elif index == 3:
+    elif index == 2:
         return ConfirmationResult(
             decision=UserConfirmation.ACCEPT, policy_change=NeverConfirm()
         )
-    elif index == 4:
+    elif index == 3:
         return ConfirmationResult(
             decision=UserConfirmation.ACCEPT,
             policy_change=ConfirmRisky(threshold=SecurityRisk.HIGH),
