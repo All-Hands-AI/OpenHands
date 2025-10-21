@@ -30,12 +30,14 @@ import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper"
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useUnifiedResumeConversationSandbox } from "#/hooks/mutation/use-unified-start-conversation";
 import { I18nKey } from "#/i18n/declaration";
+import { useEventStore } from "#/stores/use-event-store";
 
 function AppContent() {
   useConversationConfig();
 
   const { t } = useTranslation();
   const { conversationId } = useConversationId();
+  const clearEvents = useEventStore((state) => state.clearEvents);
 
   // Handle both task IDs (task-{uuid}) and regular conversation IDs
   const { isTask, taskStatus, taskDetail } = useTaskPolling();
@@ -72,6 +74,7 @@ function AppContent() {
     resetConversationState();
     setCurrentAgentState(AgentState.LOADING);
     removeErrorMessage();
+    clearEvents();
 
     // Reset tracking ONLY if we're navigating to a DIFFERENT conversation
     // Don't reset on StrictMode remounts (conversationId is the same)
@@ -85,6 +88,7 @@ function AppContent() {
     resetConversationState,
     setCurrentAgentState,
     removeErrorMessage,
+    clearEvents,
   ]);
 
   // 2. Task Error Display Effect
@@ -150,7 +154,7 @@ function AppContent() {
     t,
   ]);
 
-  const isV1Conversation = conversation?.conversation_version === "V1";
+  const isV0Conversation = conversation?.conversation_version === "V0";
 
   const content = (
     <ConversationSubscriptionsProvider>
@@ -170,15 +174,11 @@ function AppContent() {
     </ConversationSubscriptionsProvider>
   );
 
-  // Wait for conversation data to load before rendering WebSocket provider
-  // This prevents the provider from unmounting/remounting when version changes from 0 to 1
-  if (!conversation) {
-    return content;
-  }
-
+  // Render WebSocket provider immediately to avoid mount/remount cycles
+  // The providers internally handle waiting for conversation data to be ready
   return (
     <WebSocketProviderWrapper
-      version={isV1Conversation ? 1 : 0}
+      version={isV0Conversation ? 0 : 1}
       conversationId={conversationId}
     >
       {content}
