@@ -25,7 +25,7 @@ class TestExperimentManager:
         # Create a mock LLM
         self.mock_llm = Mock(spec=LLM)
         self.mock_llm.model = 'gpt-4'
-        self.mock_llm.service_id = 'agent'
+        self.mock_llm.usage_id = 'agent'
 
         # Create a mock Agent
         self.mock_agent = Mock(spec=Agent)
@@ -81,7 +81,7 @@ class TestExperimentManagerIntegration:
         # Create a mock LLM
         self.mock_llm = Mock(spec=LLM)
         self.mock_llm.model = 'gpt-4'
-        self.mock_llm.service_id = 'agent'
+        self.mock_llm.usage_id = 'agent'
 
         # Create a mock Agent
         self.mock_agent = Mock(spec=Agent)
@@ -137,7 +137,7 @@ class TestExperimentManagerIntegration:
         # Create a stable Agent (and LLM) we can identity-check later
         mock_llm = Mock(spec=LLM)
         mock_llm.model = 'gpt-4'
-        mock_llm.service_id = 'agent'
+        mock_llm.usage_id = 'agent'
 
         mock_agent = Mock(spec=Agent)
         mock_agent.llm = mock_llm
