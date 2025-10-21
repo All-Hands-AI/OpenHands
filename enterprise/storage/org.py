@@ -48,9 +48,7 @@ class Org(Base):  # type: ignore
     org_users = relationship('OrgUser', back_populates='org')
     current_users = relationship('User', back_populates='current_org')
     billing_sessions = relationship('BillingSession', back_populates='org')
-    conversation_metadata = relationship(
-        'StoredConversationMetadata', back_populates='org'
-    )
+    conversation_metadata = relationship('StoredConversationMetadata', back_populates='org')
     user_secrets = relationship('StoredUserSecrets', back_populates='org')
     api_keys = relationship('ApiKey', back_populates='org')
     gitlab_webhooks = relationship('GitlabWebhook', back_populates='org')

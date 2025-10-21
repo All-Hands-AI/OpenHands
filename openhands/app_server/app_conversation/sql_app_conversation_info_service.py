@@ -32,6 +32,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     Select,
     String,
@@ -39,6 +40,7 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import relationship
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -71,7 +73,7 @@ class StoredConversationMetadata(Base):  # type: ignore
     )
     github_user_id = Column(String, nullable=True)  # The GitHub user ID
     user_id = Column(String, nullable=False)  # The Keycloak User ID
-    org_id = Column(SQL_UUID(as_uuid=True), nullable=True)
+    org_id = Column(SQL_UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     selected_repository = Column(String, nullable=True)
     selected_branch = Column(String, nullable=True)
     git_provider = Column(
@@ -102,8 +104,8 @@ class StoredConversationMetadata(Base):  # type: ignore
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
 
-    # Relationship back to org (commented out for tests)
-    # org = relationship('Org', back_populates='conversation_metadata')
+    # Relationship back to org
+    org = relationship('Org', back_populates='conversation_metadata')
 
 
 @dataclass
