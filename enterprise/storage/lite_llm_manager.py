@@ -554,15 +554,15 @@ class LiteLlmManager:
         if not user:
             return {}
 
-        org_user = None
-        for ou in user.org_users:
-            if ou.org_id == org_id:
-                org_user = ou
+        org_member = None
+        for om in user.org_members:
+            if om.org_id == org_id:
+                org_member = om
                 break
-        if not org_user or not org_user.llm_api_key:
+        if not org_member or not org_member.llm_api_key:
             return {}
         response = await client.get(
-            f'{LITE_LLM_API_URL}/key/info?key={org_user.llm_api_key}'
+            f'{LITE_LLM_API_URL}/key/info?key={org_member.llm_api_key}'
         )
         response.raise_for_status()
         response_json = response.json()

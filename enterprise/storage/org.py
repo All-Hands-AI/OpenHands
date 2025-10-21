@@ -45,7 +45,7 @@ class Org(Base):  # type: ignore
     conversation_expiration = Column(Integer, nullable=True)
 
     # Relationships
-    org_users = relationship('OrgUser', back_populates='org')
+    org_members = relationship('OrgMember', back_populates='org')
     current_users = relationship('User', back_populates='current_org')
     billing_sessions = relationship('BillingSession', back_populates='org')
     conversation_metadata = relationship('StoredConversationMetadata', back_populates='org')

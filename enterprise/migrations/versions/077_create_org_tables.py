@@ -110,9 +110,9 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(['role_id'], ['role.id'], name='user_role_fkey'),
     )
 
-    # Create org_user table (junction table for many-to-many relationship)
+    # Create org_member table (junction table for many-to-many relationship)
     op.create_table(
-        'org_user',
+        'org_member',
         sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('role_id', sa.Integer, nullable=False),
@@ -122,9 +122,9 @@ def upgrade() -> None:
         sa.Column('_llm_api_key_for_byor', sa.String, nullable=True),
         sa.Column('llm_base_url', sa.String, nullable=True),
         sa.Column('status', sa.String, nullable=True),
-        sa.ForeignKeyConstraint(['org_id'], ['org.id'], name='ou_org_fkey'),
-        sa.ForeignKeyConstraint(['user_id'], ['user.id'], name='ou_user_fkey'),
-        sa.ForeignKeyConstraint(['role_id'], ['role.id'], name='ou_role_fkey'),
+        sa.ForeignKeyConstraint(['org_id'], ['org.id'], name='om_org_fkey'),
+        sa.ForeignKeyConstraint(['user_id'], ['user.id'], name='om_user_fkey'),
+        sa.ForeignKeyConstraint(['role_id'], ['role.id'], name='om_role_fkey'),
         sa.PrimaryKeyConstraint('org_id', 'user_id'),
     )
 
@@ -241,7 +241,7 @@ def downgrade() -> None:
     op.drop_column('billing_sessions', 'org_id')
 
     # Drop tables in reverse order due to foreign key constraints
-    op.drop_table('org_user')
+    op.drop_table('org_member')
     op.drop_table('user')
     op.drop_table('org')
     op.drop_table('role')

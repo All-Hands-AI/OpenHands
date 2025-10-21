@@ -17,7 +17,7 @@ from storage.feedback import Feedback
 from storage.github_app_installation import GithubAppInstallation
 from storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
 from storage.org import Org
-from storage.org_user import OrgUser
+from storage.org_member import OrgMember
 from storage.role import Role
 from storage.stored_conversation_metadata import StoredConversationMetadata
 from storage.stored_offline_token import StoredOfflineToken
@@ -113,7 +113,7 @@ def add_minimal_fixtures(session_maker):
             )
         )
         session.add(
-            OrgUser(
+            OrgMember(
                 org_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
                 user_id=1,
                 role_id=1,

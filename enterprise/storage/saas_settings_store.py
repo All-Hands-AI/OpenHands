@@ -8,7 +8,7 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from storage.database import session_maker
 from storage.org import Org
 from storage.org_store import OrgStore
-from storage.org_user import OrgUser
+from storage.org_member import OrgMember
 from storage.user import User
 from storage.user_settings import UserSettings
 from storage.user_store import UserStore
@@ -43,12 +43,12 @@ class SaasSettingsStore(OssSettingsStore):
                 return None
 
         org_id = user.current_org_id
-        org_user: OrgUser = None
-        for ou in user.org_users:
-            if ou.org_id == org_id:
-                org_user = ou
+        org_member: OrgMember = None
+        for om in user.org_members:
+            if om.org_id == org_id:
+                org_member = om
                 break
-        if not org_user or not org_user.llm_api_key:
+        if not org_member or not org_member.llm_api_key:
             return None
         org = OrgStore.get_org_by_id(org_id)
         if not org:
@@ -73,15 +73,15 @@ class SaasSettingsStore(OssSettingsStore):
                 if (normalized := c.name.lstrip('_')) in Settings.model_fields
             },
         }
-        kwargs['llm_api_key'] = org_user.llm_api_key
-        if org_user.max_iterations:
-            kwargs['max_iterations'] = org_user.max_iterations
-        if org_user.llm_model:
-            kwargs['llm_model'] = org_user.llm_model
-        if org_user.llm_api_key_for_byor:
-            kwargs['llm_api_key_for_byor'] = org_user.llm_api_key_for_byor
-        if org_user.llm_base_url:
-            kwargs['llm_base_url'] = org_user.llm_base_url
+        kwargs['llm_api_key'] = org_member.llm_api_key
+        if org_member.max_iterations:
+            kwargs['max_iterations'] = org_member.max_iterations
+        if org_member.llm_model:
+            kwargs['llm_model'] = org_member.llm_model
+        if org_member.llm_api_key_for_byor:
+            kwargs['llm_api_key_for_byor'] = org_member.llm_api_key_for_byor
+        if org_member.llm_base_url:
+            kwargs['llm_base_url'] = org_member.llm_base_url
 
         settings = Settings(**kwargs)
         return settings
@@ -94,7 +94,7 @@ class SaasSettingsStore(OssSettingsStore):
             kwargs = item.model_dump(context={'expose_secrets': True})
             user = (
                 session.query(User)
-                .options(joinedload(User.org_users))
+                .options(joinedload(User.org_members))
                 .filter(User.id == uuid.UUID(self.user_id))
             ).first()
 
@@ -114,12 +114,12 @@ class SaasSettingsStore(OssSettingsStore):
                     return None
 
             org_id = user.current_org_id
-            org_user = None
-            for ou in user.org_users:
-                if ou.org_id == org_id:
-                    org_user = ou
+            org_member = None
+            for om in user.org_members:
+                if om.org_id == org_id:
+                    org_member = om
                     break
-            if not org_user or not org_user.llm_api_key:
+            if not org_member or not org_member.llm_api_key:
                 return None
             org = session.query(Org).filter(Org.id == org_id).first()
             if not org:
@@ -129,7 +129,7 @@ class SaasSettingsStore(OssSettingsStore):
                 return None
             OrgStore.migrate_org(None, org)
 
-            for model in (user, org, org_user):
+            for model in (user, org, org_member):
                 for key, value in kwargs.items():
                     if hasattr(model, key):
                         setattr(model, key, value)

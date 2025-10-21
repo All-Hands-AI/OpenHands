@@ -47,7 +47,7 @@ class OrgStore:
         with session_maker() as session:
             user = (
                 session.query(User)
-                .options(joinedload(User.org_users))
+                .options(joinedload(User.org_members))
                 .filter(User.id == uuid.UUID(keycloak_user_id))
                 .first()
             )

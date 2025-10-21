@@ -18,4 +18,4 @@ class Role(Base):  # type: ignore
 
     # Relationships
     users = relationship('User', back_populates='role')
-    org_users = relationship('OrgUser', back_populates='role')
+    org_members = relationship('OrgMember', back_populates='role')

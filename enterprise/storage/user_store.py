@@ -13,7 +13,7 @@ from storage.encrypt_utils import decrypt_model
 from storage.lite_llm_manager import LiteLlmManager
 from storage.org import Org
 from storage.org_store import OrgStore
-from storage.org_user import OrgUser
+from storage.org_member import OrgMember
 from storage.role_store import RoleStore
 from storage.user import User
 from storage.user_settings import UserSettings
@@ -64,17 +64,17 @@ class UserStore:
 
             role = RoleStore.get_role_by_name('admin')
 
-            org_user = OrgUser(
+            org_member = OrgMember(
                 org_id=org.id,
                 user_id=user.id,
                 role_id=role.id,  # admin of your own org.
                 llm_api_key=settings.llm_api_key,  # type: ignore[union-attr]
                 status='active',
             )
-            session.add(org_user)
+            session.add(org_member)
             session.commit()
             session.refresh(user)
-            user.org_users  # load org_users
+            user.org_members  # load org_members
             return user
 
     @staticmethod
@@ -135,19 +135,19 @@ class UserStore:
 
             role = RoleStore.get_role_by_name('admin')
 
-            org_user = OrgUser(
+            org_member = OrgMember(
                 org_id=org.id,
                 user_id=user.id,
                 role_id=role.id,  # admin of your own org.
                 llm_api_key=decrypted_user_settings.llm_api_key,  # type: ignore[union-attr]
                 status='active',
             )
-            session.add(org_user)
+            session.add(org_member)
             # don't remove old setting for now.
             # session.delete(user_settings)
             session.commit()
             session.refresh(user)
-            user.org_users  # load org_users
+            user.org_members  # load org_members
             return user
 
     @staticmethod
@@ -156,7 +156,7 @@ class UserStore:
         with session_maker() as session:
             return (
                 session.query(User)
-                .options(joinedload(User.org_users))
+                .options(joinedload(User.org_members))
                 .filter(User.id == uuid.UUID(keycloak_user_id))
                 .first()
             )

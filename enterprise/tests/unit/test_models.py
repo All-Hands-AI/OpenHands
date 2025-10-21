@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from storage.base import Base
 from storage.org import Org
-from storage.org_user import OrgUser
+from storage.org_member import OrgMember
 from storage.user import User
 
 
@@ -38,15 +38,15 @@ def test_user_model(session_maker):
         session.add(user)
         session.flush()
 
-        # Create org_user relationship
-        org_user = OrgUser(
+        # Create org_member relationship
+        org_member = OrgMember(
             org_id=org.id,
             user_id=user.id,
             role_id=1,
             llm_api_key='test-api-key',
             status='active',
         )
-        session.add(org_user)
+        session.add(org_member)
         session.commit()
 
         # Query the user
@@ -61,11 +61,11 @@ def test_user_model(session_maker):
         assert queried_org is not None
         assert queried_org.name == 'test_org'
 
-        # Query the org_user relationship
-        queried_org_user = (
-            session.query(OrgUser)
-            .filter(OrgUser.org_id == org.id, OrgUser.user_id == user.id)
+        # Query the org_member relationship
+        queried_org_member = (
+            session.query(OrgMember)
+            .filter(OrgMember.org_id == org.id, OrgMember.user_id == user.id)
             .first()
         )
-        assert queried_org_user is not None
-        assert queried_org_user.llm_api_key.get_secret_value() == 'test-api-key'
+        assert queried_org_member is not None
+        assert queried_org_member.llm_api_key.get_secret_value() == 'test-api-key'

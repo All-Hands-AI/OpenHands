@@ -1,5 +1,5 @@
 """
-SQLAlchemy model for Organization-User relationship.
+SQLAlchemy model for Organization-Member relationship.
 """
 
 from pydantic import SecretStr
@@ -9,10 +9,10 @@ from storage.base import Base
 from storage.encrypt_utils import decrypt_value, encrypt_value
 
 
-class OrgUser(Base):  # type: ignore
-    """Junction table for organization-user relationships with roles."""
+class OrgMember(Base):  # type: ignore
+    """Junction table for organization-member relationships with roles."""
 
-    __tablename__ = 'org_user'
+    __tablename__ = 'org_member'
 
     org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), primary_key=True)
     user_id = Column(UUID(as_uuid=True), ForeignKey('user.id'), primary_key=True)
@@ -25,9 +25,9 @@ class OrgUser(Base):  # type: ignore
     status = Column(String, nullable=True)
 
     # Relationships
-    org = relationship('Org', back_populates='org_users')
-    user = relationship('User', back_populates='org_users')
-    role = relationship('Role', back_populates='org_users')
+    org = relationship('Org', back_populates='org_members')
+    user = relationship('User', back_populates='org_members')
+    role = relationship('Role', back_populates='org_members')
 
     def __init__(self, **kwargs):
         # Handle known SQLAlchemy columns directly

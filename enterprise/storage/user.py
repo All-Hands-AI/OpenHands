@@ -34,5 +34,5 @@ class User(Base):  # type: ignore
 
     # Relationships
     role = relationship('Role', back_populates='users')
-    org_users = relationship('OrgUser', back_populates='user')
+    org_members = relationship('OrgMember', back_populates='user')
     current_org = relationship('Org', back_populates='current_users')
