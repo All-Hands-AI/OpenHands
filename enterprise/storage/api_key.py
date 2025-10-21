@@ -13,7 +13,7 @@ class ApiKey(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     key = Column(String(255), nullable=False, unique=True, index=True)
     user_id = Column(String(255), nullable=False, index=True)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     name = Column(String(255), nullable=True)
     created_at = Column(
         DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False

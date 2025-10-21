@@ -8,7 +8,7 @@ class StoredUserSecrets(Base):  # type: ignore
     __tablename__ = 'user_secrets'
     id = Column(Integer, Identity(), primary_key=True)
     keycloak_user_id = Column(String, nullable=True, index=True)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     secret_name = Column(String, nullable=False)
     secret_value = Column(String, nullable=False)
     description = Column(String, nullable=True)

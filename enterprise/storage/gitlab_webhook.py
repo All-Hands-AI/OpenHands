@@ -34,7 +34,7 @@ class GitlabWebhook(Base):  # type: ignore
     group_id = Column(String, nullable=True)
     project_id = Column(String, nullable=True)
     user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     webhook_exists = Column(Boolean, nullable=False)
     webhook_url = Column(String, nullable=True)
     webhook_secret = Column(String, nullable=True)

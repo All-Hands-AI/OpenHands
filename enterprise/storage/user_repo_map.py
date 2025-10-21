@@ -12,7 +12,7 @@ class UserRepositoryMap(Base):
     __tablename__ = 'user-repos'
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     repo_id = Column(String, nullable=False)
     admin = Column(Boolean, nullable=True)
 

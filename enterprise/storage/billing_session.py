@@ -15,7 +15,7 @@ class BillingSession(Base):  # type: ignore
     __tablename__ = 'billing_sessions'
     id = Column(String, primary_key=True)
     user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     status = Column(
         Enum(
             'in_progress',

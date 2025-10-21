@@ -143,7 +143,8 @@ class UserStore:
                 status='active',
             )
             session.add(org_user)
-            session.delete(user_settings)
+            # don't remove old setting for now.
+            # session.delete(user_settings)
             session.commit()
             session.refresh(user)
             user.org_users  # load org_users

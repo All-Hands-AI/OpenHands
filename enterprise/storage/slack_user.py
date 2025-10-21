@@ -8,7 +8,7 @@ class SlackUser(Base):  # type: ignore
     __tablename__ = 'slack_users'
     id = Column(Integer, Identity(), primary_key=True)
     keycloak_user_id = Column(String, nullable=False, index=True)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     slack_user_id = Column(String, nullable=False, index=True)
     slack_display_name = Column(String, nullable=False)
     created_at = Column(

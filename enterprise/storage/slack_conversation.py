@@ -10,7 +10,7 @@ class SlackConversation(Base):  # type: ignore
     conversation_id = Column(String, nullable=False, index=True)
     channel_id = Column(String, nullable=False)
     keycloak_user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     parent_id = Column(String, nullable=True, index=True)
 
     # Relationships

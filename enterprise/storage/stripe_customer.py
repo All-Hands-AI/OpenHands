@@ -15,7 +15,7 @@ class StripeCustomer(Base):  # type: ignore
     __tablename__ = 'stripe_customers'
     id = Column(Integer, primary_key=True, autoincrement=True)
     keycloak_user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
+    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     stripe_customer_id = Column(String, nullable=False)
     created_at = Column(
         DateTime, server_default=text('CURRENT_TIMESTAMP'), nullable=False
