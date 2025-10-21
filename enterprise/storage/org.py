@@ -51,7 +51,6 @@ class Org(Base):  # type: ignore
     conversation_metadata = relationship('StoredConversationMetadata', back_populates='org')
     user_secrets = relationship('StoredUserSecrets', back_populates='org')
     api_keys = relationship('ApiKey', back_populates='org')
-    gitlab_webhooks = relationship('GitlabWebhook', back_populates='org')
     slack_conversations = relationship('SlackConversation', back_populates='org')
     slack_users = relationship('SlackUser', back_populates='org')
     stripe_customers = relationship('StripeCustomer', back_populates='org')

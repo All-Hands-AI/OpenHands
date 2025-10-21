@@ -6,14 +6,11 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
-    ForeignKey,
     Integer,
     String,
     Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship
 from storage.base import Base
 
 
@@ -34,7 +31,6 @@ class GitlabWebhook(Base):  # type: ignore
     group_id = Column(String, nullable=True)
     project_id = Column(String, nullable=True)
     user_id = Column(String, nullable=False)
-    org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     webhook_exists = Column(Boolean, nullable=False)
     webhook_url = Column(String, nullable=True)
     webhook_secret = Column(String, nullable=True)
@@ -47,9 +43,6 @@ class GitlabWebhook(Base):  # type: ignore
         onupdate=text('CURRENT_TIMESTAMP'),
         nullable=True,
     )
-
-    # Relationships
-    org = relationship('Org', back_populates='gitlab_webhooks')
 
     def __repr__(self) -> str:
         return (

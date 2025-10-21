@@ -166,14 +166,7 @@ def upgrade() -> None:
     )
     op.create_foreign_key('api_keys_org_fkey', 'api_keys', 'org', ['org_id'], ['id'])
 
-    # gitlab_webhook
-    op.add_column(
-        'gitlab_webhook',
-        sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
-    )
-    op.create_foreign_key(
-        'gitlab_webhook_org_fkey', 'gitlab_webhook', 'org', ['org_id'], ['id']
-    )
+
 
     # slack_conversation
     op.add_column(
@@ -230,9 +223,6 @@ def downgrade() -> None:
         'slack_conversation_org_fkey', 'slack_conversation', type_='foreignkey'
     )
     op.drop_column('slack_conversation', 'org_id')
-
-    op.drop_constraint('gitlab_webhook_org_fkey', 'gitlab_webhook', type_='foreignkey')
-    op.drop_column('gitlab_webhook', 'org_id')
 
     op.drop_constraint('api_keys_org_fkey', 'api_keys', type_='foreignkey')
     op.drop_column('api_keys', 'org_id')
