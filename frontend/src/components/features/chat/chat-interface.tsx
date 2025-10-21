@@ -7,33 +7,41 @@ import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { AgentState } from "#/types/agent-state";
-import { isOpenHandsAction } from "#/types/core/guards";
-import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
+import { isOpenHandsAction, isActionOrObservation } from "#/types/core/guards";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
-import { Messages } from "./messages";
+import { Messages as V0Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 import { useInitialQueryStore } from "#/stores/initial-query-store";
-import { useAgentStore } from "#/stores/agent-store";
+import { useSendMessage } from "#/hooks/use-send-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useEventStore } from "#/stores/use-event-store";
 import { ErrorMessageBanner } from "./error-message-banner";
 import {
   hasUserEvent,
   shouldRenderEvent,
 } from "./event-content-helpers/should-render-event";
+import {
+  Messages as V1Messages,
+  hasUserEvent as hasV1UserEvent,
+  shouldRenderEvent as shouldRenderV1Event,
+} from "#/components/v1/chat";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
+import { isV0Event, isV1Event } from "#/types/v1/type-guards";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -46,8 +54,11 @@ function getEntryPoint(
 
 export function ChatInterface() {
   const { setMessageToSend } = useConversationStore();
+  const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
-  const { send, isLoadingMessages, parsedEvents } = useWsClient();
+  const { isLoadingMessages } = useWsClient();
+  const { send } = useSendMessage();
+  const storeEvents = useEventStore((state) => state.events);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
   const { t } = useTranslation();
@@ -62,7 +73,7 @@ export function ChatInterface() {
   } = useScrollToBottom(scrollRef);
   const { data: config } = useConfig();
 
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -74,18 +85,34 @@ export function ChatInterface() {
 
   const optimisticUserMessage = getOptimisticUserMessage();
 
-  const events = parsedEvents.filter(shouldRenderEvent);
+  const isV1Conversation = conversation?.conversation_version === "V1";
+
+  // Filter V0 events
+  const v0Events = storeEvents
+    .filter(isV0Event)
+    .filter(isActionOrObservation)
+    .filter(shouldRenderEvent);
+
+  // Filter V1 events
+  const v1Events = storeEvents.filter(isV1Event).filter(shouldRenderV1Event);
+
+  // Combined events count for tracking
+  const totalEvents = v0Events.length || v1Events.length;
 
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(
     () =>
-      parsedEvents.some(
-        (event) =>
-          isOpenHandsAction(event) &&
-          event.source === "agent" &&
-          event.action !== "system",
-      ),
-    [parsedEvents],
+      storeEvents
+        .filter(isV0Event)
+        .filter(isActionOrObservation)
+        .some(
+          (event) =>
+            isOpenHandsAction(event) &&
+            event.source === "agent" &&
+            event.action !== "system",
+        ) ||
+      storeEvents.filter(isV1Event).some((event) => event.source === "agent"),
+    [storeEvents],
   );
 
   const handleSendMessage = async (
@@ -96,7 +123,7 @@ export function ChatInterface() {
     // Create mutable copies of the arrays
     const images = [...originalImages];
     const files = [...originalFiles];
-    if (events.length === 0) {
+    if (totalEvents === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
           selectedRepository !== null,
@@ -107,7 +134,7 @@ export function ChatInterface() {
       });
     } else {
       posthog.capture("user_message_sent", {
-        session_message_count: events.length,
+        session_message_count: totalEvents,
         current_message_length: content.length,
       });
     }
@@ -142,11 +169,6 @@ export function ChatInterface() {
     setMessageToSend("");
   };
 
-  const handleStop = () => {
-    posthog.capture("stop_button_clicked");
-    send(generateAgentStateChangeEvent(AgentState.STOPPED));
-  };
-
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
   ) => {
@@ -165,7 +187,9 @@ export function ChatInterface() {
     onChatBodyScroll,
   };
 
-  const userEventsExist = hasUserEvent(events);
+  const v0UserEventsExist = hasUserEvent(v0Events);
+  const v1UserEventsExist = hasV1UserEvent(v1Events);
+  const userEventsExist = v0UserEventsExist || v1UserEventsExist;
 
   return (
     <ScrollProvider value={scrollProviderValue}>
@@ -184,15 +208,24 @@ export function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
         >
-          {isLoadingMessages && (
+          {isLoadingMessages && !isV1Conversation && (
             <div className="flex justify-center">
               <LoadingSpinner size="small" />
             </div>
           )}
 
-          {!isLoadingMessages && userEventsExist && (
-            <Messages
-              messages={events}
+          {!isLoadingMessages && v0UserEventsExist && (
+            <V0Messages
+              messages={v0Events}
+              isAwaitingUserConfirmation={
+                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+              }
+            />
+          )}
+
+          {v1UserEventsExist && (
+            <V1Messages
+              messages={v1Events}
               isAwaitingUserConfirmation={
                 curAgentState === AgentState.AWAITING_USER_CONFIRMATION
               }
@@ -204,7 +237,7 @@ export function ChatInterface() {
           <div className="flex justify-between relative">
             <div className="flex items-center gap-1">
               <ConfirmationModeEnabled />
-              {events.length > 0 && (
+              {totalEvents > 0 && (
                 <TrajectoryActions
                   onPositiveFeedback={() =>
                     onClickShareFeedbackActionButton("positive")
@@ -226,10 +259,7 @@ export function ChatInterface() {
 
           {errorMessage && <ErrorMessageBanner message={errorMessage} />}
 
-          <InteractiveChatBox
-            onSubmit={handleSendMessage}
-            onStop={handleStop}
-          />
+          <InteractiveChatBox onSubmit={handleSendMessage} />
         </div>
 
         {config?.APP_MODE !== "saas" && (

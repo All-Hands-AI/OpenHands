@@ -9,6 +9,11 @@ from openhands.tools.task_tracker import TaskTrackerTool
 from openhands_cli.listeners import LoadingContext
 from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
+from openhands.sdk.security.confirmation_policy import (
+    AlwaysConfirm,
+)
+from openhands_cli.tui.settings.settings_screen import SettingsScreen
+
 
 register_tool('BashTool', BashTool)
 register_tool('FileEditorTool', FileEditorTool)
@@ -21,7 +26,10 @@ class MissingAgentSpec(Exception):
     pass
 
 
-def setup_conversation(conversation_id: str | None = None) -> BaseConversation:
+def setup_conversation(
+    conversation_id: str | None = None,
+    include_security_analyzer: bool = True
+) -> BaseConversation:
     """
     Setup the conversation with agent.
 
@@ -54,8 +62,15 @@ def setup_conversation(conversation_id: str | None = None) -> BaseConversation:
                 'Agent specification not found. Please configure your agent settings.'
             )
 
+
+        if not include_security_analyzer:
+            # Remove security analyzer from agent spec
+            agent = agent.model_copy(
+                update={"security_analyzer": None}
+            )
+
         # Create conversation - agent context is now set in AgentStore.load()
-        conversation = Conversation(
+        conversation: BaseConversation = Conversation(
             agent=agent,
             workspace=Workspace(working_dir=WORK_DIR),
             # Conversation will add /<conversation_id> to this path
@@ -63,7 +78,39 @@ def setup_conversation(conversation_id: str | None = None) -> BaseConversation:
             conversation_id=conversation_id,
         )
 
+        if include_security_analyzer:
+            conversation.set_confirmation_policy(AlwaysConfirm())
+
     print_formatted_text(
         HTML(f'<green>✓ Agent initialized with model: {agent.llm.model}</green>')
     )
     return conversation
+
+
+
+def start_fresh_conversation(
+    resume_conversation_id: str | None = None
+) -> BaseConversation:
+    """Start a fresh conversation by creating a new conversation instance.
+
+    Handles the complete conversation setup process including settings screen
+    if agent configuration is missing.
+
+    Args:
+        resume_conversation_id: Optional conversation ID to resume
+
+    Returns:
+        BaseConversation: A new conversation instance
+    """
+    conversation = None
+    settings_screen = SettingsScreen()
+    try:
+        conversation = setup_conversation(resume_conversation_id)
+        return conversation
+    except MissingAgentSpec:
+        # For first-time users, show the full settings flow with choice between basic/advanced
+        settings_screen.configure_settings(first_time=True)
+
+
+    # Try once again after settings setup attempt
+    return setup_conversation(resume_conversation_id)
