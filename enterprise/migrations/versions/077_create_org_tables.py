@@ -23,6 +23,9 @@ def upgrade() -> None:
     op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto;')
     # Remove current settings table
     op.execute('DROP TABLE IF EXISTS settings')
+    
+    # Add migration_status column to user_settings table
+    op.add_column('user_settings', sa.Column('migration_status', sa.Boolean, nullable=True, default=False))
 
     # Create role table
     op.create_table(
