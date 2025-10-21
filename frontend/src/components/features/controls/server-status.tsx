@@ -5,31 +5,29 @@ import { I18nKey } from "#/i18n/declaration";
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
-import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
-import { useConversationId } from "#/hooks/use-conversation-id";
-import { useUserProviders } from "#/hooks/use-user-providers";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 export interface ServerStatusProps {
   className?: string;
   conversationStatus: ConversationStatus | null;
+  isPausing?: boolean;
+  handleStop: () => void;
+  handleResumeAgent: () => void;
 }
 
 export function ServerStatus({
   className = "",
   conversationStatus,
+  isPausing = false,
+  handleStop,
+  handleResumeAgent,
 }: ServerStatusProps) {
   const [showContextMenu, setShowContextMenu] = useState(false);
 
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
   const { t } = useTranslation();
-  const { conversationId } = useConversationId();
-
-  // Mutation hooks
-  const stopConversationMutation = useStopConversation();
-  const startConversationMutation = useStartConversation();
-  const { providers } = useUserProviders();
+  const { isTask, taskStatus, taskDetail } = useTaskPolling();
 
   const isStartingStatus =
     curAgentState === AgentState.LOADING || curAgentState === AgentState.INIT;
@@ -38,6 +36,19 @@ export function ServerStatus({
 
   // Get the appropriate color based on agent status
   const getStatusColor = (): string => {
+    // Show pausing status
+    if (isPausing) {
+      return "#FFD600";
+    }
+
+    // Show task status if we're polling a task
+    if (isTask && taskStatus) {
+      if (taskStatus === "ERROR") {
+        return "#FF684E";
+      }
+      return "#FFD600";
+    }
+
     if (isStartingStatus) {
       return "#FFD600";
     }
@@ -52,6 +63,31 @@ export function ServerStatus({
 
   // Get the appropriate status text based on agent status
   const getStatusText = (): string => {
+    // Show pausing status
+    if (isPausing) {
+      return t(I18nKey.COMMON$STOPPING);
+    }
+
+    // Show task status if we're polling a task
+    if (isTask && taskStatus) {
+      if (taskStatus === "ERROR") {
+        return (
+          taskDetail || t(I18nKey.CONVERSATION$ERROR_STARTING_CONVERSATION)
+        );
+      }
+      if (taskStatus === "READY") {
+        return t(I18nKey.CONVERSATION$READY);
+      }
+      // Format status text: "WAITING_FOR_SANDBOX" -> "Waiting for sandbox"
+      return (
+        taskDetail ||
+        taskStatus
+          .toLowerCase()
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase())
+      );
+    }
+
     if (isStartingStatus) {
       return t(I18nKey.COMMON$STARTING);
     }
@@ -76,16 +112,13 @@ export function ServerStatus({
 
   const handleStopServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    stopConversationMutation.mutate({ conversationId });
+    handleStop();
     setShowContextMenu(false);
   };
 
   const handleStartServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    startConversationMutation.mutate({
-      conversationId,
-      providers,
-    });
+    handleResumeAgent();
     setShowContextMenu(false);
   };
 
