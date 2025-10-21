@@ -10,8 +10,8 @@ from server.auth.auth_error import (
     NoCredentialsError,
     TosNotAcceptedError,
 )
-from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.cookie_compression import decompress_cookie_data
+from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth, token_manager
 from server.routes.auth import (
     get_cookie_domain,
@@ -120,9 +120,11 @@ class SetAuthCookieMiddleware:
                     decompressed_cookie = decompress_cookie_data(keycloak_auth_cookie)
                     logger.debug('Middleware: Cookie data decompressed successfully')
                 except Exception as e:
-                    logger.debug(f'Middleware: Failed to decompress cookie data, trying as uncompressed: {str(e)}')
+                    logger.debug(
+                        f'Middleware: Failed to decompress cookie data, trying as uncompressed: {str(e)}'
+                    )
                     decompressed_cookie = keycloak_auth_cookie
-                
+
                 decoded = jwt.decode(
                     decompressed_cookie,
                     jwt_secret.get_secret_value(),

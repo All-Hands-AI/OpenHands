@@ -13,8 +13,8 @@ from server.auth.constants import (
     KEYCLOAK_REALM_NAME,
     KEYCLOAK_SERVER_URL_EXT,
 )
-from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.cookie_compression import compress_cookie_data, should_compress_cookie
+from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth
 from server.auth.token_manager import TokenManager
 from server.config import sign_token
@@ -63,7 +63,9 @@ def set_response_cookie(
             cookie_value = compress_cookie_data(signed_token)
             logger.debug('Cookie data compressed successfully')
         except Exception as e:
-            logger.warning(f'Failed to compress cookie data, using uncompressed: {str(e)}')
+            logger.warning(
+                f'Failed to compress cookie data, using uncompressed: {str(e)}'
+            )
             cookie_value = signed_token
 
     # Set secure cookie with (potentially compressed) signed token

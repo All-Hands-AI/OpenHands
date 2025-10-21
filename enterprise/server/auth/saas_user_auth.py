@@ -272,15 +272,17 @@ async def saas_user_auth_from_cookie(request: Request) -> SaasUserAuth | None:
         signed_token = request.cookies.get('keycloak_auth')
         if not signed_token:
             return None
-        
+
         # Decompress the cookie data if it's compressed
         try:
             decompressed_token = decompress_cookie_data(signed_token)
             logger.debug('Cookie data decompressed successfully')
         except Exception as e:
-            logger.warning(f'Failed to decompress cookie data, trying as uncompressed: {str(e)}')
+            logger.warning(
+                f'Failed to decompress cookie data, trying as uncompressed: {str(e)}'
+            )
             decompressed_token = signed_token
-        
+
         return await saas_user_auth_from_signed_token(decompressed_token)
     except Exception as exc:
         raise CookieError from exc

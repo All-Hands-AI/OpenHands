@@ -133,9 +133,13 @@ class SaasConversationValidator(ConversationValidator):
         # Decompress the cookie data if it's compressed
         try:
             decompressed_token = decompress_cookie_data(signed_token)
-            logger.debug('Conversation validator: Cookie data decompressed successfully')
+            logger.debug(
+                'Conversation validator: Cookie data decompressed successfully'
+            )
         except Exception as e:
-            logger.debug(f'Conversation validator: Failed to decompress cookie data, trying as uncompressed: {str(e)}')
+            logger.debug(
+                f'Conversation validator: Failed to decompress cookie data, trying as uncompressed: {str(e)}'
+            )
             decompressed_token = signed_token
 
         try:
