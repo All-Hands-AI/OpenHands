@@ -27,7 +27,7 @@ from storage.linear_workspace import LinearWorkspace
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
-from openhands.integrations.service_types import Repository
+from openhands.integrations.service_types import AuthenticationError, Repository
 from openhands.server.shared import server_config
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth.user_auth import UserAuth
@@ -385,6 +385,10 @@ class LinearManager(Manager):
         except LLMAuthenticationError as e:
             logger.warning(f'[Linear] LLM authentication error: {str(e)}')
             msg_info = f'Please set a valid LLM API key in [OpenHands Cloud]({HOST_URL}) before starting a job.'
+
+        except AuthenticationError as e:
+            logger.warning(f'[Linear] Authentication error: {str(e)}')
+            msg_info = f'Authentication failure: The OpenHands app is not authenticated to do work on this repo. Please travel to [{HOST_URL}]({HOST_URL}) and add the repo. If you still encounter issues, contact support.'
 
         except Exception as e:
             logger.error(

@@ -334,7 +334,7 @@ class GithubManager(Manager):
                     f'[GitHub] Authentication error for user {user_info.username}: {str(e)}'
                 )
 
-                msg_info = f'Authentication failure: The OpenHands app is not authenticated to do work on this repo. Please travel to [{HOST_URL}]({HOST_URL}) and add the repo. If you still encounter issues, contact support.'
+                msg_info = f'@{user_info.username} Authentication failure: The OpenHands app is not authenticated to do work on this repo. Please travel to [{HOST_URL}]({HOST_URL}) and add the repo. If you still encounter issues, contact support.'
 
             msg = self.create_outgoing_message(msg_info)
             await self.send_message(msg, github_view)
