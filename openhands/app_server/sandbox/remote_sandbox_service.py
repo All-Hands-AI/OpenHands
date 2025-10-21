@@ -26,6 +26,9 @@ from openhands.app_server.event_callback.event_callback_service import (
 )
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
+    VSCODE,
+    WORKER_1,
+    WORKER_2,
     ExposedUrl,
     SandboxInfo,
     SandboxPage,
@@ -92,6 +95,7 @@ class RemoteSandboxService(SandboxService):
     resource_factor: int
     runtime_class: str | None
     start_sandbox_timeout: int
+    max_num_sandboxes: int
     user_context: UserContext
     httpx_client: httpx.AsyncClient
     db_session: AsyncSession
@@ -144,6 +148,17 @@ class RemoteSandboxService(SandboxService):
                 url = runtime.get('url', None)
                 if url:
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
+                    vscode_url = (
+                        _build_service_url(url, 'vscode')
+                        + f'/?tkn={session_api_key}&folder={runtime["working_dir"]}'
+                    )
+                    exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'))
+                    )
             else:
                 exposed_urls = None
         else:
@@ -254,6 +269,9 @@ class RemoteSandboxService(SandboxService):
     async def start_sandbox(self, sandbox_spec_id: str | None = None) -> SandboxInfo:
         """Start a new sandbox by creating a remote runtime."""
         try:
+            # Enforce sandbox limits by cleaning up old sandboxes
+            await self.pause_old_sandboxes(self.max_num_sandboxes - 1)
+
             # Get sandbox spec
             if sandbox_spec_id is None:
                 sandbox_spec = (
@@ -324,6 +342,9 @@ class RemoteSandboxService(SandboxService):
 
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox."""
+        # Enforce sandbox limits by cleaning up old sandboxes
+        await self.pause_old_sandboxes(self.max_num_sandboxes - 1)
+
         try:
             if not await self._get_stored_sandbox(sandbox_id):
                 return False
@@ -381,6 +402,11 @@ class RemoteSandboxService(SandboxService):
         except httpx.HTTPError as e:
             _logger.error(f'Error deleting sandbox {sandbox_id}: {e}')
             return False
+
+
+def _build_service_url(url: str, service_name: str):
+    scheme, host_and_path = url.split('://')
+    return scheme + '://' + service_name + '-' + host_and_path
 
 
 async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
@@ -569,6 +595,10 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
             'be in an error state.'
         ),
     )
+    max_num_sandboxes: int = Field(
+        default=10,
+        description='Maximum number of sandboxes allowed to run simultaneously',
+    )
 
     async def inject(
         self, state: InjectorState, request: Request | None = None
@@ -609,6 +639,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
                 resource_factor=self.resource_factor,
                 runtime_class=self.runtime_class,
                 start_sandbox_timeout=self.start_sandbox_timeout,
+                max_num_sandboxes=self.max_num_sandboxes,
                 user_context=user_context,
                 httpx_client=httpx_client,
                 db_session=db_session,
