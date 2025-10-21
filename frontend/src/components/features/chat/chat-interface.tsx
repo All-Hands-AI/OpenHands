@@ -40,7 +40,12 @@ import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
 import ConfirmationModeEnabled from "./confirmation-mode-enabled";
-import { isV0Event, isV1Event } from "#/types/v1/type-guards";
+import {
+  isV0Event,
+  isV1Event,
+  isSystemPromptEvent,
+  isConversationStateUpdateEvent,
+} from "#/types/v1/type-guards";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 function getEntryPoint(
@@ -111,7 +116,14 @@ export function ChatInterface() {
             event.source === "agent" &&
             event.action !== "system",
         ) ||
-      storeEvents.filter(isV1Event).some((event) => event.source === "agent"),
+      storeEvents
+        .filter(isV1Event)
+        .some(
+          (event) =>
+            event.source === "agent" &&
+            !isSystemPromptEvent(event) &&
+            !isConversationStateUpdateEvent(event),
+        ),
     [storeEvents],
   );
 

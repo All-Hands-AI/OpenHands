@@ -13,6 +13,7 @@ import {
   ConversationStateUpdateEventAgentStatus,
   ConversationStateUpdateEventFullState,
 } from "./core/events/conversation-state-event";
+import { SystemPromptEvent } from "./core/events/system-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -107,6 +108,18 @@ export const isExecuteBashObservationEvent = (
 ): event is ObservationEvent<ExecuteBashObservation> =>
   isObservationEvent(event) &&
   event.observation.kind === "ExecuteBashObservation";
+
+/**
+ * Type guard function to check if an event is a system prompt event
+ */
+export const isSystemPromptEvent = (
+  event: OpenHandsEvent,
+): event is SystemPromptEvent =>
+  event.source === "agent" &&
+  "system_prompt" in event &&
+  "tools" in event &&
+  typeof event.system_prompt === "object" &&
+  Array.isArray(event.tools);
 
 /**
  * Type guard function to check if an event is a conversation state update event
