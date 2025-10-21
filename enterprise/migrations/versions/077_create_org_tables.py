@@ -207,20 +207,11 @@ def upgrade() -> None:
         'stripe_customers_org_fkey', 'stripe_customers', 'org', ['org_id'], ['id']
     )
 
-    # user-repos
-    op.add_column(
-        'user-repos', sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True)
-    )
-    op.create_foreign_key(
-        'user_repos_org_fkey', 'user-repos', 'org', ['org_id'], ['id']
-    )
+
 
 
 def downgrade() -> None:
     # Drop foreign keys and columns added to existing tables
-    op.drop_constraint('user_repos_org_fkey', 'user-repos', type_='foreignkey')
-    op.drop_column('user-repos', 'org_id')
-
     op.drop_constraint(
         'stripe_customers_org_fkey', 'stripe_customers', type_='foreignkey'
     )
