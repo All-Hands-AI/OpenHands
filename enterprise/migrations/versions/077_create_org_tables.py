@@ -207,6 +207,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Drop migration_status column from user_settings table
+    op.drop_column('user_settings', 'migration_status')
+    
     # Drop foreign keys and columns added to existing tables
     op.drop_constraint(
         'stripe_customers_org_fkey', 'stripe_customers', type_='foreignkey'
