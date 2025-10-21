@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
+import { USE_V1_CONVERSATION_API } from "#/utils/feature-flags";
 
 /**
  * Hook to fetch in-progress V1 conversation start tasks
@@ -16,6 +17,7 @@ export const useStartTasks = (limit = 10) =>
   useQuery({
     queryKey: ["start-tasks", "search", limit],
     queryFn: () => V1ConversationService.searchStartTasks(limit),
+    enabled: USE_V1_CONVERSATION_API(),
     select: (tasks) =>
       tasks.filter(
         (task) => task.status !== "READY" && task.status !== "ERROR",
