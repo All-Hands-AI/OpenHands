@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, afterEach } from "vitest";
-import { screen, waitFor, render } from "@testing-library/react";
+import { screen, waitFor, render, cleanup } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import {
@@ -19,16 +19,34 @@ import { conversationWebSocketTestSetup } from "./helpers/msw-websocket-setup";
 // MSW WebSocket mock setup
 const { wsLink, server: mswServer } = conversationWebSocketTestSetup();
 
-beforeAll(() => mswServer.listen());
+beforeAll(() => {
+  // The global MSW server from vitest.setup.ts is already running
+  // We just need to start our WebSocket-specific server
+  mswServer.listen({ onUnhandledRequest: "bypass" });
+});
+
 afterEach(() => {
   mswServer.resetHandlers();
+  // Clean up any React components
+  cleanup();
 });
-afterAll(() => mswServer.close());
+
+afterAll(async () => {
+  // Close the WebSocket MSW server
+  mswServer.close();
+
+  // Give time for any pending WebSocket connections to close. This is very important to prevent serious memory leaks
+  await new Promise((resolve) => {
+    setTimeout(resolve, 500);
+  });
+});
 
 // Helper function to render components with ConversationWebSocketProvider
 function renderWithWebSocketContext(
   children: React.ReactNode,
   conversationId = "test-conversation-default",
+  conversationUrl = "http://localhost:3000/api/conversations/test-conversation-default",
+  sessionApiKey: string | null = null,
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -39,7 +57,11 @@ function renderWithWebSocketContext(
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ConversationWebSocketProvider conversationId={conversationId}>
+      <ConversationWebSocketProvider
+        conversationId={conversationId}
+        conversationUrl={conversationUrl}
+        sessionApiKey={sessionApiKey}
+      >
         {children}
       </ConversationWebSocketProvider>
     </QueryClientProvider>,
@@ -393,5 +415,99 @@ describe("Conversation WebSocket Handler", () => {
   describe("Message Sending", () => {
     it.todo("should send user actions through WebSocket when connected");
     it.todo("should handle send attempts when disconnected");
+  });
+
+  // 8. Terminal I/O Tests (ExecuteBashAction and ExecuteBashObservation)
+  describe("Terminal I/O Integration", () => {
+    it("should append command to store when ExecuteBashAction event is received", async () => {
+      const { createMockExecuteBashActionEvent } = await import(
+        "#/mocks/mock-ws-helpers"
+      );
+      const { useCommandStore } = await import("#/state/command-store");
+
+      // Clear the command store before test
+      useCommandStore.getState().clearTerminal();
+
+      // Create a mock ExecuteBashAction event
+      const mockBashActionEvent = createMockExecuteBashActionEvent("npm test");
+
+      // Set up MSW to send the event when connection is established
+      mswServer.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+          // Send the mock event after connection
+          client.send(JSON.stringify(mockBashActionEvent));
+        }),
+      );
+
+      // Render with WebSocket context (we don't need a component, just need the provider to be active)
+      renderWithWebSocketContext(<ConnectionStatusComponent />);
+
+      // Wait for connection
+      await waitFor(() => {
+        expect(screen.getByTestId("connection-state")).toHaveTextContent(
+          "OPEN",
+        );
+      });
+
+      // Wait for the command to be added to the store
+      await waitFor(() => {
+        const { commands } = useCommandStore.getState();
+        expect(commands.length).toBe(1);
+      });
+
+      // Verify the command was added with correct type and content
+      const { commands } = useCommandStore.getState();
+      expect(commands[0].type).toBe("input");
+      expect(commands[0].content).toBe("npm test");
+    });
+
+    it("should append output to store when ExecuteBashObservation event is received", async () => {
+      const { createMockExecuteBashObservationEvent } = await import(
+        "#/mocks/mock-ws-helpers"
+      );
+      const { useCommandStore } = await import("#/state/command-store");
+
+      // Clear the command store before test
+      useCommandStore.getState().clearTerminal();
+
+      // Create a mock ExecuteBashObservation event
+      const mockBashObservationEvent = createMockExecuteBashObservationEvent(
+        "PASS  tests/example.test.js\n  ✓ should work (2 ms)",
+        "npm test",
+      );
+
+      // Set up MSW to send the event when connection is established
+      mswServer.use(
+        wsLink.addEventListener("connection", ({ client, server }) => {
+          server.connect();
+          // Send the mock event after connection
+          client.send(JSON.stringify(mockBashObservationEvent));
+        }),
+      );
+
+      // Render with WebSocket context
+      renderWithWebSocketContext(<ConnectionStatusComponent />);
+
+      // Wait for connection
+      await waitFor(() => {
+        expect(screen.getByTestId("connection-state")).toHaveTextContent(
+          "OPEN",
+        );
+      });
+
+      // Wait for the output to be added to the store
+      await waitFor(() => {
+        const { commands } = useCommandStore.getState();
+        expect(commands.length).toBe(1);
+      });
+
+      // Verify the output was added with correct type and content
+      const { commands } = useCommandStore.getState();
+      expect(commands[0].type).toBe("output");
+      expect(commands[0].content).toBe(
+        "PASS  tests/example.test.js\n  ✓ should work (2 ms)",
+      );
+    });
   });
 });

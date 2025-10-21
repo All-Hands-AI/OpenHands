@@ -13,6 +13,7 @@ import { MicroagentsModal } from "../conversation-panel/microagents-modal";
 import { ConfirmDeleteModal } from "../conversation-panel/confirm-delete-modal";
 import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
 import { MetricsModal } from "./metrics-modal/metrics-modal";
+import { ConversationVersionBadge } from "../conversation-panel/conversation-card/conversation-version-badge";
 
 export function ConversationName() {
   const { t } = useTranslation();
@@ -146,6 +147,12 @@ export function ConversationName() {
           >
             {conversation.title}
           </div>
+        )}
+
+        {titleMode !== "edit" && (
+          <ConversationVersionBadge
+            version={conversation.conversation_version}
+          />
         )}
 
         {titleMode !== "edit" && (

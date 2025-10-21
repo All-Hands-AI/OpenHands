@@ -185,9 +185,6 @@ async def create_new_conversation(
         git_provider,
     )
 
-    if not conversation_metadata:
-        raise Exception('Failed to initialize conversation')
-
     return await start_conversation(
         user_id,
         git_provider_tokens,
