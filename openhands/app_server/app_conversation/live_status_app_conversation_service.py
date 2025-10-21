@@ -459,7 +459,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             model=user.llm_model,
             base_url=user.llm_base_url,
             api_key=user.llm_api_key,
-            service_id='agent',
+            usage_id='agent',
         )
         agent = get_default_agent(llm=llm)
 

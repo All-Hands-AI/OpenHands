@@ -18,7 +18,7 @@ from openhands.sdk.context.condenser import LLMSummarizingCondenser
 def make_agent() -> Agent:
     """Build a minimal valid Agent."""
     llm = LLM(
-        service_id='primary-llm',
+        usage_id='primary-llm',
         model='provider/model',
         api_key=SecretStr('sk-test'),
     )
@@ -45,7 +45,7 @@ def test_control_variant_sets_condenser_with_max_size_120(monkeypatch):
     assert result is not agent
     assert isinstance(result.condenser, LLMSummarizingCondenser)
 
-    # The condenser should have its own LLM (service_id overridden to "condenser")
+    # The condenser should have its own LLM (usage_id overridden to "condenser")
     assert result.condenser.llm.usage_id == 'condenser'
     # The original agent LLM remains unchanged
     assert agent.llm.usage_id == 'primary-llm'
