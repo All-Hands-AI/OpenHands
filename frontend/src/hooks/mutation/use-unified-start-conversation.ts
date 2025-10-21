@@ -53,7 +53,10 @@ export const useUnifiedResumeConversationSandbox = () => {
       return startV0Conversation(variables.conversationId, variables.providers);
     },
     onMutate: async () => {
-      toast.loading(t(I18nKey.TOAST$STARTING_CONVERSATION), TOAST_OPTIONS);
+      const toastId = toast.loading(
+        t(I18nKey.TOAST$STARTING_CONVERSATION),
+        TOAST_OPTIONS,
+      );
 
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([
@@ -61,10 +64,12 @@ export const useUnifiedResumeConversationSandbox = () => {
         "conversations",
       ]);
 
-      return { previousConversations };
+      return { previousConversations, toastId };
     },
     onError: (_, __, context) => {
-      toast.dismiss();
+      if (context?.toastId) {
+        toast.dismiss(context.toastId);
+      }
       toast.error(t(I18nKey.TOAST$FAILED_TO_START_CONVERSATION), TOAST_OPTIONS);
 
       if (context?.previousConversations) {
@@ -77,8 +82,10 @@ export const useUnifiedResumeConversationSandbox = () => {
     onSettled: (_, __, variables) => {
       invalidateConversationQueries(queryClient, variables.conversationId);
     },
-    onSuccess: (_, variables) => {
-      toast.dismiss();
+    onSuccess: (_, variables, context) => {
+      if (context?.toastId) {
+        toast.dismiss(context.toastId);
+      }
       toast.success(t(I18nKey.TOAST$CONVERSATION_STARTED), TOAST_OPTIONS);
 
       // Clear error messages when starting/resuming conversation
