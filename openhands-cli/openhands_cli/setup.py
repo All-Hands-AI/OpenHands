@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from prompt_toolkit import HTML, print_formatted_text
@@ -7,7 +8,7 @@ from openhands.tools.execute_bash import BashTool
 from openhands.tools.file_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
 from openhands_cli.listeners import LoadingContext
-from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
+from openhands_cli.locations import CONVERSATIONS_DIR, get_configured_working_directory
 from openhands_cli.tui.settings.store import AgentStore
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
@@ -69,10 +70,13 @@ def setup_conversation(
                 update={"security_analyzer": None}
             )
 
+        # Get current working directory (may have been updated)
+        current_work_dir = get_configured_working_directory() or os.getcwd()
+        
         # Create conversation - agent context is now set in AgentStore.load()
         conversation: BaseConversation = Conversation(
             agent=agent,
-            workspace=Workspace(working_dir=WORK_DIR),
+            workspace=Workspace(working_dir=current_work_dir),
             # Conversation will add /<conversation_id> to this path
             persistence_dir=CONVERSATIONS_DIR,
             conversation_id=conversation_id,
