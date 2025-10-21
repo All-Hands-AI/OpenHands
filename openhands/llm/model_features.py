@@ -31,16 +31,14 @@ def normalize_model_name(model: str) -> str:
         # No '/', keep the whole raw name (we do not support provider:model)
         name = raw
 
-    # Collapse only Anthropic Bedrock-style dot prefixes and remove the vendor token entirely.
+    # Collapse only Anthropic Bedrock-style dotted vendor and remove the vendor token entirely.
     # Examples:
     #   'anthropic.claude-*' -> 'claude-*'
     #   'us.anthropic.claude-*' -> 'claude-*'
-    if '.' in name:
-        tokens = name.split('.')
-        if 'anthropic' in tokens:
-            idx = tokens.index('anthropic')
-            if idx + 1 < len(tokens):
-                name = '.'.join(tokens[idx + 1 :])
+    if name.startswith('anthropic.'):
+        name = name[len('anthropic.') :]
+    elif '.anthropic.' in name:
+        name = name.split('.anthropic.', 1)[1]
 
     if name.endswith('-gguf'):
         name = name[: -len('-gguf')]
@@ -120,7 +118,9 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'gpt-5*',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
+    # Anthropic Sonnet/Haiku 4.5 variants
     'claude-sonnet-4-5*',
+    'claude-sonnet-4.5*',
     'claude-haiku-4-5*',
 ]
 
