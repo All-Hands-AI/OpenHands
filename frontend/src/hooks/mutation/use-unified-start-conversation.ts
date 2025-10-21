@@ -54,7 +54,7 @@ export const useUnifiedResumeConversationSandbox = () => {
         "conversations",
       ]);
 
-      return { previousConversations, toastId };
+      return { previousConversations };
     },
     onError: (_, __, context) => {
       if (context?.previousConversations) {
