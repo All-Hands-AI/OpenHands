@@ -17,7 +17,6 @@ from storage.github_app_installation import GithubAppInstallation
 from storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
 from storage.stored_conversation_metadata import StoredConversationMetadata
 from storage.stored_offline_token import StoredOfflineToken
-
 from storage.stripe_customer import StripeCustomer
 from storage.user_settings import UserSettings
 

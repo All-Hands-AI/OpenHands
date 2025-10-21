@@ -13,7 +13,6 @@ from integrations.stripe_service import (
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
 from storage.stripe_customer import Base as StripeCustomerBase
 from storage.stripe_customer import StripeCustomer
 from storage.user_settings import Base as UserBase

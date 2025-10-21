@@ -8,7 +8,6 @@ from server.constants import (
     LITE_LLM_TEAM_ID,
 )
 from storage.saas_settings_store import SaasSettingsStore
-
 from storage.user_settings import UserSettings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -301,9 +300,6 @@ async def test_create_default_settings_require_payment_disabled(
         settings = await settings_store.create_default_settings(None)
         assert settings is not None
         assert settings.language == 'en'
-
-
-
 
 
 @pytest.mark.asyncio

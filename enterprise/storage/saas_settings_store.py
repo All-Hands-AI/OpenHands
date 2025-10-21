@@ -24,7 +24,6 @@ from server.constants import (
 from server.logger import logger
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
-
 from storage.user_settings import UserSettings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -143,8 +142,6 @@ class SaasSettingsStore(SettingsStore):
 
         await self.store(settings)
         return settings
-
-
 
     async def load_legacy_file_store_settings(self, github_user_id: str):
         if not github_user_id:
