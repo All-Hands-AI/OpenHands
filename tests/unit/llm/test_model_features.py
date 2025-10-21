@@ -21,7 +21,7 @@ from openhands.llm.model_features import (
         ('openrouter/gpt-4o-mini', 'gpt-4o-mini'),
         (
             'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
-            'anthropic.claude-3-5-sonnet-20241022-v2',
+            'claude-3-5-sonnet-20241022-v2',
         ),
         ('', ''),
         (None, ''),  # type: ignore[arg-type]

@@ -15,9 +15,10 @@ def normalize_model_name(model: str) -> str:
       and treat ':' inside that basename as an Ollama-style variant tag to be removed
     - There is no provider:model form; providers, when present, use 'provider/model'
     - Drop a trailing "-gguf" suffix if present
-    - Only strip region prefixes before Anthropic Bedrock-style dot vendor.
-      Keep 'anthropic.' if present; collapse '*.anthropic.' -> 'anthropic.'.
-      Example: 'us.anthropic.claude-*' -> 'anthropic.claude-*'.
+    - Only handle Anthropic Bedrock-style dot prefixes and remove the vendor token
+      entirely so downstream checks use plain model basenames:
+      * 'anthropic.claude-*' -> 'claude-*'
+      * 'us.anthropic.claude-*' -> 'claude-*'
       Other vendors are left untouched to avoid unintended side-effects.
     """
     raw = (model or '').strip().lower()
@@ -30,15 +31,16 @@ def normalize_model_name(model: str) -> str:
         # No '/', keep the whole raw name (we do not support provider:model)
         name = raw
 
-    # Collapse only Bedrock-style region prefixes before Anthropic vendor.
-    # Keep 'anthropic.' if it's already the prefix; collapse '*.anthropic.' -> 'anthropic.'
+    # Collapse only Anthropic Bedrock-style dot prefixes and remove the vendor token entirely.
+    # Examples:
+    #   'anthropic.claude-*' -> 'claude-*'
+    #   'us.anthropic.claude-*' -> 'claude-*'
     if '.' in name:
-        vendor = 'anthropic.'
-        i = name.find(vendor)
-        if i > 0:
-            # e.g., 'us.anthropic.claude-*' -> 'anthropic.claude-*'
-            name = name[i:]
-        # if i == 0 -> already starts with 'anthropic.', leave as-is
+        tokens = name.split('.')
+        if 'anthropic' in tokens:
+            idx = tokens.index('anthropic')
+            if idx + 1 < len(tokens):
+                name = '.'.join(tokens[idx + 1 :])
 
     if name.endswith('-gguf'):
         name = name[: -len('-gguf')]
