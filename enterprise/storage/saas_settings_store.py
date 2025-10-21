@@ -33,7 +33,10 @@ class SaasSettingsStore(OssSettingsStore):
             with session_maker() as session:
                 user_settings = (
                     session.query(UserSettings)
-                    .filter(UserSettings.keycloak_user_id == self.user_id)
+                    .filter(
+                        UserSettings.keycloak_user_id == self.user_id,
+                        UserSettings.migration_status != True  # Only migrate non-migrated records
+                    )
                     .first()
                 )
             if user_settings:

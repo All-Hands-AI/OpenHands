@@ -23,6 +23,9 @@ def upgrade() -> None:
     op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto;')
     # Remove current settings table
     op.execute('DROP TABLE IF EXISTS settings')
+    
+    # Add migration_status column to user_settings table
+    op.add_column('user_settings', sa.Column('migration_status', sa.Boolean, nullable=True, default=False))
 
     # Create role table
     op.create_table(
@@ -204,6 +207,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Drop migration_status column from user_settings table
+    op.drop_column('user_settings', 'migration_status')
+    
     # Drop foreign keys and columns added to existing tables
     op.drop_constraint(
         'stripe_customers_org_fkey', 'stripe_customers', type_='foreignkey'

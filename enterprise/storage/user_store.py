@@ -85,6 +85,11 @@ class UserStore:
     ) -> User:
         if not keycloak_user_id or not user_settings:
             return None
+            
+        # Check if user is already migrated to prevent double migration
+        if user_settings.migration_status is True:
+            logger.warning(f'User {keycloak_user_id} already migrated, skipping')
+            return UserStore.get_user_by_id(keycloak_user_id)
         kwargs = decrypt_model(
             [
                 'llm_api_key',
@@ -143,8 +148,9 @@ class UserStore:
                 status='active',
             )
             session.add(org_member)
-            # don't remove old setting for now.
-            # session.delete(user_settings)
+            
+            # Mark the old user_settings as migrated instead of deleting
+            user_settings.migration_status = True
             session.commit()
             session.refresh(user)
             user.org_members  # load org_members
