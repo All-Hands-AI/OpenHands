@@ -4,8 +4,6 @@ This model stores individual metric collection records with upload tracking
 and retry logic for the OpenHands Enterprise Telemetry Service.
 """
 
-import hashlib
-import json
 import uuid
 from datetime import UTC, datetime
 from typing import Any, Dict, Optional
@@ -18,7 +16,7 @@ class TelemetryMetrics(Base):  # type: ignore
     """Stores collected telemetry metrics with upload tracking.
 
     Each record represents a single metrics collection event with associated
-    metadata for upload status, retry logic, and deduplication.
+    metadata for upload status and retry logic.
     """
 
     __tablename__ = 'telemetry_metrics'
@@ -30,7 +28,6 @@ class TelemetryMetrics(Base):  # type: ignore
         default=lambda: datetime.now(UTC),
         index=True,
     )
-    metrics_hash = Column(String(64), nullable=False, index=True)
     metrics_data = Column(JSON, nullable=False)
     uploaded_at = Column(DateTime(timezone=True), nullable=True, index=True)
     upload_attempts = Column(Integer, nullable=False, default=0)
@@ -74,27 +71,10 @@ class TelemetryMetrics(Base):  # type: ignore
             self.updated_at = now
 
         self.metrics_data = metrics_data
-        self.metrics_hash = self._calculate_metrics_hash(metrics_data)
         if collected_at:
             self.collected_at = collected_at
         elif not hasattr(self, 'collected_at') or self.collected_at is None:
             self.collected_at = now
-
-    @staticmethod
-    def _calculate_metrics_hash(metrics_data: Dict[str, Any]) -> str:
-        """Calculate a SHA-256 hash of the metrics data for deduplication.
-
-        Args:
-            metrics_data: Dictionary containing the metrics data
-
-        Returns:
-            Hexadecimal string representation of the SHA-256 hash
-        """
-        # Sort keys to ensure consistent hashing
-        normalized_json = json.dumps(
-            metrics_data, sort_keys=True, separators=(',', ':')
-        )
-        return hashlib.sha256(normalized_json.encode('utf-8')).hexdigest()
 
     def mark_uploaded(self) -> None:
         """Mark this metrics record as successfully uploaded."""

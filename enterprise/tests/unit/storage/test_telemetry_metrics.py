@@ -1,7 +1,5 @@
 """Unit tests for TelemetryMetrics model."""
 
-import hashlib
-import json
 import uuid
 from datetime import UTC, datetime
 
@@ -22,8 +20,6 @@ class TestTelemetryMetrics:
         metrics = TelemetryMetrics(metrics_data=metrics_data)
 
         assert metrics.metrics_data == metrics_data
-        assert metrics.metrics_hash is not None
-        assert len(metrics.metrics_hash) == 64  # SHA-256 hex string
         assert metrics.upload_attempts == 0
         assert metrics.uploaded_at is None
         assert metrics.last_upload_error is None
@@ -39,44 +35,6 @@ class TestTelemetryMetrics:
         metrics = TelemetryMetrics(metrics_data=metrics_data, collected_at=custom_time)
 
         assert metrics.collected_at == custom_time
-
-    def test_calculate_metrics_hash(self):
-        """Test metrics hash calculation."""
-        metrics_data = {
-            'b_key': 'value2',
-            'a_key': 'value1',
-            'c_key': 123,
-        }
-
-        # Calculate expected hash
-        normalized_json = json.dumps(
-            metrics_data, sort_keys=True, separators=(',', ':')
-        )
-        expected_hash = hashlib.sha256(normalized_json.encode('utf-8')).hexdigest()
-
-        calculated_hash = TelemetryMetrics._calculate_metrics_hash(metrics_data)
-
-        assert calculated_hash == expected_hash
-
-    def test_hash_consistency(self):
-        """Test that identical data produces identical hashes."""
-        metrics_data1 = {'key1': 'value1', 'key2': 'value2'}
-        metrics_data2 = {'key2': 'value2', 'key1': 'value1'}  # Different order
-
-        hash1 = TelemetryMetrics._calculate_metrics_hash(metrics_data1)
-        hash2 = TelemetryMetrics._calculate_metrics_hash(metrics_data2)
-
-        assert hash1 == hash2
-
-    def test_hash_uniqueness(self):
-        """Test that different data produces different hashes."""
-        metrics_data1 = {'key': 'value1'}
-        metrics_data2 = {'key': 'value2'}
-
-        hash1 = TelemetryMetrics._calculate_metrics_hash(metrics_data1)
-        hash2 = TelemetryMetrics._calculate_metrics_hash(metrics_data2)
-
-        assert hash1 != hash2
 
     def test_mark_uploaded(self):
         """Test marking metrics as uploaded."""
@@ -219,22 +177,12 @@ class TestTelemetryMetrics:
         metrics = TelemetryMetrics(metrics_data=complex_data)
 
         assert metrics.metrics_data == complex_data
-        assert len(metrics.metrics_hash) == 64
-
-        # Verify hash is deterministic for complex data
-        metrics2 = TelemetryMetrics(metrics_data=complex_data)
-        assert metrics.metrics_hash == metrics2.metrics_hash
 
     def test_empty_metrics_data(self):
         """Test with empty metrics data."""
         metrics = TelemetryMetrics(metrics_data={})
 
         assert metrics.metrics_data == {}
-        assert len(metrics.metrics_hash) == 64
-
-        # Empty dict should have consistent hash
-        metrics2 = TelemetryMetrics(metrics_data={})
-        assert metrics.metrics_hash == metrics2.metrics_hash
 
     def test_config_class(self):
         """Test that Config class is properly set."""

@@ -149,7 +149,6 @@ Stores collected metrics with transmission status tracking:
 CREATE TABLE telemetry_metrics (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     collected_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    metrics_hash VARCHAR(64) NOT NULL,
     metrics_data JSONB NOT NULL,
     uploaded_at TIMESTAMP WITH TIME ZONE NULL,
     upload_attempts INTEGER DEFAULT 0,
@@ -160,7 +159,6 @@ CREATE TABLE telemetry_metrics (
 
 CREATE INDEX idx_telemetry_metrics_collected_at ON telemetry_metrics(collected_at);
 CREATE INDEX idx_telemetry_metrics_uploaded_at ON telemetry_metrics(uploaded_at);
-CREATE INDEX idx_telemetry_metrics_hash ON telemetry_metrics(metrics_hash);
 ```
 
 #### 4.1.2 Telemetry Identity Table
@@ -197,14 +195,13 @@ from dataclasses import dataclass
 class MetricResult:
     key: str
     value: Any
-    hash_key: str
 
 class MetricsCollector(ABC):
     """Base class for metrics collectors."""
 
     @abstractmethod
     def collect(self) -> List[MetricResult]:
-        """Collect metrics and return results with hash keys."""
+        """Collect metrics and return results."""
         pass
 
     @property
@@ -275,8 +272,7 @@ class SystemMetricsCollector(MetricsCollector):
             user_count = session.query(UserSettings).count()
             results.append(MetricResult(
                 key="total_users",
-                value=user_count,
-                hash_key=f"users_{user_count}"
+                value=user_count
             ))
 
             # Collect conversation count (last 30 days)
@@ -287,8 +283,7 @@ class SystemMetricsCollector(MetricsCollector):
 
             results.append(MetricResult(
                 key="conversations_30d",
-                value=conversation_count,
-                hash_key=f"conv30_{conversation_count}"
+                value=conversation_count
             ))
 
         return results
@@ -327,11 +322,8 @@ class TelemetryCollectionProcessor(MaintenanceTaskProcessor):
                 collector_results[collector.collector_name] = f"error: {e}"
 
         # Store metrics in database
-        metrics_hash = self._generate_metrics_hash(all_metrics)
-
         with session_maker() as session:
             telemetry_record = TelemetryMetrics(
-                metrics_hash=metrics_hash,
                 metrics_data=all_metrics,
                 collected_at=datetime.now(timezone.utc)
             )
@@ -344,8 +336,7 @@ class TelemetryCollectionProcessor(MaintenanceTaskProcessor):
         return {
             "status": "completed",
             "metrics_collected": len(all_metrics),
-            "collectors_run": collector_results,
-            "metrics_hash": metrics_hash
+            "collectors_run": collector_results
         }
 
     def _should_collect(self) -> bool:

@@ -36,11 +36,6 @@ def upgrade() -> None:
             server_default=sa.text('CURRENT_TIMESTAMP'),
         ),
         sa.Column(
-            'metrics_hash',
-            sa.String(64),
-            nullable=False,
-        ),
-        sa.Column(
             'metrics_data',
             sa.JSON(),
             nullable=False,
@@ -82,7 +77,6 @@ def upgrade() -> None:
     op.create_index(
         'ix_telemetry_metrics_uploaded_at', 'telemetry_metrics', ['uploaded_at']
     )
-    op.create_index('ix_telemetry_metrics_hash', 'telemetry_metrics', ['metrics_hash'])
 
     # Create telemetry_identity table (minimal persistent identity data)
     op.create_table(
@@ -125,7 +119,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Drop telemetry tables."""
     # Drop indexes first
-    op.drop_index('ix_telemetry_metrics_hash', 'telemetry_metrics')
     op.drop_index('ix_telemetry_metrics_uploaded_at', 'telemetry_metrics')
     op.drop_index('ix_telemetry_metrics_collected_at', 'telemetry_metrics')
 
