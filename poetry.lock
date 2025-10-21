@@ -7275,7 +7275,7 @@ llama = ["llama-index (>=0.12.29,<0.13.0)", "llama-index-core (>=0.12.29,<0.13.0
 
 [[package]]
 name = "openhands-agent-server"
-version = "1.0.0a2"
+version = "1.0.0a3"
 description = "OpenHands Agent Server - REST/WebSocket interface for OpenHands AI Agent"
 optional = false
 python-versions = ">=3.12"
@@ -7297,13 +7297,13 @@ wsproto = ">=1.2.0"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "512399d896521aee3131eea4bb59087fb9dfa243"
-resolved_reference = "512399d896521aee3131eea4bb59087fb9dfa243"
+reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
 subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0a2"
+version = "1.0.0a3"
 description = "OpenHands SDK - Core functionality for building AI agents"
 optional = false
 python-versions = ">=3.12"
@@ -7327,13 +7327,13 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "512399d896521aee3131eea4bb59087fb9dfa243"
-resolved_reference = "512399d896521aee3131eea4bb59087fb9dfa243"
+reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
 subdirectory = "openhands-sdk"
 
 [[package]]
 name = "openhands-tools"
-version = "1.0.0a2"
+version = "1.0.0a3"
 description = "OpenHands Tools - Runtime tools for AI agents"
 optional = false
 python-versions = ">=3.12"
@@ -7354,8 +7354,8 @@ pydantic = ">=2.11.7"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "512399d896521aee3131eea4bb59087fb9dfa243"
-resolved_reference = "512399d896521aee3131eea4bb59087fb9dfa243"
+reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
 subdirectory = "openhands-tools"
 
 [[package]]
@@ -16524,4 +16524,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "03639ad9782d05163b25c507e7232d797572902ee57408bf999b72c21e3adf5e"
+content-hash = "fd68ed845befeb646ee910db46f1ef9c5a1fd2e6d1ac6189c04864e0665f66ed"

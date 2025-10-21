@@ -46,9 +46,9 @@ def test_control_variant_sets_condenser_with_max_size_120(monkeypatch):
     assert isinstance(result.condenser, LLMSummarizingCondenser)
 
     # The condenser should have its own LLM (service_id overridden to "condenser")
-    assert result.condenser.llm.service_id == 'condenser'
+    assert result.condenser.llm.usage_id == 'condenser'
     # The original agent LLM remains unchanged
-    assert agent.llm.service_id == 'primary-llm'
+    assert agent.llm.usage_id == 'primary-llm'
 
     # Control: max_size = 120, keep_first = 4
     assert result.condenser.max_size == 120
@@ -64,7 +64,7 @@ def test_treatment_variant_sets_condenser_with_max_size_80(monkeypatch):
 
     assert result is not agent
     assert isinstance(result.condenser, LLMSummarizingCondenser)
-    assert result.condenser.llm.service_id == 'condenser'
+    assert result.condenser.llm.usage_id == 'condenser'
     assert result.condenser.max_size == 80
     assert result.condenser.keep_first == 4
 
