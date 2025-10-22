@@ -10,6 +10,7 @@ export type ApiSettings = {
   search_api_key_set: boolean;
   confirmation_mode: boolean;
   security_analyzer: string | null;
+  security_policy: "always" | "never" | "risky" | null;
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
   // Max size for condenser in backend settings

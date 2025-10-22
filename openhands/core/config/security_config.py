@@ -7,10 +7,12 @@ class SecurityConfig(BaseModel):
     Attributes:
         confirmation_mode: Whether to enable confirmation mode.
         security_analyzer: The security analyzer to use.
+        security_policy: The security policy to use ('always', 'never', or 'risky').
     """
 
     confirmation_mode: bool = Field(default=False)
     security_analyzer: str | None = Field(default=None)
+    security_policy: str | None = Field(default=None)
 
     model_config = ConfigDict(extra='forbid')
 

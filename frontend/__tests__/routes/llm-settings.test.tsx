@@ -108,7 +108,7 @@ describe("Content", () => {
   });
 
   describe("Advanced form", () => {
-    it("should conditionally show security analyzer based on confirmation mode", async () => {
+    it("should conditionally show security analyzer based on security policy", async () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
 
@@ -116,26 +116,37 @@ describe("Content", () => {
       const advancedSwitch = screen.getByTestId("advanced-settings-switch");
       await userEvent.click(advancedSwitch);
 
-      const confirmation = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
+      const securityPolicy = screen.getByTestId("security-policy-input");
 
-      // Initially confirmation mode is false, so security analyzer should not be visible
-      expect(confirmation).not.toBeChecked();
+      // Initially security policy is "never", so security analyzer should not be visible
+      expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_NEVER");
       expect(
         screen.queryByTestId("security-analyzer-input"),
       ).not.toBeInTheDocument();
 
-      // Enable confirmation mode
-      await userEvent.click(confirmation);
-      expect(confirmation).toBeChecked();
+      // Change security policy to "always"
+      await userEvent.click(securityPolicy);
+      const alwaysOption = screen.getByText("SETTINGS$SECURITY_POLICY_ALWAYS");
+      await userEvent.click(alwaysOption);
+      expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_ALWAYS");
 
       // Security analyzer should now be visible
       screen.getByTestId("security-analyzer-input");
 
-      // Disable confirmation mode again
-      await userEvent.click(confirmation);
-      expect(confirmation).not.toBeChecked();
+      // Change security policy to "risky"
+      await userEvent.click(securityPolicy);
+      const riskyOption = screen.getByText("SETTINGS$SECURITY_POLICY_RISKY");
+      await userEvent.click(riskyOption);
+      expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_RISKY");
+
+      // Security analyzer should still be visible
+      screen.getByTestId("security-analyzer-input");
+
+      // Change security policy back to "never"
+      await userEvent.click(securityPolicy);
+      const neverOption = screen.getByText("SETTINGS$SECURITY_POLICY_NEVER");
+      await userEvent.click(neverOption);
+      expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_NEVER");
 
       // Security analyzer should be hidden again
       expect(
@@ -224,7 +235,7 @@ describe("Content", () => {
         llm_base_url: "https://api.openai.com/v1/chat/completions",
         llm_api_key_set: true,
         agent: "CoActAgent",
-        confirmation_mode: true,
+        security_policy: "always",
         enable_default_condenser: false,
         security_analyzer: "none",
       });
@@ -236,11 +247,9 @@ describe("Content", () => {
       const baseUrl = screen.getByTestId("base-url-input");
       const apiKey = screen.getByTestId("llm-api-key-input");
       const agent = screen.getByTestId("agent-input");
-      const confirmation = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
+      const securityPolicy = screen.getByTestId("security-policy-input");
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
-      const securityAnalyzer = screen.getByTestId("security-analyzer-input");
+      const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
 
       await waitFor(() => {
         expect(model).toHaveValue("openai/gpt-4o");
@@ -250,7 +259,7 @@ describe("Content", () => {
         expect(apiKey).toHaveValue("");
         expect(apiKey).toHaveProperty("placeholder", "<hidden>");
         expect(agent).toHaveValue("CoActAgent");
-        expect(confirmation).toBeChecked();
+        expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_ALWAYS");
         expect(condensor).not.toBeChecked();
         expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
       });
@@ -310,7 +319,7 @@ describe("Form submission", () => {
     const baseUrl = screen.getByTestId("base-url-input");
     const apiKey = screen.getByTestId("llm-api-key-input");
     const agent = screen.getByTestId("agent-input");
-    const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+    const securityPolicy = screen.getByTestId("security-policy-input");
     const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
     // enter custom model
@@ -325,9 +334,11 @@ describe("Form submission", () => {
     // enter api key
     await userEvent.type(apiKey, "test-api-key");
 
-    // toggle confirmation mode
-    await userEvent.click(confirmation);
-    expect(confirmation).toBeChecked();
+    // select security policy "always"
+    await userEvent.click(securityPolicy);
+    const alwaysOption = screen.getByText("SETTINGS$SECURITY_POLICY_ALWAYS");
+    await userEvent.click(alwaysOption);
+    expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_ALWAYS");
 
     // toggle memory condensor
     await userEvent.click(condensor);
@@ -355,7 +366,7 @@ describe("Form submission", () => {
         llm_model: "openai/gpt-4o",
         llm_base_url: "https://api.openai.com/v1/chat/completions",
         agent: "CoActAgent",
-        confirmation_mode: true,
+        security_policy: "always",
         enable_default_condenser: false,
         security_analyzer: null,
       }),
@@ -412,7 +423,7 @@ describe("Form submission", () => {
       llm_model: "openai/gpt-4o",
       llm_base_url: "https://api.openai.com/v1/chat/completions",
       llm_api_key_set: true,
-      confirmation_mode: true,
+      security_policy: "always",
     });
 
     renderLlmSettingsScreen();
@@ -430,10 +441,8 @@ describe("Form submission", () => {
       "enable-memory-condenser-switch",
     );
 
-    // Confirmation mode switch is now in basic settings, always visible
-    const confirmation = await screen.findByTestId(
-      "enable-confirmation-mode-switch",
-    );
+    // Security policy dropdown in advanced settings
+    const securityPolicy = await screen.findByTestId("security-policy-input");
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -489,12 +498,18 @@ describe("Form submission", () => {
     expect(agent).toHaveValue("CodeActAgent");
     expect(submitButton).toBeDisabled();
 
-    // toggle confirmation mode
-    await userEvent.click(confirmation);
-    expect(confirmation).not.toBeChecked();
+    // change security policy
+    await userEvent.click(securityPolicy);
+    const neverOption = screen.getByText("SETTINGS$SECURITY_POLICY_NEVER");
+    await userEvent.click(neverOption);
+    expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_NEVER");
     expect(submitButton).not.toBeDisabled();
-    await userEvent.click(confirmation);
-    expect(confirmation).toBeChecked();
+
+    // reset security policy back to "always"
+    await userEvent.click(securityPolicy);
+    const alwaysOption = screen.getByText("SETTINGS$SECURITY_POLICY_ALWAYS");
+    await userEvent.click(alwaysOption);
+    expect(securityPolicy).toHaveValue("SETTINGS$SECURITY_POLICY_ALWAYS");
     expect(submitButton).toBeDisabled();
 
     // toggle memory condensor
@@ -591,7 +606,7 @@ describe("Form submission", () => {
       llm_model: "openai/gpt-4o",
       llm_base_url: "https://api.openai.com/v1/chat/completions",
       llm_api_key_set: true,
-      confirmation_mode: true,
+      security_policy: "always",
     });
     const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
     renderLlmSettingsScreen();
@@ -620,7 +635,7 @@ describe("Form submission", () => {
       expect.objectContaining({
         llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
-        confirmation_mode: false, // Confirmation mode is now an advanced setting, should be cleared when saving basic settings
+        security_policy: null, // Security policy is now an advanced setting, should be cleared when saving basic settings
       }),
     );
   });

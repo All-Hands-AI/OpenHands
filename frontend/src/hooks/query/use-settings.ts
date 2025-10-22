@@ -17,6 +17,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     LANGUAGE: apiSettings.language,
     CONFIRMATION_MODE: apiSettings.confirmation_mode,
     SECURITY_ANALYZER: apiSettings.security_analyzer,
+    SECURITY_POLICY: apiSettings.security_policy,
     LLM_API_KEY_SET: apiSettings.llm_api_key_set,
     SEARCH_API_KEY_SET: apiSettings.search_api_key_set,
     REMOTE_RUNTIME_RESOURCE_FACTOR: apiSettings.remote_runtime_resource_factor,

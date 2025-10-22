@@ -57,7 +57,10 @@ from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm
+from openhands.sdk.security.confirmation_policy import (
+    AlwaysConfirm,
+    ConfirmRisky,
+)
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -420,6 +423,33 @@ class LiveStatusAppConversationService(GitAppConversationService):
         )
         return agent_server_url
 
+    def _get_confirmation_policy(self, user):
+        """Determine the confirmation policy based on user settings.
+
+        Priority:
+        1. Use security_policy if set ('always', 'never', 'risky')
+        2. Fall back to confirmation_mode for backward compatibility
+
+        Returns:
+            A confirmation policy instance (AlwaysConfirm, NeverConfirm, or ConfirmRisky)
+        """
+        # New security_policy field takes priority
+        if user.security_policy:
+            if user.security_policy == 'always':
+                return AlwaysConfirm()
+            elif user.security_policy == 'never':
+                return NeverConfirm()
+            elif user.security_policy == 'risky':
+                # Default to HIGH threshold with confirm_unknown=True
+                # These could be additional fields in the future
+                return ConfirmRisky()
+
+        # Fall back to legacy confirmation_mode for backward compatibility
+        if user.confirmation_mode:
+            return AlwaysConfirm()
+
+        return NeverConfirm()
+
     async def _build_start_conversation_request_for_user(
         self,
         initial_message: SendMessageRequest | None,
@@ -473,9 +503,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             conversation_id=conversation_id,
             agent=agent,
             workspace=workspace,
-            confirmation_policy=(
-                AlwaysConfirm() if user.confirmation_mode else NeverConfirm()
-            ),
+            confirmation_policy=self._get_confirmation_policy(user),
             initial_message=initial_message,
             secrets=secrets,
         )

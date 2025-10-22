@@ -87,7 +87,7 @@ function LlmSettingsScreen() {
     searchApiKey: false,
     baseUrl: false,
     agent: false,
-    confirmationMode: false,
+    securityPolicy: false,
     enableDefaultCondenser: false,
     securityAnalyzer: false,
     condenserMaxSize: false,
@@ -98,9 +98,9 @@ function LlmSettingsScreen() {
     string | null
   >(null);
 
-  // Track confirmation mode state to control security analyzer visibility
-  const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
-    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
+  // Track security policy state to control security analyzer visibility
+  const [selectedSecurityPolicy, setSelectedSecurityPolicy] = React.useState(
+    settings?.SECURITY_POLICY ?? DEFAULT_SETTINGS.SECURITY_POLICY ?? "never",
   );
 
   // Track selected security analyzer for form submission
@@ -144,10 +144,10 @@ function LlmSettingsScreen() {
 
   // Update confirmation mode state when settings change
   React.useEffect(() => {
-    if (settings?.CONFIRMATION_MODE !== undefined) {
-      setConfirmationModeEnabled(settings.CONFIRMATION_MODE);
+    if (settings?.SECURITY_POLICY !== undefined) {
+      setSelectedSecurityPolicy(settings.SECURITY_POLICY ?? "never");
     }
-  }, [settings?.CONFIRMATION_MODE]);
+  }, [settings?.SECURITY_POLICY]);
 
   // Update selected security analyzer state when settings change
   React.useEffect(() => {
@@ -177,7 +177,7 @@ function LlmSettingsScreen() {
       searchApiKey: false,
       baseUrl: false,
       agent: false,
-      confirmationMode: false,
+      securityPolicy: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
       condenserMaxSize: false,
@@ -197,8 +197,6 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
-    const confirmationMode =
-      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const securityAnalyzer = formData
       .get("security-analyzer-input")
       ?.toString();
@@ -210,7 +208,6 @@ function LlmSettingsScreen() {
         LLM_MODEL: fullLlmModel,
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
-        CONFIRMATION_MODE: confirmationMode,
         SECURITY_ANALYZER:
           securityAnalyzer === "none"
             ? null
@@ -219,6 +216,7 @@ function LlmSettingsScreen() {
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
         AGENT: DEFAULT_SETTINGS.AGENT,
+        SECURITY_POLICY: null,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       },
       {
@@ -234,8 +232,11 @@ function LlmSettingsScreen() {
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
     const agent = formData.get("agent-input")?.toString();
-    const confirmationMode =
-      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
+    const securityPolicy = formData.get("security-policy-input")?.toString() as
+      | "always"
+      | "never"
+      | "risky"
+      | undefined;
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
     const condenserMaxSizeStr = formData
@@ -260,7 +261,7 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
         AGENT: agent,
-        CONFIRMATION_MODE: confirmationMode,
+        SECURITY_POLICY: securityPolicy || DEFAULT_SETTINGS.SECURITY_POLICY,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         CONDENSER_MAX_SIZE:
           condenserMaxSize ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
@@ -284,7 +285,7 @@ function LlmSettingsScreen() {
       searchApiKey: false,
       baseUrl: false,
       agent: false,
-      confirmationMode: false,
+      securityPolicy: false,
       enableDefaultCondenser: false,
       securityAnalyzer: false,
       condenserMaxSize: false,
@@ -347,16 +348,21 @@ function LlmSettingsScreen() {
     }));
   };
 
-  const handleConfirmationModeIsDirty = (isToggled: boolean) => {
-    const confirmationModeIsDirty = isToggled !== settings?.CONFIRMATION_MODE;
+  const handleSecurityPolicyIsDirty = (
+    policy: "always" | "never" | "risky",
+  ) => {
+    const securityPolicyIsDirty = policy !== settings?.SECURITY_POLICY;
     setDirtyInputs((prev) => ({
       ...prev,
-      confirmationMode: confirmationModeIsDirty,
+      securityPolicy: securityPolicyIsDirty,
     }));
-    setConfirmationModeEnabled(isToggled);
+    setSelectedSecurityPolicy(policy);
 
-    // When confirmation mode is enabled, set default security analyzer to "llm" if not already set
-    if (isToggled && !selectedSecurityAnalyzer) {
+    // When security policy is "always" or "risky", set default security analyzer to "llm" if not already set
+    if (
+      (policy === "always" || policy === "risky") &&
+      !selectedSecurityAnalyzer
+    ) {
       setSelectedSecurityAnalyzer(DEFAULT_SETTINGS.SECURITY_ANALYZER);
       setDirtyInputs((prev) => ({
         ...prev,
@@ -396,6 +402,21 @@ function LlmSettingsScreen() {
   };
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
+
+  const getSecurityPolicyOptions = () => [
+    {
+      key: "never",
+      label: t(I18nKey.SETTINGS$SECURITY_POLICY_NEVER),
+    },
+    {
+      key: "always",
+      label: t(I18nKey.SETTINGS$SECURITY_POLICY_ALWAYS),
+    },
+    {
+      key: "risky",
+      label: t(I18nKey.SETTINGS$SECURITY_POLICY_RISKY),
+    },
+  ];
 
   const getSecurityAnalyzerOptions = () => {
     const analyzers = resources?.securityAnalyzers || [];
@@ -659,28 +680,50 @@ function LlmSettingsScreen() {
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
               </SettingsSwitch>
 
-              {/* Confirmation mode and security analyzer */}
-              <div className="flex items-center gap-2">
-                <SettingsSwitch
-                  testId="enable-confirmation-mode-switch"
-                  name="enable-confirmation-mode-switch"
-                  onToggle={handleConfirmationModeIsDirty}
-                  defaultIsToggled={settings.CONFIRMATION_MODE}
-                  isBeta
+              {/* Security policy and security analyzer */}
+              <div className="w-full max-w-[680px]">
+                <div className="flex items-center gap-2 mb-2.5">
+                  <span className="text-sm">
+                    {t(I18nKey.SETTINGS$SECURITY_POLICY)}
+                  </span>
+                  <TooltipButton
+                    tooltip={t(I18nKey.SETTINGS$SECURITY_POLICY_TOOLTIP)}
+                    ariaLabel={t(I18nKey.SETTINGS$SECURITY_POLICY)}
+                    className="text-[#9099AC] hover:text-white cursor-help"
+                  >
+                    <QuestionCircleIcon width={16} height={16} />
+                  </TooltipButton>
+                </div>
+                <SettingsDropdownInput
+                  testId="security-policy-input"
+                  name="security-policy-display"
+                  items={getSecurityPolicyOptions()}
+                  selectedKey={selectedSecurityPolicy}
+                  isClearable={false}
                   isDisabled={shouldShowUpgradeBanner}
-                >
-                  {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-                </SettingsSwitch>
-                <TooltipButton
-                  tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-                  ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-                  className="text-[#9099AC] hover:text-white cursor-help"
-                >
-                  <QuestionCircleIcon width={16} height={16} />
-                </TooltipButton>
+                  onSelectionChange={(key) => {
+                    const newValue = key?.toString() as
+                      | "always"
+                      | "never"
+                      | "risky";
+                    if (newValue) {
+                      handleSecurityPolicyIsDirty(newValue);
+                    }
+                  }}
+                  wrapperClassName="w-full"
+                />
+                {/* Hidden input to store the actual key value for form submission */}
+                <input
+                  type="hidden"
+                  name="security-policy-input"
+                  value={selectedSecurityPolicy}
+                />
               </div>
 
-              {confirmationModeEnabled && (
+              {(selectedSecurityPolicy === "always" ||
+                selectedSecurityPolicy === "risky" ||
+                settings?.SECURITY_POLICY === "always" ||
+                settings?.SECURITY_POLICY === "risky") && (
                 <>
                   <div className="w-full max-w-[680px]">
                     <SettingsDropdownInput
