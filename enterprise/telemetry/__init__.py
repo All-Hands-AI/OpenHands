@@ -6,12 +6,12 @@ OpenHands Enterprise Telemetry Service.
 """
 
 from .base_collector import MetricResult, MetricsCollector
-from .registry import CollectorRegistry, register_collector, collector_registry
+from .registry import CollectorRegistry, collector_registry, register_collector
 
 __all__ = [
     'MetricResult',
-    'MetricsCollector', 
+    'MetricsCollector',
     'CollectorRegistry',
     'register_collector',
-    'collector_registry'
+    'collector_registry',
 ]
