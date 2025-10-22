@@ -4,8 +4,7 @@ from abc import ABC
 from typing import List
 
 import pytest
-
-from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
+from telemetry.base_collector import MetricResult, MetricsCollector
 
 
 class TestMetricResult:

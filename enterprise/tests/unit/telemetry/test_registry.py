@@ -4,9 +4,8 @@ from typing import List
 from unittest.mock import patch
 
 import pytest
-
-from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
-from enterprise.telemetry.registry import CollectorRegistry, register_collector
+from telemetry.base_collector import MetricResult, MetricsCollector
+from telemetry.registry import CollectorRegistry, register_collector
 
 
 class TestCollectorRegistry:
@@ -161,7 +160,7 @@ class TestCollectorRegistry:
         self.registry._collectors['bad'] = BadCollector
 
         # Should return only the good collector, log error for bad one
-        with patch('enterprise.telemetry.registry.logger') as mock_logger:
+        with patch('telemetry.registry.logger') as mock_logger:
             collectors = self.registry.get_all_collectors()
 
             assert len(collectors) == 1
@@ -266,6 +265,9 @@ class TestRegisterCollectorDecorator:
 
     def setup_method(self):
         """Set up for each test."""
+        # Create a test registry
+        self.registry = CollectorRegistry()
+
         # Clear the global registry
         from enterprise.telemetry.registry import collector_registry
 
@@ -274,36 +276,36 @@ class TestRegisterCollectorDecorator:
     def test_register_collector_decorator(self):
         """Test the @register_collector decorator."""
 
-        @register_collector('decorated_collector')
-        class DecoratedCollector(MetricsCollector):
-            @property
-            def collector_name(self) -> str:
-                return 'decorated_collector'
+        # Patch the global registry to use our test registry
+        with patch('telemetry.registry.collector_registry', self.registry):
 
-            def collect(self) -> List[MetricResult]:
-                return [MetricResult(key='decorated', value=True)]
+            @register_collector('decorated_collector')
+            class DecoratedCollector(MetricsCollector):
+                @property
+                def collector_name(self) -> str:
+                    return 'decorated_collector'
 
-        from enterprise.telemetry.registry import collector_registry
+                def collect(self) -> List[MetricResult]:
+                    return [MetricResult(key='decorated', value=True)]
 
-        assert 'decorated_collector' in collector_registry.list_collector_names()
+            # Use the test registry
+            assert 'decorated_collector' in self.registry.list_collector_names()
 
-        collector = collector_registry.get_collector_by_name('decorated_collector')
-        assert collector.collector_name == 'decorated_collector'
+            collector = self.registry.get_collector_by_name('decorated_collector')
+            assert collector.collector_name == 'decorated_collector'
 
-        results = collector.collect()
-        assert len(results) == 1
-        assert results[0].key == 'decorated'
-        assert results[0].value is True
+            results = collector.collect()
+            assert len(results) == 1
+            assert results[0].key == 'decorated'
+            assert results[0].value is True
 
     def test_decorator_with_registration_failure(self):
         """Test decorator when registration fails."""
 
-        with patch(
-            'enterprise.telemetry.registry.collector_registry.register'
-        ) as mock_register:
+        with patch('telemetry.registry.collector_registry.register') as mock_register:
             mock_register.side_effect = ValueError('Registration failed')
 
-            with patch('enterprise.telemetry.registry.logger') as mock_logger:
+            with patch('telemetry.registry.logger') as mock_logger:
 
                 @register_collector('failing_collector')
                 class FailingCollector(MetricsCollector):

@@ -9,12 +9,11 @@ from datetime import UTC, datetime, timedelta
 from typing import List
 
 from sqlalchemy import func
-
-from enterprise.storage.database import session_maker
-from enterprise.storage.stored_conversation_metadata import StoredConversationMetadata
-from enterprise.storage.user_settings import UserSettings
-from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
-from enterprise.telemetry.registry import register_collector
+from storage.database import session_maker
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.user_settings import UserSettings
+from telemetry.base_collector import MetricResult, MetricsCollector
+from telemetry.registry import register_collector
 
 logger = logging.getLogger(__name__)
 

@@ -7,8 +7,8 @@ including automatic discovery, registration, and execution of collectors.
 from typing import List
 from unittest.mock import MagicMock, patch
 
-from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
-from enterprise.telemetry.registry import CollectorRegistry, register_collector
+from telemetry.base_collector import MetricResult, MetricsCollector
+from telemetry.registry import CollectorRegistry, register_collector
 
 
 class TestTelemetryFrameworkIntegration:
@@ -162,9 +162,11 @@ class TestTelemetryFrameworkIntegration:
         from enterprise.telemetry.collectors.health_check import HealthCheckCollector
 
         # Mock dependencies using context managers
-        with patch('enterprise.telemetry.collectors.health_check.platform') as mock_platform, \
-             patch('enterprise.telemetry.collectors.health_check.session_maker') as mock_session_maker:
-            
+        with patch(
+            'enterprise.telemetry.collectors.health_check.platform'
+        ) as mock_platform, patch(
+            'enterprise.telemetry.collectors.health_check.session_maker'
+        ) as mock_session_maker:
             # Mock dependencies
             mock_platform.system.return_value = 'Linux'
             mock_platform.release.return_value = '5.4.0'

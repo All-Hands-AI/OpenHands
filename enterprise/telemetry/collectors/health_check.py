@@ -11,9 +11,9 @@ import time
 from datetime import UTC, datetime
 from typing import List
 
-from enterprise.storage.database import session_maker
-from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
-from enterprise.telemetry.registry import register_collector
+from storage.database import session_maker
+from telemetry.base_collector import MetricResult, MetricsCollector
+from telemetry.registry import register_collector
 
 logger = logging.getLogger(__name__)
 
