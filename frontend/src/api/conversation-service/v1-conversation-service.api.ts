@@ -253,6 +253,44 @@ class V1ConversationService {
     );
     return data;
   }
+
+  /**
+   * Upload a single file to the V1 conversation workspace
+   * V1 API endpoint: POST /api/file/upload/{path}
+   *
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param sessionApiKey Session API key for authentication (required for V1)
+   * @param file The file to upload
+   * @param path The absolute path where the file should be uploaded (defaults to /workspace/{file.name})
+   * @returns void on success, throws on error
+   */
+  static async uploadFile(
+    conversationUrl: string | null | undefined,
+    sessionApiKey: string | null | undefined,
+    file: File,
+    path?: string,
+  ): Promise<void> {
+    // Default to /workspace/{filename} if no path provided (must be absolute)
+    const uploadPath = path || `/workspace/${file.name}`;
+    const encodedPath = encodeURIComponent(uploadPath);
+    const url = this.buildRuntimeUrl(
+      conversationUrl,
+      `/api/file/upload/${encodedPath}`,
+    );
+    const headers = this.buildSessionHeaders(sessionApiKey);
+
+    // Create FormData with the file
+    const formData = new FormData();
+    formData.append("file", file);
+
+    // Upload file
+    await axios.post(url, formData, {
+      headers: {
+        ...headers,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  }
 }
 
 export default V1ConversationService;
