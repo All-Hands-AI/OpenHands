@@ -3,6 +3,7 @@ Test that the models are correctly defined.
 """
 
 from uuid import uuid4
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -34,9 +35,7 @@ def test_user_model(session_maker):
 
         # Create a test user
         test_user_id = uuid4()
-        user = User(
-            id=test_user_id, current_org_id=org.id, language='en'
-        )
+        user = User(id=test_user_id, current_org_id=org.id, language='en')
         session.add(user)
         session.flush()
 
@@ -52,9 +51,7 @@ def test_user_model(session_maker):
         session.commit()
 
         # Query the user
-        queried_user = (
-            session.query(User).filter(User.id == test_user_id).first()
-        )
+        queried_user = session.query(User).filter(User.id == test_user_id).first()
         assert queried_user is not None
         assert queried_user.language == 'en'
 

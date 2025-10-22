@@ -123,7 +123,7 @@ class OrgStore:
         org: Org,
     ):
         """Create a new organization."""
-        if not org or org.org_version == ORG_SETTINGS_VERSION:
+        if org.org_version == ORG_SETTINGS_VERSION:
             return org
         call_async_from_sync(
             LiteLlmManager.update_team,

@@ -19,8 +19,8 @@ IS_LOCAL_ENV = bool(HOST == 'localhost')
 DEFAULT_BILLING_MARGIN = float(os.environ.get('DEFAULT_BILLING_MARGIN', '1.0'))
 
 # Map of user settings versions to their corresponding default LLM models
-# This ensures that ORG_VERSION_TO_MODEL and LITELLM_DEFAULT_MODEL stay in sync
-ORG_VERSION_TO_MODEL = {
+# This ensures that PERSONAL_WORKSPACE_VERSION_TO_MODEL and LITELLM_DEFAULT_MODEL stay in sync
+PERSONAL_WORKSPACE_VERSION_TO_MODEL = {
     1: 'claude-3-5-sonnet-20241022',
     2: 'claude-3-7-sonnet-20250219',
     3: 'claude-sonnet-4-20250514',
@@ -30,8 +30,11 @@ ORG_VERSION_TO_MODEL = {
 LITELLM_DEFAULT_MODEL = os.getenv('LITELLM_DEFAULT_MODEL')
 
 # Current user settings version - this should be the latest key in USER_SETTINGS_VERSION_TO_MODEL
-ORG_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
-CURRENT_USER_SETTINGS_VERSION = max(ORG_VERSION_TO_MODEL.keys())
+ORG_SETTINGS_VERSION = max(PERSONAL_WORKSPACE_VERSION_TO_MODEL.keys())
+PERSONAL_WORKSPACE_VERSION = max(PERSONAL_WORKSPACE_VERSION_TO_MODEL.keys())
+
+
+CURRENT_USER_SETTINGS_VERSION = max(PERSONAL_WORKSPACE_VERSION_TO_MODEL.keys())
 
 LITE_LLM_API_URL = os.environ.get(
     'LITE_LLM_API_URL', 'https://llm-proxy.app.all-hands.dev'
@@ -90,5 +93,5 @@ def get_default_litellm_model():
     """
     if LITELLM_DEFAULT_MODEL:
         return LITELLM_DEFAULT_MODEL
-    model = ORG_VERSION_TO_MODEL[ORG_SETTINGS_VERSION]
+    model = PERSONAL_WORKSPACE_VERSION_TO_MODEL[PERSONAL_WORKSPACE_VERSION]
     return build_litellm_proxy_model_path(model)

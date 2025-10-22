@@ -97,7 +97,6 @@ def settings_store(session_maker, mock_config):
             settings.email_verified = True
         return settings
 
-
     # Patch the store method to filter out email and email_verified
     async def patched_store(item):
         if item:

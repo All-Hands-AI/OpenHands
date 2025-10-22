@@ -190,7 +190,9 @@ def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
             side_effect=lambda session, org: org,
         ),
     ):
-        retrieved_org = OrgStore.get_current_org_from_keycloak_user_id(str(test_user_id))
+        retrieved_org = OrgStore.get_current_org_from_keycloak_user_id(
+            str(test_user_id)
+        )
         assert retrieved_org is not None
         assert retrieved_org.name == 'test-org'
 
