@@ -40,8 +40,8 @@ def is_all_hands_saas_environment(request: Request) -> bool:
     Returns:
         True if the current domain contains "all-hands.dev" or "openhands.dev" postfix
     """
-    hostname = request.url.hostname or ""
-    return hostname.endswith("all-hands.dev") or hostname.endswith("openhands.dev")
+    hostname = request.url.hostname or ''
+    return hostname.endswith('all-hands.dev') or hostname.endswith('openhands.dev')
 
 
 def validate_saas_environment(request: Request) -> None:

@@ -236,9 +236,7 @@ async def test_success_callback_session_not_found():
 
     with patch('server.routes.billing.session_maker') as mock_session_maker:
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            None
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = None
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
         with pytest.raises(HTTPException) as exc_info:
             await success_callback('test_session_id', mock_request)
@@ -263,9 +261,7 @@ async def test_success_callback_stripe_incomplete():
         patch('stripe.checkout.Session.retrieve') as mock_stripe_retrieve,
     ):
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_billing_session
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = mock_billing_session
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
 
         mock_stripe_retrieve.return_value = MagicMock(status='pending')
@@ -303,9 +299,7 @@ async def test_success_callback_success():
         patch('httpx.AsyncClient') as mock_client,
     ):
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_billing_session
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = mock_billing_session
         mock_user_settings = MagicMock(billing_margin=None)
         mock_db_session.query.return_value.filter.return_value.first.return_value = (
             mock_user_settings
@@ -368,9 +362,7 @@ async def test_success_callback_lite_llm_error():
         patch('httpx.AsyncClient') as mock_client,
     ):
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_billing_session
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = mock_billing_session
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
 
         mock_stripe_retrieve.return_value = MagicMock(
@@ -400,9 +392,7 @@ async def test_cancel_callback_session_not_found():
 
     with patch('server.routes.billing.session_maker') as mock_session_maker:
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            None
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = None
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
 
         response = await cancel_callback('test_session_id', mock_request)
@@ -427,9 +417,7 @@ async def test_cancel_callback_success():
 
     with patch('server.routes.billing.session_maker') as mock_session_maker:
         mock_db_session = MagicMock()
-        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_billing_session
-        )
+        mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = mock_billing_session
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
 
         response = await cancel_callback('test_session_id', mock_request)
@@ -523,9 +511,7 @@ async def test_cancel_subscription_success():
         # Setup mock session
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_subscription_access
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
 
         # Call the function
         result = await cancel_subscription('test_user')
@@ -547,13 +533,13 @@ async def test_cancel_subscription_success():
 @pytest.mark.asyncio
 async def test_cancel_subscription_no_active_subscription():
     """Test cancellation when no active subscription exists."""
-    with (patch('server.routes.billing.session_maker') as mock_session_maker,):
+    with (
+        patch('server.routes.billing.session_maker') as mock_session_maker,
+    ):
         # Setup mock session with no subscription found
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            None
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
 
         # Call the function and expect HTTPException
         with pytest.raises(HTTPException) as exc_info:
@@ -583,13 +569,13 @@ async def test_cancel_subscription_missing_stripe_id():
         cancelled_at=None,
     )
 
-    with (patch('server.routes.billing.session_maker') as mock_session_maker,):
+    with (
+        patch('server.routes.billing.session_maker') as mock_session_maker,
+    ):
         # Setup mock session
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_subscription_access
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
 
         # Call the function and expect HTTPException
         with pytest.raises(HTTPException) as exc_info:
@@ -629,9 +615,7 @@ async def test_cancel_subscription_stripe_error():
         # Setup mock session
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_subscription_access
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
 
         # Call the function and expect HTTPException
         with pytest.raises(HTTPException) as exc_info:
@@ -670,9 +654,7 @@ async def test_create_subscription_checkout_session_duplicate_prevention(
         # Setup mock session to return existing active subscription
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            mock_subscription_access
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = mock_subscription_access
 
         # Call the function and expect HTTPException
         with pytest.raises(HTTPException) as exc_info:
@@ -716,9 +698,7 @@ async def test_create_subscription_checkout_session_allows_after_cancellation(
         # Setup mock session - the query should return None because cancelled subscriptions are filtered out
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            None
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
 
         # Should succeed
         result = await create_subscription_checkout_session(
@@ -758,9 +738,7 @@ async def test_create_subscription_checkout_session_success_no_existing(
         # Setup mock session to return no existing subscription
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = (
-            None
-        )
+        mock_session.query.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.filter.return_value.first.return_value = None
 
         # Should succeed
         result = await create_subscription_checkout_session(
