@@ -25,6 +25,7 @@ from server.logger import logger
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
 from storage.user_settings import UserSettings
+from storage.user_settings_utils import get_user_settings_by_keycloak_id
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
@@ -43,11 +44,7 @@ class SaasSettingsStore(SettingsStore):
         if not self.user_id:
             return None
         with self.session_maker() as session:
-            settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == self.user_id)
-                .first()
-            )
+            settings = get_user_settings_by_keycloak_id(self.user_id, session)
 
             if not settings or settings.user_version != CURRENT_USER_SETTINGS_VERSION:
                 logger.info(
@@ -71,12 +68,8 @@ class SaasSettingsStore(SettingsStore):
             if item:
                 kwargs = item.model_dump(context={'expose_secrets': True})
                 self._encrypt_kwargs(kwargs)
-                query = session.query(UserSettings).filter(
-                    UserSettings.keycloak_user_id == self.user_id
-                )
-
                 # First check if we have an existing entry in the new table
-                existing = query.first()
+                existing = get_user_settings_by_keycloak_id(self.user_id, session)
 
             kwargs = {
                 key: value
@@ -207,11 +200,7 @@ class SaasSettingsStore(SettingsStore):
                 spend = user_info.get('spend') or 0
 
                 with session_maker() as session:
-                    user_settings = (
-                        session.query(UserSettings)
-                        .filter(UserSettings.keycloak_user_id == self.user_id)
-                        .first()
-                    )
+                    user_settings = get_user_settings_by_keycloak_id(self.user_id, session)
                     # In upgrade to V4, we no longer use billing margin, but instead apply this directly
                     # in litellm. The default billing marign was 2 before this (hence the magic numbers below)
                     if (

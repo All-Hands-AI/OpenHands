@@ -21,6 +21,7 @@ from server.constants import IS_FEATURE_ENV
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
 from storage.user_settings import UserSettings
+from storage.user_settings_utils import get_user_settings_by_keycloak_id, get_or_create_user_settings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
@@ -212,16 +213,10 @@ async def keycloak_callback(
             f'&state={state}'
         )
 
-    has_accepted_tos = False
-    with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
-        )
-        has_accepted_tos = (
-            user_settings is not None and user_settings.accepted_tos is not None
-        )
+    user_settings = get_user_settings_by_keycloak_id(user_id)
+    has_accepted_tos = (
+        user_settings is not None and user_settings.accepted_tos is not None
+    )
 
     # If the user hasn't accepted the TOS, redirect to the TOS page
     if not has_accepted_tos:
@@ -341,24 +336,13 @@ async def accept_tos(request: Request):
 
     # Update user settings with TOS acceptance
     with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
+        user_settings = get_or_create_user_settings(
+            user_id, 
+            session,
+            accepted_tos=datetime.now(timezone.utc),
+            user_version=0  # This will trigger a migration to the latest version on next load
         )
-
-        if user_settings:
-            user_settings.accepted_tos = datetime.now(timezone.utc)
-            session.merge(user_settings)
-        else:
-            # Create user settings if they don't exist
-            user_settings = UserSettings(
-                keycloak_user_id=user_id,
-                accepted_tos=datetime.now(timezone.utc),
-                user_version=0,  # This will trigger a migration to the latest version on next load
-            )
-            session.add(user_settings)
-
+        user_settings.accepted_tos = datetime.now(timezone.utc)
         session.commit()
 
     logger.info(f'User {user_id} accepted TOS')

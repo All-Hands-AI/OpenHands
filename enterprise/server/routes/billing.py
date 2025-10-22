@@ -24,6 +24,7 @@ from storage.billing_session import BillingSession
 from storage.database import session_maker
 from storage.subscription_access import SubscriptionAccess
 from storage.user_settings import UserSettings
+from storage.user_settings_utils import get_user_settings_by_keycloak_id
 
 from openhands.server.user_auth import get_user_id
 
@@ -579,11 +580,7 @@ async def stripe_webhook(request: Request) -> JSONResponse:
 def reset_user_to_free_tier_settings(user_id: str) -> None:
     """Reset user settings to free tier defaults when subscription ends."""
     with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
-        )
+        user_settings = get_user_settings_by_keycloak_id(user_id, session)
 
         if user_settings:
             user_settings.llm_model = get_default_litellm_model()
