@@ -87,12 +87,12 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.data_models.settings import Settings
-from openhands.utils.environment import get_effective_llm_base_url
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
+from openhands.utils.environment import get_effective_llm_base_url
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = depends_app_conversation_service()
