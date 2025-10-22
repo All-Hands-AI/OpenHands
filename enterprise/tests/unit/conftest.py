@@ -1,13 +1,12 @@
 from datetime import datetime
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
 from server.constants import CURRENT_USER_SETTINGS_VERSION
 from server.maintenance_task_processor.user_version_upgrade_processor import (
     UserVersionUpgradeProcessor,
 )
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
