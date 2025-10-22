@@ -107,23 +107,34 @@ def _get_v0_conversation_config(
 @app.get('/config')
 async def get_remote_runtime_config(
     conversation_id: str,
-    conversation: ServerConversation = Depends(get_conversation),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
+    user_id: str | None = Depends(get_user_id),
 ) -> JSONResponse:
     """Retrieve the runtime configuration.
 
     For V0 conversations: returns runtime_id and session_id from the runtime.
     For V1 conversations: returns sandbox_id as runtime_id and conversation_id as session_id.
     """
-    # Check if this is a V1 conversation
+    # Check if this is a V1 conversation first
     if await _is_v1_conversation(conversation_id, app_conversation_service):
         # This is a V1 conversation
         config = await _get_v1_conversation_config(
             conversation_id, app_conversation_service
         )
     else:
-        # V0 conversation - use the existing logic
-        config = _get_v0_conversation_config(conversation)
+        # V0 conversation - get the conversation and use the existing logic
+        conversation = await conversation_manager.attach_to_conversation(
+            conversation_id, user_id
+        )
+        if not conversation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Conversation {conversation_id} not found',
+            )
+        try:
+            config = _get_v0_conversation_config(conversation)
+        finally:
+            await conversation_manager.detach_from_conversation(conversation)
 
     return JSONResponse(content=config)
 
