@@ -293,11 +293,12 @@ class TokenManager:
         refresh_token_expires_at: int,
     ) -> dict[str, str | int] | None:
         current_time = int(time.time())
-        # expire access_token ten minutes before actual expiration
+        # expire access_token four hours before actual expiration
+        # This ensures tokens are refreshed on resume to have at least 4 hours validity
         access_expired = (
             False
             if access_token_expires_at == 0
-            else access_token_expires_at < current_time + 600
+            else access_token_expires_at < current_time + 14400
         )
         refresh_expired = (
             False

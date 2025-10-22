@@ -1385,7 +1385,7 @@ wheels = [
 
 [[package]]
 name = "fastmcp"
-version = "2.12.2"
+version = "2.12.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "authlib" },
@@ -1400,9 +1400,9 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "rich" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/35/8a/c46759bb41a53187191e5b3d963c0bde54783ecc89186a93c4947607b8e4/fastmcp-2.12.2.tar.gz", hash = "sha256:6d13e2f9be57b99763fc22485f9f603daa23bfbca35a8172baa43b283d6fc1ff", size = 5244547, upload-time = "2025-09-03T21:28:09.869Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/a6/e3b46cd3e228635e0064c2648788b6f66a53bf0d0ddbf5fb44cca951f908/fastmcp-2.12.5.tar.gz", hash = "sha256:2dfd02e255705a4afe43d26caddbc864563036e233dbc6870f389ee523b39a6a", size = 7190263, upload-time = "2025-10-17T13:24:58.896Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/0a/7a8d564b1b9909dbfc36eb93d76410a4acfada6b1e13ee451a753bb6dbc2/fastmcp-2.12.2-py3-none-any.whl", hash = "sha256:0b58d68e819c82078d1fd51989d3d81f2be7382d527308b06df55f4d0a4ec94f", size = 312029, upload-time = "2025-09-03T21:28:08.62Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/c1/9fb98c9649e15ea8cc691b4b09558b61dafb3dc0345f7322f8c4a8991ade/fastmcp-2.12.5-py3-none-any.whl", hash = "sha256:b1e542f9b83dbae7cecfdc9c73b062f77074785abda9f2306799116121344133", size = 329099, upload-time = "2025-10-17T13:24:57.518Z" },
 ]
 
 [[package]]
@@ -3882,8 +3882,8 @@ wheels = [
 
 [[package]]
 name = "openhands-agent-server"
-version = "1.0.0a1"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fagent_server&rev=08cf609a996523c0199c61c768d74417b7e96109#08cf609a996523c0199c61c768d74417b7e96109" }
+version = "1.0.0a3"
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-agent-server&rev=8d8134ca5a87cc3e90e3ff968327a7f4c961e22e#8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
@@ -3893,6 +3893,7 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "uvicorn" },
     { name = "websockets" },
+    { name = "wsproto" },
 ]
 
 [[package]]
@@ -4057,7 +4058,7 @@ requires-dist = [
     { name = "docker" },
     { name = "e2b", marker = "extra == 'third-party-runtimes'", specifier = ">=1.0.5,<1.8" },
     { name = "fastapi" },
-    { name = "fastmcp", specifier = ">=2.5.2,<3" },
+    { name = "fastmcp", specifier = ">=2.12.4" },
     { name = "google-api-python-client", specifier = ">=2.164,<3" },
     { name = "google-auth-httplib2" },
     { name = "google-auth-oauthlib" },
@@ -4079,8 +4080,8 @@ requires-dist = [
     { name = "numpy" },
     { name = "openai", specifier = "==1.99.9" },
     { name = "openhands-aci", specifier = "==0.3.2" },
-    { name = "openhands-agent-server", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fagent_server&rev=08cf609a996523c0199c61c768d74417b7e96109" },
-    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=08cf609a996523c0199c61c768d74417b7e96109" },
+    { name = "openhands-agent-server", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-agent-server&rev=8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" },
+    { name = "openhands-sdk", git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-sdk&rev=8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" },
     { name = "opentelemetry-api", specifier = ">=1.33.1,<2" },
     { name = "opentelemetry-exporter-otlp-proto-grpc", specifier = ">=1.33.1,<2" },
     { name = "pathspec", specifier = ">=0.12.1,<0.13" },
@@ -4089,7 +4090,7 @@ requires-dist = [
     { name = "prompt-toolkit", specifier = ">=3.0.50,<4" },
     { name = "protobuf", specifier = ">=5,<6" },
     { name = "psutil" },
-    { name = "pybase62", specifier = ">=1.0,<2" },
+    { name = "pybase62", specifier = ">=1,<2" },
     { name = "pygithub", specifier = ">=2.5,<3" },
     { name = "pyjwt", specifier = ">=2.9,<3" },
     { name = "pylatexenc" },
@@ -4185,8 +4186,8 @@ testgeneval = [
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0a1"
-source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands%2Fsdk&rev=08cf609a996523c0199c61c768d74417b7e96109#08cf609a996523c0199c61c768d74417b7e96109" }
+version = "1.0.0a3"
+source = { git = "https://github.com/All-Hands-AI/agent-sdk.git?subdirectory=openhands-sdk&rev=8d8134ca5a87cc3e90e3ff968327a7f4c961e22e#8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
 dependencies = [
     { name = "fastmcp" },
     { name = "httpx" },

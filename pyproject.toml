@@ -28,7 +28,7 @@ dependencies = [
   "dirhash",
   "docker",
   "fastapi",
-  "fastmcp>=2.5.2,<3",
+  "fastmcp>=2.12.4",           # Note: 2.12.0+ has breaking auth API changes
   "google-api-python-client>=2.164,<3",
   "google-auth-httplib2",
   "google-auth-oauthlib",
@@ -50,10 +50,8 @@ dependencies = [
   "openai==1.99.9",
   "openhands-aci==0.3.2",
   # V1 dependencies
-  "openhands-agent-server @ git+https://github.com/All-Hands-AI/agent-sdk.git@08cf609a996523c0199c61c768d74417b7e96109#subdirectory=openhands/agent_server",
-  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@08cf609a996523c0199c61c768d74417b7e96109#subdirectory=openhands/sdk",
-  # This refuses to install
-  # openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "08cf609a996523c0199c61c768d74417b7e96109" }
+  "openhands-agent-server @ git+https://github.com/All-Hands-AI/agent-sdk.git@8d8134ca5a87cc3e90e3ff968327a7f4c961e22e#subdirectory=openhands-agent-server",
+  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@8d8134ca5a87cc3e90e3ff968327a7f4c961e22e#subdirectory=openhands-sdk",
   "opentelemetry-api>=1.33.1,<2",
   "opentelemetry-exporter-otlp-proto-grpc>=1.33.1,<2",
   "pathspec>=0.12.1,<0.13",
