@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import List
 
-from enterprise.server.constants import CURRENT_USER_SETTINGS_VERSION
-from enterprise.server.logger import logger
-from enterprise.storage.database import session_maker
-from enterprise.storage.maintenance_task import MaintenanceTask, MaintenanceTaskProcessor
-from enterprise.storage.saas_settings_store import SaasSettingsStore
-from enterprise.storage.user_settings import UserSettings
+from server.constants import CURRENT_USER_SETTINGS_VERSION
+from server.logger import logger
+from storage.database import session_maker
+from storage.maintenance_task import MaintenanceTask, MaintenanceTaskProcessor
+from storage.saas_settings_store import SaasSettingsStore
+from storage.user_settings import UserSettings
 
 from openhands.core.config import load_openhands_config
 

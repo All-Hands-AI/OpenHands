@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import Column, DateTime, Integer, String, Text, text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSON
-from enterprise.storage.base import Base
+from storage.base import Base
 
 from openhands.utils.import_utils import get_impl
 
