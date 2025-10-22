@@ -57,17 +57,6 @@ export const isMobileDevice = (): boolean =>
 export const isProductionDomain = (): boolean =>
   window.location.origin === PRODUCT_URL.PRODUCTION;
 
-/**
- * Checks if the current domain is an All Hands SaaS environment
- * @returns True if the current domain contains "all-hands.dev" or "openhands.dev" postfix
- */
-export const isAllHandsSaaSEnvironment = (): boolean => {
-  const { hostname } = window.location;
-  return (
-    hostname.endsWith("all-hands.dev") || hostname.endsWith("openhands.dev")
-  );
-};
-
 interface EventActionHistory {
   args?: {
     LLM_API_KEY?: string;

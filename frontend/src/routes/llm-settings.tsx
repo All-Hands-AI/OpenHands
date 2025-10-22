@@ -32,7 +32,8 @@ import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrade-banner-with-backdrop";
 import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/use-create-subscription-checkout-session";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { cn, isAllHandsSaaSEnvironment } from "#/utils/utils";
+import { cn } from "#/utils/utils";
+import { useIsAllHandsSaaSEnvironment } from "#/hooks/use-is-all-hands-saas-environment";
 
 interface OpenHandsApiKeyHelpProps {
   testId: string;
@@ -78,6 +79,7 @@ function LlmSettingsScreen() {
   const { data: isAuthed } = useIsAuthed();
   const { mutate: createSubscriptionCheckoutSession } =
     useCreateSubscriptionCheckoutSession();
+  const isAllHandsSaaSEnvironment = useIsAllHandsSaaSEnvironment();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -445,7 +447,7 @@ function LlmSettingsScreen() {
   const shouldShowUpgradeBanner =
     config?.APP_MODE === "saas" &&
     !subscriptionAccess &&
-    isAllHandsSaaSEnvironment();
+    isAllHandsSaaSEnvironment;
 
   const formAction = (formData: FormData) => {
     // Prevent form submission for unsubscribed SaaS users
