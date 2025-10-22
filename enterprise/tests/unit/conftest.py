@@ -106,7 +106,7 @@ def add_minimal_fixtures(session_maker):
         )
         session.add(
             User(
-                id='mock-user-id',
+                id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
                 current_org_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
                 user_consents_to_analytics=True,
             )

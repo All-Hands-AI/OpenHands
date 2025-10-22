@@ -2,6 +2,7 @@
 Test that the models are correctly defined.
 """
 
+from uuid import uuid4
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -33,7 +34,7 @@ def test_user_model(session_maker):
 
         # Create a test user
         user = User(
-            keycloak_user_id='test-user-id', current_org_id=org.id, language='en'
+            id=uuid4(), current_org_id=org.id, language='en'
         )
         session.add(user)
         session.flush()

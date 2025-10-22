@@ -15,7 +15,7 @@ class OrgMemberStore:
     @staticmethod
     def add_user_to_org(
         org_id: UUID,
-        user_id: int,
+        user_id: UUID,
         role_id: int,
         llm_api_key: str,
         status: Optional[str] = None,
