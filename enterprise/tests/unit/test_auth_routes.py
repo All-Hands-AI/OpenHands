@@ -146,7 +146,7 @@ async def test_keycloak_callback_user_not_allowed(mock_request):
         mock_user.keycloak_user_id = 'test_user_id'
         mock_user.current_org_id = 'test_org_id'
         mock_user.accepted_tos = None
-        mock_user_store.get_user_by_keycloak_id.return_value = mock_user
+        mock_user_store.get_user_by_id.return_value = mock_user
         mock_user_store.create_user = AsyncMock(return_value=mock_user)
         mock_user_store.migrate_user = AsyncMock(return_value=mock_user)
 
@@ -181,7 +181,7 @@ async def test_keycloak_callback_success_with_valid_offline_token(mock_request):
         mock_user.accepted_tos = '2025-01-01'
 
         # Setup UserStore mocks
-        mock_user_store.get_user_by_keycloak_id.return_value = mock_user
+        mock_user_store.get_user_by_id.return_value = mock_user
         mock_user_store.create_user = AsyncMock(return_value=mock_user)
         mock_user_store.migrate_user = AsyncMock(return_value=mock_user)
 
@@ -245,7 +245,7 @@ async def test_keycloak_callback_success_without_offline_token(mock_request):
         mock_user.accepted_tos = '2025-01-01'
 
         # Setup UserStore mocks
-        mock_user_store.get_user_by_keycloak_id.return_value = mock_user
+        mock_user_store.get_user_by_id.return_value = mock_user
         mock_user_store.create_user = AsyncMock(return_value=mock_user)
         mock_user_store.migrate_user = AsyncMock(return_value=mock_user)
 

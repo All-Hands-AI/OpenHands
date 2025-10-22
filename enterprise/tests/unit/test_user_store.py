@@ -130,30 +130,12 @@ async def test_create_user(session_maker, mock_litellm_api):
     pass
 
 
-def test_get_user_by_keycloak_id(session_maker):
-    # Test getting user by keycloak ID
-    test_org_id = uuid.uuid4()
-    with session_maker() as session:
-        # Create a test user
-        user = User(keycloak_user_id='test-id', current_org_id=test_org_id)
-        session.add(user)
-        session.commit()
-        user_id = user.id
-
-    # Test retrieval
-    with patch('storage.user_store.session_maker', session_maker):
-        retrieved_user = UserStore.get_user_by_id('test-id')
-        assert retrieved_user is not None
-        assert retrieved_user.id == user_id
-        assert retrieved_user.keycloak_user_id == 'test-id'
-
-
 def test_get_user_by_id(session_maker):
     # Test getting user by ID
     test_org_id = uuid.uuid4()
     with session_maker() as session:
         # Create a test user
-        user = User(keycloak_user_id='test-id', current_org_id=test_org_id)
+        user = User(id='test-id', current_org_id=test_org_id)
         session.add(user)
         session.commit()
         user_id = user.id
@@ -163,7 +145,6 @@ def test_get_user_by_id(session_maker):
         retrieved_user = UserStore.get_user_by_id(user_id)
         assert retrieved_user is not None
         assert retrieved_user.id == user_id
-        assert retrieved_user.keycloak_user_id == 'test-id'
 
 
 def test_update_user(session_maker):
@@ -172,7 +153,7 @@ def test_update_user(session_maker):
     test_org_id2 = uuid.uuid4()
     with session_maker() as session:
         # Create a test user
-        user = User(keycloak_user_id='test-id', current_org_id=test_org_id1)
+        user = User(id='test-id', current_org_id=test_org_id1)
         session.add(user)
         session.commit()
         user_id = user.id
