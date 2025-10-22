@@ -92,7 +92,7 @@ export const useCreateConversation = () => {
         query_character_length: query?.length,
         has_repository: !!repository,
       });
-      await queryClient.invalidateQueries({
+      queryClient.removeQueries({
         queryKey: ["user", "conversations"],
       });
     },
