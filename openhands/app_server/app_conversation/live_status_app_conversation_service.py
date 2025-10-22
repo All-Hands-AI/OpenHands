@@ -39,6 +39,9 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
 from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
+from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
+    SQLAppConversationInfoService,
+)
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
@@ -528,6 +531,85 @@ class LiveStatusAppConversationService(GitAppConversationService):
         _logger.info(
             f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
         )
+
+    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a V1 conversation and all its associated data."""
+        # Check if we have the required SQL implementation for transactional deletion
+        if not isinstance(
+            self.app_conversation_info_service, SQLAppConversationInfoService
+        ):
+            _logger.error(
+                f'Cannot delete V1 conversation {conversation_id}: SQL implementation required for transactional deletion',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            return False
+
+        try:
+            # Get the conversation info to find the sandbox and agent server URL
+            app_conversation = await self.get_app_conversation(conversation_id)
+            if not app_conversation:
+                return False
+
+            # Delete from agent server if sandbox is running
+            await self._delete_from_agent_server(conversation_id, app_conversation)
+
+            # Delete from database
+            return await self._delete_from_database(conversation_id)
+
+        except Exception as e:
+            _logger.error(
+                f'Error deleting V1 conversation {conversation_id}: {e}',
+                extra={'conversation_id': str(conversation_id)},
+                exc_info=True,
+            )
+            return False
+
+    async def _delete_from_agent_server(
+        self, conversation_id: UUID, app_conversation: AppConversation
+    ) -> None:
+        """Delete conversation from agent server if sandbox is running."""
+        if not (
+            app_conversation.sandbox_status == SandboxStatus.RUNNING
+            and app_conversation.session_api_key
+        ):
+            return
+
+        try:
+            # Get sandbox info to find agent server URL
+            sandbox = await self.sandbox_service.get_sandbox(
+                app_conversation.sandbox_id
+            )
+            if sandbox and sandbox.exposed_urls:
+                agent_server_url = self._get_agent_server_url(sandbox)
+
+                # Call agent server delete API
+                response = await self.httpx_client.delete(
+                    f'{agent_server_url}/api/conversations/{conversation_id}',
+                    headers={'X-Session-API-Key': app_conversation.session_api_key},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except Exception as e:
+            _logger.warning(
+                f'Failed to delete conversation from agent server: {e}',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            # Continue with database cleanup even if agent server call fails
+
+    async def _delete_from_database(self, conversation_id: UUID) -> bool:
+        """Delete conversation from database."""
+        # The session is already managed by the dependency injection system
+        # No need for explicit transaction management here
+        deleted_info = (
+            await self.app_conversation_info_service.delete_app_conversation_info(
+                conversation_id
+            )
+        )
+        deleted_tasks = await self.app_conversation_start_task_service.delete_app_conversation_start_tasks(
+            conversation_id
+        )
+
+        return deleted_info or deleted_tasks
 
 
 class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):

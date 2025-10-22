@@ -465,15 +465,58 @@ async def get_conversation(
 async def delete_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> bool:
+    # Try V1 conversation first
+    v1_result = await _try_delete_v1_conversation(
+        conversation_id, app_conversation_service
+    )
+    if v1_result is not None:
+        return v1_result
+
+    # V0 conversation logic
+    return await _delete_v0_conversation(conversation_id, user_id)
+
+
+async def _try_delete_v1_conversation(
+    conversation_id: str, app_conversation_service: AppConversationService
+) -> bool | None:
+    """Try to delete a V1 conversation. Returns None if not a V1 conversation."""
+    try:
+        conversation_uuid = uuid.UUID(conversation_id)
+        # Check if it's a V1 conversation by trying to get it
+        app_conversation = await app_conversation_service.get_app_conversation(
+            conversation_uuid
+        )
+        if app_conversation:
+            # This is a V1 conversation, delete it using the app conversation service
+            return await app_conversation_service.delete_app_conversation(
+                conversation_uuid
+            )
+    except (ValueError, TypeError):
+        # Not a valid UUID, continue with V0 logic
+        pass
+    except Exception:
+        # Some other error, continue with V0 logic
+        pass
+
+    return None
+
+
+async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> bool:
+    """Delete a V0 conversation using the legacy logic."""
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
         await conversation_store.get_metadata(conversation_id)
     except FileNotFoundError:
         return False
+
+    # Stop the conversation if it's running
     is_running = await conversation_manager.is_agent_loop_running(conversation_id)
     if is_running:
         await conversation_manager.close_session(conversation_id)
+
+    # Clean up runtime and metadata
     runtime_cls = get_runtime_cls(config.runtime)
     await runtime_cls.delete(conversation_id)
     await conversation_store.delete_metadata(conversation_id)
