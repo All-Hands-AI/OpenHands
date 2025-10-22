@@ -25,6 +25,12 @@ vi.mock("#/hooks/query/use-is-authed", () => ({
   useIsAuthed: () => mockUseIsAuthed(),
 }));
 
+// Mock useIsAllHandsSaaSEnvironment hook
+const mockUseIsAllHandsSaaSEnvironment = vi.fn();
+vi.mock("#/hooks/use-is-all-hands-saas-environment", () => ({
+  useIsAllHandsSaaSEnvironment: () => mockUseIsAllHandsSaaSEnvironment(),
+}));
+
 const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
     wrapper: ({ children }) => (
@@ -48,6 +54,9 @@ beforeEach(() => {
 
   // Default mock for useIsAuthed - returns authenticated by default
   mockUseIsAuthed.mockReturnValue({ data: true, isLoading: false });
+
+  // Default mock for useIsAllHandsSaaSEnvironment - returns true for SaaS environment
+  mockUseIsAllHandsSaaSEnvironment.mockReturnValue(true);
 });
 
 describe("Content", () => {
@@ -104,7 +113,6 @@ describe("Content", () => {
         expect(screen.getByTestId("set-indicator")).toBeInTheDocument();
       });
     });
-
   });
 
   describe("Advanced form", () => {
