@@ -12,8 +12,8 @@ from storage.database import session_maker
 from storage.encrypt_utils import decrypt_model
 from storage.lite_llm_manager import LiteLlmManager
 from storage.org import Org
-from storage.org_store import OrgStore
 from storage.org_member import OrgMember
+from storage.org_store import OrgStore
 from storage.role_store import RoleStore
 from storage.user import User
 from storage.user_settings import UserSettings
@@ -85,7 +85,7 @@ class UserStore:
     ) -> User:
         if not keycloak_user_id or not user_settings:
             return None
-            
+
         # Check if user is already migrated to prevent double migration
         if user_settings.migration_status is True:
             logger.warning(f'User {keycloak_user_id} already migrated, skipping')
@@ -148,7 +148,7 @@ class UserStore:
                 status='active',
             )
             session.add(org_member)
-            
+
             # Mark the old user_settings as migrated instead of deleting
             user_settings.migration_status = True
             session.commit()

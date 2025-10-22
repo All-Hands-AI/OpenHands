@@ -7,8 +7,8 @@ from server.logger import logger
 from sqlalchemy.orm import joinedload, sessionmaker
 from storage.database import session_maker
 from storage.org import Org
-from storage.org_store import OrgStore
 from storage.org_member import OrgMember
+from storage.org_store import OrgStore
 from storage.user import User
 from storage.user_settings import UserSettings
 from storage.user_store import UserStore
@@ -35,7 +35,7 @@ class SaasSettingsStore(OssSettingsStore):
                     session.query(UserSettings)
                     .filter(
                         UserSettings.keycloak_user_id == self.user_id,
-                        UserSettings.migration_status != True  # Only migrate non-migrated records
+                        UserSettings.migration_status.is_(False),
                     )
                     .first()
                 )
