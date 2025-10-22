@@ -31,6 +31,8 @@ stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')
 
 
+# TODO: Add a new app_mode named "ON_PREM" to support self-hosted customers instead of doing this
+# and members should comment out the "validate_saas_environment" function if they are developing and testing locally.
 def is_all_hands_saas_environment(request: Request) -> bool:
     """Check if the current domain is an All Hands SaaS environment.
 
