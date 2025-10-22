@@ -83,6 +83,81 @@ VSCode Extension:
   - Use `vscode.window.createOutputChannel()` for debug logging instead of `showErrorMessage()` popups
   - Pre-commit process runs both frontend and backend checks when committing extension changes
 
+## Enterprise Directory
+
+The `enterprise/` directory contains additional functionality that extends the open-source OpenHands codebase. This includes:
+- Authentication and user management (Keycloak integration)
+- Database migrations (Alembic)
+- Integration services (GitHub, GitLab, Jira, Linear, Slack)
+- Billing and subscription management (Stripe)
+- Telemetry and analytics (PostHog)
+
+### Enterprise Development Setup
+
+**Prerequisites:**
+- Python 3.12
+- Poetry (for dependency management)
+- Node.js 22.x (for frontend)
+- Docker (optional)
+
+**Setup Steps:**
+1. First, build the main OpenHands project: `make build`
+2. Then install enterprise dependencies: `cd enterprise && poetry install --with dev,test`
+3. Set up enterprise pre-commit hooks: `poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml`
+
+**Running Enterprise Tests:**
+```bash
+# Enterprise unit tests
+PYTHONPATH=".:$PYTHONPATH" poetry run --project=enterprise pytest --forked -n auto -s -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark ./enterprise/tests/unit --cov=enterprise --cov-branch
+
+# Enterprise linting
+cd enterprise
+poetry run pre-commit run --all-files --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+```
+
+**Running Enterprise Server:**
+```bash
+cd enterprise
+make start-backend  # Development mode with hot reload
+# or
+make run  # Full application (backend + frontend)
+```
+
+**Key Configuration Files:**
+- `enterprise/pyproject.toml` - Enterprise-specific dependencies
+- `enterprise/Makefile` - Enterprise build and run commands
+- `enterprise/dev_config/python/` - Linting and type checking configuration
+- `enterprise/migrations/` - Database migration files
+
+**Database Migrations:**
+Enterprise uses Alembic for database migrations. When making schema changes:
+1. Create migration files in `enterprise/migrations/versions/`
+2. Test migrations thoroughly
+3. The CI will check for migration conflicts on PRs
+
+**Integration Development:**
+The enterprise codebase includes integrations for:
+- **GitHub** - PR management, webhooks, app installations
+- **GitLab** - Similar to GitHub but for GitLab instances
+- **Jira** - Issue tracking and project management
+- **Linear** - Modern issue tracking
+- **Slack** - Team communication and notifications
+
+Each integration follows a consistent pattern with service classes, storage models, and API endpoints.
+
+**Important Notes:**
+- Enterprise code is licensed under Polyform Free Trial License (30-day limit)
+- The enterprise server extends the OSS server through dynamic imports
+- Database changes require careful migration planning in `enterprise/migrations/`
+- Always test changes in both OSS and enterprise contexts
+- Use the enterprise-specific Makefile commands for development
+
+**Troubleshooting:**
+- If tests fail, ensure all dependencies are installed: `poetry install --with dev,test`
+- For database issues, check migration status and run migrations if needed
+- For frontend issues, ensure the main OpenHands frontend is built: `make build`
+- Check logs in the `logs/` directory for runtime issues
+
 ## Template for Github Pull Request
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
