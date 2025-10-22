@@ -16,17 +16,17 @@ def get_user_settings_by_keycloak_id(
 ) -> Optional[UserSettings]:
     """
     Get UserSettings by keycloak_user_id.
-    
+
     Args:
         keycloak_user_id: The keycloak user ID to search for
         session: Optional existing database session. If not provided, creates a new one.
-        
+
     Returns:
         UserSettings object if found, None otherwise
     """
     if not keycloak_user_id:
         return None
-        
+
     def _get_settings():
         if session:
             # Use provided session
@@ -43,7 +43,7 @@ def get_user_settings_by_keycloak_id(
                     .filter(UserSettings.keycloak_user_id == keycloak_user_id)
                     .first()
                 )
-    
+
     return _get_settings()
 
 
@@ -52,11 +52,11 @@ async def get_user_settings_by_keycloak_id_async(
 ) -> Optional[UserSettings]:
     """
     Async version of get_user_settings_by_keycloak_id.
-    
+
     Args:
         keycloak_user_id: The keycloak user ID to search for
         session: Optional existing database session. If not provided, creates a new one.
-        
+
     Returns:
         UserSettings object if found, None otherwise
     """
@@ -66,24 +66,22 @@ async def get_user_settings_by_keycloak_id_async(
 
 
 def get_or_create_user_settings(
-    keycloak_user_id: str, 
-    session: Optional[Session] = None,
-    **default_values
+    keycloak_user_id: str, session: Optional[Session] = None, **default_values
 ) -> UserSettings:
     """
     Get UserSettings by keycloak_user_id, creating it if it doesn't exist.
-    
+
     Args:
         keycloak_user_id: The keycloak user ID to search for
         session: Optional existing database session. If not provided, creates a new one.
         **default_values: Default values to use when creating new UserSettings
-        
+
     Returns:
         UserSettings object (existing or newly created)
     """
     if not keycloak_user_id:
-        raise ValueError("keycloak_user_id cannot be empty")
-        
+        raise ValueError('keycloak_user_id cannot be empty')
+
     def _get_or_create():
         if session:
             # Use provided session
@@ -94,8 +92,7 @@ def get_or_create_user_settings(
             )
             if not settings:
                 settings = UserSettings(
-                    keycloak_user_id=keycloak_user_id,
-                    **default_values
+                    keycloak_user_id=keycloak_user_id, **default_values
                 )
                 session.add(settings)
                 session.flush()  # Flush to get the ID but don't commit
@@ -110,29 +107,26 @@ def get_or_create_user_settings(
                 )
                 if not settings:
                     settings = UserSettings(
-                        keycloak_user_id=keycloak_user_id,
-                        **default_values
+                        keycloak_user_id=keycloak_user_id, **default_values
                     )
                     new_session.add(settings)
                     new_session.commit()
                 return settings
-    
+
     return _get_or_create()
 
 
 async def get_or_create_user_settings_async(
-    keycloak_user_id: str, 
-    session: Optional[Session] = None,
-    **default_values
+    keycloak_user_id: str, session: Optional[Session] = None, **default_values
 ) -> UserSettings:
     """
     Async version of get_or_create_user_settings.
-    
+
     Args:
         keycloak_user_id: The keycloak user ID to search for
         session: Optional existing database session. If not provided, creates a new one.
         **default_values: Default values to use when creating new UserSettings
-        
+
     Returns:
         UserSettings object (existing or newly created)
     """

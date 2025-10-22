@@ -23,7 +23,6 @@ from server.logger import logger
 from storage.billing_session import BillingSession
 from storage.database import session_maker
 from storage.subscription_access import SubscriptionAccess
-from storage.user_settings import UserSettings
 from storage.user_settings_utils import get_user_settings_by_keycloak_id
 
 from openhands.server.user_auth import get_user_id

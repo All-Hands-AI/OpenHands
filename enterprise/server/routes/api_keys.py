@@ -6,7 +6,6 @@ from pydantic import BaseModel, field_validator
 from server.constants import LITE_LLM_API_KEY, LITE_LLM_API_URL
 from storage.api_key_store import ApiKeyStore
 from storage.database import session_maker
-from storage.user_settings import UserSettings
 from storage.user_settings_utils import get_user_settings_by_keycloak_id
 
 from openhands.core.logger import openhands_logger as logger
@@ -17,7 +16,9 @@ from openhands.utils.async_utils import call_sync_from_async
 # Helper functions for BYOR API key management
 async def get_byor_key_from_db(user_id: str) -> str | None:
     """Get the BYOR key from the database for a user."""
-    user_db_settings = await call_sync_from_async(get_user_settings_by_keycloak_id, user_id)
+    user_db_settings = await call_sync_from_async(
+        get_user_settings_by_keycloak_id, user_id
+    )
     if user_db_settings and user_db_settings.llm_api_key_for_byor:
         return user_db_settings.llm_api_key_for_byor
     return None

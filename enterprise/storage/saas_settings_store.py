@@ -200,7 +200,9 @@ class SaasSettingsStore(SettingsStore):
                 spend = user_info.get('spend') or 0
 
                 with session_maker() as session:
-                    user_settings = get_user_settings_by_keycloak_id(self.user_id, session)
+                    user_settings = get_user_settings_by_keycloak_id(
+                        self.user_id, session
+                    )
                     # In upgrade to V4, we no longer use billing margin, but instead apply this directly
                     # in litellm. The default billing marign was 2 before this (hence the magic numbers below)
                     if (

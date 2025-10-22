@@ -20,8 +20,10 @@ from server.config import sign_token
 from server.constants import IS_FEATURE_ENV
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
-from storage.user_settings import UserSettings
-from storage.user_settings_utils import get_user_settings_by_keycloak_id, get_or_create_user_settings
+from storage.user_settings_utils import (
+    get_or_create_user_settings,
+    get_user_settings_by_keycloak_id,
+)
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
@@ -337,10 +339,10 @@ async def accept_tos(request: Request):
     # Update user settings with TOS acceptance
     with session_maker() as session:
         user_settings = get_or_create_user_settings(
-            user_id, 
+            user_id,
             session,
             accepted_tos=datetime.now(timezone.utc),
-            user_version=0  # This will trigger a migration to the latest version on next load
+            user_version=0,  # This will trigger a migration to the latest version on next load
         )
         user_settings.accepted_tos = datetime.now(timezone.utc)
         session.commit()
