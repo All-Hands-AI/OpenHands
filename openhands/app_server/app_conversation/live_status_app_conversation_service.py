@@ -206,7 +206,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             response = await self.httpx_client.post(
                 f'{agent_server_url}/api/conversations',
                 json=start_conversation_request.model_dump(
-                    context={'expose_secrets': True}
+                    mode='json', context={'expose_secrets': True}
                 ),
                 headers={'X-Session-API-Key': sandbox.session_api_key},
                 timeout=self.sandbox_startup_timeout,
@@ -279,13 +279,15 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         # Build app_conversation from info
         result = [
-            self._build_conversation(
-                app_conversation_info,
-                sandboxes_by_id.get(app_conversation_info.sandbox_id),
-                conversation_info_by_id.get(app_conversation_info.id),
+            (
+                self._build_conversation(
+                    app_conversation_info,
+                    sandboxes_by_id.get(app_conversation_info.sandbox_id),
+                    conversation_info_by_id.get(app_conversation_info.id),
+                )
+                if app_conversation_info
+                else None
             )
-            if app_conversation_info
-            else None
             for app_conversation_info in app_conversation_infos
         ]
 
@@ -369,7 +371,6 @@ class LiveStatusAppConversationService(GitAppConversationService):
         self, task: AppConversationStartTask
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Wait for sandbox to start and return info."""
-
         # Get the sandbox
         if not task.request.sandbox_id:
             sandbox = await self.sandbox_service.start_sandbox()
@@ -472,13 +473,61 @@ class LiveStatusAppConversationService(GitAppConversationService):
             conversation_id=conversation_id,
             agent=agent,
             workspace=workspace,
-            confirmation_policy=AlwaysConfirm()
-            if user.confirmation_mode
-            else NeverConfirm(),
+            confirmation_policy=(
+                AlwaysConfirm() if user.confirmation_mode else NeverConfirm()
+            ),
             initial_message=initial_message,
             secrets=secrets,
         )
         return start_conversation_request
+
+    async def update_agent_server_conversation_title(
+        self,
+        conversation_id: str,
+        new_title: str,
+        app_conversation_info: AppConversationInfo,
+    ) -> None:
+        """Update the conversation title in the agent-server.
+
+        Args:
+            conversation_id: The conversation ID as a string
+            new_title: The new title to set
+            app_conversation_info: The app conversation info containing sandbox_id
+        """
+        # Get the sandbox info to find the agent-server URL
+        sandbox = await self.sandbox_service.get_sandbox(
+            app_conversation_info.sandbox_id
+        )
+        assert sandbox is not None, (
+            f'Sandbox {app_conversation_info.sandbox_id} not found for conversation {conversation_id}'
+        )
+        assert sandbox.exposed_urls is not None, (
+            f'Sandbox {app_conversation_info.sandbox_id} has no exposed URLs for conversation {conversation_id}'
+        )
+
+        # Use the existing method to get the agent-server URL
+        agent_server_url = self._get_agent_server_url(sandbox)
+
+        # Prepare the request
+        url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id}'
+        headers = {}
+        if sandbox.session_api_key:
+            headers['X-Session-API-Key'] = sandbox.session_api_key
+
+        payload = {'title': new_title}
+
+        # Make the PATCH request to the agent-server
+        response = await self.httpx_client.patch(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=30.0,
+        )
+        response.raise_for_status()
+
+        _logger.info(
+            f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
+        )
 
 
 class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
