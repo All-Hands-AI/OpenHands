@@ -114,7 +114,7 @@ PYTHONPATH=".:$PYTHONPATH" poetry run --project=enterprise pytest --forked -n au
 cd enterprise
 PYTHONPATH=".:$PYTHONPATH" poetry run pytest tests/unit/telemetry/ --confcutdir=tests/unit/telemetry
 
-# Enterprise linting
+# Enterprise linting (IMPORTANT: use --show-diff-on-failure to match GitHub CI)
 poetry run pre-commit run --all-files --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
 ```
 
@@ -191,6 +191,7 @@ Each integration follows a consistent pattern with service classes, storage mode
 - For frontend issues, ensure the main OpenHands frontend is built: `make build`
 - Check logs in the `logs/` directory for runtime issues
 - If tests fail with import errors, verify `PYTHONPATH=".:$PYTHONPATH"` is set
+- **If GitHub CI fails but local linting passes**: Always use `--show-diff-on-failure` flag to match CI behavior exactly
 
 ## Template for Github Pull Request
 
