@@ -4,23 +4,23 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from enterprise.server.constants import CURRENT_USER_SETTINGS_VERSION
-from enterprise.server.maintenance_task_processor.user_version_upgrade_processor import (
+from server.constants import CURRENT_USER_SETTINGS_VERSION
+from server.maintenance_task_processor.user_version_upgrade_processor import (
     UserVersionUpgradeProcessor,
 )
-from enterprise.storage.base import Base
+from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
-from enterprise.storage.billing_session import BillingSession
-from enterprise.storage.conversation_work import ConversationWork
-from enterprise.storage.feedback import Feedback
-from enterprise.storage.github_app_installation import GithubAppInstallation
-from enterprise.storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
-from enterprise.storage.stored_conversation_metadata import StoredConversationMetadata
-from enterprise.storage.stored_offline_token import StoredOfflineToken
-from enterprise.storage.stored_settings import StoredSettings
-from enterprise.storage.stripe_customer import StripeCustomer
-from enterprise.storage.user_settings import UserSettings
+from storage.billing_session import BillingSession
+from storage.conversation_work import ConversationWork
+from storage.feedback import Feedback
+from storage.github_app_installation import GithubAppInstallation
+from storage.maintenance_task import MaintenanceTask, MaintenanceTaskStatus
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_offline_token import StoredOfflineToken
+from storage.stored_settings import StoredSettings
+from storage.stripe_customer import StripeCustomer
+from storage.user_settings import UserSettings
 
 
 @pytest.fixture
