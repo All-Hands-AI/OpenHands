@@ -33,8 +33,9 @@ def test_user_model(session_maker):
         session.flush()
 
         # Create a test user
+        test_user_id = uuid4()
         user = User(
-            id=uuid4(), current_org_id=org.id, language='en'
+            id=test_user_id, current_org_id=org.id, language='en'
         )
         session.add(user)
         session.flush()
@@ -52,7 +53,7 @@ def test_user_model(session_maker):
 
         # Query the user
         queried_user = (
-            session.query(User).filter(User.keycloak_user_id == 'test-user-id').first()
+            session.query(User).filter(User.id == test_user_id).first()
         )
         assert queried_user is not None
         assert queried_user.language == 'en'

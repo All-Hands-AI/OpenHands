@@ -143,7 +143,7 @@ async def test_keycloak_callback_user_not_allowed(mock_request):
 
         # Mock the user creation
         mock_user = MagicMock()
-        mock_user.keycloak_user_id = 'test_user_id'
+        mock_user.id = 'test_user_id'
         mock_user.current_org_id = 'test_org_id'
         mock_user.accepted_tos = None
         mock_user_store.get_user_by_id.return_value = mock_user
@@ -176,7 +176,7 @@ async def test_keycloak_callback_success_with_valid_offline_token(mock_request):
     ):
         # Mock user with accepted_tos
         mock_user = MagicMock()
-        mock_user.keycloak_user_id = 'test_user_id'
+        mock_user.id = 'test_user_id'
         mock_user.current_org_id = 'test_org_id'
         mock_user.accepted_tos = '2025-01-01'
 
@@ -240,7 +240,7 @@ async def test_keycloak_callback_success_without_offline_token(mock_request):
     ):
         # Mock user with accepted_tos
         mock_user = MagicMock()
-        mock_user.keycloak_user_id = 'test_user_id'
+        mock_user.id = 'test_user_id'
         mock_user.current_org_id = 'test_org_id'
         mock_user.accepted_tos = '2025-01-01'
 

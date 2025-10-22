@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import patch
 
 # Mock the database module before importing OrgMemberStore
@@ -17,8 +18,8 @@ def test_get_org_members(session_maker):
         session.add(org)
         session.flush()
 
-        user1 = User(keycloak_user_id='test-user-1', current_org_id=org.id)
-        user2 = User(keycloak_user_id='test-user-2', current_org_id=org.id)
+        user1 = User(id=uuid.uuid4(), current_org_id=org.id)
+        user2 = User(id=uuid.uuid4(), current_org_id=org.id)
         role = Role(name='admin', rank=1)
         session.add_all([user1, user2, role])
         session.flush()
@@ -59,7 +60,7 @@ def test_get_user_orgs(session_maker):
         session.add_all([org1, org2])
         session.flush()
 
-        user = User(keycloak_user_id='test-user', current_org_id=org1.id)
+        user = User(id=uuid.uuid4(), current_org_id=org1.id)
         role = Role(name='admin', rank=1)
         session.add_all([user, role])
         session.flush()
@@ -99,7 +100,7 @@ def test_get_org_member(session_maker):
         session.add(org)
         session.flush()
 
-        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        user = User(id=uuid.uuid4(), current_org_id=org.id)
         role = Role(name='admin', rank=1)
         session.add_all([user, role])
         session.flush()
@@ -133,7 +134,7 @@ def test_add_user_to_org(session_maker):
         session.add(org)
         session.flush()
 
-        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        user = User(id=uuid.uuid4(), current_org_id=org.id)
         role = Role(name='admin', rank=1)
         session.add_all([user, role])
         session.commit()
@@ -167,7 +168,7 @@ def test_update_user_role_in_org(session_maker):
         session.add(org)
         session.flush()
 
-        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        user = User(id=uuid.uuid4(), current_org_id=org.id)
         role1 = Role(name='admin', rank=1)
         role2 = Role(name='user', rank=2)
         session.add_all([user, role1, role2])
@@ -216,7 +217,7 @@ def test_remove_user_from_org(session_maker):
         session.add(org)
         session.flush()
 
-        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        user = User(id=uuid.uuid4(), current_org_id=org.id)
         role = Role(name='admin', rank=1)
         session.add_all([user, role])
         session.flush()

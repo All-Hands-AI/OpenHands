@@ -133,9 +133,10 @@ async def test_create_user(session_maker, mock_litellm_api):
 def test_get_user_by_id(session_maker):
     # Test getting user by ID
     test_org_id = uuid.uuid4()
+    test_user_id = uuid.uuid4()
     with session_maker() as session:
         # Create a test user
-        user = User(id='test-id', current_org_id=test_org_id)
+        user = User(id=test_user_id, current_org_id=test_org_id)
         session.add(user)
         session.commit()
         user_id = user.id
@@ -151,9 +152,10 @@ def test_update_user(session_maker):
     # Test updating user details
     test_org_id1 = uuid.uuid4()
     test_org_id2 = uuid.uuid4()
+    test_user_id = uuid.uuid4()
     with session_maker() as session:
         # Create a test user
-        user = User(id='test-id', current_org_id=test_org_id1)
+        user = User(id=test_user_id, current_org_id=test_org_id1)
         session.add(user)
         session.commit()
         user_id = user.id
@@ -177,10 +179,12 @@ def test_list_users(session_maker):
     # Test listing all users
     test_org_id1 = uuid.uuid4()
     test_org_id2 = uuid.uuid4()
+    test_user_id1 = uuid.uuid4()
+    test_user_id2 = uuid.uuid4()
     with session_maker() as session:
         # Create test users
-        user1 = User(keycloak_user_id='test-id-1', current_org_id=test_org_id1)
-        user2 = User(keycloak_user_id='test-id-2', current_org_id=test_org_id2)
+        user1 = User(id=test_user_id1, current_org_id=test_org_id1)
+        user2 = User(id=test_user_id2, current_org_id=test_org_id2)
         session.add_all([user1, user2])
         session.commit()
 
@@ -188,9 +192,9 @@ def test_list_users(session_maker):
     with patch('storage.user_store.session_maker', session_maker):
         users = UserStore.list_users()
         assert len(users) >= 2
-        keycloak_ids = [user.keycloak_user_id for user in users]
-        assert 'test-id-1' in keycloak_ids
-        assert 'test-id-2' in keycloak_ids
+        user_ids = [user.id for user in users]
+        assert test_user_id1 in user_ids
+        assert test_user_id2 in user_ids
 
 
 def test_get_kwargs_from_settings():

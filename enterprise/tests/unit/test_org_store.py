@@ -168,7 +168,8 @@ def test_get_org_by_name(session_maker, mock_litellm_api):
 
 
 def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
-    # Test getting current org from keycloak user ID
+    # Test getting current org from user ID
+    test_user_id = uuid.uuid4()
     with session_maker() as session:
         # Create test data
         org = Org(name='test-org')
@@ -177,7 +178,7 @@ def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
 
         from storage.user import User
 
-        user = User(keycloak_user_id='test-user', current_org_id=org.id)
+        user = User(id=test_user_id, current_org_id=org.id)
         session.add(user)
         session.commit()
 
@@ -189,7 +190,7 @@ def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
             side_effect=lambda session, org: org,
         ),
     ):
-        retrieved_org = OrgStore.get_current_org_from_keycloak_user_id('test-user')
+        retrieved_org = OrgStore.get_current_org_from_keycloak_user_id(str(test_user_id))
         assert retrieved_org is not None
         assert retrieved_org.name == 'test-org'
 
