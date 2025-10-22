@@ -28,22 +28,21 @@ class OrgStore:
         """Create a new organization."""
         with session_maker() as session:
             org = Org(**kwargs)
-            OrgStore.migrate_org(None, org)
+            org.org_version = ORG_SETTINGS_VERSION
+            org.default_llm_model = get_default_litellm_model()
             session.add(org)
             session.commit()
             session.refresh(org)
             return org
 
     @staticmethod
-    def get_org_by_id(org_id: UUID) -> Optional[Org]:
+    def get_org_by_id(org_id: UUID) -> Org | None:
         """Get organization by ID."""
         with session_maker() as session:
-            return OrgStore.migrate_org(
-                session, session.query(Org).filter(Org.id == org_id).first()
-            )
+            return session.query(Org).filter(Org.id == org_id).first()
 
     @staticmethod
-    def get_current_org_from_keycloak_user_id(keycloak_user_id: str) -> Optional[Org]:
+    def get_current_org_from_keycloak_user_id(keycloak_user_id: str) -> Org | None:
         with session_maker() as session:
             user = (
                 session.query(User)
@@ -55,9 +54,7 @@ class OrgStore:
                 logger.warning(f'User not found for ID {keycloak_user_id}')
                 return None
             org_id = user.current_org_id
-            org = OrgStore.migrate_org(
-                session, session.query(Org).filter(Org.id == org_id).first()
-            )
+            org = session.query(Org).filter(Org.id == org_id).first()
             if not org:
                 logger.warning(
                     f'Org not found for ID {org_id} as the current org for user {keycloak_user_id}'
@@ -66,19 +63,17 @@ class OrgStore:
             return org
 
     @staticmethod
-    def get_org_by_name(name: str) -> Optional[Org]:
+    def get_org_by_name(name: str) -> Org | None:
         """Get organization by name."""
         with session_maker() as session:
-            return OrgStore.migrate_org(
-                session, session.query(Org).filter(Org.name == name).first()
-            )
+            return session.query(Org).filter(Org.name == name).first()
 
     @staticmethod
     def list_orgs() -> list[Org]:
         """List all organizations."""
         with session_maker() as session:
             orgs = session.query(Org).all()
-            return [OrgStore.migrate_org(session, org) for org in orgs]
+            return orgs
 
     @staticmethod
     def update_org(
@@ -97,8 +92,6 @@ class OrgStore:
                 if hasattr(org, key):
                     setattr(org, key, value)
 
-            OrgStore.migrate_org(None, org)
-
             session.commit()
             session.refresh(org)
             return org
@@ -116,24 +109,3 @@ class OrgStore:
             and hasattr(settings, normalized)
         }
         return kwargs
-
-    @staticmethod
-    def migrate_org(
-        session: Session | None,
-        org: Org,
-    ):
-        """Create a new organization."""
-        if org.org_version == ORG_SETTINGS_VERSION:
-            return org
-        call_async_from_sync(
-            LiteLlmManager.update_team,
-            team_id=str(org.id),
-            team_alias=None,
-            max_budget=None,
-        )
-        org.org_version = ORG_SETTINGS_VERSION
-        org.default_llm_model = get_default_litellm_model()
-        if session:
-            session.commit()
-            session.refresh(org)
-        return org

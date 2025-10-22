@@ -130,7 +130,6 @@ class SaasSettingsStore(OssSettingsStore):
                     f'Org not found for ID {org_id} as the current org for user {self.user_id}'
                 )
                 return None
-            OrgStore.migrate_org(None, org)
 
             for model in (user, org, org_member):
                 for key, value in kwargs.items():
