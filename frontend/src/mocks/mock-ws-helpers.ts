@@ -128,3 +128,59 @@ export const createMockAgentErrorEvent = (
   error: "Failed to execute command: Permission denied",
   ...overrides,
 });
+
+/**
+ * Creates a mock ExecuteBashAction event for testing terminal command handling
+ */
+export const createMockExecuteBashActionEvent = (
+  command: string = "ls -la",
+) => ({
+  id: "bash-action-123",
+  timestamp: new Date().toISOString(),
+  source: "agent",
+  thought: [{ type: "text", text: "Executing bash command" }],
+  thinking_blocks: [],
+  action: {
+    kind: "ExecuteBashAction",
+    command,
+    is_input: false,
+    timeout: null,
+    reset: false,
+  },
+  tool_name: "ExecuteBashAction",
+  tool_call_id: "bash-call-456",
+  tool_call: {
+    id: "bash-call-456",
+    type: "function",
+    function: {
+      name: "ExecuteBashAction",
+      arguments: JSON.stringify({ command }),
+    },
+  },
+  llm_response_id: "llm-response-789",
+  security_risk: { level: "low" },
+});
+
+/**
+ * Creates a mock ExecuteBashObservation event for testing terminal output handling
+ */
+export const createMockExecuteBashObservationEvent = (
+  output: string = "total 24\ndrwxr-xr-x  5 user  staff  160 Jan 10 12:00 .",
+  command: string = "ls -la",
+) => ({
+  id: "bash-obs-123",
+  timestamp: new Date().toISOString(),
+  source: "environment",
+  tool_name: "ExecuteBashAction",
+  tool_call_id: "bash-call-456",
+  observation: {
+    kind: "ExecuteBashObservation",
+    output,
+    command,
+    exit_code: 0,
+    error: false,
+    timeout: false,
+    metadata: { cwd: "/home/user" },
+  },
+  action_id: "bash-action-123",
+});
