@@ -24,7 +24,7 @@ from server.config import get_config
 from storage.database import session_maker
 from storage.proactive_conversation_store import ProactiveConversationStore
 from storage.saas_secrets_store import SaasSecretsStore
-from storage.user_settings_utils import get_user_settings_by_keycloak_id_async
+from storage.saas_settings_store import SaasSettingsStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -61,7 +61,14 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
     if not user_id:
         return False
 
-    settings = await get_user_settings_by_keycloak_id_async(user_id)
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+
+    settings = await call_sync_from_async(
+        settings_store.get_user_settings_by_keycloak_id, user_id
+    )
 
     if not settings or settings.enable_proactive_conversation_starters is None:
         return False

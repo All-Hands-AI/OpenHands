@@ -16,14 +16,12 @@ from server.auth.constants import (
 from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth
 from server.auth.token_manager import TokenManager
-from server.config import sign_token
+from server.config import get_config, sign_token
 from server.constants import IS_FEATURE_ENV
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
-from storage.user_settings_utils import (
-    get_or_create_user_settings,
-    get_user_settings_by_keycloak_id,
-)
+from storage.saas_settings_store import SaasSettingsStore
+from storage.user_settings_utils import get_or_create_user_settings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderHandler
@@ -215,7 +213,11 @@ async def keycloak_callback(
             f'&state={state}'
         )
 
-    user_settings = get_user_settings_by_keycloak_id(user_id)
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+    user_settings = settings_store.get_user_settings_by_keycloak_id(user_id)
     has_accepted_tos = (
         user_settings is not None and user_settings.accepted_tos is not None
     )
