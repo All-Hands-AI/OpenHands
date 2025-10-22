@@ -7,8 +7,6 @@ including automatic discovery, registration, and execution of collectors.
 from typing import List
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from enterprise.telemetry.base_collector import MetricResult, MetricsCollector
 from enterprise.telemetry.registry import CollectorRegistry, register_collector
 
@@ -161,12 +159,7 @@ class TestTelemetryFrameworkIntegration:
 
     def test_real_collector_integration(self):
         """Test integration with actual collector implementations."""
-
-        # Try to import real collectors, skip if dependencies not available
-        try:
-            from enterprise.telemetry.collectors.health_check import HealthCheckCollector
-        except ImportError as e:
-            pytest.skip(f"Skipping test due to missing dependencies: {e}")
+        from enterprise.telemetry.collectors.health_check import HealthCheckCollector
 
         # Mock dependencies using context managers
         with patch('enterprise.telemetry.collectors.health_check.platform') as mock_platform, \
