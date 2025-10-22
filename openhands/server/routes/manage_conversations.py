@@ -12,6 +12,9 @@ from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
 )
@@ -19,6 +22,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
 from openhands.app_server.config import (
+    depends_app_conversation_info_service,
     depends_app_conversation_service,
 )
 from openhands.core.config.llm_config import LLMConfig
@@ -90,6 +94,7 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = depends_app_conversation_service()
+app_conversation_info_service_dependency = depends_app_conversation_info_service()
 
 
 def _filter_conversations_by_age(
@@ -759,23 +764,201 @@ class UpdateConversationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
 
+async def _update_v1_conversation(
+    conversation_uuid: uuid.UUID,
+    new_title: str,
+    user_id: str | None,
+    app_conversation_info_service: AppConversationInfoService,
+    app_conversation_service: AppConversationService,
+) -> JSONResponse | bool:
+    """Update a V1 conversation title.
+
+    Args:
+        conversation_uuid: The conversation ID as a UUID
+        new_title: The new title to set
+        user_id: The authenticated user ID
+        app_conversation_info_service: The app conversation info service
+        app_conversation_service: The app conversation service for agent-server communication
+
+    Returns:
+        JSONResponse on error, True on success
+    """
+    conversation_id = str(conversation_uuid)
+    logger.info(
+        f'Updating V1 conversation {conversation_uuid}',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    # Get the V1 conversation info
+    app_conversation_info = (
+        await app_conversation_info_service.get_app_conversation_info(conversation_uuid)
+    )
+
+    if not app_conversation_info:
+        # Not a V1 conversation
+        return None
+
+    # Validate that the user owns this conversation
+    if user_id and app_conversation_info.created_by_user_id != user_id:
+        logger.warning(
+            f'User {user_id} attempted to update V1 conversation {conversation_uuid} owned by {app_conversation_info.created_by_user_id}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Permission denied: You can only update your own conversations',
+                'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Update the title and timestamp
+    original_title = app_conversation_info.title
+    app_conversation_info.title = new_title
+    app_conversation_info.updated_at = datetime.now(timezone.utc)
+
+    # Save the updated conversation info
+    try:
+        await app_conversation_info_service.save_app_conversation_info(
+            app_conversation_info
+        )
+    except AssertionError:
+        # This happens when user doesn't own the conversation
+        logger.warning(
+            f'User {user_id} attempted to update V1 conversation {conversation_uuid} - permission denied',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Permission denied: You can only update your own conversations',
+                'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Try to update the agent-server as well
+    try:
+        if hasattr(app_conversation_service, 'update_agent_server_conversation_title'):
+            await app_conversation_service.update_agent_server_conversation_title(
+                conversation_id=conversation_id,
+                new_title=new_title,
+                app_conversation_info=app_conversation_info,
+            )
+    except Exception as e:
+        # Log the error but don't fail the database update
+        logger.warning(
+            f'Failed to update agent-server for conversation {conversation_uuid}: {e}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+
+    logger.info(
+        f'Successfully updated V1 conversation {conversation_uuid} title from "{original_title}" to "{app_conversation_info.title}"',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    return True
+
+
+async def _update_v0_conversation(
+    conversation_id: str,
+    new_title: str,
+    user_id: str | None,
+    conversation_store: ConversationStore,
+) -> JSONResponse | bool:
+    """Update a V0 conversation title.
+
+    Args:
+        conversation_id: The conversation ID
+        new_title: The new title to set
+        user_id: The authenticated user ID
+        conversation_store: The conversation store
+
+    Returns:
+        JSONResponse on error, True on success
+
+    Raises:
+        FileNotFoundError: If the conversation is not found
+    """
+    logger.info(
+        f'Updating V0 conversation {conversation_id}',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    # Get the existing conversation metadata
+    metadata = await conversation_store.get_metadata(conversation_id)
+
+    # Validate that the user owns this conversation
+    if user_id and metadata.user_id != user_id:
+        logger.warning(
+            f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Permission denied: You can only update your own conversations',
+                'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Update the conversation metadata
+    original_title = metadata.title
+    metadata.title = new_title
+    metadata.last_updated_at = datetime.now(timezone.utc)
+
+    # Save the updated metadata
+    await conversation_store.save_metadata(metadata)
+
+    # Emit a status update to connected clients about the title change
+    try:
+        status_update_dict = {
+            'status_update': True,
+            'type': 'info',
+            'message': conversation_id,
+            'conversation_title': metadata.title,
+        }
+        await conversation_manager.sio.emit(
+            'oh_event',
+            status_update_dict,
+            to=f'room:{conversation_id}',
+        )
+    except Exception as e:
+        logger.error(f'Error emitting title update event: {e}')
+        # Don't fail the update if we can't emit the event
+
+    logger.info(
+        f'Successfully updated conversation {conversation_id} title from "{original_title}" to "{metadata.title}"',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    return True
+
+
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
     data: UpdateConversationRequest,
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
+    app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> bool:
     """Update conversation metadata.
 
     This endpoint allows updating conversation details like title.
     Only the conversation owner can update the conversation.
+    Supports both V0 and V1 conversations.
 
     Args:
         conversation_id: The ID of the conversation to update
         data: The conversation update data (title, etc.)
         user_id: The authenticated user ID
         conversation_store: The conversation store dependency
+        app_conversation_info_service: The app conversation info service for V1 conversations
+        app_conversation_service: The app conversation service for agent-server communication
 
     Returns:
         bool: True if the conversation was updated successfully
@@ -788,57 +971,41 @@ async def update_conversation(
         extra={'session_id': conversation_id, 'user_id': user_id},
     )
 
+    new_title = data.title.strip()
+
+    # Try to handle as V1 conversation first
     try:
-        # Get the existing conversation metadata
-        metadata = await conversation_store.get_metadata(conversation_id)
-
-        # Validate that the user owns this conversation
-        if user_id and metadata.user_id != user_id:
-            logger.warning(
-                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
-                extra={'session_id': conversation_id, 'user_id': user_id},
-            )
-            return JSONResponse(
-                content={
-                    'status': 'error',
-                    'message': 'Permission denied: You can only update your own conversations',
-                    'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
-                },
-                status_code=status.HTTP_403_FORBIDDEN,
-            )
-
-        # Update the conversation metadata
-        original_title = metadata.title
-        metadata.title = data.title.strip()
-        metadata.last_updated_at = datetime.now(timezone.utc)
-
-        # Save the updated metadata
-        await conversation_store.save_metadata(metadata)
-
-        # Emit a status update to connected clients about the title change
-        try:
-            status_update_dict = {
-                'status_update': True,
-                'type': 'info',
-                'message': conversation_id,
-                'conversation_title': metadata.title,
-            }
-            await conversation_manager.sio.emit(
-                'oh_event',
-                status_update_dict,
-                to=f'room:{conversation_id}',
-            )
-        except Exception as e:
-            logger.error(f'Error emitting title update event: {e}')
-            # Don't fail the update if we can't emit the event
-
-        logger.info(
-            f'Successfully updated conversation {conversation_id} title from "{original_title}" to "{metadata.title}"',
-            extra={'session_id': conversation_id, 'user_id': user_id},
+        conversation_uuid = uuid.UUID(conversation_id)
+        result = await _update_v1_conversation(
+            conversation_uuid=conversation_uuid,
+            new_title=new_title,
+            user_id=user_id,
+            app_conversation_info_service=app_conversation_info_service,
+            app_conversation_service=app_conversation_service,
         )
 
-        return True
+        # If result is not None, it's a V1 conversation (either success or error)
+        if result is not None:
+            return result
 
+    except (ValueError, TypeError):
+        # Not a valid UUID, fall through to V0 logic
+        pass
+    except Exception as e:
+        logger.warning(
+            f'Error checking V1 conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        # Fall through to V0 logic
+
+    # Handle as V0 conversation
+    try:
+        return await _update_v0_conversation(
+            conversation_id=conversation_id,
+            new_title=new_title,
+            user_id=user_id,
+            conversation_store=conversation_store,
+        )
     except FileNotFoundError:
         logger.warning(
             f'Conversation {conversation_id} not found for update',
