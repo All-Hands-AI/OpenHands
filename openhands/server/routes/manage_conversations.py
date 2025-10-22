@@ -87,6 +87,8 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.data_models.settings import Settings
+from openhands.utils.environment import get_effective_llm_base_url
+from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
@@ -501,10 +503,21 @@ async def get_prompt(
         # placeholder for error handling
         raise ValueError('Settings not found')
 
+    env_base_url = os.environ.get('LLM_BASE_URL')
+    settings_base_url = settings.llm_base_url
+    if env_base_url not in (None, ''):
+        effective_base_url = env_base_url
+    elif settings_base_url not in (None, ''):
+        effective_base_url = settings_base_url
+    else:
+        effective_base_url = get_effective_llm_base_url(
+            settings.llm_model,
+            settings_base_url,
+        )
     llm_config = LLMConfig(
         model=settings.llm_model or '',
         api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
+        base_url=effective_base_url,
     )
 
     prompt_template = generate_prompt_template(stringified_events)
