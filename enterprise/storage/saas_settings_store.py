@@ -9,10 +9,10 @@ from dataclasses import dataclass
 
 import httpx
 from cryptography.fernet import Fernet
-from integrations import stripe_service
+from enterprise.integrations import stripe_service
 from pydantic import SecretStr
-from server.auth.token_manager import TokenManager
-from server.constants import (
+from enterprise.server.auth.token_manager import TokenManager
+from enterprise.server.constants import (
     CURRENT_USER_SETTINGS_VERSION,
     DEFAULT_INITIAL_BUDGET,
     LITE_LLM_API_KEY,
@@ -21,7 +21,7 @@ from server.constants import (
     REQUIRE_PAYMENT,
     get_default_litellm_model,
 )
-from server.logger import logger
+from enterprise.server.logger import logger
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
 from storage.user_settings import UserSettings
