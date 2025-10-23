@@ -16,7 +16,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
 PRE_COMMIT_HOOK = '.git/hooks/pre-commit'
