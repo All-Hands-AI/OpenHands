@@ -266,7 +266,9 @@ class FilesystemEventService(EventService):
 
         # Load all events from files in a background thread.
         loop = asyncio.get_running_loop()
-        page_events = await loop.run_in_executor(None, self._load_events_from_files, page_files)
+        page_events = await loop.run_in_executor(
+            None, self._load_events_from_files, page_files
+        )
 
         return EventPage(items=page_events, next_page_id=next_page_id)
 
