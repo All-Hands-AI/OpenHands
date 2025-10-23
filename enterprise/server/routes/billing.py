@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from integrations import stripe_service
 from pydantic import BaseModel
+from server.config import get_config
 from server.constants import (
     LITE_LLM_API_KEY,
     LITE_LLM_API_URL,
@@ -22,8 +23,8 @@ from server.constants import (
 from server.logger import logger
 from storage.billing_session import BillingSession
 from storage.database import session_maker
+from storage.saas_settings_store import SaasSettingsStore
 from storage.subscription_access import SubscriptionAccess
-from storage.user_settings import UserSettings
 
 from openhands.server.user_auth import get_user_id
 
@@ -617,11 +618,14 @@ async def stripe_webhook(request: Request) -> JSONResponse:
 
 def reset_user_to_free_tier_settings(user_id: str) -> None:
     """Reset user settings to free tier defaults when subscription ends."""
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+
     with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
+        user_settings = settings_store.get_user_settings_by_keycloak_id(
+            user_id, session
         )
 
         if user_settings:
