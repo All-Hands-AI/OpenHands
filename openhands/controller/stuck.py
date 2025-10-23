@@ -1,7 +1,5 @@
-"""Stuck detection and loop recovery management for agent loops."""
-
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
@@ -18,9 +16,6 @@ from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
-
-if TYPE_CHECKING:
-    from openhands.controller.state.state import State
 
 
 class StuckDetector:
