@@ -4,7 +4,7 @@ import asyncio
 import copy
 import os
 import time
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable
 
 if TYPE_CHECKING:
     from openhands.security.analyzer import SecurityAnalyzer
@@ -190,9 +190,6 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
-
-        # loop recovery info for CLI mode
-        self._loop_recovery_info: dict[str, Any] | None = None
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
@@ -619,9 +616,6 @@ class AgentController:
             elif option == 3:
                 # Option 3: Stop agent completely
                 await self.set_agent_state_to(AgentState.STOPPED)
-
-            # Clear the loop recovery info
-            self._loop_recovery_info = None
             return
 
     def _reset(self) -> None:

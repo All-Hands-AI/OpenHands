@@ -1,11 +1,10 @@
 """Tests for CLI loop recovery functionality."""
 
-import asyncio
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.cli.commands import handle_exit_command, handle_resume_command
+from openhands.cli.commands import handle_resume_command
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.stuck import StuckDetector
 from openhands.core.schema import AgentState
@@ -116,7 +115,9 @@ class TestCliLoopRecoveryIntegration:
         agent_state = AgentState.PAUSED
 
         # Mock handle_resume_command
-        with patch('openhands.cli.commands.handle_resume_command') as mock_handle_resume:
+        with patch(
+            'openhands.cli.commands.handle_resume_command'
+        ) as mock_handle_resume:
             mock_handle_resume.return_value = (False, False)
 
             # Call handle_commands with loop recovery resume
@@ -132,7 +133,9 @@ class TestCliLoopRecoveryIntegration:
             )
 
             # Check that handle_resume_command was called with correct args
-            mock_handle_resume.assert_called_once_with('/resume 1', event_stream, agent_state)
+            mock_handle_resume.assert_called_once_with(
+                '/resume 1', event_stream, agent_state
+            )
 
             # Check the return values
             assert close_repl is False
