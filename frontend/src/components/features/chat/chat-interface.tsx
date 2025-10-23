@@ -249,7 +249,7 @@ export function ChatInterface() {
           <div className="flex justify-between relative">
             <div className="flex items-center gap-1">
               <ConfirmationModeEnabled />
-              {totalEvents > 0 && (
+              {totalEvents > 0 && !isV1Conversation && (
                 <TrajectoryActions
                   onPositiveFeedback={() =>
                     onClickShareFeedbackActionButton("positive")
@@ -274,7 +274,7 @@ export function ChatInterface() {
           <InteractiveChatBox onSubmit={handleSendMessage} />
         </div>
 
-        {config?.APP_MODE !== "saas" && (
+        {config?.APP_MODE !== "saas" && !isV1Conversation && (
           <FeedbackModal
             isOpen={feedbackModalIsOpen}
             onClose={() => setFeedbackModalIsOpen(false)}
