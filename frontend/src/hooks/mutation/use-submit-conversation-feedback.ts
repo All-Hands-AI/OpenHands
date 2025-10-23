@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { useActiveConversation } from "../query/use-active-conversation";
 import {
   BatchFeedbackData,
   getFeedbackQueryKey,
@@ -15,34 +14,16 @@ type SubmitConversationFeedbackArgs = {
 
 export const useSubmitConversationFeedback = () => {
   const { conversationId } = useConversationId();
-  const { data: conversation } = useActiveConversation();
   const queryClient = useQueryClient();
 
-  // TODO: Disable conversation feedback API call for V1 conversations
-  // This is a temporary measure and may be re-enabled in the future
-  const isV1Conversation = conversation?.conversation_version === "V1";
-
   return useMutation({
-    mutationFn: ({
-      rating,
-      eventId,
-      reason,
-    }: SubmitConversationFeedbackArgs) => {
-      if (isV1Conversation) {
-        // Return a rejected promise for V1 conversations
-        return Promise.reject(
-          new Error(
-            "Conversation feedback API is disabled for V1 conversations",
-          ),
-        );
-      }
-      return ConversationService.submitConversationFeedback(
+    mutationFn: ({ rating, eventId, reason }: SubmitConversationFeedbackArgs) =>
+      ConversationService.submitConversationFeedback(
         conversationId,
         rating,
         eventId,
         reason,
-      );
-    },
+      ),
     onMutate: async ({ rating, eventId, reason }) => {
       if (!eventId) return { previousFeedback: null };
 
