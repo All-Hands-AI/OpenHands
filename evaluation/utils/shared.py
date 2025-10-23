@@ -268,7 +268,9 @@ def prepare_dataset(
 
     if filter_func is not None:
         dataset = filter_func(dataset)
-        logger.info(f'Applied filter after sampling: {len(dataset)} instances remaining')
+        logger.info(
+            f'Applied filter after sampling: {len(dataset)} instances remaining'
+        )
 
     def make_serializable(instance_dict: dict) -> dict:
         import numpy as np
