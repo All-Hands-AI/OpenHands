@@ -45,6 +45,7 @@ export type Settings = {
   SEARCH_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string | null;
+  SECURITY_POLICY: "always" | "never" | "risky" | null;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;

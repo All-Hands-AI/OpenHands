@@ -24,6 +24,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   language: DEFAULT_SETTINGS.LANGUAGE,
   confirmation_mode: DEFAULT_SETTINGS.CONFIRMATION_MODE,
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+  security_policy: DEFAULT_SETTINGS.SECURITY_POLICY,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   provider_tokens_set: {},
