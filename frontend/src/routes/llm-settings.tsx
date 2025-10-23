@@ -33,6 +33,7 @@ import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrad
 import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/use-create-subscription-checkout-session";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { cn } from "#/utils/utils";
+import { useIsAllHandsSaaSEnvironment } from "#/hooks/use-is-all-hands-saas-environment";
 
 interface OpenHandsApiKeyHelpProps {
   testId: string;
@@ -78,6 +79,7 @@ function LlmSettingsScreen() {
   const { data: isAuthed } = useIsAuthed();
   const { mutate: createSubscriptionCheckoutSession } =
     useCreateSubscriptionCheckoutSession();
+  const isAllHandsSaaSEnvironment = useIsAllHandsSaaSEnvironment();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -441,8 +443,11 @@ function LlmSettingsScreen() {
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
   // Show upgrade banner and disable form in SaaS mode when user doesn't have an active subscription
+  // Exclude self-hosted enterprise customers (those not on all-hands.dev domains)
   const shouldShowUpgradeBanner =
-    config?.APP_MODE === "saas" && !subscriptionAccess;
+    config?.APP_MODE === "saas" &&
+    !subscriptionAccess &&
+    isAllHandsSaaSEnvironment;
 
   const formAction = (formData: FormData) => {
     // Prevent form submission for unsubscribed SaaS users

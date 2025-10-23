@@ -35,7 +35,7 @@ import {
   hasUserEvent as hasV1UserEvent,
   shouldRenderEvent as shouldRenderV1Event,
 } from "#/components/v1/chat";
-import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { useUnifiedUploadFiles } from "#/hooks/mutation/use-unified-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
 import { useConversationStore } from "#/state/conversation-store";
@@ -86,7 +86,7 @@ export function ChatInterface() {
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const { selectedRepository, replayJson } = useInitialQueryStore();
   const params = useParams();
-  const { mutateAsync: uploadFiles } = useUploadFiles();
+  const { mutateAsync: uploadFiles } = useUnifiedUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
 
