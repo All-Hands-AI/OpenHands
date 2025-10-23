@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
+from storage.stored_user_secrets import StoredUserSecrets
 
 # Mock the database module before importing UserStore
 with patch('storage.database.engine'), patch('storage.database.a_engine'):
@@ -56,12 +57,11 @@ async def test_create_default_settings_no_org_id():
 
 
 @pytest.mark.asyncio
-async def test_create_default_settings_require_payment_enabled(
+async def test_create_default_settings_require_org(
     session_maker, mock_stripe
 ):
     # Mock stripe_service.has_payment_method to return False
     with (
-        patch('storage.user_store.REQUIRE_PAYMENT', True),
         patch(
             'stripe.Customer.list_payment_methods_async',
             AsyncMock(return_value=MagicMock(data=[])),
@@ -73,39 +73,10 @@ async def test_create_default_settings_require_payment_enabled(
         )
         assert settings is None
 
-
-@pytest.mark.asyncio
-async def test_create_default_settings_require_payment_disabled(
-    session_maker, mock_stripe, mock_litellm_api
-):
-    # Even without payment method, should get default settings when REQUIRE_PAYMENT is False
-    with (
-        patch('storage.user_store.REQUIRE_PAYMENT', False),
-        patch(
-            'stripe.Customer.list_payment_methods_async',
-            AsyncMock(return_value=MagicMock(data=[])),
-        ),
-        patch('integrations.stripe_service.session_maker', session_maker),
-        patch('storage.user_store.session_maker', session_maker),
-        patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'server.auth.token_manager.TokenManager.get_user_info_from_user_id',
-            AsyncMock(return_value={'attributes': {'github_id': ['12345']}}),
-        ),
-    ):
-        settings = await UserStore.create_default_settings(
-            'test-org-id', 'test-user-id'
-        )
-        assert settings is not None
-        assert settings.language == 'en'
-        assert settings.enable_proactive_conversation_starters is True
-
-
 @pytest.mark.asyncio
 async def test_create_default_settings_with_litellm(session_maker, mock_litellm_api):
     # Test that UserStore.create_default_settings works with LiteLLM
     with (
-        patch('storage.user_store.REQUIRE_PAYMENT', False),
         patch('integrations.stripe_service.session_maker', session_maker),
         patch('storage.user_store.session_maker', session_maker),
         patch('storage.org_store.session_maker', session_maker),
@@ -133,10 +104,10 @@ async def test_create_user(session_maker, mock_litellm_api):
 def test_get_user_by_id(session_maker):
     # Test getting user by ID
     test_org_id = uuid.uuid4()
-    test_user_id = uuid.uuid4()
+    test_user_id = '5594c7b6-f959-4b81-92e9-b09c206f5081'
     with session_maker() as session:
         # Create a test user
-        user = User(id=test_user_id, current_org_id=test_org_id)
+        user = User(id=uuid.UUID(test_user_id), current_org_id=test_org_id)
         session.add(user)
         session.commit()
         user_id = user.id
@@ -146,33 +117,6 @@ def test_get_user_by_id(session_maker):
         retrieved_user = UserStore.get_user_by_id(user_id)
         assert retrieved_user is not None
         assert retrieved_user.id == user_id
-
-
-def test_update_user(session_maker):
-    # Test updating user details
-    test_org_id1 = uuid.uuid4()
-    test_org_id2 = uuid.uuid4()
-    test_user_id = uuid.uuid4()
-    with session_maker() as session:
-        # Create a test user
-        user = User(id=test_user_id, current_org_id=test_org_id1)
-        session.add(user)
-        session.commit()
-        user_id = user.id
-
-    # Test update
-    with patch('storage.user_store.session_maker', session_maker):
-        updated_user = UserStore.update_user(
-            user_id=user_id,
-            current_org_id=test_org_id2,
-            role_id=3,
-            enable_sound_notifications=True,
-        )
-
-        assert updated_user is not None
-        assert updated_user.current_org_id == test_org_id2
-        assert updated_user.role_id == 3
-        assert updated_user.enable_sound_notifications is True
 
 
 def test_list_users(session_maker):

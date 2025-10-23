@@ -94,7 +94,7 @@ async def test_create_customer_stores_id_in_db(session_maker):
         ),
     ):
         # Call the function
-        result = await find_or_create_customer_by_user_id('test-user-id')
+        result = await find_or_create_customer_by_user_id('5594c7b6-f959-4b81-92e9-b09c206f5081')
 
     # Verify the result
     assert result == 'cus_test123'

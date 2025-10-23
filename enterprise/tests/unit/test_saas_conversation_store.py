@@ -119,10 +119,10 @@ async def test_get_nonexistent_metadata(session_maker):
 
 @pytest.mark.asyncio
 async def test_exists(session_maker):
-    store = SaasConversationStore('12345', session_maker)
+    store = SaasConversationStore('5594c7b6-f959-4b81-92e9-b09c206f5081', session_maker)
     metadata = ConversationMetadata(
         conversation_id='exists-test',
-        user_id='12345',
+        user_id='5594c7b6-f959-4b81-92e9-b09c206f5081',
         selected_repository='repo',
         selected_branch='test-branch',
         created_at=datetime.now(UTC),

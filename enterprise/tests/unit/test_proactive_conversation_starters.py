@@ -56,7 +56,7 @@ async def test_get_user_proactive_conversation_setting_user_not_found(mock_sessi
                 'integrations.github.github_view.call_sync_from_async',
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting('5594c7b6-f959-4b81-92e9-b09c206f5081') is False
 
 
 async def test_get_user_proactive_conversation_setting_user_setting_none(mock_session):
@@ -75,7 +75,7 @@ async def test_get_user_proactive_conversation_setting_user_setting_none(mock_se
                 'integrations.github.github_view.call_sync_from_async',
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting('5594c7b6-f959-4b81-92e9-b09c206f5081') is False
 
 
 async def test_get_user_proactive_conversation_setting_user_setting_true(mock_session):
@@ -113,4 +113,4 @@ async def test_get_user_proactive_conversation_setting_user_setting_false(mock_s
                 'integrations.github.github_view.call_sync_from_async',
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting('5594c7b6-f959-4b81-92e9-b09c206f5081') is False

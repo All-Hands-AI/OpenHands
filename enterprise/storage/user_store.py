@@ -173,28 +173,6 @@ class UserStore:
         with session_maker() as session:
             return session.query(User).all()
 
-    @staticmethod
-    def update_user(
-        user_id: int,
-        current_org_id: int,
-        role_id: Optional[int] = None,
-        enable_sound_notifications: Optional[bool] = None,
-    ) -> Optional[User]:
-        """Update user details."""
-        with session_maker() as session:
-            user = session.query(User).filter(User.id == user_id).first()
-            if not user:
-                return None
-
-            user.current_org_id = current_org_id
-            if role_id is not None:
-                user.role_id = role_id
-            if enable_sound_notifications is not None:
-                user.enable_sound_notifications = enable_sound_notifications
-
-            session.commit()
-            session.refresh(user)
-            return user
 
     @staticmethod
     async def create_default_settings(
