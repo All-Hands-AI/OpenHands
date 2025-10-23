@@ -31,6 +31,37 @@ stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')
 
 
+# TODO: Add a new app_mode named "ON_PREM" to support self-hosted customers instead of doing this
+# and members should comment out the "validate_saas_environment" function if they are developing and testing locally.
+def is_all_hands_saas_environment(request: Request) -> bool:
+    """Check if the current domain is an All Hands SaaS environment.
+
+    Args:
+        request: FastAPI Request object
+
+    Returns:
+        True if the current domain contains "all-hands.dev" or "openhands.dev" postfix
+    """
+    hostname = request.url.hostname or ''
+    return hostname.endswith('all-hands.dev') or hostname.endswith('openhands.dev')
+
+
+def validate_saas_environment(request: Request) -> None:
+    """Validate that the request is coming from an All Hands SaaS environment.
+
+    Args:
+        request: FastAPI Request object
+
+    Raises:
+        HTTPException: If the request is not from an All Hands SaaS environment
+    """
+    if not is_all_hands_saas_environment(request):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Checkout sessions are only available for All Hands SaaS environments',
+        )
+
+
 class BillingSessionType(Enum):
     DIRECT_PAYMENT = 'DIRECT_PAYMENT'
     MONTHLY_SUBSCRIPTION = 'MONTHLY_SUBSCRIPTION'
@@ -196,6 +227,8 @@ async def cancel_subscription(user_id: str = Depends(get_user_id)) -> JSONRespon
 async def create_customer_setup_session(
     request: Request, user_id: str = Depends(get_user_id)
 ) -> CreateBillingSessionResponse:
+    validate_saas_environment(request)
+
     customer_id = await stripe_service.find_or_create_customer(user_id)
     checkout_session = await stripe.checkout.Session.create_async(
         customer=customer_id,
@@ -214,6 +247,8 @@ async def create_checkout_session(
     request: Request,
     user_id: str = Depends(get_user_id),
 ) -> CreateBillingSessionResponse:
+    validate_saas_environment(request)
+
     customer_id = await stripe_service.find_or_create_customer(user_id)
     checkout_session = await stripe.checkout.Session.create_async(
         customer=customer_id,
@@ -268,6 +303,8 @@ async def create_subscription_checkout_session(
     billing_session_type: BillingSessionType = BillingSessionType.MONTHLY_SUBSCRIPTION,
     user_id: str = Depends(get_user_id),
 ) -> CreateBillingSessionResponse:
+    validate_saas_environment(request)
+
     # Prevent duplicate subscriptions for the same user
     with session_maker() as session:
         now = datetime.now(UTC)
@@ -343,6 +380,8 @@ async def create_subscription_checkout_session_via_get(
     user_id: str = Depends(get_user_id),
 ) -> RedirectResponse:
     """Create a subscription checkout session using a GET request (For easier copy / paste to URL bar)."""
+    validate_saas_environment(request)
+
     response = await create_subscription_checkout_session(
         request, billing_session_type, user_id
     )
