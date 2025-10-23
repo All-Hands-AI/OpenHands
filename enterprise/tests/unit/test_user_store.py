@@ -121,7 +121,7 @@ def test_get_user_by_id(session_maker):
 
     # Test retrieval
     with patch('storage.user_store.session_maker', session_maker):
-        retrieved_user = UserStore.get_user_by_id(user_id)
+        retrieved_user = UserStore.get_user_by_id(test_user_id)
         assert retrieved_user is not None
         assert retrieved_user.id == user_id
 
