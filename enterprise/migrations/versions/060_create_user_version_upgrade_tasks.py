@@ -30,8 +30,9 @@ def upgrade():
 
     This replaces the functionality of the removed admin maintenance endpoint.
     """
-    # Import here to avoid circular imports
-    from server.constants import CURRENT_USER_SETTINGS_VERSION
+    # Use hardcoded value to avoid dependency on server.constants
+    # This was the value of CURRENT_USER_SETTINGS_VERSION when this migration was created
+    CURRENT_USER_SETTINGS_VERSION = 4
 
     # Create a connection and bind it to a session
     connection = op.get_bind()
