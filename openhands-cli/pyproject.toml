@@ -4,7 +4,7 @@ requires = [ "hatchling>=1.25" ]
 
 [project]
 name = "openhands"
-version = "1.0.0"
+version = "1.0.2"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
 license = { text = "MIT" }
@@ -15,15 +15,16 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
 ]
+# Using Git URLs for dependencies so installs from PyPI pull from GitHub
+# TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk",
-  "openhands-tools",
+  "openhands-sdk==1.0.0a3",
+  "openhands-tools==1.0.0a3",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
 
-# Dev-only tools with uv groups: `uv sync --group dev`
-scripts.openhands = "openhands_cli.simple_main:main"
+scripts = { openhands = "openhands_cli.simple_main:main" }
 
 [dependency-groups]
 # Hatchling wheel target: include the package directory
@@ -41,6 +42,9 @@ dev = [
   "pytest-xdist>=3.6.1",
   "ruff>=0.11.8",
 ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = [ "openhands_cli" ]
@@ -95,6 +99,8 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
-[tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "189979a5013751aa86852ab41afe9a79555e62ac" }
+# UNCOMMENT TO USE EXACT COMMIT FROM AGENT-SDK
+
+# [tool.uv.sources]
+# openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-sdk", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }
+# openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands-tools", rev = "512399d896521aee3131eea4bb59087fb9dfa243" }

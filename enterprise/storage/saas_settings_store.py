@@ -24,7 +24,6 @@ from server.constants import (
 from server.logger import logger
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
-from storage.stored_settings import StoredSettings
 from storage.user_settings import UserSettings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -143,33 +142,6 @@ class SaasSettingsStore(SettingsStore):
 
         await self.store(settings)
         return settings
-
-    def load_legacy_db_settings(self, github_user_id: str) -> Settings | None:
-        if not github_user_id:
-            return None
-
-        with self.session_maker() as session:
-            settings = (
-                session.query(StoredSettings)
-                .filter(StoredSettings.id == github_user_id)
-                .first()
-            )
-            if settings is None:
-                return None
-
-            logger.info(
-                'saas_settings_store:load_legacy_db_settings:found',
-                extra={'github_user_id': github_user_id},
-            )
-            kwargs = {
-                c.name: getattr(settings, c.name)
-                for c in StoredSettings.__table__.columns
-                if c.name in Settings.model_fields
-            }
-            self._decrypt_kwargs(kwargs)
-            del kwargs['secrets_store']
-            settings = Settings(**kwargs)
-            return settings
 
     async def load_legacy_file_store_settings(self, github_user_id: str):
         if not github_user_id:

@@ -15,7 +15,6 @@ export interface CustomChatInputProps {
   showButton?: boolean;
   conversationStatus?: ConversationStatus | null;
   onSubmit: (message: string) => void;
-  onStop?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
   onFilesPaste?: (files: File[]) => void;
@@ -28,7 +27,6 @@ export function CustomChatInput({
   showButton = true,
   conversationStatus = null,
   onSubmit,
-  onStop,
   onFocus,
   onBlur,
   onFilesPaste,
@@ -88,7 +86,7 @@ export function CustomChatInput({
     messageToSend,
   );
 
-  const { handleSubmit, handleResumeAgent, handleStop } = useChatSubmission(
+  const { handleSubmit, handleResumeAgent } = useChatSubmission(
     chatInputRef as React.RefObject<HTMLDivElement | null>,
     fileInputRef as React.RefObject<HTMLInputElement | null>,
     smartResize,
@@ -143,7 +141,6 @@ export function CustomChatInput({
           chatInputRef={chatInputRef}
           handleFileIconClick={handleFileIconClick}
           handleSubmit={handleSubmit}
-          handleStop={handleStop}
           handleResumeAgent={handleResumeAgent}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -153,7 +150,6 @@ export function CustomChatInput({
           onKeyDown={(e) => handleKeyDown(e, isDisabled, handleSubmit)}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          onStop={onStop}
         />
       </div>
     </div>

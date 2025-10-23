@@ -2,12 +2,12 @@ import { render, screen } from "@testing-library/react";
 import { JupyterEditor } from "#/components/features/jupyter/jupyter";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { AgentState } from "#/types/agent-state";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 import { useJupyterStore } from "#/state/jupyter-store";
 
-// Mock the agent store
-vi.mock("#/stores/agent-store", () => ({
-  useAgentStore: vi.fn(),
+// Mock the agent state hook
+vi.mock("#/hooks/use-agent-state", () => ({
+  useAgentState: vi.fn(),
 }));
 
 // Mock react-i18next
@@ -30,11 +30,9 @@ describe("JupyterEditor", () => {
   });
 
   it("should have a scrollable container", () => {
-    // Mock agent store to return RUNNING state (not in RUNTIME_INACTIVE_STATES)
-    vi.mocked(useAgentStore).mockReturnValue({
+    // Mock agent state to return RUNNING state (not in RUNTIME_INACTIVE_STATES)
+    vi.mocked(useAgentState).mockReturnValue({
       curAgentState: AgentState.RUNNING,
-      setCurrentAgentState: vi.fn(),
-      reset: vi.fn(),
     });
 
     render(

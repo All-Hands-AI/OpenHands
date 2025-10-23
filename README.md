@@ -1,7 +1,7 @@
 <a name="readme-top"></a>
 
 <div align="center">
-  <img src="./docs/static/img/logo.png" alt="Logo" width="200">
+  <img src="https://raw.githubusercontent.com/All-Hands-AI/docs/main/openhands/static/img/logo.png" alt="Logo" width="200">
   <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
 
@@ -37,6 +37,12 @@ OpenHands agents can do anything a human developer can: modify code, run command
 call APIs, and yes—even copy code snippets from StackOverflow.
 
 Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for OpenHands Cloud](https://app.all-hands.dev) to get started.
+
+
+> [!IMPORTANT]
+> **Upcoming change**: We are renaming our GitHub Org from `All-Hands-AI` to `OpenHands` on October 20th, 2025.
+> Check the [tracking issue](https://github.com/All-Hands-AI/OpenHands/issues/11376) for more information.
+
 
 > [!IMPORTANT]
 > Using OpenHands for work? We'd love to chat! Fill out

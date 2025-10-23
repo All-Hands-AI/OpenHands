@@ -104,6 +104,7 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
     'claude-sonnet-4-5*',
+    'claude-haiku-4-5*',
 ]
 
 PROMPT_CACHE_PATTERNS: list[str] = [

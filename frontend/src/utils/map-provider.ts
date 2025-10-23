@@ -25,6 +25,7 @@ export const MAP_PROVIDER = {
   openrouter: "OpenRouter",
   openhands: "OpenHands",
   lemonade: "Lemonade",
+  clarifai: "Clarifai",
 };
 
 export const mapProvider = (provider: string) =>
