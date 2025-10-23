@@ -35,6 +35,46 @@ def session_maker(engine):
     return sessionmaker(bind=engine)
 
 
+@pytest.fixture
+def mock_request():
+    """Create a mock request object with proper URL structure for testing."""
+    return Request(
+        scope={
+            'type': 'http',
+            'path': '/api/billing/test',
+            'server': ('test.com', 80),
+        }
+    )
+
+
+@pytest.fixture
+def mock_checkout_request():
+    """Create a mock request object for checkout session tests."""
+    request = Request(
+        scope={
+            'type': 'http',
+            'path': '/api/billing/create-checkout-session',
+            'server': ('test.com', 80),
+        }
+    )
+    request._base_url = URL('http://test.com/')
+    return request
+
+
+@pytest.fixture
+def mock_subscription_request():
+    """Create a mock request object for subscription checkout session tests."""
+    request = Request(
+        scope={
+            'type': 'http',
+            'path': '/api/billing/subscription-checkout-session',
+            'server': ('test.com', 80),
+        }
+    )
+    request._base_url = URL('http://test.com/')
+    return request
+
+
 @pytest.mark.asyncio
 async def test_get_credits_lite_llm_error():
     with (
@@ -89,14 +129,10 @@ async def test_get_credits_success():
 
 
 @pytest.mark.asyncio
-async def test_create_checkout_session_stripe_error(session_maker):
+async def test_create_checkout_session_stripe_error(
+    session_maker, mock_checkout_request
+):
     """Test handling of Stripe API errors."""
-    mock_request = Request(
-        scope={
-            'type': 'http',
-        }
-    )
-    mock_request._base_url = URL('http://test.com/')
 
     mock_customer = stripe.Customer(
         id='mock-customer', metadata={'user_id': 'mock-user'}
@@ -117,17 +153,16 @@ async def test_create_checkout_session_stripe_error(session_maker):
             'server.auth.token_manager.TokenManager.get_user_info_from_user_id',
             AsyncMock(return_value={'email': 'testy@tester.com'}),
         ),
+        patch('server.routes.billing.validate_saas_environment'),
     ):
         await create_checkout_session(
-            CreateCheckoutSessionRequest(amount=25), mock_request, 'mock_user'
+            CreateCheckoutSessionRequest(amount=25), mock_checkout_request, 'mock_user'
         )
 
 
 @pytest.mark.asyncio
-async def test_create_checkout_session_success(session_maker):
+async def test_create_checkout_session_success(session_maker, mock_checkout_request):
     """Test successful creation of checkout session."""
-    mock_request = Request(scope={'type': 'http'})
-    mock_request._base_url = URL('http://test.com/')
 
     mock_session = MagicMock()
     mock_session.url = 'https://checkout.stripe.com/test-session'
@@ -151,12 +186,13 @@ async def test_create_checkout_session_success(session_maker):
             'server.auth.token_manager.TokenManager.get_user_info_from_user_id',
             AsyncMock(return_value={'email': 'testy@tester.com'}),
         ),
+        patch('server.routes.billing.validate_saas_environment'),
     ):
         mock_db_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_db_session
 
         result = await create_checkout_session(
-            CreateCheckoutSessionRequest(amount=25), mock_request, 'mock_user'
+            CreateCheckoutSessionRequest(amount=25), mock_checkout_request, 'mock_user'
         )
 
         assert isinstance(result, CreateBillingSessionResponse)

@@ -14,6 +14,10 @@ from openhands.utils.async_utils import call_sync_from_async
 # Helper functions for BYOR API key management
 async def get_byor_key_from_db(user_id: str) -> str | None:
     """Get the BYOR key from the database for a user."""
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
 
     def _get_byor_key():
         org = OrgStore.get_current_org_from_keycloak_user_id(user_id)
@@ -30,6 +34,10 @@ async def get_byor_key_from_db(user_id: str) -> str | None:
 
 async def store_byor_key_in_db(user_id: str, key: str) -> None:
     """Store the BYOR key in the database for a user."""
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
 
     def _update_user_settings():
         org = OrgStore.get_current_org_from_keycloak_user_id(user_id)

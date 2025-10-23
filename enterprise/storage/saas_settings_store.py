@@ -25,6 +25,41 @@ class SaasSettingsStore(OssSettingsStore):
     config: OpenHandsConfig
     ENCRYPT_VALUES = ['llm_api_key', 'llm_api_key_for_byor', 'search_api_key']
 
+    def get_user_settings_by_keycloak_id(
+        self, keycloak_user_id: str, session=None
+    ) -> UserSettings | None:
+        """
+        Get UserSettings by keycloak_user_id.
+
+        Args:
+            keycloak_user_id: The keycloak user ID to search for
+            session: Optional existing database session. If not provided, creates a new one.
+
+        Returns:
+            UserSettings object if found, None otherwise
+        """
+        if not keycloak_user_id:
+            return None
+
+        def _get_settings():
+            if session:
+                # Use provided session
+                return (
+                    session.query(UserSettings)
+                    .filter(UserSettings.keycloak_user_id == keycloak_user_id)
+                    .first()
+                )
+            else:
+                # Create new session
+                with self.session_maker() as new_session:
+                    return (
+                        new_session.query(UserSettings)
+                        .filter(UserSettings.keycloak_user_id == keycloak_user_id)
+                        .first()
+                    )
+
+        return _get_settings()
+
     async def load(self) -> Settings | None:
         user = UserStore.get_user_by_id(self.user_id)
         if not user:
@@ -105,10 +140,8 @@ class SaasSettingsStore(OssSettingsStore):
                 # Check if we need to migrate from user_settings
                 user_settings = None
                 with session_maker() as session:
-                    user_settings = (
-                        session.query(UserSettings)
-                        .filter(UserSettings.keycloak_user_id == self.user_id)
-                        .first()
+                    user_settings = self.get_user_settings_by_keycloak_id(
+                        self.user_id, session
                     )
                 if user_settings:
                     user = await UserStore.migrate_user(self.user_id, user_settings)
