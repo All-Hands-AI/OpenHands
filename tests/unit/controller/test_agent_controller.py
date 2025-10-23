@@ -353,6 +353,7 @@ async def test_run_controller_with_fatal_error(
         reverse=True, limit=1, event_types=(AgentStateChangedObservation)
     )
     assert len(error_observations) == 1
+    # Find the ERROR state change observation
     error_observation = error_observations[0]
     assert state.iteration_flag.current_value == 3
     assert state.agent_state == AgentState.ERROR
@@ -419,6 +420,8 @@ async def test_run_controller_stop_with_stuck(
         print(f'event {i}: {event_to_dict(event)}')
 
     assert state.iteration_flag.current_value == 3
+    # With loop recovery, we have additional events for pause state
+    # Now includes LoopDetectionObservation and state change events
     assert len(events) == 12
     # check the eventstream have 4 pairs of repeated actions and observations
     # With the refactored system message handling, we need to adjust the range
