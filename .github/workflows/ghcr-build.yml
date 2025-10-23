@@ -200,7 +200,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/all-hands-ai/enterprise-server
+          images: ghcr.io/openhands/enterprise-server
           tags: |
             type=ref,event=branch
             type=ref,event=pr
