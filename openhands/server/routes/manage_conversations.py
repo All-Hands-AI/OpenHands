@@ -1139,25 +1139,29 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
         app_conversation.sandbox_status, ConversationStatus.STOPPED
     )
 
-    runtime_status_mapping = {
-        AgentExecutionStatus.ERROR: RuntimeStatus.ERROR,
-        AgentExecutionStatus.IDLE: RuntimeStatus.READY,
-        AgentExecutionStatus.RUNNING: RuntimeStatus.READY,
-        AgentExecutionStatus.PAUSED: RuntimeStatus.READY,
-        AgentExecutionStatus.WAITING_FOR_CONFIRMATION: RuntimeStatus.READY,
-        AgentExecutionStatus.FINISHED: RuntimeStatus.READY,
-        AgentExecutionStatus.STUCK: RuntimeStatus.ERROR,
-    }
-    runtime_status = runtime_status_mapping.get(
-        app_conversation.agent_status, RuntimeStatus.ERROR
-    )
+    if conversation_status == ConversationStatus.RUNNING:
+        runtime_status_mapping = {
+            AgentExecutionStatus.ERROR: RuntimeStatus.ERROR,
+            AgentExecutionStatus.IDLE: RuntimeStatus.READY,
+            AgentExecutionStatus.RUNNING: RuntimeStatus.READY,
+            AgentExecutionStatus.PAUSED: RuntimeStatus.READY,
+            AgentExecutionStatus.WAITING_FOR_CONFIRMATION: RuntimeStatus.READY,
+            AgentExecutionStatus.FINISHED: RuntimeStatus.READY,
+            AgentExecutionStatus.STUCK: RuntimeStatus.ERROR,
+        }
+        runtime_status = runtime_status_mapping.get(
+            app_conversation.agent_status, RuntimeStatus.ERROR
+        )
+    else:
+        runtime_status = None
+
     title = (
         app_conversation.title
         or f'Conversation {base62.encodebytes(app_conversation.id.bytes)}'
     )
 
     return ConversationInfo(
-        conversation_id=str(app_conversation.id),
+        conversation_id=app_conversation.id.hex,
         title=title,
         last_updated_at=app_conversation.updated_at,
         status=conversation_status,
