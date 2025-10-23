@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
-from storage.stored_user_secrets import StoredUserSecrets
 
 # Mock the database module before importing UserStore
 with patch('storage.database.engine'), patch('storage.database.a_engine'):
@@ -12,6 +11,14 @@ with patch('storage.database.engine'), patch('storage.database.a_engine'):
 
 from openhands.storage.data_models.settings import Settings
 
+
+from sqlalchemy.orm import configure_mappers
+
+@pytest.fixture(autouse=True, scope="session")
+def load_all_models():
+    import storage
+    configure_mappers()    # fail fast if anything’s missing
+    yield
 
 @pytest.fixture
 def mock_litellm_api():
