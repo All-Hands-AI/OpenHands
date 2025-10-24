@@ -31,7 +31,6 @@ from openhands.core.config.security_config import SecurityConfig
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 from openhands.utils.import_utils import get_impl
-from openhands.utils.http_session import configure_http_session
 
 JWT_SECRET = '.jwt_secret'
 load_dotenv()
@@ -450,8 +449,6 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
                 get_file_store(cfg.file_store, cfg.file_store_path)
             )
         )
-
-    configure_http_session(verify=not cfg.security.insecure_skip_verify if cfg.security.insecure_skip_verify is not None else True)
 
     # If CLIRuntime is selected, disable Jupyter for all agents
     # Assuming 'cli' is the identifier for CLIRuntime

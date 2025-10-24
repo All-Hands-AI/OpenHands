@@ -31,23 +31,6 @@ def _get_client() -> httpx.Client:
     return _client
 
 
-def configure_http_session(*, verify: bool | None = None) -> None:
-    """Configure the shared HTTPX client used by HttpSession."""
-
-    global _client, _verify_certificates
-
-    target_verify = _verify_certificates if verify is None else verify
-
-    if target_verify == _verify_certificates and _client is not None:
-        return
-
-    with _client_lock:
-        if _client is not None:
-            _client.close()
-        _verify_certificates = target_verify
-        _client = _build_client(_verify_certificates)
-
-
 @dataclass
 class HttpSession:
     """request.Session is reusable after it has been closed. This behavior makes it
