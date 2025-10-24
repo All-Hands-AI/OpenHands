@@ -187,10 +187,11 @@ def test_get_kwargs_from_settings():
 
     # Should only include fields that exist in Org model
     assert 'agent' in kwargs
-    assert 'llm_model' in kwargs
+    assert 'default_llm_model' in kwargs
     assert kwargs['agent'] == 'CodeActAgent'
-    assert kwargs['llm_model'] == 'gpt-4'
+    assert kwargs['default_llm_model'] == 'gpt-4'
     # Should not include fields that don't exist in Org model
     assert 'language' not in kwargs  # language is not in Org model
     assert 'llm_api_key' not in kwargs
+    assert 'llm_model' not in kwargs
     assert 'enable_sound_notifications' not in kwargs
