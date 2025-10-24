@@ -129,9 +129,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
             query = query.order_by(StoredConversationMetadata.created_at.desc())
         elif sort_order == AppConversationSortOrder.UPDATED_AT:
-            query = query.order_by(StoredConversationMetadata.updated_at)
+            query = query.order_by(StoredConversationMetadata.last_updated_at)
         elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
-            query = query.order_by(StoredConversationMetadata.updated_at.desc())
+            query = query.order_by(StoredConversationMetadata.last_updated_at.desc())
         elif sort_order == AppConversationSortOrder.TITLE:
             query = query.order_by(StoredConversationMetadata.title)
         elif sort_order == AppConversationSortOrder.TITLE_DESC:

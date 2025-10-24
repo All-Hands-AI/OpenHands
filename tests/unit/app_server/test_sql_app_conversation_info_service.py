@@ -457,7 +457,9 @@ class TestSQLAppConversationInfoService:
             await service_with_user_id.save_app_conversation_info(info)
 
         # Count without filters
-        count = await service_with_user_id.count_app_conversation_info()
+        count = await service_with_user_id.count_app_conversation_info(
+            updated_at__gte=datetime(1900, 1, 1, tzinfo=timezone.utc)
+        )
         assert count == len(multiple_conversation_infos)
 
     @pytest.mark.asyncio
