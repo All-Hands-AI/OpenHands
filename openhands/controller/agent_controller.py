@@ -1318,7 +1318,6 @@ You can now provide new instructions to continue.
         self, stuck_analysis: StuckDetector.StuckAnalysis
     ) -> None:
         """Restart the agent using the last user message as the new instruction."""
-        from openhands.events.action.message import MessageAction
 
         # Find the last user message in the history
         last_user_message = None
