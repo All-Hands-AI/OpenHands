@@ -31,6 +31,9 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
 
   const hasRepository = !!selectedRepository;
 
+  // Check if conversation exists
+  const isConversationDataExisted = !!conversation;
+
   return (
     <div className="flex flex-row items-center">
       <div className="flex flex-row gap-2.5 items-center overflow-x-auto flex-wrap md:flex-nowrap relative scrollbar-hide">
@@ -66,6 +69,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
             >
               <GitControlBarPullButton
                 onSuggestionsClick={onSuggestionsClick}
+                isConversationDataExisted={isConversationDataExisted}
               />
             </GitControlBarTooltipWrapper>
 
@@ -78,6 +82,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
                 onSuggestionsClick={onSuggestionsClick}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
+                isConversationDataExisted={isConversationDataExisted}
               />
             </GitControlBarTooltipWrapper>
 
@@ -90,6 +95,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
                 onSuggestionsClick={onSuggestionsClick}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
+                isConversationDataExisted={isConversationDataExisted}
               />
             </GitControlBarTooltipWrapper>
           </>

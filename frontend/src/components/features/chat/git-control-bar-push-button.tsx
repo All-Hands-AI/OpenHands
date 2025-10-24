@@ -10,19 +10,22 @@ interface GitControlBarPushButtonProps {
   onSuggestionsClick: (value: string) => void;
   hasRepository: boolean;
   currentGitProvider: Provider;
+  isConversationDataExisted?: boolean;
 }
 
 export function GitControlBarPushButton({
   onSuggestionsClick,
   hasRepository,
   currentGitProvider,
+  isConversationDataExisted = true,
 }: GitControlBarPushButtonProps) {
   const { t } = useTranslation();
 
   const { providers } = useUserProviders();
 
   const providersAreSet = providers.length > 0;
-  const isButtonEnabled = providersAreSet && hasRepository;
+  const isButtonEnabled =
+    providersAreSet && hasRepository && isConversationDataExisted;
 
   const handlePushClick = () => {
     posthog.capture("push_button_clicked");
