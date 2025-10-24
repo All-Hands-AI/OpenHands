@@ -180,9 +180,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = select(func.count(StoredConversationMetadata.conversation_id))
         user_id = await self.user_context.get_user_id()
         if user_id:
-            query = query.where(
-                StoredConversationMetadata.created_by_user_id == user_id
-            )
+            query = query.where(StoredConversationMetadata.user_id == user_id)
 
         query = self._apply_filters(
             query=query,
