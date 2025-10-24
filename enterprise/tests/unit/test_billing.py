@@ -1,3 +1,4 @@
+import uuid
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -138,6 +139,9 @@ async def test_create_checkout_session_stripe_error(
         id='mock-customer', metadata={'user_id': 'mock-user'}
     )
     mock_customer_create = AsyncMock(return_value=mock_customer)
+    mock_org = MagicMock()
+    mock_org.id = uuid.uuid4()
+    mock_org.contact_email = 'testy@tester.com'
     with (
         pytest.raises(Exception, match='Stripe API Error'),
         patch('stripe.Customer.create_async', mock_customer_create),
@@ -149,6 +153,10 @@ async def test_create_checkout_session_stripe_error(
             AsyncMock(side_effect=Exception('Stripe API Error')),
         ),
         patch('integrations.stripe_service.session_maker', session_maker),
+        patch(
+            'storage.org_store.OrgStore.get_current_org_from_keycloak_user_id',
+            return_value=mock_org,
+        ),
         patch(
             'server.auth.token_manager.TokenManager.get_user_info_from_user_id',
             AsyncMock(return_value={'email': 'testy@tester.com'}),
@@ -174,6 +182,10 @@ async def test_create_checkout_session_success(session_maker, mock_checkout_requ
         id='mock-customer', metadata={'user_id': 'mock-user'}
     )
     mock_customer_create = AsyncMock(return_value=mock_customer)
+    mock_org = MagicMock()
+    mock_org_id = uuid.uuid4()
+    mock_org.id = mock_org_id
+    mock_org.contact_email = 'testy@tester.com'
     with (
         patch('stripe.Customer.create_async', mock_customer_create),
         patch(
@@ -182,6 +194,10 @@ async def test_create_checkout_session_success(session_maker, mock_checkout_requ
         patch('stripe.checkout.Session.create_async', mock_create),
         patch('server.routes.billing.session_maker') as mock_session_maker,
         patch('integrations.stripe_service.session_maker', session_maker),
+        patch(
+            'storage.org_store.OrgStore.get_current_org_from_keycloak_user_id',
+            return_value=mock_org,
+        ),
         patch(
             'server.auth.token_manager.TokenManager.get_user_info_from_user_id',
             AsyncMock(return_value={'email': 'testy@tester.com'}),
@@ -296,8 +312,8 @@ async def test_success_callback_success():
             },
         ),
         patch(
-            'storage.lite_llm_manager.LiteLlmManager.update_user_in_team'
-        ) as mock_update_user,
+            'storage.lite_llm_manager.LiteLlmManager.update_team_and_users_budget'
+        ) as mock_update_budget,
     ):
         mock_db_session = MagicMock()
         mock_db_session.query.return_value.filter.return_value.filter.return_value.first.return_value = mock_billing_session
@@ -316,15 +332,14 @@ async def test_success_callback_success():
         )
 
         # Verify LiteLLM API calls
-        mock_update_user.assert_called_once_with(
-            'mock_user',
+        mock_update_budget.assert_called_once_with(
             'mock_org_id',
             125.0,  # 100 + (25.00 from Stripe)
         )
 
         # Verify database updates
         assert mock_billing_session.status == 'completed'
-        assert mock_billing_session.price == 2500
+        assert mock_billing_session.price == 25.0
         mock_db_session.merge.assert_called_once()
         mock_db_session.commit.assert_called_once()
 
@@ -425,7 +440,7 @@ async def test_has_payment_method_with_payment_method():
 
     mock_has_payment_method = AsyncMock(return_value=True)
     with patch(
-        'integrations.stripe_service.has_payment_method', mock_has_payment_method
+        'server.routes.billing.stripe_service.has_payment_method_by_user_id', mock_has_payment_method
     ):
         result = await has_payment_method('mock_user')
         assert result is True
@@ -437,7 +452,7 @@ async def test_has_payment_method_without_payment_method():
     """Test has_payment_method returns False when user has no payment method."""
     mock_has_payment_method = AsyncMock(return_value=False)
     with patch(
-        'integrations.stripe_service.has_payment_method', mock_has_payment_method
+        'server.routes.billing.stripe_service.has_payment_method_by_user_id', mock_has_payment_method
     ):
         mock_has_payment_method.return_value = False
         result = await has_payment_method('mock_user')
@@ -448,10 +463,17 @@ async def test_has_payment_method_without_payment_method():
 @pytest.mark.asyncio
 async def test_create_customer_setup_session_success():
     """Test successful creation of customer setup session."""
-    mock_request = Request(scope={'type': 'http', 'headers': []})
+    mock_request = Request(
+        scope={
+            'type': 'http',
+            'path': '/api/billing/create-customer-setup-session',
+            'server': ('test.com', 80),
+            'headers': [],
+        }
+    )
     mock_request._base_url = URL('http://test.com/')
 
-    mock_customer = 'mock-customer-id'
+    mock_customer_info = {'customer_id': 'mock-customer-id', 'org_id': 'mock-org-id'}
     mock_session = MagicMock()
     mock_session.url = 'https://checkout.stripe.com/test-session'
     mock_create = AsyncMock(return_value=mock_session)
@@ -459,9 +481,10 @@ async def test_create_customer_setup_session_success():
     with (
         patch(
             'integrations.stripe_service.find_or_create_customer_by_user_id',
-            AsyncMock(return_value=mock_customer),
+            AsyncMock(return_value=mock_customer_info),
         ),
         patch('stripe.checkout.Session.create_async', mock_create),
+        patch('server.routes.billing.validate_saas_environment'),
     ):
         result = await create_customer_setup_session(mock_request, 'mock_user')
 
@@ -470,7 +493,7 @@ async def test_create_customer_setup_session_success():
 
         # Verify Stripe session creation parameters
         mock_create.assert_called_once_with(
-            customer=mock_customer,
+            customer='mock-customer-id',
             mode='setup',
             payment_method_types=['card'],
             success_url='http://test.com/?free_credits=success',
