@@ -52,10 +52,10 @@ from openhands.storage.locations import (
     get_conversation_events_dir,
 )
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 from openhands.utils.utils import create_registry_and_conversation_stats
-from openhands.utils.http_session import httpx_verify_option
 
 # Pattern for accessing runtime pods externally
 RUNTIME_URL_PATTERN = os.getenv(
@@ -270,7 +270,7 @@ class SaasNestedConversationManager(ConversationManager):
             verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': session_api_key,
-            }
+            },
         ) as client:
             await self._setup_nested_settings(client, api_url, settings)
             await self._setup_provider_tokens(client, api_url, settings)
@@ -489,7 +489,7 @@ class SaasNestedConversationManager(ConversationManager):
             verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': runtime['session_api_key'],
-            }
+            },
         ) as client:
             response = await client.post(f'{nested_url}/events', json=data)
             response.raise_for_status()
@@ -557,7 +557,7 @@ class SaasNestedConversationManager(ConversationManager):
                 verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': session_api_key,
-                }
+                },
             ) as client:
                 # Query the nested runtime for conversation info
                 response = await client.get(nested_url)

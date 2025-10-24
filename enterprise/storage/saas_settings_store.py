@@ -219,7 +219,7 @@ class SaasSettingsStore(SettingsStore):
                 verify=httpx_verify_option(),
                 headers={
                     'x-goog-api-key': LITE_LLM_API_KEY,
-                }
+                },
             ) as client:
                 # Get the previous max budget to prevent accidental loss
                 # In Litellm a get always succeeds, regardless of whether the user actually exists

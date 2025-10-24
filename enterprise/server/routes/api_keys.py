@@ -72,7 +72,7 @@ async def generate_byor_key(user_id: str) -> str | None:
             verify=httpx_verify_option(),
             headers={
                 'x-goog-api-key': LITE_LLM_API_KEY,
-            }
+            },
         ) as client:
             response = await client.post(
                 f'{LITE_LLM_API_URL}/key/generate',
@@ -125,7 +125,7 @@ async def delete_byor_key_from_litellm(user_id: str, byor_key: str) -> bool:
             verify=httpx_verify_option(),
             headers={
                 'x-goog-api-key': LITE_LLM_API_KEY,
-            }
+            },
         ) as client:
             # Delete the key directly using the key value
             delete_url = f'{LITE_LLM_API_URL}/key/delete'
