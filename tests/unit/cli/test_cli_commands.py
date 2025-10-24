@@ -573,7 +573,7 @@ class TestHandleResumeCommand:
 
         # Call the function with PAUSED state
         close_repl, new_session_requested = await handle_resume_command(
-            event_stream, AgentState.PAUSED
+            '/resume', event_stream, AgentState.PAUSED
         )
 
         # Check that the event stream add_event was called with the correct message action
@@ -604,7 +604,7 @@ class TestHandleResumeCommand:
         event_stream = MagicMock(spec=EventStream)
 
         close_repl, new_session_requested = await handle_resume_command(
-            event_stream, invalid_state
+            '/resume', event_stream, invalid_state
         )
 
         # Check that no event was added to the stream
