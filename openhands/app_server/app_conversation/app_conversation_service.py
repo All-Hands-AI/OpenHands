@@ -88,7 +88,10 @@ class AppConversationService(ABC):
 
     @abstractmethod
     async def run_setup_scripts(
-        self, task: AppConversationStartTask, workspace: Workspace
+        self,
+        task: AppConversationStartTask,
+        workspace: Workspace,
+        working_dir: str,
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Run the setup scripts for the project and yield status updates"""
         yield task
