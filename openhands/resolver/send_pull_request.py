@@ -23,6 +23,7 @@ from openhands.resolver.patching import apply_diff, parse_patch
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import identify_token
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
+from openhands.utils.environment import get_effective_llm_base_url
 
 
 def apply_patch(repo_dir: str, patch: str) -> None:
@@ -707,10 +708,22 @@ def main() -> None:
     )
 
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
+    model_name = my_args.llm_model or os.environ['LLM_MODEL']
+    env_base_url = os.environ.get('LLM_BASE_URL')
+    configured_base_url = my_args.llm_base_url
+    if configured_base_url not in (None, ''):
+        resolved_base_url = configured_base_url
+    elif env_base_url not in (None, ''):
+        resolved_base_url = env_base_url
+    else:
+        resolved_base_url = get_effective_llm_base_url(
+            model_name,
+            configured_base_url,
+        )
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ['LLM_MODEL'],
+        model=model_name,
         api_key=SecretStr(api_key) if api_key else None,
-        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+        base_url=resolved_base_url,
     )
 
     if not os.path.exists(my_args.output_dir):

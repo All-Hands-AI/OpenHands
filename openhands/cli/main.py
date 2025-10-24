@@ -86,6 +86,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.utils.environment import get_effective_llm_base_url
 from openhands.utils.utils import create_registry_and_conversation_stats
 
 
@@ -650,7 +651,18 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
             logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
-            llm_config.base_url = settings.llm_base_url
+            env_base_url = os.environ.get('LLM_BASE_URL')
+            settings_base_url = settings.llm_base_url
+            if env_base_url not in (None, ''):
+                llm_config.base_url = env_base_url
+            elif settings_base_url not in (None, ''):
+                llm_config.base_url = settings_base_url
+            else:
+                llm_config.base_url = get_effective_llm_base_url(
+                    llm_config.model,
+                    settings_base_url,
+                    llm_config.custom_llm_provider,
+                )
             config.set_llm_config(llm_config)
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
