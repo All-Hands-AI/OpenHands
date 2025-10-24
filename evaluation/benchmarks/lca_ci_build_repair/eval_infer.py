@@ -117,12 +117,12 @@ def run_eval(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
-    action = CmdRunAction(command='poetry install')
+    action = CmdRunAction(command='pip install -U uv && uv sync')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
     # Set up the task environment
-    commandf = f'poetry run python run_eval_jobs.py --model-name "{model_name}" --config-path "{lca_ci_path}/config.yaml" --job-ids-file "/tmp/output_lca.jsonl" --result-filename "testfile.jsonl"  > /tmp/single_output.txt'
+    commandf = f'uv run python run_eval_jobs.py --model-name "{model_name}" --config-path "{lca_ci_path}/config.yaml" --job-ids-file "/tmp/output_lca.jsonl" --result-filename "testfile.jsonl"  > /tmp/single_output.txt'
     action = CmdRunAction(command=commandf)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)

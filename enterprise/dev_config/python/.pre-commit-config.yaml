@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: docs/modules/python
@@ -13,15 +13,16 @@ repos:
       - id: debug-statements
         files: ^enterprise/
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.16
+    rev: v0.24.1
     hooks:
       - id: validate-pyproject
         types: [toml]
+        additional_dependencies: ["validate-pyproject-schema-store[all]"]
         files: ^enterprise/pyproject\.toml$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.4.1
+    rev: v0.12.12
     hooks:
       # Run the linter.
       - id: ruff
@@ -36,7 +37,7 @@ repos:
         files: ^enterprise/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.9.0
+    rev: v1.17.1
     hooks:
       - id: mypy
         additional_dependencies:

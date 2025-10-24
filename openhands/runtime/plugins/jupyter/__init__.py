@@ -47,9 +47,8 @@ class JupyterPlugin(Plugin):
             # Non-LocalRuntime
             prefix = f'su - {username} -s ' if SU_TO_USER else ''
             # cd to code repo, setup all env vars and run micromamba
-            poetry_prefix = (
+            uv_prefix = (
                 'cd /openhands/code\n'
-                'export POETRY_VIRTUALENVS_PATH=/openhands/poetry;\n'
                 'export PYTHONPATH=/openhands/code:$PYTHONPATH;\n'
                 'export MAMBA_ROOT_PREFIX=/openhands/micromamba;\n'
                 '/openhands/micromamba/bin/micromamba run -n openhands '
@@ -64,7 +63,7 @@ class JupyterPlugin(Plugin):
                     'This is required for the jupyter plugin to work with LocalRuntime.'
                 )
             # The correct environment is ensured by the PATH in LocalRuntime.
-            poetry_prefix = f'cd {code_repo_path}\n'
+            uv_prefix = f'cd {code_repo_path}\n'
 
         if is_windows:
             # Windows-specific command format
@@ -113,7 +112,7 @@ class JupyterPlugin(Plugin):
             # Unix systems (Linux/macOS)
             jupyter_launch_command = (
                 f"{prefix}/bin/bash << 'EOF'\n"
-                f'{poetry_prefix}'
+                f'{uv_prefix}'
                 f'"{sys.executable}" -m jupyter kernelgateway '
                 '--KernelGatewayApp.ip=0.0.0.0 '
                 f'--KernelGatewayApp.port={self.kernel_gateway_port}\n'

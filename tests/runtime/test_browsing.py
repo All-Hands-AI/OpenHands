@@ -20,8 +20,8 @@ from openhands.events.observation import (
 )
 
 # ============================================================================================================================
-# Browsing tests, without evaluation (poetry install --without evaluation)
-# For eval environments, tests need to run with poetry install
+# Browsing tests, without evaluation (uv sync --no-group evaluation)
+# For eval environments, tests need to run with uv sync
 # ============================================================================================================================
 
 

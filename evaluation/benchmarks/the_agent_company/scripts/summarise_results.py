@@ -184,7 +184,7 @@ def is_perfect_completion(total: int, result: int) -> bool:
 
 def main():
     if len(sys.argv) != 2:
-        print('Usage: poetry run python summarise_results.py <folder_path>')
+        print('Usage: uv run python summarise_results.py <folder_path>')
         sys.exit(1)
 
     folder_path = sys.argv[1]

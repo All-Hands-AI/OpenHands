@@ -33,7 +33,7 @@ Results will be in `evaluation/evaluation_outputs/outputs/visualwebarena/`
 To calculate the success rate, run:
 
 ```sh
-poetry run python evaluation/benchmarks/visualwebarena/get_success_rate.py evaluation/evaluation_outputs/outputs/visualwebarena/SOME_AGENT/EXP_NAME/output.jsonl
+uv run python evaluation/benchmarks/visualwebarena/get_success_rate.py evaluation/evaluation_outputs/outputs/visualwebarena/SOME_AGENT/EXP_NAME/output.jsonl
 ```
 
 ## Submit your evaluation results

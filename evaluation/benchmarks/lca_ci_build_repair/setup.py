@@ -47,13 +47,13 @@ def setup():
     print(f'Copying config.yaml to {lca_ci_config_path}')
     shutil.copy(config_path, lca_ci_config_path)
 
-    # Run poetry install in LCA_CI_PATH
-    print(f"Running 'poetry install' in {lca_ci_path}")
+    # Install uv in LCA_CI_PATH
+    print(f"Running 'uv sync' in {lca_ci_path}")
     result = subprocess.run(
-        ['poetry', 'install'], cwd=lca_ci_path, capture_output=True, text=True
+        ['uv', 'sync'], cwd=lca_ci_path, capture_output=True, text=True
     )
     if result.returncode != 0:
-        print(f'Warning during poetry install: {result.stderr}')
+        print(f'Warning during uv sync: {result.stderr}')
 
 
 if __name__ == '__main__':

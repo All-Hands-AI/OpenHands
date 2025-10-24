@@ -131,13 +131,17 @@ class TestProcessEvent:
         """Test processing a regular event."""
         content = {'type': 'action', 'action': 'run', 'args': {'command': 'ls'}}
 
-        with patch(
-            'server.utils.conversation_callback_utils.file_store'
-        ) as mock_file_store, patch(
-            'server.utils.conversation_callback_utils.event_from_dict'
-        ) as mock_event_from_dict, patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
+        with (
+            patch(
+                'server.utils.conversation_callback_utils.file_store'
+            ) as mock_file_store,
+            patch(
+                'server.utils.conversation_callback_utils.event_from_dict'
+            ) as mock_event_from_dict,
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
         ):
             mock_event = MagicMock()
             mock_event_from_dict.return_value = mock_event
@@ -157,20 +161,27 @@ class TestProcessEvent:
         """Test processing an AgentStateChangedObservation event."""
         content = {'type': 'observation', 'observation': 'agent_state_changed'}
 
-        with patch(
-            'server.utils.conversation_callback_utils.file_store'
-        ) as mock_file_store, patch(
-            'server.utils.conversation_callback_utils.event_from_dict'
-        ) as mock_event_from_dict, patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.utils.conversation_callback_utils.invoke_conversation_callbacks'
-        ) as mock_invoke_callbacks, patch(
-            'server.utils.conversation_callback_utils.update_active_working_seconds'
-        ) as mock_update_working_seconds, patch(
-            'server.utils.conversation_callback_utils.EventStore'
-        ) as mock_event_store_class:
+        with (
+            patch(
+                'server.utils.conversation_callback_utils.file_store'
+            ) as mock_file_store,
+            patch(
+                'server.utils.conversation_callback_utils.event_from_dict'
+            ) as mock_event_from_dict,
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.utils.conversation_callback_utils.invoke_conversation_callbacks'
+            ) as mock_invoke_callbacks,
+            patch(
+                'server.utils.conversation_callback_utils.update_active_working_seconds'
+            ) as mock_update_working_seconds,
+            patch(
+                'server.utils.conversation_callback_utils.EventStore'
+            ) as mock_event_store_class,
+        ):
             mock_event = MagicMock(spec=AgentStateChangedObservation)
             mock_event.agent_state = (
                 'stopped'  # Set a non-RUNNING state to trigger the update
@@ -194,20 +205,27 @@ class TestProcessEvent:
         """Test processing an AgentStateChangedObservation event with RUNNING state."""
         content = {'type': 'observation', 'observation': 'agent_state_changed'}
 
-        with patch(
-            'server.utils.conversation_callback_utils.file_store'
-        ) as mock_file_store, patch(
-            'server.utils.conversation_callback_utils.event_from_dict'
-        ) as mock_event_from_dict, patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.utils.conversation_callback_utils.invoke_conversation_callbacks'
-        ) as mock_invoke_callbacks, patch(
-            'server.utils.conversation_callback_utils.update_active_working_seconds'
-        ) as mock_update_working_seconds, patch(
-            'server.utils.conversation_callback_utils.EventStore'
-        ) as mock_event_store_class:
+        with (
+            patch(
+                'server.utils.conversation_callback_utils.file_store'
+            ) as mock_file_store,
+            patch(
+                'server.utils.conversation_callback_utils.event_from_dict'
+            ) as mock_event_from_dict,
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.utils.conversation_callback_utils.invoke_conversation_callbacks'
+            ) as mock_invoke_callbacks,
+            patch(
+                'server.utils.conversation_callback_utils.update_active_working_seconds'
+            ) as mock_update_working_seconds,
+            patch(
+                'server.utils.conversation_callback_utils.EventStore'
+            ) as mock_event_store_class,
+        ):
             mock_event = MagicMock(spec=AgentStateChangedObservation)
             mock_event.agent_state = 'running'  # Set RUNNING state to skip the update
             mock_event_from_dict.return_value = mock_event
@@ -344,15 +362,19 @@ class TestOnWrite:
         content = {'accumulated_cost': 20.0}
         mock_request.json.return_value = content
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
 
             result = await on_write(
@@ -371,16 +393,21 @@ class TestOnWrite:
         content = {'type': 'action', 'action': 'run'}
         mock_request.json.return_value = content
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key, patch(
-            'server.utils.conversation_callback_utils.file_store'
-        ) as mock_file_store, patch(
-            'server.utils.conversation_callback_utils.event_from_dict'
-        ) as mock_event_from_dict:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+            patch(
+                'server.utils.conversation_callback_utils.file_store'
+            ) as mock_file_store,
+            patch(
+                'server.utils.conversation_callback_utils.event_from_dict'
+            ) as mock_event_from_dict,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
             mock_event_from_dict.return_value = MagicMock()
 
@@ -398,12 +425,15 @@ class TestOnWrite:
         self, mock_request, session_maker_with_minimal_fixtures
     ):
         """Test request with invalid API key."""
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
 
             result = await on_write(
@@ -426,12 +456,15 @@ class TestOnWrite:
         self, mock_request, session_maker_with_minimal_fixtures
     ):
         """Test request with unsupported subpath."""
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
 
             result = await on_write(
@@ -448,12 +481,15 @@ class TestOnWrite:
         mock_request = MagicMock(spec=Request)
         mock_request.json = AsyncMock(side_effect=ValueError('Invalid JSON'))
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
 
             result = await on_write(
@@ -569,14 +605,18 @@ class TestProcessBatchOperationsBackground:
             )
         ]
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key, patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
         ):
             mock_get_api_key.return_value = 'correct-api-key'
 
@@ -608,16 +648,21 @@ class TestProcessBatchOperationsBackground:
             )
         ]
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key, patch(
-            'server.utils.conversation_callback_utils.file_store'
-        ) as mock_file_store, patch(
-            'server.utils.conversation_callback_utils.event_from_dict'
-        ) as mock_event_from_dict:
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+            patch(
+                'server.utils.conversation_callback_utils.file_store'
+            ) as mock_file_store,
+            patch(
+                'server.utils.conversation_callback_utils.event_from_dict'
+            ) as mock_event_from_dict,
+        ):
             mock_get_api_key.return_value = 'correct-api-key'
             mock_event_from_dict.return_value = MagicMock()
 
@@ -644,14 +689,18 @@ class TestProcessBatchOperationsBackground:
             ),
         ]
 
-        with patch(
-            'server.routes.event_webhook.session_maker',
-            session_maker_with_minimal_fixtures,
-        ), patch(
-            'server.routes.event_webhook._get_session_api_key'
-        ) as mock_get_api_key, patch(
-            'server.utils.conversation_callback_utils.session_maker',
-            session_maker_with_minimal_fixtures,
+        with (
+            patch(
+                'server.routes.event_webhook.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
+            patch(
+                'server.routes.event_webhook._get_session_api_key'
+            ) as mock_get_api_key,
+            patch(
+                'server.utils.conversation_callback_utils.session_maker',
+                session_maker_with_minimal_fixtures,
+            ),
         ):
             # First call succeeds, second fails
             mock_get_api_key.side_effect = ['correct-api-key', 'wrong-api-key']

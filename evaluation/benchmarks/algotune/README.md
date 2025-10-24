@@ -31,9 +31,9 @@ Each task directory (`tasks/algotune-*`) contains:
 Use the main evaluation script:
 
 ```bash
-poetry run python evaluation/benchmarks/algotune/adapter/run_adapter.py --output-path evaluation/benchmarks/algotune/tasks
+uv run python evaluation/benchmarks/algotune/adapter/run_adapter.py --output-path evaluation/benchmarks/algotune/tasks
 
-poetry run python evaluation/benchmarks/algotune/run_infer.py \
+uv run python evaluation/benchmarks/algotune/run_infer.py \
   --agent-cls CodeActAgent \
   --llm-config llm.gpt-5 \
   --optim_task all \

@@ -33,7 +33,7 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "HUBS: $HUBS"
 
-COMMAND="poetry run python evaluation/benchmarks/gorilla/run_infer.py \
+COMMAND="uv run python evaluation/benchmarks/gorilla/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \
