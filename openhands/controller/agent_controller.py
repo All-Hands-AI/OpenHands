@@ -1337,7 +1337,7 @@ You can now provide new instructions to continue.
             # Re-use the last user message as the new instruction
             self.event_stream.add_event(
                 LoopDetectionObservation(
-                    content=f"""\n✅ Restarting with your last instruction: {last_user_message.content}'
+                    content=f"""\n✅ Restarting with your last instruction: {last_user_message.content}
 Agent is now continuing with the same task...
 """
                 ),
