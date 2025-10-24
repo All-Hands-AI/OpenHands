@@ -173,7 +173,6 @@ class UserStore:
         with session_maker() as session:
             return session.query(User).all()
 
-
     @staticmethod
     async def create_default_settings(
         org_id: str, keycloak_user_id: str

@@ -110,7 +110,9 @@ async def test_find_customer_id_by_user_id_falls_back_to_stripe(
 
     # Verify that Stripe was searched with the org_id
     mock_search.assert_called_once()
-    assert f"metadata['org_id']:'{str(test_org_id)}'" in mock_search.call_args[1]['query']
+    assert (
+        f"metadata['org_id']:'{str(test_org_id)}'" in mock_search.call_args[1]['query']
+    )
 
 
 @pytest.mark.asyncio

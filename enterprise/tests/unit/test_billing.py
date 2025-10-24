@@ -440,7 +440,8 @@ async def test_has_payment_method_with_payment_method():
 
     mock_has_payment_method = AsyncMock(return_value=True)
     with patch(
-        'server.routes.billing.stripe_service.has_payment_method_by_user_id', mock_has_payment_method
+        'server.routes.billing.stripe_service.has_payment_method_by_user_id',
+        mock_has_payment_method,
     ):
         result = await has_payment_method('mock_user')
         assert result is True
@@ -452,7 +453,8 @@ async def test_has_payment_method_without_payment_method():
     """Test has_payment_method returns False when user has no payment method."""
     mock_has_payment_method = AsyncMock(return_value=False)
     with patch(
-        'server.routes.billing.stripe_service.has_payment_method_by_user_id', mock_has_payment_method
+        'server.routes.billing.stripe_service.has_payment_method_by_user_id',
+        mock_has_payment_method,
     ):
         mock_has_payment_method.return_value = False
         result = await has_payment_method('mock_user')

@@ -37,7 +37,6 @@ from storage.user import User
 from storage.user_repo_map import UserRepositoryMap
 from storage.user_settings import UserSettings
 
-
 __all__ = [
     'ApiKey',
     'AuthTokens',

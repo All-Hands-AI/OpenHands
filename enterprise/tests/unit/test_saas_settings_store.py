@@ -1,5 +1,4 @@
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID
 
 import pytest
 from pydantic import SecretStr
@@ -11,13 +10,10 @@ from openhands.server.settings import Settings
 with patch('storage.database.engine'), patch('storage.database.a_engine'):
     from server.constants import (
         LITE_LLM_API_URL,
-        LITE_LLM_TEAM_ID,
     )
     from storage.saas_settings_store import SaasSettingsStore
     from storage.user_settings import UserSettings
-    from storage.user import User
-    from storage.org import Org
-    from storage.org_member import OrgMember
+
 
 @pytest.fixture
 def mock_github_user():
@@ -39,7 +35,9 @@ def mock_config():
 
 @pytest.fixture
 def settings_store(session_maker, mock_config):
-    store = SaasSettingsStore('5594c7b6-f959-4b81-92e9-b09c206f5081', session_maker, mock_config)
+    store = SaasSettingsStore(
+        '5594c7b6-f959-4b81-92e9-b09c206f5081', session_maker, mock_config
+    )
 
     # Patch the load method to read from UserSettings table directly (for testing)
     async def patched_load():
@@ -57,7 +55,7 @@ def settings_store(session_maker, mock_config):
                     agent='CodeActAgent',
                     language='en',
                 )
-            
+
             # Decrypt and convert to Settings
             kwargs = {}
             for column in UserSettings.__table__.columns:
@@ -65,7 +63,7 @@ def settings_store(session_maker, mock_config):
                     value = getattr(user_settings, column.name, None)
                     if value is not None:
                         kwargs[column.name] = value
-            
+
             store._decrypt_kwargs(kwargs)
             settings = Settings(**kwargs)
             settings.email = 'test@example.com'
@@ -148,9 +146,7 @@ async def test_store_and_load_keycloak_user(settings_store):
 
 
 @pytest.mark.asyncio
-async def test_load_returns_default_when_not_found(
-    settings_store, session_maker
-):
+async def test_load_returns_default_when_not_found(settings_store, session_maker):
     file_store = MagicMock()
     file_store.read.side_effect = FileNotFoundError()
 
@@ -163,6 +159,7 @@ async def test_load_returns_default_when_not_found(
         assert loaded_settings.agent == 'CodeActAgent'
         assert loaded_settings.llm_api_key.get_secret_value() == 'test_api_key'
         assert loaded_settings.llm_base_url == 'http://test.url'
+
 
 @pytest.mark.asyncio
 async def test_encryption(settings_store):
@@ -178,7 +175,9 @@ async def test_encryption(settings_store):
     with settings_store.session_maker() as session:
         stored = (
             session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == '5594c7b6-f959-4b81-92e9-b09c206f5081')
+            .filter(
+                UserSettings.keycloak_user_id == '5594c7b6-f959-4b81-92e9-b09c206f5081'
+            )
             .first()
         )
         # The stored key should be encrypted

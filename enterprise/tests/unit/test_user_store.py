@@ -9,16 +9,16 @@ with patch('storage.database.engine'), patch('storage.database.a_engine'):
     from storage.user import User
     from storage.user_store import UserStore
 
+from sqlalchemy.orm import configure_mappers
+
 from openhands.storage.data_models.settings import Settings
 
 
-from sqlalchemy.orm import configure_mappers
-
-@pytest.fixture(autouse=True, scope="session")
+@pytest.fixture(autouse=True, scope='session')
 def load_all_models():
-    import storage
-    configure_mappers()    # fail fast if anything’s missing
+    configure_mappers()  # fail fast if anything’s missing
     yield
+
 
 @pytest.fixture
 def mock_litellm_api():
@@ -64,9 +64,7 @@ async def test_create_default_settings_no_org_id():
 
 
 @pytest.mark.asyncio
-async def test_create_default_settings_require_org(
-    session_maker, mock_stripe
-):
+async def test_create_default_settings_require_org(session_maker, mock_stripe):
     # Mock stripe_service.has_payment_method to return False
     with (
         patch(
@@ -79,6 +77,7 @@ async def test_create_default_settings_require_org(
             'test-org-id', 'test-user-id'
         )
         assert settings is None
+
 
 @pytest.mark.asyncio
 async def test_create_default_settings_with_litellm(session_maker, mock_litellm_api):

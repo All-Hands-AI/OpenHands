@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from base64 import b64decode, b64encode
 import binascii
 import hashlib
 import uuid
+from base64 import b64decode, b64encode
 from dataclasses import dataclass
 
+from cryptography.fernet import Fernet
 from pydantic import SecretStr
-
 from server.logger import logger
 from sqlalchemy.orm import joinedload, sessionmaker
 from storage.database import session_maker
@@ -21,8 +21,6 @@ from storage.user_store import UserStore
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
 from openhands.storage.settings.settings_store import SettingsStore as OssSettingsStore
-from cryptography.fernet import Fernet
-
 
 
 @dataclass
