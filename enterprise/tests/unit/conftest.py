@@ -3,9 +3,6 @@ from datetime import datetime
 
 import pytest
 from server.constants import ORG_SETTINGS_VERSION
-from server.maintenance_task_processor.user_version_upgrade_processor import (
-    UserVersionUpgradeProcessor,
-)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from storage.base import Base
@@ -136,17 +133,6 @@ def add_minimal_fixtures(session_maker):
                 updated_at=datetime.fromisoformat('2025-03-08'),
             )
         )
-        maintenance_task = MaintenanceTask(
-            status=MaintenanceTaskStatus.PENDING,
-        )
-        maintenance_task.set_processor(
-            UserVersionUpgradeProcessor(
-                user_ids=['mock-user-id'],
-                created_at=datetime.fromisoformat('2025-03-07'),
-                updated_at=datetime.fromisoformat('2025-03-08'),
-            )
-        )
-        session.add(maintenance_task)
         session.commit()
 
 

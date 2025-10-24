@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+from base64 import b64decode, b64encode
+import binascii
+import hashlib
 import uuid
 from dataclasses import dataclass
+
+from pydantic import SecretStr
 
 from server.logger import logger
 from sqlalchemy.orm import joinedload, sessionmaker
@@ -16,6 +21,8 @@ from storage.user_store import UserStore
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
 from openhands.storage.settings.settings_store import SettingsStore as OssSettingsStore
+from cryptography.fernet import Fernet
+
 
 
 @dataclass
@@ -179,3 +186,49 @@ class SaasSettingsStore(OssSettingsStore):
     ) -> SaasSettingsStore:
         logger.debug(f'saas_settings_store.get_instance::{user_id}')
         return SaasSettingsStore(user_id, session_maker, config)
+
+    def _should_encrypt(self, key):
+        return key in self.ENCRYPT_VALUES
+
+    def _decrypt_kwargs(self, kwargs: dict):
+        fernet = self._fernet()
+        for key, value in kwargs.items():
+            try:
+                if value is None:
+                    continue
+                if self._should_encrypt(key):
+                    if isinstance(value, SecretStr):
+                        value = fernet.decrypt(
+                            b64decode(value.get_secret_value().encode())
+                        ).decode()
+                    else:
+                        value = fernet.decrypt(b64decode(value.encode())).decode()
+                    kwargs[key] = value
+            except binascii.Error:
+                pass  # Key is in legacy format...
+
+    def _encrypt_kwargs(self, kwargs: dict):
+        fernet = self._fernet()
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+
+            if isinstance(value, dict):
+                self._encrypt_kwargs(value)
+                continue
+
+            if self._should_encrypt(key):
+                if isinstance(value, SecretStr):
+                    value = b64encode(
+                        fernet.encrypt(value.get_secret_value().encode())
+                    ).decode()
+                else:
+                    value = b64encode(fernet.encrypt(value.encode())).decode()
+                kwargs[key] = value
+
+    def _fernet(self):
+        if not self.config.jwt_secret:
+            raise ValueError('jwt_secret must be defined on config')
+        jwt_secret = self.config.jwt_secret.get_secret_value()
+        fernet_key = b64encode(hashlib.sha256(jwt_secret.encode()).digest())
+        return Fernet(fernet_key)
