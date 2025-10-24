@@ -69,7 +69,13 @@ async def find_or_create_customer_by_user_id(user_id: str) -> dict | None:
 
     # Save the stripe customer in the local db
     with session_maker() as session:
-        session.add(StripeCustomer(org_id=org.id, stripe_customer_id=customer.id))
+        session.add(
+            StripeCustomer(
+                keycloak_user_id=user_id,
+                org_id=org.id,
+                stripe_customer_id=customer.id,
+            )
+        )
         session.commit()
 
     logger.info(
