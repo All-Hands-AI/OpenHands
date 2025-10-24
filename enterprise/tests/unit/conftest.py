@@ -68,7 +68,7 @@ def add_minimal_fixtures(session_maker):
         session.add(
             StoredConversationMetadata(
                 conversation_id='mock-conversation-id',
-                user_id='mock-user-id',
+                user_id='5594c7b6-f959-4b81-92e9-b09c206f5081',
                 created_at=datetime.fromisoformat('2025-03-07'),
                 last_updated_at=datetime.fromisoformat('2025-03-08'),
                 accumulated_cost=5.25,
@@ -111,7 +111,7 @@ def add_minimal_fixtures(session_maker):
         session.add(
             OrgMember(
                 org_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
-                user_id=1,
+                user_id=uuid.UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
                 role_id=1,
                 llm_api_key='mock-api-key',
                 status='active',
