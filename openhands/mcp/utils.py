@@ -249,9 +249,34 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     logger.debug(f'Matching client: {matching_client}')
 
+    await call_tool_mcp_direct(matching_client, action)
+
+
+async def call_tool_mcp_direct(mcp_client: MCPClient, action: MCPAction) -> Observation:
+    """Call a tool on an MCP server and return the observation.
+
+    Args:
+        mcp_clients: The list of MCP clients to execute the action on
+        action: The MCP action to execute
+
+    Returns:
+        The observation from the MCP server
+    """
+    import sys
+
+    from openhands.events.observation import ErrorObservation
+
+    # Skip MCP tools on Windows
+    if sys.platform == 'win32':
+        logger.info('MCP functionality is disabled on Windows')
+        return ErrorObservation('MCP functionality is not available on Windows')
+
+    if mcp_client is None:
+        raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
+
     try:
         # Call the tool - this will create a new connection internally
-        response = await matching_client.call_tool(action.name, action.arguments)
+        response = await mcp_client.call_tool(action.name, action.arguments)
         logger.debug(f'MCP response: {response}')
 
         return MCPObservation(
@@ -261,7 +286,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
         )
     except asyncio.TimeoutError:
         # Handle timeout errors specifically
-        timeout_val = getattr(matching_client, 'server_timeout', 'unknown')
+        timeout_val = getattr(mcp_client, 'server_timeout', 'unknown')
         logger.error(f'MCP tool {action.name} timed out after {timeout_val}s')
         error_content = json.dumps(
             {
