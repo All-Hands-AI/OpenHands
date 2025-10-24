@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pydantic import SecretStr
 from server.constants import (
-    CURRENT_USER_SETTINGS_VERSION,
     LITE_LLM_API_URL,
     LITE_LLM_TEAM_ID,
 )
