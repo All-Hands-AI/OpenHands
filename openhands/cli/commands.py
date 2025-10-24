@@ -47,6 +47,7 @@ from openhands.core.schema.exit_reason import ExitReason
 from openhands.events import EventSource
 from openhands.events.action import (
     ChangeAgentStateAction,
+    LoopRecoveryAction,
     MessageAction,
 )
 from openhands.events.stream import EventStream
@@ -159,9 +160,9 @@ async def handle_commands(
             exit_reason = ExitReason.INTENTIONAL
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
-    elif command == '/resume':
+    elif command.startswith('/resume'):
         close_repl, new_session_requested = await handle_resume_command(
-            event_stream, agent_state
+            command, event_stream, agent_state
         )
     elif command == '/mcp':
         await handle_mcp_command(config)
@@ -294,6 +295,7 @@ async def handle_settings_command(
 # Setting the agent state to RUNNING will currently freeze the agent without continuing with the rest of the task.
 # This is a workaround to handle the resume command for the time being. Replace user message with the state change event once the issue is fixed.
 async def handle_resume_command(
+    command: str,
     event_stream: EventStream,
     agent_state: str,
 ) -> tuple[bool, bool]:
@@ -309,10 +311,29 @@ async def handle_resume_command(
         )
         return close_repl, new_session_requested
 
-    event_stream.add_event(
-        MessageAction(content='continue'),
-        EventSource.USER,
-    )
+    # Check if this is a loop recovery resume with an option
+    if command.strip() != '/resume':
+        # Parse the option from the command (e.g., '/resume 1', '/resume 2')
+        parts = command.strip().split()
+        if len(parts) == 2 and parts[1] in ['1', '2']:
+            option = parts[1]
+            # Send the option as a message to be handled by the controller
+            event_stream.add_event(
+                LoopRecoveryAction(option=int(option)),
+                EventSource.USER,
+            )
+        else:
+            # Invalid format, send as regular resume
+            event_stream.add_event(
+                MessageAction(content='continue'),
+                EventSource.USER,
+            )
+    else:
+        # Regular resume without loop recovery option
+        event_stream.add_event(
+            MessageAction(content='continue'),
+            EventSource.USER,
+        )
 
     # event_stream.add_event(
     #     ChangeAgentStateAction(AgentState.RUNNING),
