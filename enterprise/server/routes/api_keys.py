@@ -12,6 +12,7 @@ from storage.saas_settings_store import SaasSettingsStore
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.user_auth import get_user_id
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 
 
 # Helper functions for BYOR API key management
@@ -68,9 +69,10 @@ async def generate_byor_key(user_id: str) -> str | None:
 
     try:
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'x-goog-api-key': LITE_LLM_API_KEY,
-            }
+            },
         ) as client:
             response = await client.post(
                 f'{LITE_LLM_API_URL}/key/generate',
@@ -120,9 +122,10 @@ async def delete_byor_key_from_litellm(user_id: str, byor_key: str) -> bool:
 
     try:
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'x-goog-api-key': LITE_LLM_API_KEY,
-            }
+            },
         ) as client:
             # Delete the key directly using the key value
             delete_url = f'{LITE_LLM_API_URL}/key/delete'
