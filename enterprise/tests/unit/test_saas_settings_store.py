@@ -1,17 +1,23 @@
-from base64 import b64encode
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import UUID
 
 import pytest
 from pydantic import SecretStr
-from server.constants import (
-    LITE_LLM_API_URL,
-    LITE_LLM_TEAM_ID,
-)
-from storage.saas_settings_store import SaasSettingsStore
-from storage.user_settings import UserSettings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
+
+# Mock the database module before importing
+with patch('storage.database.engine'), patch('storage.database.a_engine'):
+    from server.constants import (
+        LITE_LLM_API_URL,
+        LITE_LLM_TEAM_ID,
+    )
+    from storage.saas_settings_store import SaasSettingsStore
+    from storage.user_settings import UserSettings
+    from storage.user import User
+    from storage.org import Org
+    from storage.org_member import OrgMember
 
 @pytest.fixture
 def mock_github_user():
@@ -33,21 +39,40 @@ def mock_config():
 
 @pytest.fixture
 def settings_store(session_maker, mock_config):
-    store = SaasSettingsStore('user-id', session_maker, mock_config)
+    store = SaasSettingsStore('5594c7b6-f959-4b81-92e9-b09c206f5081', session_maker, mock_config)
 
-    # Patch the store method directly to filter out email and email_verified
-    original_load = store.load
-
-    # Patch the load method to add email and email_verified
+    # Patch the load method to read from UserSettings table directly (for testing)
     async def patched_load():
-        settings = await original_load()
-        if settings:
-            # Add email and email_verified fields to mimic SaasUserAuth behavior
+        with store.session_maker() as session:
+            user_settings = (
+                session.query(UserSettings)
+                .filter(UserSettings.keycloak_user_id == store.user_id)
+                .first()
+            )
+            if not user_settings:
+                # Return default settings
+                return Settings(
+                    llm_api_key=SecretStr('test_api_key'),
+                    llm_base_url='http://test.url',
+                    agent='CodeActAgent',
+                    language='en',
+                )
+            
+            # Decrypt and convert to Settings
+            kwargs = {}
+            for column in UserSettings.__table__.columns:
+                if column.name != 'keycloak_user_id':
+                    value = getattr(user_settings, column.name, None)
+                    if value is not None:
+                        kwargs[column.name] = value
+            
+            store._decrypt_kwargs(kwargs)
+            settings = Settings(**kwargs)
             settings.email = 'test@example.com'
             settings.email_verified = True
-        return settings
+            return settings
 
-    # Patch the store method to filter out email and email_verified
+    # Patch the store method to write to UserSettings table directly (for testing)
     async def patched_store(item):
         if item:
             # Make a copy of the item without email and email_verified
