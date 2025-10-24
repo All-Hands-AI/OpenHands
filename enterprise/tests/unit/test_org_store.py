@@ -49,10 +49,6 @@ def test_get_org_by_id(session_maker, mock_litellm_api):
     # Test retrieval
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         retrieved_org = OrgStore.get_org_by_id(org_id)
         assert retrieved_org is not None
@@ -80,10 +76,6 @@ def test_list_orgs(session_maker, mock_litellm_api):
     # Test listing
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         orgs = OrgStore.list_orgs()
         assert len(orgs) >= 2
@@ -104,10 +96,6 @@ def test_update_org(session_maker, mock_litellm_api):
     # Test update
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         updated_org = OrgStore.update_org(
             org_id=org_id, kwargs={'name': 'updated-org', 'agent': 'PlannerAgent'}
@@ -133,10 +121,6 @@ def test_create_org(session_maker, mock_litellm_api):
     # Test creating a new org
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         org = OrgStore.create_org(kwargs={'name': 'new-org', 'agent': 'CodeActAgent'})
 
@@ -157,10 +141,6 @@ def test_get_org_by_name(session_maker, mock_litellm_api):
     # Test retrieval
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         retrieved_org = OrgStore.get_org_by_name('test-org-by-name')
         assert retrieved_org is not None
@@ -185,10 +165,6 @@ def test_get_current_org_from_keycloak_user_id(session_maker, mock_litellm_api):
     # Test retrieval
     with (
         patch('storage.org_store.session_maker', session_maker),
-        patch(
-            'storage.org_store.OrgStore.migrate_org',
-            side_effect=lambda session, org: org,
-        ),
     ):
         retrieved_org = OrgStore.get_current_org_from_keycloak_user_id(
             str(test_user_id)
@@ -218,21 +194,3 @@ def test_get_kwargs_from_settings():
     assert 'language' not in kwargs  # language is not in Org model
     assert 'llm_api_key' not in kwargs
     assert 'enable_sound_notifications' not in kwargs
-
-
-@pytest.mark.skip(reason='Complex migration logic with session management issues')
-def test_migrate_org(session_maker, mock_litellm_api):
-    # Test migrating org settings
-    with session_maker() as session:
-        # Create a test org with old version
-        org = Org(name='test-org', org_version=1)
-        session.add(org)
-        session.commit()
-
-    # Test migration
-    with patch('storage.org_store.session_maker', session_maker):
-        migrated_org = OrgStore.migrate_org(session_maker(), org)
-
-        # Verify migration occurred (this would depend on the actual migration logic)
-        assert migrated_org is not None
-        # The actual assertions would depend on what the migration does
