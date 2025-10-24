@@ -59,6 +59,7 @@ from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
     FileReadObservation,
+    LoopDetectionObservation,
     MCPObservation,
     TaskTrackingObservation,
 )
@@ -309,6 +310,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
             display_error(event.content)
+        elif isinstance(event, LoopDetectionObservation):
+            handle_loop_recovery_state_observation(event)
 
 
 def display_message(message: str, is_agent_message: bool = False) -> None:
@@ -1039,3 +1042,25 @@ class UserCancelledError(Exception):
     """Raised when the user cancels an operation via key binding."""
 
     pass
+
+
+def handle_loop_recovery_state_observation(
+    observation: LoopDetectionObservation,
+) -> None:
+    """Handle loop recovery state observation events.
+
+    Updates the global loop recovery state based on the observation.
+    """
+    content = observation.content
+    container = Frame(
+        TextArea(
+            text=content,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Agent Loop Detection',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
