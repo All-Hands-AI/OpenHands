@@ -46,7 +46,7 @@ jobs:
           else
             json=$(jq -n -c '[
                 { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
-                { image: "ghcr.io/all-hands-ai/python-nodejs:python3.13-nodejs22-trixie", tag: "trixie" },
+                { image: "ghcr.io/openhands/python-nodejs:python3.13-nodejs22-trixie", tag: "trixie" },
                 { image: "ubuntu:24.04", tag: "ubuntu" }
               ]')
           fi
@@ -200,7 +200,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/all-hands-ai/enterprise-server
+          images: ghcr.io/openhands/enterprise-server
           tags: |
             type=ref,event=branch
             type=ref,event=pr

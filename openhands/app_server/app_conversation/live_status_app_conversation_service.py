@@ -51,13 +51,13 @@ from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -181,11 +181,11 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
             # Run setup scripts
             workspace = AsyncRemoteWorkspace(
-                working_dir=sandbox_spec.working_dir,
-                server_url=agent_server_url,
-                session_api_key=sandbox.session_api_key,
+                host=agent_server_url, api_key=sandbox.session_api_key
             )
-            async for updated_task in self.run_setup_scripts(task, workspace):
+            async for updated_task in self.run_setup_scripts(
+                task, workspace, sandbox_spec.working_dir
+            ):
                 yield updated_task
 
             # Build the start request
