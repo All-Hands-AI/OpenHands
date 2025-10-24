@@ -24,6 +24,7 @@ from openhands.llm.tool_names import (
     FINISH_TOOL_NAME,
     LLM_BASED_EDIT_TOOL_NAME,
     STR_REPLACE_EDITOR_TOOL_NAME,
+    TASK_TRACKER_TOOL_NAME,
 )
 
 # Inspired by: https://docs.together.ai/docs/llama-3-function-calling#function-calling-w-llama-31-70b
@@ -314,6 +315,53 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 </function>
 """
     },
+    'task_tracker': {
+        'view': """
+ASSISTANT:
+Let me check the current task list first:
+<function=task_tracker>
+<parameter=command>view</parameter>
+</function>
+""",
+        'plan': """
+I'll create or update the full plan based on your requirements and current progress:
+<function=task_tracker>
+<parameter=command>plan</parameter>
+<parameter=task_list>
+[
+  {
+    "id": "task-1",
+    "title": "Initialize repo",
+    "status": "done",
+    "notes": "Repository created and README added.",
+    "description": "Create repository and basic docs."
+  },
+  {
+    "id": "task-2",
+    "title": "Implement nested param parsing",
+    "status": "in_progress",
+    "notes": "Add recursive parsing for array-typed parameters.",
+    "description": "Update fn_call_converter.convert_tools_to_description to walk nested objects in arrays."
+  },
+  {
+    "id": "task-3",
+    "title": "Complete task_tracker prompt examples",
+    "status": "todo",
+    "notes": "Add clear examples for view/plan.",
+    "description": "Provide canonical examples so LLM fills task_list with proper fields (id/title/status/notes/description)."
+  },
+  {
+    "id": "task-4",
+    "title": "Add tests for nested arrays",
+    "status": "todo",
+    "notes": "Cover arrays of objects and missing fields.",
+    "description": "Write unit tests ensuring inner fields are preserved in generated descriptions."
+  }
+]
+</parameter>
+</function>
+""",
+    },
 }
 
 
@@ -333,6 +381,8 @@ def get_example_for_tools(tools: list[dict]) -> str:
                 available_tools.add('finish')
             elif name == LLM_BASED_EDIT_TOOL_NAME:
                 available_tools.add('edit_file')
+            elif name == TASK_TRACKER_TOOL_NAME:
+                available_tools.add('task_tracker')
 
     if not available_tools:
         return ''
@@ -373,6 +423,10 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
 
     if 'finish' in available_tools:
         example += TOOL_EXAMPLES['finish']['example']
+
+    if 'task_tracker' in available_tools:
+        example += TOOL_EXAMPLES['task_tracker']['view']
+        example += TOOL_EXAMPLES['task_tracker']['plan']
 
     example += """
 --------------------- END OF EXAMPLE ---------------------
@@ -468,6 +522,32 @@ def convert_tools_to_description(tools: list[dict]) -> str:
                 ret += (
                     f'  ({j + 1}) {param_name} ({param_type}, {param_status}): {desc}\n'
                 )
+
+                # Handle nested structure for array/object types
+                if param_type == 'array' and 'items' in param_info:
+                    items = param_info['items']
+                    if items.get('type') == 'object' and 'properties' in items:
+                        ret += '       task_list array item structure:\n'
+                        item_properties = items['properties']
+                        item_required = set(items.get('required', []))
+                        for k, (item_param_name, item_param_info) in enumerate(
+                            item_properties.items()
+                        ):
+                            item_is_required = item_param_name in item_required
+                            item_status = 'required' if item_is_required else 'optional'
+                            item_type = item_param_info.get('type', 'string')
+                            item_desc = item_param_info.get(
+                                'description', 'No description provided'
+                            )
+
+                            # Handle enum values for nested items
+                            if 'enum' in item_param_info:
+                                item_enum_values = ', '.join(
+                                    f'`{v}`' for v in item_param_info['enum']
+                                )
+                                item_desc += f' Allowed values: [{item_enum_values}]'
+
+                            ret += f'       - {item_param_name} ({item_type}, {item_status}): {item_desc}\n'
         else:
             ret += 'No parameters are required for this function.\n'
 
