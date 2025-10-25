@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 import { GitControlBarRepoButton } from "./git-control-bar-repo-button";
 import { GitControlBarBranchButton } from "./git-control-bar-branch-button";
 import { GitControlBarPullButton } from "./git-control-bar-pull-button";
@@ -20,14 +21,50 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
   const { data: conversation } = useActiveConversation();
   const { repositoryInfo } = useTaskPolling();
 
-  // Priority: conversation data > task data
-  // This ensures we show repository info immediately from task, then transition to conversation data
+  // Internal state to preserve repository data during transitions
+  const [preservedRepository, setPreservedRepository] = useState<string | null>(
+    null,
+  );
+  const [preservedBranch, setPreservedBranch] = useState<string | null>(null);
+  const [preservedProvider, setPreservedProvider] = useState<Provider | null>(
+    null,
+  );
+
+  // Update preserved data when we have repository info from task polling
+  useEffect(() => {
+    if (repositoryInfo?.selectedRepository) {
+      setPreservedRepository(repositoryInfo.selectedRepository);
+      setPreservedBranch(repositoryInfo.selectedBranch ?? null);
+      setPreservedProvider(repositoryInfo.gitProvider ?? null);
+    }
+  }, [repositoryInfo]);
+
+  // Clear preserved data when conversation data is available
+  useEffect(() => {
+    if (
+      conversation?.selected_repository ||
+      conversation?.selected_branch ||
+      conversation?.git_provider
+    ) {
+      setPreservedRepository(null);
+      setPreservedBranch(null);
+      setPreservedProvider(null);
+    }
+  }, [conversation]);
+
+  // Priority: conversation data > preserved data > task data
+  // This ensures we show repository info immediately from task, preserve it during transition, then use conversation data
   const selectedRepository =
-    conversation?.selected_repository || repositoryInfo?.selectedRepository;
+    conversation?.selected_repository ||
+    preservedRepository ||
+    repositoryInfo?.selectedRepository;
   const gitProvider = (conversation?.git_provider ||
+    preservedProvider ||
     repositoryInfo?.gitProvider) as Provider;
   const selectedBranch =
-    conversation?.selected_branch || repositoryInfo?.selectedBranch;
+    conversation?.selected_branch ||
+    preservedBranch ||
+    repositoryInfo?.selectedBranch;
 
   const hasRepository = !!selectedRepository;
 
