@@ -1,6 +1,7 @@
 # openhands_cli/settings/store.py
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +11,7 @@ from openhands_cli.locations import (
     AGENT_SETTINGS_PATH,
     MCP_CONFIG_FILE,
     PERSISTENCE_DIR,
-    WORK_DIR,
+    get_configured_working_directory,
 )
 from prompt_toolkit import HTML, print_formatted_text
 
@@ -41,8 +42,11 @@ class AgentStore:
             # Update tools with most recent working directory
             updated_tools = get_default_tools(enable_browser=False)
 
+            # Get current working directory (may have been updated)
+            current_work_dir = get_configured_working_directory() or os.getcwd()
+            
             agent_context = AgentContext(
-                system_message_suffix=f'You current working directory is: {WORK_DIR}',
+                system_message_suffix=f'You current working directory is: {current_work_dir}',
             )
 
             additional_mcp_config = self.load_mcp_configuration()

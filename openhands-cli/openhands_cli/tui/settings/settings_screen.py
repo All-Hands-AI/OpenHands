@@ -8,7 +8,7 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands_cli.llm_utils import get_llm_metadata
-from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
+from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, get_configured_working_directory
 from openhands_cli.pt_style import COLOR_GREY
 from openhands_cli.tui.settings.store import AgentStore
 from openhands_cli.tui.utils import StepCounter
@@ -23,6 +23,7 @@ from openhands_cli.user_actions.settings_action import (
     save_settings_confirmation,
     settings_type_confirmation,
 )
+from openhands_cli.user_actions.working_directory_action import configure_working_directory_in_settings
 
 
 class SettingsScreen:
@@ -61,6 +62,9 @@ class SettingsScreen:
                     ('   Base URL', llm.base_url),
                 ]
             )
+        # Get current working directory info
+        current_work_dir = get_configured_working_directory() or os.getcwd()
+        
         labels_and_values.extend(
             [
                 ('   API Key', '********' if llm.api_key else 'Not Set'),
@@ -73,6 +77,10 @@ class SettingsScreen:
                 (
                     '   Memory Condensation',
                     'Enabled' if agent_spec.condenser else 'Disabled',
+                ),
+                (
+                    '   Working Directory',
+                    current_work_dir,
                 ),
                 (
                     '   Configuration File',
@@ -124,6 +132,8 @@ class SettingsScreen:
             self.handle_basic_settings()
         elif settings_type == SettingsType.ADVANCED:
             self.handle_advanced_settings()
+        elif settings_type == SettingsType.WORKING_DIRECTORY:
+            configure_working_directory_in_settings()
 
     def handle_basic_settings(self):
         step_counter = StepCounter(3)
