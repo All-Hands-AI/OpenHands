@@ -121,8 +121,7 @@ class JupyterPlugin(Plugin):
             )
             logger.debug(f'Jupyter launch command: {jupyter_launch_command}')
 
-            # Using asyncio.create_subprocess_shell instead of subprocess.Popen
-            # to avoid ASYNC101 linting error
+            # Use asyncio subprocess utilities on Unix platforms to avoid blocking calls
             self.gateway_process = await asyncio.create_subprocess_shell(
                 jupyter_launch_command,
                 stderr=asyncio.subprocess.STDOUT,
@@ -164,16 +163,31 @@ class JupyterPlugin(Plugin):
             await self.kernel.initialize()
 
         # Execute the code and get structured output
-        output = await self.kernel.execute(action.code, timeout=action.timeout)
+        if action.timeout is None:
+            output = await self.kernel.execute(action.code)
+        else:
+            timeout_seconds = int(action.timeout)
+            output = await self.kernel.execute(action.code, timeout=timeout_seconds)
 
         # Extract text content and image URLs from the structured output
-        text_content = output.get('text', '')
-        image_urls = output.get('images', [])
+        raw_text = output.get('text', '')
+        if isinstance(raw_text, list):
+            text_content = ''.join(str(fragment) for fragment in raw_text)
+        else:
+            text_content = str(raw_text)
+
+        raw_images = output.get('images', [])
+        if isinstance(raw_images, list):
+            image_urls = [str(item) for item in raw_images]
+        elif isinstance(raw_images, str):
+            image_urls = [raw_images]
+        else:
+            image_urls = []
 
         return IPythonRunCellObservation(
             content=text_content,
             code=action.code,
-            image_urls=image_urls if image_urls else None,
+            image_urls=image_urls or None,
         )
 
     async def run(self, action: Action) -> IPythonRunCellObservation:

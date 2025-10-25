@@ -54,6 +54,7 @@ class IssueResolver:
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
+
         Params initialized:
             owner: Owner of the repo.
             repo: Repository name.
