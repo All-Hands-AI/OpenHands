@@ -57,6 +57,13 @@ class AppConversationInfoService(ABC):
             ]
         )
 
+    @abstractmethod
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
+        """Delete a conversation info from the database.
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
+
     # Mutators
 
     @abstractmethod
