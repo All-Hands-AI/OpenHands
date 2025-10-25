@@ -430,9 +430,25 @@ async def run_session(
         # No session restored, no initial action: prompt for the user's first message
         asyncio.create_task(prompt_for_next_task(''))
 
-    await run_agent_until_done(
-        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
-    )
+    skip_set_callback = False
+    while True:
+        await run_agent_until_done(
+            controller,
+            runtime,
+            memory,
+            [AgentState.STOPPED, AgentState.ERROR],
+            skip_set_callback,
+        )
+        # Try loop recovery in CLI app
+        if (
+            controller.state.agent_state == AgentState.ERROR
+            and controller.state.last_error.startswith('AgentStuckInLoopError')
+        ):
+            controller.attempt_loop_recovery()
+            skip_set_callback = True
+            continue
+        else:
+            break
 
     await cleanup_session(loop, agent, runtime, controller)
 

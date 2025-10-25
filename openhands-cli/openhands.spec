@@ -32,8 +32,8 @@ a = Analysis(
         *collect_data_files('litellm'),
         *collect_data_files('fastmcp'),
         *collect_data_files('mcp'),
-        # Include Jinja prompt templates required by the agent SDK
-        *collect_data_files('openhands.sdk.agent', includes=['prompts/*.j2']),
+        # Include all data files from openhands.sdk (templates, configs, etc.)
+        *collect_data_files('openhands.sdk'),
         # Include package metadata for importlib.metadata
         *copy_metadata('fastmcp'),
     ],

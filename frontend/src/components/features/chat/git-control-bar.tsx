@@ -5,6 +5,7 @@ import { GitControlBarPullButton } from "./git-control-bar-pull-button";
 import { GitControlBarPushButton } from "./git-control-bar-push-button";
 import { GitControlBarPrButton } from "./git-control-bar-pr-button";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 import { Provider } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
 import { GitControlBarTooltipWrapper } from "./git-control-bar-tooltip-wrapper";
@@ -17,10 +18,16 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
   const { t } = useTranslation();
 
   const { data: conversation } = useActiveConversation();
+  const { repositoryInfo } = useTaskPolling();
 
-  const selectedRepository = conversation?.selected_repository;
-  const gitProvider = conversation?.git_provider as Provider;
-  const selectedBranch = conversation?.selected_branch;
+  // Priority: conversation data > task data
+  // This ensures we show repository info immediately from task, then transition to conversation data
+  const selectedRepository =
+    conversation?.selected_repository || repositoryInfo?.selectedRepository;
+  const gitProvider = (conversation?.git_provider ||
+    repositoryInfo?.gitProvider) as Provider;
+  const selectedBranch =
+    conversation?.selected_branch || repositoryInfo?.selectedBranch;
 
   const hasRepository = !!selectedRepository;
 

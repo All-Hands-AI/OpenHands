@@ -26,6 +26,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.observation.loop_recovery import LoopDetectionObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
@@ -51,6 +52,7 @@ observations = (
     MCPObservation,
     FileDownloadObservation,
     TaskTrackingObservation,
+    LoopDetectionObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

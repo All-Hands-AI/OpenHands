@@ -6,7 +6,8 @@ import {
   ImageContent,
 } from "./common";
 
-interface MCPToolObservation extends ObservationBase<"MCPToolObservation"> {
+export interface MCPToolObservation
+  extends ObservationBase<"MCPToolObservation"> {
   /**
    * Content returned from the MCP tool converted to LLM Ready TextContent or ImageContent
    */
@@ -21,21 +22,23 @@ interface MCPToolObservation extends ObservationBase<"MCPToolObservation"> {
   tool_name: string;
 }
 
-interface FinishObservation extends ObservationBase<"FinishObservation"> {
+export interface FinishObservation
+  extends ObservationBase<"FinishObservation"> {
   /**
    * Final message sent to the user
    */
   message: string;
 }
 
-interface ThinkObservation extends ObservationBase<"ThinkObservation"> {
+export interface ThinkObservation extends ObservationBase<"ThinkObservation"> {
   /**
    * Confirmation message. DEFAULT: "Your thought has been logged."
    */
   content: string;
 }
 
-interface BrowserObservation extends ObservationBase<"BrowserObservation"> {
+export interface BrowserObservation
+  extends ObservationBase<"BrowserObservation"> {
   /**
    * The output message from the browser operation
    */
@@ -50,7 +53,7 @@ interface BrowserObservation extends ObservationBase<"BrowserObservation"> {
   screenshot_data: string | null;
 }
 
-interface ExecuteBashObservation
+export interface ExecuteBashObservation
   extends ObservationBase<"ExecuteBashObservation"> {
   /**
    * The raw output from the tool.
@@ -78,7 +81,40 @@ interface ExecuteBashObservation
   metadata: CmdOutputMetadata;
 }
 
-interface StrReplaceEditorObservation
+export interface FileEditorObservation
+  extends ObservationBase<"FileEditorObservation"> {
+  /**
+   * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
+   */
+  command: "view" | "create" | "str_replace" | "insert" | "undo_edit";
+  /**
+   * The output message from the tool for the LLM to see.
+   */
+  output: string;
+  /**
+   * The file path that was edited.
+   */
+  path: string | null;
+  /**
+   * Indicates if the file previously existed. If not, it was created.
+   */
+  prev_exist: boolean;
+  /**
+   * The content of the file before the edit.
+   */
+  old_content: string | null;
+  /**
+   * The content of the file after the edit.
+   */
+  new_content: string | null;
+  /**
+   * Error message if any.
+   */
+  error: string | null;
+}
+
+// Keep StrReplaceEditorObservation as a separate interface for backward compatibility
+export interface StrReplaceEditorObservation
   extends ObservationBase<"StrReplaceEditorObservation"> {
   /**
    * The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.
@@ -110,7 +146,7 @@ interface StrReplaceEditorObservation
   error: string | null;
 }
 
-interface TaskTrackerObservation
+export interface TaskTrackerObservation
   extends ObservationBase<"TaskTrackerObservation"> {
   /**
    * The formatted task list or status message.
@@ -132,5 +168,6 @@ export type Observation =
   | ThinkObservation
   | BrowserObservation
   | ExecuteBashObservation
+  | FileEditorObservation
   | StrReplaceEditorObservation
   | TaskTrackerObservation;

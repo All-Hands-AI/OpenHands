@@ -10,7 +10,8 @@ import { MicroagentsModalHeader } from "./microagents-modal-header";
 import { MicroagentsLoadingState } from "./microagents-loading-state";
 import { MicroagentsEmptyState } from "./microagents-empty-state";
 import { MicroagentItem } from "./microagent-item";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface MicroagentsModalProps {
   onClose: () => void;
@@ -18,7 +19,8 @@ interface MicroagentsModalProps {
 
 export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
+  const { data: conversation } = useActiveConversation();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );
@@ -29,6 +31,15 @@ export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
     refetch,
     isRefetching,
   } = useConversationMicroagents();
+
+  // TODO: Hide MicroagentsModal for V1 conversations
+  // This is a temporary measure and may be re-enabled in the future
+  const isV1Conversation = conversation?.conversation_version === "V1";
+
+  // Don't render anything for V1 conversations
+  if (isV1Conversation) {
+    return null;
+  }
 
   const toggleAgent = (agentName: string) => {
     setExpandedAgents((prev) => ({
