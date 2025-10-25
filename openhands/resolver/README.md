@@ -62,7 +62,7 @@ Follow these steps to use this workflow in your own repository:
         2. Create a draft PR if successful, or push a branch if unsuccessful
         3. Comment on the issue with the results
 
-Need help? Feel free to [open an issue](https://github.com/openhands/openhands/issues) or email us at [contact@all-hands.dev](mailto:contact@all-hands.dev).
+Need help? Feel free to [open an issue](https://github.com/openhands/openhands/issues).
 
 ## Manual Installation
 
