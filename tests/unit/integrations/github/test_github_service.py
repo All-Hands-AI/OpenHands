@@ -263,12 +263,12 @@ async def test_github_search_repositories_with_organizations():
             {
                 'id': 1,
                 'name': 'OpenHands',
-                'full_name': 'OpenHands/OpenHands',
+                'full_name': 'All-Hands-AI/OpenHands',
                 'private': False,
-                'html_url': 'https://github.com/OpenHands/OpenHands',
-                'clone_url': 'https://github.com/OpenHands/OpenHands.git',
+                'html_url': 'https://github.com/All-Hands-AI/OpenHands',
+                'clone_url': 'https://github.com/All-Hands-AI/OpenHands.git',
                 'pushed_at': '2023-01-01T00:00:00Z',
-                'owner': {'login': 'OpenHands', 'type': 'Organization'},
+                'owner': {'login': 'All-Hands-AI', 'type': 'Organization'},
             }
         ]
     }
@@ -278,7 +278,7 @@ async def test_github_search_repositories_with_organizations():
         patch.object(
             service,
             'get_organizations_from_installations',
-            return_value=['OpenHands', 'example-org'],
+            return_value=['All-Hands-AI', 'example-org'],
         ),
         patch.object(
             service, '_make_request', return_value=(mock_search_response, {})
@@ -307,7 +307,7 @@ async def test_github_search_repositories_with_organizations():
         # Second call should be for first organization
         org1_call = calls[1]
         org1_params = org1_call[0][1]
-        assert org1_params['q'] == 'openhands org:OpenHands'
+        assert org1_params['q'] == 'openhands org:All-Hands-AI'
 
         # Third call should be for second organization
         org2_call = calls[2]
@@ -316,7 +316,7 @@ async def test_github_search_repositories_with_organizations():
 
         # Verify repositories are returned (3 copies since each call returns the same mock response)
         assert len(repositories) == 3
-        assert all(repo.full_name == 'OpenHands/OpenHands' for repo in repositories)
+        assert all(repo.full_name == 'All-Hands-AI/OpenHands' for repo in repositories)
 
 
 @pytest.mark.asyncio
@@ -325,14 +325,14 @@ async def test_github_get_user_organizations():
     service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
 
     mock_orgs_response = [
-        {'login': 'OpenHands', 'id': 1},
+        {'login': 'All-Hands-AI', 'id': 1},
         {'login': 'example-org', 'id': 2},
     ]
 
     with patch.object(service, '_make_request', return_value=(mock_orgs_response, {})):
         orgs = await service.get_user_organizations()
 
-        assert orgs == ['OpenHands', 'example-org']
+        assert orgs == ['All-Hands-AI', 'example-org']
 
 
 @pytest.mark.asyncio

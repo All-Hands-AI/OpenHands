@@ -681,9 +681,9 @@ def test_file_instruction_with_repo_instruction():
     ) as f:
         conversation_instructions_prompt = f.read()
 
-    # load repo instruction from openhands/resolver/prompts/repo_instructions/openhands___openhands-resolver.txt
+    # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
     with open(
-        'openhands/resolver/prompts/repo_instructions/openhands___openhands-resolver.txt',
+        'openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt',
         'r',
     ) as f:
         repo_instruction = f.read()
