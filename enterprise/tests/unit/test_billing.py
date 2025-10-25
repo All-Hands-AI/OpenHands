@@ -691,7 +691,16 @@ async def test_create_subscription_checkout_session_allows_after_cancellation(
         ),
         patch(
             'server.routes.billing.SUBSCRIPTION_PRICE_DATA',
-            {'MONTHLY_SUBSCRIPTION': {'unit_amount': 2000}},
+            {
+                'MONTHLY_SUBSCRIPTION': {
+                    'price_id': 'price_test123',
+                    'unit_amount': 2000,
+                }
+            },
+        ),
+        patch(
+            'integrations.stripe_service.get_pro_subscription_price_id',
+            AsyncMock(return_value='price_test123'),
         ),
         patch('server.routes.billing.validate_saas_environment'),
     ):
@@ -731,7 +740,16 @@ async def test_create_subscription_checkout_session_success_no_existing(
         ),
         patch(
             'server.routes.billing.SUBSCRIPTION_PRICE_DATA',
-            {'MONTHLY_SUBSCRIPTION': {'unit_amount': 2000}},
+            {
+                'MONTHLY_SUBSCRIPTION': {
+                    'price_id': 'price_test123',
+                    'unit_amount': 2000,
+                }
+            },
+        ),
+        patch(
+            'integrations.stripe_service.get_pro_subscription_price_id',
+            AsyncMock(return_value='price_test123'),
         ),
         patch('server.routes.billing.validate_saas_environment'),
     ):

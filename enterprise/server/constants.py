@@ -37,22 +37,26 @@ LITE_LLM_API_URL = os.environ.get(
 )
 LITE_LLM_TEAM_ID = os.environ.get('LITE_LLM_TEAM_ID', None)
 LITE_LLM_API_KEY = os.environ.get('LITE_LLM_API_KEY', None)
-SUBSCRIPTION_PRICE_DATA = {
-    'MONTHLY_SUBSCRIPTION': {
-        'unit_amount': 2000,
-        'currency': 'usd',
-        'product_data': {
-            'name': 'OpenHands Monthly',
-            'tax_code': 'txcd_10000000',
-        },
-        'tax_behavior': 'exclusive',
-        'recurring': {'interval': 'month', 'interval_count': 1},
-    },
-}
 
 DEFAULT_INITIAL_BUDGET = float(os.environ.get('DEFAULT_INITIAL_BUDGET', '20'))
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', None)
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', None)
+STRIPE_PRO_SUBSCRIPTION_PRICE_ID = os.environ.get(
+    'STRIPE_PRO_SUBSCRIPTION_PRICE_ID', None
+)
+
+SUBSCRIPTION_PRICE_DATA = {
+    'MONTHLY_SUBSCRIPTION': {
+        'price_id': STRIPE_PRO_SUBSCRIPTION_PRICE_ID,
+        'unit_amount': 2000,  # Keep for backward compatibility and validation
+        'currency': 'usd',
+        # Product metadata for validation and logging (not used in Stripe API)
+        'product_name': 'OpenHands Pro Subscription (monthly)',
+        'tax_code': 'txcd_10000000',
+        'tax_behavior': 'exclusive',
+        'recurring': {'interval': 'month', 'interval_count': 1},
+    },
+}
 REQUIRE_PAYMENT = os.environ.get('REQUIRE_PAYMENT', '0') in ('1', 'true')
 
 SLACK_CLIENT_ID = os.environ.get('SLACK_CLIENT_ID', None)
