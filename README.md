@@ -55,9 +55,35 @@ which comes with $20 in free credits for new users.
 
 ## 💻 Running OpenHands Locally
 
-### Option 1: CLI Launcher (Recommended)
+### Option 1: Homebrew (macOS - Recommended)
 
-The easiest way to run OpenHands locally is using the CLI launcher with [uv](https://docs.astral.sh/uv/). This provides better isolation from your current project's virtual environment and is required for OpenHands' default MCP servers.
+The easiest way to install OpenHands CLI on macOS is using Homebrew:
+
+```bash
+# Add the OpenHands tap
+brew tap All-Hands-AI/openhands https://github.com/All-Hands-AI/OpenHands.git
+
+# Install OpenHands CLI
+brew install openhands
+```
+
+**Launch OpenHands**:
+```bash
+# Launch the CLI (short command)
+oh
+
+# Or use the full name
+openhands
+
+# Launch the GUI server
+oh serve
+```
+
+You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (for GUI mode)!
+
+### Option 2: CLI Launcher with uv
+
+You can also run OpenHands using the CLI launcher with [uv](https://docs.astral.sh/uv/). This provides better isolation from your current project's virtual environment and is required for OpenHands' default MCP servers.
 
 **Install uv** (if you haven't already):
 
@@ -74,7 +100,7 @@ uvx --python 3.12 --from openhands-ai openhands
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (for GUI mode)!
 
-### Option 2: Docker
+### Option 3: Docker
 
 <details>
 <summary>Click to expand Docker command</summary>
