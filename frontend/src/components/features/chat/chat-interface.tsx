@@ -47,6 +47,7 @@ import {
   isConversationStateUpdateEvent,
 } from "#/types/v1/type-guards";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -62,6 +63,7 @@ export function ChatInterface() {
   const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
+  const { isTask } = useTaskPolling();
   const { send } = useSendMessage();
   const storeEvents = useEventStore((state) => state.events);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -220,7 +222,7 @@ export function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
         >
-          {isLoadingMessages && !isV1Conversation && (
+          {isLoadingMessages && !isV1Conversation && !isTask && (
             <div className="flex justify-center">
               <LoadingSpinner size="small" />
             </div>
