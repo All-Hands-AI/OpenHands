@@ -2,7 +2,7 @@
 
 This guide is for people working on OpenHands and editing the source code.
 If you wish to contribute your changes, check out the
-[CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/OpenHands/OpenHands/blob/main/CONTRIBUTING.md)
 on how to clone and setup the project initially before moving on. Otherwise,
 you can clone the OpenHands project directly.
 
