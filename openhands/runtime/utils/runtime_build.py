@@ -52,12 +52,14 @@ def _generate_dockerfile(
     )
     template = env.get_template('Dockerfile.j2')
 
+    _channel_alias = os.getenv('OH_CONDA_CHANNEL_ALIAS')
     dockerfile_content = template.render(
         base_image=base_image,
         build_from_scratch=build_from == BuildFromImageType.SCRATCH,
         build_from_versioned=build_from == BuildFromImageType.VERSIONED,
         extra_deps=extra_deps if extra_deps is not None else '',
         enable_browser=enable_browser,
+        channel_alias=_channel_alias,
     )
     return dockerfile_content
 

@@ -218,6 +218,44 @@ def test_generate_dockerfile_build_from_versioned():
     )
 
 
+def test_generate_dockerfile_channel_alias_included(monkeypatch):
+    # Use a direct import from the repository path to avoid importing a stale copy from /openhands/code
+    import importlib.util
+    from pathlib import Path
+
+    base_dir = Path(__file__).resolve().parents[4]
+    mod_path = base_dir / 'openhands' / 'runtime' / 'utils' / 'runtime_build.py'
+    spec = importlib.util.spec_from_file_location('runtime_build_local', str(mod_path))
+    rb = importlib.util.module_from_spec(spec)
+    assert spec and spec.loader
+    spec.loader.exec_module(rb)
+
+    base_image = 'debian:11'
+    alias = 'https://repo.prefix.dev'
+    monkeypatch.setenv('OH_CONDA_CHANNEL_ALIAS', alias)
+    dockerfile_content = rb._generate_dockerfile(
+        base_image,
+        build_from=rb.BuildFromImageType.SCRATCH,
+    )
+    assert f'micromamba config set channel_alias "{alias}"' in dockerfile_content
+    assert '-c conda-forge' in dockerfile_content
+
+
+def test_generate_dockerfile_channel_alias_unset():
+    base_image = 'debian:11'
+    prev = os.environ.get('OH_CONDA_CHANNEL_ALIAS')
+    os.environ.pop('OH_CONDA_CHANNEL_ALIAS', None)
+    try:
+        dockerfile_content = _generate_dockerfile(
+            base_image,
+            build_from=BuildFromImageType.SCRATCH,
+        )
+    finally:
+        if prev is not None:
+            os.environ['OH_CONDA_CHANNEL_ALIAS'] = prev
+    assert 'micromamba config set channel_alias' not in dockerfile_content
+
+
 def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
