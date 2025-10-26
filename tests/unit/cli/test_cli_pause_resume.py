@@ -271,7 +271,7 @@ class TestCliCommandsPauseResume:
         )
 
         # Check that handle_resume_command was called with correct args
-        mock_handle_resume.assert_called_once_with(event_stream, agent_state)
+        mock_handle_resume.assert_called_once_with(message, event_stream, agent_state)
 
         # Check the return values
         assert close_repl is False

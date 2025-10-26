@@ -179,7 +179,7 @@ class LLMConfig(BaseModel):
 
         # Set an API version by default for Azure models
         # Required for newer models.
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
+        # Azure issue: https://github.com/OpenHands/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
             self.api_version = '2024-12-01-preview'
 

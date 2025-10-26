@@ -58,7 +58,7 @@ async def start_sandbox(
     return info
 
 
-@router.post('/{id}/pause', responses={404: {'description': 'Item not found'}})
+@router.post('/{sandbox_id}/pause', responses={404: {'description': 'Item not found'}})
 async def pause_sandbox(
     sandbox_id: str,
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -69,7 +69,7 @@ async def pause_sandbox(
     return Success()
 
 
-@router.post('/{id}/resume', responses={404: {'description': 'Item not found'}})
+@router.post('/{sandbox_id}/resume', responses={404: {'description': 'Item not found'}})
 async def resume_sandbox(
     sandbox_id: str,
     sandbox_service: SandboxService = sandbox_service_dependency,

@@ -38,7 +38,7 @@ async def initialize_conversation(
     selected_branch: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     git_provider: ProviderType | None = None,
-) -> ConversationMetadata | None:
+) -> ConversationMetadata:
     if conversation_id is None:
         conversation_id = uuid.uuid4().hex
 
@@ -66,13 +66,8 @@ async def initialize_conversation(
         await conversation_store.save_metadata(conversation_metadata)
         return conversation_metadata
 
-    try:
-        conversation_metadata = await conversation_store.get_metadata(conversation_id)
-        return conversation_metadata
-    except Exception:
-        pass
-
-    return None
+    conversation_metadata = await conversation_store.get_metadata(conversation_id)
+    return conversation_metadata
 
 
 async def start_conversation(
@@ -189,9 +184,6 @@ async def create_new_conversation(
         conversation_trigger,
         git_provider,
     )
-
-    if not conversation_metadata:
-        raise Exception('Failed to initialize conversation')
 
     return await start_conversation(
         user_id,
