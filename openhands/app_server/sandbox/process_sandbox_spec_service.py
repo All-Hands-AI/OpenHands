@@ -10,7 +10,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
-    AGENT_SERVER_VERSION,
+    AGENT_SERVER_IMAGE,
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
@@ -20,7 +20,7 @@ from openhands.app_server.services.injector import InjectorState
 def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
-            id=AGENT_SERVER_VERSION,
+            id=AGENT_SERVER_IMAGE,
             command=['python', '-m', 'openhands.agent_server'],
             initial_env={
                 # VSCode disabled for now

@@ -76,6 +76,7 @@ export interface Conversation {
   url: string | null;
   session_api_key: string | null;
   pr_number?: number[] | null;
+  conversation_version?: "V0" | "V1";
 }
 
 export interface ResultSet<T> {

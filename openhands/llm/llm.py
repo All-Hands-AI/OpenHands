@@ -148,17 +148,19 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
-            elif 'claude-sonnet-4-5' in self.config.model:
-                kwargs.pop(
-                    'reasoning_effort', None
-                )  # don't send reasoning_effort to Claude Sonnet 4.5
+            elif any(
+                k in self.config.model
+                for k in ('claude-sonnet-4-5', 'claude-haiku-4-5-20251001')
+            ):
+                # don't send reasoning_effort to specific Claude Sonnet/Haiku 4.5 variants
+                kwargs.pop('reasoning_effort', None)
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
             kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        # Azure issue: https://github.com/OpenHands/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
@@ -511,6 +513,7 @@ class LLM(RetryMixin, DebugMixin):
                 'claude-3.7-sonnet',
                 'claude-sonnet-4',
                 'claude-sonnet-4-5-20250929',
+                'claude-haiku-4-5-20251001',
             ]
             if any(model in self.config.model for model in sonnet_models):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
@@ -819,9 +822,14 @@ class LLM(RetryMixin, DebugMixin):
                 message.force_string_serializer = True
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
                 message.force_string_serializer = True
-            if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
-                message.force_string_serializer = True
-            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
+            if any(
+                k in self.config.model
+                for k in (
+                    'openrouter/anthropic/claude-sonnet-4',
+                    'openrouter/anthropic/claude-sonnet-4-5-20250929',
+                    'openrouter/anthropic/claude-haiku-4-5-20251001',
+                )
+            ):
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization
