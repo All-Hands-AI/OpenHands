@@ -218,6 +218,20 @@ def test_generate_dockerfile_build_from_versioned():
     )
 
 
+def test_generate_dockerfile_channel_alias(monkeypatch):
+    base_image = 'debian:11'
+    alias = 'https://repo.prefix.dev'
+    monkeypatch.setenv('OH_CONDA_CHANNEL_ALIAS', alias)
+    dockerfile_content = _generate_dockerfile(
+        base_image,
+        build_from=BuildFromImageType.SCRATCH,
+    )
+    # Should include a micromamba config set channel_alias line
+    assert f'micromamba config set channel_alias {alias}' in dockerfile_content
+    # We still expect conda-forge usage for packages
+    assert '-c conda-forge' in dockerfile_content
+
+
 def test_get_runtime_image_repo_and_tag_eventstream():
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
