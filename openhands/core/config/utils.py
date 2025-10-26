@@ -12,7 +12,6 @@ import toml
 from dotenv import load_dotenv
 from pydantic import BaseModel, SecretStr, ValidationError
 
-from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.arg_utils import get_headless_parser
@@ -25,6 +24,7 @@ from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -225,6 +225,35 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             # Re-raise ValueError from SecurityConfig.from_toml_section
             raise ValueError('Error in [security] section in config.toml')
 
+    if 'model_routing' in toml_config:
+        try:
+            model_routing_mapping = ModelRoutingConfig.from_toml_section(
+                toml_config['model_routing']
+            )
+            # We only use the base model routing config for now
+            if 'model_routing' in model_routing_mapping:
+                default_agent_config = cfg.get_agent_config()
+                default_agent_config.model_routing = model_routing_mapping[
+                    'model_routing'
+                ]
+
+                # Construct the llms_for_routing by filtering llms with for_routing = True
+                llms_for_routing_dict = {}
+                for llm_name, llm_config in cfg.llms.items():
+                    if llm_config and llm_config.for_routing:
+                        llms_for_routing_dict[llm_name] = llm_config
+                default_agent_config.model_routing.llms_for_routing = (
+                    llms_for_routing_dict
+                )
+
+                logger.openhands_logger.debug(
+                    'Default model routing configuration loaded from config toml and assigned to default agent'
+                )
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [model_routing] config from toml, values have not been applied.\nError: {e}'
+            )
+
     # Process sandbox section if present
     if 'sandbox' in toml_config:
         try:
@@ -327,6 +356,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         'condenser',
         'mcp',
         'kubernetes',
+        'model_routing',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
@@ -346,11 +376,6 @@ def get_or_create_jwt_secret(file_store: FileStore) -> str:
 def finalize_config(cfg: OpenHandsConfig) -> None:
     """More tweaks to the config after it's been loaded."""
     # Handle the sandbox.volumes parameter
-    if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
-        logger.openhands_logger.warning(
-            'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use SANDBOX_VOLUMES instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'"
-        )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
         mounts = cfg.sandbox.volumes.split(',')
@@ -559,6 +584,41 @@ def get_llm_config_arg(
     return None
 
 
+def get_llms_for_routing_config(toml_file: str = 'config.toml') -> dict[str, LLMConfig]:
+    """Get the LLMs that are configured for routing from the config file.
+
+    This function will return a dictionary of LLMConfig objects that are configured
+    for routing, i.e., those with `for_routing` set to True.
+
+    Args:
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
+
+    Returns:
+        dict[str, LLMConfig]: A dictionary of LLMConfig objects for routing.
+    """
+    llms_for_routing: dict[str, LLMConfig] = {}
+
+    try:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
+    except FileNotFoundError:
+        return llms_for_routing
+    except toml.TomlDecodeError as e:
+        logger.openhands_logger.error(
+            f'Cannot parse LLM configs from {toml_file}. Exception: {e}'
+        )
+        return llms_for_routing
+
+    llm_configs = LLMConfig.from_toml_section(toml_config.get('llm', {}))
+
+    if llm_configs:
+        for llm_name, llm_config in llm_configs.items():
+            if llm_config.for_routing:
+                llms_for_routing[llm_name] = llm_config
+
+    return llms_for_routing
+
+
 def get_condenser_config_arg(
     condenser_config_arg: str, toml_file: str = 'config.toml'
 ) -> CondenserConfig | None:
@@ -671,13 +731,58 @@ def get_condenser_config_arg(
         return None
 
 
+def get_model_routing_config_arg(toml_file: str = 'config.toml') -> ModelRoutingConfig:
+    """Get the model routing settings from the config file. We only support the default model routing config [model_routing].
+
+    Args:
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
+
+    Returns:
+        ModelRoutingConfig: The ModelRoutingConfig object with the settings from the config file, or the object with default values if not found/error.
+    """
+    logger.openhands_logger.debug(
+        f"Loading model routing config ['model_routing'] from {toml_file}"
+    )
+    default_cfg = ModelRoutingConfig()
+
+    # load the toml file
+    try:
+        with open(toml_file, 'r', encoding='utf-8') as toml_contents:
+            toml_config = toml.load(toml_contents)
+    except FileNotFoundError as e:
+        logger.openhands_logger.error(f'Config file not found: {toml_file}. Error: {e}')
+        return default_cfg
+    except toml.TomlDecodeError as e:
+        logger.openhands_logger.error(
+            f'Cannot parse model routing group [model_routing] from {toml_file}. Exception: {e}'
+        )
+        return default_cfg
+
+    # Update the model routing config with the specified section
+    if 'model_routing' in toml_config:
+        try:
+            model_routing_data = toml_config['model_routing']
+            return ModelRoutingConfig(**model_routing_data)
+        except ValidationError as e:
+            logger.openhands_logger.error(
+                f'Invalid model routing configuration for [model_routing]: {e}'
+            )
+            return default_cfg
+
+    logger.openhands_logger.warning(
+        f'Model routing config section [model_routing] not found in {toml_file}'
+    )
+    return default_cfg
+
+
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
     parser = get_headless_parser()
     args = parser.parse_args()
+    from openhands import get_version
 
     if args.version:
-        print(f'OpenHands version: {__version__}')
+        print(f'OpenHands version: {get_version()}')
         sys.exit(0)
 
     return args

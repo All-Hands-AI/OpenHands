@@ -14,6 +14,7 @@ from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
 )
+from openhands.cli.deprecation_warning import display_deprecation_warning
 from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
@@ -429,9 +430,25 @@ async def run_session(
         # No session restored, no initial action: prompt for the user's first message
         asyncio.create_task(prompt_for_next_task(''))
 
-    await run_agent_until_done(
-        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
-    )
+    skip_set_callback = False
+    while True:
+        await run_agent_until_done(
+            controller,
+            runtime,
+            memory,
+            [AgentState.STOPPED, AgentState.ERROR],
+            skip_set_callback,
+        )
+        # Try loop recovery in CLI app
+        if (
+            controller.state.agent_state == AgentState.ERROR
+            and controller.state.last_error.startswith('AgentStuckInLoopError')
+        ):
+            controller.attempt_loop_recovery()
+            skip_set_callback = True
+            continue
+        else:
+            break
 
     await cleanup_session(loop, agent, runtime, controller)
 
@@ -779,3 +796,6 @@ def run_cli_command(args):
         except Exception as e:
             print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)
+        finally:
+            # Display deprecation warning on exit
+            display_deprecation_warning()

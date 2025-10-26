@@ -28,6 +28,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -36,7 +37,11 @@ from openhands.core.config import (
     get_llm_config_arg,
     load_from_toml,
 )
-from openhands.core.config.utils import get_agent_config_arg
+from openhands.core.config.utils import (
+    get_agent_config_arg,
+    get_llms_for_routing_config,
+    get_model_routing_config_arg,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
@@ -57,6 +62,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def get_config(
+    instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
@@ -66,13 +72,24 @@ def get_config(
         sandbox_config=sandbox_config,
         runtime='docker',
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
+        )
+    )
+    model_routing_config = get_model_routing_config_arg()
+    model_routing_config.llms_for_routing = (
+        get_llms_for_routing_config()
+    )  # Populate with LLMs for routing from config.toml file
+
     if metadata.agent_config:
+        metadata.agent_config.model_routing = model_routing_config
         config.set_agent_config(metadata.agent_config, metadata.agent_class)
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
+        agent_config.model_routing = model_routing_config
 
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
@@ -145,7 +162,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(instance, metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:

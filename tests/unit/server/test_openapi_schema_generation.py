@@ -50,6 +50,10 @@ class MockUserAuth(UserAuth):
     async def get_instance(cls, request: Request) -> UserAuth:
         return MockUserAuth()
 
+    @classmethod
+    async def get_for_user(cls, user_id: str) -> UserAuth:
+        return MockUserAuth()
+
 
 @pytest.fixture
 def test_client():

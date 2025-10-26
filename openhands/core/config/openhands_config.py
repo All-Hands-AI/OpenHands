@@ -30,6 +30,7 @@ class OpenHandsConfig(BaseModel):
             The default configuration is stored under the 'agent' key.
         default_agent: Name of the default agent to use.
         sandbox: Sandbox configuration settings.
+        security: Security configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
@@ -88,8 +89,8 @@ class OpenHandsConfig(BaseModel):
     )
 
     # Deprecated parameters - will be removed in a future version
-    workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path: str | None = Field(default=None)
+    workspace_mount_rewrite: str | None = Field(default=None)
     # End of deprecated parameters
 
     cache_dir: str = Field(default='/tmp/cache')
@@ -111,6 +112,10 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    client_wait_timeout: int = Field(
+        default=30,
+        description='Timeout in seconds for waiting for websocket client connection during initialization',
+    )
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)

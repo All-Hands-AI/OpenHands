@@ -271,7 +271,7 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
     is_windows(), reason='Test uses Linux-specific bash loops and sed commands'
 )
 def test_multiline_command_loop(temp_dir, runtime_cls):
-    # https://github.com/All-Hands-AI/OpenHands/issues/3143
+    # https://github.com/OpenHands/OpenHands/issues/3143
     init_cmd = """mkdir -p _modules && \
 for month in {01..04}; do
     for day in {01..05}; do
@@ -695,7 +695,10 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_overwrite_existing_file(temp_dir, runtime_cls):
+def test_overwrite_existing_file(tmp_path_factory, runtime_cls):
+    temp_dir = tmp_path_factory.mktemp('mount')
+    host_temp_dir = tmp_path_factory.mktemp('host')
+
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         sandbox_dir = config.workspace_mount_path_in_sandbox
@@ -724,8 +727,8 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             assert 'Hello, World!' not in obs.content
 
             # Create host file and copy to overwrite
-            _create_test_file(temp_dir)
-            runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
+            _create_test_file(str(host_temp_dir))
+            runtime.copy_to(str(host_temp_dir / 'test_file.txt'), sandbox_dir)
 
             # Verify file content is overwritten
             obs = _run_cmd_action(runtime, f'Get-Content {sandbox_file}')
@@ -749,8 +752,8 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             assert obs.content.strip() == ''  # Empty file
             assert 'Hello, World!' not in obs.content
 
-            _create_test_file(temp_dir)
-            runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
+            _create_test_file(str(host_temp_dir))
+            runtime.copy_to(str(host_temp_dir / 'test_file.txt'), sandbox_dir)
 
             obs = _run_cmd_action(runtime, f'cat {sandbox_file}')
             assert obs.exit_code == 0
@@ -1450,7 +1453,7 @@ def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
     try:
         # create a git repo - same for both platforms
         action = CmdRunAction(
-            'git init && git remote add origin https://github.com/All-Hands-AI/OpenHands'
+            'git init && git remote add origin https://github.com/OpenHands/OpenHands'
         )
         obs = runtime.run_action(action)
         # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -1460,7 +1463,7 @@ def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(CmdRunAction('git remote -v'))
         # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.metadata.exit_code == 0
-        assert 'https://github.com/All-Hands-AI/OpenHands' in obs.content
+        assert 'https://github.com/OpenHands/OpenHands' in obs.content
         assert 'git remote -v' not in obs.content
     finally:
         _close_test_runtime(runtime)

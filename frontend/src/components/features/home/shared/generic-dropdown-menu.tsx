@@ -29,6 +29,10 @@ export interface GenericDropdownMenuProps<T> {
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
+  stickyTopItem?: React.ReactNode;
+  stickyFooterItem?: React.ReactNode;
+  testId?: string;
+  numberOfRecentItems?: number;
 }
 
 export function GenericDropdownMenu<T>({
@@ -43,32 +47,68 @@ export function GenericDropdownMenu<T>({
   menuRef,
   renderItem,
   renderEmptyState,
+  stickyTopItem,
+  stickyFooterItem,
+  testId,
+  numberOfRecentItems = 0,
 }: GenericDropdownMenuProps<T>) {
   if (!isOpen) return null;
 
+  const hasItems = filteredItems.length > 0;
+  const showEmptyState = !hasItems && !stickyTopItem && !stickyFooterItem;
+
   return (
-    <ul
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      {...getMenuProps({
-        ref: menuRef,
-        className: cn(
-          "absolute z-10 w-full bg-[#454545] border border-[#717888] rounded-xl shadow-lg max-h-60 overflow-auto",
-          "focus:outline-none p-1 gap-2 flex flex-col",
-        ),
-        onScroll,
-      })}
-    >
-      {filteredItems.length === 0
-        ? renderEmptyState(inputValue)
-        : filteredItems.map((item, index) =>
-            renderItem(
-              item,
-              index,
-              highlightedIndex,
-              selectedItem,
-              getItemProps,
+    <div className="relative">
+      <div
+        className={cn(
+          "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
+          "focus:outline-none mt-1 z-[9999]",
+          stickyTopItem || stickyFooterItem ? "max-h-60" : "max-h-60",
+        )}
+      >
+        <ul
+          // eslint-disable-next-line react/jsx-props-no-spreading
+          {...getMenuProps({
+            ref: menuRef,
+            className: cn(
+              "w-full overflow-auto p-1 custom-scrollbar-always",
+              stickyTopItem || stickyFooterItem
+                ? "max-h-[calc(15rem-3rem)]"
+                : "max-h-60", // Reserve space for sticky items
             ),
+            onScroll,
+            "data-testid": testId,
+          })}
+        >
+          {showEmptyState ? (
+            renderEmptyState(inputValue)
+          ) : (
+            <>
+              {stickyTopItem}
+              {filteredItems.map((item, index) => (
+                <>
+                  {renderItem(
+                    item,
+                    index,
+                    highlightedIndex,
+                    selectedItem,
+                    getItemProps,
+                  )}
+                  {numberOfRecentItems > 0 &&
+                    index === numberOfRecentItems - 1 && (
+                      <div className="border-b border-[#727987] bg-[#454545] pb-1 mb-1 h-[1px]" />
+                    )}
+                </>
+              ))}
+            </>
           )}
-    </ul>
+        </ul>
+        {stickyFooterItem && (
+          <div className="border-t border-[#727987] bg-[#454545] p-1 rounded-b-lg">
+            {stickyFooterItem}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

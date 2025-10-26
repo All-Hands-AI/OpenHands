@@ -146,7 +146,7 @@ class ProviderHandler:
         """Read-only access to provider tokens."""
         return self._provider_tokens
 
-    def _get_service(self, provider: ProviderType) -> GitService:
+    def get_service(self, provider: ProviderType) -> GitService:
         """Helper method to instantiate a service for a given provider"""
         token = self.provider_tokens[provider]
         service_class = self.service_class_map[provider]
@@ -163,7 +163,7 @@ class ProviderHandler:
         """Get user information from the first available provider"""
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_user()
             except Exception:
                 continue
@@ -188,12 +188,15 @@ class ProviderHandler:
             return SecretStr(data.token)
 
         except Exception as e:
-            logger.warning(f'Failed to fetch latest token for provider {provider}: {e}')
+            logger.error(
+                f'Failed to fetch latest token for provider {provider}: {e}',
+                exc_info=True,
+            )
 
         return None
 
     async def get_github_installations(self) -> list[str]:
-        service = cast(InstallationsService, self._get_service(ProviderType.GITHUB))
+        service = cast(InstallationsService, self.get_service(ProviderType.GITHUB))
         try:
             return await service.get_installations()
         except Exception as e:
@@ -202,7 +205,7 @@ class ProviderHandler:
         return []
 
     async def get_bitbucket_workspaces(self) -> list[str]:
-        service = cast(InstallationsService, self._get_service(ProviderType.BITBUCKET))
+        service = cast(InstallationsService, self.get_service(ProviderType.BITBUCKET))
         try:
             return await service.get_installations()
         except Exception as e:
@@ -228,7 +231,7 @@ class ProviderHandler:
             if not page or not per_page:
                 raise ValueError('Failed to provider params for paginating repos')
 
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             return await service.get_paginated_repos(
                 page, per_page, sort, installation_id
             )
@@ -236,7 +239,7 @@ class ProviderHandler:
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 service_repos = await service.get_all_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -249,7 +252,7 @@ class ProviderHandler:
         tasks: list[SuggestedTask] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 service_repos = await service.get_suggested_tasks()
                 tasks.extend(service_repos)
             except Exception as e:
@@ -266,7 +269,7 @@ class ProviderHandler:
     ) -> list[Branch]:
         """Search for branches within a repository using the appropriate provider service."""
         if selected_provider:
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             try:
                 return await service.search_branches(repository, query, per_page)
             except Exception as e:
@@ -278,7 +281,7 @@ class ProviderHandler:
         # If provider not specified, determine provider by verifying repository access
         try:
             repo_details = await self.verify_repo_provider(repository)
-            service = self._get_service(repo_details.git_provider)
+            service = self.get_service(repo_details.git_provider)
             return await service.search_branches(repository, query, per_page)
         except Exception as e:
             logger.warning(f'Error searching branches for {repository}: {e}')
@@ -291,22 +294,23 @@ class ProviderHandler:
         per_page: int,
         sort: str,
         order: str,
+        app_mode: AppMode,
     ) -> list[Repository]:
         if selected_provider:
-            service = self._get_service(selected_provider)
+            service = self.get_service(selected_provider)
             public = self._is_repository_url(query, selected_provider)
             user_repos = await service.search_repositories(
-                query, per_page, sort, order, public
+                query, per_page, sort, order, public, app_mode
             )
             return self._deduplicate_repositories(user_repos)
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 public = self._is_repository_url(query, provider)
                 service_repos = await service.search_repositories(
-                    query, per_page, sort, order, public
+                    query, per_page, sort, order, public, app_mode
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -445,28 +449,46 @@ class ProviderHandler:
         return f'{provider.value}_token'.lower()
 
     async def verify_repo_provider(
-        self, repository: str, specified_provider: ProviderType | None = None
+        self,
+        repository: str,
+        specified_provider: ProviderType | None = None,
+        is_optional: bool = False,
     ) -> Repository:
         errors = []
 
         if specified_provider:
             try:
-                service = self._get_service(specified_provider)
+                service = self.get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
                 errors.append(f'{specified_provider.value}: {str(e)}')
 
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
                 errors.append(f'{provider.value}: {str(e)}')
 
-        # Log all accumulated errors before raising AuthenticationError
-        logger.error(
-            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
-        )
+        # Log detailed error based on whether we had tokens or not
+        # For optional repositories (like org-level microagents), use debug level
+        log_fn = logger.debug if is_optional else logger.error
+
+        if not self.provider_tokens:
+            log_fn(
+                f'Failed to access repository {repository}: No provider tokens available. '
+                f'provider_tokens dict is empty.'
+            )
+        elif errors:
+            log_fn(
+                f'Failed to access repository {repository} with all available providers. '
+                f'Tried providers: {list(self.provider_tokens.keys())}. '
+                f'Errors: {"; ".join(errors)}'
+            )
+        else:
+            log_fn(
+                f'Failed to access repository {repository}: Unknown error (no providers tried, no errors recorded)'
+            )
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(
@@ -489,7 +511,7 @@ class ProviderHandler:
         """
         if specified_provider:
             try:
-                service = self._get_service(specified_provider)
+                service = self.get_service(specified_provider)
                 return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(
@@ -498,7 +520,7 @@ class ProviderHandler:
 
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
@@ -528,7 +550,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 result = await service.get_microagents(repository)
                 # Only return early if we got a non-empty result
                 if result:
@@ -572,7 +594,7 @@ class ProviderHandler:
         errors = []
         for provider in self.provider_tokens:
             try:
-                service = self._get_service(provider)
+                service = self.get_service(provider)
                 result = await service.get_microagent_content(repository, file_path)
                 # If we got content, return it immediately
                 if result:
@@ -610,17 +632,22 @@ class ProviderHandler:
             f'Microagent file {file_path} not found in {repository}'
         )
 
-    async def get_authenticated_git_url(self, repo_name: str) -> str:
+    async def get_authenticated_git_url(
+        self, repo_name: str, is_optional: bool = False
+    ) -> str:
         """Get an authenticated git URL for a repository.
 
         Args:
             repo_name: Repository name (owner/repo)
+            is_optional: If True, logs at debug level instead of error level when repo not found
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
         try:
-            repository = await self.verify_repo_provider(repo_name)
+            repository = await self.verify_repo_provider(
+                repo_name, is_optional=is_optional
+            )
         except AuthenticationError:
             raise Exception('Git provider authentication issue when getting remote URL')
 
@@ -676,7 +703,7 @@ class ProviderHandler:
             True if PR is active (open), False if closed/merged, True if can't determine
         """
         try:
-            service = self._get_service(git_provider)
+            service = self.get_service(git_provider)
             return await service.is_pr_open(repository, pr_number)
 
         except Exception as e:

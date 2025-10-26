@@ -65,6 +65,7 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'claude-3.7-sonnet*',
     'claude-sonnet-3-7-latest',
     'claude-3-5-sonnet*',
+    'claude-3.5-sonnet*',  # Accept dot-notation for Sonnet 3.5 as well
     'claude-3.5-haiku*',
     'claude-3-5-haiku*',
     'claude-sonnet-4*',
@@ -102,6 +103,8 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'gpt-5*',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
+    'claude-sonnet-4-5*',
+    'claude-haiku-4-5*',
 ]
 
 PROMPT_CACHE_PATTERNS: list[str] = [
@@ -122,6 +125,7 @@ SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
     'o1*',
     # grok-4 specific model name (basename)
     'grok-4-0709',
+    'grok-code-fast-1',
     # DeepSeek R1 family
     'deepseek-r1-0528*',
 ]

@@ -1,12 +1,13 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  GetConfigResponse,
-  Conversation,
-  ResultSet,
-} from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
+import { Conversation, ResultSet } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
+import {
+  ApiSettings,
+  PostApiSettings,
+} from "#/settings-service/settings.types";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
 import { GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
@@ -114,7 +115,11 @@ const openHandsHandlers = [
       "gpt-4o-mini",
       "anthropic/claude-3.5",
       "anthropic/claude-sonnet-4-20250514",
+      "anthropic/claude-sonnet-4-5-20250929",
+      "anthropic/claude-haiku-4-5-20251001",
       "openhands/claude-sonnet-4-20250514",
+      "openhands/claude-sonnet-4-5-20250929",
+      "openhands/claude-haiku-4-5-20251001",
       "sambanova/Meta-Llama-3.1-8B-Instruct",
     ]),
   ),
