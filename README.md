@@ -92,7 +92,7 @@ docker run -it --rm --pull=always \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/openhands/openhands:0.59
+    docker.all-hands.dev/all-hands-ai/openhands:0.59
 ```
 
 </details>
