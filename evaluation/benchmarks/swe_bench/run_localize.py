@@ -141,7 +141,7 @@ You SHOULD NEVER attempt to browse the web.
     return instruction
 
 
-# TODO: migrate all swe-bench docker to ghcr.io/openhands
+# TODO: migrate all swe-bench docker to ghcr.io/all-hands-ai
 DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
     'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/'
 )
