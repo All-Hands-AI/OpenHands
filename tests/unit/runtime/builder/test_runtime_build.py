@@ -219,7 +219,6 @@ def test_generate_dockerfile_build_from_versioned():
 
 
 def test_generate_dockerfile_channel_alias_included(monkeypatch):
-    # Use a direct import from the repository path to avoid importing a stale copy from /openhands/code
     import importlib.util
     from pathlib import Path
 
