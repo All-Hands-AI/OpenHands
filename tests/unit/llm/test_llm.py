@@ -1,6 +1,7 @@
 import copy
 import tempfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,6 +9,8 @@ from litellm import PromptTokensDetails
 from litellm.exceptions import (
     RateLimitError,
 )
+
+from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
@@ -199,6 +202,80 @@ def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
 
     # Call completion
     llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
+
+
+def test_gateway_headers_and_token_caching(monkeypatch):
+    request_calls: list[dict[str, Any]] = []
+
+    def fake_request(method, url, headers=None, json=None, timeout=None, verify=None):
+        request_calls.append(
+            {
+                'method': method,
+                'url': url,
+                'headers': headers,
+                'json': json,
+                'timeout': timeout,
+                'verify': verify,
+            }
+        )
+
+        class _Response:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {'data': {'token': 'cached-token', 'expires_in': 120}}
+
+        return _Response()
+
+    monkeypatch.setattr('openhands.llm.llm.httpx.request', fake_request)
+
+    config = LLMConfig(
+        model='openai/gpt-4o',
+        api_key=SecretStr('llm-secret'),
+        gateway_provider='tachyon',
+        gateway_auth_url='https://idp.example.com/token',
+        gateway_auth_method='post',
+        gateway_auth_headers={'X-Identity-Key': '{{llm_api_key}}'},
+        gateway_auth_body={'client': 'openhands'},
+        gateway_auth_token_path='data.token',
+        gateway_auth_expires_in_path='data.expires_in',
+        custom_headers={'X-Tachyon-Key': 'static-key'},
+        extra_body_params={'metadata': {'source': 'cli'}},
+    )
+
+    llm = LLM(config, service_id='gateway-test')
+
+    call_kwargs: dict[str, Any] = {
+        'extra_body': {'metadata': {'existing': 1}},
+    }
+
+    llm._prepare_gateway_call(call_kwargs)
+
+    # Ensure identity provider was called exactly once
+    assert len(request_calls) == 1
+    request = request_calls[0]
+    assert request['method'] == 'POST'
+    assert request['url'] == 'https://idp.example.com/token'
+    assert request['headers']['X-Identity-Key'] == 'llm-secret'
+    assert request['json'] == {'client': 'openhands'}
+
+    # Validate merged headers and body
+    assert 'extra_headers' in call_kwargs
+    headers = call_kwargs['extra_headers']
+    assert headers['Authorization'] == 'Bearer cached-token'
+    assert headers['X-Tachyon-Key'] == 'static-key'
+
+    extra_body = call_kwargs['extra_body']
+    assert extra_body['metadata']['existing'] == 1
+    assert extra_body['metadata']['source'] == 'cli'
+    assert extra_body['headers']['Authorization'] == 'Bearer cached-token'
+
+    # Second invocation should reuse cached token (no additional IDP call)
+    second_kwargs: dict[str, Any] = {}
+    llm._prepare_gateway_call(second_kwargs)
+    assert len(request_calls) == 1
+    assert second_kwargs['extra_headers']['Authorization'] == 'Bearer cached-token'
 
 
 def test_llm_init_with_metrics():

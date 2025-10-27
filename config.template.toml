@@ -211,6 +211,21 @@ model = "gpt-4o"
 # ]
 #safety_settings = []
 
+# Enterprise gateway integration (e.g., Tachyon)
+#gateway_provider = ""
+#gateway_auth_url = ""
+#gateway_auth_method = "POST"
+#gateway_auth_headers = { "X-Identity-Key" = "", "X-Identity-Secret" = "" }
+#gateway_auth_body = { "audience" = "tachyon" }
+#gateway_auth_token_path = "access_token"
+#gateway_auth_expires_in_path = "expires_in"
+#gateway_auth_token_ttl = 300
+#gateway_token_header = "Authorization"
+#gateway_token_prefix = "Bearer "
+#gateway_auth_verify_ssl = true
+#custom_headers = { "X-Tachyon-Key" = "" }
+#extra_body_params = { "metadata" = { "source" = "openhands-cli" } }
+
 [llm.draft_editor]
 # The number of times llm_editor tries to fix an error when editing.
 correct_num = 5

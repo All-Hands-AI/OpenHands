@@ -1,5 +1,6 @@
 import copy
 import os
+import threading
 import time
 import warnings
 from functools import partial
@@ -212,6 +213,19 @@ class LLM(RetryMixin, DebugMixin):
         )
 
         self._completion_unwrapped = self._completion
+        self._gateway_lock = threading.Lock()
+        self._gateway_token: str | None = None
+        self._gateway_token_expiry: float | None = None
+        self._static_gateway_headers: dict[str, str] = (
+            copy.deepcopy(self.config.custom_headers)
+            if self.config.custom_headers
+            else {}
+        )
+        self._static_gateway_body: dict[str, Any] = (
+            copy.deepcopy(self.config.extra_body_params)
+            if self.config.extra_body_params
+            else {}
+        )
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -310,8 +324,15 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
+            self._prepare_gateway_call(kwargs)
+
             # if we're not using litellm proxy, remove the extra_body
-            if 'litellm_proxy' not in self.config.model:
+            should_preserve_extra_body = bool(
+                'litellm_proxy' in self.config.model
+                or self._static_gateway_body
+                or self.config.gateway_provider
+            )
+            if not should_preserve_extra_body:
                 kwargs.pop('extra_body', None)
 
             # Record start time for latency measurement
@@ -798,6 +819,214 @@ class LLM(RetryMixin, DebugMixin):
             self.cost_metric_supported = False
             logger.debug('Cost calculation not supported for this model.')
         return 0.0
+
+    def _prepare_gateway_call(self, call_kwargs: dict[str, Any]) -> None:
+        """Augment LiteLLM call kwargs with gateway headers, body params, and tokens."""
+        if (
+            not self.config.gateway_provider
+            and not self._static_gateway_headers
+            and not self._static_gateway_body
+        ):
+            return
+
+        headers: dict[str, str] = {}
+        existing_headers = call_kwargs.get('extra_headers')
+        if isinstance(existing_headers, dict):
+            headers.update(existing_headers)
+
+        if self._static_gateway_headers:
+            rendered_headers = self._render_gateway_templates(
+                self._static_gateway_headers
+            )
+            if isinstance(rendered_headers, dict):
+                headers.update(rendered_headers)
+
+        token_headers = self._get_gateway_token_headers()
+        if token_headers:
+            headers.update(token_headers)
+
+        if headers:
+            call_kwargs['extra_headers'] = headers
+
+        # Merge extra body parameters
+        rendered_body_params = {}
+        if self._static_gateway_body:
+            rendered = self._render_gateway_templates(self._static_gateway_body)
+            if isinstance(rendered, dict):
+                rendered_body_params = rendered
+
+        if headers:
+            rendered_body_params = copy.deepcopy(rendered_body_params)
+            body_headers = rendered_body_params.setdefault('headers', {})
+            if isinstance(body_headers, dict):
+                body_headers.update(headers)
+            else:
+                rendered_body_params['headers'] = headers
+
+        existing_body = call_kwargs.get('extra_body')
+        merged_body: dict[str, Any] | None = None
+        if isinstance(existing_body, dict):
+            merged_body = copy.deepcopy(existing_body)
+            if rendered_body_params:
+                self._merge_dict_in_place(merged_body, rendered_body_params)
+        elif rendered_body_params:
+            merged_body = rendered_body_params
+
+        if merged_body:
+            call_kwargs['extra_body'] = merged_body
+
+    def _get_gateway_token_headers(self) -> dict[str, str]:
+        """Return the gateway token header dict, fetching a new token if necessary."""
+        token = self._ensure_gateway_token()
+        if not token:
+            return {}
+
+        header_name = self.config.gateway_token_header or 'Authorization'
+        prefix = self.config.gateway_token_prefix or ''
+        value = f'{prefix}{token}' if prefix else token
+        return {header_name: value}
+
+    def _ensure_gateway_token(self) -> str | None:
+        """Fetch or reuse an identity-provider token when gateway auth is configured."""
+        if not self.config.gateway_auth_url:
+            return None
+
+        now = time.time()
+        if (
+            self._gateway_token
+            and self._gateway_token_expiry
+            and now < self._gateway_token_expiry - 5
+        ):
+            return self._gateway_token
+
+        with self._gateway_lock:
+            # Double-check after acquiring the lock
+            if (
+                self._gateway_token
+                and self._gateway_token_expiry
+                and time.time() < self._gateway_token_expiry - 5
+            ):
+                return self._gateway_token
+
+            method = (self.config.gateway_auth_method or 'POST').upper()
+            headers = self._render_gateway_templates(
+                self.config.gateway_auth_headers or {}
+            )
+            body = self._render_gateway_templates(self.config.gateway_auth_body or {})
+
+            try:
+                response = httpx.request(
+                    method,
+                    self.config.gateway_auth_url,
+                    headers=headers if isinstance(headers, dict) else None,
+                    json=body if isinstance(body, dict) else None,
+                    timeout=self.config.timeout or 30,
+                    verify=self.config.gateway_auth_verify_ssl,
+                )
+                response.raise_for_status()
+            except Exception as err:
+                logger.error(f'Gateway auth request failed: {err}')
+                raise
+
+            payload: Any
+            try:
+                payload = response.json()
+            except Exception as err:
+                logger.error(f'Failed to parse gateway auth response JSON: {err}')
+                raise
+
+            token_path = self.config.gateway_auth_token_path or 'access_token'
+            token_value = self._extract_from_path(payload, token_path)
+            if not isinstance(token_value, str) or not token_value.strip():
+                raise ValueError(
+                    f'Gateway auth response did not contain token at path "{token_path}".'
+                )
+
+            ttl_seconds: float | None = None
+            if self.config.gateway_auth_expires_in_path:
+                expires_in_value = self._extract_from_path(
+                    payload, self.config.gateway_auth_expires_in_path
+                )
+                ttl_seconds = self._coerce_float(expires_in_value)
+
+            if ttl_seconds is None and self.config.gateway_auth_token_ttl:
+                ttl_seconds = float(self.config.gateway_auth_token_ttl)
+
+            if ttl_seconds is None:
+                ttl_seconds = 300.0
+
+            self._gateway_token = token_value.strip()
+            self._gateway_token_expiry = time.time() + max(ttl_seconds, 1.0)
+            return self._gateway_token
+
+    @staticmethod
+    def _coerce_float(value: Any) -> float | None:
+        try:
+            if value is None:
+                return None
+            if isinstance(value, (int, float)):
+                return float(value)
+            return float(str(value))
+        except (ValueError, TypeError):
+            return None
+
+    def _render_gateway_templates(self, value: Any) -> Any:
+        """Apply simple templating for gateway configuration values."""
+        if isinstance(value, str):
+            replacements: dict[str, str] = {
+                '{{llm_model}}': self.config.model,
+                '{{llm_base_url}}': self.config.base_url or '',
+            }
+            if self.config.api_key:
+                replacements['{{llm_api_key}}'] = self.config.api_key.get_secret_value()
+            result = value
+            for placeholder, actual in replacements.items():
+                result = result.replace(placeholder, actual)
+            return result
+        if isinstance(value, dict):
+            return {k: self._render_gateway_templates(v) for k, v in value.items()}
+        if isinstance(value, list):
+            return [self._render_gateway_templates(v) for v in value]
+        return value
+
+    @staticmethod
+    def _merge_dict_in_place(target: dict[str, Any], extra: dict[str, Any]) -> None:
+        for key, value in extra.items():
+            if (
+                key in target
+                and isinstance(target[key], dict)
+                and isinstance(value, dict)
+            ):
+                LLM._merge_dict_in_place(target[key], value)
+            else:
+                target[key] = value
+
+    @staticmethod
+    def _extract_from_path(payload: Any, path: str) -> Any:
+        current = payload
+        if not path:
+            return current
+        for part in path.split('.'):
+            if isinstance(current, dict):
+                current = current.get(part)
+            elif isinstance(current, list):
+                try:
+                    index = int(part)
+                except (ValueError, TypeError):
+                    raise ValueError(
+                        f'Invalid list index "{part}" while traversing response path.'
+                    ) from None
+                try:
+                    current = current[index]
+                except (IndexError, TypeError):
+                    raise ValueError(
+                        f'Index {index} out of range while traversing response path.'
+                    ) from None
+            else:
+                raise ValueError(
+                    f'Cannot traverse path "{path}"; segment "{part}" not found.'
+                )
+        return current
 
     def __str__(self) -> str:
         if self.config.api_version:

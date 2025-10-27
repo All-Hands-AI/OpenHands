@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -28,6 +30,19 @@ class Settings(BaseModel):
     llm_model: str | None = None
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
+    llm_gateway_provider: str | None = None
+    llm_gateway_auth_url: str | None = None
+    llm_gateway_auth_method: str | None = None
+    llm_gateway_auth_headers: dict[str, str] | None = None
+    llm_gateway_auth_body: dict[str, Any] | None = None
+    llm_gateway_auth_token_path: str | None = None
+    llm_gateway_auth_expires_in_path: str | None = None
+    llm_gateway_auth_token_ttl: int | None = None
+    llm_gateway_token_header: str | None = None
+    llm_gateway_token_prefix: str | None = None
+    llm_gateway_auth_verify_ssl: bool | None = None
+    llm_custom_headers: dict[str, str] | None = None
+    llm_extra_body_params: dict[str, Any] | None = None
     remote_runtime_resource_factor: int | None = None
     # Planned to be removed from settings
     secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
@@ -147,6 +162,19 @@ class Settings(BaseModel):
             llm_model=llm_config.model,
             llm_api_key=llm_config.api_key,
             llm_base_url=llm_config.base_url,
+            llm_gateway_provider=llm_config.gateway_provider,
+            llm_gateway_auth_url=llm_config.gateway_auth_url,
+            llm_gateway_auth_method=llm_config.gateway_auth_method,
+            llm_gateway_auth_headers=llm_config.gateway_auth_headers,
+            llm_gateway_auth_body=llm_config.gateway_auth_body,
+            llm_gateway_auth_token_path=llm_config.gateway_auth_token_path,
+            llm_gateway_auth_expires_in_path=llm_config.gateway_auth_expires_in_path,
+            llm_gateway_auth_token_ttl=llm_config.gateway_auth_token_ttl,
+            llm_gateway_token_header=llm_config.gateway_token_header,
+            llm_gateway_token_prefix=llm_config.gateway_token_prefix,
+            llm_gateway_auth_verify_ssl=llm_config.gateway_auth_verify_ssl,
+            llm_custom_headers=llm_config.custom_headers,
+            llm_extra_body_params=llm_config.extra_body_params,
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,

@@ -71,6 +71,50 @@ class LLMConfig(BaseModel):
     top_p: float = Field(default=1.0)
     top_k: float | None = Field(default=None)
     custom_llm_provider: str | None = Field(default=None)
+    gateway_provider: str | None = Field(
+        default=None,
+        description='Name of the enterprise gateway provider (e.g. "tachyon").',
+    )
+    gateway_auth_url: str | None = Field(
+        default=None,
+        description='URL of the identity provider endpoint used to acquire gateway tokens.',
+    )
+    gateway_auth_method: str = Field(
+        default='POST',
+        description='HTTP method to use when calling the identity provider.',
+    )
+    gateway_auth_headers: dict[str, str] | None = Field(
+        default=None,
+        description='Static headers to send to the identity provider.',
+    )
+    gateway_auth_body: dict[str, Any] | None = Field(
+        default=None,
+        description='JSON body sent to the identity provider when fetching a token.',
+    )
+    gateway_auth_token_path: str | None = Field(
+        default=None,
+        description='Dot-delimited path to the token value in the identity provider response.',
+    )
+    gateway_auth_expires_in_path: str | None = Field(
+        default=None,
+        description='Dot-delimited path to the expires_in value in the identity provider response.',
+    )
+    gateway_auth_token_ttl: int | None = Field(
+        default=None,
+        description='Fallback TTL (seconds) for gateway tokens if the response lacks expiry data.',
+    )
+    gateway_token_header: str | None = Field(
+        default=None,
+        description='Header name used to forward the gateway token (defaults to Authorization).',
+    )
+    gateway_token_prefix: str = Field(
+        default='Bearer ',
+        description='Prefix prepended to the gateway token when constructing the header value.',
+    )
+    gateway_auth_verify_ssl: bool = Field(
+        default=True,
+        description='Whether to verify TLS certificates when calling the identity provider.',
+    )
     max_input_tokens: int | None = Field(default=None)
     max_output_tokens: int | None = Field(default=None)
     input_cost_per_token: float | None = Field(default=None)
@@ -92,6 +136,14 @@ class LLMConfig(BaseModel):
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
+    )
+    custom_headers: dict[str, str] | None = Field(
+        default=None,
+        description='Custom headers to add to each LLM request.',
+    )
+    extra_body_params: dict[str, Any] | None = Field(
+        default=None,
+        description='Extra parameters merged into the request body for each LLM request.',
     )
     for_routing: bool = Field(default=False)
 
@@ -192,3 +244,21 @@ class LLMConfig(BaseModel):
             )
         if self.aws_region_name:
             os.environ['AWS_REGION_NAME'] = self.aws_region_name
+
+        if self.gateway_provider:
+            provider = self.gateway_provider.strip()
+            self.gateway_provider = provider or None
+
+        if self.gateway_auth_method:
+            self.gateway_auth_method = self.gateway_auth_method.upper()
+
+        if self.gateway_token_header:
+            header = self.gateway_token_header.strip()
+            self.gateway_token_header = header or None
+
+        if (
+            self.gateway_auth_token_ttl is not None
+            and self.gateway_auth_token_ttl <= 0
+        ):
+            logger.warning('gateway_auth_token_ttl must be positive; ignoring value.')
+            self.gateway_auth_token_ttl = None

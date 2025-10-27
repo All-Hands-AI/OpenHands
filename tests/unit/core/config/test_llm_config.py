@@ -1,8 +1,10 @@
 import pathlib
 
 import pytest
+from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.utils import load_from_toml
 
 
@@ -254,3 +256,21 @@ api_key = "test-api-key"
     non_azure_llm = default_config.get_llm_config('llm')
     assert non_azure_llm.model == 'anthropic/claude-3-sonnet'
     assert non_azure_llm.api_version is None
+
+
+def test_llm_config_gateway_fields_normalization() -> None:
+    config = LLMConfig(
+        model='openai/gpt-4o',
+        api_key=SecretStr('test'),
+        gateway_provider='  Tachyon ',
+        gateway_auth_method='post',
+        gateway_token_header='  X-Tachyon-Token  ',
+        gateway_auth_token_ttl=-5,
+        custom_headers={'X-Static': 'value'},
+    )
+
+    assert config.gateway_provider == 'Tachyon'
+    assert config.gateway_auth_method == 'POST'
+    assert config.gateway_token_header == 'X-Tachyon-Token'
+    assert config.gateway_auth_token_ttl is None
+    assert config.custom_headers == {'X-Static': 'value'}
