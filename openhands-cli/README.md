@@ -1,8 +1,8 @@
 # OpenHands V1 CLI
 
-A **lightweight, modern CLI** to interact with the OpenHands agent (powered by [agent-sdk](https://github.com/All-Hands-AI/agent-sdk)). 
+A **lightweight, modern CLI** to interact with the OpenHands agent (powered by [agent-sdk](https://github.com/OpenHands/agent-sdk)). 
 
-The [OpenHands V0 CLI (legacy)](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/cli) is being deprecated.
+The [OpenHands V0 CLI (legacy)](https://github.com/OpenHands/OpenHands/tree/main/openhands/cli) is being deprecated.
 
 ---
 
