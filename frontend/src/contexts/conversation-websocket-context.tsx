@@ -68,10 +68,15 @@ export function ConversationWebSocketProvider({
   const { appendInput, appendOutput } = useCommandStore();
 
   // Build WebSocket URL from props
-  const wsUrl = useMemo(
-    () => buildWebSocketUrl(conversationId, conversationUrl),
-    [conversationId, conversationUrl],
-  );
+  // Only build URL if we have both conversationId and conversationUrl
+  // This prevents connection attempts during task polling phase
+  const wsUrl = useMemo(() => {
+    // Don't attempt connection if we're missing required data
+    if (!conversationId || !conversationUrl) {
+      return null;
+    }
+    return buildWebSocketUrl(conversationId, conversationUrl);
+  }, [conversationId, conversationUrl]);
 
   // Reset hasConnected flag when conversation changes
   useEffect(() => {
@@ -185,9 +190,10 @@ export function ConversationWebSocketProvider({
     };
   }, [handleMessage, setErrorMessage, removeErrorMessage, sessionApiKey]);
 
-  // Build a fallback URL to prevent hook from connecting if conversation data isn't ready
-  const websocketUrl = wsUrl || "ws://localhost/placeholder";
-  const { socket } = useWebSocket(websocketUrl, websocketOptions);
+  // Only attempt WebSocket connection when we have a valid URL
+  // This prevents connection attempts during task polling phase
+  const websocketUrl = wsUrl;
+  const { socket } = useWebSocket(websocketUrl || "", websocketOptions);
 
   // V1 send message function via WebSocket
   const sendMessage = useCallback(
@@ -212,7 +218,7 @@ export function ConversationWebSocketProvider({
   );
 
   useEffect(() => {
-    // Only process socket updates if we have a valid URL
+    // Only process socket updates if we have a valid URL and socket
     if (socket && wsUrl) {
       // Update state based on socket readyState
       const updateState = () => {

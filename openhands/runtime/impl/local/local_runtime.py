@@ -79,7 +79,7 @@ def get_user_info() -> tuple[int, str | None]:
 
 
 def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
-    ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
+    ERROR_MESSAGE = 'Please follow the instructions in https://github.com/OpenHands/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
             f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
@@ -158,7 +158,7 @@ class LocalRuntime(ActionExecutionClient):
 
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
-            'This is an experimental feature, please report issues to https://github.com/All-Hands-AI/OpenHands/issues. '
+            'This is an experimental feature, please report issues to https://github.com/OpenHands/OpenHands/issues. '
             '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'

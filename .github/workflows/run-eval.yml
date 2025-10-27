@@ -101,7 +101,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             -d "{\"ref\": \"main\", \"inputs\": {\"github-repo\": \"${{ steps.eval_params.outputs.repo_url }}\", \"github-branch\": \"${{ steps.eval_params.outputs.eval_branch }}\", \"pr-number\": \"${PR_NUMBER}\", \"eval-instances\": \"${{ steps.eval_params.outputs.eval_instances }}\"}}" \
-            https://api.github.com/repos/All-Hands-AI/evaluation/actions/workflows/create-branch.yml/dispatches
+            https://api.github.com/repos/OpenHands/evaluation/actions/workflows/create-branch.yml/dispatches
 
           # Send Slack message
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then

@@ -16,7 +16,7 @@ def download_latest_vsix_from_github() -> str | None:
     Returns:
         Path to downloaded .vsix file, or None if failed
     """
-    api_url = 'https://api.github.com/repos/All-Hands-AI/OpenHands/releases'
+    api_url = 'https://api.github.com/repos/OpenHands/OpenHands/releases'
     try:
         with urllib.request.urlopen(api_url, timeout=10) as response:
             if response.status != 200:

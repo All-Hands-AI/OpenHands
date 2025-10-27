@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship
 from storage.base import Base
 
 
-class StoredUserSecrets(Base):  # type: ignore
-    __tablename__ = 'user_secrets'
+class StoredCustomSecrets(Base):  # type: ignore
+    __tablename__ = 'custom_secrets'
     id = Column(Integer, Identity(), primary_key=True)
     keycloak_user_id = Column(String, nullable=True, index=True)
     org_id = Column(UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)

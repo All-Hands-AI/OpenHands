@@ -56,7 +56,7 @@ ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in ac
 
 
 def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
-    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    # keep_prompt has been deprecated in https://github.com/OpenHands/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
 
