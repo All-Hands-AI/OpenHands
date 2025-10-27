@@ -104,7 +104,7 @@ class AppServerConfig(OpenHandsModel):
     )
 
     # Services
-    lifespan: AppLifespanService = Field(default_factory=_get_default_lifespan)
+    lifespan: AppLifespanService | None = Field(default_factory=_get_default_lifespan)
 
 
 def config_from_env() -> AppServerConfig:
@@ -291,7 +291,7 @@ def get_db_session(
     return get_global_config().db_session.context(state, request)
 
 
-def get_app_lifespan_service() -> AppLifespanService:
+def get_app_lifespan_service() -> AppLifespanService | None:
     config = get_global_config()
     return config.lifespan
 

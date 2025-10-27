@@ -23,7 +23,7 @@ from openhands.integrations.provider import (
 from openhands.integrations.service_types import ProviderType
 
 
-class UserSecrets(BaseModel):
+class Secrets(BaseModel):
     provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
@@ -96,7 +96,7 @@ class UserSecrets(BaseModel):
     ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
-            raise ValueError('UserSecrets must be initialized with a dictionary')
+            raise ValueError('Secrets must be initialized with a dictionary')
 
         new_data: dict[str, MappingProxyType | None] = {}
 

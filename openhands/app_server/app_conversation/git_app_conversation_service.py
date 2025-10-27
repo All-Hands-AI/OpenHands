@@ -16,7 +16,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
 PRE_COMMIT_HOOK = '.git/hooks/pre-commit'
@@ -36,23 +36,25 @@ class GitAppConversationService(AppConversationService, ABC):
         self,
         task: AppConversationStartTask,
         workspace: AsyncRemoteWorkspace,
+        working_dir: str,
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         task.status = AppConversationStartTaskStatus.PREPARING_REPOSITORY
         yield task
-        await self.clone_or_init_git_repo(task, workspace)
+        await self.clone_or_init_git_repo(task, workspace, working_dir)
 
         task.status = AppConversationStartTaskStatus.RUNNING_SETUP_SCRIPT
         yield task
-        await self.maybe_run_setup_script(workspace)
+        await self.maybe_run_setup_script(workspace, working_dir)
 
         task.status = AppConversationStartTaskStatus.SETTING_UP_GIT_HOOKS
         yield task
-        await self.maybe_setup_git_hooks(workspace)
+        await self.maybe_setup_git_hooks(workspace, working_dir)
 
     async def clone_or_init_git_repo(
         self,
         task: AppConversationStartTask,
         workspace: AsyncRemoteWorkspace,
+        working_dir: str,
     ):
         request = task.request
 
@@ -61,7 +63,7 @@ class GitAppConversationService(AppConversationService, ABC):
                 _logger.debug('Initializing a new git repository in the workspace.')
                 await workspace.execute_command(
                     'git init && git config --global --add safe.directory '
-                    + workspace.working_dir
+                    + working_dir
                 )
             else:
                 _logger.info('Not initializing a new git repository.')
@@ -77,7 +79,7 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # Clone the repo - this is the slow part!
         clone_command = f'git clone {remote_repo_url} {dir_name}'
-        await workspace.execute_command(clone_command, workspace.working_dir)
+        await workspace.execute_command(clone_command, working_dir)
 
         # Checkout the appropriate branch
         if request.selected_branch:
@@ -87,14 +89,15 @@ class GitAppConversationService(AppConversationService, ABC):
             random_str = base62.encodebytes(os.urandom(16))
             openhands_workspace_branch = f'openhands-workspace-{random_str}'
             checkout_command = f'git checkout -b {openhands_workspace_branch}'
-        await workspace.execute_command(checkout_command, workspace.working_dir)
+        await workspace.execute_command(checkout_command, working_dir)
 
     async def maybe_run_setup_script(
         self,
         workspace: AsyncRemoteWorkspace,
+        working_dir: str,
     ):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
-        setup_script = workspace.working_dir + '/.openhands/setup.sh'
+        setup_script = working_dir + '/.openhands/setup.sh'
 
         await workspace.execute_command(
             f'chmod +x {setup_script} && source {setup_script}', timeout=600
@@ -108,10 +111,11 @@ class GitAppConversationService(AppConversationService, ABC):
     async def maybe_setup_git_hooks(
         self,
         workspace: AsyncRemoteWorkspace,
+        working_dir: str,
     ):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
         command = 'mkdir -p .git/hooks && chmod +x .openhands/pre-commit.sh'
-        result = await workspace.execute_command(command, workspace.working_dir)
+        result = await workspace.execute_command(command, working_dir)
         if result.exit_code:
             return
 
@@ -127,9 +131,7 @@ class GitAppConversationService(AppConversationService, ABC):
                         f'mv {PRE_COMMIT_HOOK} {PRE_COMMIT_LOCAL} &&'
                         f'chmod +x {PRE_COMMIT_LOCAL}'
                     )
-                    result = await workspace.execute_command(
-                        command, workspace.working_dir
-                    )
+                    result = await workspace.execute_command(command, working_dir)
                     if result.exit_code != 0:
                         _logger.error(
                             f'Failed to preserve existing pre-commit hook: {result.stderr}',
