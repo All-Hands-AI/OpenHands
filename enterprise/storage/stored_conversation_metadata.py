@@ -4,19 +4,15 @@ This module provides a minimal StoredConversationMetadata class to avoid
 import issues with the main branch's broken agent_server imports.
 """
 
-from typing import Any
-
 from sqlalchemy import Column, DateTime, String
-from sqlalchemy.orm import declarative_base
 
-# Create a separate base to avoid table conflicts with main enterprise storage
-TelemetryBase: Any = declarative_base()
+from storage.base import Base
 
 
-class StoredConversationMetadata(TelemetryBase):
+class StoredConversationMetadata(Base):
     """Minimal StoredConversationMetadata class for telemetry compatibility."""
 
-    __tablename__ = 'stored_conversation_metadata'
+    __tablename__ = 'telemetry_conversation_metadata'
 
     # Fields needed for telemetry queries
     id = Column(String, primary_key=True)

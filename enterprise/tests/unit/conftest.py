@@ -1,8 +1,13 @@
 from datetime import datetime
 
 import pytest
+from server.constants import CURRENT_USER_SETTINGS_VERSION
+from server.maintenance_task_processor.user_version_upgrade_processor import (
+    UserVersionUpgradeProcessor,
+)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
 from storage.billing_session import BillingSession
@@ -14,12 +19,6 @@ from storage.stored_conversation_metadata import StoredConversationMetadata
 from storage.stored_offline_token import StoredOfflineToken
 from storage.stripe_customer import StripeCustomer
 from storage.user_settings import UserSettings
-
-from enterprise.server.constants import CURRENT_USER_SETTINGS_VERSION
-from enterprise.server.maintenance_task_processor.user_version_upgrade_processor import (
-    UserVersionUpgradeProcessor,
-)
-from enterprise.storage.base import Base
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Identity, Integer, String
 
-from enterprise.server.constants import DEFAULT_BILLING_MARGIN
-from enterprise.storage.base import Base
+from server.constants import DEFAULT_BILLING_MARGIN
+from storage.base import Base
 
 
 class UserSettings(Base):  # type: ignore
