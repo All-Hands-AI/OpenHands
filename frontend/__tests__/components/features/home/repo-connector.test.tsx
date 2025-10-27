@@ -57,7 +57,7 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
   },
   {
     id: "2",
-    full_name: "All-Hands-AI/OpenHands",
+    full_name: "OpenHands/OpenHands",
     git_provider: "github",
     is_public: true,
     main_branch: "main",
@@ -114,7 +114,7 @@ describe("RepoConnector", () => {
     // Wait for the options to be loaded and displayed
     await waitFor(() => {
       expect(screen.getByText("rbren/polaris")).toBeInTheDocument();
-      expect(screen.getByText("All-Hands-AI/OpenHands")).toBeInTheDocument();
+      expect(screen.getByText("OpenHands/OpenHands")).toBeInTheDocument();
     });
   });
 
