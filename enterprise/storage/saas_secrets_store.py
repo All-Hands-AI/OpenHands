@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from cryptography.fernet import Fernet
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
-from storage.stored_user_secrets import StoredUserSecrets
+from storage.stored_custom_secrets import StoredCustomSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
@@ -28,8 +28,8 @@ class SaasSecretsStore(SecretsStore):
         with self.session_maker() as session:
             # Fetch all secrets for the given user ID
             settings = (
-                session.query(StoredUserSecrets)
-                .filter(StoredUserSecrets.keycloak_user_id == self.user_id)
+                session.query(StoredCustomSecrets)
+                .filter(StoredCustomSecrets.keycloak_user_id == self.user_id)
                 .all()
             )
 
@@ -51,8 +51,8 @@ class SaasSecretsStore(SecretsStore):
         with self.session_maker() as session:
             # Incoming secrets are always the most updated ones
             # Delete all existing records and override with incoming ones
-            session.query(StoredUserSecrets).filter(
-                StoredUserSecrets.keycloak_user_id == self.user_id
+            session.query(StoredCustomSecrets).filter(
+                StoredCustomSecrets.keycloak_user_id == self.user_id
             ).delete()
 
             # Prepare the new secrets data
@@ -74,7 +74,7 @@ class SaasSecretsStore(SecretsStore):
 
             # Add the new secrets
             for secret_name, secret_value, description in secret_tuples:
-                new_secret = StoredUserSecrets(
+                new_secret = StoredCustomSecrets(
                     keycloak_user_id=self.user_id,
                     secret_name=secret_name,
                     secret_value=secret_value,

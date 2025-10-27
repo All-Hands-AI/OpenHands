@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import SecretStr
 from storage.saas_secrets_store import SaasSecretsStore
-from storage.stored_user_secrets import StoredUserSecrets
+from storage.stored_custom_secrets import StoredCustomSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.integrations.provider import CustomSecret
@@ -87,8 +87,8 @@ class TestSaasSecretsStore:
         # Verify the data is encrypted in the database
         with secrets_store.session_maker() as session:
             stored = (
-                session.query(StoredUserSecrets)
-                .filter(StoredUserSecrets.keycloak_user_id == 'user-id')
+                session.query(StoredCustomSecrets)
+                .filter(StoredCustomSecrets.keycloak_user_id == 'user-id')
                 .first()
             )
 
