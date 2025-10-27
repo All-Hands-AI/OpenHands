@@ -226,13 +226,55 @@ def test_generate_dockerfile_channel_alias(monkeypatch):
         base_image,
         build_from=BuildFromImageType.SCRATCH,
     )
-    # Should include a micromamba config set channel_alias line
-    assert f'micromamba config set channel_alias {alias}' in dockerfile_content
+    # Should include a micromamba config set channel_alias line with quoted alias
+    assert f"micromamba config set channel_alias '{alias}'" in dockerfile_content
     # We still expect conda-forge usage for packages
     assert '-c conda-forge' in dockerfile_content
 
+    # Ensure the line continuation uses a single backslash (\\) only
+    lines = dockerfile_content.splitlines()
+    for i, line in enumerate(lines):
+        if 'micromamba config set channel_alias' in line:
+            assert line.rstrip().endswith('\\')
+            # Not a literal double backslash in the Dockerfile (which would break RUN continuation)
+            assert ' \\\\' not in line
+            break
+
 
 def test_get_runtime_image_repo_and_tag_eventstream():
+    base_image = 'debian:11'
+    img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
+    assert (
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_debian_tag_11'
+    )
+
+    img_repo, img_tag = get_runtime_image_repo_and_tag(DEFAULT_BASE_IMAGE)
+    assert (
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag
+        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22'
+    )
+
+    base_image = 'ubuntu'
+    img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
+    assert (
+        img_repo == f'{get_runtime_image_repo()}'
+        and img_tag == f'{OH_VERSION}_image_ubuntu_tag_latest'
+    )
+
+
+def test_generate_dockerfile_channel_alias_not_in_non_scratch(monkeypatch):
+    base_image = 'debian:11'
+    alias = 'https://repo.prefix.dev'
+    monkeypatch.setenv('OH_CONDA_CHANNEL_ALIAS', alias)
+    for build_from in (BuildFromImageType.VERSIONED, BuildFromImageType.LOCK):
+        dockerfile_content = _generate_dockerfile(
+            base_image,
+            build_from=build_from,
+        )
+        assert 'micromamba config set channel_alias' not in dockerfile_content
+
     base_image = 'debian:11'
     img_repo, img_tag = get_runtime_image_repo_and_tag(base_image)
     assert (
