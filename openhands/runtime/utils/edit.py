@@ -400,9 +400,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         ret_obs.llm_metrics = self.draft_editor_llm.metrics
         return ret_obs
 
-    def check_retry_num(self, retry_num):
-        # Use configured correct_num if present; default to 5 otherwise for robustness
-        correct_num = getattr(self.draft_editor_llm.config, 'correct_num', 5)
+    def check_retry_num(self, retry_num: int) -> bool:
+        correct_num = self.draft_editor_llm.config.correct_num
         return correct_num < retry_num
 
     def correct_edit(
