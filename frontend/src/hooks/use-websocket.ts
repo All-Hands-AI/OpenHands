@@ -27,6 +27,8 @@ export const useWebSocket = <T = string>(
   const shouldReconnectRef = React.useRef(true); // Only set to false by disconnect()
   // Track which WebSocket instances are allowed to reconnect using a WeakSet
   const allowedToReconnectRef = React.useRef<WeakSet<WebSocket>>(new WeakSet());
+  // Track whether we've already emitted an error for the current WebSocket instance
+  const errorEmittedRef = React.useRef(false);
 
   // Store options in a ref to avoid reconnecting when callbacks change
   const optionsRef = React.useRef(options);
@@ -61,6 +63,7 @@ export const useWebSocket = <T = string>(
       setError(null); // Clear any previous errors
       setIsReconnecting(false);
       attemptCountRef.current = 0; // Reset attempt count on successful connection
+      errorEmittedRef.current = false; // reset error emission for this connection
       optionsRef.current?.onOpen?.(event);
     };
 
@@ -82,9 +85,13 @@ export const useWebSocket = <T = string>(
             `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
           ),
         );
-        // Also call onError handler for error closures (only if allowed to reconnect)
-        if (canReconnect) {
-          optionsRef.current?.onError?.(event);
+        // Only emit onError once per connection lifecycle to avoid duplicate calls
+        if (!errorEmittedRef.current) {
+          errorEmittedRef.current = true;
+          // Also call onError handler for error closures (only if allowed to reconnect)
+          if (canReconnect) {
+            optionsRef.current?.onError?.(event);
+          }
         }
       }
       optionsRef.current?.onClose?.(event);
@@ -114,7 +121,11 @@ export const useWebSocket = <T = string>(
 
     ws.onerror = (event) => {
       setIsConnected(false);
-      optionsRef.current?.onError?.(event);
+      // Only emit onError once per connection lifecycle
+      if (!errorEmittedRef.current) {
+        errorEmittedRef.current = true;
+        optionsRef.current?.onError?.(event);
+      }
     };
   }, [url]);
 
