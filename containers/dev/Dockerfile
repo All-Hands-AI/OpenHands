@@ -109,8 +109,6 @@ RUN git config --system --add safe.directory /app
 
 WORKDIR /app
 
-COPY . /app
-
 # cache build dependencies
 RUN \
   --mount=type=bind,source=./,target=/app/,rw \
