@@ -39,7 +39,7 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.utils.async_utils import call_async_from_sync
 
-# TODO: migrate all swe-bench docker to ghcr.io/openhands
+# TODO: migrate all swe-bench docker to ghcr.io/all-hands-ai
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
