@@ -28,16 +28,16 @@ export const useUnifiedVSCodeUrl = () => {
   const isV1Conversation = conversation?.conversation_version === "V1";
 
   // Fetch V1 app conversation to get sandbox_id
-  const { data: appConversations } = useBatchAppConversations(
+  const appConversationsQuery = useBatchAppConversations(
     isV1Conversation && conversationId ? [conversationId] : [],
   );
-  const appConversation = appConversations?.[0];
+  const appConversation = appConversationsQuery.data?.[0];
   const sandboxId = appConversation?.sandbox_id;
 
   // Fetch sandbox data for V1 conversations
-  const { data: sandboxes } = useBatchSandboxes(sandboxId ? [sandboxId] : []);
+  const sandboxesQuery = useBatchSandboxes(sandboxId ? [sandboxId] : []);
 
-  return useQuery<VSCodeUrlResult>({
+  const mainQuery = useQuery<VSCodeUrlResult>({
     queryKey: [
       "unified",
       "vscode_url",
@@ -50,14 +50,18 @@ export const useUnifiedVSCodeUrl = () => {
 
       // V1: Get VSCode URL from sandbox exposed_urls
       if (isV1Conversation) {
-        if (!sandboxes || sandboxes.length === 0 || !sandboxes[0]) {
+        if (
+          !sandboxesQuery.data ||
+          sandboxesQuery.data.length === 0 ||
+          !sandboxesQuery.data[0]
+        ) {
           return {
             url: null,
             error: t(I18nKey.VSCODE$URL_NOT_AVAILABLE),
           };
         }
 
-        const sandbox = sandboxes[0];
+        const sandbox = sandboxesQuery.data[0];
         const vscodeUrl = sandbox.exposed_urls?.find(
           (url) => url.name === "VSCODE",
         );
@@ -91,8 +95,28 @@ export const useUnifiedVSCodeUrl = () => {
       };
     },
     enabled:
-      runtimeIsReady && !!conversationId && (!isV1Conversation || !!sandboxes),
+      runtimeIsReady &&
+      !!conversationId &&
+      (!isV1Conversation || !!sandboxesQuery.data),
     refetchOnMount: true,
     retry: 3,
   });
+
+  // Calculate overall loading state including dependent queries for V1
+  const isLoading = isV1Conversation
+    ? appConversationsQuery.isLoading ||
+      sandboxesQuery.isLoading ||
+      mainQuery.isLoading
+    : mainQuery.isLoading;
+
+  // Explicitly destructure to avoid excessive re-renders from spreading the entire query object
+  return {
+    data: mainQuery.data,
+    error: mainQuery.error,
+    isLoading,
+    isError: mainQuery.isError,
+    isSuccess: mainQuery.isSuccess,
+    status: mainQuery.status,
+    refetch: mainQuery.refetch,
+  };
 };

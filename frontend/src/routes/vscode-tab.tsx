@@ -39,8 +39,16 @@ function VSCodeTab() {
     }
   };
 
-  if (isRuntimeInactive || isLoading) {
+  if (isRuntimeInactive) {
     return <WaitingForRuntimeMessage />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
+        {t(I18nKey.VSCODE$LOADING)}
+      </div>
+    );
   }
 
   if (error || (data && data.error) || !data?.url || iframeError) {

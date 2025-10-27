@@ -22,26 +22,30 @@ export const useUnifiedActiveHost = () => {
   const isV1Conversation = conversation?.conversation_version === "V1";
 
   // Fetch V1 app conversation to get sandbox_id
-  const { data: appConversations } = useBatchAppConversations(
+  const appConversationsQuery = useBatchAppConversations(
     isV1Conversation && conversationId ? [conversationId] : [],
   );
-  const appConversation = appConversations?.[0];
+  const appConversation = appConversationsQuery.data?.[0];
   const sandboxId = appConversation?.sandbox_id;
 
   // Fetch sandbox data for V1 conversations
-  const { data: sandboxes } = useBatchSandboxes(sandboxId ? [sandboxId] : []);
+  const sandboxesQuery = useBatchSandboxes(sandboxId ? [sandboxId] : []);
 
   // Get worker URLs from V1 sandbox or legacy web hosts from V0
-  const { data } = useQuery({
+  const { data, isLoading: hostsQueryLoading } = useQuery({
     queryKey: [conversationId, "unified", "hosts", isV1Conversation, sandboxId],
     queryFn: async () => {
       // V1: Get worker URLs from sandbox exposed_urls
       if (isV1Conversation) {
-        if (!sandboxes || sandboxes.length === 0 || !sandboxes[0]) {
+        if (
+          !sandboxesQuery.data ||
+          sandboxesQuery.data.length === 0 ||
+          !sandboxesQuery.data[0]
+        ) {
           return { hosts: [] };
         }
 
-        const sandbox = sandboxes[0];
+        const sandbox = sandboxesQuery.data[0];
         const workerUrls =
           sandbox.exposed_urls
             ?.filter((url) => url.name.startsWith("WORKER_"))
@@ -55,7 +59,9 @@ export const useUnifiedActiveHost = () => {
       return { hosts };
     },
     enabled:
-      runtimeIsReady && !!conversationId && (!isV1Conversation || !!sandboxes),
+      runtimeIsReady &&
+      !!conversationId &&
+      (!isV1Conversation || !!sandboxesQuery.data),
     initialData: { hosts: [] },
     meta: {
       disableToast: true,
@@ -88,5 +94,12 @@ export const useUnifiedActiveHost = () => {
     setActiveHost(successfulApp || "");
   }, [appsData]);
 
-  return { activeHost };
+  // Calculate overall loading state including dependent queries for V1
+  const isLoading = isV1Conversation
+    ? appConversationsQuery.isLoading ||
+      sandboxesQuery.isLoading ||
+      hostsQueryLoading
+    : hostsQueryLoading;
+
+  return { activeHost, isLoading };
 };
