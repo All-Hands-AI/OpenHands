@@ -69,7 +69,7 @@ class UserAuth(ABC):
         """Get secrets store"""
 
     @abstractmethod
-    async def get_user_secrets(self) -> Secrets | None:
+    async def get_secrets(self) -> Secrets | None:
         """Get the user's secrets"""
 
     def get_auth_type(self) -> AuthType | None:

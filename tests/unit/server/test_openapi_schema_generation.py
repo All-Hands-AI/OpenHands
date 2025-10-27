@@ -43,7 +43,7 @@ class MockUserAuth(UserAuth):
     async def get_secrets_store(self) -> SecretsStore | None:
         return None
 
-    async def get_user_secrets(self) -> Secrets | None:
+    async def get_secrets(self) -> Secrets | None:
         return None
 
     @classmethod

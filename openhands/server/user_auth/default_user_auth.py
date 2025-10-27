@@ -19,7 +19,7 @@ class DefaultUserAuth(UserAuth):
     _settings: Settings | None = None
     _settings_store: SettingsStore | None = None
     _secrets_store: SecretsStore | None = None
-    _user_secrets: Secrets | None = None
+    _secrets: Secrets | None = None
 
     async def get_user_id(self) -> str | None:
         """The default implementation does not support multi tenancy, so user_id is always None"""
@@ -73,17 +73,17 @@ class DefaultUserAuth(UserAuth):
         self._secrets_store = secret_store
         return secret_store
 
-    async def get_user_secrets(self) -> Secrets | None:
-        user_secrets = self._user_secrets
+    async def get_secrets(self) -> Secrets | None:
+        user_secrets = self._secrets
         if user_secrets:
             return user_secrets
         secrets_store = await self.get_secrets_store()
         user_secrets = await secrets_store.load()
-        self._user_secrets = user_secrets
+        self._secrets = user_secrets
         return user_secrets
 
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
-        user_secrets = await self.get_user_secrets()
+        user_secrets = await self.get_secrets()
         if user_secrets is None:
             return None
         return user_secrets.provider_tokens

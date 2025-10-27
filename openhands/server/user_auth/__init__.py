@@ -39,9 +39,9 @@ async def get_secrets_store(request: Request) -> SecretsStore:
     return secrets_store
 
 
-async def get_user_secrets(request: Request) -> Secrets | None:
+async def get_secrets(request: Request) -> Secrets | None:
     user_auth = await get_user_auth(request)
-    user_secrets = await user_auth.get_user_secrets()
+    user_secrets = await user_auth.get_secrets()
     return user_secrets
 
 

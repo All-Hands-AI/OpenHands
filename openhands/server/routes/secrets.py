@@ -14,8 +14,8 @@ from openhands.server.settings import (
 )
 from openhands.server.user_auth import (
     get_provider_tokens,
+    get_secrets,
     get_secrets_store,
-    get_user_secrets,
 )
 from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.data_models.settings import Settings
@@ -181,7 +181,7 @@ async def unset_provider_tokens(
 
 @app.get('/secrets', response_model=GETCustomSecrets)
 async def load_custom_secrets_names(
-    user_secrets: Secrets | None = Depends(get_user_secrets),
+    user_secrets: Secrets | None = Depends(get_secrets),
 ) -> GETCustomSecrets | JSONResponse:
     try:
         if not user_secrets:
