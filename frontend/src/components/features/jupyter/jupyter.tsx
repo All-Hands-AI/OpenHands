@@ -7,7 +7,7 @@ import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { I18nKey } from "#/i18n/declaration";
 import JupyterLargeIcon from "#/icons/jupyter-large.svg?react";
 import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
-import { useAgentStore } from "#/stores/agent-store";
+import { useAgentState } from "#/hooks/use-agent-state";
 import { useJupyterStore } from "#/state/jupyter-store";
 
 interface JupyterEditorProps {
@@ -15,7 +15,7 @@ interface JupyterEditorProps {
 }
 
 export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
-  const { curAgentState } = useAgentStore();
+  const { curAgentState } = useAgentState();
 
   const cells = useJupyterStore((state) => state.cells);
 

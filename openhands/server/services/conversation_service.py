@@ -27,7 +27,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
@@ -38,7 +38,7 @@ async def initialize_conversation(
     selected_branch: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     git_provider: ProviderType | None = None,
-) -> ConversationMetadata | None:
+) -> ConversationMetadata:
     if conversation_id is None:
         conversation_id = uuid.uuid4().hex
 
@@ -66,13 +66,8 @@ async def initialize_conversation(
         await conversation_store.save_metadata(conversation_metadata)
         return conversation_metadata
 
-    try:
-        conversation_metadata = await conversation_store.get_metadata(conversation_id)
-        return conversation_metadata
-    except Exception:
-        pass
-
-    return None
+    conversation_metadata = await conversation_store.get_metadata(conversation_id)
+    return conversation_metadata
 
 
 async def start_conversation(
@@ -190,9 +185,6 @@ async def create_new_conversation(
         git_provider,
     )
 
-    if not conversation_metadata:
-        raise Exception('Failed to initialize conversation')
-
     return await start_conversation(
         user_id,
         git_provider_tokens,
@@ -240,7 +232,7 @@ async def setup_init_conversation_settings(
     settings = await settings_store.load()
 
     secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-    user_secrets: UserSecrets | None = await secrets_store.load()
+    user_secrets: Secrets | None = await secrets_store.load()
 
     if not settings:
         from socketio.exceptions import ConnectionRefusedError
