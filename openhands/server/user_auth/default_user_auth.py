@@ -7,7 +7,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import UserAuth
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
@@ -19,7 +19,7 @@ class DefaultUserAuth(UserAuth):
     _settings: Settings | None = None
     _settings_store: SettingsStore | None = None
     _secrets_store: SecretsStore | None = None
-    _user_secrets: UserSecrets | None = None
+    _user_secrets: Secrets | None = None
 
     async def get_user_id(self) -> str | None:
         """The default implementation does not support multi tenancy, so user_id is always None"""
@@ -73,7 +73,7 @@ class DefaultUserAuth(UserAuth):
         self._secrets_store = secret_store
         return secret_store
 
-    async def get_user_secrets(self) -> UserSecrets | None:
+    async def get_user_secrets(self) -> Secrets | None:
         user_secrets = self._user_secrets
         if user_secrets:
             return user_secrets

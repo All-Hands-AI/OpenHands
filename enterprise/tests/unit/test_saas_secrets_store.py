@@ -9,7 +9,7 @@ from storage.stored_custom_secrets import StoredCustomSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.integrations.provider import CustomSecret
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 
 
 @pytest.fixture
@@ -27,8 +27,8 @@ def secrets_store(session_maker, mock_config):
 class TestSaasSecretsStore:
     @pytest.mark.asyncio
     async def test_store_and_load(self, secrets_store):
-        # Create a UserSecrets object with some test data
-        user_secrets = UserSecrets(
+        # Create a Secrets object with some test data
+        user_secrets = Secrets(
             custom_secrets=MappingProxyType(
                 {
                     'api_token': CustomSecret.from_value(
@@ -60,8 +60,8 @@ class TestSaasSecretsStore:
 
     @pytest.mark.asyncio
     async def test_encryption_decryption(self, secrets_store):
-        # Create a UserSecrets object with sensitive data
-        user_secrets = UserSecrets(
+        # Create a Secrets object with sensitive data
+        user_secrets = Secrets(
             custom_secrets=MappingProxyType(
                 {
                     'api_token': CustomSecret.from_value(
@@ -154,7 +154,7 @@ class TestSaasSecretsStore:
     @pytest.mark.asyncio
     async def test_update_existing_secrets(self, secrets_store):
         # Create and store initial secrets
-        initial_secrets = UserSecrets(
+        initial_secrets = Secrets(
             custom_secrets=MappingProxyType(
                 {
                     'api_token': CustomSecret.from_value(
@@ -169,7 +169,7 @@ class TestSaasSecretsStore:
         await secrets_store.store(initial_secrets)
 
         # Create and store updated secrets
-        updated_secrets = UserSecrets(
+        updated_secrets = Secrets(
             custom_secrets=MappingProxyType(
                 {
                     'api_token': CustomSecret.from_value(

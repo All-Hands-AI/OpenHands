@@ -31,7 +31,7 @@ from openhands.integrations.provider import (
 )
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import AuthType, UserAuth
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 token_manager = TokenManager()
@@ -52,7 +52,7 @@ class SaasUserAuth(UserAuth):
     settings_store: SaasSettingsStore | None = None
     secrets_store: SaasSecretsStore | None = None
     _settings: Settings | None = None
-    _user_secrets: UserSecrets | None = None
+    _user_secrets: Secrets | None = None
     accepted_tos: bool | None = None
     auth_type: AuthType = AuthType.COOKIE
 

@@ -11,7 +11,7 @@ from storage.stored_custom_secrets import StoredCustomSecrets
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 
 
@@ -21,7 +21,7 @@ class SaasSecretsStore(SecretsStore):
     session_maker: sessionmaker
     config: OpenHandsConfig
 
-    async def load(self) -> UserSecrets | None:
+    async def load(self) -> Secrets | None:
         if not self.user_id:
             return None
 
@@ -34,7 +34,7 @@ class SaasSecretsStore(SecretsStore):
             )
 
             if not settings:
-                return UserSecrets()
+                return Secrets()
 
             kwargs = {}
             for secret in settings:
@@ -45,9 +45,9 @@ class SaasSecretsStore(SecretsStore):
 
             self._decrypt_kwargs(kwargs)
 
-            return UserSecrets(custom_secrets=kwargs)  # type: ignore[arg-type]
+            return Secrets(custom_secrets=kwargs)  # type: ignore[arg-type]
 
-    async def store(self, item: UserSecrets):
+    async def store(self, item: Secrets):
         with self.session_maker() as session:
             # Incoming secrets are always the most updated ones
             # Delete all existing records and override with incoming ones
