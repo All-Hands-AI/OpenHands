@@ -9,8 +9,12 @@ from dataclasses import dataclass
 
 import httpx
 from cryptography.fernet import Fernet
-from enterprise.integrations import stripe_service
 from pydantic import SecretStr
+from sqlalchemy.orm import sessionmaker
+from storage.database import session_maker
+from storage.user_settings import UserSettings
+
+from enterprise.integrations import stripe_service
 from enterprise.server.auth.token_manager import TokenManager
 from enterprise.server.constants import (
     CURRENT_USER_SETTINGS_VERSION,
@@ -22,10 +26,6 @@ from enterprise.server.constants import (
     get_default_litellm_model,
 )
 from enterprise.server.logger import logger
-from sqlalchemy.orm import sessionmaker
-from storage.database import session_maker
-from storage.user_settings import UserSettings
-
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
 from openhands.storage import get_file_store
@@ -269,7 +269,7 @@ class SaasSettingsStore(SettingsStore):
 
                 # Create the new litellm user
                 response = await self._create_user_in_lite_llm(
-                    client, email, max_budget, spend
+                    client, email, int(max_budget), int(spend)
                 )
                 if not response.is_success:
                     logger.warning(
@@ -278,7 +278,7 @@ class SaasSettingsStore(SettingsStore):
                     )
                     # Litellm insists on unique email addresses - it is possible the email address was registered with a different user.
                     response = await self._create_user_in_lite_llm(
-                        client, None, max_budget, spend
+                        client, None, int(max_budget), int(spend)
                     )
 
                 # User failed to create in litellm - this is an unforseen error state...

@@ -1,5 +1,6 @@
-from enterprise.server.constants import DEFAULT_BILLING_MARGIN
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, Identity, Integer, String
+
+from enterprise.server.constants import DEFAULT_BILLING_MARGIN
 from enterprise.storage.base import Base
 
 

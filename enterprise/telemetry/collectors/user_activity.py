@@ -9,7 +9,6 @@ from datetime import UTC, datetime, timedelta
 from typing import List
 
 from sqlalchemy import func
-
 from storage.database import session_maker
 from storage.stored_conversation_metadata import StoredConversationMetadata
 from storage.user_settings import UserSettings

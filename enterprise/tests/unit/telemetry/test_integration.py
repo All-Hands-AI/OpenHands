@@ -162,9 +162,11 @@ class TestTelemetryFrameworkIntegration:
         from enterprise.telemetry.collectors.health_check import HealthCheckCollector
 
         # Mock dependencies using context managers
-        with patch('enterprise.telemetry.collectors.health_check.platform') as mock_platform, \
-             patch('enterprise.telemetry.collectors.health_check.session_maker') as mock_session_maker:
-            
+        with patch(
+            'enterprise.telemetry.collectors.health_check.platform'
+        ) as mock_platform, patch(
+            'enterprise.telemetry.collectors.health_check.session_maker'
+        ) as mock_session_maker:
             # Mock dependencies
             mock_platform.system.return_value = 'Linux'
             mock_platform.release.return_value = '5.4.0'
