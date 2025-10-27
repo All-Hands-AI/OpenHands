@@ -20,7 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # Rename the table from user_secrets to custom_secrets
     op.rename_table('user_secrets', 'custom_secrets')
-    
+
     # Rename the index to match the new table name
     op.drop_index('idx_user_secrets_keycloak_user_id', 'custom_secrets')
     op.create_index(
@@ -34,6 +34,6 @@ def downgrade() -> None:
     op.create_index(
         'idx_user_secrets_keycloak_user_id', 'custom_secrets', ['keycloak_user_id']
     )
-    
+
     # Rename the table back from custom_secrets to user_secrets
     op.rename_table('custom_secrets', 'user_secrets')
