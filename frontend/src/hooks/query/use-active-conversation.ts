@@ -8,8 +8,8 @@ export const useActiveConversation = () => {
 
   // Don't poll if this is a task ID (format: "task-{uuid}")
   // Task polling is handled by useTaskPolling hook
-  const isTaskId = conversationId.startsWith("task-");
-  const actualConversationId = isTaskId ? null : conversationId;
+  const isTaskId = conversationId?.startsWith("task-");
+  const actualConversationId = isTaskId ? null : (conversationId ?? null);
 
   const userConversation = useUserConversation(
     actualConversationId,
