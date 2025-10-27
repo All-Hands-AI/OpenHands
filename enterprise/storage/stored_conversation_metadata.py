@@ -6,7 +6,7 @@ import issues with the main branch's broken agent_server imports.
 
 from datetime import datetime
 from sqlalchemy import Column, DateTime, String
-from enterprise.storage.base import Base
+from storage.base import Base
 
 
 class StoredConversationMetadata(Base):
