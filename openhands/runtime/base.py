@@ -4,6 +4,7 @@ import copy
 import json
 import os
 import random
+import shlex
 import shutil
 import string
 import tempfile
@@ -340,9 +341,15 @@ class Runtime(FileEditRuntimeMixin):
             sid=self.sid,
         )
 
-        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
+        logger.info(
+            f'Fetching latest provider tokens for runtime: {self.sid}, '
+            f'providers: {providers_called}'
+        )
         env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
+        )
+        logger.info(
+            f'Successfully fetched {len(env_vars)} token(s) for runtime: {self.sid}'
         )
 
         if len(env_vars) == 0:
@@ -355,8 +362,9 @@ class Runtime(FileEditRuntimeMixin):
                 )
             self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
-            logger.warning(
-                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            logger.error(
+                f'Failed to export latest github token to runtime: {self.sid}, {e}',
+                exc_info=True,
             )
 
     async def _handle_action(self, event: Action) -> None:
@@ -440,8 +448,12 @@ class Runtime(FileEditRuntimeMixin):
         )
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
+        repo_path = self.workspace_root / dir_name
+        quoted_repo_path = shlex.quote(str(repo_path))
+        quoted_remote_repo_url = shlex.quote(remote_repo_url)
+
         # Clone repository command
-        clone_command = f'git clone {remote_repo_url} {dir_name}'
+        clone_command = f'git clone {quoted_remote_repo_url} {quoted_repo_path}'
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -454,11 +466,35 @@ class Runtime(FileEditRuntimeMixin):
         await call_sync_from_async(self.run_action, clone_action)
 
         cd_checkout_action = CmdRunAction(
-            command=f'cd {dir_name} && {checkout_command}'
+            command=f'cd {quoted_repo_path} && {checkout_command}'
         )
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
+
+        if remote_repo_url:
+            set_remote_action = CmdRunAction(
+                command=(
+                    f'cd {quoted_repo_path} && '
+                    f'git remote set-url origin {quoted_remote_repo_url}'
+                )
+            )
+            obs = await call_sync_from_async(self.run_action, set_remote_action)
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                self.log(
+                    'info',
+                    f'Set git remote origin to authenticated URL for {selected_repository}',
+                )
+            else:
+                self.log(
+                    'warning',
+                    (
+                        'Failed to set git remote origin while ensuring fresh token '
+                        f'for {selected_repository}: '
+                        f'{obs.content if isinstance(obs, CmdOutputObservation) else "unknown error"}'
+                    ),
+                )
+
         return dir_name
 
     def maybe_run_setup_script(self):
@@ -740,6 +776,7 @@ fi
                     self.provider_handler.get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
+                    is_optional=True,
                 )
             except AuthenticationError as e:
                 self.log(

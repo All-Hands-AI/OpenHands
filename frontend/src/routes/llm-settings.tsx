@@ -33,6 +33,38 @@ import { UpgradeBannerWithBackdrop } from "#/components/features/settings/upgrad
 import { useCreateSubscriptionCheckoutSession } from "#/hooks/mutation/stripe/use-create-subscription-checkout-session";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { cn } from "#/utils/utils";
+import { useIsAllHandsSaaSEnvironment } from "#/hooks/use-is-all-hands-saas-environment";
+
+interface OpenHandsApiKeyHelpProps {
+  testId: string;
+}
+
+function OpenHandsApiKeyHelp({ testId }: OpenHandsApiKeyHelpProps) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <HelpLink
+        testId={testId}
+        text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+        linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+        href="https://app.all-hands.dev/settings/api-keys"
+        suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
+      />
+      <p className="text-xs">
+        {t(I18nKey.SETTINGS$LLM_BILLING_INFO)}{" "}
+        <a
+          href="https://docs.all-hands.dev/usage/llms/openhands-llms"
+          rel="noreferrer noopener"
+          target="_blank"
+          className="underline underline-offset-2"
+        >
+          {t(I18nKey.SETTINGS$SEE_PRICING_DETAILS)}
+        </a>
+      </p>
+    </>
+  );
+}
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -47,6 +79,7 @@ function LlmSettingsScreen() {
   const { data: isAuthed } = useIsAuthed();
   const { mutate: createSubscriptionCheckoutSession } =
     useCreateSubscriptionCheckoutSession();
+  const isAllHandsSaaSEnvironment = useIsAllHandsSaaSEnvironment();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -410,8 +443,11 @@ function LlmSettingsScreen() {
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
   // Show upgrade banner and disable form in SaaS mode when user doesn't have an active subscription
+  // Exclude self-hosted enterprise customers (those not on all-hands.dev domains)
   const shouldShowUpgradeBanner =
-    config?.APP_MODE === "saas" && !subscriptionAccess;
+    config?.APP_MODE === "saas" &&
+    !subscriptionAccess &&
+    isAllHandsSaaSEnvironment;
 
   const formAction = (formData: FormData) => {
     // Prevent form submission for unsubscribed SaaS users
@@ -445,7 +481,7 @@ function LlmSettingsScreen() {
         )}
         inert={shouldShowUpgradeBanner}
       >
-        <div className="p-9 flex flex-col gap-6">
+        <div className="flex flex-col gap-6">
           <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
@@ -473,13 +509,7 @@ function LlmSettingsScreen() {
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
                     currentSelectedModel?.startsWith("openhands/")) && (
-                    <HelpLink
-                      testId="openhands-api-key-help"
-                      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-                      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                      href="https://app.all-hands.dev/settings/api-keys"
-                      suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
-                    />
+                    <OpenHandsApiKeyHelp testId="openhands-api-key-help" />
                   )}
                 </>
               )}
@@ -506,32 +536,6 @@ function LlmSettingsScreen() {
                 linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
                 href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
-
-              {config?.APP_MODE !== "saas" && (
-                <SettingsInput
-                  testId="search-api-key-input"
-                  name="search-api-key-input"
-                  label={t(I18nKey.SETTINGS$SEARCH_API_KEY)}
-                  type="password"
-                  className="w-full max-w-[680px]"
-                  defaultValue={settings.SEARCH_API_KEY || ""}
-                  onChange={handleSearchApiKeyIsDirty}
-                  placeholder={t(I18nKey.API$TAVILY_KEY_EXAMPLE)}
-                  isDisabled={shouldShowUpgradeBanner}
-                  startContent={
-                    settings.SEARCH_API_KEY_SET && (
-                      <KeyStatusIcon isSet={settings.SEARCH_API_KEY_SET} />
-                    )
-                  }
-                />
-              )}
-
-              <HelpLink
-                testId="search-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$SEARCH_API_KEY_OPTIONAL)}
-                linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
-                href="https://tavily.com/"
-              />
             </div>
           )}
 
@@ -552,13 +556,7 @@ function LlmSettingsScreen() {
               />
               {(settings.LLM_MODEL?.startsWith("openhands/") ||
                 currentSelectedModel?.startsWith("openhands/")) && (
-                <HelpLink
-                  testId="openhands-api-key-help-2"
-                  text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
-                  linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
-                  href="https://app.all-hands.dev/settings/api-keys"
-                  suffix={` ${t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}`}
-                />
+                <OpenHandsApiKeyHelp testId="openhands-api-key-help-2" />
               )}
 
               <SettingsInput
@@ -665,72 +663,72 @@ function LlmSettingsScreen() {
               >
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
               </SettingsSwitch>
-            </div>
-          )}
 
-          {/* Confirmation mode and security analyzer - always visible */}
-          <div className="flex items-center gap-2">
-            <SettingsSwitch
-              testId="enable-confirmation-mode-switch"
-              name="enable-confirmation-mode-switch"
-              onToggle={handleConfirmationModeIsDirty}
-              defaultIsToggled={settings.CONFIRMATION_MODE}
-              isBeta
-              isDisabled={shouldShowUpgradeBanner}
-            >
-              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-            </SettingsSwitch>
-            <TooltipButton
-              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              className="text-[#9099AC] hover:text-white cursor-help"
-            >
-              <QuestionCircleIcon width={16} height={16} />
-            </TooltipButton>
-          </div>
-
-          {confirmationModeEnabled && (
-            <>
-              <div className="w-full max-w-[680px]">
-                <SettingsDropdownInput
-                  testId="security-analyzer-input"
-                  name="security-analyzer-display"
-                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={getSecurityAnalyzerOptions()}
-                  placeholder={t(
-                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
-                  )}
-                  selectedKey={selectedSecurityAnalyzer || "none"}
-                  isClearable={false}
-                  onSelectionChange={(key) => {
-                    const newValue = key?.toString() || "";
-                    setSelectedSecurityAnalyzer(newValue);
-                    handleSecurityAnalyzerIsDirty(newValue);
-                  }}
-                  onInputChange={(value) => {
-                    // Handle when input is cleared
-                    if (!value) {
-                      setSelectedSecurityAnalyzer("");
-                      handleSecurityAnalyzerIsDirty("");
-                    }
-                  }}
-                  wrapperClassName="w-full"
-                />
-                {/* Hidden input to store the actual key value for form submission */}
-                <input
-                  type="hidden"
-                  name="security-analyzer-input"
-                  value={selectedSecurityAnalyzer || ""}
-                />
+              {/* Confirmation mode and security analyzer */}
+              <div className="flex items-center gap-2">
+                <SettingsSwitch
+                  testId="enable-confirmation-mode-switch"
+                  name="enable-confirmation-mode-switch"
+                  onToggle={handleConfirmationModeIsDirty}
+                  defaultIsToggled={settings.CONFIRMATION_MODE}
+                  isBeta
+                  isDisabled={shouldShowUpgradeBanner}
+                >
+                  {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+                </SettingsSwitch>
+                <TooltipButton
+                  tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+                  ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+                  className="text-[#9099AC] hover:text-white cursor-help"
+                >
+                  <QuestionCircleIcon width={16} height={16} />
+                </TooltipButton>
               </div>
-              <p className="text-xs text-tertiary-alt max-w-[680px]">
-                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
-              </p>
-            </>
+
+              {confirmationModeEnabled && (
+                <>
+                  <div className="w-full max-w-[680px]">
+                    <SettingsDropdownInput
+                      testId="security-analyzer-input"
+                      name="security-analyzer-display"
+                      label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+                      items={getSecurityAnalyzerOptions()}
+                      placeholder={t(
+                        I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                      )}
+                      selectedKey={selectedSecurityAnalyzer || "none"}
+                      isClearable={false}
+                      onSelectionChange={(key) => {
+                        const newValue = key?.toString() || "";
+                        setSelectedSecurityAnalyzer(newValue);
+                        handleSecurityAnalyzerIsDirty(newValue);
+                      }}
+                      onInputChange={(value) => {
+                        // Handle when input is cleared
+                        if (!value) {
+                          setSelectedSecurityAnalyzer("");
+                          handleSecurityAnalyzerIsDirty("");
+                        }
+                      }}
+                      wrapperClassName="w-full"
+                    />
+                    {/* Hidden input to store the actual key value for form submission */}
+                    <input
+                      type="hidden"
+                      name="security-analyzer-input"
+                      value={selectedSecurityAnalyzer || ""}
+                    />
+                  </div>
+                  <p className="text-xs text-tertiary-alt max-w-[680px]">
+                    {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
+                  </p>
+                </>
+              )}
+            </div>
           )}
         </div>
 
-        <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+        <div className="flex gap-6 p-6 justify-end">
           <BrandButton
             testId="submit-button"
             type="submit"

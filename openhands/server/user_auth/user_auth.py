@@ -9,7 +9,7 @@ from pydantic import SecretStr
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server.settings import Settings
 from openhands.server.shared import server_config
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.import_utils import get_impl
@@ -69,7 +69,7 @@ class UserAuth(ABC):
         """Get secrets store"""
 
     @abstractmethod
-    async def get_user_secrets(self) -> UserSecrets | None:
+    async def get_secrets(self) -> Secrets | None:
         """Get the user's secrets"""
 
     def get_auth_type(self) -> AuthType | None:
@@ -79,6 +79,11 @@ class UserAuth(ABC):
     @abstractmethod
     async def get_instance(cls, request: Request) -> UserAuth:
         """Get an instance of UserAuth from the request given"""
+
+    @classmethod
+    @abstractmethod
+    async def get_for_user(cls, user_id: str) -> UserAuth:
+        """Get an instance of UserAuth for the user given"""
 
 
 async def get_user_auth(request: Request) -> UserAuth:
@@ -91,4 +96,11 @@ async def get_user_auth(request: Request) -> UserAuth:
     if user_auth is None:
         raise ValueError('Failed to get user auth instance')
     request.state.user_auth = user_auth
+    return user_auth
+
+
+async def get_for_user(user_id: str) -> UserAuth:
+    impl_name = server_config.user_auth_class
+    impl = get_impl(UserAuth, impl_name)
+    user_auth = await impl.get_for_user(user_id)
     return user_auth

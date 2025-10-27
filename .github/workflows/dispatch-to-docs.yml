@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: ["All-Hands-AI/docs"]
+        repo: ["OpenHands/docs"]
     steps:
       - name: Push to docs repo
         uses: peter-evans/repository-dispatch@v3

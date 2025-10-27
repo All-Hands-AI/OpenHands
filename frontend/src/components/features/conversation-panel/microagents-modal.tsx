@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { I18nKey } from "#/i18n/declaration";
 import { useConversationMicroagents } from "#/hooks/query/use-conversation-microagents";
-import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { Typography } from "#/ui/typography";
 import { MicroagentsModalHeader } from "./microagents-modal-header";
 import { MicroagentsLoadingState } from "./microagents-loading-state";
 import { MicroagentsEmptyState } from "./microagents-empty-state";
 import { MicroagentItem } from "./microagent-item";
+import { useAgentState } from "#/hooks/use-agent-state";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface MicroagentsModalProps {
   onClose: () => void;
@@ -19,7 +19,8 @@ interface MicroagentsModalProps {
 
 export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentState();
+  const { data: conversation } = useActiveConversation();
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
     {},
   );
@@ -30,6 +31,15 @@ export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
     refetch,
     isRefetching,
   } = useConversationMicroagents();
+
+  // TODO: Hide MicroagentsModal for V1 conversations
+  // This is a temporary measure and may be re-enabled in the future
+  const isV1Conversation = conversation?.conversation_version === "V1";
+
+  // Don't render anything for V1 conversations
+  if (isV1Conversation) {
+    return null;
+  }
 
   const toggleAgent = (agentName: string) => {
     setExpandedAgents((prev) => ({

@@ -19,11 +19,12 @@ from integrations.utils import (
 from jinja2 import Environment
 from pydantic.dataclasses import dataclass
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from storage.database import session_maker
 from storage.proactive_conversation_store import ProactiveConversationStore
 from storage.saas_secrets_store import SaasSecretsStore
-from storage.user_settings import UserSettings
+from storage.saas_settings_store import SaasSettingsStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -60,20 +61,19 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
     if not user_id:
         return False
 
-    def _get_setting():
-        with session_maker() as session:
-            settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == user_id)
-                .first()
-            )
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
 
-            if not settings or settings.enable_proactive_conversation_starters is None:
-                return False
+    settings = await call_sync_from_async(
+        settings_store.get_user_settings_by_keycloak_id, user_id
+    )
 
-            return settings.enable_proactive_conversation_starters
+    if not settings or settings.enable_proactive_conversation_starters is None:
+        return False
 
-    return await call_sync_from_async(_get_setting)
+    return settings.enable_proactive_conversation_starters
 
 
 # =================================================

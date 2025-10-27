@@ -60,7 +60,7 @@ class SandboxConfig(BaseModel):
     logger.debug(f'SandboxConfig user_id default: {user_id}')
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
-    remote_runtime_api_timeout: int = Field(default=10)
+    remote_runtime_api_timeout: int = Field(default=180)
     remote_runtime_enable_retries: bool = Field(default=True)
     remote_runtime_class: str | None = Field(
         default=None

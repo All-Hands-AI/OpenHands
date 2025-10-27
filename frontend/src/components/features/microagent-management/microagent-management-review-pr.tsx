@@ -1,17 +1,14 @@
-import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "../settings/brand-button";
 import { getProviderName, constructPullRequestUrl } from "#/utils/utils";
 import { Provider } from "#/types/settings";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 
 export function MicroagentManagementReviewPr() {
   const { t } = useTranslation();
 
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const { selectedMicroagentItem } = useMicroagentManagementStore();
 
   const { conversation } = selectedMicroagentItem ?? {};
 

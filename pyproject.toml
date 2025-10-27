@@ -6,12 +6,12 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.56.0"
+version = "0.59.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/All-Hands-AI/OpenHands"
+repository = "https://github.com/OpenHands/OpenHands"
 packages = [
   { include = "openhands/**/*" },
   { include = "third_party/**/*" },
@@ -26,7 +26,7 @@ build = "build_vscode.py" # Build VSCode extension during Poetry build
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.14"
-litellm = "^1.74.3, !=1.64.4, !=1.67.*"            # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
+litellm = ">=1.74.3, <1.78.0, !=1.64.4, !=1.67.*"  # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
 openai = "1.99.9"                                  # Pin due to litellm incompatibility with >=1.100.0 (BerriAI/litellm#13711)
 aiohttp = ">=3.9.0,!=3.11.13"                      # Pin to avoid yanked version 3.11.13
 google-genai = "*"                                 # To use litellm with Gemini Pro API
@@ -42,6 +42,7 @@ uvicorn = "*"
 numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
+playwright = "^1.55.0"
 html2text = "*"
 deprecated = "*"
 pexpect = "*"
@@ -60,19 +61,19 @@ protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer op
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 
-libtmux = ">=0.37,<0.40"
+libtmux = ">=0.46.2"
 pygithub = "^2.5.0"
 joblib = "*"
 openhands-aci = "0.3.2"
 python-socketio = "^5.11.4"
-sse-starlette = "^2.1.3"
+sse-starlette = "^3.0.2"
 psutil = "*"
 python-json-logger = "^3.2.1"
 prompt-toolkit = "^3.0.50"
 poetry = "^2.1.2"
 anyio = "4.9.0"
 pythonnet = "*"
-fastmcp = "^2.5.2"
+fastmcp = "^2.12.4"           # Note: 2.12.0+ has breaking auth API changes
 python-frontmatter = "^1.1.0"
 shellingham = "^1.5.4"
 # TODO: Should these go into the runtime group?
@@ -83,6 +84,14 @@ python-pptx = "*"
 pylatexenc = "*"
 python-docx = "*"
 bashlex = "^0.18"
+
+# Explicitly pinned packages for latest versions
+pypdf = "^6.0.0"
+pillow = "^11.3.0"
+starlette = "^0.48.0"
+urllib3 = "^2.5.0"
+requests = "^2.32.5"
+setuptools = ">=78.1.1"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
@@ -101,6 +110,16 @@ runloop-api-client = { version = "0.50.0", optional = true }
 daytona = { version = "0.24.2", optional = true }
 httpx-aiohttp = "^0.1.8"
 e2b-code-interpreter = { version = "^2.0.0", optional = true }
+pybase62 = "^1.0.0"
+
+# V1 dependencies
+openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
+openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
+openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
+python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
+sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
+pg8000 = "^1.31.5"
+asyncpg = "^0.30.0"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]
@@ -166,6 +185,7 @@ pyarrow = "21.0.0"
 datasets = "*"
 joblib = "*"
 swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval" }
+multi-swe-bench = "0.1.2"
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.entry:main"
@@ -196,3 +216,5 @@ lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
 concurrency = [ "gevent" ]
+relative_files = true
+omit = [ "enterprise/tests/*", "**/test_*" ]

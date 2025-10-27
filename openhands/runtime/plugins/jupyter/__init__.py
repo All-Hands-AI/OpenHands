@@ -13,6 +13,15 @@ from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.utils.shutdown_listener import should_continue
 
+SU_TO_USER = os.getenv('SU_TO_USER', 'true').lower() in (
+    '1',
+    'true',
+    't',
+    'yes',
+    'y',
+    'on',
+)
+
 
 @dataclass
 class JupyterRequirement(PluginRequirement):
@@ -36,7 +45,7 @@ class JupyterPlugin(Plugin):
 
         if not is_local_runtime:
             # Non-LocalRuntime
-            prefix = f'su - {username} -s '
+            prefix = f'su - {username} -s ' if SU_TO_USER else ''
             # cd to code repo, setup all env vars and run micromamba
             poetry_prefix = (
                 'cd /openhands/code\n'
@@ -69,7 +78,7 @@ class JupyterPlugin(Plugin):
 
             # Using synchronous subprocess.Popen for Windows as asyncio.create_subprocess_shell
             # has limitations on Windows platforms
-            self.gateway_process = subprocess.Popen(  # type: ignore[ASYNC101] # noqa: ASYNC101
+            self.gateway_process = subprocess.Popen(  # type: ignore[ASYNC101]
                 jupyter_launch_command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -82,19 +91,19 @@ class JupyterPlugin(Plugin):
             output = ''
             while should_continue():
                 if self.gateway_process.stdout is None:
-                    time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                    time.sleep(1)  # type: ignore[ASYNC101]
                     continue
 
                 line = self.gateway_process.stdout.readline()
                 if not line:
-                    time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                    time.sleep(1)  # type: ignore[ASYNC101]
                     continue
 
                 output += line
                 if 'at' in line:
                     break
 
-                time.sleep(1)  # type: ignore[ASYNC101] # noqa: ASYNC101
+                time.sleep(1)  # type: ignore[ASYNC101]
                 logger.debug('Waiting for jupyter kernel gateway to start...')
 
             logger.debug(
