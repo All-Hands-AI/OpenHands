@@ -2,7 +2,7 @@
 
 This guide is for people working on OpenHands and editing the source code.
 If you wish to contribute your changes, check out the
-[CONTRIBUTING.md](https://github.com/All-Hands-AI/OpenHands/blob/main/CONTRIBUTING.md)
+[CONTRIBUTING.md](https://github.com/OpenHands/OpenHands/blob/main/CONTRIBUTING.md)
 on how to clone and setup the project initially before moving on. Otherwise,
 you can clone the OpenHands project directly.
 
@@ -159,7 +159,7 @@ poetry run pytest ./tests/unit/test_*.py
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker
 container image by setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.59-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/openhands/runtime:0.59-nikolaik`
 
 ## Develop inside Docker container
 
@@ -193,7 +193,7 @@ Here's a guide to the important documentation files in the repository:
 - [/README.md](./README.md): Main project overview, features, and basic setup instructions
 - [/Development.md](./Development.md) (this file): Comprehensive guide for developers working on OpenHands
 - [/CONTRIBUTING.md](./CONTRIBUTING.md): Guidelines for contributing to the project, including code style and PR process
-- [/docs/DOC_STYLE_GUIDE.md](./docs/DOC_STYLE_GUIDE.md): Standards for writing and maintaining project documentation
+- [DOC_STYLE_GUIDE.md](https://github.com/All-Hands-AI/docs/blob/main/openhands/DOC_STYLE_GUIDE.md): Standards for writing and maintaining project documentation
 - [/openhands/README.md](./openhands/README.md): Details about the backend Python implementation
 - [/frontend/README.md](./frontend/README.md): Frontend React application setup and development guide
 - [/containers/README.md](./containers/README.md): Information about Docker containers and deployment
