@@ -20,6 +20,7 @@ from server.utils.conversation_callback_utils import (
     update_conversation_metadata,
     update_conversation_stats,
 )
+from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.database import session_maker
 from storage.stored_conversation_metadata import StoredConversationMetadata
 
@@ -226,12 +227,12 @@ def _parse_conversation_id_and_subpath(path: str) -> Tuple[str, str]:
 
 def _get_user_id(conversation_id: str) -> str:
     with session_maker() as session:
-        conversation_metadata = (
-            session.query(StoredConversationMetadata)
-            .filter(StoredConversationMetadata.conversation_id == conversation_id)
+        conversation_metadata_saas = (
+            session.query(ConversationMetadataSaas)
+            .filter(ConversationMetadataSaas.conversation_id == conversation_id)
             .first()
         )
-        return conversation_metadata.user_id
+        return str(conversation_metadata_saas.user_id)
 
 
 async def _get_session_api_key(user_id: str, conversation_id: str) -> str | None:

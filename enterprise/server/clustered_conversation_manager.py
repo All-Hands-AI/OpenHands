@@ -7,6 +7,7 @@ from uuid import uuid4
 import socketio
 from server.logger import logger
 from server.utils.conversation_callback_utils import invoke_conversation_callbacks
+from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.database import session_maker
 from storage.saas_settings_store import SaasSettingsStore
 from storage.stored_conversation_metadata import StoredConversationMetadata
@@ -525,16 +526,16 @@ class ClusteredConversationManager(StandaloneConversationManager):
                 )
                 # Look up the user_id from the database
                 with session_maker() as session:
-                    conversation_metadata = (
-                        session.query(StoredConversationMetadata)
+                    conversation_metadata_saas = (
+                        session.query(ConversationMetadataSaas)
                         .filter(
-                            StoredConversationMetadata.conversation_id
+                            ConversationMetadataSaas.conversation_id
                             == conversation_id
                         )
                         .first()
                     )
                     user_id = (
-                        conversation_metadata.user_id if conversation_metadata else None
+                        str(conversation_metadata_saas.user_id) if conversation_metadata_saas else None
                     )
                 # Handle the stopped conversation asynchronously
                 asyncio.create_task(

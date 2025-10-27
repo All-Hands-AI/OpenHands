@@ -20,6 +20,7 @@ from server.utils.conversation_callback_utils import (
 from sqlalchemy import orm
 from storage.api_key_store import ApiKeyStore
 from storage.database import session_maker
+from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.stored_conversation_metadata import StoredConversationMetadata
 
 from openhands.controller.agent import Agent
@@ -522,16 +523,16 @@ class SaasNestedConversationManager(ConversationManager):
         """
 
         with session_maker() as session:
-            conversation_metadata = (
-                session.query(StoredConversationMetadata)
-                .filter(StoredConversationMetadata.conversation_id == conversation_id)
+            conversation_metadata_saas = (
+                session.query(ConversationMetadataSaas)
+                .filter(ConversationMetadataSaas.conversation_id == conversation_id)
                 .first()
             )
 
-            if not conversation_metadata:
+            if not conversation_metadata_saas:
                 raise ValueError(f'No conversation found {conversation_id}')
 
-            return conversation_metadata.user_id
+            return str(conversation_metadata_saas.user_id)
 
     async def _get_runtime_status_from_nested_runtime(
         self, session_api_key: Any | None, nested_url: str, conversation_id: str
@@ -853,8 +854,11 @@ class SaasNestedConversationManager(ConversationManager):
         with session_maker() as session:
             # Only include conversations updated in the past week
             one_week_ago = datetime.now(UTC) - timedelta(days=7)
-            query = session.query(StoredConversationMetadata.conversation_id).filter(
-                StoredConversationMetadata.user_id == user_id,
+            query = session.query(StoredConversationMetadata.conversation_id).join(
+                ConversationMetadataSaas,
+                StoredConversationMetadata.conversation_id == ConversationMetadataSaas.conversation_id
+            ).filter(
+                ConversationMetadataSaas.user_id == user_id,
                 StoredConversationMetadata.last_updated_at >= one_week_ago,
             )
             user_conversation_ids = set(query)

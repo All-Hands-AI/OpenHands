@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.future import select
+from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.database import session_maker
 from storage.feedback import ConversationFeedback
 from storage.stored_conversation_metadata import StoredConversationMetadata
@@ -33,10 +34,10 @@ async def get_event_ids(conversation_id: str, user_id: str) -> List[int]:
     def _verify_conversation():
         with session_maker() as session:
             metadata = (
-                session.query(StoredConversationMetadata)
+                session.query(ConversationMetadataSaas)
                 .filter(
-                    StoredConversationMetadata.conversation_id == conversation_id,
-                    StoredConversationMetadata.user_id == user_id,
+                    ConversationMetadataSaas.conversation_id == conversation_id,
+                    ConversationMetadataSaas.user_id == user_id,
                 )
                 .first()
             )

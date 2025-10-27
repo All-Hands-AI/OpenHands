@@ -51,6 +51,7 @@ class Org(Base):  # type: ignore
     conversation_metadata = relationship(
         'StoredConversationMetadata', back_populates='org'
     )
+    conversation_metadata_saas = relationship('ConversationMetadataSaas', back_populates='org')
     user_secrets = relationship('StoredUserSecrets', back_populates='org')
     api_keys = relationship('ApiKey', back_populates='org')
     slack_conversations = relationship('SlackConversation', back_populates='org')

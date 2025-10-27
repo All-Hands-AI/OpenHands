@@ -3,6 +3,7 @@ from storage.auth_tokens import AuthTokens
 from storage.billing_session import BillingSession
 from storage.billing_session_type import BillingSessionType
 from storage.conversation_callback import CallbackStatus, ConversationCallback
+from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.conversation_work import ConversationWork
 from storage.experiment_assignment import ExperimentAssignment
 from storage.feedback import ConversationFeedback, Feedback
@@ -45,6 +46,7 @@ __all__ = [
     'CallbackStatus',
     'ConversationCallback',
     'ConversationFeedback',
+    'ConversationMetadataSaas',
     'ConversationWork',
     'ExperimentAssignment',
     'Feedback',

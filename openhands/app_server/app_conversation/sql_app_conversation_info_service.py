@@ -26,13 +26,9 @@ from uuid import UUID
 
 from fastapi import Request
 from sqlalchemy import (
-    UUID as SQL_UUID,
-)
-from sqlalchemy import (
     Column,
     DateTime,
     Float,
-    ForeignKey,
     Integer,
     Select,
     String,
@@ -40,7 +36,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import relationship
 
 from openhands.agent_server.utils import utc_now
 from openhands.app_server.app_conversation.app_conversation_info_service import (
@@ -71,9 +66,6 @@ class StoredConversationMetadata(Base):  # type: ignore
     conversation_id = Column(
         String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    github_user_id = Column(String, nullable=True)  # The GitHub user ID
-    user_id = Column(String, nullable=False)  # The Keycloak User ID
-    org_id = Column(SQL_UUID(as_uuid=True), ForeignKey('org.id'), nullable=True)
     selected_repository = Column(String, nullable=True)
     selected_branch = Column(String, nullable=True)
     git_provider = Column(
@@ -103,9 +95,6 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
-
-    # Relationship back to org
-    org = relationship('Org', back_populates='conversation_metadata')
 
 
 @dataclass
@@ -196,9 +185,6 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
         query = select(func.count(StoredConversationMetadata.conversation_id))
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = query.where(StoredConversationMetadata.user_id == user_id)
 
         query = self._apply_filters(
             query=query,
@@ -288,22 +274,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
     async def save_app_conversation_info(
         self, info: AppConversationInfo
     ) -> AppConversationInfo:
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = select(StoredConversationMetadata).where(
-                StoredConversationMetadata.conversation_id == info.id
-            )
-            result = await self.db_session.execute(query)
-            existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == user_id
-
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
 
         stored = StoredConversationMetadata(
             conversation_id=str(info.id),
-            github_user_id=None,  # TODO: Should we add this to the conversation info?
-            user_id=info.created_by_user_id or '',
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
             git_provider=info.git_provider.value if info.git_provider else None,
@@ -335,11 +310,6 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = select(StoredConversationMetadata).where(
             StoredConversationMetadata.conversation_version == 'V1'
         )
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = query.where(
-                StoredConversationMetadata.user_id == user_id,
-            )
         return query
 
     def _to_info(self, stored: StoredConversationMetadata) -> AppConversationInfo:
@@ -370,7 +340,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
         return AppConversationInfo(
             id=UUID(stored.conversation_id),
-            created_by_user_id=stored.user_id if stored.user_id else None,
+            created_by_user_id=None,  # User ID is now stored in ConversationMetadataSaas
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
