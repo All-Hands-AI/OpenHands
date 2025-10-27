@@ -1,7 +1,7 @@
 """create telemetry tables
 
-Revision ID: 077
-Revises: 076
+Revision ID: 078
+Revises: 077
 Create Date: 2025-10-21
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '077'
-down_revision: Union[str, None] = '076'
+revision: str = '078'
+down_revision: Union[str, None] = '077'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -78,9 +78,9 @@ def upgrade() -> None:
         'ix_telemetry_metrics_uploaded_at', 'telemetry_metrics', ['uploaded_at']
     )
 
-    # Create telemetry_identity table (minimal persistent identity data)
+    # Create telemetry_replicated_identity table (minimal persistent identity data)
     op.create_table(
-        'telemetry_identity',
+        'telemetry_replicated_identity',
         sa.Column(
             'id',
             sa.Integer(),
@@ -112,8 +112,10 @@ def upgrade() -> None:
         ),
     )
 
-    # Add constraint to ensure single row in telemetry_identity
-    op.create_check_constraint('single_identity_row', 'telemetry_identity', 'id = 1')
+    # Add constraint to ensure single row in telemetry_replicated_identity
+    op.create_check_constraint(
+        'single_identity_row', 'telemetry_replicated_identity', 'id = 1'
+    )
 
 
 def downgrade() -> None:
@@ -123,5 +125,5 @@ def downgrade() -> None:
     op.drop_index('ix_telemetry_metrics_collected_at', 'telemetry_metrics')
 
     # Drop tables
-    op.drop_table('telemetry_identity')
+    op.drop_table('telemetry_replicated_identity')
     op.drop_table('telemetry_metrics')

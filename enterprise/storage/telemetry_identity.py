@@ -22,7 +22,7 @@ class TelemetryIdentity(Base):  # type: ignore
     Operational data like timestamps are derived from the telemetry_metrics table.
     """
 
-    __tablename__ = 'telemetry_identity'
+    __tablename__ = 'telemetry_replicated_identity'
     __table_args__ = (CheckConstraint('id = 1', name='single_identity_row'),)
 
     id = Column(Integer, primary_key=True, default=1)
