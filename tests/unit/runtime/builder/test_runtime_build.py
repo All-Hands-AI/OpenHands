@@ -230,6 +230,17 @@ def test_generate_dockerfile_channel_alias(monkeypatch):
     assert f"micromamba config set channel_alias '{alias}'" in dockerfile_content
     # We still expect conda-forge usage for packages
     assert '-c conda-forge' in dockerfile_content
+    # Ensure no explicit anaconda.org URLs are present
+    assert 'https://conda.anaconda.org' not in dockerfile_content
+    # The micromamba install should use the named channel, not a URL
+    install_snippet = (
+        '/openhands/micromamba/bin/micromamba install -n openhands -c conda-forge'
+    )
+    assert install_snippet in dockerfile_content
+    # Order: alias configured before first install from conda-forge
+    assert dockerfile_content.find(
+        'micromamba config set channel_alias'
+    ) < dockerfile_content.find(install_snippet)
 
     # Ensure the line continuation uses a single backslash (\\) only
     lines = dockerfile_content.splitlines()
