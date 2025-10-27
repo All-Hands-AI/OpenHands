@@ -6,10 +6,13 @@ import issues with the main branch's broken agent_server imports.
 
 from datetime import datetime
 from sqlalchemy import Column, DateTime, String
-from storage.base import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+# Create a separate base to avoid table conflicts with main enterprise storage
+TelemetryBase = declarative_base()
 
 
-class StoredConversationMetadata(Base):
+class StoredConversationMetadata(TelemetryBase):
     """Minimal StoredConversationMetadata class for telemetry compatibility."""
     
     __tablename__ = 'stored_conversation_metadata'
