@@ -81,8 +81,6 @@ class SaaSServerConfig(ServerConfig):
         'server.saas_monitoring_listener.SaaSMonitoringListener'
     )
     user_auth_class: str = 'server.auth.saas_user_auth.SaasUserAuth'
-    # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
-    hide_microagent_management = True
     # Maintenance window configuration
     maintenance_start_time: str = os.environ.get(
         'MAINTENANCE_START_TIME', ''
@@ -97,7 +95,7 @@ class SaaSServerConfig(ServerConfig):
         self._get_app_slug()
 
     def _get_app_slug(self):
-        """Retrieves the GitHub App slug using the GitHub API's /app endpoint by generating a JWT for the app.
+        """Retrieves the GitHub App slug using the GitHub API's /app endpoint by generating a JWT for the app
 
         Raises:
             HTTPException: If the request to the GitHub API fails.
@@ -175,7 +173,6 @@ class SaaSServerConfig(ServerConfig):
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
-                'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
                 'ENABLE_JIRA': self.enable_jira,
                 'ENABLE_JIRA_DC': self.enable_jira_dc,
                 'ENABLE_LINEAR': self.enable_linear,
