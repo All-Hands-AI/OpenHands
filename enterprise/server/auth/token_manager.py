@@ -26,6 +26,7 @@ from server.auth.constants import (
     KEYCLOAK_SERVER_URL_EXT,
 )
 from server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
+from server.config import get_config
 from server.logger import logger
 from sqlalchemy import String as SQLString
 from sqlalchemy import type_coerce
@@ -35,18 +36,7 @@ from storage.github_app_installation import GithubAppInstallation
 from storage.offline_token_store import OfflineTokenStore
 from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
-from openhands.core.config import load_openhands_config
 from openhands.integrations.service_types import ProviderType
-
-# Create a function to get config to avoid circular imports
-_config = None
-
-
-def get_config():
-    global _config
-    if _config is None:
-        _config = load_openhands_config()
-    return _config
 
 
 def _before_sleep_callback(retry_state: RetryCallState) -> None:
@@ -303,11 +293,12 @@ class TokenManager:
         refresh_token_expires_at: int,
     ) -> dict[str, str | int] | None:
         current_time = int(time.time())
-        # expire access_token ten minutes before actual expiration
+        # expire access_token four hours before actual expiration
+        # This ensures tokens are refreshed on resume to have at least 4 hours validity
         access_expired = (
             False
             if access_token_expires_at == 0
-            else access_token_expires_at < current_time + 600
+            else access_token_expires_at < current_time + 14400
         )
         refresh_expired = (
             False

@@ -1,13 +1,12 @@
-import { useSelector } from "react-redux";
-import { RootState } from "#/store";
 import { useTerminal } from "#/hooks/use-terminal";
 import "@xterm/xterm/css/xterm.css";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { cn } from "#/utils/utils";
 import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 function Terminal() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentState();
 
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 

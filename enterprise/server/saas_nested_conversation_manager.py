@@ -60,9 +60,14 @@ from openhands.utils.utils import create_registry_and_conversation_stats
 RUNTIME_URL_PATTERN = os.getenv(
     'RUNTIME_URL_PATTERN', 'https://{runtime_id}.prod-runtime.all-hands.dev'
 )
+RUNTIME_ROUTING_MODE = os.getenv('RUNTIME_ROUTING_MODE', 'subdomain').lower()
 
 # Pattern for base URL for the runtime
-RUNTIME_CONVERSATION_URL = RUNTIME_URL_PATTERN + '/api/conversations/{conversation_id}'
+RUNTIME_CONVERSATION_URL = RUNTIME_URL_PATTERN + (
+    '/runtime/api/conversations/{conversation_id}'
+    if RUNTIME_ROUTING_MODE == 'path'
+    else '/api/conversations/{conversation_id}'
+)
 
 # Time in seconds before a Redis entry is considered expired if not refreshed
 _REDIS_ENTRY_TIMEOUT_SECONDS = 300
@@ -344,18 +349,48 @@ class SaasNestedConversationManager(ConversationManager):
         api_url: str,
         custom_secrets: MappingProxyType[str, Any] | None,
     ):
-        """Setup custom secrets for the nested conversation."""
+        """Setup custom secrets for the nested conversation.
+
+        Note: When resuming conversations, secrets may already exist in the runtime.
+        We check for specific duplicate error messages to handle this case gracefully.
+        """
         if custom_secrets:
             for key, secret in custom_secrets.items():
-                response = await client.post(
-                    f'{api_url}/api/secrets',
-                    json={
-                        'name': key,
-                        'description': secret.description,
-                        'value': secret.secret.get_secret_value(),
-                    },
-                )
-                response.raise_for_status()
+                try:
+                    response = await client.post(
+                        f'{api_url}/api/secrets',
+                        json={
+                            'name': key,
+                            'description': secret.description,
+                            'value': secret.secret.get_secret_value(),
+                        },
+                    )
+                    response.raise_for_status()
+                    logger.debug(f'Successfully created secret: {key}')
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code == 400:
+                        # Only ignore if it's actually a duplicate error
+                        try:
+                            error_data = e.response.json()
+                            error_msg = error_data.get('message', '')
+                            # The API returns: "Secret {secret_name} already exists"
+                            if 'already exists' in error_msg:
+                                logger.info(
+                                    f'Secret "{key}" already exists, continuing - ignoring duplicate',
+                                    extra={'api_url': api_url},
+                                )
+                                continue
+                        except (KeyError, ValueError, TypeError):
+                            pass  # If we can't parse JSON, fall through to re-raise
+                    # Re-raise all other errors (including non-duplicate 400s)
+                    logger.error(
+                        f'Failed to setup secret "{key}": HTTP {e.response.status_code}',
+                        extra={
+                            'api_url': api_url,
+                            'response_text': e.response.text[:200],
+                        },
+                    )
+                    raise
 
     def _get_mcp_config(self, user_id: str) -> MCPConfig | None:
         api_key_store = ApiKeyStore.get_instance()
@@ -749,6 +784,7 @@ class SaasNestedConversationManager(ConversationManager):
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
         env_vars['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
+        env_vars['ENABLE_V1'] = '0'
 
         # We need this for LLM traces tracking to identify the source of the LLM calls
         env_vars['WEB_HOST'] = WEB_HOST

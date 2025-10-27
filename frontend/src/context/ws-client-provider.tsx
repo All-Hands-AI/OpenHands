@@ -11,13 +11,11 @@ import {
   CommandAction,
   FileEditAction,
   FileWriteAction,
-  OpenHandsAction,
   UserMessageAction,
 } from "#/types/core/actions";
 import { Conversation } from "#/api/open-hands.types";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { OpenHandsObservation } from "#/types/core/observations";
 import {
   isAgentStateChangeObservation,
   isErrorObservation,
@@ -26,10 +24,16 @@ import {
   isStatusUpdate,
   isUserMessage,
 } from "#/types/core/guards";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
-import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
+import { useErrorMessageStore } from "#/stores/error-message-store";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { useEventStore } from "#/stores/use-event-store";
 
-export type WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
+/**
+ * @deprecated Use `V1_WebSocketConnectionState` from `conversation-websocket-context.tsx` instead.
+ * This type is for legacy V0 conversations only.
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type V0_WebSocketStatus = "CONNECTING" | "CONNECTED" | "DISCONNECTED";
 
 const hasValidMessageProperty = (obj: unknown): obj is { message: string } =>
   typeof obj === "object" &&
@@ -70,18 +74,14 @@ const isMessageAction = (
   isUserMessage(event) || isAssistantMessage(event);
 
 interface UseWsClient {
-  webSocketStatus: WebSocketStatus;
+  webSocketStatus: V0_WebSocketStatus;
   isLoadingMessages: boolean;
-  events: Record<string, unknown>[];
-  parsedEvents: (OpenHandsAction | OpenHandsObservation)[];
   send: (event: Record<string, unknown>) => void;
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   webSocketStatus: "DISCONNECTED",
   isLoadingMessages: true,
-  events: [],
-  parsedEvents: [],
   send: () => {
     throw new Error("not connected");
   },
@@ -131,16 +131,13 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
-  const { removeOptimisticUserMessage } = useOptimisticUserMessage();
-  const { setErrorMessage, removeErrorMessage } = useWSErrorMessage();
+  const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
+  const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
+  const { addEvent, clearEvents } = useEventStore();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
   const [webSocketStatus, setWebSocketStatus] =
-    React.useState<WebSocketStatus>("DISCONNECTED");
-  const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
-  const [parsedEvents, setParsedEvents] = React.useState<
-    (OpenHandsAction | OpenHandsObservation)[]
-  >([]);
+    React.useState<V0_WebSocketStatus>("DISCONNECTED");
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
   const { providers } = useUserProviders();
 
@@ -188,7 +185,7 @@ export function WsClientProvider({
       }
 
       if (isOpenHandsAction(event) || isOpenHandsObservation(event)) {
-        setParsedEvents((prevEvents) => [...prevEvents, event]);
+        addEvent(event); // Event is already OpenHandsParsedEvent
       }
 
       if (isErrorObservation(event)) {
@@ -249,7 +246,6 @@ export function WsClientProvider({
       }
     }
 
-    setEvents((prevEvents) => [...prevEvents, event]);
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
@@ -286,9 +282,7 @@ export function WsClientProvider({
   React.useEffect(() => {
     lastEventRef.current = null;
 
-    // reset events when conversationId changes
-    setEvents([]);
-    setParsedEvents([]);
+    clearEvents();
     setWebSocketStatus("CONNECTING");
   }, [conversationId]);
 
@@ -397,16 +391,9 @@ export function WsClientProvider({
     () => ({
       webSocketStatus,
       isLoadingMessages: messageRateHandler.isUnderThreshold,
-      events,
-      parsedEvents,
       send,
     }),
-    [
-      webSocketStatus,
-      messageRateHandler.isUnderThreshold,
-      events,
-      parsedEvents,
-    ],
+    [webSocketStatus, messageRateHandler.isUnderThreshold],
   );
 
   return <WsClientContext value={value}>{children}</WsClientContext>;

@@ -1,12 +1,5 @@
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { ConversationStatus } from "#/types/conversation-status";
-import {
-  clearAllFiles,
-  setShouldHideSuggestions,
-  setSubmittedMessage,
-} from "#/state/conversation-slice";
-import { RootState } from "#/store";
 import { useChatInputLogic } from "#/hooks/chat/use-chat-input-logic";
 import { useFileHandling } from "#/hooks/chat/use-file-handling";
 import { useGripResize } from "#/hooks/chat/use-grip-resize";
@@ -15,13 +8,13 @@ import { useChatSubmission } from "#/hooks/chat/use-chat-submission";
 import { ChatInputGrip } from "./components/chat-input-grip";
 import { ChatInputContainer } from "./components/chat-input-container";
 import { HiddenFileInput } from "./components/hidden-file-input";
+import { useConversationStore } from "#/state/conversation-store";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
   showButton?: boolean;
   conversationStatus?: ConversationStatus | null;
   onSubmit: (message: string) => void;
-  onStop?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
   onFilesPaste?: (files: File[]) => void;
@@ -34,17 +27,18 @@ export function CustomChatInput({
   showButton = true,
   conversationStatus = null,
   onSubmit,
-  onStop,
   onFocus,
   onBlur,
   onFilesPaste,
   className = "",
   buttonClassName = "",
 }: CustomChatInputProps) {
-  const { submittedMessage } = useSelector(
-    (state: RootState) => state.conversation,
-  );
-  const dispatch = useDispatch();
+  const {
+    submittedMessage,
+    clearAllFiles,
+    setShouldHideSuggestions,
+    setSubmittedMessage,
+  } = useConversationStore();
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
@@ -56,8 +50,8 @@ export function CustomChatInput({
       return;
     }
     onSubmit(submittedMessage);
-    dispatch(setSubmittedMessage(null));
-  }, [submittedMessage, disabled, onSubmit, dispatch]);
+    setSubmittedMessage(null);
+  }, [submittedMessage, disabled, onSubmit, setSubmittedMessage]);
 
   // Custom hooks
   const {
@@ -86,16 +80,18 @@ export function CustomChatInput({
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   } = useGripResize(
     chatInputRef as React.RefObject<HTMLDivElement | null>,
     messageToSend,
   );
 
-  const { handleSubmit, handleResumeAgent, handleStop } = useChatSubmission(
+  const { handleSubmit, handleResumeAgent } = useChatSubmission(
     chatInputRef as React.RefObject<HTMLDivElement | null>,
     fileInputRef as React.RefObject<HTMLInputElement | null>,
     smartResize,
     onSubmit,
+    resetManualResize,
   );
 
   const { handleInput, handlePaste, handleKeyDown, handleBlur, handleFocus } =
@@ -112,12 +108,11 @@ export function CustomChatInput({
   // Cleanup: reset suggestions visibility when component unmounts
   useEffect(
     () => () => {
-      dispatch(setShouldHideSuggestions(false));
-      dispatch(clearAllFiles());
+      setShouldHideSuggestions(false);
+      clearAllFiles();
     },
-    [dispatch],
+    [setShouldHideSuggestions, clearAllFiles],
   );
-
   return (
     <div className={`w-full ${className}`}>
       {/* Hidden file input */}
@@ -146,7 +141,6 @@ export function CustomChatInput({
           chatInputRef={chatInputRef}
           handleFileIconClick={handleFileIconClick}
           handleSubmit={handleSubmit}
-          handleStop={handleStop}
           handleResumeAgent={handleResumeAgent}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -156,7 +150,6 @@ export function CustomChatInput({
           onKeyDown={(e) => handleKeyDown(e, isDisabled, handleSubmit)}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          onStop={onStop}
         />
       </div>
     </div>
