@@ -10,7 +10,11 @@ from typing import List
 
 from sqlalchemy import func
 from storage.database import session_maker
-from storage.stored_conversation_metadata import StoredConversationMetadata
+try:
+    from storage.stored_conversation_metadata import StoredConversationMetadata
+except ImportError:
+    # Fallback to test version if main import fails due to broken SDK imports
+    from storage.test_stored_conversation_metadata import StoredConversationMetadata
 from storage.user_settings import UserSettings
 from telemetry.base_collector import MetricResult, MetricsCollector
 from telemetry.registry import register_collector
