@@ -1,7 +1,7 @@
 """create org tables from pgerd schema
 
-Revision ID: 077
-Revises: 076
+Revision ID: 080
+Revises: 079
 Create Date: 2025-01-07 00:00:00.000000
 
 """
@@ -157,13 +157,13 @@ def upgrade() -> None:
         ['id'],
     )
 
-    # user_secrets
+    # custom_secrets
     op.add_column(
-        'user_secrets',
+        'custom_secrets',
         sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
     )
     op.create_foreign_key(
-        'user_secrets_org_fkey', 'user_secrets', 'org', ['org_id'], ['id']
+        'custom_secrets_org_fkey', 'custom_secrets', 'org', ['org_id'], ['id']
     )
 
     # api_keys
@@ -232,8 +232,8 @@ def downgrade() -> None:
     op.drop_constraint('api_keys_org_fkey', 'api_keys', type_='foreignkey')
     op.drop_column('api_keys', 'org_id')
 
-    op.drop_constraint('user_secrets_org_fkey', 'user_secrets', type_='foreignkey')
-    op.drop_column('user_secrets', 'org_id')
+    op.drop_constraint('custom_secrets_org_fkey', 'custom_secrets', type_='foreignkey')
+    op.drop_column('custom_secrets', 'org_id')
 
     op.drop_constraint(
         'conversation_metadata_org_fkey', 'conversation_metadata', type_='foreignkey'
