@@ -291,6 +291,24 @@ class V1ConversationService {
       },
     });
   }
+
+  /**
+   * Get the count of events for a conversation
+   * Uses the V1 API endpoint: GET /api/v1/events/count
+   *
+   * @param conversationId The conversation ID to get event count for
+   * @returns The number of events in the conversation
+   */
+  static async getEventCount(conversationId: string): Promise<number> {
+    const params = new URLSearchParams();
+    params.append("conversation_id__eq", conversationId);
+
+    const { data } = await openHands.get<number>(
+      `/api/v1/events/count?${params.toString()}`,
+    );
+
+    return data;
+  }
 }
 
 export default V1ConversationService;
