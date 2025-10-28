@@ -188,8 +188,8 @@ Notes
 ## Open risks and proposed refactor plan (orgs)
 
 1) Data model
-- Add org_id (nullable) columns to conversation metadata and related tables; maintain created_by_user_id and created_by_org_id.
-- Backfill/nullable default for OSS.
+- Do not add org_id to OpenHands models or schemas at this stage.
+- Keep storage keyed by user_id only; org-aware access should be enforced purely via DI/service policy (UserContext/Organization policy), never via new columns or route params.
 
 2) Context and DI
 - Option A: Extend UserContext.get_user_info() to include org memberships and an active org_id (if selected).
