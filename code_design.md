@@ -192,6 +192,56 @@ Below is a concise mapping of legacy endpoints that the frontend still calls, an
 - /api/conversations/{conversation_id}/events and related conversation endpoints (legacy conversation runtime APIs)
   - Implemented in: openhands/server/routes/conversation.py
   - Frontend V1 usage: frontend/src/api/conversation-service/v1-conversation-service.api.ts uses POST /api/conversations/{conversationId}/events to send messages
+
+Org policy without schema changes
+- Scope: Avoid org_id in routes or schemas. Apply org-aware access exclusively in DI/service layer and JWS claims.
+- Strategy: Compute allowed_user_ids for the active context. Services filter by created_by_user_id in StoredConversationMetadata using either:
+  - user_id from UserContext when no org is active, or
+  - a set of user_ids derived from OrganizationContext memberships when an org is active.
+- No table changes are required because we filter on user_id. Organization membership is resolved externally (e.g., enterprise DB) and injected via DI.
+
+DI structure
+- OrganizationContext (DI, optional)
+  - active_org_id: str | None  (selected org or None)
+  - member_user_ids(): set[str]  (users in selected org)
+  - is_member(user_id: str) -> bool
+- Default OH implementation returns no active_org_id and empty membership, so behavior equals current user-only scoping.
+- Enterprise can provide an OrganizationContext injector that reads org selection from auth/session and resolves memberships from its own DB.
+
+Service scoping wrappers (no schema change)
+- Wrap SQLAppConversationInfoService with OrgScopedAppConversationInfoService:
+  - search/count/get/batch_get: if active_org_id, filter where user_id IN member_user_ids(); else filter by current user_id.
+  - save: assert created_by_user_id belongs to current user or org membership (policy: allow only current user as author; org membership governs visibility, not authorship).
+- Wrap SQLAppConversationStartTaskService similarly using created_by_user_id.
+- Event access: EventService should validate visibility via AppConversationInfoService prior to reading from filesystem; reuse the same org-aware filter.
+
+Pseudocode (service wrapper)
+- def _user_ids_scope():
+  - org_ctx = OrganizationContext(); user_ctx = UserContext()
+  - if org_ctx.active_org_id: return org_ctx.member_user_ids()
+  - else: return { await user_ctx.get_user_id() }
+- For queries: query.where(StoredConversationMetadata.user_id.in_(scope))
+
+JWS claim integration (secrets)
+- X-Access-Token JWS may optionally include org_id claim when an org is active.
+- GET /api/v1/webhooks/secrets should verify org_id claim via OrganizationContext and enforce that the requested secret belongs to a user within org membership.
+- This keeps org scope entirely in DI/JWS logic; no route or schema change needed.
+
+Legacy endpoints
+- /api/user/* remain as compatibility surfaces and accept provider_tokens/access_token today; do not add org_id to their routes. If org-aware behavior is needed there, enterprise can wrap or replace them with V1 endpoints that resolve provider tokens via DI and JWS instead of raw provider_tokens.
+
+Risks
+- Reintroducing user_id or org_id into route signatures through new endpoints. Mitigate by requiring DI-only scoping for all new features.
+- Inconsistent scoping across services. Mitigate by centralizing scope computation (_user_ids_scope) and reusing it in all service wrappers.
+- Performance on IN clauses with large orgs. Mitigate with caching of member_user_ids and pagination limits; optionally implement server-side membership expansion via join in enterprise layer.
+
+Rollout plan
+- Phase 1 (no schema changes):
+  - Implement OrganizationContext injector (default no-op in OH; enterprise provides real one).
+  - Add OrgScoped wrappers for AppConversationInfoService, AppConversationStartTaskService, and EventService.
+  - Add optional org_id claim to JWS token issuance path in LiveStatusAppConversationService and verify in webhook_router.get_secret.
+- Phase 2: Monitor perf; if needed, enterprise may introduce derived indices or membership-materialized views on its side without touching OH schemas.
+
   - How V1 wiring works:
     - get_remote_runtime_config at GET /api/conversations/{conversation_id}/config detects V1 sessions (UUID) and maps to sandbox_id + session_api_key so that a V1 session can still use these endpoints
     - add_event and add_message forward events to the appropriate runtime (legacy or mapped V1)
