@@ -55,6 +55,20 @@ Key references
 - app_conversation/sql_app_conversation_info_service.py (uses get_user_id() for row-level filtering)
 - event/filesystem_event_service.py (permissioning via app_conversation_info_service)
 
+
+Audit summary
+- Routers
+  - /api/v1/users: user_router.py uses DI UserContext.get_user_info(); no user_id exposure
+  - /api/v1/app-conversations: app_conversation_router.py uses service injectors; stream-start pins UserContext in InjectorState for streaming; no user_id exposure
+  - /api/v1/events: event_router.py uses EventService via DI; no user_id exposure
+  - /api/v1/webhooks: webhook_router.py validates sandbox via X-Session-API-Key, uses as_admin() for webhook auth, and resolves per-user context via injector.get_for_user(user_id) for JWS-secret fetch; no user_id in route signatures
+- Services
+  - SQLAppConversationInfoService scopes by UserContext.get_user_id() within _secure_select(), count, get, batch_get, save
+  - SQLAppConversationStartTaskService injector resolves user_id once from UserContext and binds it to service instance; no route exposure
+  - LiveStatusAppConversationService uses UserContext for authorship/tokens; interacts with Agent Server using sandbox session API key
+- Legacy shims still mounted and used in V1 flows
+  - server/routes/conversation.py and manage_conversations.py continue to use Depends(get_user_id); treat them as compatibility shims only; avoid new feature work there
+
 ---
 
 ## 2) ConversationPaths
