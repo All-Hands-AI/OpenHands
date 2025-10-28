@@ -113,9 +113,9 @@ e2b-code-interpreter = { version = "^2.0.0", optional = true }
 pybase62 = "^1.0.0"
 
 # V1 dependencies
-openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
-openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
-openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e" }
+openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "93b481c50fab2bb45e6065606219155119d35656" }
+openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "93b481c50fab2bb45e6065606219155119d35656" }
+openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "93b481c50fab2bb45e6065606219155119d35656" }
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
 pg8000 = "^1.31.5"
@@ -218,3 +218,11 @@ lint.pydocstyle.convention = "google"
 concurrency = [ "gevent" ]
 relative_files = true
 omit = [ "enterprise/tests/*", "**/test_*" ]
+
+[tool.pyright]
+exclude = [
+  "evaluation/evaluation_outputs/**",
+  "**/__pycache__",
+  "**/.git",
+  "**/node_modules",
+]

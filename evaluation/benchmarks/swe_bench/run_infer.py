@@ -259,6 +259,9 @@ def get_config(
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
         model_routing=model_routing_config,
+        system_prompt_filename=metadata.agent_config.system_prompt_filename
+        if metadata.agent_config
+        else 'system_prompt.j2',
     )
     config.set_agent_config(agent_config)
 

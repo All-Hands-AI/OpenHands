@@ -71,7 +71,7 @@ class AuthUserContext(UserContext):
         results = {}
 
         # Include custom secrets...
-        secrets = await self.user_auth.get_user_secrets()
+        secrets = await self.user_auth.get_secrets()
         if secrets:
             for name, custom_secret in secrets.custom_secrets.items():
                 results[name] = StaticSecret(value=custom_secret.secret)
