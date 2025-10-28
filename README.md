@@ -7,26 +7,26 @@
 
 
 <div align="center">
-  <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
+  <a href="https://github.com/OpenHands/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/OpenHands/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
+  <a href="https://github.com/OpenHands/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/OpenHands/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
+  <a href="https://github.com/OpenHands/OpenHands/blob/main/LICENSE"><img src="https://img.shields.io/github/license/OpenHands/OpenHands?style=for-the-badge&color=blue" alt="MIT License"></a>
   <br/>
   <a href="https://all-hands.dev/joinslack"><img src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge" alt="Join our Slack community"></a>
-  <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
+  <a href="https://github.com/OpenHands/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
   <br/>
   <a href="https://docs.all-hands.dev/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
   <a href="https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0#gid=0"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
 
   <!-- Keep these links. Translations will automatically update with the README. -->
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=de">Deutsch</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=es">Español</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=fr">français</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=ja">日本語</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=ko">한국어</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=pt">Português</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=ru">Русский</a> |
-  <a href="https://www.readme-i18n.com/All-Hands-AI/OpenHands?lang=zh">中文</a>
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=de">Deutsch</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=es">Español</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=fr">français</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ja">日本語</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ko">한국어</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=pt">Português</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=ru">Русский</a> |
+  <a href="https://www.readme-i18n.com/OpenHands/OpenHands?lang=zh">中文</a>
 
   <hr>
 </div>
@@ -119,7 +119,7 @@ system requirements and more information.
 > It is not appropriate for multi-tenant deployments where multiple users share the same instance. There is no built-in authentication, isolation, or scalability.
 >
 > If you're interested in running OpenHands in a multi-tenant environment, check out the source-available, commercially-licensed
-> [OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud)
+> [OpenHands Cloud Helm Chart](https://github.com/openHands/OpenHands-cloud)
 
 You can [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode),
@@ -128,7 +128,7 @@ or run it on tagged issues with [a github action](https://docs.all-hands.dev/usa
 
 Visit [Running OpenHands](https://docs.all-hands.dev/usage/installation) for more information and setup instructions.
 
-If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+If you want to modify the OpenHands source code, check out [Development.md](https://github.com/OpenHands/OpenHands/blob/main/Development.md).
 
 Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/usage/troubleshooting) can help.
 
@@ -146,17 +146,17 @@ OpenHands is a community-driven project, and we welcome contributions from every
 through Slack, so this is the best place to start, but we also are happy to have you contact us on Github:
 
 - [Join our Slack workspace](https://all-hands.dev/joinslack) - Here we talk about research, architecture, and future development.
-- [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
+- [Read or post Github Issues](https://github.com/OpenHands/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
 
 See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 📈 Progress
 
-See the monthly OpenHands roadmap [here](https://github.com/orgs/All-Hands-AI/projects/1) (updated at the maintainer's meeting at the end of each month).
+See the monthly OpenHands roadmap [here](https://github.com/orgs/OpenHands/projects/1) (updated at the maintainer's meeting at the end of each month).
 
 <p align="center">
-  <a href="https://star-history.com/#All-Hands-AI/OpenHands&Date">
-    <img src="https://api.star-history.com/svg?repos=All-Hands-AI/OpenHands&type=Date" width="500" alt="Star History Chart">
+  <a href="https://star-history.com/#OpenHands/OpenHands&Date">
+    <img src="https://api.star-history.com/svg?repos=OpenHands/OpenHands&type=Date" width="500" alt="Star History Chart">
   </a>
 </p>
 
