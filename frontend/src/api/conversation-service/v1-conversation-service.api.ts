@@ -202,7 +202,7 @@ class V1ConversationService {
       conversationUrl,
       `/api/conversations/${conversationId}/run`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     const { data } = await axios.post<{ success: boolean }>(
       url,
