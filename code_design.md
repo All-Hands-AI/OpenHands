@@ -150,8 +150,33 @@ Auth primitives in routes
 
 ## Legacy/V0 surface still present (for UI compatibility)
 
-- openhands/server/app.py mounts both legacy routers and V1 when server_config.enable_v1 is true. The UI still calls many /api/user/* endpoints (see frontend src), hence legacy routes remain. V1-specific UI calls use /api/v1/* for conversations/sandboxes/events.
-- Risk: Introducing orgs must not add org_id to these routes. Keep org scoping in DI and services only.
+Below is a concise mapping of legacy endpoints that the frontend still calls, and how they relate to V1. Some are intentionally retained because they provide functionality not yet covered by the new V1 surfaces. All items verified against the current codebase.
+
+- /api/user/* (legacy Git/user provider APIs)
+  - Implemented in: openhands/server/routes/git.py
+  - Frontend usage: frontend/src/api/git-service/*.ts and suggestions-service.api.ts
+  - Purpose: repository discovery, branches, installations, microagents listing/content, suggested tasks
+  - Status for V1: Retained. These serve as integration-oriented endpoints for git providers and repo scanning. No direct V1 replacement yet. They remain part of the V1 experience and are mounted alongside /api/v1.
+
+- /api/conversations/{conversation_id}/events and related conversation endpoints (legacy conversation runtime APIs)
+  - Implemented in: openhands/server/routes/conversation.py
+  - Frontend V1 usage: frontend/src/api/conversation-service/v1-conversation-service.api.ts uses POST /api/conversations/{conversationId}/events to send messages
+  - How V1 wiring works:
+    - get_remote_runtime_config at GET /api/conversations/{conversation_id}/config detects V1 sessions (UUID) and maps to sandbox_id + session_api_key so that a V1 session can still use these endpoints
+    - add_event and add_message forward events to the appropriate runtime (legacy or mapped V1)
+  - Status for V1: Retained. These are part of the V1 runtime interaction shim and are intentionally kept to avoid duplicating runtime event endpoints under /api/v1.
+
+- /api (legacy conversation management)
+  - Implemented in: openhands/server/routes/manage_conversations.py
+  - Purpose: V0 session lifecycle management and metadata; has shims to include V1 results when possible
+    - Example: GET /api/conversations/{conversation_id} tries V1 via AppConversationService first, else falls back to V0
+    - POST /api/conversations creates V0 sessions (distinct from /api/v1/app-conversations which starts a V1 conversation via agent-server)
+  - Status for V1: Mixed. Some endpoints act as shims for compatibility and aggregation; new V1 creation flows are at /api/v1/app-conversations. These legacy endpoints are mounted and available but should be considered compatibility layers.
+
+Notes
+- Routing: openhands/server/app.py conditionally mounts v1_router alongside legacy routers when server_config.enable_v1 is true. The frontend calls a mix of /api/v1/* and legacy /api/* or /api/user/* where necessary. This is expected during the transition.
+- Recommendation: keep these legacy endpoints stable while we evaluate which ones should get V1-native equivalents. Where legacy endpoints are used in V1 flows (e.g., sending messages), they are effectively part of the V1 surface and should be documented as such.
+- Org risk: even for retained legacy endpoints, avoid adding org_id to paths. Apply org scoping via DI/service checks and JWS where needed.
 
 ---
 
