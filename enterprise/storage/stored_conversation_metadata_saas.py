@@ -5,14 +5,14 @@ This model stores the SaaS-specific metadata for conversations,
 containing only the conversation_id, user_id, and org_id.
 """
 
-from uuid import UUID
-
-from sqlalchemy import UUID as SQL_UUID, Column, ForeignKey, String
+from sqlalchemy import UUID as SQL_UUID
+from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship
+
 from storage.base import Base
 
 
-class ConversationMetadataSaas(Base):  # type: ignore
+class StoredConversationMetadataSaas(Base):  # type: ignore
     """SaaS conversation metadata model containing user and org associations."""
 
     __tablename__ = 'conversation_metadata_saas'
@@ -22,8 +22,8 @@ class ConversationMetadataSaas(Base):  # type: ignore
     org_id = Column(SQL_UUID(as_uuid=True), ForeignKey('org.id'), nullable=False)
 
     # Relationships
-    user = relationship('User', back_populates='conversation_metadata_saas')
-    org = relationship('Org', back_populates='conversation_metadata_saas')
+    user = relationship('User', back_populates='stored_conversation_metadata_saas')
+    org = relationship('Org', back_populates='stored_conversation_metadata_saas')
 
 
-__all__ = ['ConversationMetadataSaas']
+__all__ = ['StoredConversationMetadataSaas']

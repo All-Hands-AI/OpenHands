@@ -7,10 +7,9 @@ from uuid import uuid4
 import socketio
 from server.logger import logger
 from server.utils.conversation_callback_utils import invoke_conversation_callbacks
-from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.database import session_maker
 from storage.saas_settings_store import SaasSettingsStore
-from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 from openhands.core.config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -527,15 +526,17 @@ class ClusteredConversationManager(StandaloneConversationManager):
                 # Look up the user_id from the database
                 with session_maker() as session:
                     conversation_metadata_saas = (
-                        session.query(ConversationMetadataSaas)
+                        session.query(StoredConversationMetadataSaas)
                         .filter(
-                            ConversationMetadataSaas.conversation_id
+                            StoredConversationMetadataSaas.conversation_id
                             == conversation_id
                         )
                         .first()
                     )
                     user_id = (
-                        str(conversation_metadata_saas.user_id) if conversation_metadata_saas else None
+                        str(conversation_metadata_saas.user_id)
+                        if conversation_metadata_saas
+                        else None
                     )
                 # Handle the stopped conversation asynchronously
                 asyncio.create_task(

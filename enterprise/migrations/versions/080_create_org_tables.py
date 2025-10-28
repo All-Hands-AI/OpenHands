@@ -13,8 +13,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '077'
-down_revision: Union[str, None] = '076'
+revision: str = '080'
+down_revision: Union[str, None] = '079'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -144,17 +144,19 @@ def upgrade() -> None:
         'billing_sessions_org_fkey', 'billing_sessions', 'org', ['org_id'], ['id']
     )
 
-    # conversation_metadata
-    op.add_column(
-        'conversation_metadata',
-        sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=True),
-    )
-    op.create_foreign_key(
-        'conversation_metadata_org_fkey',
-        'conversation_metadata',
-        'org',
-        ['org_id'],
-        ['id'],
+    # Create conversation_metadata_saas table
+    op.create_table(
+        'conversation_metadata_saas',
+        sa.Column('conversation_id', sa.String(), nullable=False),
+        sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('org_id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.ForeignKeyConstraint(
+            ['user_id'], ['user.id'], name='conversation_metadata_saas_user_fkey'
+        ),
+        sa.ForeignKeyConstraint(
+            ['org_id'], ['org.id'], name='conversation_metadata_saas_org_fkey'
+        ),
+        sa.PrimaryKeyConstraint('conversation_id'),
     )
 
     # custom_secrets
@@ -235,10 +237,8 @@ def downgrade() -> None:
     op.drop_constraint('custom_secrets_org_fkey', 'custom_secrets', type_='foreignkey')
     op.drop_column('custom_secrets', 'org_id')
 
-    op.drop_constraint(
-        'conversation_metadata_org_fkey', 'conversation_metadata', type_='foreignkey'
-    )
-    op.drop_column('conversation_metadata', 'org_id')
+    # Drop conversation_metadata_saas table
+    op.drop_table('conversation_metadata_saas')
 
     op.drop_constraint(
         'billing_sessions_org_fkey', 'billing_sessions', type_='foreignkey'

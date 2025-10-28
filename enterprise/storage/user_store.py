@@ -5,6 +5,8 @@ Store class for managing users.
 import uuid
 from typing import Optional
 
+from sqlalchemy import text
+
 from integrations.stripe_service import migrate_customer
 from server.logger import logger
 from sqlalchemy.orm import joinedload
@@ -151,6 +153,24 @@ class UserStore:
 
             # Mark the old user_settings as migrated instead of deleting
             user_settings.migration_status = True
+
+            # need to migrate conversation metadata
+            session.execute(
+                text("""
+                INSERT INTO conversation_metadata_saas (conversation_id, user_id, org_id)
+                SELECT 
+                    conversation_id,
+                    CASE 
+                        WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+                        THEN user_id::uuid
+                        ELSE gen_random_uuid()
+                    END AS user_id,
+                    COALESCE(org_id, gen_random_uuid()) AS org_id
+                FROM conversation_metadata
+                WHERE user_id IS NOT NULL
+            """)
+            )
+
             session.commit()
             session.refresh(user)
             user.org_members  # load org_members

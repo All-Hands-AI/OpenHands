@@ -6,12 +6,6 @@ from dataclasses import dataclass
 from datetime import UTC
 from uuid import UUID
 
-from sqlalchemy.orm import sessionmaker
-from storage.conversation_metadata_saas import ConversationMetadataSaas
-from storage.database import session_maker
-from storage.stored_conversation_metadata import StoredConversationMetadata
-from storage.user_store import UserStore
-
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.integrations.provider import ProviderType
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -24,6 +18,12 @@ from openhands.storage.data_models.conversation_metadata_result_set import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.search_utils import offset_to_page_id, page_id_to_offset
+from sqlalchemy.orm import sessionmaker
+
+from storage.database import session_maker
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
+from storage.user_store import UserStore
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +48,12 @@ class SaasConversationStore(ConversationStore):
         return (
             session.query(StoredConversationMetadata)
             .join(
-                ConversationMetadataSaas,
-                StoredConversationMetadata.conversation_id == ConversationMetadataSaas.conversation_id
+                StoredConversationMetadataSaas,
+                StoredConversationMetadata.conversation_id
+                == StoredConversationMetadataSaas.conversation_id,
             )
-            .filter(ConversationMetadataSaas.user_id == self.user_id)
-            .filter(ConversationMetadataSaas.org_id == self.org_id)
+            .filter(StoredConversationMetadataSaas.user_id == self.user_id)
+            .filter(StoredConversationMetadataSaas.org_id == self.org_id)
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
         )
 
@@ -70,6 +71,8 @@ class SaasConversationStore(ConversationStore):
             # Convert string to ProviderType enum
             kwargs['git_provider'] = ProviderType(kwargs['git_provider'])
 
+        kwargs['user_id'] = self.user_id
+
         # Remove V1 attributes
         kwargs.pop('max_budget_per_task', None)
         kwargs.pop('cache_read_tokens', None)
@@ -82,7 +85,7 @@ class SaasConversationStore(ConversationStore):
 
     async def save_metadata(self, metadata: ConversationMetadata):
         kwargs = dataclasses.asdict(metadata)
-        
+
         # Remove user_id and org_id from kwargs since they're no longer in StoredConversationMetadata
         kwargs.pop('user_id', None)
         kwargs.pop('org_id', None)
@@ -101,24 +104,29 @@ class SaasConversationStore(ConversationStore):
             with self.session_maker() as session:
                 # Save the main conversation metadata
                 session.merge(stored_metadata)
-                
+
                 # Create or update the SaaS metadata record
-                saas_metadata = session.query(ConversationMetadataSaas).filter(
-                    ConversationMetadataSaas.conversation_id == stored_metadata.conversation_id
-                ).first()
-                
+                saas_metadata = (
+                    session.query(StoredConversationMetadataSaas)
+                    .filter(
+                        StoredConversationMetadataSaas.conversation_id
+                        == stored_metadata.conversation_id
+                    )
+                    .first()
+                )
+
                 if not saas_metadata:
-                    saas_metadata = ConversationMetadataSaas(
+                    saas_metadata = StoredConversationMetadataSaas(
                         conversation_id=stored_metadata.conversation_id,
                         user_id=self.user_id,
-                        org_id=self.org_id
+                        org_id=self.org_id,
                     )
                     session.add(saas_metadata)
                 else:
                     # Update existing record
                     saas_metadata.user_id = self.user_id
                     saas_metadata.org_id = self.org_id
-                
+
                 session.commit()
 
         await call_sync_from_async(_save_metadata)
@@ -140,14 +148,14 @@ class SaasConversationStore(ConversationStore):
             with self.session_maker() as session:
                 # Delete the main conversation metadata
                 self._select_by_id(session, conversation_id).delete()
-                
+
                 # Delete the SaaS metadata record
-                session.query(ConversationMetadataSaas).filter(
-                    ConversationMetadataSaas.conversation_id == conversation_id,
-                    ConversationMetadataSaas.user_id == self.user_id,
-                    ConversationMetadataSaas.org_id == self.org_id
+                session.query(StoredConversationMetadataSaas).filter(
+                    StoredConversationMetadataSaas.conversation_id == conversation_id,
+                    StoredConversationMetadataSaas.user_id == self.user_id,
+                    StoredConversationMetadataSaas.org_id == self.org_id,
                 ).delete()
-                
+
                 session.commit()
 
         await call_sync_from_async(_delete_metadata)
@@ -172,11 +180,12 @@ class SaasConversationStore(ConversationStore):
                 conversations = (
                     session.query(StoredConversationMetadata)
                     .join(
-                        ConversationMetadataSaas,
-                        StoredConversationMetadata.conversation_id == ConversationMetadataSaas.conversation_id
+                        StoredConversationMetadataSaas,
+                        StoredConversationMetadata.conversation_id
+                        == StoredConversationMetadataSaas.conversation_id,
                     )
-                    .filter(ConversationMetadataSaas.user_id == self.user_id)
-                    .filter(ConversationMetadataSaas.org_id == self.org_id)
+                    .filter(StoredConversationMetadataSaas.user_id == self.user_id)
+                    .filter(StoredConversationMetadataSaas.org_id == self.org_id)
                     .order_by(StoredConversationMetadata.created_at.desc())
                     .offset(offset)
                     .limit(limit + 1)

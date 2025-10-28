@@ -20,9 +20,8 @@ from server.utils.conversation_callback_utils import (
     update_conversation_metadata,
     update_conversation_stats,
 )
-from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.database import session_maker
-from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 from openhands.server.shared import conversation_manager
 
@@ -228,8 +227,8 @@ def _parse_conversation_id_and_subpath(path: str) -> Tuple[str, str]:
 def _get_user_id(conversation_id: str) -> str:
     with session_maker() as session:
         conversation_metadata_saas = (
-            session.query(ConversationMetadataSaas)
-            .filter(ConversationMetadataSaas.conversation_id == conversation_id)
+            session.query(StoredConversationMetadataSaas)
+            .filter(StoredConversationMetadataSaas.conversation_id == conversation_id)
             .first()
         )
         return str(conversation_metadata_saas.user_id)

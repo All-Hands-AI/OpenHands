@@ -20,8 +20,8 @@ from server.utils.conversation_callback_utils import (
 from sqlalchemy import orm
 from storage.api_key_store import ApiKeyStore
 from storage.database import session_maker
-from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, OpenHandsConfig
@@ -524,8 +524,10 @@ class SaasNestedConversationManager(ConversationManager):
 
         with session_maker() as session:
             conversation_metadata_saas = (
-                session.query(ConversationMetadataSaas)
-                .filter(ConversationMetadataSaas.conversation_id == conversation_id)
+                session.query(StoredConversationMetadataSaas)
+                .filter(
+                    StoredConversationMetadataSaas.conversation_id == conversation_id
+                )
                 .first()
             )
 
@@ -854,12 +856,17 @@ class SaasNestedConversationManager(ConversationManager):
         with session_maker() as session:
             # Only include conversations updated in the past week
             one_week_ago = datetime.now(UTC) - timedelta(days=7)
-            query = session.query(StoredConversationMetadata.conversation_id).join(
-                ConversationMetadataSaas,
-                StoredConversationMetadata.conversation_id == ConversationMetadataSaas.conversation_id
-            ).filter(
-                ConversationMetadataSaas.user_id == user_id,
-                StoredConversationMetadata.last_updated_at >= one_week_ago,
+            query = (
+                session.query(StoredConversationMetadata.conversation_id)
+                .join(
+                    StoredConversationMetadataSaas,
+                    StoredConversationMetadata.conversation_id
+                    == StoredConversationMetadataSaas.conversation_id,
+                )
+                .filter(
+                    StoredConversationMetadataSaas.user_id == user_id,
+                    StoredConversationMetadata.last_updated_at >= one_week_ago,
+                )
             )
             user_conversation_ids = set(query)
             return user_conversation_ids
@@ -933,11 +940,16 @@ class SaasNestedConversationManager(ConversationManager):
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
             .first()
         )
-        if conversation_metadata is None:
+        conversation_metadata_saas = (
+            session.query(StoredConversationMetadataSaas)
+            .filter(StoredConversationMetadataSaas.conversation_id == conversation_id)
+            .first()
+        )
+        if conversation_metadata is None or conversation_metadata_saas is None:
             # Conversation is running in different server
             return
 
-        user_id = conversation_metadata.user_id
+        user_id = conversation_metadata_saas.user_id
 
         # Get the id of the next event which is not present
         events_dir = get_conversation_events_dir(

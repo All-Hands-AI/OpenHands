@@ -36,4 +36,6 @@ class User(Base):  # type: ignore
     role = relationship('Role', back_populates='users')
     org_members = relationship('OrgMember', back_populates='user')
     current_org = relationship('Org', back_populates='current_users')
-    conversation_metadata_saas = relationship('ConversationMetadataSaas', back_populates='user')
+    stored_conversation_metadata_saas = relationship(
+        'StoredConversationMetadataSaas', back_populates='user'
+    )

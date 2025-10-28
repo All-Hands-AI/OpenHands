@@ -3,7 +3,6 @@ from storage.auth_tokens import AuthTokens
 from storage.billing_session import BillingSession
 from storage.billing_session_type import BillingSessionType
 from storage.conversation_callback import CallbackStatus, ConversationCallback
-from storage.conversation_metadata_saas import ConversationMetadataSaas
 from storage.conversation_work import ConversationWork
 from storage.experiment_assignment import ExperimentAssignment
 from storage.feedback import ConversationFeedback, Feedback
@@ -28,9 +27,10 @@ from storage.slack_conversation import SlackConversation
 from storage.slack_team import SlackTeam
 from storage.slack_user import SlackUser
 from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
+from storage.stored_custom_secrets import StoredCustomSecrets
 from storage.stored_offline_token import StoredOfflineToken
 from storage.stored_repository import StoredRepository
-from storage.stored_user_secrets import StoredUserSecrets
 from storage.stripe_customer import StripeCustomer
 from storage.subscription_access import SubscriptionAccess
 from storage.subscription_access_status import SubscriptionAccessStatus
@@ -46,7 +46,7 @@ __all__ = [
     'CallbackStatus',
     'ConversationCallback',
     'ConversationFeedback',
-    'ConversationMetadataSaas',
+    'StoredConversationMetadataSaas',
     'ConversationWork',
     'ExperimentAssignment',
     'Feedback',
@@ -74,7 +74,7 @@ __all__ = [
     'StoredConversationMetadata',
     'StoredOfflineToken',
     'StoredRepository',
-    'StoredUserSecrets',
+    'StoredCustomSecrets',
     'StripeCustomer',
     'SubscriptionAccess',
     'SubscriptionAccessStatus',
