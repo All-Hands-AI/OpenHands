@@ -18,6 +18,7 @@ from storage.lite_llm_manager import LiteLlmManager
 from storage.user_store import UserStore
 
 from openhands.server.user_auth import get_user_id
+from openhands.utils.http_session import httpx_verify_option
 
 stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')

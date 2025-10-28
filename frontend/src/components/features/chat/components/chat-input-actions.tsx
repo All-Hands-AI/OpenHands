@@ -10,6 +10,8 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useSendMessage } from "#/hooks/use-send-message";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { AgentState } from "#/types/agent-state";
+import { useV1PauseConversation } from "#/hooks/mutation/use-v1-pause-conversation";
+import { useV1ResumeConversation } from "#/hooks/mutation/use-v1-resume-conversation";
 
 interface ChatInputActionsProps {
   conversationStatus: ConversationStatus | null;
@@ -26,6 +28,8 @@ export function ChatInputActions({
   const pauseConversationSandboxMutation = useUnifiedPauseConversationSandbox();
   const resumeConversationSandboxMutation =
     useUnifiedResumeConversationSandbox();
+  const v1PauseConversationMutation = useV1PauseConversation();
+  const v1ResumeConversationMutation = useV1ResumeConversation();
   const { conversationId } = useConversationId();
   const { providers } = useUserProviders();
   const { send } = useSendMessage();
@@ -38,7 +42,8 @@ export function ChatInputActions({
 
   const handlePauseAgent = () => {
     if (isV1Conversation) {
-      // V1: Empty function for now
+      // V1: Pause the conversation (agent execution)
+      v1PauseConversationMutation.mutate({ conversationId });
       return;
     }
 
@@ -46,11 +51,24 @@ export function ChatInputActions({
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
+  const handleResumeAgentClick = () => {
+    if (isV1Conversation) {
+      // V1: Resume the conversation (agent execution)
+      v1ResumeConversationMutation.mutate({ conversationId });
+      return;
+    }
+
+    // V0: Call the original handleResumeAgent (sends "continue" message)
+    handleResumeAgent();
+  };
+
   const handleStartClick = () => {
     resumeConversationSandboxMutation.mutate({ conversationId, providers });
   };
 
-  const isPausing = pauseConversationSandboxMutation.isPending;
+  const isPausing =
+    pauseConversationSandboxMutation.isPending ||
+    v1PauseConversationMutation.isPending;
 
   return (
     <div className="w-full flex items-center justify-between">
@@ -66,7 +84,7 @@ export function ChatInputActions({
       <AgentStatus
         className="ml-2 md:ml-3"
         handleStop={handlePauseAgent}
-        handleResumeAgent={handleResumeAgent}
+        handleResumeAgent={handleResumeAgentClick}
         disabled={disabled}
         isPausing={isPausing}
       />

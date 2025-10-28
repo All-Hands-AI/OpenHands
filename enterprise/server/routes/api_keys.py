@@ -9,6 +9,7 @@ from storage.org_store import OrgStore
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.user_auth import get_user_id
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 
 
 # Helper functions for BYOR API key management
