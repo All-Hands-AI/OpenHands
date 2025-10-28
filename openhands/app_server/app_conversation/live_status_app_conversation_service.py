@@ -181,11 +181,11 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
             # Run setup scripts
             workspace = AsyncRemoteWorkspace(
-                host=agent_server_url, api_key=sandbox.session_api_key
+                host=agent_server_url,
+                api_key=sandbox.session_api_key,
+                working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(
-                task, workspace, sandbox_spec.working_dir
-            ):
+            async for updated_task in self.run_setup_scripts(task, workspace):
                 yield updated_task
 
             # Build the start request
