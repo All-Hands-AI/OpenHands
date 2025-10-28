@@ -494,7 +494,8 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     """Run the alias setup flow to configure shell aliases.
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
-    Handles existing aliases by offering to keep or remove them.
+    Provides information about both uvx (current) and uv tool install (recommended)
+    approaches while maintaining backward compatibility.
 
     Args:
         config: OpenHands configuration
@@ -522,6 +523,25 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
         )
     )
     print_formatted_text('')
+    
+    # Add informational tip about uv tool install
+    print_formatted_text(
+        HTML(
+            '<ansiblue>💡 Tip: For better performance and version control, consider using:</ansiblue>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiblue>   <b>uv tool install --python 3.12 openhands-ai</b></ansiblue>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiblue>   This installs OpenHands persistently (use "uv tool upgrade openhands-ai" to update)</ansiblue>'
+        )
+    )
+    print_formatted_text('')
+    
     print_formatted_text(
         HTML(
             '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
@@ -556,6 +576,24 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
             print_formatted_text(
                 HTML(
                     f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
+                )
+            )
+            print_formatted_text('')
+            
+            # Provide post-installation guidance for switching to uv tool install
+            print_formatted_text(
+                HTML(
+                    '<ansiblue>💡 Optional: For better performance, run:</ansiblue>'
+                )
+            )
+            print_formatted_text(
+                HTML(
+                    '<ansiblue>   <b>uv tool install --python 3.12 openhands-ai</b></ansiblue>'
+                )
+            )
+            print_formatted_text(
+                HTML(
+                    '<ansiblue>   Then modify your aliases to use just "openhands" instead of the uvx command</ansiblue>'
                 )
             )
         else:
