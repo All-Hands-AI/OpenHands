@@ -218,11 +218,3 @@ lint.pydocstyle.convention = "google"
 concurrency = [ "gevent" ]
 relative_files = true
 omit = [ "enterprise/tests/*", "**/test_*" ]
-
-[tool.pyright]
-exclude = [
-  "evaluation/evaluation_outputs/**",
-  "**/__pycache__",
-  "**/.git",
-  "**/node_modules",
-]
