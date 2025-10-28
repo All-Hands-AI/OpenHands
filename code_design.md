@@ -175,6 +175,11 @@ Below is a concise mapping of legacy endpoints that the frontend still calls, an
 
 Notes
 - Routing: openhands/server/app.py conditionally mounts v1_router alongside legacy routers when server_config.enable_v1 is true. The frontend calls a mix of /api/v1/* and legacy /api/* or /api/user/* where necessary. This is expected during the transition.
+- Frontend usage verification:
+  - frontend/src/api/conversation-service/v1-conversation-service.api.ts
+    - sendMessage() posts to /api/conversations/{id}/events (legacy path) using V1 conversationUrl/session key
+    - getVSCodeUrl(), pauseConversation(), and uploadFile() talk directly to the agent-server via conversationUrl (endpoints provided by agent-server)
+  - frontend/src/api/suggestions-service/suggestions-service.api.ts calls /api/user/suggested-tasks
 - Recommendation: keep these legacy endpoints stable while we evaluate which ones should get V1-native equivalents. Where legacy endpoints are used in V1 flows (e.g., sending messages), they are effectively part of the V1 surface and should be documented as such.
 - Org risk: even for retained legacy endpoints, avoid adding org_id to paths. Apply org scoping via DI/service checks and JWS where needed.
 
