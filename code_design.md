@@ -98,6 +98,23 @@ Status
 - agent-sdk’s equivalent boundary is SecretSource with implementations:
   - StaticSecret for literal values
   - LookupSecret for remote fetch
+
+Token sweep (direct usage in routes/services)
+- V1 app-server
+  - No provider tokens in route signatures. Provider access goes through UserContext → ProviderHandler and is consumed as SecretSource (StaticSecret or LookupSecret).
+  - X-Session-API-Key appears only for agent-server calls (headers) and sandbox auth in webhooks; not a provider token. Required to authorize runtime access.
+  - X-Access-Token (JWS) appears only in webhook secret fetch flow; scoped to user_id and provider_type (and can include org_id in future). Not required in public routes; only used by sandboxes to retrieve secrets.
+- Legacy routes still mounted
+  - /api/user/* expects provider_tokens via Depends(get_provider_tokens) plus access_token (legacy external auth) and user_id. These are the only places exposing provider token inputs at the REST surface today.
+  - Guidance: keep them as compatibility endpoints. Do not add new surfaces that accept provider tokens. Prefer V1 SecretSource/JWS approach.
+- Services
+  - SQL services do not pass provider tokens; they consume UserContext.user_id for row-level filtering only.
+  - LiveStatusAppConversationService uses JWT service to create X-Access-Token for LookupSecret and uses sandbox X-Session-API-Key to talk to agent-server; no provider tokens in signatures.
+
+Access token in routes?
+- We do not need an access token in public V1 routes. The JWS access token (X-Access-Token) is strictly an internal sandbox-to-app-server credential for GET /api/v1/webhooks/secrets.
+- For user-initiated calls, standard app auth + DI is sufficient; provider tokens should never be threaded through public route signatures.
+
 - app-server V1 maps provider tokens into SecretSource:
   - In LiveStatusAppConversationService._build_start_conversation_request_for_user():
     - If web_url is configured, constructs a LookupSecret to GET /api/v1/webhooks/secrets with X-Access-Token (JWS) that includes user_id and provider_type (scoped and expirable)
