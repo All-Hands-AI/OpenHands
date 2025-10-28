@@ -9,5 +9,5 @@ export function useConversationId() {
     );
   }
 
-  return { conversationId: conversationId || "" };
+  return { conversationId };
 }
