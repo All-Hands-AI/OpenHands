@@ -222,7 +222,7 @@ class IssueResolver:
             and not is_experimental
         ):
             runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+                f'ghcr.io/openhands/runtime:{openhands.__version__}-nikolaik'
             )
 
         # Convert container image values to string or None
@@ -571,7 +571,7 @@ class IssueResolver:
         # checkout the repo
         repo_dir = os.path.join(self.output_dir, 'repo')
         if not os.path.exists(repo_dir):
-            checkout_output = subprocess.check_output(  # noqa: ASYNC101
+            checkout_output = subprocess.check_output(
                 [
                     'git',
                     'clone',
@@ -584,7 +584,7 @@ class IssueResolver:
 
         # get the commit id of current repo for reproducibility
         base_commit = (
-            subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
+            subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
             .decode('utf-8')
             .strip()
         )
@@ -596,7 +596,7 @@ class IssueResolver:
                 repo_dir, '.openhands_instructions'
             )
             if os.path.exists(openhands_instructions_path):
-                with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
+                with open(openhands_instructions_path, 'r') as f:
                     self.repo_instruction = f.read()
 
         # OUTPUT FILE
@@ -605,7 +605,7 @@ class IssueResolver:
 
         # Check if this issue was already processed
         if os.path.exists(output_file):
-            with open(output_file, 'r') as f:  # noqa: ASYNC101
+            with open(output_file, 'r') as f:
                 for line in f:
                     data = ResolverOutput.model_validate_json(line)
                     if data.issue.number == self.issue_number:
@@ -614,7 +614,7 @@ class IssueResolver:
                         )
                         return
 
-        output_fp = open(output_file, 'a')  # noqa: ASYNC101
+        output_fp = open(output_file, 'a')
 
         logger.info(
             f'Resolving issue {self.issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {self.max_iterations}.'
@@ -633,20 +633,20 @@ class IssueResolver:
 
                 # Fetch the branch first to ensure it exists locally
                 fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
-                subprocess.check_output(  # noqa: ASYNC101
+                subprocess.check_output(
                     fetch_cmd,
                     cwd=repo_dir,
                 )
 
                 # Checkout the branch
                 checkout_cmd = ['git', 'checkout', branch_to_use]
-                subprocess.check_output(  # noqa: ASYNC101
+                subprocess.check_output(
                     checkout_cmd,
                     cwd=repo_dir,
                 )
 
                 base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
+                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
                     .decode('utf-8')
                     .strip()
                 )

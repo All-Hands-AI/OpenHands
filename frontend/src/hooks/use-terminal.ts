@@ -1,26 +1,17 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { useSelector } from "react-redux";
-import { Command } from "#/state/command-slice";
-import { RootState } from "#/store";
+import { Command, useCommandStore } from "#/state/command-store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { useSendMessage } from "#/hooks/use-send-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
   The reason for this is that the hook exposes a ref that requires a DOM element to be rendered.
 */
-
-interface UseTerminalConfig {
-  commands: Command[];
-}
-
-const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
-  commands: [],
-};
 
 const renderCommand = (
   command: Command,
@@ -44,11 +35,10 @@ const renderCommand = (
 // This ensures terminal history is preserved when navigating away and back
 const persistentLastCommandIndex = { current: 0 };
 
-export const useTerminal = ({
-  commands,
-}: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
-  const { send } = useWsClient();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+export const useTerminal = () => {
+  const { send } = useSendMessage();
+  const { curAgentState } = useAgentState();
+  const commands = useCommandStore((state) => state.commands);
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -60,8 +50,13 @@ export const useTerminal = ({
     new Terminal({
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       fontSize: 14,
+      scrollback: 1000,
+      scrollSensitivity: 1,
+      fastScrollModifier: "alt",
+      fastScrollSensitivity: 5,
+      allowTransparency: true,
       theme: {
-        background: "#24272E",
+        background: "transparent",
       },
     });
 

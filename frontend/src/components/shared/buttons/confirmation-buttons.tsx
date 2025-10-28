@@ -1,31 +1,35 @@
-import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { AgentState } from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
-import { useWsClient } from "#/context/ws-client-provider";
 import { ActionTooltip } from "../action-tooltip";
-import { isOpenHandsAction } from "#/types/core/guards";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { isOpenHandsAction, isActionOrObservation } from "#/types/core/guards";
+import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
 import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/u-warning.svg?react";
-import { RootState } from "#/store";
-import { addSubmittedEventId } from "#/state/event-message-slice";
+import { useEventMessageStore } from "#/stores/event-message-store";
+import { useEventStore } from "#/stores/use-event-store";
+import { isV0Event } from "#/types/v1/type-guards";
+import { useSendMessage } from "#/hooks/use-send-message";
 
 export function ConfirmationButtons() {
-  const submittedEventIds = useSelector(
-    (state: RootState) => state.eventMessage.submittedEventIds,
+  const submittedEventIds = useEventMessageStore(
+    (state) => state.submittedEventIds,
   );
-
-  const dispatch = useDispatch();
+  const addSubmittedEventId = useEventMessageStore(
+    (state) => state.addSubmittedEventId,
+  );
 
   const { t } = useTranslation();
 
-  const { send, parsedEvents } = useWsClient();
+  const { send } = useSendMessage();
+  const events = useEventStore((state) => state.events);
 
   // Find the most recent action awaiting confirmation
-  const awaitingAction = parsedEvents
+  const awaitingAction = events
+    .filter(isV0Event)
+    .filter(isActionOrObservation)
     .slice()
     .reverse()
     .find((ev) => {
@@ -40,10 +44,10 @@ export function ConfirmationButtons() {
         return;
       }
 
-      dispatch(addSubmittedEventId(awaitingAction.id));
+      addSubmittedEventId(awaitingAction.id);
       send(generateAgentStateChangeEvent(state));
     },
-    [send],
+    [send, addSubmittedEventId],
   );
 
   // Handle keyboard shortcuts

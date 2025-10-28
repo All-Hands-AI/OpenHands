@@ -34,6 +34,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
+    LoopDetectionObservation,
     TaskTrackingObservation,
     UserRejectObservation,
 )
@@ -528,6 +529,9 @@ class ConversationMemory:
         elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, LoopDetectionObservation):
+            # LoopRecovery should not be observed by llm, handled internally.
+            return []
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions

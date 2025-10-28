@@ -9,6 +9,9 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationPage,
+)
 from openhands.integrations.service_types import (
     AuthenticationError,
     CreateMicroagent,
@@ -79,7 +82,7 @@ def test_client():
 def create_new_test_conversation(
     test_request: InitSessionRequest, auth_type: AuthType | None = None
 ):
-    # Create a mock UserSecrets object with the required custom_secrets attribute
+    # Create a mock Secrets object with the required custom_secrets attribute
     mock_user_secrets = MagicMock()
     mock_user_secrets.custom_secrets = MappingProxyType({})
 
@@ -156,12 +159,18 @@ async def test_search_conversations():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     expected = ConversationInfoResultSet(
@@ -240,12 +249,18 @@ async def test_search_conversations_with_repository_filter():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository='test/repo',
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with only pagination parameters (filtering is done at API level)
@@ -311,12 +326,18 @@ async def test_search_conversations_with_trigger_filter():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=ConversationTrigger.GUI,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with only pagination parameters (filtering is done at API level)
@@ -382,12 +403,18 @@ async def test_search_conversations_with_both_filters():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository='test/repo',
                         conversation_trigger=ConversationTrigger.SUGGESTED_TASK,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with only pagination parameters (filtering is done at API level)
@@ -455,19 +482,28 @@ async def test_search_conversations_with_pagination():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
-                        page_id='page_123',
+                        page_id='eyJ2MCI6ICJwYWdlXzEyMyIsICJ2MSI6IG51bGx9',
                         limit=10,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with pagination parameters (filtering is done at API level)
                     mock_store.search.assert_called_once_with('page_123', 10)
 
                     # Verify the result includes pagination info
-                    assert result_set.next_page_id == 'next_page_123'
+                    assert (
+                        result_set.next_page_id
+                        == 'eyJ2MCI6ICJuZXh0X3BhZ2VfMTIzIiwgInYxIjogbnVsbH0='
+                    )
 
 
 @pytest.mark.asyncio
@@ -526,19 +562,28 @@ async def test_search_conversations_with_filters_and_pagination():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
-                        page_id='page_456',
+                        page_id='eyJ2MCI6ICJwYWdlXzQ1NiIsICJ2MSI6IG51bGx9',
                         limit=5,
                         selected_repository='test/repo',
                         conversation_trigger=ConversationTrigger.GUI,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with only pagination parameters (filtering is done at API level)
                     mock_store.search.assert_called_once_with('page_456', 5)
 
                     # Verify the result includes pagination info
-                    assert result_set.next_page_id == 'next_page_456'
+                    assert (
+                        result_set.next_page_id
+                        == 'eyJ2MCI6ICJuZXh0X3BhZ2VfNDU2IiwgInYxIjogbnVsbH0='
+                    )
                     assert len(result_set.results) == 1
                     result = result_set.results[0]
                     assert result.selected_repository == 'test/repo'
@@ -586,12 +631,18 @@ async def test_search_conversations_empty_results():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository='nonexistent/repo',
                         conversation_trigger=ConversationTrigger.GUI,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify that search was called with only pagination parameters (filtering is done at API level)
@@ -1249,12 +1300,18 @@ async def test_search_conversations_with_pr_number():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify the result includes pr_number field
@@ -1320,12 +1377,18 @@ async def test_search_conversations_with_empty_pr_number():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify the result includes empty pr_number field
@@ -1391,12 +1454,18 @@ async def test_search_conversations_with_single_pr_number():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify the result includes single pr_number
@@ -1532,12 +1601,18 @@ async def test_search_conversations_multiple_with_pr_numbers():
                         )
                     )
 
+                    mock_app_conversation_service = AsyncMock()
+                    mock_app_conversation_service.search_app_conversations.return_value = AppConversationPage(
+                        items=[]
+                    )
+
                     result_set = await search_conversations(
                         page_id=None,
                         limit=20,
                         selected_repository=None,
                         conversation_trigger=None,
                         conversation_store=mock_store,
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify all results include pr_number field

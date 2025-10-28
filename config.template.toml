@@ -189,7 +189,7 @@ model = "gpt-4o"
 # Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
 # ATTENTION: Based on evaluation, enabling native function calling may lead to worse results
 # in some scenarios. Use with caution and consider testing with your specific use case.
-# https://github.com/All-Hands-AI/OpenHands/pull/4711
+# https://github.com/OpenHands/OpenHands/pull/4711
 #native_tool_calling = None
 
 
@@ -488,6 +488,47 @@ type = "noop"
 
 # Run the runtime sandbox container in privileged mode for use with docker-in-docker
 #privileged = false
+
+#################################### MCP #####################################
+# Configuration for Model Context Protocol (MCP) servers
+# MCP allows OpenHands to communicate with external tool servers
+##############################################################################
+[mcp]
+# SSE servers - Server-Sent Events transport (legacy)
+#sse_servers = [
+#    # Basic SSE server with just a URL
+#    "http://localhost:8080/mcp/sse",
+#
+#    # SSE server with authentication
+#    {url = "https://api.example.com/mcp/sse", api_key = "your-api-key"}
+#]
+
+# SHTTP servers - Streamable HTTP transport (recommended)
+#shttp_servers = [
+#    # Basic SHTTP server with default 60s timeout
+#    "https://api.example.com/mcp/shttp",
+#
+#    # SHTTP server with custom timeout for long-running tools
+#    {
+#        url = "https://api.example.com/mcp/shttp",
+#        api_key = "your-api-key",
+#        timeout = 180  # 3 minutes for processing-heavy tools (1-3600 seconds)
+#    }
+#]
+
+# Stdio servers - Direct process communication (development only)
+#stdio_servers = [
+#    # Basic stdio server
+#    {name = "filesystem", command = "npx", args = ["@modelcontextprotocol/server-filesystem", "/"]},
+#
+#    # Stdio server with environment variables
+#    {
+#        name = "fetch",
+#        command = "uvx",
+#        args = ["mcp-server-fetch"],
+#        env = {DEBUG = "true"}
+#    }
+#]
 
 #################################### Model Routing ############################
 # Configuration for experimental model routing feature

@@ -25,7 +25,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 
 
 class GitlabManager(Manager):
@@ -62,7 +62,13 @@ class GitlabManager(Manager):
             logger.warning(f'Got invalid keyloak user id for GitLab User {user_id}')
             return False
 
-        gitlab_service = GitLabServiceImpl(external_auth_id=keycloak_user_id)
+        # Importing here prevents circular import
+        from integrations.gitlab.gitlab_service import SaaSGitLabService
+
+        gitlab_service: SaaSGitLabService = GitLabServiceImpl(
+            external_auth_id=keycloak_user_id
+        )
+
         return await gitlab_service.user_has_write_access(project_id)
 
     async def receive_message(self, message: Message):
@@ -119,7 +125,13 @@ class GitlabManager(Manager):
             gitlab_view: The GitLab view object containing issue/PR/comment info
         """
         keycloak_user_id = gitlab_view.user_info.keycloak_user_id
-        gitlab_service = GitLabServiceImpl(external_auth_id=keycloak_user_id)
+
+        # Importing here prevents circular import
+        from integrations.gitlab.gitlab_service import SaaSGitLabService
+
+        gitlab_service: SaaSGitLabService = GitLabServiceImpl(
+            external_auth_id=keycloak_user_id
+        )
 
         outgoing_message = message.message
 
@@ -186,7 +198,7 @@ class GitlabManager(Manager):
                     f'[GitLab] Creating new conversation for user {user_info.username}'
                 )
 
-                secret_store = UserSecrets(
+                secret_store = Secrets(
                     provider_tokens=MappingProxyType(
                         {
                             ProviderType.GITLAB: ProviderToken(

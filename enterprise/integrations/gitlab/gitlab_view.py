@@ -4,7 +4,8 @@ from integrations.models import Message
 from integrations.types import ResolverViewInterface, UserData
 from integrations.utils import HOST, get_oh_labels, has_exact_mention
 from jinja2 import Environment
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from storage.database import session_maker
 from storage.saas_secrets_store import SaasSecretsStore
 
@@ -47,14 +48,14 @@ class GitlabIssue(ResolverViewInterface):
         )
 
         self.previous_comments = await gitlab_service.get_issue_or_mr_comments(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
         (
             self.title,
             self.description,
         ) = await gitlab_service.get_issue_or_mr_title_and_body(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
     async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
@@ -199,11 +200,11 @@ class GitlabInlineMRComment(GitlabMRComment):
             self.title,
             self.description,
         ) = await gitlab_service.get_issue_or_mr_title_and_body(
-            self.project_id, self.issue_number, is_mr=self.is_mr
+            str(self.project_id), self.issue_number, is_mr=self.is_mr
         )
 
         self.previous_comments = await gitlab_service.get_review_thread_comments(
-            self.project_id, self.issue_number, self.discussion_id
+            str(self.project_id), self.issue_number, self.discussion_id
         )
 
     async def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:

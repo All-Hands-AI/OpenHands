@@ -24,7 +24,6 @@ from server.constants import (
 from server.logger import logger
 from sqlalchemy.orm import sessionmaker
 from storage.database import session_maker
-from storage.stored_settings import StoredSettings
 from storage.user_settings import UserSettings
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -32,6 +31,7 @@ from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 
 
 @dataclass
@@ -40,15 +40,46 @@ class SaasSettingsStore(SettingsStore):
     session_maker: sessionmaker
     config: OpenHandsConfig
 
+    def get_user_settings_by_keycloak_id(
+        self, keycloak_user_id: str, session=None
+    ) -> UserSettings | None:
+        """
+        Get UserSettings by keycloak_user_id.
+
+        Args:
+            keycloak_user_id: The keycloak user ID to search for
+            session: Optional existing database session. If not provided, creates a new one.
+
+        Returns:
+            UserSettings object if found, None otherwise
+        """
+        if not keycloak_user_id:
+            return None
+
+        def _get_settings():
+            if session:
+                # Use provided session
+                return (
+                    session.query(UserSettings)
+                    .filter(UserSettings.keycloak_user_id == keycloak_user_id)
+                    .first()
+                )
+            else:
+                # Create new session
+                with self.session_maker() as new_session:
+                    return (
+                        new_session.query(UserSettings)
+                        .filter(UserSettings.keycloak_user_id == keycloak_user_id)
+                        .first()
+                    )
+
+        return _get_settings()
+
     async def load(self) -> Settings | None:
         if not self.user_id:
             return None
         with self.session_maker() as session:
-            settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == self.user_id)
-                .first()
-            )
+            settings = self.get_user_settings_by_keycloak_id(self.user_id, session)
 
             if not settings or settings.user_version != CURRENT_USER_SETTINGS_VERSION:
                 logger.info(
@@ -72,12 +103,8 @@ class SaasSettingsStore(SettingsStore):
             if item:
                 kwargs = item.model_dump(context={'expose_secrets': True})
                 self._encrypt_kwargs(kwargs)
-                query = session.query(UserSettings).filter(
-                    UserSettings.keycloak_user_id == self.user_id
-                )
-
                 # First check if we have an existing entry in the new table
-                existing = query.first()
+                existing = self.get_user_settings_by_keycloak_id(self.user_id, session)
 
             kwargs = {
                 key: value
@@ -144,33 +171,6 @@ class SaasSettingsStore(SettingsStore):
         await self.store(settings)
         return settings
 
-    def load_legacy_db_settings(self, github_user_id: str) -> Settings | None:
-        if not github_user_id:
-            return None
-
-        with self.session_maker() as session:
-            settings = (
-                session.query(StoredSettings)
-                .filter(StoredSettings.id == github_user_id)
-                .first()
-            )
-            if settings is None:
-                return None
-
-            logger.info(
-                'saas_settings_store:load_legacy_db_settings:found',
-                extra={'github_user_id': github_user_id},
-            )
-            kwargs = {
-                c.name: getattr(settings, c.name)
-                for c in StoredSettings.__table__.columns
-                if c.name in Settings.model_fields
-            }
-            self._decrypt_kwargs(kwargs)
-            del kwargs['secrets_store']
-            settings = Settings(**kwargs)
-            return settings
-
     async def load_legacy_file_store_settings(self, github_user_id: str):
         if not github_user_id:
             return None
@@ -216,9 +216,10 @@ class SaasSettingsStore(SettingsStore):
             )
 
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'x-goog-api-key': LITE_LLM_API_KEY,
-                }
+                },
             ) as client:
                 # Get the previous max budget to prevent accidental loss
                 # In Litellm a get always succeeds, regardless of whether the user actually exists
@@ -235,10 +236,8 @@ class SaasSettingsStore(SettingsStore):
                 spend = user_info.get('spend') or 0
 
                 with session_maker() as session:
-                    user_settings = (
-                        session.query(UserSettings)
-                        .filter(UserSettings.keycloak_user_id == self.user_id)
-                        .first()
+                    user_settings = self.get_user_settings_by_keycloak_id(
+                        self.user_id, session
                     )
                     # In upgrade to V4, we no longer use billing margin, but instead apply this directly
                     # in litellm. The default billing marign was 2 before this (hence the magic numbers below)

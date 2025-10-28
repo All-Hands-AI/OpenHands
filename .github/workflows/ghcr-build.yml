@@ -46,6 +46,7 @@ jobs:
           else
             json=$(jq -n -c '[
                 { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
+                { image: "ghcr.io/openhands/python-nodejs:python3.13-nodejs22-trixie", tag: "trixie" },
                 { image: "ubuntu:24.04", tag: "ubuntu" }
               ]')
           fi
@@ -125,7 +126,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: poetry run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -136,6 +137,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork != true
         shell: bash
         run: |
+
           ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
 
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
@@ -176,8 +178,10 @@ jobs:
     # Do not build enterprise in forks
     if: github.event.pull_request.head.repo.fork != true
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       # Set up Docker Buildx for better performance
       - name: Set up Docker Buildx
@@ -196,7 +200,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/all-hands-ai/enterprise-server
+          images: ghcr.io/openhands/enterprise-server
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -209,6 +213,8 @@ jobs:
             latest=auto
             prefix=
             suffix=
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
       - name: Determine app image tag
         shell: bash
         run: |
@@ -246,7 +252,7 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
             -d "{\"ref\": \"main\", \"inputs\": {\"openhandsPrNumber\": \"${{ github.event.pull_request.number }}\", \"deployEnvironment\": \"feature\", \"enterpriseImageTag\": \"pr-${{ github.event.pull_request.number }}\" }}" \
-            https://api.github.com/repos/All-Hands-AI/deploy/actions/workflows/deploy.yaml/dispatches
+            https://api.github.com/repos/OpenHands/deploy/actions/workflows/deploy.yaml/dispatches
 
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:

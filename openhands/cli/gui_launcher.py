@@ -94,8 +94,8 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
 
     # Get the current version for the Docker image
     version = __version__
-    runtime_image = f'docker.all-hands.dev/all-hands-ai/runtime:{version}-nikolaik'
-    app_image = f'docker.all-hands.dev/all-hands-ai/openhands:{version}'
+    runtime_image = f'docker.all-hands.dev/openhands/runtime:{version}-nikolaik'
+    app_image = f'docker.all-hands.dev/openhands/openhands:{version}'
 
     print_formatted_text(HTML('<grey>Pulling required Docker images...</grey>'))
 
@@ -103,19 +103,10 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
     pull_cmd = ['docker', 'pull', runtime_image]
     print_formatted_text(HTML(_format_docker_command_for_logging(pull_cmd)))
     try:
-        subprocess.run(
-            pull_cmd,
-            check=True,
-            timeout=300,  # 5 minutes timeout
-        )
+        subprocess.run(pull_cmd, check=True)
     except subprocess.CalledProcessError:
         print_formatted_text(
             HTML('<ansired>❌ Failed to pull runtime image.</ansired>')
-        )
-        sys.exit(1)
-    except subprocess.TimeoutExpired:
-        print_formatted_text(
-            HTML('<ansired>❌ Timeout while pulling runtime image.</ansired>')
         )
         sys.exit(1)
 

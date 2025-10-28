@@ -14,7 +14,7 @@ export function LoadingSpinner({
     <div
       className={cn(
         "absolute top-1/2 transform -translate-y-1/2",
-        hasSelection ? "right-16" : "right-12",
+        hasSelection ? "right-11" : "right-6",
       )}
     >
       <div
