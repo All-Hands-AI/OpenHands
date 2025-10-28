@@ -6,6 +6,7 @@ import { GitControlBarPushButton } from "./git-control-bar-push-button";
 import { GitControlBarPrButton } from "./git-control-bar-pr-button";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useTaskPolling } from "#/hooks/query/use-task-polling";
+import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
 import { Provider } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
 import { GitControlBarTooltipWrapper } from "./git-control-bar-tooltip-wrapper";
@@ -19,6 +20,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
 
   const { data: conversation } = useActiveConversation();
   const { repositoryInfo } = useTaskPolling();
+  const webSocketStatus = useUnifiedWebSocketStatus();
 
   // Priority: conversation data > task data
   // This ensures we show repository info immediately from task, then transition to conversation data
@@ -31,8 +33,8 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
 
   const hasRepository = !!selectedRepository;
 
-  // Check if conversation exists
-  const isConversationDataExisted = !!conversation;
+  // Enable buttons only when conversation exists and WS is connected
+  const isConversationReady = !!conversation && webSocketStatus === "CONNECTED";
 
   return (
     <div className="flex flex-row items-center">
@@ -69,7 +71,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
             >
               <GitControlBarPullButton
                 onSuggestionsClick={onSuggestionsClick}
-                isConversationDataExisted={isConversationDataExisted}
+                isConversationReady={isConversationReady}
               />
             </GitControlBarTooltipWrapper>
 
@@ -82,7 +84,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
                 onSuggestionsClick={onSuggestionsClick}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
-                isConversationDataExisted={isConversationDataExisted}
+                isConversationReady={isConversationReady}
               />
             </GitControlBarTooltipWrapper>
 
@@ -95,7 +97,7 @@ export function GitControlBar({ onSuggestionsClick }: GitControlBarProps) {
                 onSuggestionsClick={onSuggestionsClick}
                 hasRepository={hasRepository}
                 currentGitProvider={gitProvider}
-                isConversationDataExisted={isConversationDataExisted}
+                isConversationReady={isConversationReady}
               />
             </GitControlBarTooltipWrapper>
           </>
