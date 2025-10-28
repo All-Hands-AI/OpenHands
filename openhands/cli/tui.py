@@ -11,7 +11,7 @@ import re
 import sys
 import threading
 import time
-from typing import Generator
+from typing import Generator, Iterable, Tuple
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
@@ -314,6 +314,60 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             handle_loop_recovery_state_observation(event)
 
 
+def _sanitize_mentions_cli(text: str, blocklist: Iterable[str] | None = None) -> str:
+    """Sanitize mentions in CLI output by inserting zero-width joiner after @ symbol.
+
+    Preserves fenced code blocks (```...```) unchanged while sanitizing mentions
+    in normal text to prevent clickable/platform-activating mentions.
+
+    Args:
+        text: The text to sanitize
+        blocklist: List of handles to sanitize (defaults to OpenHands variants)
+
+    Returns:
+        Sanitized text with mentions neutralized outside code blocks
+    """
+    if not text:
+        return text or ""
+
+    bl = list(blocklist) if blocklist else ["@OpenHands", "@openhands", "@open-hands"]
+    # Build regex of all variants (case-insensitive compare via lower pass)
+    # Handle both @handle and handle formats
+    escaped = []
+    for s in bl:
+        if s.startswith("@"):
+            escaped.append(re.escape(s))
+        else:
+            # Match both @handle and handle formats
+            escaped.append(re.escape(f"@{s}"))
+            escaped.append(re.escape(s))
+    pattern = re.compile("(" + "|".join(escaped) + ")", re.IGNORECASE)
+
+    # Split into fenced code blocks and normal text: ```...```
+    parts: list[Tuple[str, bool]] = []
+    fence = re.compile(r"```[^\n]*\n[\s\S]*?\n```", re.MULTILINE)
+    last = 0
+    for m in fence.finditer(text):
+        if m.start() > last:
+            parts.append((text[last:m.start()], False))
+        parts.append((text[m.start():m.end()], True))
+        last = m.end()
+    if last < len(text):
+        parts.append((text[last:], False))
+
+    def neutralize(s: str) -> str:
+        def replace_match(match):
+            matched_text = match.group(0)
+            # If the match doesn't start with @, add it before sanitizing
+            if not matched_text.startswith("@"):
+                return f"@\u200D{matched_text}"
+            else:
+                return matched_text.replace("@", "@\u200D")
+        return pattern.sub(replace_match, s)
+
+    return "".join(chunk if is_code else neutralize(chunk) for chunk, is_code in parts)
+
+
 def display_message(message: str, is_agent_message: bool = False) -> None:
     """Display a message in the terminal with markdown rendering.
 
@@ -321,7 +375,7 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
         message: The message to display
         is_agent_message: If True, apply agent styling (blue color)
     """
-    message = message.strip()
+    message = _sanitize_mentions_cli(message.strip())
 
     if message:
         # Add spacing before the message
