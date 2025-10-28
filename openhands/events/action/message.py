@@ -3,6 +3,7 @@ from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.utils.sanitize_mentions import sanitize_assistant_message_content
 from openhands.version import get_version
 
 
@@ -14,6 +15,11 @@ class MessageAction(Action):
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
     security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
+
+    def __post_init__(self):
+        """Sanitize assistant message content to prevent self-mention loops."""
+        if self.source == 'agent' and self.content:
+            self.content = sanitize_assistant_message_content(self.content)
 
     @property
     def message(self) -> str:
