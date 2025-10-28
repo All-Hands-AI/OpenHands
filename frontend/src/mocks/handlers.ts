@@ -336,9 +336,4 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 400 });
   }),
-
-  // V1 API endpoints
-  // Return a default count of 0 for any conversation
-  // Tests can override this with mswServer.use() for specific scenarios
-  http.get("/api/v1/events/count", () => HttpResponse.json(0)),
 ];

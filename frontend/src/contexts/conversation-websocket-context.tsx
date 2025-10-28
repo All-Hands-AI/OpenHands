@@ -103,10 +103,6 @@ export function ConversationWebSocketProvider({
       receivedEventCountRef.current >= expectedEventCount &&
       isLoadingHistory
     ) {
-      // eslint-disable-next-line no-console
-      console.log(
-        `[History Loading] Count API completed. Already received ${receivedEventCountRef.current}/${expectedEventCount} events, marking as loaded`,
-      );
       setIsLoadingHistory(false);
     }
   }, [expectedEventCount, isLoadingHistory]);
@@ -121,19 +117,11 @@ export function ConversationWebSocketProvider({
         if (isLoadingHistory) {
           receivedEventCountRef.current += 1;
 
-          if (expectedEventCount !== null) {
-            // eslint-disable-next-line no-console
-            console.log(
-              `[History Loading] Received ${receivedEventCountRef.current}/${expectedEventCount} events`,
-            );
-
-            if (receivedEventCountRef.current >= expectedEventCount) {
-              // eslint-disable-next-line no-console
-              console.log(
-                "[History Loading] All events received, marking as loaded",
-              );
-              setIsLoadingHistory(false);
-            }
+          if (
+            expectedEventCount !== null &&
+            receivedEventCountRef.current >= expectedEventCount
+          ) {
+            setIsLoadingHistory(false);
           }
         }
 
@@ -225,10 +213,6 @@ export function ConversationWebSocketProvider({
           try {
             const count =
               await V1ConversationService.getEventCount(conversationId);
-            // eslint-disable-next-line no-console
-            console.log(
-              `[History Loading] Expected event count for ${conversationId}: ${count}`,
-            );
             setExpectedEventCount(count);
 
             // If no events expected, mark as loaded immediately
@@ -236,8 +220,6 @@ export function ConversationWebSocketProvider({
               setIsLoadingHistory(false);
             }
           } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn("Failed to fetch event count:", error);
             // Fall back to marking as loaded to avoid infinite loading state
             setIsLoadingHistory(false);
           }
