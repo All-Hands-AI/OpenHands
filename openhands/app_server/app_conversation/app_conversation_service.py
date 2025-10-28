@@ -12,9 +12,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartTask,
 )
 from openhands.app_server.services.injector import Injector
-from openhands.sdk import Workspace
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
-
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 
