@@ -291,6 +291,19 @@ class V1ConversationService {
       },
     });
   }
+
+  /**
+   * Get the conversation config (runtime_id) for a V1 conversation
+   * @param conversationId The conversation ID
+   * @returns Object containing runtime_id
+   */
+  static async getConversationConfig(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
+    const url = `/api/conversations/${conversationId}/config`;
+    const { data } = await openHands.get<{ runtime_id: string }>(url);
+    return data;
+  }
 }
 
 export default V1ConversationService;
