@@ -205,8 +205,6 @@ export function ChatInterface() {
   const v1UserEventsExist = hasV1UserEvent(v1Events);
   const userEventsExist = v0UserEventsExist || v1UserEventsExist;
 
-  console.log("curAgentState", curAgentState);
-
   return (
     <ScrollProvider value={scrollProviderValue}>
       <div className="h-full flex flex-col justify-between pr-0 md:pr-4 relative">
