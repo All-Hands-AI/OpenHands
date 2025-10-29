@@ -21,7 +21,6 @@ import {
 interface EventMessageProps {
   event: OpenHandsEvent;
   hasObservationPair: boolean;
-  isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
@@ -38,7 +37,6 @@ interface EventMessageProps {
 export function EventMessage({
   event,
   hasObservationPair,
-  isAwaitingUserConfirmation,
   isLastMessage,
   microagentStatus,
   microagentConversationId,
@@ -46,9 +44,6 @@ export function EventMessage({
   actions,
   isInLast10Actions,
 }: EventMessageProps) {
-  const shouldShowConfirmationButtons =
-    isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
-
   const { data: config } = useConfig();
 
   // V1 events use string IDs, but useFeedbackExists expects number
@@ -103,17 +98,14 @@ export function EventMessage({
     return (
       <UserAssistantEventMessage
         event={event as MessageEvent}
-        shouldShowConfirmationButtons={shouldShowConfirmationButtons}
         {...commonProps}
+        isLastMessage={isLastMessage}
       />
     );
   }
 
   // Generic fallback for all other events (including observation events)
   return (
-    <GenericEventMessageWrapper
-      event={event}
-      shouldShowConfirmationButtons={shouldShowConfirmationButtons}
-    />
+    <GenericEventMessageWrapper event={event} isLastMessage={isLastMessage} />
   );
 }
