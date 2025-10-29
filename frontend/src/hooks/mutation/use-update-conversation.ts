@@ -27,7 +27,6 @@ export const useUpdateConversation = () => {
         variables.conversationVersion,
       );
 
-
       queryClient.setQueryData(
         ["user", "conversations"],
         (old: { conversation_id: string; title: string }[] | undefined) =>
