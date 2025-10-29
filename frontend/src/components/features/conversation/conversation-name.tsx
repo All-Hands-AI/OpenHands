@@ -69,7 +69,11 @@ export function ConversationName() {
       const trimmed = inputRef.current.value.trim();
       if (trimmed !== conversation?.title) {
         updateConversation(
-          { conversationId, newTitle: trimmed },
+          {
+            conversationId,
+            newTitle: trimmed,
+            conversationVersion: conversation?.conversation_version,
+          },
           {
             onSuccess: () => {
               displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));

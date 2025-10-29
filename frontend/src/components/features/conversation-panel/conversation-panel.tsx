@@ -17,6 +17,7 @@ import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation"
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { ConversationCard } from "./conversation-card/conversation-card";
 import { StartTaskCard } from "./start-task-card/start-task-card";
+import { normalizeConversationId } from "#/utils/utils";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -90,9 +91,10 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const handleConversationTitleChange = async (
     conversationId: string,
     newTitle: string,
+    conversationVersion?: "V0" | "V1",
   ) => {
     updateConversation(
-      { conversationId, newTitle },
+      { conversationId, newTitle, conversationVersion },
       {
         onSuccess: () => {
           displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));
@@ -167,7 +169,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {conversations?.map((project) => (
         <NavLink
           key={project.conversation_id}
-          to={`/conversations/${project.conversation_id}`}
+          to={`/conversations/${normalizeConversationId(project.conversation_id, project.conversation_version)}`}
           onClick={onClose}
         >
           <ConversationCard
@@ -179,7 +181,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               )
             }
             onChangeTitle={(title) =>
-              handleConversationTitleChange(project.conversation_id, title)
+              handleConversationTitleChange(
+                project.conversation_id,
+                title,
+                project.conversation_version,
+              )
             }
             title={project.title}
             selectedRepository={{
