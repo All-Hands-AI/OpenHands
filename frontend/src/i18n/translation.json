@@ -14878,5 +14878,21 @@
     "tr": "Konuşma durduruldu",
     "de": "Konversation gestoppt",
     "uk": "Розмову зупинено"
+  },
+  "AGENT_STATUS$WAITING_FOR_USER_CONFIRMATION": {
+    "en": "Waiting for user confirmation",
+    "ja": "ユーザーの確認を待っています",
+    "zh-CN": "等待用户确认",
+    "zh-TW": "等待使用者確認",
+    "ko-KR": "사용자 확인 대기 중",
+    "no": "Venter på brukerbekreftelse",
+    "it": "In attesa di conferma dell'utente",
+    "pt": "Aguardando confirmação do usuário",
+    "es": "Esperando confirmación del usuario",
+    "ar": "في انتظار تأكيد المستخدم",
+    "fr": "En attente de la confirmation de l'utilisateur",
+    "tr": "Kullanıcı onayı bekleniyor",
+    "de": "Warte auf Benutzerbestätigung",
+    "uk": "Очікується підтвердження користувача"
   }
 }

@@ -26,9 +26,11 @@ const renderCommand = (
     return;
   }
 
-  terminal.writeln(
-    parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
-  );
+  const trimmedContent = content.replaceAll("\n", "\r\n").trim();
+  // Only write if there's actual content to avoid empty newlines
+  if (trimmedContent) {
+    terminal.writeln(parseTerminalOutput(trimmedContent));
+  }
 };
 
 // Create a persistent reference that survives component unmounts
@@ -153,7 +155,7 @@ export const useTerminal = () => {
         lastCommandType = commands[i].type;
         // Pass true for isUserInput to skip rendering user input commands
         // that have already been displayed as the user typed
-        renderCommand(commands[i], terminal.current, true);
+        renderCommand(commands[i], terminal.current, false);
       }
       lastCommandIndex.current = commands.length;
       if (lastCommandType === "output") {

@@ -267,12 +267,7 @@ export function ChatInterface() {
           )}
 
           {!conversationWebSocket?.isLoadingHistory && v1UserEventsExist && (
-            <V1Messages
-              messages={v1Events}
-              isAwaitingUserConfirmation={
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-              }
-            />
+            <V1Messages messages={v1Events} />
           )}
         </div>
 
