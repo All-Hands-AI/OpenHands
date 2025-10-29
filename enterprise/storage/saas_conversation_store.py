@@ -52,7 +52,7 @@ class SaasConversationStore(ConversationStore):
                 StoredConversationMetadata.conversation_id
                 == StoredConversationMetadataSaas.conversation_id,
             )
-            .filter(StoredConversationMetadataSaas.user_id == self.user_id)
+            .filter(StoredConversationMetadataSaas.user_id == UUID(self.user_id))
             .filter(StoredConversationMetadataSaas.org_id == self.org_id)
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
         )
@@ -118,13 +118,13 @@ class SaasConversationStore(ConversationStore):
                 if not saas_metadata:
                     saas_metadata = StoredConversationMetadataSaas(
                         conversation_id=stored_metadata.conversation_id,
-                        user_id=self.user_id,
+                        user_id=UUID(self.user_id),
                         org_id=self.org_id,
                     )
                     session.add(saas_metadata)
                 else:
                     # Update existing record
-                    saas_metadata.user_id = self.user_id
+                    saas_metadata.user_id = UUID(self.user_id)
                     saas_metadata.org_id = self.org_id
 
                 session.commit()
@@ -147,12 +147,14 @@ class SaasConversationStore(ConversationStore):
         def _delete_metadata():
             with self.session_maker() as session:
                 # Delete the main conversation metadata
-                self._select_by_id(session, conversation_id).delete()
+                session.query(StoredConversationMetadata).filter(
+                    StoredConversationMetadata.conversation_id == conversation_id,
+                ).delete()
 
                 # Delete the SaaS metadata record
                 session.query(StoredConversationMetadataSaas).filter(
                     StoredConversationMetadataSaas.conversation_id == conversation_id,
-                    StoredConversationMetadataSaas.user_id == self.user_id,
+                    StoredConversationMetadataSaas.user_id == UUID(self.user_id),
                     StoredConversationMetadataSaas.org_id == self.org_id,
                 ).delete()
 
@@ -184,7 +186,9 @@ class SaasConversationStore(ConversationStore):
                         StoredConversationMetadata.conversation_id
                         == StoredConversationMetadataSaas.conversation_id,
                     )
-                    .filter(StoredConversationMetadataSaas.user_id == self.user_id)
+                    .filter(
+                        StoredConversationMetadataSaas.user_id == UUID(self.user_id)
+                    )
                     .filter(StoredConversationMetadataSaas.org_id == self.org_id)
                     .order_by(StoredConversationMetadata.created_at.desc())
                     .offset(offset)

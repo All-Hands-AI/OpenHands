@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime
+from uuid import UUID
 
 import pytest
-from server.constants import ORG_SETTINGS_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+from server.constants import ORG_SETTINGS_VERSION
 from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.
@@ -16,6 +18,9 @@ from storage.org import Org
 from storage.org_member import OrgMember
 from storage.role import Role
 from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import (
+    StoredConversationMetadataSaas,
+)
 from storage.stored_offline_token import StoredOfflineToken
 from storage.stripe_customer import StripeCustomer
 from storage.user import User
@@ -67,13 +72,19 @@ def add_minimal_fixtures(session_maker):
         session.add(
             StoredConversationMetadata(
                 conversation_id='mock-conversation-id',
-                user_id='5594c7b6-f959-4b81-92e9-b09c206f5081',
                 created_at=datetime.fromisoformat('2025-03-07'),
                 last_updated_at=datetime.fromisoformat('2025-03-08'),
                 accumulated_cost=5.25,
                 prompt_tokens=500,
                 completion_tokens=250,
                 total_tokens=750,
+            )
+        )
+        session.add(
+            StoredConversationMetadataSaas(
+                conversation_id='mock-conversation-id',
+                user_id=UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
+                org_id=UUID('5594c7b6-f959-4b81-92e9-b09c206f5081'),
             )
         )
         session.add(
