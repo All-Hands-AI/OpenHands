@@ -49,6 +49,7 @@ export const useTerminal = () => {
       fastScrollModifier: "alt",
       fastScrollSensitivity: 5,
       allowTransparency: true,
+      disableStdin: true, // Make terminal read-only
       theme: {
         background: "transparent",
       },
@@ -57,7 +58,11 @@ export const useTerminal = () => {
   const initializeTerminal = () => {
     if (terminal.current) {
       if (fitAddon.current) terminal.current.loadAddon(fitAddon.current);
-      if (ref.current) terminal.current.open(ref.current);
+      if (ref.current) {
+        terminal.current.open(ref.current);
+        // Hide cursor for read-only terminal using ANSI escape sequence
+        terminal.current.write("\x1b[?25l");
+      }
     }
   };
 
@@ -81,7 +86,7 @@ export const useTerminal = () => {
         }
         lastCommandIndex.current = commands.length;
       }
-      terminal.current.write("$ ");
+      // Don't show prompt in read-only terminal
     }
 
     return () => {
@@ -95,17 +100,15 @@ export const useTerminal = () => {
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
-      let lastCommandType = "";
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        lastCommandType = commands[i].type;
+        if (commands[i].type === "input") {
+          terminal.current.write("$ ");
+        }
         // Pass true for isUserInput to skip rendering user input commands
         // that have already been displayed as the user typed
         renderCommand(commands[i], terminal.current, false);
       }
       lastCommandIndex.current = commands.length;
-      if (lastCommandType === "output") {
-        terminal.current.write("$ ");
-      }
     }
   }, [commands]);
 
