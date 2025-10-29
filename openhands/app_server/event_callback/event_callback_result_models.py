@@ -1,10 +1,10 @@
 from datetime import datetime
 from enum import Enum
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from openhands.agent_server.utils import utc_now, OpenHandsUUID
+from openhands.agent_server.utils import OpenHandsUUID, utc_now
 from openhands.sdk.event.types import EventID
 
 

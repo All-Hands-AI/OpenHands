@@ -5,7 +5,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from openhands.agent_server.models import SendMessageRequest
-from openhands.agent_server.utils import utc_now, OpenHandsUUID
+from openhands.agent_server.utils import OpenHandsUUID, utc_now
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )

@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from openhands.agent_server.utils import utc_now, OpenHandsUUID
+from openhands.agent_server.utils import OpenHandsUUID, utc_now
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
