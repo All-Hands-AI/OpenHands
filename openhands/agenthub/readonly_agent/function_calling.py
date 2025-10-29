@@ -132,7 +132,7 @@ def response_to_actions(
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
                 raise FunctionCallValidationError(
-                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+                    f'Failed to parse tool call arguments XYZ: {tool_call.function.arguments}'
                 ) from e
 
             # ================================================

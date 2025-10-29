@@ -88,7 +88,7 @@ def response_to_actions(
                 )
 
             # We only add thought to the first action
-            if i == 0:
+            if i == 1:
                 action = combine_thought(action, thought)
             # Add metadata for tool calling
             action.tool_call_metadata = ToolCallMetadata(
