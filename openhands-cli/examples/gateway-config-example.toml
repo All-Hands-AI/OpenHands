@@ -1,0 +1,53 @@
+# Enterprise Gateway Configuration Example for OpenHands CLI
+# Configure OpenHands to work with enterprise LLM gateways
+#
+# Usage:
+# 1. Copy this file and customize it.
+# 2. Reference secrets with ${ENV:VAR_NAME} syntax.
+# 3. Run: openhands --gateway-config /path/to/your-config.toml
+#    or export OPENHANDS_GATEWAY_CONFIG=/path/to/your-config.toml and run openhands
+
+# Optional provider name for logging/debugging.
+gateway_provider = "custom"
+
+# === Identity Provider Configuration ===
+# Remove this section entirely if the gateway does not require token exchange.
+gateway_auth_url = "https://identity.example.com/oauth2/token"
+gateway_auth_method = "POST"
+gateway_auth_token_path = "access_token"          # Required if using identity provider (dot notation supported)
+gateway_auth_expires_in_path = "expires_in"       # Optional; remove if response lacks expiry
+gateway_auth_token_ttl = 3600                     # Optional fallback (seconds). Remove for default (300s).
+gateway_auth_verify_ssl = true                    # Set to false only for local/self-signed testing
+
+[gateway_auth_headers]
+# Headers sent to the identity provider. Remove if not needed.
+Content-Type = "application/json"
+X-Client-Id = "${ENV:GATEWAY_CLIENT_ID}"
+X-Client-Secret = "${ENV:GATEWAY_CLIENT_SECRET}"
+
+[gateway_auth_body]
+# Request body for the identity provider. Remove if not needed.
+grant_type = "client_credentials"
+audience = "llm-gateway"
+scope = "llm:access"
+
+# === Gateway Request Configuration ===
+gateway_token_header = "Authorization"    # Optional. Remove to use default ("Authorization")
+gateway_token_prefix = "Bearer "          # Optional. Remove for no prefix
+
+[custom_headers]
+# Headers added to every LLM request. Remove entries you do not need.
+X-Gateway-Context = "openhands-cli"
+X-Request-Priority = "normal"
+X-Tenant-Id = "${ENV:TENANT_ID}"
+
+[extra_body_params]  # Optional JSON body additions merged into the request payload.
+
+  [extra_body_params.metadata]
+  source = "cli"
+  version = "1.0"
+  user = "${ENV:USER}"
+
+  [extra_body_params.gateway_options]
+  retry_on_failure = true
+  timeout_seconds = 30

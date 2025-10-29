@@ -34,3 +34,28 @@ uv run openhands
 ./dist/openhands            # macOS/Linux
 # dist/openhands.exe        # Windows
 ```
+
+## Enterprise Gateway Support
+
+For enterprise users with custom LLM gateways, you can provide a gateway configuration file to handle authentication and custom headers/parameters.
+
+### Using Gateway Configuration
+
+```bash
+# Using command line flag
+uv run openhands --gateway-config ~/mycompany-gateway.toml
+
+# Or using environment variable
+export OPENHANDS_GATEWAY_CONFIG=~/mycompany-gateway.toml
+uv run openhands
+```
+
+See `examples/gateway-config-example.toml` for a complete configuration example with comments.
+
+### Key Features
+
+- **OAuth2/Token Exchange**: Automatically handles token acquisition and refresh
+- **Custom Headers**: Add headers required by your gateway
+- **Environment Variables**: Use `${ENV:VAR_NAME}` syntax for sensitive values
+- **Extra Body Parameters**: Include additional fields in LLM request bodies
+- **TOML Format**: Clean, readable configuration with comments

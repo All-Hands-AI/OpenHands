@@ -1,6 +1,4 @@
-import json
 import os
-from typing import Any
 
 from openhands.sdk import LLM, BaseConversation, LocalFileStore
 from openhands.sdk.security.confirmation_policy import NeverConfirm
@@ -25,7 +23,6 @@ from openhands_cli.user_actions.settings_action import (
     save_settings_confirmation,
     settings_type_confirmation,
 )
-from openhands_cli.user_actions.utils import cli_confirm, cli_text_input
 
 
 class SettingsScreen:
@@ -151,18 +148,17 @@ class SettingsScreen:
 
     def handle_advanced_settings(self, escapable=True):
         """Handle advanced settings configuration with clean step-by-step flow."""
-        step_counter = StepCounter(18)
+        step_counter = StepCounter(4)
         try:
             custom_model = prompt_custom_model(step_counter)
             base_url = prompt_base_url(step_counter)
             api_key = prompt_api_key(
                 step_counter,
                 custom_model.split('/')[0] if len(custom_model.split('/')) > 1 else '',
-                self.conversation.agent.llm.api_key if self.conversation else None,
+                self.conversation.state.agent.llm.api_key if self.conversation else None,
                 escapable=escapable,
             )
             memory_condensation = choose_memory_condensation(step_counter)
-            gateway_settings = self._prompt_gateway_settings(step_counter)
 
             # Confirm save
             save_settings_confirmation()
@@ -172,32 +168,16 @@ class SettingsScreen:
 
         # Store the collected settings for persistence
         self._save_advanced_settings(
-            custom_model,
-            base_url,
-            api_key,
-            memory_condensation,
-            gateway_settings,
+            custom_model, base_url, api_key, memory_condensation
         )
 
-    def _save_llm_settings(
-        self,
-        model,
-        api_key,
-        base_url: str | None = None,
-        gateway_options: dict[str, Any] | None = None,
-    ) -> None:
-        gateway_kwargs = {
-            key: value
-            for key, value in (gateway_options or {}).items()
-            if value is not None and value != {}
-        }
+    def _save_llm_settings(self, model, api_key, base_url: str | None = None) -> None:
         llm = LLM(
             model=model,
             api_key=api_key,
             base_url=base_url,
             service_id='agent',
             metadata=get_llm_metadata(model_name=model, llm_type='agent'),
-            **gateway_kwargs,
         )
 
         agent = self.agent_store.load()
@@ -208,19 +188,9 @@ class SettingsScreen:
         self.agent_store.save(agent)
 
     def _save_advanced_settings(
-        self,
-        custom_model: str,
-        base_url: str,
-        api_key: str,
-        memory_condensation: bool,
-        gateway_settings: dict[str, Any] | None,
+        self, custom_model: str, base_url: str, api_key: str, memory_condensation: bool
     ):
-        self._save_llm_settings(
-            custom_model,
-            api_key,
-            base_url=base_url,
-            gateway_options=gateway_settings,
-        )
+        self._save_llm_settings(custom_model, api_key, base_url=base_url)
 
         agent_spec = self.agent_store.load()
         if not agent_spec:
@@ -230,181 +200,3 @@ class SettingsScreen:
             agent_spec.model_copy(update={'condenser': None})
 
         self.agent_store.save(agent_spec)
-
-    def _prompt_gateway_settings(self, step_counter: StepCounter) -> dict[str, Any] | None:
-        """Collect enterprise gateway configuration from the user."""
-
-        options = ['Yes, configure gateway settings', 'No, skip']
-        try:
-            choice = cli_confirm(
-                step_counter.next_step(
-                    'Configure enterprise gateway settings (e.g., Tachyon)? '
-                ),
-                options,
-                escapable=True,
-            )
-        except KeyboardInterrupt:
-            raise
-
-        if choice == 1:
-            return {}
-
-        gateway_provider = cli_text_input(
-            step_counter.next_step(
-                'Gateway provider name (ENTER for "tachyon"): '
-            ),
-            escapable=True,
-        )
-        gateway_provider = gateway_provider or 'tachyon'
-
-        gateway_auth_url = cli_text_input(
-            step_counter.next_step(
-                'Identity provider URL (ENTER to skip if not required): '
-            ),
-            escapable=True,
-        )
-
-        method_input = cli_text_input(
-            step_counter.next_step(
-                'Identity provider HTTP method (ENTER for POST): '
-            ),
-            escapable=True,
-        )
-        gateway_auth_method = method_input.upper() if method_input else 'POST'
-
-        gateway_auth_headers = self._prompt_json_mapping(
-            step_counter.next_step(
-                'Identity provider headers as JSON (ENTER to skip): '
-            )
-        )
-
-        gateway_auth_body = self._prompt_json_mapping(
-            step_counter.next_step(
-                'Identity provider JSON body (ENTER to skip): '
-            )
-        )
-
-        token_path = cli_text_input(
-            step_counter.next_step(
-                'Token path in identity provider response (ENTER for access_token): '
-            ),
-            escapable=True,
-        )
-        gateway_auth_token_path = token_path or 'access_token'
-
-        expires_in_path = cli_text_input(
-            step_counter.next_step(
-                'expires_in path in response (ENTER to skip): '
-            ),
-            escapable=True,
-        )
-        gateway_auth_expires_in_path = expires_in_path or None
-
-        ttl_seconds = self._prompt_optional_int(
-            step_counter.next_step(
-                'Token TTL fallback in seconds (ENTER to skip): '
-            )
-        )
-
-        token_header_input = cli_text_input(
-            step_counter.next_step(
-                'Header name for gateway token (ENTER for Authorization): '
-            ),
-            escapable=True,
-        )
-        gateway_token_header = token_header_input or 'Authorization'
-
-        token_prefix_input = cli_text_input(
-            step_counter.next_step(
-                'Token prefix (ENTER for "Bearer "): '
-            ),
-            escapable=True,
-        )
-        gateway_token_prefix = token_prefix_input if token_prefix_input != '' else 'Bearer '
-
-        verify_choice = cli_confirm(
-            step_counter.next_step(
-                'Verify TLS certificates for identity provider? '
-                '(recommended): '
-            ),
-            ['Yes', 'No'],
-            escapable=True,
-        )
-        gateway_auth_verify_ssl = verify_choice == 0
-
-        custom_headers = self._prompt_json_mapping(
-            step_counter.next_step(
-                'Additional headers for gateway requests (ENTER to skip): '
-            )
-        )
-
-        extra_body = self._prompt_json_mapping(
-            step_counter.next_step(
-                'Additional JSON body params for gateway requests (ENTER to skip): '
-            )
-        )
-
-        settings: dict[str, Any] = {
-            'gateway_provider': gateway_provider,
-            'gateway_auth_url': gateway_auth_url or None,
-            'gateway_auth_method': gateway_auth_method,
-            'gateway_auth_headers': gateway_auth_headers,
-            'gateway_auth_body': gateway_auth_body,
-            'gateway_auth_token_path': gateway_auth_token_path,
-            'gateway_auth_expires_in_path': gateway_auth_expires_in_path,
-            'gateway_auth_token_ttl': ttl_seconds,
-            'gateway_token_header': gateway_token_header,
-            'gateway_token_prefix': gateway_token_prefix,
-            'gateway_auth_verify_ssl': gateway_auth_verify_ssl,
-            'custom_headers': custom_headers,
-            'extra_body_params': extra_body,
-        }
-
-        return settings
-
-    def _prompt_json_mapping(self, question: str) -> dict[str, Any] | None:
-        while True:
-            try:
-                raw_value = cli_text_input(question, escapable=True)
-            except KeyboardInterrupt:
-                raise
-
-            if not raw_value:
-                return None
-
-            try:
-                parsed = json.loads(raw_value)
-            except json.JSONDecodeError as err:
-                print_formatted_text(
-                    HTML(
-                        f"\n<red>Invalid JSON: {err}. Please enter a JSON object or press ENTER to skip.</red>"
-                    )
-                )
-                continue
-
-            if not isinstance(parsed, dict):
-                print_formatted_text(
-                    HTML(
-                        '\n<red>Please enter a JSON object (e.g., {"X-Header": "value"}).</red>'
-                    )
-                )
-                continue
-
-            return parsed
-
-    def _prompt_optional_int(self, question: str) -> int | None:
-        while True:
-            try:
-                raw_value = cli_text_input(question, escapable=True)
-            except KeyboardInterrupt:
-                raise
-
-            if not raw_value:
-                return None
-
-            try:
-                return int(raw_value)
-            except ValueError:
-                print_formatted_text(
-                    HTML('\n<red>Please enter a valid integer value.</red>')
-                )

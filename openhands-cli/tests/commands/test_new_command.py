@@ -20,7 +20,7 @@ def test_start_fresh_conversation_success(mock_setup_conversation):
 
     # Verify the result
     assert result == mock_conversation
-    mock_setup_conversation.assert_called_once_with(None)
+    mock_setup_conversation.assert_called_once_with(None, gateway_config_path=None)
 
 
 @patch('openhands_cli.setup.SettingsScreen')
@@ -49,6 +49,9 @@ def test_start_fresh_conversation_missing_agent_spec(
     assert result == mock_conversation
     # Should be called twice: first fails, second succeeds
     assert mock_setup_conversation.call_count == 2
+    for call in mock_setup_conversation.call_args_list:
+        assert call.args[0] is None
+        assert call.kwargs.get('gateway_config_path') is None
     # Settings screen should be called once with first_time=True (new behavior)
     mock_settings_screen.configure_settings.assert_called_once_with(first_time=True)
 

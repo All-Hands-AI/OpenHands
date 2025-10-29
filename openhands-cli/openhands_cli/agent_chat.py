@@ -55,9 +55,15 @@ def _print_exit_hint(conversation_id: str) -> None:
 
 
 
-def run_cli_entry(resume_conversation_id: str | None = None) -> None:
+def run_cli_entry(
+    resume_conversation_id: str | None = None,
+    gateway_config_path: str | None = None
+) -> None:
     """Run the agent chat session using the agent SDK.
 
+    Args:
+        resume_conversation_id: Optional conversation ID to resume
+        gateway_config_path: Optional path to gateway configuration file
 
     Raises:
         AgentSetupError: If agent setup fails
@@ -66,7 +72,10 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     """
 
     try:
-        conversation = start_fresh_conversation(resume_conversation_id)
+        conversation = start_fresh_conversation(
+            resume_conversation_id,
+            gateway_config_path=gateway_config_path
+        )
     except MissingAgentSpec:
         print_formatted_text(HTML('\n<yellow>Setup is required to use OpenHands CLI.</yellow>'))
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))

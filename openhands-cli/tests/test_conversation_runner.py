@@ -68,6 +68,7 @@ class TestConversationRunner:
 
         convo = Conversation(agent)
         convo.max_iteration_per_run = 1
+        convo.max_iteration_per_run = 1
         convo.state.agent_status = agent_status
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(NeverConfirm())
@@ -108,10 +109,16 @@ class TestConversationRunner:
         agent.security_analyzer = MagicMock()
         
         convo = Conversation(agent)
+        convo.max_iteration_per_run = 1
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+        def fake_run() -> None:
+            agent.step(convo.state, lambda *_args, **_kwargs: None)
+
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
         with patch.object(
+            convo, 'run', side_effect=fake_run
+        ), patch.object(
             cr, '_handle_confirmation_request', return_value=confirmation
         ) as mock_confirmation_request:
             cr.process_message(message=None)
@@ -131,10 +138,15 @@ class TestConversationRunner:
         convo = Conversation(agent)
         convo.state.agent_status = AgentExecutionStatus.PAUSED
 
+        def fake_run() -> None:
+            agent.step(convo.state, lambda *_args, **_kwargs: None)
+
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
 
-        with patch.object(cr, '_handle_confirmation_request') as _mock_h:
+        with patch.object(convo, 'run', side_effect=fake_run), patch.object(
+            cr, '_handle_confirmation_request'
+        ) as _mock_h:
             cr.process_message(message=None)
 
         # No confirmation was needed up front; we still expect exactly one run.

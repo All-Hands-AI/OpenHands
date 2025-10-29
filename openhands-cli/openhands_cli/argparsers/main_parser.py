@@ -1,6 +1,7 @@
 """Main argument parser for OpenHands CLI."""
 
 import argparse
+import os
 
 
 def create_main_parser() -> argparse.ArgumentParser:
@@ -29,6 +30,14 @@ Examples:
         '--resume',
         type=str,
         help='Conversation ID to resume'
+    )
+
+    parser.add_argument(
+        '--gateway-config',
+        type=str,
+        default=os.environ.get('OPENHANDS_GATEWAY_CONFIG'),
+        help='Path to enterprise gateway configuration (JSON file). Can also be set via OPENHANDS_GATEWAY_CONFIG environment variable.',
+        metavar='PATH'
     )
     
     # Only serve as subcommand

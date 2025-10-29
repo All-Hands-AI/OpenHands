@@ -26,7 +26,9 @@ class TestMainEntryPoint:
         simple_main.main()
 
         # Should call run_cli_entry with no resume conversation ID
-        mock_run_agent_chat.assert_called_once_with(resume_conversation_id=None)
+        mock_run_agent_chat.assert_called_once_with(
+            resume_conversation_id=None, gateway_config_path=None
+        )
 
     @patch('openhands_cli.agent_chat.run_cli_entry')
     @patch('sys.argv', ['openhands'])
@@ -88,7 +90,8 @@ class TestMainEntryPoint:
 
         # Should call run_cli_entry with the provided resume conversation ID
         mock_run_agent_chat.assert_called_once_with(
-            resume_conversation_id='test-conversation-id'
+            resume_conversation_id='test-conversation-id',
+            gateway_config_path=None,
         )
 
 
@@ -97,8 +100,14 @@ class TestMainEntryPoint:
 @pytest.mark.parametrize(
     "argv,expected_kwargs",
     [
-        (['openhands'], {"resume_conversation_id": None}),
-        (['openhands', '--resume', 'test-id'], {"resume_conversation_id": 'test-id'}),
+        (
+            ['openhands'],
+            {"resume_conversation_id": None, "gateway_config_path": None},
+        ),
+        (
+            ['openhands', '--resume', 'test-id'],
+            {"resume_conversation_id": 'test-id', "gateway_config_path": None},
+        ),
     ],
 )
 def test_main_cli_calls_run_cli_entry(monkeypatch, argv, expected_kwargs):

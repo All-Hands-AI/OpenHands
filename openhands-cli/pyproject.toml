@@ -18,10 +18,12 @@ classifiers = [
 # Using Git URLs for dependencies so installs from PyPI pull from GitHub
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk==1.0.0a3",
-  "openhands-tools==1.0.0a3",
+  "fastapi>=0.120.2",
+  "openhands-sdk>=1.0.0a4",
+  "openhands-tools>=1.0.0a3",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
+  "uvicorn>=0.38.0",
 ]
 
 scripts = { openhands = "openhands_cli.simple_main:main" }
