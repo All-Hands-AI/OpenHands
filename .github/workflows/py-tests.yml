@@ -202,6 +202,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           MERGE_COVERAGE_FILES: true
 
+      - name: log outputs
+        run: echo ${{ toJSON(steps.coverage_comment.outputs) }}
+
       - name: Enforce coverage
         if: ${{ steps.coverage_comment.outputs.new_percent_covered < steps.coverage_comment.outputs.reference_percent_covered }}
         run: echo "Coverage decreased, which is not allowed. Please add some unit tests for the modified code." && exit 1
