@@ -17,7 +17,6 @@ import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation"
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { ConversationCard } from "./conversation-card/conversation-card";
 import { StartTaskCard } from "./start-task-card/start-task-card";
-import { normalizeConversationId } from "#/utils/utils";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -169,7 +168,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       {conversations?.map((project) => (
         <NavLink
           key={project.conversation_id}
-          to={`/conversations/${normalizeConversationId(project.conversation_id, project.conversation_version)}`}
+          to={`/conversations/${project.conversation_id}`}
           onClick={onClose}
         >
           <ConversationCard
