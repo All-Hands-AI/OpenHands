@@ -108,12 +108,29 @@ class TestConversationRunner:
         agent.security_analyzer = MagicMock()
         
         convo = Conversation(agent)
+        convo.max_iteration_per_run = 1
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
+        
+        # Mock pause_listener to avoid threading issues in tests
+        from unittest.mock import MagicMock
+        mock_listener = MagicMock()
+        mock_listener.is_paused.return_value = False
+        
         with patch.object(
             cr, '_handle_confirmation_request', return_value=confirmation
-        ) as mock_confirmation_request:
+        ) as mock_confirmation_request, \
+        patch('openhands_cli.runner.pause_listener') as mock_pause_listener, \
+        patch.object(convo, 'run') as mock_run:
+            mock_pause_listener.return_value.__enter__.return_value = mock_listener
+            mock_pause_listener.return_value.__exit__.return_value = None
+            
+            # Mock conversation.run() to simulate agent stepping and finishing
+            def mock_run_side_effect():
+                agent.step(convo.state, lambda event: None)
+                
+            mock_run.side_effect = mock_run_side_effect
             cr.process_message(message=None)
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
@@ -129,12 +146,28 @@ class TestConversationRunner:
         """
         agent.finish_on_step = 1
         convo = Conversation(agent)
+        convo.max_iteration_per_run = 1
         convo.state.agent_status = AgentExecutionStatus.PAUSED
 
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
 
-        with patch.object(cr, '_handle_confirmation_request') as _mock_h:
+        # Mock pause_listener to avoid threading issues in tests
+        from unittest.mock import MagicMock
+        mock_listener = MagicMock()
+        mock_listener.is_paused.return_value = False
+
+        with patch.object(cr, '_handle_confirmation_request') as _mock_h, \
+        patch('openhands_cli.runner.pause_listener') as mock_pause_listener, \
+        patch.object(convo, 'run') as mock_run:
+            mock_pause_listener.return_value.__enter__.return_value = mock_listener
+            mock_pause_listener.return_value.__exit__.return_value = None
+            
+            # Mock conversation.run() to simulate agent stepping and finishing
+            def mock_run_side_effect():
+                agent.step(convo.state, lambda event: None)
+                
+            mock_run.side_effect = mock_run_side_effect
             cr.process_message(message=None)
 
         # No confirmation was needed up front; we still expect exactly one run.

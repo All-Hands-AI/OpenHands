@@ -72,3 +72,5 @@ def get_default_cli_agent(
             'security_analyzer': LLMSecurityAnalyzer()
         }
     )
+    
+    return agent
