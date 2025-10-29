@@ -3,6 +3,7 @@ import { openHands } from "../open-hands-axios";
 import { ConversationTrigger, GetVSCodeUrlResponse } from "../open-hands.types";
 import { Provider } from "#/types/settings";
 import { buildHttpBaseUrl } from "#/utils/websocket-url";
+import { buildSessionHeaders } from "#/utils/utils";
 import type {
   V1SendMessageRequest,
   V1SendMessageResponse,
@@ -13,21 +14,6 @@ import type {
 } from "./v1-conversation-service.types";
 
 class V1ConversationService {
-  /**
-   * Build headers for V1 API requests that require session authentication
-   * @param sessionApiKey Session API key for authentication
-   * @returns Headers object with X-Session-API-Key if provided
-   */
-  private static buildSessionHeaders(
-    sessionApiKey?: string | null,
-  ): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (sessionApiKey) {
-      headers["X-Session-API-Key"] = sessionApiKey;
-    }
-    return headers;
-  }
-
   /**
    * Build the full URL for V1 runtime-specific endpoints
    * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
@@ -160,7 +146,7 @@ class V1ConversationService {
     sessionApiKey?: string | null,
   ): Promise<GetVSCodeUrlResponse> {
     const url = this.buildRuntimeUrl(conversationUrl, "/api/vscode/url");
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     // V1 API returns {url: '...'} instead of {vscode_url: '...'}
     // Map it to match the expected interface
@@ -188,7 +174,7 @@ class V1ConversationService {
       conversationUrl,
       `/api/conversations/${conversationId}/pause`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     const { data } = await axios.post<{ success: boolean }>(
       url,
@@ -216,7 +202,7 @@ class V1ConversationService {
       conversationUrl,
       `/api/conversations/${conversationId}/run`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     const { data } = await axios.post<{ success: boolean }>(
       url,
@@ -305,7 +291,7 @@ class V1ConversationService {
       conversationUrl,
       `/api/file/upload/${encodedPath}`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     // Create FormData with the file
     const formData = new FormData();
@@ -318,6 +304,19 @@ class V1ConversationService {
         "Content-Type": "multipart/form-data",
       },
     });
+  }
+
+  /**
+   * Get the conversation config (runtime_id) for a V1 conversation
+   * @param conversationId The conversation ID
+   * @returns Object containing runtime_id
+   */
+  static async getConversationConfig(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
+    const url = `/api/conversations/${conversationId}/config`;
+    const { data } = await openHands.get<{ runtime_id: string }>(url);
+    return data;
   }
 }
 

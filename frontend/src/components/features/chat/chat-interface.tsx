@@ -237,14 +237,7 @@ export function ChatInterface() {
             />
           )}
 
-          {v1UserEventsExist && (
-            <V1Messages
-              messages={v1Events}
-              isAwaitingUserConfirmation={
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-              }
-            />
-          )}
+          {v1UserEventsExist && <V1Messages messages={v1Events} />}
         </div>
 
         <div className="flex flex-col gap-[6px]">
