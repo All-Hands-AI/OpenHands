@@ -31,7 +31,7 @@ from server.utils.conversation_callback_utils import register_callback_processor
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -250,7 +250,7 @@ class GithubManager(Manager):
                     f'[GitHub] Creating new conversation for user {user_info.username}'
                 )
 
-                secret_store = UserSecrets(
+                secret_store = Secrets(
                     provider_tokens=MappingProxyType(
                         {
                             ProviderType.GITHUB: ProviderToken(

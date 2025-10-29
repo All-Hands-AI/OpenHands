@@ -199,6 +199,34 @@ class V1ConversationService {
   }
 
   /**
+   * Resume a V1 conversation
+   * Uses the custom runtime URL from the conversation
+   *
+   * @param conversationId The conversation ID
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param sessionApiKey Session API key for authentication (required for V1)
+   * @returns Success response
+   */
+  static async resumeConversation(
+    conversationId: string,
+    conversationUrl: string | null | undefined,
+    sessionApiKey?: string | null,
+  ): Promise<{ success: boolean }> {
+    const url = this.buildRuntimeUrl(
+      conversationUrl,
+      `/api/conversations/${conversationId}/run`,
+    );
+    const headers = this.buildSessionHeaders(sessionApiKey);
+
+    const { data } = await axios.post<{ success: boolean }>(
+      url,
+      {},
+      { headers },
+    );
+    return data;
+  }
+
+  /**
    * Pause a V1 sandbox
    * Calls the /api/v1/sandboxes/{id}/pause endpoint
    *
