@@ -176,7 +176,6 @@ jobs:
 
   coverage-comment:
     name: Coverage Comment
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     needs: [test-on-linux, test-enterprise, test-cli-python]
 
@@ -196,6 +195,7 @@ jobs:
         run: ln -sf openhands-cli/openhands_cli openhands_cli
 
       - name: Coverage comment
+        # In PR mode leaves a comment, otherwise records coverage in branch python-coverage-comment-action-data.
         id: coverage_comment
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
@@ -203,5 +203,15 @@ jobs:
           MERGE_COVERAGE_FILES: true
 
       - name: Enforce coverage
-        if: ${{ steps.coverage_comment.outputs.new_percent_covered < steps.coverage_comment.outputs.reference_percent_covered }}
-        run: echo "Coverage decreased, which is not allowed. Please add some unit tests for the modified code." && exit 1
+        # Fail if on PR AND there are uncovered lines AND diff coverage is less than total coverage.
+        # To debug, try a step to log outputs like: `echo ${{ toJSON(steps.coverage_comment.outputs) }}`
+        # Once we track base branch, reference_percent_covered will be better to use than new_percent_covered.
+        if: ${{ github.event_name == 'pull_request' && fromJSON(steps.coverage_comment.outputs.diff_total_num_violations) > 0 && steps.coverage_comment.outputs.diff_total_percent_covered < steps.coverage_comment.outputs.new_percent_covered }}
+        run: |
+          echo "Coverage decreased, which is not allowed."
+          echo "Please add some unit tests for the modified code."
+          echo
+          echo "  diff_total_num_violations: ${{ steps.coverage_comment.outputs.diff_total_num_violations }}"
+          echo "  diff_total_percent_covered: ${{ steps.coverage_comment.outputs.diff_total_percent_covered}}"
+          echo "  new_percent_covered: ${{ steps.coverage_comment.outputs.new_percent_covered}}"
+          exit 1
