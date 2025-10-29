@@ -635,11 +635,8 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
             logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
-            env_base_url = os.environ.get('LLM_BASE_URL')
             settings_base_url = settings.llm_base_url
-            if env_base_url not in (None, ''):
-                llm_config.base_url = env_base_url
-            elif settings_base_url not in (None, ''):
+            if settings_base_url not in (None, ''):
                 llm_config.base_url = settings_base_url
             else:
                 llm_config.base_url = get_effective_llm_base_url(

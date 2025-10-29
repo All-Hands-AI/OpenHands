@@ -1,6 +1,5 @@
 """Utility functions for generating conversation summaries."""
 
-import os
 from typing import Optional
 
 from openhands.core.config import LLMConfig
@@ -116,11 +115,8 @@ async def auto_generate_title(
             try:
                 if settings and settings.llm_model:
                     # Create LLM config from settings
-                    env_base_url = os.environ.get('LLM_BASE_URL')
                     settings_base_url = settings.llm_base_url
-                    if env_base_url not in (None, ''):
-                        effective_base_url = env_base_url
-                    elif settings_base_url not in (None, ''):
+                    if settings_base_url not in (None, ''):
                         effective_base_url = settings_base_url
                     else:
                         effective_base_url = get_effective_llm_base_url(
