@@ -129,7 +129,6 @@ class TestConversationRunner:
         """
         agent.finish_on_step = 1
         convo = Conversation(agent)
-        convo.max_iteration_per_run = 1
         convo.state.agent_status = AgentExecutionStatus.PAUSED
 
         cr = ConversationRunner(convo)
