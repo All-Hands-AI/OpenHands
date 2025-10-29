@@ -203,7 +203,8 @@ jobs:
           MERGE_COVERAGE_FILES: true
 
       - name: Enforce coverage
-        # Once we track base branch, reference_percent_covered will be better to use than new_percent_covered.
+        # Fail if on PR AND there are uncovered lines AND diff coverage is less than total coverage.
         # To debug, try a step to log outputs like: `echo ${{ toJSON(steps.coverage_comment.outputs) }}`
-        if: ${{ github.event_name == 'pull_request' && steps.coverage_comment.outputs.new_percent_covered < steps.coverage_comment.outputs.new_percent_covered }}
+        # Once we track base branch, reference_percent_covered will be better to use than new_percent_covered.
+        if: ${{ github.event_name == 'pull_request' && fromJSON(steps.coverage_comment.outputs.diff_total_num_violations) > 0 && steps.coverage_comment.outputs.diff_total_percent_covered < steps.coverage_comment.outputs.new_percent_covered }}
         run: echo "Coverage decreased, which is not allowed. Please add some unit tests for the modified code." && exit 1
