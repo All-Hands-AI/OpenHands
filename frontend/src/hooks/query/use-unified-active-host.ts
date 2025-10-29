@@ -5,8 +5,8 @@ import ConversationService from "#/api/conversation-service/conversation-service
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useRuntimeIsReady } from "#/hooks/use-runtime-is-ready";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useBatchAppConversations } from "./use-batch-app-conversations";
 import { useBatchSandboxes } from "./use-batch-sandboxes";
+import { useConversationConfig } from "./use-conversation-config";
 
 /**
  * Unified hook to get active web host for both legacy (V0) and V1 conversations
@@ -18,15 +18,11 @@ export const useUnifiedActiveHost = () => {
   const { conversationId } = useConversationId();
   const runtimeIsReady = useRuntimeIsReady();
   const { data: conversation } = useActiveConversation();
+  const { data: conversationConfig, isLoading: isLoadingConfig } =
+    useConversationConfig();
 
   const isV1Conversation = conversation?.conversation_version === "V1";
-
-  // Fetch V1 app conversation to get sandbox_id
-  const appConversationsQuery = useBatchAppConversations(
-    isV1Conversation && conversationId ? [conversationId] : [],
-  );
-  const appConversation = appConversationsQuery.data?.[0];
-  const sandboxId = appConversation?.sandbox_id;
+  const sandboxId = conversationConfig?.runtime_id;
 
   // Fetch sandbox data for V1 conversations
   const sandboxesQuery = useBatchSandboxes(sandboxId ? [sandboxId] : []);
@@ -96,9 +92,7 @@ export const useUnifiedActiveHost = () => {
 
   // Calculate overall loading state including dependent queries for V1
   const isLoading = isV1Conversation
-    ? appConversationsQuery.isLoading ||
-      sandboxesQuery.isLoading ||
-      hostsQueryLoading
+    ? isLoadingConfig || sandboxesQuery.isLoading || hostsQueryLoading
     : hostsQueryLoading;
 
   return { activeHost, isLoading };
