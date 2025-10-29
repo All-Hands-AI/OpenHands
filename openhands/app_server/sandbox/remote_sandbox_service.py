@@ -313,9 +313,9 @@ class RemoteSandboxService(SandboxService):
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,
-                'run_as_user': 1000,
-                'run_as_group': 1000,
-                'fs_group': 1000,
+                'run_as_user': 10001,
+                'run_as_group': 10001,
+                'fs_group': 10001,
             }
 
             # Add runtime class if specified
@@ -530,7 +530,7 @@ async def refresh_conversation(
         # TODO: It would be nice to have an updated_at__gte filter parameter in the
         # agent server so that we don't pull the full event list each time
         event_url = (
-            f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
+            f'{url}/api/conversations/{app_conversation_info.id.hex}/events/search'
         )
         page_id = None
         while True:

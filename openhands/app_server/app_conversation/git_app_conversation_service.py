@@ -81,7 +81,8 @@ class GitAppConversationService(AppConversationService, ABC):
         # Clone the repo - this is the slow part!
         clone_command = f'git clone {remote_repo_url} {dir_name}'
         result = await workspace.execute_command(clone_command, workspace.working_dir)
-        print(result)
+        if result.exit_code:
+            _logger.warning(f'Git clone failed: {result.stderr}')
 
         # Checkout the appropriate branch
         if request.selected_branch:
