@@ -98,14 +98,9 @@ class ConversationRunner:
             if user_confirmation == UserConfirmation.DEFER:
                 return
 
-        # Track iterations to prevent infinite loops in tests
-        max_iterations = getattr(self.conversation, 'max_iteration_per_run', None)
-        iteration_count = 0
-        
         while True:
             with pause_listener(self.conversation) as listener:
                 self.conversation.run()
-                iteration_count += 1
 
                 if listener.is_paused():
                     break
@@ -122,20 +117,9 @@ class ConversationRunner:
                 if user_confirmation == UserConfirmation.DEFER:
                     return
 
-            elif self.conversation.state.agent_status == AgentExecutionStatus.IDLE:
-                # Agent is idle, which means it has finished its work
-                break
-
-            elif self.conversation.state.agent_status == AgentExecutionStatus.RUNNING:
-                # Agent is still running, continue the loop
-                continue
-
             else:
-                raise Exception(f'Unexpected agent status: {self.conversation.state.agent_status}')
-            
-            # Prevent infinite loops in tests by respecting max_iteration_per_run
-            if max_iterations and iteration_count >= max_iterations:
-                break
+                raise Exception('Infinite loop')
+
 
     def _handle_confirmation_request(self) -> UserConfirmation:
         """Handle confirmation request from user.

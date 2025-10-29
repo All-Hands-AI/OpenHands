@@ -6,13 +6,13 @@ from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
 from pydantic import ConfigDict, SecretStr, model_validator
 
-from openhands.sdk import Conversation, ConversationCallbackType
+from openhands.sdk import Conversation, ConversationCallbackType, LocalConversation
 from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
-
+from unittest.mock import MagicMock
 
 class FakeLLM(LLM):
     @model_validator(mode='after')
@@ -41,11 +41,11 @@ class FakeAgent(AgentBase):
         pass
 
     def step(
-        self, state: ConversationState, on_event: ConversationCallbackType
+        self, conversation: LocalConversation, on_event: ConversationCallbackType
     ) -> None:
         self.step_count += 1
         if self.step_count == self.finish_on_step:
-            state.agent_status = AgentExecutionStatus.FINISHED
+            conversation.state.agent_status = AgentExecutionStatus.FINISHED
 
 
 @pytest.fixture()
@@ -102,35 +102,18 @@ class TestConversationRunner:
         """
         if final_status == AgentExecutionStatus.FINISHED:
             agent.finish_on_step = 1
-        
+
         # Add a mock security analyzer to enable confirmation mode
-        from unittest.mock import MagicMock
         agent.security_analyzer = MagicMock()
-        
+
         convo = Conversation(agent)
-        convo.max_iteration_per_run = 1
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
-        
-        # Mock pause_listener to avoid threading issues in tests
-        from unittest.mock import MagicMock
-        mock_listener = MagicMock()
-        mock_listener.is_paused.return_value = False
-        
+
         with patch.object(
             cr, '_handle_confirmation_request', return_value=confirmation
-        ) as mock_confirmation_request, \
-        patch('openhands_cli.runner.pause_listener') as mock_pause_listener, \
-        patch.object(convo, 'run') as mock_run:
-            mock_pause_listener.return_value.__enter__.return_value = mock_listener
-            mock_pause_listener.return_value.__exit__.return_value = None
-            
-            # Mock conversation.run() to simulate agent stepping and finishing
-            def mock_run_side_effect():
-                agent.step(convo.state, lambda event: None)
-                
-            mock_run.side_effect = mock_run_side_effect
+        ) as mock_confirmation_request:
             cr.process_message(message=None)
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
@@ -152,22 +135,7 @@ class TestConversationRunner:
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
 
-        # Mock pause_listener to avoid threading issues in tests
-        from unittest.mock import MagicMock
-        mock_listener = MagicMock()
-        mock_listener.is_paused.return_value = False
-
-        with patch.object(cr, '_handle_confirmation_request') as _mock_h, \
-        patch('openhands_cli.runner.pause_listener') as mock_pause_listener, \
-        patch.object(convo, 'run') as mock_run:
-            mock_pause_listener.return_value.__enter__.return_value = mock_listener
-            mock_pause_listener.return_value.__exit__.return_value = None
-            
-            # Mock conversation.run() to simulate agent stepping and finishing
-            def mock_run_side_effect():
-                agent.step(convo.state, lambda event: None)
-                
-            mock_run.side_effect = mock_run_side_effect
+        with patch.object(cr, '_handle_confirmation_request') as _mock_h:
             cr.process_message(message=None)
 
         # No confirmation was needed up front; we still expect exactly one run.
