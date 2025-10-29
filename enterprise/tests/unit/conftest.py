@@ -3,10 +3,9 @@ from datetime import datetime
 from uuid import UUID
 
 import pytest
+from server.constants import ORG_SETTINGS_VERSION
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from server.constants import ORG_SETTINGS_VERSION
 from storage.base import Base
 
 # Anything not loaded here may not have a table created for it.

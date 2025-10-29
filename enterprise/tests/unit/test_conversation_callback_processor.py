@@ -6,8 +6,6 @@ import json
 from uuid import UUID
 
 import pytest
-from openhands.events.observation.agent import AgentStateChangedObservation
-
 from storage.conversation_callback import (
     CallbackStatus,
     ConversationCallback,
@@ -17,6 +15,8 @@ from storage.stored_conversation_metadata import StoredConversationMetadata
 from storage.stored_conversation_metadata_saas import (
     StoredConversationMetadataSaas,
 )
+
+from openhands.events.observation.agent import AgentStateChangedObservation
 
 
 class MockConversationCallbackProcessor(ConversationCallbackProcessor):

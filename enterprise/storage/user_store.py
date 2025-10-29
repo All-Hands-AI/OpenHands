@@ -5,10 +5,9 @@ Store class for managing users.
 import uuid
 from typing import Optional
 
-from sqlalchemy import text
-
 from integrations.stripe_service import migrate_customer
 from server.logger import logger
+from sqlalchemy import text
 from sqlalchemy.orm import joinedload
 from storage.database import session_maker
 from storage.encrypt_utils import decrypt_model
@@ -158,10 +157,10 @@ class UserStore:
             session.execute(
                 text("""
                 INSERT INTO conversation_metadata_saas (conversation_id, user_id, org_id)
-                SELECT 
+                SELECT
                     conversation_id,
-                    CASE 
-                        WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' 
+                    CASE
+                        WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
                         THEN user_id::uuid
                         ELSE gen_random_uuid()
                     END AS user_id,

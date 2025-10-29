@@ -8,7 +8,6 @@ containing only the conversation_id, user_id, and org_id.
 from sqlalchemy import UUID as SQL_UUID
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship
-
 from storage.base import Base
 
 
