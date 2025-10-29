@@ -27,7 +27,6 @@ export const useUpdateConversation = () => {
         variables.conversationVersion,
       );
 
-      console.log("normalizedConversationId", normalizedConversationId);
 
       queryClient.setQueryData(
         ["user", "conversations"],
