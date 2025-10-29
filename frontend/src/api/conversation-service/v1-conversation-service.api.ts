@@ -11,6 +11,7 @@ import type {
   V1AppConversationStartTask,
   V1AppConversationStartTaskPage,
   V1AppConversation,
+  V1SandboxInfo,
 } from "./v1-conversation-service.types";
 
 class V1ConversationService {
@@ -264,6 +265,32 @@ class V1ConversationService {
 
     const { data } = await openHands.get<(V1AppConversation | null)[]>(
       `/api/v1/app-conversations?${params.toString()}`,
+    );
+    return data;
+  }
+
+  /**
+   * Batch get V1 sandboxes by their IDs
+   * Returns null for any missing sandboxes
+   *
+   * @param ids Array of sandbox IDs (max 100)
+   * @returns Array of sandboxes or null for missing ones
+   */
+  static async batchGetSandboxes(
+    ids: string[],
+  ): Promise<(V1SandboxInfo | null)[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    if (ids.length > 100) {
+      throw new Error("Cannot request more than 100 sandboxes at once");
+    }
+
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("id", id));
+
+    const { data } = await openHands.get<(V1SandboxInfo | null)[]>(
+      `/api/v1/sandboxes?${params.toString()}`,
     );
     return data;
   }
