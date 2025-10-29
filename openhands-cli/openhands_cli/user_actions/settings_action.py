@@ -15,6 +15,7 @@ from openhands_cli.user_actions.utils import (
 class SettingsType(Enum):
     BASIC = 'basic'
     ADVANCED = 'advanced'
+    WORKING_DIRECTORY = 'working_directory'
 
 
 def settings_type_confirmation(first_time: bool = False) -> SettingsType:
@@ -28,7 +29,7 @@ def settings_type_confirmation(first_time: bool = False) -> SettingsType:
     ]
     if not first_time:
         question = 'Which settings would you like to modify?'
-        choices.append('Go back')
+        choices.extend(['Working Directory', 'Go back'])
 
 
     index = cli_confirm(question, choices, escapable=True)
@@ -36,7 +37,10 @@ def settings_type_confirmation(first_time: bool = False) -> SettingsType:
     if choices[index] == 'Go back':
         raise KeyboardInterrupt
 
-    options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
+    if first_time:
+        options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED}
+    else:
+        options_map = {0: SettingsType.BASIC, 1: SettingsType.ADVANCED, 2: SettingsType.WORKING_DIRECTORY}
 
     return options_map.get(index)
 

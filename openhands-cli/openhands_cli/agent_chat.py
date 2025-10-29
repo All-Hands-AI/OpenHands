@@ -26,6 +26,7 @@ from openhands_cli.tui.tui import (
 )
 from openhands_cli.user_actions import UserConfirmation, exit_session_confirmation
 from openhands_cli.user_actions.utils import get_session_prompter
+from openhands_cli.user_actions.working_directory_action import prompt_working_directory_configuration
 
 
 def _restore_tty() -> None:
@@ -64,6 +65,16 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         KeyboardInterrupt: If user interrupts the session
         EOFError: If EOF is encountered
     """
+
+    # Configure working directory before starting conversation
+    if not resume_conversation_id:
+        # Only prompt for working directory on new conversations
+        try:
+            working_dir = prompt_working_directory_configuration()
+            print_formatted_text(HTML(f'<green>Using working directory: {working_dir}</green>\n'))
+        except KeyboardInterrupt:
+            print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+            return
 
     try:
         conversation = start_fresh_conversation(resume_conversation_id)
