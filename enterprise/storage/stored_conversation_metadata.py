@@ -2,7 +2,6 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
 from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 from openhands.app_server.app_conversation.app_conversation_models import (
@@ -117,8 +116,10 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
         if has_more:
             rows = rows[:limit]
 
-        items = [self._to_info_with_user_id(stored_metadata, saas_metadata) 
-                for stored_metadata, saas_metadata in rows]
+        items = [
+            self._to_info_with_user_id(stored_metadata, saas_metadata)
+            for stored_metadata, saas_metadata in rows
+        ]
 
         # Calculate next page ID
         next_page_id = None
@@ -136,13 +137,17 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
         updated_at__lt: datetime | None = None,
     ) -> int:
         """Count conversations matching the given filters with SAAS metadata."""
-        query = select(func.count(StoredConversationMetadata.conversation_id)).select_from(
-            StoredConversationMetadata.join(
-                StoredConversationMetadataSaas,
-                StoredConversationMetadata.conversation_id
-                == StoredConversationMetadataSaas.conversation_id,
+        query = (
+            select(func.count(StoredConversationMetadata.conversation_id))
+            .select_from(
+                StoredConversationMetadata.join(
+                    StoredConversationMetadataSaas,
+                    StoredConversationMetadata.conversation_id
+                    == StoredConversationMetadataSaas.conversation_id,
+                )
             )
-        ).where(StoredConversationMetadata.conversation_version == 'V1')
+            .where(StoredConversationMetadata.conversation_version == 'V1')
+        )
 
         # Apply user filtering
         user_id = await self.user_context.get_user_id()
@@ -227,17 +232,22 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
         )
         result = await self.db_session.execute(query)
         rows = result.all()
-        
+
         # Create a mapping of conversation_id to (metadata, saas_metadata)
         info_by_id = {}
         for stored_metadata, saas_metadata in rows:
-            info_by_id[stored_metadata.conversation_id] = (stored_metadata, saas_metadata)
-        
+            info_by_id[stored_metadata.conversation_id] = (
+                stored_metadata,
+                saas_metadata,
+            )
+
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_id_strs:
             if conversation_id in info_by_id:
                 stored_metadata, saas_metadata = info_by_id[conversation_id]
-                results.append(self._to_info_with_user_id(stored_metadata, saas_metadata))
+                results.append(
+                    self._to_info_with_user_id(stored_metadata, saas_metadata)
+                )
             else:
                 results.append(None)
 
@@ -249,7 +259,7 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
         """Save conversation info and create/update SAAS metadata with user_id and org_id."""
         # Save the base conversation metadata
         await super().save_app_conversation_info(info)
-        
+
         # Get current user_id for SAAS metadata
         user_id = await self.user_context.get_user_id()
         if user_id:
@@ -259,7 +269,7 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
             )
             result = await self.db_session.execute(saas_query)
             existing_saas_metadata = result.scalar_one_or_none()
-            
+
             if existing_saas_metadata:
                 # Update existing SAAS metadata
                 existing_saas_metadata.user_id = user_id
@@ -275,23 +285,25 @@ class SQLAppConversationInfoServiceSaas(_SQLAppConversationInfoService):
                     org_id=user_id,  # Set org_id to user_id as it will not be specified
                 )
                 self.db_session.add(saas_metadata)
-            
+
             await self.db_session.commit()
-        
+
         return info
 
     def _to_info_with_user_id(
-        self, 
-        stored: StoredConversationMetadata, 
-        saas_metadata: StoredConversationMetadataSaas
+        self,
+        stored: StoredConversationMetadata,
+        saas_metadata: StoredConversationMetadataSaas,
     ) -> AppConversationInfo:
         """Convert stored metadata to AppConversationInfo with user_id from SAAS metadata."""
         # Use the base _to_info method to get the basic info
         info = self._to_info(stored)
-        
+
         # Override the created_by_user_id with the user_id from SAAS metadata
-        info.created_by_user_id = str(saas_metadata.user_id) if saas_metadata.user_id else None
-        
+        info.created_by_user_id = (
+            str(saas_metadata.user_id) if saas_metadata.user_id else None
+        )
+
         return info
 
 

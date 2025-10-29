@@ -18,11 +18,14 @@ class SaasAppConversationInfoServiceInjector(AppConversationInfoServiceInjector)
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[AppConversationInfoService, None]:
         # Define inline to prevent circular lookup
+        from storage.stored_conversation_metadata import (
+            SQLAppConversationInfoServiceSaas,
+        )
+
         from openhands.app_server.config import (
             get_db_session,
             get_user_context,
         )
-        from storage.stored_conversation_metadata import SQLAppConversationInfoServiceSaas
 
         async with (
             get_user_context(state, request) as user_context,
