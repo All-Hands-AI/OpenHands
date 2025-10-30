@@ -179,6 +179,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                     print_formatted_text(
                         HTML('<yellow>No active conversation running...</yellow>')
                     )
+                    continue
 
                 conversation = runner.conversation
                 if not (
