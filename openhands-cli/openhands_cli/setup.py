@@ -42,11 +42,6 @@ def load_agent_specs(
 def verify_agent_exists_or_setup_agent() -> Agent:
     """Verify agent specs exists by attempting to load it.
 
-    Args:
-        resume_conversation_id: Conversation ID
-
-    Returns:
-        Agent: A new conversation instance
     """
     settings_screen = SettingsScreen()
     try:
