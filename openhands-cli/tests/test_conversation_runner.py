@@ -50,7 +50,7 @@ class FakeAgent(AgentBase):
 
 @pytest.fixture()
 def agent() -> FakeAgent:
-    llm = LLM(**default_config(), service_id='test-service')
+    llm = LLM(**default_config(), usage_id='test-service')
     return FakeAgent(llm=llm, tools=[])
 
 
