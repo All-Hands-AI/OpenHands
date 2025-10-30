@@ -82,7 +82,7 @@ def test_client():
 def create_new_test_conversation(
     test_request: InitSessionRequest, auth_type: AuthType | None = None
 ):
-    # Create a mock UserSecrets object with the required custom_secrets attribute
+    # Create a mock Secrets object with the required custom_secrets attribute
     mock_user_secrets = MagicMock()
     mock_user_secrets.custom_secrets = MappingProxyType({})
 

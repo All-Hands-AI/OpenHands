@@ -1,13 +1,11 @@
 import os
 
 from openhands.sdk import LLM, BaseConversation, LocalFileStore
-from openhands.sdk.security.confirmation_policy import NeverConfirm
-from openhands.tools.preset.default import get_default_agent
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands_cli.llm_utils import get_llm_metadata
+from openhands_cli.utils import get_llm_metadata, get_default_cli_agent
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 from openhands_cli.pt_style import COLOR_GREY
 from openhands_cli.tui.settings.store import AgentStore
@@ -176,13 +174,13 @@ class SettingsScreen:
             model=model,
             api_key=api_key,
             base_url=base_url,
-            service_id='agent',
+            usage_id='agent',
             metadata=get_llm_metadata(model_name=model, llm_type='agent'),
         )
 
         agent = self.agent_store.load()
         if not agent:
-            agent = get_default_agent(llm=llm, cli_mode=True)
+            agent = get_default_cli_agent(llm=llm)
 
         agent = agent.model_copy(update={'llm': llm})
         self.agent_store.save(agent)

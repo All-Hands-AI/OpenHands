@@ -254,19 +254,20 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.59.0"
+version = "0.72.0"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "anthropic-0.59.0-py3-none-any.whl", hash = "sha256:cbc8b3dccef66ad6435c4fa1d317e5ebb092399a4b88b33a09dc4bf3944c3183"},
-    {file = "anthropic-0.59.0.tar.gz", hash = "sha256:d710d1ef0547ebbb64b03f219e44ba078e83fc83752b96a9b22e9726b523fd8f"},
+    {file = "anthropic-0.72.0-py3-none-any.whl", hash = "sha256:0e9f5a7582f038cab8efbb4c959e49ef654a56bfc7ba2da51b5a7b8a84de2e4d"},
+    {file = "anthropic-0.72.0.tar.gz", hash = "sha256:8971fe76dcffc644f74ac3883069beb1527641115ae0d6eb8fa21c1ce4082f7a"},
 ]
 
 [package.dependencies]
 anyio = ">=3.5.0,<5"
 distro = ">=1.7.0,<2"
+docstring-parser = ">=0.15,<1"
 google-auth = {version = ">=2,<3", extras = ["requests"], optional = true, markers = "extra == \"vertex\""}
 httpx = ">=0.25.0,<1"
 jiter = ">=0.4.0,<1"
@@ -275,7 +276,7 @@ sniffio = "*"
 typing-extensions = ">=4.10,<5"
 
 [package.extras]
-aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.8)"]
+aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.9)"]
 bedrock = ["boto3 (>=1.28.57)", "botocore (>=1.31.57)"]
 vertex = ["google-auth[requests] (>=2,<3)"]
 
@@ -1204,19 +1205,19 @@ botocore = ["botocore"]
 
 [[package]]
 name = "browser-use"
-version = "0.7.10"
+version = "0.8.0"
 description = "Make websites accessible for AI agents"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "browser_use-0.7.10-py3-none-any.whl", hash = "sha256:669e12571a0c0c4c93e5fd26abf9e2534eb9bacbc510328aedcab795bd8906a9"},
-    {file = "browser_use-0.7.10.tar.gz", hash = "sha256:f93ce59e06906c12d120360dee4aa33d83618ddf7c9a575dd0ac517d2de7ccbc"},
+    {file = "browser_use-0.8.0-py3-none-any.whl", hash = "sha256:b7c299e38ec1c1aec42a236cc6ad2268a366226940d6ff9d88ed461afd5a1cc3"},
+    {file = "browser_use-0.8.0.tar.gz", hash = "sha256:2136eb3251424f712a08ee379c9337237c2f93b29b566807db599cf94e6abb5e"},
 ]
 
 [package.dependencies]
 aiohttp = "3.12.15"
-anthropic = ">=0.58.2,<1.0.0"
+anthropic = ">=0.68.1,<1.0.0"
 anyio = ">=4.9.0"
 authlib = ">=1.6.0"
 bubus = ">=1.5.6"
@@ -1248,11 +1249,11 @@ typing-extensions = ">=4.12.2"
 uuid7 = ">=0.1.0"
 
 [package.extras]
-all = ["agentmail (>=0.0.53)", "boto3 (>=1.38.45)", "botocore (>=1.37.23)", "click (>=8.1.8)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)", "rich (>=14.0.0)", "textual (>=3.2.0)"]
+all = ["agentmail (==0.0.59)", "boto3 (>=1.38.45)", "botocore (>=1.37.23)", "click (>=8.1.8)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)", "rich (>=14.0.0)", "textual (>=3.2.0)"]
 aws = ["boto3 (>=1.38.45)"]
 cli = ["click (>=8.1.8)", "rich (>=14.0.0)", "textual (>=3.2.0)"]
-eval = ["anyio (>=4.9.0)", "browserbase (==1.4.0)", "datamodel-code-generator (>=0.26.0)", "hyperbrowser (==0.47.0)", "lmnr[all] (==0.7.10)", "psutil (>=7.0.0)"]
-examples = ["agentmail (>=0.0.53)", "botocore (>=1.37.23)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)"]
+eval = ["anyio (>=4.9.0)", "browserbase (==1.4.0)", "datamodel-code-generator (>=0.26.0)", "hyperbrowser (==0.47.0)", "lmnr[all] (==0.7.17)", "psutil (>=7.0.0)"]
+examples = ["agentmail (==0.0.59)", "botocore (>=1.37.23)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)"]
 video = ["imageio[ffmpeg] (>=2.37.0)", "numpy (>=2.3.2)"]
 
 [[package]]
@@ -7275,13 +7276,15 @@ llama = ["llama-index (>=0.12.29,<0.13.0)", "llama-index-core (>=0.12.29,<0.13.0
 
 [[package]]
 name = "openhands-agent-server"
-version = "1.0.0a3"
+version = "1.0.0a5"
 description = "OpenHands Agent Server - REST/WebSocket interface for OpenHands AI Agent"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_agent_server-1.0.0a5-py3-none-any.whl", hash = "sha256:823fecd33fd45ba64acc6960beda24df2af6520c26c8c110564d0e3679c53186"},
+    {file = "openhands_agent_server-1.0.0a5.tar.gz", hash = "sha256:65458923905f215666e59654e47f124e4c597fe982ede7d54184c8795d810a35"},
+]
 
 [package.dependencies]
 aiosqlite = ">=0.19"
@@ -7294,22 +7297,17 @@ uvicorn = ">=0.31.1"
 websockets = ">=12"
 wsproto = ">=1.2.0"
 
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-subdirectory = "openhands-agent-server"
-
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0a3"
+version = "1.0.0a5"
 description = "OpenHands SDK - Core functionality for building AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_sdk-1.0.0a5-py3-none-any.whl", hash = "sha256:db20272b04cf03627f9f7d1e87992078ac4ce15d188955a2962aa9e754d0af03"},
+    {file = "openhands_sdk-1.0.0a5.tar.gz", hash = "sha256:8888d6892d58cf9b11a71fa80086156c0b6c9a0b50df6839c0a9cafffba2338c"},
+]
 
 [package.dependencies]
 fastmcp = ">=2.11.3"
@@ -7324,39 +7322,27 @@ websockets = ">=12"
 [package.extras]
 boto3 = ["boto3 (>=1.35.0)"]
 
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-subdirectory = "openhands-sdk"
-
 [[package]]
 name = "openhands-tools"
-version = "1.0.0a3"
+version = "1.0.0a5"
 description = "OpenHands Tools - Runtime tools for AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_tools-1.0.0a5-py3-none-any.whl", hash = "sha256:74c27e23e6adc9a0bad00e32448bd4872019ce0786474e8de2fbf2d7c0887e8e"},
+    {file = "openhands_tools-1.0.0a5.tar.gz", hash = "sha256:6c67454e612596e95c5151267659ddd3b633a5d4a1b70b348f7f913c62146562"},
+]
 
 [package.dependencies]
 bashlex = ">=0.18"
 binaryornot = ">=0.4.4"
-browser-use = ">=0.7.7"
+browser-use = ">=0.8.0"
 cachetools = "*"
 func-timeout = ">=4.3.5"
 libtmux = ">=0.46.2"
 openhands-sdk = "*"
 pydantic = ">=2.11.7"
-
-[package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-subdirectory = "openhands-tools"
 
 [[package]]
 name = "openpyxl"
@@ -16524,4 +16510,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "fd68ed845befeb646ee910db46f1ef9c5a1fd2e6d1ac6189c04864e0665f66ed"
+content-hash = "f2234ef5fb5e97bc187d433eae9fcab8903a830d6557fb3926b0c3f37730dd17"
