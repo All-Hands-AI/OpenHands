@@ -70,20 +70,6 @@ def setup_conversation(
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    # Use provided conversation_id or generate a random one
-    if conversation_id is None:
-        conversation_id = uuid.uuid4()
-    elif isinstance(conversation_id, str):
-        try:
-            conversation_id = uuid.UUID(conversation_id)
-        except ValueError as e:
-            print_formatted_text(
-                HTML(
-                    f"<yellow>Warning: '{conversation_id}' is not a valid UUID.</yellow>"
-                )
-            )
-            raise e
-
     with LoadingContext('Initializing OpenHands agent...'):
         agent = load_agent_specs(str(conversation_id))
 
