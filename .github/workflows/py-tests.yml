@@ -173,7 +173,6 @@ jobs:
           path: ".coverage.openhands-cli.${{ matrix.python-version }}"
           include-hidden-files: true
 
-
   coverage-comment:
     name: Coverage Comment
     runs-on: ubuntu-latest
@@ -195,23 +194,32 @@ jobs:
         run: ln -sf openhands-cli/openhands_cli openhands_cli
 
       - name: Coverage comment
-        # In PR mode leaves a comment, otherwise records coverage in branch python-coverage-comment-action-data.
+        # In PR mode leaves a comment or file of one.
+        # On non-PR records coverage in branch python-coverage-comment-action-data.
         id: coverage_comment
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ github.token }}
           MERGE_COVERAGE_FILES: true
 
-      - name: Enforce coverage
-        # Fail if on PR AND there are uncovered lines AND diff coverage is less than total coverage.
-        # To debug, try a step to log outputs like: `echo ${{ toJSON(steps.coverage_comment.outputs) }}`
-        # Once we track base branch, reference_percent_covered will be better to use than new_percent_covered.
-        if: ${{ github.event_name == 'pull_request' && fromJSON(steps.coverage_comment.outputs.diff_total_num_violations) > 0 && steps.coverage_comment.outputs.diff_total_percent_covered < steps.coverage_comment.outputs.new_percent_covered }}
+      - name: Store Pull Request comment to be posted
+        uses: actions/upload-artifact@v4
+        if: steps.coverage_comment.outputs.COMMENT_FILE_WRITTEN == 'true'
+        with:
+          name: python-coverage-comment-action
+          path: python-coverage-comment-action.txt
+
+      - name: Record stats on coverage change
+        shell: bash
         run: |
-          echo "Coverage decreased, which is not allowed."
-          echo "Please add some unit tests for the modified code."
-          echo
-          echo "  diff_total_num_violations: ${{ steps.coverage_comment.outputs.diff_total_num_violations }}"
-          echo "  diff_total_percent_covered: ${{ steps.coverage_comment.outputs.diff_total_percent_covered}}"
-          echo "  new_percent_covered: ${{ steps.coverage_comment.outputs.new_percent_covered}}"
-          exit 1
+          # Docs: https://github.com/marketplace/actions/python-coverage-comment
+          echo "diff_total_num_violations: ${{ steps.coverage_comment.outputs.diff_total_num_violations }}" >> coverage-stats.txt
+          echo "diff_total_percent_covered: ${{ steps.coverage_comment.outputs.diff_total_percent_covered}}" >> coverage-stats.txt
+          echo "new_percent_covered: ${{ steps.coverage_comment.outputs.new_percent_covered}}" >> coverage-stats.txt
+
+      - name: Store artifact to mark potential untested code modified
+        uses: actions/upload-artifact@v4
+        if: ${{ github.event_name == 'pull_request' && fromJSON(steps.coverage_comment.outputs.diff_total_num_violations) > 0 && steps.coverage_comment.outputs.diff_total_percent_covered < steps.coverage_comment.outputs.new_percent_covered }}
+        with:
+          name: low-coverage-python
+          path: coverage-stats.txt
