@@ -15,13 +15,12 @@ import sys
 import time
 from pathlib import Path
 
-from openhands_cli.llm_utils import get_llm_metadata
-from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
+from openhands_cli.utils import get_llm_metadata, get_default_cli_agent
+from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 
 from openhands.sdk import LLM
-from openhands.tools.preset.default import get_default_agent
 
-dummy_agent = get_default_agent(
+dummy_agent = get_default_cli_agent(
     llm=LLM(
         model='dummy-model',
         api_key='dummy-key',
