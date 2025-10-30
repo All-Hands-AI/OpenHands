@@ -1171,7 +1171,7 @@ def test_download_file(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
         # Browse to the HTML page
-        action_browse = BrowseURLAction(url=f'http://localhost:{dynamic_port}/')
+        action_browse = BrowseURLAction(url=f'http://localhost:{dynamic_port}/download_test.html')
         logger.info(action_browse, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action_browse)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
