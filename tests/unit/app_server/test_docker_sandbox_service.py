@@ -601,7 +601,7 @@ class TestDockerSandboxService:
             service._docker_status_to_sandbox_status('paused') == SandboxStatus.PAUSED
         )
         assert (
-            service._docker_status_to_sandbox_status('exited') == SandboxStatus.MISSING
+            service._docker_status_to_sandbox_status('exited') == SandboxStatus.PAUSED
         )
         assert (
             service._docker_status_to_sandbox_status('created')

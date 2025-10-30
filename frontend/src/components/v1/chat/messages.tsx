@@ -10,11 +10,10 @@ import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-
 
 interface MessagesProps {
   messages: OpenHandsEvent[];
-  isAwaitingUserConfirmation: boolean;
 }
 
 export const Messages: React.FC<MessagesProps> = React.memo(
-  ({ messages, isAwaitingUserConfirmation }) => {
+  ({ messages }) => {
     const { getOptimisticUserMessage } = useOptimisticUserMessageStore();
 
     const optimisticUserMessage = getOptimisticUserMessage();
@@ -43,7 +42,6 @@ export const Messages: React.FC<MessagesProps> = React.memo(
             key={message.id}
             event={message}
             hasObservationPair={actionHasObservationPair(message)}
-            isAwaitingUserConfirmation={isAwaitingUserConfirmation}
             isLastMessage={messages.length - 1 === index}
             isInLast10Actions={messages.length - 1 - index < 10}
             // Microagent props - not implemented yet for V1

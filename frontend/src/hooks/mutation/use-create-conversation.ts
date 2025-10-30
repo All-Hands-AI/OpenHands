@@ -45,7 +45,7 @@ export const useCreateConversation = () => {
         createMicroagent,
       } = variables;
 
-      const useV1 = USE_V1_CONVERSATION_API();
+      const useV1 = USE_V1_CONVERSATION_API() && !createMicroagent;
 
       if (useV1) {
         // Use V1 API - creates a conversation start task
@@ -92,7 +92,7 @@ export const useCreateConversation = () => {
         query_character_length: query?.length,
         has_repository: !!repository,
       });
-      await queryClient.invalidateQueries({
+      queryClient.removeQueries({
         queryKey: ["user", "conversations"],
       });
     },

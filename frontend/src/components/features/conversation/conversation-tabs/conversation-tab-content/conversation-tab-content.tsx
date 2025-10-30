@@ -12,7 +12,6 @@ import { useConversationStore } from "#/state/conversation-store";
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
-const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
@@ -24,7 +23,6 @@ export function ConversationTabContent() {
   // Determine which tab is active based on the current path
   const isEditorActive = selectedTab === "editor";
   const isBrowserActive = selectedTab === "browser";
-  const isJupyterActive = selectedTab === "jupyter";
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
   const isTerminalActive = selectedTab === "terminal";
@@ -36,11 +34,6 @@ export function ConversationTabContent() {
       key: "browser",
       component: BrowserTab,
       isActive: isBrowserActive,
-    },
-    {
-      key: "jupyter",
-      component: JupyterTab,
-      isActive: isJupyterActive,
     },
     { key: "served", component: ServedTab, isActive: isServedActive },
     { key: "vscode", component: VSCodeTab, isActive: isVSCodeActive },
@@ -58,9 +51,6 @@ export function ConversationTabContent() {
     if (isBrowserActive) {
       return t(I18nKey.COMMON$BROWSER);
     }
-    if (isJupyterActive) {
-      return t(I18nKey.COMMON$JUPYTER);
-    }
     if (isServedActive) {
       return t(I18nKey.COMMON$APP);
     }
@@ -74,7 +64,6 @@ export function ConversationTabContent() {
   }, [
     isEditorActive,
     isBrowserActive,
-    isJupyterActive,
     isServedActive,
     isVSCodeActive,
     isTerminalActive,
