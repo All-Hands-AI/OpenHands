@@ -33,7 +33,6 @@ export const useUnifiedGetGitChanges = () => {
 
   const result = useQuery({
     queryKey: [
-      "unified",
       "file_changes",
       conversationId,
       isV1Conversation,
