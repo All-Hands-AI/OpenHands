@@ -11,7 +11,7 @@
 
 ## Setup Environment and LLM Configuration
 
-1. Please follow instructions mentioned [here](https://github.com/openlocus/OpenHands/blob/discoverybench-openhands-integration/evaluation/README.md#setup) to setup OpenHands development environment and LLMs locally
+1. Please follow instructions mentioned [here](https://github.com/openlocus/OpenHands/blob/discoverybench-openhands-integration/evaluati../../Development.md) to setup OpenHands development environment and LLMs locally
 
 2. Execute the bash script to start DiscoveryBench Evaluation
 

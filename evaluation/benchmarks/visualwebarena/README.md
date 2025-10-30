@@ -4,7 +4,7 @@ This folder contains evaluation for [VisualWebArena](https://github.com/web-aren
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Setup VisualWebArena Environment
 

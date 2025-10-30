@@ -4,13 +4,13 @@ This folder contains the OpenHands inference generation of the [SWE-Perf benchma
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../../README.md#development-environment) and [configure LLM config](../../README.md#configure-openhands-and-your-llm).
+1. Environment setup: [install python environment](../../../Development.md#1-requirements) and [configure LLM config](../../../Development.md#3-configuring-the-language-model).
 2. [Run inference](#running-inference-locally-with-docker): Generate a edit patch for each Github issue
 3. [Evaluate patches](#evaluate-generated-patches)
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Running inference Locally with Docker
 
