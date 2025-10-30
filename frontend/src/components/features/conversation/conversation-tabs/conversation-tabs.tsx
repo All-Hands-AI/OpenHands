@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalStorage } from "@uidotdev/usehooks";
-import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ServerIcon from "#/icons/server.svg?react";
@@ -107,13 +106,6 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("terminal"),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
-    },
-    {
-      isActive: isTabActive("jupyter"),
-      icon: JupyterIcon,
-      onClick: () => onTabSelected("jupyter"),
-      tooltipContent: t(I18nKey.COMMON$JUPYTER),
-      tooltipAriaLabel: t(I18nKey.COMMON$JUPYTER),
     },
     {
       isActive: isTabActive("served"),
