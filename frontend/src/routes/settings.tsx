@@ -6,7 +6,6 @@ import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/option-service/option.types";
-import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 import { SAAS_NAV_ITEMS, OSS_NAV_ITEMS } from "#/constants/settings-nav";
 import { Typography } from "#/ui/typography";
 import { SettingsLayout } from "#/components/features/settings/settings-layout";
@@ -41,7 +40,6 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { data: subscriptionAccess } = useSubscriptionAccess();
   const location = useLocation();
 
   const isSaas = config?.APP_MODE === "saas";
@@ -55,7 +53,7 @@ function SettingsScreen() {
       items.push(...OSS_NAV_ITEMS);
     }
     return items;
-  }, [isSaas, !!subscriptionAccess]);
+  }, [isSaas]);
 
   // Current section title for the main content area
   const currentSectionTitle = useMemo(() => {
