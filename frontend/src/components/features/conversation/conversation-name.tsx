@@ -72,7 +72,6 @@ export function ConversationName() {
           {
             conversationId,
             newTitle: trimmed,
-            conversationVersion: conversation?.conversation_version,
           },
           {
             onSuccess: () => {

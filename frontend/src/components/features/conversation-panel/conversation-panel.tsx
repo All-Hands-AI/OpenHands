@@ -90,10 +90,9 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const handleConversationTitleChange = async (
     conversationId: string,
     newTitle: string,
-    conversationVersion?: "V0" | "V1",
   ) => {
     updateConversation(
-      { conversationId, newTitle, conversationVersion },
+      { conversationId, newTitle },
       {
         onSuccess: () => {
           displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));
@@ -180,11 +179,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               )
             }
             onChangeTitle={(title) =>
-              handleConversationTitleChange(
-                project.conversation_id,
-                title,
-                project.conversation_version,
-              )
+              handleConversationTitleChange(project.conversation_id, title)
             }
             title={project.title}
             selectedRepository={{
