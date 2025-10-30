@@ -18,7 +18,7 @@ def read_json(path: Path) -> dict:
 
 
 def make_screen_with_conversation(model='openai/gpt-4o-mini', api_key='sk-xyz'):
-    llm = LLM(model=model, api_key=SecretStr(api_key), service_id='test-service')
+    llm = LLM(model=model, api_key=SecretStr(api_key), usage_id='test-service')
     # Conversation(agent) signature may vary across versions; adapt if needed:
     from openhands.sdk.agent import Agent
 
@@ -31,7 +31,7 @@ def seed_file(path: Path, model: str = 'openai/gpt-4o-mini', api_key: str = 'sk-
     store = AgentStore()
     store.file_store = LocalFileStore(root=str(path))
     agent = get_default_cli_agent(
-        llm=LLM(model=model, api_key=SecretStr(api_key), service_id='test-service')
+        llm=LLM(model=model, api_key=SecretStr(api_key), usage_id='test-service')
     )
     store.save(agent)
 
