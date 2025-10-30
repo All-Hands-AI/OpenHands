@@ -4,7 +4,6 @@ import { devtools } from "zustand/middleware";
 export type ConversationTab =
   | "editor"
   | "browser"
-  | "jupyter"
   | "served"
   | "vscode"
   | "terminal";
