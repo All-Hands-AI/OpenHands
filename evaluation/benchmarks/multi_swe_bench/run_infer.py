@@ -792,7 +792,9 @@ if __name__ == '__main__':
     filter_func = None
     if args.filter_dataset_after_sampling:
         # Pass filter as callback to apply after sampling
-        filter_func = lambda df: filter_dataset(df, 'instance_id')
+        def filter_func(df):
+            return filter_dataset(df, 'instance_id')
+
         logger.info(
             f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks (filtering will occur after sampling)'
         )

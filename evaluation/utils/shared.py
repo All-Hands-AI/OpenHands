@@ -9,7 +9,7 @@ import time
 import traceback
 from contextlib import contextmanager
 from inspect import signature
-from typing import Any, Awaitable, Callable, TextIO, Optional
+from typing import Any, Awaitable, Callable, Optional, TextIO
 
 import pandas as pd
 from pydantic import BaseModel

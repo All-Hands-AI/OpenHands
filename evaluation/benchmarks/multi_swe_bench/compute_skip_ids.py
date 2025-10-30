@@ -1,8 +1,8 @@
-import json
 import argparse
-from pathlib import Path
-from collections import Counter
 import fnmatch
+import json
+from collections import Counter
+from pathlib import Path
 
 
 def find_final_reports(base_dir, pattern=None):
