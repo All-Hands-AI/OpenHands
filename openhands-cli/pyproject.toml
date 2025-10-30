@@ -4,7 +4,7 @@ requires = [ "hatchling>=1.25" ]
 
 [project]
 name = "openhands"
-version = "1.0.2"
+version = "1.0.3"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
 license = { text = "MIT" }
@@ -18,8 +18,8 @@ classifiers = [
 # Using Git URLs for dependencies so installs from PyPI pull from GitHub
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk==1.0.0a3",
-  "openhands-tools==1.0.0a3",
+  "openhands-sdk==1.0.0a5",
+  "openhands-tools==1.0.0a5",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
