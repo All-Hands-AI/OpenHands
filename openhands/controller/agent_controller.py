@@ -418,8 +418,6 @@ class AgentController:
             ):
                 # TODO: this is fragile, but how else to check if eligible?
                 return True
-            if isinstance(event, AgentDelegateAction):
-                return True
             if isinstance(event, CondensationAction):
                 return True
             if isinstance(event, CondensationRequestAction):
