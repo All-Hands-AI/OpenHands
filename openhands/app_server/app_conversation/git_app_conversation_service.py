@@ -16,7 +16,7 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
 )
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
 PRE_COMMIT_HOOK = '.git/hooks/pre-commit'
@@ -59,10 +59,13 @@ class GitAppConversationService(AppConversationService, ABC):
         if not request.selected_repository:
             if self.init_git_in_empty_workspace:
                 _logger.debug('Initializing a new git repository in the workspace.')
-                await workspace.execute_command(
-                    'git init && git config --global --add safe.directory '
-                    + workspace.working_dir
+                cmd = (
+                    'git init && git config --global '
+                    f'--add safe.directory {workspace.working_dir}'
                 )
+                result = await workspace.execute_command(cmd, workspace.working_dir)
+                if result.exit_code:
+                    _logger.warning(f'Git init failed: {result.stderr}')
             else:
                 _logger.info('Not initializing a new git repository.')
             return
@@ -77,7 +80,8 @@ class GitAppConversationService(AppConversationService, ABC):
 
         # Clone the repo - this is the slow part!
         clone_command = f'git clone {remote_repo_url} {dir_name}'
-        await workspace.execute_command(clone_command, workspace.working_dir)
+        result = await workspace.execute_command(clone_command, workspace.working_dir)
+        print(result)
 
         # Checkout the appropriate branch
         if request.selected_branch:

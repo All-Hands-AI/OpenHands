@@ -90,7 +90,8 @@ class DockerSandboxService(SandboxService):
         status_mapping = {
             'running': SandboxStatus.RUNNING,
             'paused': SandboxStatus.PAUSED,
-            'exited': SandboxStatus.MISSING,
+            # The stop button was pressed in the docker console
+            'exited': SandboxStatus.PAUSED,
             'created': SandboxStatus.STARTING,
             'restarting': SandboxStatus.STARTING,
             'removing': SandboxStatus.MISSING,
