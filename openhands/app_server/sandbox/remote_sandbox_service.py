@@ -124,7 +124,9 @@ class RemoteSandboxService(SandboxService):
             try:
                 runtime = await self._get_runtime(stored.id)
             except Exception:
-                _logger.exception('Error getting runtime: {stored.id}', stack_info=True)
+                _logger.exception(
+                    f'Error getting runtime: {stored.id}', stack_info=True
+                )
 
         if runtime:
             # Translate status
@@ -150,7 +152,7 @@ class RemoteSandboxService(SandboxService):
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
                     vscode_url = (
                         _build_service_url(url, 'vscode')
-                        + f'/?tkn={session_api_key}&folder={runtime["working_dir"]}'
+                        + f'/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject'
                     )
                     exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
                     exposed_urls.append(
@@ -308,14 +310,13 @@ class RemoteSandboxService(SandboxService):
             start_request: dict[str, Any] = {
                 'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
                 'command': sandbox_spec.command,
-                #'command': ['python', '-c', 'import time; time.sleep(300)'],
-                'working_dir': sandbox_spec.working_dir,
+                'working_dir': '/workspace',
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,
-                'run_as_user': 1000,
-                'run_as_group': 1000,
-                'fs_group': 1000,
+                'run_as_user': 10001,
+                'run_as_group': 10001,
+                'fs_group': 10001,
             }
 
             # Add runtime class if specified
@@ -530,7 +531,7 @@ async def refresh_conversation(
         # TODO: It would be nice to have an updated_at__gte filter parameter in the
         # agent server so that we don't pull the full event list each time
         event_url = (
-            f'{url}/ap/conversations/{app_conversation_info.id.hex}/events/search'
+            f'{url}/api/conversations/{app_conversation_info.id.hex}/events/search'
         )
         page_id = None
         while True:
