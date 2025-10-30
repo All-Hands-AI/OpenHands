@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
-from pydantic import Field, SecretStr, TypeAdapter
+from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,

@@ -124,7 +124,9 @@ class RemoteSandboxService(SandboxService):
             try:
                 runtime = await self._get_runtime(stored.id)
             except Exception:
-                _logger.exception(f'Error getting runtime: {stored.id}', stack_info=True)
+                _logger.exception(
+                    f'Error getting runtime: {stored.id}', stack_info=True
+                )
 
         if runtime:
             # Translate status
