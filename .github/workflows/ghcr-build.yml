@@ -256,7 +256,7 @@ jobs:
   test_runtime_root:
     name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime, define-matrix]
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       fail-fast: false
       matrix:
@@ -313,7 +313,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 4 -raRs  -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          poetry run pytest -n 5 -raRs  -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
