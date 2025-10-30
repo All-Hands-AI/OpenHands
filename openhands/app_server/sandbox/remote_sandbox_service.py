@@ -150,7 +150,7 @@ class RemoteSandboxService(SandboxService):
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
                     vscode_url = (
                         _build_service_url(url, 'vscode')
-                        + f'/?tkn={session_api_key}&folder={runtime["working_dir"]}'
+                        + f'/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject'
                     )
                     exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
                     exposed_urls.append(
@@ -308,8 +308,7 @@ class RemoteSandboxService(SandboxService):
             start_request: dict[str, Any] = {
                 'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
                 'command': sandbox_spec.command,
-                #'command': ['python', '-c', 'import time; time.sleep(300)'],
-                'working_dir': sandbox_spec.working_dir,
+                'working_dir': '/workspace',
                 'environment': environment,
                 'session_id': sandbox_id,  # Use sandbox_id as session_id
                 'resource_factor': self.resource_factor,

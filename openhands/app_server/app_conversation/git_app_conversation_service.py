@@ -56,6 +56,12 @@ class GitAppConversationService(AppConversationService, ABC):
     ):
         request = task.request
 
+        # Create the projects directory if it does not exist yet
+        parent = Path(workspace.working_dir).parent
+        result = await workspace.execute_command(f"mkdir {workspace.working_dir}", parent)
+        if result.exit_code:
+            _logger.warning(f'mkdir failed: {result.stderr}')
+
         if not request.selected_repository:
             if self.init_git_in_empty_workspace:
                 _logger.debug('Initializing a new git repository in the workspace.')
