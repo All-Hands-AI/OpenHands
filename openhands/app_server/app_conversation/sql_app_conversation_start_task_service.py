@@ -28,6 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from openhands.agent_server.models import utc_now
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
     AppConversationStartRequest,
     AppConversationStartTask,
     AppConversationStartTaskPage,
@@ -221,10 +222,17 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         await self.session.commit()
         return task
 
-    async def delete_app_conversation_start_tasks(self, conversation_id: UUID) -> bool:
-        """Delete all start tasks associated with a conversation."""
+    async def delete_app_conversation_start_tasks(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
+        """Delete all start tasks associated with a conversation.
+
+        Args:
+            app_conversation_info: The app conversation info to delete tasks for (already fetched).
+        """
         from sqlalchemy import delete
 
+        conversation_id = app_conversation_info.id
         # Build delete query with user filter if user_id is set
         delete_query = delete(StoredAppConversationStartTask).where(
             StoredAppConversationStartTask.app_conversation_id == conversation_id

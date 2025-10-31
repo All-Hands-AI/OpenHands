@@ -96,8 +96,11 @@ class AppConversationService(ABC):
         yield task
 
     @abstractmethod
-    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
+    async def delete_app_conversation(self, app_conversation: AppConversation) -> bool:
         """Delete a V1 conversation and all its associated data.
+
+        Args:
+            app_conversation: The app conversation object to delete (already fetched).
 
         This method should:
         1. Delete the conversation from the database

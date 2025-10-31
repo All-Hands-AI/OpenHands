@@ -998,8 +998,10 @@ async def test_delete_v1_conversation_success():
         # Verify that get_app_conversation was called
         mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
 
-        # Verify that delete_app_conversation was called
-        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+        # Verify that delete_app_conversation was called with the app_conversation object
+        mock_service.delete_app_conversation.assert_called_once_with(
+            mock_app_conversation
+        )
 
 
 @pytest.mark.asyncio
@@ -1221,8 +1223,10 @@ async def test_delete_v1_conversation_with_agent_server():
         # Verify that get_app_conversation was called
         mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
 
-        # Verify that delete_app_conversation was called
-        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+        # Verify that delete_app_conversation was called with the app_conversation object
+        mock_service.delete_app_conversation.assert_called_once_with(
+            mock_app_conversation
+        )
 
 
 @pytest.mark.asyncio

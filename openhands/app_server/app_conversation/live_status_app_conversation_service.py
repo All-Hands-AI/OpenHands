@@ -532,8 +532,13 @@ class LiveStatusAppConversationService(GitAppConversationService):
             f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
         )
 
-    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
-        """Delete a V1 conversation and all its associated data."""
+    async def delete_app_conversation(self, app_conversation: AppConversation) -> bool:
+        """Delete a V1 conversation and all its associated data.
+
+        Args:
+            app_conversation: The app conversation object to delete (already fetched).
+        """
+        conversation_id = app_conversation.id
         # Check if we have the required SQL implementation for transactional deletion
         if not isinstance(
             self.app_conversation_info_service, SQLAppConversationInfoService
@@ -545,16 +550,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             return False
 
         try:
-            # Get the conversation info to find the sandbox and agent server URL
-            app_conversation = await self.get_app_conversation(conversation_id)
-            if not app_conversation:
-                return False
-
             # Delete from agent server if sandbox is running
-            await self._delete_from_agent_server(conversation_id, app_conversation)
+            await self._delete_from_agent_server(app_conversation)
 
-            # Delete from database
-            return await self._delete_from_database(conversation_id)
+            # Delete from database using the conversation info from app_conversation
+            # AppConversation extends AppConversationInfo, so we can use it directly
+            return await self._delete_from_database(app_conversation)
 
         except Exception as e:
             _logger.error(
@@ -565,9 +566,10 @@ class LiveStatusAppConversationService(GitAppConversationService):
             return False
 
     async def _delete_from_agent_server(
-        self, conversation_id: UUID, app_conversation: AppConversation
+        self, app_conversation: AppConversation
     ) -> None:
         """Delete conversation from agent server if sandbox is running."""
+        conversation_id = app_conversation.id
         if not (
             app_conversation.sandbox_status == SandboxStatus.RUNNING
             and app_conversation.session_api_key
@@ -596,17 +598,23 @@ class LiveStatusAppConversationService(GitAppConversationService):
             )
             # Continue with database cleanup even if agent server call fails
 
-    async def _delete_from_database(self, conversation_id: UUID) -> bool:
-        """Delete conversation from database."""
+    async def _delete_from_database(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
+        """Delete conversation from database.
+
+        Args:
+            app_conversation_info: The app conversation info to delete (already fetched).
+        """
         # The session is already managed by the dependency injection system
         # No need for explicit transaction management here
         deleted_info = (
             await self.app_conversation_info_service.delete_app_conversation_info(
-                conversation_id
+                app_conversation_info
             )
         )
         deleted_tasks = await self.app_conversation_start_task_service.delete_app_conversation_start_tasks(
-            conversation_id
+            app_conversation_info
         )
 
         return deleted_info or deleted_tasks

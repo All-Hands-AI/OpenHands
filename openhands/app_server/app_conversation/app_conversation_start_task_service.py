@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
     AppConversationStartTask,
     AppConversationStartTaskPage,
     AppConversationStartTaskSortOrder,
@@ -57,8 +58,13 @@ class AppConversationStartTaskService(ABC):
         """
 
     @abstractmethod
-    async def delete_app_conversation_start_tasks(self, conversation_id: UUID) -> bool:
+    async def delete_app_conversation_start_tasks(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
         """Delete all start tasks associated with a conversation.
+
+        Args:
+            app_conversation_info: The app conversation info (already fetched).
 
         Returns True if any tasks were deleted successfully, False otherwise.
         """

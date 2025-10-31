@@ -490,8 +490,9 @@ async def _try_delete_v1_conversation(
         )
         if app_conversation:
             # This is a V1 conversation, delete it using the app conversation service
+            # Pass the already-fetched app_conversation to avoid redundant database lookups
             return await app_conversation_service.delete_app_conversation(
-                conversation_uuid
+                app_conversation
             )
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
