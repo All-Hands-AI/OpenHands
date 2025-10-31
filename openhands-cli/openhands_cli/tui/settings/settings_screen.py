@@ -158,7 +158,7 @@ class SettingsScreen:
             api_key = prompt_api_key(
                 step_counter,
                 custom_model.split('/')[0] if len(custom_model.split('/')) > 1 else '',
-                self.conversation.agent.llm.api_key if self.conversation else None,
+                self.conversation.state.agent.llm.api_key if self.conversation else None,
                 escapable=escapable,
             )
             memory_condensation = choose_memory_condensation(step_counter)
