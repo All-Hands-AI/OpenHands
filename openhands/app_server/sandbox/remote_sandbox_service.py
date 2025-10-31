@@ -47,6 +47,7 @@ from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+ALLOW_CORS_ORIGINS_VARIABLE = 'OH_ALLOW_CORS_ORIGINS_0'
 polling_task: asyncio.Task | None = None
 POD_STATUS_MAPPING = {
     'ready': SandboxStatus.RUNNING,
@@ -213,6 +214,7 @@ class RemoteSandboxService(SandboxService):
             environment[WEBHOOK_CALLBACK_VARIABLE] = (
                 f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
             )
+            environment[ALLOW_CORS_ORIGINS_VARIABLE] = self.web_url
 
         return environment
 
