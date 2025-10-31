@@ -91,6 +91,7 @@ export const useTerminal = () => {
 
     return () => {
       terminal.current?.dispose();
+      lastCommandIndex.current = 0;
     };
   }, []);
 
