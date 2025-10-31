@@ -5,7 +5,6 @@ import V1ConversationService from "#/api/conversation-service/v1-conversation-se
 import { SuggestedTask } from "#/utils/types";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
-import { USE_V1_CONVERSATION_API } from "#/utils/feature-flags";
 
 interface CreateConversationVariables {
   query?: string;
@@ -45,7 +44,7 @@ export const useCreateConversation = () => {
         createMicroagent,
       } = variables;
 
-      const useV1 = USE_V1_CONVERSATION_API() && !createMicroagent;
+      const useV1 = !createMicroagent;
 
       if (useV1) {
         // Use V1 API - creates a conversation start task
