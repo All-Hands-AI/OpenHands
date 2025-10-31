@@ -1,6 +1,8 @@
 import logging
+from re import S
 from unittest.mock import Mock, patch
 
+from _pytest._code.code import ReprTraceback
 import pytest
 from pytest import TempPathFactory
 
@@ -20,6 +22,23 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.stream import EventSource, EventStream
 from openhands.storage import get_file_store
 
+import pytest
+from openhands.controller.state.state import State
+from openhands.events.action import CmdRunAction, FileReadAction
+from openhands.events.observation import CmdOutputObservation, FileReadObservation
+
+# [Adicionar estes mocks no nível do módulo (fora da classe)]
+# Mocks de Ações/Obs Par (Padrão A)
+Ap = CmdRunAction(command='ls')
+Op = CmdOutputObservation(command='ls', content='file1.txt')
+
+# Mocks de Ações/Obs Ímpar (Padrão B)
+Ai = FileReadAction(path='file1.txt')
+Oi = FileReadObservation(content='File content', path='file1.txt')
+
+# Mocks "Diferentes" para quebrar o padrão
+Adp = CmdRunAction(command='pwd')
+Adi = FileReadAction(path='file2.txt')
 
 def collect_events(stream):
     return [event for event in stream.get_events()]
@@ -53,6 +72,8 @@ def event_stream(temp_dir):
 
 
 class TestStuckDetector:
+
+
     @pytest.fixture
     def stuck_detector(self):
         state = State(inputs={})
@@ -792,6 +813,74 @@ class TestStuckDetector:
             # at events after the last user message
             assert stuck_detector.is_stuck(headless_mode=False) is False
             mock_warning.assert_not_called()
+
+    @pytest.fixture
+    def stuck_detector_mcdc(self):
+
+        return StuckDetector(state=None)
+
+
+    def test_fail_short_history_actions(self, stuck_detector_mcdc: StuckDetector):
+        history = [
+            Ai, Oi, Ap, Op,  # A1, O1, A2, O2
+            Ai, Oi, Ap, Op,  # A3, O3, A4, O4
+            Ai, Oi           # A5, O5
+        ] # Total 5 Ações,
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
+
+
+    def test_fail_short_history_observations(self, stuck_detector_mcdc: StuckDetector):
+
+        history = history = [
+            Ai, Oi, Ap, Op,  # A1, O1, A2, O2
+            Ai, Oi, Ap, Op,  # A3, O3, A4, O4
+            Ai, Oi, Ap       # A5, O5, A6 (Falta O6)
+        ] # Total 6 Aç
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
+
+    def test_fail_pattern_break_A6_A4(self, stuck_detector_mcdc: StuckDetector):
+
+        # A6(Ap) != A4(Adp)
+        history = [
+            Ai, Oi, Ap, Op,    # A1,O1, A2,O2
+            Ai, Oi, Adp, Op,   # A3,O3, A4(Adp),O4
+            Ai, Oi, Ap, Op     # A5,O5, A6(Ap),O6
+        ]
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
+
+    def test_fail_pattern_break_A6_A2(self, stuck_detector_mcdc:StuckDetector):
+
+        history = [
+            Ai, Oi, Adp, Op,   # A1,O1, A2(Adp),O2
+            Ai, Oi, Ap, Op,    # A3,O3, A4(Ap),O4
+            Ai, Oi, Ap, Op     # A5,O5, A6(Ap),O6
+        ]
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
+
+    def test_fail_pattern_break_A5_A3(self, stuck_detector_mcdc: StuckDetector):
+
+        # A5(Ai) != A3(Adi)
+        history = [
+            Ai, Oi, Ap, Op,    # A1,O1, A2,O2
+            Adi, Oi, Ap, Op,   # A3(Adi),O3, A4,O4
+            Ai, Oi, Ap, Op     # A5(Ai),O5, A6,O6
+        ]
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
+
+    def test_fail_pattern_break_A5_A1(self, stuck_detector_mcdc: StuckDetector):
+
+        history = [
+            Adi, Oi, Ap, Op,   # A1(Adi),O1, A2,O2
+            Ai, Oi, Ap, Op,    # A3(Ai),O3, A4,O4
+            Ai, Oi, Ap, Op     # A5(Ai),O5, A6,O6
+        ]
+
+        assert stuck_detector_mcdc._is_stuck_action_observation_pattern(history, 0) is False
 
 
 class TestAgentController:
