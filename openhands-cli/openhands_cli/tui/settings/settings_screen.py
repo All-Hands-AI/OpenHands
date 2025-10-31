@@ -1,6 +1,6 @@
 import os
 
-from openhands.sdk import LLM, BaseConversation, LocalFileStore
+from openhands.sdk import LLM, BaseConversation, LLMSummarizingCondenser, LocalFileStore
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
@@ -182,7 +182,14 @@ class SettingsScreen:
         if not agent:
             agent = get_default_cli_agent(llm=llm)
 
+        # Must update all LLMs
         agent = agent.model_copy(update={'llm': llm})
+        condenser = LLMSummarizingCondenser(
+            llm=llm.model_copy(
+                update={"usage_id": "condenser"}
+            )
+        )
+        agent = agent.model_copy(update={'condenser': condenser})
         self.agent_store.save(agent)
 
     def _save_advanced_settings(
