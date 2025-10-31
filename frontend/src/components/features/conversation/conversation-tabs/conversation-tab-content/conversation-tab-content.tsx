@@ -79,6 +79,8 @@ export function ConversationTabContent() {
     <TabContainer>
       <ConversationTabTitle title={conversationTabTitle} />
       <TabContentArea>
+            {/* Force Terminal tab remount to reset XTerm buffer/state when conversationId changes */}
+
         {tabs.map(({ key, component: Component, isActive }) => (
           <TabWrapper
             key={key === "terminal" ? `${key}-${conversationId}` : key}
