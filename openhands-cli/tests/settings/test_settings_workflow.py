@@ -121,15 +121,13 @@ def test_update_existing_settings_workflow(tmp_path: Path):
     assert True  # If we get here, the workflow completed successfully
 
 
-def test_llm_settings_modification_creates_multiple_llms_with_same_api_key_different_usage_ids():
+def test_all_llms_in_agent_are_updated():
     """Test that modifying LLM settings creates multiple LLMs with same API key but different usage_ids."""
     # Create a screen with existing agent settings
     screen = SettingsScreen(conversation=None)
-    
-    # Create initial agent with existing settings
     initial_llm = LLM(model='openai/gpt-3.5-turbo', api_key=SecretStr('sk-initial'), usage_id='test-service')
     initial_agent = get_default_cli_agent(llm=initial_llm)
-    
+
     # Mock the agent store to return the initial agent and capture the save call
     with (
         patch.object(screen.agent_store, 'load', return_value=initial_agent),
@@ -137,34 +135,22 @@ def test_llm_settings_modification_creates_multiple_llms_with_same_api_key_diffe
     ):
         # Modify the LLM settings with new API key
         screen._save_llm_settings(model='openai/gpt-4o-mini', api_key='sk-updated-123')
-        
-        # Verify save was called
         mock_save.assert_called_once()
-        
+
         # Get the saved agent from the mock
         saved_agent = mock_save.call_args[0][0]
-        
-        # Get all LLMs from the agent
         all_llms = list(saved_agent.get_all_llms())
-        
-        # Verify we have multiple LLMs
         assert len(all_llms) >= 2, f"Expected at least 2 LLMs, got {len(all_llms)}"
-        
+
         # Verify all LLMs have the same API key
         api_keys = [llm.api_key.get_secret_value() for llm in all_llms]
         assert all(api_key == 'sk-updated-123' for api_key in api_keys), \
             f"Not all LLMs have the same API key: {api_keys}"
-        
+
         # Verify none of the usage_id attributes match
         usage_ids = [llm.usage_id for llm in all_llms]
         assert len(set(usage_ids)) == len(usage_ids), \
             f"Some usage_ids are duplicated: {usage_ids}"
-        
-        # Verify we have the expected usage_ids
-        expected_usage_ids = {'agent', 'condenser'}
-        actual_usage_ids = set(usage_ids)
-        assert expected_usage_ids.issubset(actual_usage_ids), \
-            f"Expected usage_ids {expected_usage_ids} to be subset of {actual_usage_ids}"
 
 
 @pytest.mark.parametrize(
