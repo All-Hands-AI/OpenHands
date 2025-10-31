@@ -5759,8 +5759,8 @@ wsproto = ">=1.2.0"
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
-resolved_reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
+reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
+resolved_reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
 subdirectory = "openhands-agent-server"
 
 [[package]]
@@ -5805,9 +5805,9 @@ memory-profiler = "^0.61.0"
 numpy = "*"
 openai = "1.99.9"
 openhands-aci = "0.3.2"
-openhands-agent-server = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "ce0a71af55dfce101f7419fbdb0116178f01e109", subdirectory = "openhands-agent-server"}
-openhands-sdk = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "ce0a71af55dfce101f7419fbdb0116178f01e109", subdirectory = "openhands-sdk"}
-openhands-tools = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "ce0a71af55dfce101f7419fbdb0116178f01e109", subdirectory = "openhands-tools"}
+openhands-agent-server = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "3d8af53b2f0259dc98555a4acd4238f90e0afbce", subdirectory = "openhands-agent-server"}
+openhands-sdk = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "3d8af53b2f0259dc98555a4acd4238f90e0afbce", subdirectory = "openhands-sdk"}
+openhands-tools = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "3d8af53b2f0259dc98555a4acd4238f90e0afbce", subdirectory = "openhands-tools"}
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 pathspec = "^0.12.1"
@@ -5887,8 +5887,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
-resolved_reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
+reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
+resolved_reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
 subdirectory = "openhands-sdk"
 
 [[package]]
@@ -5914,8 +5914,8 @@ pydantic = ">=2.11.7"
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
-resolved_reference = "ce0a71af55dfce101f7419fbdb0116178f01e109"
+reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
+resolved_reference = "3d8af53b2f0259dc98555a4acd4238f90e0afbce"
 subdirectory = "openhands-tools"
 
 [[package]]

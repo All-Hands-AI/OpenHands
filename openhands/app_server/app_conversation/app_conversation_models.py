@@ -1,11 +1,11 @@
 from datetime import datetime
 from enum import Enum
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 from openhands.agent_server.models import SendMessageRequest
-from openhands.agent_server.utils import utc_now
+from openhands.agent_server.utils import OpenHandsUUID, utc_now
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallbackProcessor,
 )
@@ -19,7 +19,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationTrig
 class AppConversationInfo(BaseModel):
     """Conversation info which does not contain status."""
 
-    id: UUID = Field(default_factory=uuid4)
+    id: OpenHandsUUID = Field(default_factory=uuid4)
 
     created_by_user_id: str | None
     sandbox_id: str
@@ -125,11 +125,11 @@ class AppConversationStartTask(BaseModel):
     we kick off a background task for it. Once the conversation is started, the app_conversation_id
     is populated."""
 
-    id: UUID = Field(default_factory=uuid4)
+    id: OpenHandsUUID = Field(default_factory=uuid4)
     created_by_user_id: str | None
     status: AppConversationStartTaskStatus = AppConversationStartTaskStatus.WORKING
     detail: str | None = None
-    app_conversation_id: UUID | None = Field(
+    app_conversation_id: OpenHandsUUID | None = Field(
         default=None, description='The id of the app_conversation, if READY'
     )
     sandbox_id: str | None = Field(
