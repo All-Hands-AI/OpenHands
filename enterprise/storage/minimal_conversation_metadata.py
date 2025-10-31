@@ -8,7 +8,7 @@ to run successfully.
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, Float, Integer, JSON, String
+from sqlalchemy import JSON, Column, DateTime, Float, Integer, String
 from storage.base import Base
 
 
@@ -29,7 +29,7 @@ class StoredConversationMetadata(Base):
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     trigger = Column(String, nullable=True)
     pr_number = Column(JSON, nullable=True)
-    
+
     # Cost and token metrics
     accumulated_cost = Column(Float, default=0.0)
     prompt_tokens = Column(Integer, default=0)
@@ -41,10 +41,10 @@ class StoredConversationMetadata(Base):
     reasoning_tokens = Column(Integer, default=0)
     context_window = Column(Integer, default=0)
     per_turn_token = Column(Integer, default=0)
-    
+
     # LLM model used for the conversation
     llm_model = Column(String, nullable=True)
-    
+
     conversation_version = Column(String, nullable=False, default='V0')
     sandbox_id = Column(String, nullable=True)
 
