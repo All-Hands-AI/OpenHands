@@ -6,13 +6,13 @@ from openhands_cli.runner import ConversationRunner
 from openhands_cli.user_actions.types import UserConfirmation
 from pydantic import ConfigDict, SecretStr, model_validator
 
-from openhands.sdk import Conversation, ConversationCallbackType
+from openhands.sdk import Conversation, ConversationCallbackType, LocalConversation
 from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
 from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
-
+from unittest.mock import MagicMock
 
 class FakeLLM(LLM):
     @model_validator(mode='after')
@@ -41,16 +41,16 @@ class FakeAgent(AgentBase):
         pass
 
     def step(
-        self, state: ConversationState, on_event: ConversationCallbackType
+        self, conversation: LocalConversation, on_event: ConversationCallbackType
     ) -> None:
         self.step_count += 1
         if self.step_count == self.finish_on_step:
-            state.agent_status = AgentExecutionStatus.FINISHED
+            conversation.state.agent_status = AgentExecutionStatus.FINISHED
 
 
 @pytest.fixture()
 def agent() -> FakeAgent:
-    llm = LLM(**default_config(), service_id='test-service')
+    llm = LLM(**default_config(), usage_id='test-service')
     return FakeAgent(llm=llm, tools=[])
 
 
@@ -102,15 +102,15 @@ class TestConversationRunner:
         """
         if final_status == AgentExecutionStatus.FINISHED:
             agent.finish_on_step = 1
-        
+
         # Add a mock security analyzer to enable confirmation mode
-        from unittest.mock import MagicMock
         agent.security_analyzer = MagicMock()
-        
+
         convo = Conversation(agent)
         convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
+
         with patch.object(
             cr, '_handle_confirmation_request', return_value=confirmation
         ) as mock_confirmation_request:
