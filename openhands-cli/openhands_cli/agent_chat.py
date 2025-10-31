@@ -143,8 +143,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             elif command == '/new':
                 try:
                     # Start a fresh conversation (no resume ID = new conversation)
+                    conversation_id = uuid.uuid4()
                     conversation = setup_conversation(conversation_id)
-                    runner = ConversationRunner(conversation)
+                    runner = None
                     display_welcome(conversation_id, resume=False)
                     print_formatted_text(
                         HTML('<green>✓ Started fresh conversation</green>')
