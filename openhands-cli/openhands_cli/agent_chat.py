@@ -4,6 +4,7 @@ Agent chat functionality for OpenHands CLI.
 Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
+import os
 import sys
 from datetime import datetime
 import uuid
@@ -46,14 +47,53 @@ def _restore_tty() -> None:
         pass
 
 
+def _get_current_command() -> str:
+    """Get the command used to invoke the current CLI.
+    
+    Returns:
+        The command that should be used to resume the conversation
+    """
+    if len(sys.argv) > 0:
+        command = sys.argv[0]
+        
+        # Handle different execution scenarios
+        if command.endswith('.py'):
+            # Running as python script, suggest the binary name
+            return 'openhands'
+        elif os.path.sep in command or '\\' in command:
+            # Full path provided (Unix or Windows), extract basename but preserve ./ prefix if present
+            # Handle both Unix and Windows paths regardless of current OS
+            if '\\' in command:
+                # Windows path
+                basename = command.split('\\')[-1]
+            else:
+                # Unix path
+                basename = os.path.basename(command)
+            
+            if command.startswith('./'):
+                return './' + basename
+            else:
+                return basename
+        else:
+            # Command without path, use as-is
+            return command
+    
+    # Fallback to default
+    return 'openhands'
+
+
 def _print_exit_hint(conversation_id: str) -> None:
     """Print a resume hint with the current conversation ID."""
     print_formatted_text(
         HTML(f'<grey>Conversation ID:</grey> <yellow>{conversation_id}</yellow>')
     )
+    
+    # Get the current command used to invoke the CLI
+    current_command = _get_current_command()
+    
     print_formatted_text(
         HTML(
-            f'<grey>Hint:</grey> run <gold>openhands --resume {conversation_id}</gold> '
+            f'<grey>Hint:</grey> run <gold>{current_command} --resume {conversation_id}</gold> '
             'to resume this conversation.'
         )
     )
