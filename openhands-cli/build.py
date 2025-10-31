@@ -287,6 +287,6 @@ if __name__ == '__main__':
         sys.exit(main())
     except Exception as e:
         print(e)
-        print('❌ Executable test failed, build process failed')
+        print('❌ Executable test failed')
         sys.exit(1)
 
