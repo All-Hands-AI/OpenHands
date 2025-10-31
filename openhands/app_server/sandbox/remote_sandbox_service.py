@@ -167,12 +167,14 @@ class RemoteSandboxService(SandboxService):
             created_at=stored.created_at,
         )
 
-    def _get_sandbox_status_from_runtime(self, runtime: dict[str, Any] | None) -> SandboxStatus:
-        """ Derive a SandboxStatus from the runtime info. The legacy logic for getting
+    def _get_sandbox_status_from_runtime(
+        self, runtime: dict[str, Any] | None
+    ) -> SandboxStatus:
+        """Derive a SandboxStatus from the runtime info. The legacy logic for getting
         the status of a runtime is inconsistent. It is divided between a "status" which
         cannot be trusted (It sometimes returns  "running" for cases when the pod is
         still starting) and a "pod_status" which is not returned for list
-        operations. """
+        operations."""
         if not runtime:
             return SandboxStatus.MISSING
 
