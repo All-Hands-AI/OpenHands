@@ -14,9 +14,9 @@ from storage.base import Base
 
 class StoredConversationMetadata(Base):
     """Minimal conversation metadata model for enterprise tests."""
-    
+
     __tablename__ = 'conversation_metadata'
-    
+
     conversation_id = Column(String, primary_key=True)
     user_id = Column(String, nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -28,7 +28,7 @@ class StoredConversationMetadata(Base):
     llm_model = Column(String, nullable=True)
     git_provider = Column(String, nullable=True)
     trigger = Column(String, nullable=True)
-    
+
     def __init__(
         self,
         conversation_id: str,
