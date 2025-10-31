@@ -33,9 +33,6 @@ class SettingsScreen:
         agent_spec = self.agent_store.load()
         if not agent_spec:
             return
-        assert self.conversation is not None, (
-            'Conversation must be set to display settings.'
-        )
 
         llm = agent_spec.llm
         advanced_llm_settings = True if llm.base_url else False
@@ -62,12 +59,20 @@ class SettingsScreen:
         labels_and_values.extend(
             [
                 ('   API Key', '********' if llm.api_key else 'Not Set'),
+            ]
+        )
+
+        if self.conversation:
+                labels_and_values.extend([
                 (
                     '   Confirmation Mode',
                     'Enabled'
                     if self.conversation.is_confirmation_mode_active
                     else 'Disabled',
-                ),
+                )
+                ])
+
+        labels_and_values.extend([
                 (
                     '   Memory Condensation',
                     'Enabled' if agent_spec.condenser else 'Disabled',
