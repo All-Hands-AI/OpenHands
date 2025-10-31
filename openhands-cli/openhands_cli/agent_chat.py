@@ -127,7 +127,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                     break
 
             elif command == '/settings':
-                settings_screen = SettingsScreen(conversation)
+                settings_screen = SettingsScreen(runner.conversation if runner else None)
                 settings_screen.display_settings()
                 continue
 
