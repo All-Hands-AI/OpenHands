@@ -144,8 +144,8 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 try:
                     # Start a fresh conversation (no resume ID = new conversation)
                     conversation_id = uuid.uuid4()
-                    conversation = setup_conversation(conversation_id)
                     runner = None
+                    conversation = None
                     display_welcome(conversation_id, resume=False)
                     print_formatted_text(
                         HTML('<green>✓ Started fresh conversation</green>')
@@ -196,7 +196,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 # Resume without new message
                 message = None
 
-            if not runner:
+            if not runner or not conversation:
                 conversation = setup_conversation(conversation_id)
                 runner = ConversationRunner(conversation)
             runner.process_message(message)
