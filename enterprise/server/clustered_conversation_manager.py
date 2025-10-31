@@ -9,7 +9,7 @@ from server.logger import logger
 from server.utils.conversation_callback_utils import invoke_conversation_callbacks
 from storage.database import session_maker
 from storage.saas_settings_store import SaasSettingsStore
-from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.minimal_conversation_metadata import StoredConversationMetadata
 
 from openhands.core.config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
