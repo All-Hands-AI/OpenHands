@@ -26,7 +26,7 @@ dummy_agent = get_default_cli_agent(
         api_key='dummy-key',
         metadata=get_llm_metadata(model_name='dummy-model', llm_type='openhands'),
     ),
-    cli_mode=True,
+    cli_mode=False
 )
 
 # =================================================
