@@ -106,7 +106,7 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across [s
 - APIBench: [`evaluation/benchmarks/gorilla`](./benchmarks/gorilla/)
 - ToolQA: [`evaluation/benchmarks/toolqa`](./benchmarks/toolqa/)
 - AiderBench: [`evaluation/benchmarks/aider_bench`](./benchmarks/aider_bench/)
-- Commit0: [`evaluation/benchmarks/commit0_bench`](./benchmarks/commit0_bench/)
+- Commit0: [`evaluation/benchmarks/commit0`](./benchmarks/commit0/)
 - DiscoveryBench: [`evaluation/benchmarks/discoverybench`](./benchmarks/discoverybench/)
 - TerminalBench: [`evaluation/benchmarks/terminal_bench`](./benchmarks/terminal_bench)
 

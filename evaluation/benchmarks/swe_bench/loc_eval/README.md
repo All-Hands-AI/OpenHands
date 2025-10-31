@@ -3,8 +3,8 @@
 This folder implements localization evaluation at both file and function levels to complementing the assessment of agent inference on [SWE-Bench](https://www.swebench.com/).
 
 ## **1. Environment Setup**
-- Python env: [Install python environment](../../../README.md#development-environment)
-- LLM config: [Configure LLM config](../../../README.md#configure-openhands-and-your-llm)
+- Python env: [Install python environment](../../../../Development.md#1-requirements)
+- LLM config: [Configure LLM config](../../../../Development.md#3-configuring-the-language-model)
 
 ## **2. Inference & Evaluation**
 - Inference and evaluation follow the original `run_infer.sh` and `run_eval.sh` implementation

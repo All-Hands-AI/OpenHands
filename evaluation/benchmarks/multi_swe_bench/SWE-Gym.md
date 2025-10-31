@@ -38,7 +38,7 @@ The process of running SWE-Gym is very similar to how you'd run SWE-Bench evalua
 
 1. First, clone OpenHands repo `git clone https://github.com/OpenHands/OpenHands.git`
 2. Then setup the repo following [Development.md](https://github.com/OpenHands/OpenHands/blob/main/Development.md)
-3. Then you can simply serve your own model as an OpenAI compatible endpoint, put those info in config.toml. You can do this by following instruction [here](../../README.md#setup).
+3. Then you can simply serve your own model as an OpenAI compatible endpoint, put those info in config.toml. You can do this by following instruction [here](../../../Development.md).
 4. And then simply do the following to sample for 16x parallelism:
 
 ```bash

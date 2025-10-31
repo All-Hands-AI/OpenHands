@@ -4,7 +4,7 @@ This folder contains the evaluation harness for [ScienceAgentBench](https://osu-
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Setup ScienceAgentBench
 
