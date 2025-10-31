@@ -70,7 +70,7 @@ def setup_conversation(
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    with LoadingContext('Initializing OpenHands agent...'):
+    with LoadingContext('Loading OpenHands agent...'):
         agent = load_agent_specs(str(conversation_id))
 
         if not include_security_analyzer:
