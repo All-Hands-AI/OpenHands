@@ -38,9 +38,10 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
             .where(StoredConversationMetadata.conversation_version == 'V1')
         )
 
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = query.where(StoredConversationMetadataSaas.user_id == user_id)
+        user_id_str = await self.user_context.get_user_id()
+        if user_id_str:
+            user_id_uuid = UUID(user_id_str)
+            query = query.where(StoredConversationMetadataSaas.user_id == user_id_uuid)
 
         return query
 
@@ -56,9 +57,10 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
             .where(StoredConversationMetadata.conversation_version == 'V1')
         )
 
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = query.where(StoredConversationMetadataSaas.user_id == user_id)
+        user_id_str = await self.user_context.get_user_id()
+        if user_id_str:
+            user_id_uuid = UUID(user_id_str)
+            query = query.where(StoredConversationMetadataSaas.user_id == user_id_uuid)
 
         return query
 
@@ -155,9 +157,10 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
         )
 
         # Apply user filtering
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            query = query.where(StoredConversationMetadataSaas.user_id == user_id)
+        user_id_str = await self.user_context.get_user_id()
+        if user_id_str:
+            user_id_uuid = UUID(user_id_str)
+            query = query.where(StoredConversationMetadataSaas.user_id == user_id_uuid)
 
         query = self._apply_filters_with_saas_metadata(
             query=query,
@@ -266,8 +269,11 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
         await super().save_app_conversation_info(info)
 
         # Get current user_id for SAAS metadata
-        user_id = await self.user_context.get_user_id()
-        if user_id:
+        user_id_str = await self.user_context.get_user_id()
+        if user_id_str:
+            # Convert string user_id to UUID
+            user_id_uuid = UUID(user_id_str)
+
             # Check if SAAS metadata already exists
             saas_query = select(StoredConversationMetadataSaas).where(
                 StoredConversationMetadataSaas.conversation_id == str(info.id)
@@ -277,17 +283,17 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
 
             if existing_saas_metadata:
                 # Update existing SAAS metadata
-                existing_saas_metadata.user_id = user_id
+                existing_saas_metadata.user_id = user_id_uuid
                 # Keep existing org_id or set to user_id if not specified
                 if not existing_saas_metadata.org_id:
-                    existing_saas_metadata.org_id = user_id
+                    existing_saas_metadata.org_id = user_id_uuid
             else:
                 # Create new SAAS metadata
                 # Set org_id to user_id as specified in requirements
                 saas_metadata = StoredConversationMetadataSaas(
                     conversation_id=str(info.id),
-                    user_id=user_id,
-                    org_id=user_id,  # Set org_id to user_id as it will not be specified
+                    user_id=user_id_uuid,
+                    org_id=user_id_uuid,  # Set org_id to user_id as it will not be specified
                 )
                 self.db_session.add(saas_metadata)
 
