@@ -127,6 +127,13 @@ class OpenHandsConfig(BaseModel):
         default='openhands@all-hands.dev',
         description='Git user email for commits made by the agent',
     )
+    mention_blocklist: list[str] = Field(
+        default_factory=lambda: os.getenv(
+            'MENTION_BLOCKLIST',
+            '@OpenHands,@openhands,@open-hands'
+        ).split(','),
+        description='List of mentions to sanitize in assistant outputs'
+    )
 
     defaults_dict: ClassVar[dict] = {}
 
