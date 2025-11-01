@@ -5,6 +5,7 @@ import type {
   ConfirmationResponseRequest,
   ConfirmationResponseResponse,
 } from "./event-service.types";
+import { openHands } from "../open-hands-axios";
 
 class EventService {
   /**
@@ -36,6 +37,14 @@ class EventService {
 
     return data;
   }
-}
 
+  static async getEventCount(conversationId: string): Promise<number> {
+    const params = new URLSearchParams();
+    params.append("conversation_id__eq", conversationId);
+    const { data } = await openHands.get<number>(
+      `/api/v1/events/count?${params.toString()}`,
+    );
+    return data;
+  }
+}
 export default EventService;

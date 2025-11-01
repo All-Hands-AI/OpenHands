@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { Provider } from "#/types/settings";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
+import { SandboxService } from "#/api/sandbox-service/sandbox-service.api";
 
 /**
  * Gets the conversation version from the cache
@@ -48,7 +49,7 @@ const fetchV1ConversationData = async (
  */
 export const pauseV1ConversationSandbox = async (conversationId: string) => {
   const { sandboxId } = await fetchV1ConversationData(conversationId);
-  return V1ConversationService.pauseSandbox(sandboxId);
+  return SandboxService.pauseSandbox(sandboxId);
 };
 
 /**
@@ -75,7 +76,7 @@ export const stopV0Conversation = async (conversationId: string) =>
  */
 export const resumeV1ConversationSandbox = async (conversationId: string) => {
   const { sandboxId } = await fetchV1ConversationData(conversationId);
-  return V1ConversationService.resumeSandbox(sandboxId);
+  return SandboxService.resumeSandbox(sandboxId);
 };
 
 /**
