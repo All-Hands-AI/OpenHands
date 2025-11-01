@@ -3,6 +3,7 @@ import { openHands } from "../open-hands-axios";
 import { ConversationTrigger, GetVSCodeUrlResponse } from "../open-hands.types";
 import { Provider } from "#/types/settings";
 import { buildHttpBaseUrl } from "#/utils/websocket-url";
+import { buildSessionHeaders } from "#/utils/utils";
 import type {
   V1SendMessageRequest,
   V1SendMessageResponse,
@@ -10,24 +11,10 @@ import type {
   V1AppConversationStartTask,
   V1AppConversationStartTaskPage,
   V1AppConversation,
+  V1SandboxInfo,
 } from "./v1-conversation-service.types";
 
 class V1ConversationService {
-  /**
-   * Build headers for V1 API requests that require session authentication
-   * @param sessionApiKey Session API key for authentication
-   * @returns Headers object with X-Session-API-Key if provided
-   */
-  private static buildSessionHeaders(
-    sessionApiKey?: string | null,
-  ): Record<string, string> {
-    const headers: Record<string, string> = {};
-    if (sessionApiKey) {
-      headers["X-Session-API-Key"] = sessionApiKey;
-    }
-    return headers;
-  }
-
   /**
    * Build the full URL for V1 runtime-specific endpoints
    * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
@@ -160,7 +147,7 @@ class V1ConversationService {
     sessionApiKey?: string | null,
   ): Promise<GetVSCodeUrlResponse> {
     const url = this.buildRuntimeUrl(conversationUrl, "/api/vscode/url");
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     // V1 API returns {url: '...'} instead of {vscode_url: '...'}
     // Map it to match the expected interface
@@ -188,7 +175,35 @@ class V1ConversationService {
       conversationUrl,
       `/api/conversations/${conversationId}/pause`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
+
+    const { data } = await axios.post<{ success: boolean }>(
+      url,
+      {},
+      { headers },
+    );
+    return data;
+  }
+
+  /**
+   * Resume a V1 conversation
+   * Uses the custom runtime URL from the conversation
+   *
+   * @param conversationId The conversation ID
+   * @param conversationUrl The conversation URL (e.g., "http://localhost:54928/api/conversations/...")
+   * @param sessionApiKey Session API key for authentication (required for V1)
+   * @returns Success response
+   */
+  static async resumeConversation(
+    conversationId: string,
+    conversationUrl: string | null | undefined,
+    sessionApiKey?: string | null,
+  ): Promise<{ success: boolean }> {
+    const url = this.buildRuntimeUrl(
+      conversationUrl,
+      `/api/conversations/${conversationId}/run`,
+    );
+    const headers = buildSessionHeaders(sessionApiKey);
 
     const { data } = await axios.post<{ success: boolean }>(
       url,
@@ -255,6 +270,32 @@ class V1ConversationService {
   }
 
   /**
+   * Batch get V1 sandboxes by their IDs
+   * Returns null for any missing sandboxes
+   *
+   * @param ids Array of sandbox IDs (max 100)
+   * @returns Array of sandboxes or null for missing ones
+   */
+  static async batchGetSandboxes(
+    ids: string[],
+  ): Promise<(V1SandboxInfo | null)[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    if (ids.length > 100) {
+      throw new Error("Cannot request more than 100 sandboxes at once");
+    }
+
+    const params = new URLSearchParams();
+    ids.forEach((id) => params.append("id", id));
+
+    const { data } = await openHands.get<(V1SandboxInfo | null)[]>(
+      `/api/v1/sandboxes?${params.toString()}`,
+    );
+    return data;
+  }
+
+  /**
    * Upload a single file to the V1 conversation workspace
    * V1 API endpoint: POST /api/file/upload/{path}
    *
@@ -277,7 +318,7 @@ class V1ConversationService {
       conversationUrl,
       `/api/file/upload/${encodedPath}`,
     );
-    const headers = this.buildSessionHeaders(sessionApiKey);
+    const headers = buildSessionHeaders(sessionApiKey);
 
     // Create FormData with the file
     const formData = new FormData();
@@ -290,6 +331,37 @@ class V1ConversationService {
         "Content-Type": "multipart/form-data",
       },
     });
+  }
+
+  /**
+   * Get the conversation config (runtime_id) for a V1 conversation
+   * @param conversationId The conversation ID
+   * @returns Object containing runtime_id
+   */
+  static async getConversationConfig(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
+    const url = `/api/conversations/${conversationId}/config`;
+    const { data } = await openHands.get<{ runtime_id: string }>(url);
+    return data;
+  }
+
+  /**
+   * Get the count of events for a conversation
+   * Uses the V1 API endpoint: GET /api/v1/events/count
+   *
+   * @param conversationId The conversation ID to get event count for
+   * @returns The number of events in the conversation
+   */
+  static async getEventCount(conversationId: string): Promise<number> {
+    const params = new URLSearchParams();
+    params.append("conversation_id__eq", conversationId);
+
+    const { data } = await openHands.get<number>(
+      `/api/v1/events/count?${params.toString()}`,
+    );
+
+    return data;
   }
 }
 

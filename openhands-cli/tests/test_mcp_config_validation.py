@@ -26,7 +26,7 @@ def _create_agent(mcp_config=None) -> Agent:
     if mcp_config is None:
         mcp_config = {}
     return Agent(
-        llm=LLM(model='test-model', api_key='test-key', service_id='test-service'),
+        llm=LLM(model='test-model', api_key='test-key', usage_id='test-service'),
         tools=[],
         mcp_config=mcp_config,
     )

@@ -47,6 +47,7 @@ class LLMConfig(BaseModel):
         seed: The seed to use for the LLM.
         safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
         for_routing: Whether this LLM is used for routing. This is set to True for models used in conjunction with the main LLM in the model routing feature.
+        completion_kwargs: Custom kwargs to pass to litellm.completion.
     """
 
     model: str = Field(default='claude-sonnet-4-20250514')
@@ -94,6 +95,12 @@ class LLMConfig(BaseModel):
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
     for_routing: bool = Field(default=False)
+    # The number of correction attempts for the LLM draft editor
+    correct_num: int = Field(default=5)
+    completion_kwargs: dict[str, Any] | None = Field(
+        default=None,
+        description='Custom kwargs to pass to litellm.completion',
+    )
 
     model_config = ConfigDict(extra='forbid')
 
