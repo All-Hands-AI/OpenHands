@@ -31,6 +31,9 @@ class MCPClient(BaseModel):
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
     server_timeout: Optional[float] = None  # Timeout from server config for tool calls
+    server_config: MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig = (
+        None
+    )
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""
@@ -96,6 +99,7 @@ class MCPClient(BaseModel):
                 )
 
             self.client = Client(transport, timeout=timeout)
+            self.server_config = server
 
             await self._initialize_and_list_tools()
         except McpError as e:
@@ -131,6 +135,8 @@ class MCPClient(BaseModel):
                 command=server.command, args=server.args or [], env=server.env
             )
             self.client = Client(transport, timeout=timeout)
+            self.server_config = server
+
             await self._initialize_and_list_tools()
         except Exception as e:
             server_name = getattr(
@@ -176,3 +182,15 @@ class MCPClient(BaseModel):
                 )
             else:
                 return await self.client.call_tool_mcp(name=tool_name, arguments=args)
+
+    async def refresh(self) -> None:
+        """Refresh the client and re-obtain the latest collection of tools."""
+        if not self.server_config:
+            raise RuntimeError('Server Config is empty, so refresh is not possible.')
+        self.tool_map.clear()
+        self.tools.clear()
+        self.client = None
+        if isinstance(self.server_config, MCPStdioServerConfig):
+            await self.connect_stdio(self.server_config)
+        else:
+            await self.connect_http(self.server_config)
