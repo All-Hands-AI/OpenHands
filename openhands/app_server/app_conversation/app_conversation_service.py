@@ -95,6 +95,21 @@ class AppConversationService(ABC):
         """Run the setup scripts for the project and yield status updates"""
         yield task
 
+    @abstractmethod
+    async def delete_app_conversation(self, app_conversation: AppConversation) -> bool:
+        """Delete a V1 conversation and all its associated data.
+
+        Args:
+            app_conversation: The app conversation object to delete (already fetched).
+
+        This method should:
+        1. Delete the conversation from the database
+        2. Call the agent server to delete the conversation
+        3. Clean up any related data
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
+
 
 class AppConversationServiceInjector(
     DiscriminatedUnionMixin, Injector[AppConversationService], ABC

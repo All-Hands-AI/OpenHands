@@ -356,9 +356,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
-            git_provider=ProviderType(stored.git_provider)
-            if stored.git_provider
-            else None,
+            git_provider=(
+                ProviderType(stored.git_provider) if stored.git_provider else None
+            ),
             title=stored.title,
             trigger=ConversationTrigger(stored.trigger) if stored.trigger else None,
             pr_number=stored.pr_number,
@@ -374,6 +374,26 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         if not value.tzinfo:
             value = value.replace(tzinfo=UTC)
         return value
+
+    async def delete_app_conversation_info(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
+        """Delete a conversation info from the database.
+
+        Args:
+            app_conversation_info: The app conversation info to delete (already fetched).
+        """
+        from sqlalchemy import delete
+
+        conversation_id = app_conversation_info.id
+        # No need to refetch - we already have the conversation info.
+        # Delete the conversation metadata directly using the provided info.
+        delete_query = delete(StoredConversationMetadata).where(
+            StoredConversationMetadata.conversation_id == str(conversation_id)
+        )
+        result = await self.db_session.execute(delete_query)
+
+        return result.rowcount > 0
 
 
 class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):
