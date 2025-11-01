@@ -428,12 +428,29 @@ class Runtime(FileEditRuntimeMixin):
                 )
             return ''
 
+        logger.info(
+            f'[Git Clone] Getting authenticated git URL for repository: {selected_repository}'
+        )
         remote_repo_url = await self.provider_handler.get_authenticated_git_url(
             selected_repository
         )
 
         if not remote_repo_url:
+            logger.error(
+                f'[Git Clone] Failed to get authenticated git URL for {selected_repository}'
+            )
             raise ValueError('Missing either Git token or valid repository')
+
+        # Mask token in URL for logging
+        masked_url = remote_repo_url
+        if '@' in masked_url:
+            parts = masked_url.split('@')
+            if ':' in parts[0]:
+                protocol_and_user = parts[0].rsplit(':', 1)[0]
+                masked_url = f'{protocol_and_user}:***@{parts[1]}'
+        logger.info(
+            f'[Git Clone] Authenticated URL obtained (token masked): {masked_url}'
+        )
 
         if self.status_callback:
             self.status_callback(
@@ -441,19 +458,31 @@ class Runtime(FileEditRuntimeMixin):
             )
 
         dir_name = selected_repository.split('/')[-1]
+        logger.debug(f'[Git Clone] Repository directory name: {dir_name}')
 
         # Generate a random branch name to avoid conflicts
         random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
+        logger.debug(
+            f'[Git Clone] Generated workspace branch name: {openhands_workspace_branch}'
+        )
 
         repo_path = self.workspace_root / dir_name
         quoted_repo_path = shlex.quote(str(repo_path))
         quoted_remote_repo_url = shlex.quote(remote_repo_url)
 
+        logger.info(f'[Git Clone] Target repository path: {repo_path}')
+        logger.debug(f'[Git Clone] Workspace root: {self.workspace_root}')
+
         # Clone repository command
         clone_command = f'git clone {quoted_remote_repo_url} {quoted_repo_path}'
+        # Log command with masked URL
+        masked_clone_cmd = f'git clone {shlex.quote(masked_url)} {quoted_repo_path}'
+        logger.info(
+            f'[Git Clone] Executing clone command (token masked): {masked_clone_cmd}'
+        )
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -461,39 +490,142 @@ class Runtime(FileEditRuntimeMixin):
             if selected_branch
             else f'git checkout -b {openhands_workspace_branch}'
         )
+        logger.info(
+            f'[Git Clone] Will checkout to branch: '
+            f'{selected_branch if selected_branch else openhands_workspace_branch}'
+        )
 
         clone_action = CmdRunAction(command=clone_command)
-        await call_sync_from_async(self.run_action, clone_action)
+        logger.debug('[Git Clone] Starting git clone operation...')
+        clone_obs = await call_sync_from_async(self.run_action, clone_action)
+
+        # Log clone result
+        if isinstance(clone_obs, CmdOutputObservation):
+            if clone_obs.exit_code == 0:
+                logger.info(
+                    f'[Git Clone] Clone command completed successfully. Exit code: {clone_obs.exit_code}'
+                )
+                if clone_obs.content:
+                    logger.debug(f'[Git Clone] Clone output: {clone_obs.content[:500]}')
+            else:
+                logger.error(
+                    f'[Git Clone] Clone command failed with exit code: {clone_obs.exit_code}'
+                )
+                logger.error(f'[Git Clone] Clone error output: {clone_obs.content}')
+        else:
+            logger.warning(
+                f'[Git Clone] Clone command returned unexpected observation type: {type(clone_obs)}'
+            )
+
+        # Check if directory was created
+        if repo_path.exists():
+            logger.info(
+                f'[Git Clone] Repository directory created successfully: {repo_path}'
+            )
+            logger.debug(f'[Git Clone] Directory is a directory: {repo_path.is_dir()}')
+        else:
+            logger.error(
+                f'[Git Clone] Repository directory was NOT created: {repo_path}. '
+                'Clone may have failed.'
+            )
 
         cd_checkout_action = CmdRunAction(
             command=f'cd {quoted_repo_path} && {checkout_command}'
         )
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
-        await call_sync_from_async(self.run_action, action)
+        logger.info(f'[Git Clone] Executing checkout command: {checkout_command}')
+        logger.debug(
+            f'[Git Clone] Full checkout command: cd {quoted_repo_path} && {checkout_command}'
+        )
+
+        checkout_obs = await call_sync_from_async(self.run_action, action)
+
+        # Log checkout result
+        if isinstance(checkout_obs, CmdOutputObservation):
+            if checkout_obs.exit_code == 0:
+                logger.info(
+                    f'[Git Clone] Checkout command completed successfully. Exit code: {checkout_obs.exit_code}'
+                )
+                if checkout_obs.content:
+                    logger.debug(f'[Git Clone] Checkout output: {checkout_obs.content}')
+            else:
+                logger.error(
+                    f'[Git Clone] Checkout command failed with exit code: {checkout_obs.exit_code}'
+                )
+                logger.error(
+                    f'[Git Clone] Checkout error output: {checkout_obs.content}'
+                )
+        else:
+            logger.warning(
+                f'[Git Clone] Checkout command returned unexpected observation type: {type(checkout_obs)}'
+            )
 
         if remote_repo_url:
+            logger.info(
+                f'[Git Clone] Setting git remote origin URL to ensure fresh token for {selected_repository}'
+            )
             set_remote_action = CmdRunAction(
                 command=(
                     f'cd {quoted_repo_path} && '
                     f'git remote set-url origin {quoted_remote_repo_url}'
                 )
             )
+            # Log command with masked URL
+            masked_remote_cmd = (
+                f'cd {quoted_repo_path} && '
+                f'git remote set-url origin {shlex.quote(masked_url)}'
+            )
+            logger.debug(
+                f'[Git Clone] Remote set-url command (token masked): {masked_remote_cmd}'
+            )
+
             obs = await call_sync_from_async(self.run_action, set_remote_action)
+
             if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
                     'info',
                     f'Set git remote origin to authenticated URL for {selected_repository}',
                 )
+                logger.info(
+                    f'[Git Clone] Successfully set remote origin URL. Exit code: {obs.exit_code}'
+                )
+                if obs.content:
+                    logger.debug(f'[Git Clone] Remote set-url output: {obs.content}')
             else:
+                error_content = (
+                    obs.content
+                    if isinstance(obs, CmdOutputObservation)
+                    else 'unknown error'
+                )
+                exit_code = (
+                    obs.exit_code if isinstance(obs, CmdOutputObservation) else 'N/A'
+                )
                 self.log(
                     'warning',
                     (
                         'Failed to set git remote origin while ensuring fresh token '
                         f'for {selected_repository}: '
-                        f'{obs.content if isinstance(obs, CmdOutputObservation) else "unknown error"}'
+                        f'{error_content}'
                     ),
                 )
+                logger.error(
+                    f'[Git Clone] Failed to set remote origin URL. '
+                    f'Exit code: {exit_code}, Error: {error_content}'
+                )
+
+                # Additional debugging: check if repo directory exists and has .git
+                if repo_path.exists():
+                    git_dir = repo_path / '.git'
+                    logger.debug(
+                        f'[Git Clone] Repository directory exists: {repo_path.exists()}, '
+                        f'.git directory exists: {git_dir.exists() if repo_path.exists() else "N/A"}'
+                    )
+                else:
+                    logger.error(
+                        f'[Git Clone] Repository directory does NOT exist: {repo_path}. '
+                        'This explains why git remote set-url failed.'
+                    )
 
         return dir_name
 
@@ -700,6 +832,29 @@ fi
             # This is a safe fallback since we'll just use the default .openhands
             return False
 
+    def _is_azure_devops_repository(self, repo_name: str) -> bool:
+        """Check if a repository is hosted on Azure DevOps.
+
+        Args:
+            repo_name: Repository name (e.g., "org/project/repo")
+
+        Returns:
+            True if the repository is hosted on Azure DevOps, False otherwise
+        """
+        try:
+            provider_handler = ProviderHandler(
+                self.git_provider_tokens or MappingProxyType({})
+            )
+            repository = call_async_from_sync(
+                provider_handler.verify_repo_provider,
+                GENERAL_TIMEOUT,
+                repo_name,
+            )
+            return repository.git_provider == ProviderType.AZURE_DEVOPS
+        except Exception:
+            # If we can't determine the provider, assume it's not Azure DevOps
+            return False
+
     def get_microagents_from_org_or_user(
         self, selected_repository: str
     ) -> list[BaseMicroagent]:
@@ -735,24 +890,35 @@ fi
             )
             return loaded_microagents
 
-        # Extract the domain and org/user name
-        org_name = repo_parts[-2]
+        # Determine repository type
+        is_azure_devops = self._is_azure_devops_repository(selected_repository)
+        is_gitlab = self._is_gitlab_repository(selected_repository)
+
+        # Extract the org/user name
+        # Azure DevOps format: org/project/repo (3 parts) - extract org (first part)
+        # GitHub/GitLab/Bitbucket format: owner/repo (2 parts) - extract owner (first part)
+        if is_azure_devops and len(repo_parts) >= 3:
+            org_name = repo_parts[0]  # Get org from org/project/repo
+        else:
+            org_name = repo_parts[-2]  # Get owner from owner/repo
+
         self.log(
             'info',
             f'Extracted org/user name: {org_name}',
         )
-
-        # Determine if this is a GitLab repository
-        is_gitlab = self._is_gitlab_repository(selected_repository)
         self.log(
             'debug',
-            f'Repository type detection - is_gitlab: {is_gitlab}',
+            f'Repository type detection - is_gitlab: {is_gitlab}, is_azure_devops: {is_azure_devops}',
         )
 
-        # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+        # For GitLab and Azure DevOps, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
         if is_gitlab:
             org_openhands_repo = f'{org_name}/openhands-config'
+        elif is_azure_devops:
+            # Azure DevOps format: org/project/repo
+            # For org-level config, use: org/openhands-config/openhands-config
+            org_openhands_repo = f'{org_name}/openhands-config/openhands-config'
         else:
             org_openhands_repo = f'{org_name}/.openhands'
 
@@ -1187,8 +1353,7 @@ fi
         return self.git_handler.get_git_diff(file_path)
 
     def get_workspace_branch(self, primary_repo_path: str | None = None) -> str | None:
-        """
-        Get the current branch of the workspace.
+        """Get the current branch of the workspace.
 
         Args:
             primary_repo_path: Path to the primary repository within the workspace.
