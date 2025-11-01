@@ -129,9 +129,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
             query = query.order_by(StoredConversationMetadata.created_at.desc())
         elif sort_order == AppConversationSortOrder.UPDATED_AT:
-            query = query.order_by(StoredConversationMetadata.updated_at)
+            query = query.order_by(StoredConversationMetadata.last_updated_at)
         elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
-            query = query.order_by(StoredConversationMetadata.updated_at.desc())
+            query = query.order_by(StoredConversationMetadata.last_updated_at.desc())
         elif sort_order == AppConversationSortOrder.TITLE:
             query = query.order_by(StoredConversationMetadata.title)
         elif sort_order == AppConversationSortOrder.TITLE_DESC:
@@ -180,9 +180,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = select(func.count(StoredConversationMetadata.conversation_id))
         user_id = await self.user_context.get_user_id()
         if user_id:
-            query = query.where(
-                StoredConversationMetadata.created_by_user_id == user_id
-            )
+            query = query.where(StoredConversationMetadata.user_id == user_id)
 
         query = self._apply_filters(
             query=query,

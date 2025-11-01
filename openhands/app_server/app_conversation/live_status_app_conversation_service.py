@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
-from pydantic import Field, SecretStr, TypeAdapter
+from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
@@ -51,13 +51,13 @@ from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -181,9 +181,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
             # Run setup scripts
             workspace = AsyncRemoteWorkspace(
+                host=agent_server_url,
+                api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
-                server_url=agent_server_url,
-                session_api_key=sandbox.session_api_key,
             )
             async for updated_task in self.run_setup_scripts(task, workspace):
                 yield updated_task
@@ -443,7 +443,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + '/ap/v1/webhooks/secrets',
+                    url=self.web_url + '/api/v1/webhooks/secrets',
                     headers={'X-Access-Token': access_token},
                 )
             else:
@@ -452,7 +452,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # on the type, this may eventually expire.
                 static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
-                    secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
+                    secrets[GIT_TOKEN] = StaticSecret(value=static_token)
 
         workspace = LocalWorkspace(working_dir=working_dir)
 

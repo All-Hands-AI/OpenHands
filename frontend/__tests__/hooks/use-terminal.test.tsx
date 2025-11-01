@@ -35,13 +35,12 @@ function TestTerminalComponent() {
 }
 
 describe("useTerminal", () => {
+  // Terminal is read-only - no longer tests user input functionality
   const mockTerminal = vi.hoisted(() => ({
     loadAddon: vi.fn(),
     open: vi.fn(),
     write: vi.fn(),
     writeln: vi.fn(),
-    onKey: vi.fn(),
-    attachCustomKeyEventHandler: vi.fn(),
     dispose: vi.fn(),
   }));
 

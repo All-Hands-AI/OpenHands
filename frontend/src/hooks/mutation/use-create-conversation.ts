@@ -45,7 +45,7 @@ export const useCreateConversation = () => {
         createMicroagent,
       } = variables;
 
-      const useV1 = USE_V1_CONVERSATION_API();
+      const useV1 = USE_V1_CONVERSATION_API() && !createMicroagent;
 
       if (useV1) {
         // Use V1 API - creates a conversation start task

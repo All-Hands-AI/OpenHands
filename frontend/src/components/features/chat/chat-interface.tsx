@@ -47,6 +47,8 @@ import {
   isConversationStateUpdateEvent,
 } from "#/types/v1/type-guards";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
+import { useConversationWebSocket } from "#/contexts/conversation-websocket-context";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -62,6 +64,8 @@ export function ChatInterface() {
   const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
   const { isLoadingMessages } = useWsClient();
+  const { isTask } = useTaskPolling();
+  const conversationWebSocket = useConversationWebSocket();
   const { send } = useSendMessage();
   const storeEvents = useEventStore((state) => state.events);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -91,6 +95,25 @@ export function ChatInterface() {
   const optimisticUserMessage = getOptimisticUserMessage();
 
   const isV1Conversation = conversation?.conversation_version === "V1";
+
+  // Instantly scroll to bottom when history loading completes
+  const prevLoadingHistoryRef = React.useRef(
+    conversationWebSocket?.isLoadingHistory,
+  );
+  React.useEffect(() => {
+    const wasLoading = prevLoadingHistoryRef.current;
+    const isLoading = conversationWebSocket?.isLoadingHistory;
+
+    // When history loading transitions from true to false, instantly scroll to bottom
+    if (wasLoading && !isLoading && scrollRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "instant",
+      });
+    }
+
+    prevLoadingHistoryRef.current = isLoading;
+  }, [conversationWebSocket?.isLoadingHistory, scrollRef]);
 
   // Filter V0 events
   const v0Events = storeEvents
@@ -220,11 +243,19 @@ export function ChatInterface() {
           onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           className="custom-scrollbar-always flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2 fast-smooth-scroll"
         >
-          {isLoadingMessages && !isV1Conversation && (
+          {isLoadingMessages && !isV1Conversation && !isTask && (
             <div className="flex justify-center">
               <LoadingSpinner size="small" />
             </div>
           )}
+
+          {conversationWebSocket?.isLoadingHistory &&
+            isV1Conversation &&
+            !isTask && (
+              <div className="flex justify-center">
+                <LoadingSpinner size="small" />
+              </div>
+            )}
 
           {!isLoadingMessages && v0UserEventsExist && (
             <V0Messages
@@ -235,13 +266,8 @@ export function ChatInterface() {
             />
           )}
 
-          {v1UserEventsExist && (
-            <V1Messages
-              messages={v1Events}
-              isAwaitingUserConfirmation={
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-              }
-            />
+          {!conversationWebSocket?.isLoadingHistory && v1UserEventsExist && (
+            <V1Messages messages={v1Events} />
           )}
         </div>
 
@@ -249,7 +275,7 @@ export function ChatInterface() {
           <div className="flex justify-between relative">
             <div className="flex items-center gap-1">
               <ConfirmationModeEnabled />
-              {totalEvents > 0 && (
+              {totalEvents > 0 && !isV1Conversation && (
                 <TrajectoryActions
                   onPositiveFeedback={() =>
                     onClickShareFeedbackActionButton("positive")
@@ -274,7 +300,7 @@ export function ChatInterface() {
           <InteractiveChatBox onSubmit={handleSendMessage} />
         </div>
 
-        {config?.APP_MODE !== "saas" && (
+        {config?.APP_MODE !== "saas" && !isV1Conversation && (
           <FeedbackModal
             isOpen={feedbackModalIsOpen}
             onClose={() => setFeedbackModalIsOpen(false)}
