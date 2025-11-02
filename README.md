@@ -66,10 +66,10 @@ See the [uv installation guide](https://docs.astral.sh/uv/getting-started/instal
 **Launch OpenHands**:
 ```bash
 # Launch the GUI server
-uvx --python 3.12 --from openhands-ai openhands serve
+uvx --python 3.12 openhands serve
 
 # Or launch the CLI
-uvx --python 3.12 --from openhands-ai openhands
+uvx --python 3.12 openhands
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (for GUI mode)!

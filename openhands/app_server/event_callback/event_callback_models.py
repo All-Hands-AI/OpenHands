@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from openhands.agent_server.utils import utc_now
+from openhands.agent_server.utils import OpenHandsUUID, utc_now
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
@@ -58,7 +58,7 @@ class LoggingCallbackProcessor(EventCallbackProcessor):
 
 
 class CreateEventCallbackRequest(OpenHandsModel):
-    conversation_id: UUID | None = Field(
+    conversation_id: OpenHandsUUID | None = Field(
         default=None,
         description=(
             'Optional filter on the conversation to which this callback applies'
@@ -74,7 +74,7 @@ class CreateEventCallbackRequest(OpenHandsModel):
 
 
 class EventCallback(CreateEventCallbackRequest):
-    id: UUID = Field(default_factory=uuid4)
+    id: OpenHandsUUID = Field(default_factory=uuid4)
     created_at: datetime = Field(default_factory=utc_now)
 
 
