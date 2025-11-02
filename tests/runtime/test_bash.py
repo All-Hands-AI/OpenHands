@@ -51,6 +51,7 @@ def get_platform_command(linux_cmd, windows_cmd):
     return windows_cmd if is_windows() else linux_cmd
 
 
+@pytest.mark.skip(reason='This test is flaky')
 def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:

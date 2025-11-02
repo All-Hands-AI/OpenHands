@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
-from pydantic import Field, SecretStr, TypeAdapter
+from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
@@ -443,7 +443,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + '/ap/v1/webhooks/secrets',
+                    url=self.web_url + '/api/v1/webhooks/secrets',
                     headers={'X-Access-Token': access_token},
                 )
             else:
@@ -452,7 +452,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # on the type, this may eventually expire.
                 static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
-                    secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
+                    secrets[GIT_TOKEN] = StaticSecret(value=static_token)
 
         workspace = LocalWorkspace(working_dir=working_dir)
 
