@@ -8,6 +8,7 @@ import { TabContentArea } from "./tab-content-area";
 import { ConversationTabTitle } from "../conversation-tab-title";
 import Terminal from "#/components/features/terminal/terminal";
 import { useConversationStore } from "#/state/conversation-store";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -17,6 +18,7 @@ const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
 export function ConversationTabContent() {
   const { selectedTab, shouldShownAgentLoading } = useConversationStore();
+  const { conversationId } = useConversationId();
 
   const { t } = useTranslation();
 
@@ -78,7 +80,11 @@ export function ConversationTabContent() {
       <ConversationTabTitle title={conversationTabTitle} />
       <TabContentArea>
         {tabs.map(({ key, component: Component, isActive }) => (
-          <TabWrapper key={key} isActive={isActive}>
+          <TabWrapper
+            // Force Terminal tab remount to reset XTerm buffer/state when conversationId changes
+            key={key === "terminal" ? `${key}-${conversationId}` : key}
+            isActive={isActive}
+          >
             <Component />
           </TabWrapper>
         ))}
