@@ -3,7 +3,7 @@ from storage.base import Base
 
 
 class AuthTokens(Base):  # type: ignore
-    __tablename__ = 'auth_tokens'
+    __tablename__ = "auth_tokens"
     id = Column(Integer, Identity(), primary_key=True)
     keycloak_user_id = Column(String, nullable=False, index=True)
     identity_provider = Column(String, nullable=False)
@@ -18,9 +18,9 @@ class AuthTokens(Base):  # type: ignore
 
     __table_args__ = (
         Index(
-            'idx_auth_tokens_keycloak_user_identity_provider',
-            'keycloak_user_id',
-            'identity_provider',
+            "idx_auth_tokens_keycloak_user_identity_provider",
+            "keycloak_user_id",
+            "identity_provider",
             unique=True,
         ),
     )

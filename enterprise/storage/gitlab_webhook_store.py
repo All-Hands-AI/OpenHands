@@ -21,10 +21,10 @@ class GitlabWebhookStore:
         webhook: GitlabWebhook,
     ) -> tuple[GitLabResourceType, str]:
         if not (webhook.group_id or webhook.project_id):
-            raise ValueError('Either project_id or group_id must be provided')
+            raise ValueError("Either project_id or group_id must be provided")
 
         if webhook.group_id and webhook.project_id:
-            raise ValueError('Only one of project_id or group_id should be provided')
+            raise ValueError("Only one of project_id or group_id should be provided")
 
         if webhook.group_id:
             return (GitLabResourceType.GROUP, webhook.group_id)
@@ -52,27 +52,27 @@ class GitlabWebhookStore:
                     {
                         k: v
                         for k, v in webhook.__dict__.items()
-                        if not k.startswith('_') and k != 'id'
+                        if not k.startswith("_") and k != "id"
                     }
                     for webhook in project_details
                 ]
 
                 if values:
                     # Separate values into groups and projects
-                    group_values = [v for v in values if v.get('group_id')]
-                    project_values = [v for v in values if v.get('project_id')]
+                    group_values = [v for v in values if v.get("group_id")]
+                    project_values = [v for v in values if v.get("project_id")]
 
                     # Batch insert for groups
                     if group_values:
                         stmt = insert(GitlabWebhook).values(group_values)
-                        stmt = stmt.on_conflict_do_nothing(index_elements=['group_id'])
+                        stmt = stmt.on_conflict_do_nothing(index_elements=["group_id"])
                         await session.execute(stmt)
 
                     # Batch insert for projects
                     if project_values:
                         stmt = insert(GitlabWebhook).values(project_values)
                         stmt = stmt.on_conflict_do_nothing(
-                            index_elements=['project_id']
+                            index_elements=["project_id"]
                         )
                         await session.execute(stmt)
 
@@ -86,7 +86,6 @@ class GitlabWebhookStore:
         Raises:
             ValueError: If neither project_id nor group_id is provided, or if both are provided.
         """
-
         resource_type, resource_id = GitlabWebhookStore.determine_resource_type(webhook)
         async with self.a_session_maker() as session:
             async with session.begin():
@@ -110,15 +109,14 @@ class GitlabWebhookStore:
         Raises:
             ValueError: If neither project_id nor group_id is provided, or if both are provided.
         """
-
         resource_type, resource_id = GitlabWebhookStore.determine_resource_type(webhook)
 
         logger.info(
-            'Attempting to delete webhook',
+            "Attempting to delete webhook",
             extra={
-                'resource_type': resource_type.value,
-                'resource_id': resource_id,
-                'user_id': getattr(webhook, 'user_id', None),
+                "resource_type": resource_type.value,
+                "resource_id": resource_id,
+                "user_id": getattr(webhook, "user_id", None),
             },
         )
 
@@ -139,21 +137,21 @@ class GitlabWebhookStore:
 
                 if rows_deleted > 0:
                     logger.info(
-                        'Successfully deleted webhook',
+                        "Successfully deleted webhook",
                         extra={
-                            'resource_type': resource_type.value,
-                            'resource_id': resource_id,
-                            'rows_deleted': rows_deleted,
-                            'user_id': getattr(webhook, 'user_id', None),
+                            "resource_type": resource_type.value,
+                            "resource_id": resource_id,
+                            "rows_deleted": rows_deleted,
+                            "user_id": getattr(webhook, "user_id", None),
                         },
                     )
                 else:
                     logger.warning(
-                        'No webhook found to delete',
+                        "No webhook found to delete",
                         extra={
-                            'resource_type': resource_type.value,
-                            'resource_id': resource_id,
-                            'user_id': getattr(webhook, 'user_id', None),
+                            "resource_type": resource_type.value,
+                            "resource_id": resource_id,
+                            "user_id": getattr(webhook, "user_id", None),
                         },
                     )
 
@@ -170,7 +168,7 @@ class GitlabWebhookStore:
         Raises:
             ValueError: If neither project_id nor group_id is provided, or if both are provided.
         """
-        await self.update_webhook(webhook, {'last_synced': text('CURRENT_TIMESTAMP')})
+        await self.update_webhook(webhook, {"last_synced": text("CURRENT_TIMESTAMP")})
 
     async def filter_rows(
         self,
@@ -184,7 +182,6 @@ class GitlabWebhookStore:
         Returns:
             List of GitlabWebhook objects that need processing
         """
-
         async with self.a_session_maker() as session:
             query = (
                 select(GitlabWebhook)
@@ -198,9 +195,7 @@ class GitlabWebhookStore:
             return list(webhooks)
 
     async def get_webhook_secret(self, webhook_uuid: str, user_id: str) -> str | None:
-        """
-        Get's webhook secret given the webhook uuid and admin keycloak user id
-        """
+        """Get's webhook secret given the webhook uuid and admin keycloak user id"""
         async with self.a_session_maker() as session:
             query = (
                 select(GitlabWebhook)

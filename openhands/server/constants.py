@@ -1,3 +1,3 @@
 """Server constants."""
 
-ROOM_KEY = 'room:{sid}'
+ROOM_KEY = "room:{sid}"

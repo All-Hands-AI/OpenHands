@@ -25,10 +25,9 @@ from openhands.core.logger import openhands_logger as logger
 class SaaSOpenHandsMCPConfig(OpenHandsMCPConfig):
     @staticmethod
     def create_default_mcp_server_config(
-        host: str, config: 'OpenHandsConfig', user_id: str | None = None
+        host: str, config: "OpenHandsConfig", user_id: str | None = None
     ) -> tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]:
-        """
-        Create a default MCP server configuration.
+        """Create a default MCP server configuration.
 
         Args:
             host: Host string
@@ -36,19 +35,18 @@ class SaaSOpenHandsMCPConfig(OpenHandsMCPConfig):
         Returns:
             A tuple containing the default SSE server configuration and a list of MCP stdio server configurations
         """
-
         api_key_store = ApiKeyStore.get_instance()
         if user_id:
             api_key = api_key_store.retrieve_mcp_api_key(user_id)
 
             if not api_key:
-                api_key = api_key_store.create_api_key(user_id, 'MCP_API_KEY', None)
+                api_key = api_key_store.create_api_key(user_id, "MCP_API_KEY", None)
 
             if not api_key:
-                logger.error(f'Could not provision MCP API Key for user: {user_id}')
+                logger.error(f"Could not provision MCP API Key for user: {user_id}")
                 return None, []
 
             return MCPSHTTPServerConfig(
-                url=f'https://{host}/mcp/mcp', api_key=api_key
+                url=f"https://{host}/mcp/mcp", api_key=api_key
             ), []
         return None, []

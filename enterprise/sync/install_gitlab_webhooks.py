@@ -12,15 +12,15 @@ from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import GitService
 
 CHUNK_SIZE = 100
-WEBHOOK_NAME = 'OpenHands Resolver'
+WEBHOOK_NAME = "OpenHands Resolver"
 SCOPES: list[str] = [
-    'note_events',
-    'merge_requests_events',
-    'confidential_issues_events',
-    'issues_events',
-    'confidential_note_events',
-    'job_events',
-    'pipeline_events',
+    "note_events",
+    "merge_requests_events",
+    "confidential_issues_events",
+    "issues_events",
+    "confidential_note_events",
+    "job_events",
+    "pipeline_events",
 ]
 
 
@@ -49,9 +49,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """
-        Check if the GitLab resource still exists
-        """
+        """Check if the GitLab resource still exists"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -61,12 +59,12 @@ class VerifyWebhookStatus:
         )
 
         logger.info(
-            'Does resource exists',
+            "Does resource exists",
             extra={
-                'does_resource_exist': does_resource_exist,
-                'status': status,
-                'resource_id': resource_id,
-                'resource_type': resource_type,
+                "does_resource_exist": does_resource_exist,
+                "status": status,
+                "resource_id": resource_id,
+                "resource_type": resource_type,
             },
         )
 
@@ -83,9 +81,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """
-        Check is user still has permission to resource
-        """
+        """Check is user still has permission to resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -98,12 +94,12 @@ class VerifyWebhookStatus:
         )
 
         logger.info(
-            'Is user admin',
+            "Is user admin",
             extra={
-                'is_user_admin': is_user_admin_of_resource,
-                'status': status,
-                'resource_id': resource_id,
-                'resource_type': resource_type,
+                "is_user_admin": is_user_admin_of_resource,
+                "status": status,
+                "resource_id": resource_id,
+                "resource_type": resource_type,
             },
         )
 
@@ -120,9 +116,7 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """
-        Check whether webhook already exists on resource
-        """
+        """Check whether webhook already exists on resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
@@ -134,19 +128,19 @@ class VerifyWebhookStatus:
         )
 
         logger.info(
-            'Does webhook already exist',
+            "Does webhook already exist",
             extra={
-                'does_webhook_exist_on_resource': does_webhook_exist_on_resource,
-                'status': status,
-                'resource_id': resource_id,
-                'resource_type': resource_type,
+                "does_webhook_exist_on_resource": does_webhook_exist_on_resource,
+                "status": status,
+                "resource_id": resource_id,
+                "resource_type": resource_type,
             },
         )
 
         self.determine_if_rate_limited(status)
         if does_webhook_exist_on_resource != webhook.webhook_exists:
             await webhook_store.update_webhook(
-                webhook, {'webhook_exists': does_webhook_exist_on_resource}
+                webhook, {"webhook_exists": does_webhook_exist_on_resource}
             )
 
         if does_webhook_exist_on_resource:
@@ -192,15 +186,13 @@ class VerifyWebhookStatus:
         webhook_store: GitlabWebhookStore,
         webhook: GitlabWebhook,
     ):
-        """
-        Install webhook on resource
-        """
+        """Install webhook on resource"""
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         gitlab_service = cast(type[SaaSGitLabService], gitlab_service)
 
-        webhook_secret = f'{webhook.user_id}-{str(uuid4())}'
-        webhook_uuid = f'{str(uuid4())}'
+        webhook_secret = f"{webhook.user_id}-{str(uuid4())}"
+        webhook_uuid = f"{str(uuid4())}"
 
         webhook_id, status = await gitlab_service.install_webhook(
             resource_type=resource_type,
@@ -213,12 +205,12 @@ class VerifyWebhookStatus:
         )
 
         logger.info(
-            'Creating new webhook',
+            "Creating new webhook",
             extra={
-                'webhook_id': webhook_id,
-                'status': status,
-                'resource_id': resource_id,
-                'resource_type': resource_type,
+                "webhook_id": webhook_id,
+                "status": status,
+                "resource_id": resource_id,
+                "resource_type": resource_type,
             },
         )
 
@@ -228,21 +220,20 @@ class VerifyWebhookStatus:
             await webhook_store.update_webhook(
                 webhook=webhook,
                 update_fields={
-                    'webhook_secret': webhook_secret,
-                    'webhook_exists': True,  # webhook was created
-                    'webhook_url': GITLAB_WEBHOOK_URL,
-                    'scopes': SCOPES,
-                    'webhook_uuid': webhook_uuid,  # required to identify which webhook installation is sending payload
+                    "webhook_secret": webhook_secret,
+                    "webhook_exists": True,  # webhook was created
+                    "webhook_url": GITLAB_WEBHOOK_URL,
+                    "scopes": SCOPES,
+                    "webhook_uuid": webhook_uuid,  # required to identify which webhook installation is sending payload
                 },
             )
 
             logger.info(
-                f'Installed webhook for {webhook.user_id} on {resource_type}:{resource_id}'
+                f"Installed webhook for {webhook.user_id} on {resource_type}:{resource_id}"
             )
 
     async def install_webhooks(self):
-        """
-        Periodically check the conditions for installing a webhook on resource as valid
+        """Periodically check the conditions for installing a webhook on resource as valid
         Rows with valid conditions with contain (webhook_exists=False, status=WebhookStatus.VERIFIED)
 
         Conditions we check for
@@ -255,7 +246,6 @@ class VerifyWebhookStatus:
                 - resource was never setup with webhook
 
         """
-
         from integrations.gitlab.gitlab_service import SaaSGitLabService
 
         # Get an instance of the webhook store
@@ -265,8 +255,8 @@ class VerifyWebhookStatus:
         webhooks_to_process = await self.fetch_rows(webhook_store)
 
         logger.info(
-            'Processing webhook chunks',
-            extra={'webhooks_to_process': webhooks_to_process},
+            "Processing webhook chunks",
+            extra={"webhooks_to_process": webhooks_to_process},
         )
 
         for webhook in webhooks_to_process:
@@ -279,7 +269,7 @@ class VerifyWebhookStatus:
                 gitlab_service_impl = GitLabServiceImpl(external_auth_id=user_id)
 
                 if not isinstance(gitlab_service_impl, SaaSGitLabService):
-                    raise Exception('Only SaaSGitLabService is supported')
+                    raise Exception("Only SaaSGitLabService is supported")
                 # Cast needed when mypy can see OpenHands
                 gitlab_service = cast(type[SaaSGitLabService], gitlab_service_impl)
 
@@ -309,16 +299,16 @@ class VerifyWebhookStatus:
                     await webhook_store.update_last_synced(webhook)
                 except Exception as e:
                     logger.warning(
-                        'Failed to update last_synced for webhook',
+                        "Failed to update last_synced for webhook",
                         extra={
-                            'webhook_id': getattr(webhook, 'id', None),
-                            'project_id': getattr(webhook, 'project_id', None),
-                            'group_id': getattr(webhook, 'group_id', None),
-                            'error': str(e),
+                            "webhook_id": getattr(webhook, "id", None),
+                            "project_id": getattr(webhook, "project_id", None),
+                            "group_id": getattr(webhook, "group_id", None),
+                            "error": str(e),
                         },
                     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     status_verifier = VerifyWebhookStatus()
     asyncio.run(status_verifier.install_webhooks())

@@ -21,10 +21,9 @@ class LinearIntegrationStore:
         encrypted_webhook_secret: str,
         svc_acc_email: str,
         encrypted_svc_acc_api_key: str,
-        status: str = 'active',
+        status: str = "active",
     ) -> LinearWorkspace:
         """Create a new Linear workspace with encrypted sensitive data."""
-
         workspace = LinearWorkspace(
             name=name.lower(),
             linear_org_id=linear_org_id,
@@ -40,7 +39,7 @@ class LinearIntegrationStore:
             session.commit()
             session.refresh(workspace)
 
-        logger.info(f'[Linear] Created workspace {workspace.name}')
+        logger.info(f"[Linear] Created workspace {workspace.name}")
         return workspace
 
     async def update_workspace(
@@ -80,7 +79,7 @@ class LinearIntegrationStore:
             session.commit()
             session.refresh(workspace)
 
-        logger.info(f'[Linear] Updated workspace {workspace.name}')
+        logger.info(f"[Linear] Updated workspace {workspace.name}")
         return workspace
 
     async def create_workspace_link(
@@ -88,7 +87,7 @@ class LinearIntegrationStore:
         keycloak_user_id: str,
         linear_user_id: str,
         linear_workspace_id: int,
-        status: str = 'active',
+        status: str = "active",
     ) -> LinearUser:
         """Create a new Linear workspace link."""
         linear_user = LinearUser(
@@ -104,7 +103,7 @@ class LinearIntegrationStore:
             session.refresh(linear_user)
 
         logger.info(
-            f'[Linear] Created user {linear_user.id} for workspace {linear_workspace_id}'
+            f"[Linear] Created user {linear_user.id} for workspace {linear_workspace_id}"
         )
         return linear_user
 
@@ -137,7 +136,7 @@ class LinearIntegrationStore:
                 session.query(LinearUser)
                 .filter(
                     LinearUser.keycloak_user_id == keycloak_user_id,
-                    LinearUser.status == 'active',
+                    LinearUser.status == "active",
                 )
                 .first()
             )
@@ -166,7 +165,7 @@ class LinearIntegrationStore:
                 .filter(
                     LinearUser.linear_user_id == linear_user_id,
                     LinearUser.linear_workspace_id == linear_workspace_id,
-                    LinearUser.status == 'active',
+                    LinearUser.status == "active",
                 )
                 .first()
             )
@@ -184,14 +183,14 @@ class LinearIntegrationStore:
 
             if not linear_user:
                 raise ValueError(
-                    f'Linear user not found for Keycloak ID: {keycloak_user_id}'
+                    f"Linear user not found for Keycloak ID: {keycloak_user_id}"
                 )
 
             linear_user.status = status
             session.commit()
             session.refresh(linear_user)
 
-            logger.info(f'[Linear] Updated user {keycloak_user_id} status to {status}')
+            logger.info(f"[Linear] Updated user {keycloak_user_id} status to {status}")
             return linear_user
 
     async def deactivate_workspace(self, workspace_id: int):
@@ -201,13 +200,13 @@ class LinearIntegrationStore:
                 session.query(LinearUser)
                 .filter(
                     LinearUser.linear_workspace_id == workspace_id,
-                    LinearUser.status == 'active',
+                    LinearUser.status == "active",
                 )
                 .all()
             )
 
             for user in users:
-                user.status = 'inactive'
+                user.status = "inactive"
                 session.add(user)
 
             workspace = (
@@ -216,12 +215,12 @@ class LinearIntegrationStore:
                 .first()
             )
             if workspace:
-                workspace.status = 'inactive'
+                workspace.status = "inactive"
                 session.add(workspace)
 
             session.commit()
 
-        logger.info(f'[Jira] Deactivated all user links for workspace {workspace_id}')
+        logger.info(f"[Jira] Deactivated all user links for workspace {workspace_id}")
 
     async def create_conversation(
         self, linear_conversation: LinearConversation

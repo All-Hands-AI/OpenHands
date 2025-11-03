@@ -109,18 +109,18 @@ class TestLegacyConversationManagerCacheCleanup:
 
         # Add both expired and valid entries
         legacy_manager._legacy_cache = {
-            'expired_conversation': LegacyCacheEntry(True, expired_time),
-            'valid_conversation': LegacyCacheEntry(False, valid_time),
-            'another_expired': LegacyCacheEntry(True, expired_time - 100),
+            "expired_conversation": LegacyCacheEntry(True, expired_time),
+            "valid_conversation": LegacyCacheEntry(False, valid_time),
+            "another_expired": LegacyCacheEntry(True, expired_time - 100),
         }
 
         legacy_manager._cleanup_expired_cache_entries()
 
         # Only valid entry should remain
         assert len(legacy_manager._legacy_cache) == 1
-        assert 'valid_conversation' in legacy_manager._legacy_cache
-        assert 'expired_conversation' not in legacy_manager._legacy_cache
-        assert 'another_expired' not in legacy_manager._legacy_cache
+        assert "valid_conversation" in legacy_manager._legacy_cache
+        assert "expired_conversation" not in legacy_manager._legacy_cache
+        assert "another_expired" not in legacy_manager._legacy_cache
 
     def test_cleanup_expired_cache_entries_keeps_valid(self, legacy_manager):
         """Test that valid entries are kept during cleanup."""
@@ -128,16 +128,16 @@ class TestLegacyConversationManagerCacheCleanup:
         valid_time = current_time - 100  # Well within timeout
 
         legacy_manager._legacy_cache = {
-            'valid_conversation_1': LegacyCacheEntry(True, valid_time),
-            'valid_conversation_2': LegacyCacheEntry(False, valid_time - 50),
+            "valid_conversation_1": LegacyCacheEntry(True, valid_time),
+            "valid_conversation_2": LegacyCacheEntry(False, valid_time - 50),
         }
 
         legacy_manager._cleanup_expired_cache_entries()
 
         # Both entries should remain
         assert len(legacy_manager._legacy_cache) == 2
-        assert 'valid_conversation_1' in legacy_manager._legacy_cache
-        assert 'valid_conversation_2' in legacy_manager._legacy_cache
+        assert "valid_conversation_1" in legacy_manager._legacy_cache
+        assert "valid_conversation_2" in legacy_manager._legacy_cache
 
     def test_cleanup_expired_cache_entries_empty_cache(self, legacy_manager):
         """Test cleanup with empty cache."""
@@ -158,31 +158,31 @@ class TestIsLegacyRuntime:
 
     def test_is_legacy_runtime_legacy_command(self, legacy_manager):
         """Test with legacy runtime command."""
-        runtime = {'command': 'some_old_legacy_command'}
+        runtime = {"command": "some_old_legacy_command"}
         result = legacy_manager.is_legacy_runtime(runtime)
         assert result is True
 
     def test_is_legacy_runtime_new_command(self, legacy_manager):
         """Test with new runtime command containing openhands.server."""
-        runtime = {'command': 'python -m openhands.server.listen'}
+        runtime = {"command": "python -m openhands.server.listen"}
         result = legacy_manager.is_legacy_runtime(runtime)
         assert result is False
 
     def test_is_legacy_runtime_partial_match(self, legacy_manager):
         """Test with command that partially matches but is still legacy."""
-        runtime = {'command': 'openhands.client.start'}
+        runtime = {"command": "openhands.client.start"}
         result = legacy_manager.is_legacy_runtime(runtime)
         assert result is True
 
     def test_is_legacy_runtime_empty_command(self, legacy_manager):
         """Test with empty command."""
-        runtime = {'command': ''}
+        runtime = {"command": ""}
         result = legacy_manager.is_legacy_runtime(runtime)
         assert result is True
 
     def test_is_legacy_runtime_missing_command_key(self, legacy_manager):
         """Test with runtime missing command key."""
-        runtime = {'other_key': 'value'}
+        runtime = {"other_key": "value"}
         # This should raise a KeyError
         with pytest.raises(KeyError):
             legacy_manager.is_legacy_runtime(runtime)
@@ -194,7 +194,7 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_hit_valid_entry_legacy(self, legacy_manager):
         """Test cache hit with valid legacy entry."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
         current_time = time.time()
 
         # Add valid cache entry
@@ -211,7 +211,7 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_hit_valid_entry_non_legacy(self, legacy_manager):
         """Test cache hit with valid non-legacy entry."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
         current_time = time.time()
 
         # Add valid cache entry
@@ -228,8 +228,8 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_miss_legacy_runtime(self, legacy_manager):
         """Test cache miss with legacy runtime."""
-        conversation_id = 'test_conversation'
-        runtime = {'command': 'old_command'}
+        conversation_id = "test_conversation"
+        runtime = {"command": "old_command"}
 
         legacy_manager.conversation_manager._get_runtime.return_value = runtime
 
@@ -247,8 +247,8 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_miss_non_legacy_runtime(self, legacy_manager):
         """Test cache miss with non-legacy runtime."""
-        conversation_id = 'test_conversation'
-        runtime = {'command': 'python -m openhands.server.listen'}
+        conversation_id = "test_conversation"
+        runtime = {"command": "python -m openhands.server.listen"}
 
         legacy_manager.conversation_manager._get_runtime.return_value = runtime
 
@@ -266,9 +266,9 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_expired_entry(self, legacy_manager):
         """Test with expired cache entry."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
         expired_time = time.time() - _LEGACY_ENTRY_TIMEOUT_SECONDS - 1
-        runtime = {'command': 'python -m openhands.server.listen'}
+        runtime = {"command": "python -m openhands.server.listen"}
 
         # Add expired cache entry
         legacy_manager._legacy_cache[conversation_id] = LegacyCacheEntry(
@@ -291,9 +291,9 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_exactly_at_timeout(self, legacy_manager):
         """Test with cache entry exactly at timeout boundary."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
         timeout_time = time.time() - _LEGACY_ENTRY_TIMEOUT_SECONDS
-        runtime = {'command': 'python -m openhands.server.listen'}
+        runtime = {"command": "python -m openhands.server.listen"}
 
         # Add cache entry exactly at timeout
         legacy_manager._legacy_cache[conversation_id] = LegacyCacheEntry(
@@ -313,7 +313,7 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_runtime_returns_none(self, legacy_manager):
         """Test when runtime returns None."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
 
         legacy_manager.conversation_manager._get_runtime.return_value = None
 
@@ -327,14 +327,14 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cleanup_called_on_each_invocation(self, legacy_manager):
         """Test that cleanup is called on each invocation."""
-        conversation_id = 'test_conversation'
-        runtime = {'command': 'test'}
+        conversation_id = "test_conversation"
+        runtime = {"command": "test"}
 
         legacy_manager.conversation_manager._get_runtime.return_value = runtime
 
         # Mock the cleanup method to verify it's called
         with patch.object(
-            legacy_manager, '_cleanup_expired_cache_entries'
+            legacy_manager, "_cleanup_expired_cache_entries"
         ) as mock_cleanup:
             await legacy_manager.should_start_in_legacy_mode(conversation_id)
             mock_cleanup.assert_called_once()
@@ -342,11 +342,11 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_multiple_conversations_cached_independently(self, legacy_manager):
         """Test that multiple conversations are cached independently."""
-        conv1 = 'conversation_1'
-        conv2 = 'conversation_2'
+        conv1 = "conversation_1"
+        conv2 = "conversation_2"
 
-        runtime1 = {'command': 'old_command'}  # Legacy
-        runtime2 = {'command': 'python -m openhands.server.listen'}  # Non-legacy
+        runtime1 = {"command": "old_command"}  # Legacy
+        runtime2 = {"command": "python -m openhands.server.listen"}  # Non-legacy
 
         # Mock to return different runtimes based on conversation_id
         def mock_get_runtime(conversation_id):
@@ -371,9 +371,9 @@ class TestShouldStartInLegacyMode:
     @pytest.mark.asyncio
     async def test_cache_timestamp_updated_on_refresh(self, legacy_manager):
         """Test that cache timestamp is updated when entry is refreshed."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
         old_time = time.time() - _LEGACY_ENTRY_TIMEOUT_SECONDS - 1
-        runtime = {'command': 'test'}
+        runtime = {"command": "test"}
 
         # Add expired entry
         legacy_manager._legacy_cache[conversation_id] = LegacyCacheEntry(True, old_time)
@@ -403,11 +403,14 @@ class TestLegacyConversationManagerIntegration:
         mock_monitoring_listener,
     ):
         """Test that get_instance creates a properly configured manager."""
-        with patch(
-            'server.legacy_conversation_manager.SaasNestedConversationManager'
-        ) as mock_saas, patch(
-            'server.legacy_conversation_manager.ClusteredConversationManager'
-        ) as mock_clustered:
+        with (
+            patch(
+                "server.legacy_conversation_manager.SaasNestedConversationManager"
+            ) as mock_saas,
+            patch(
+                "server.legacy_conversation_manager.ClusteredConversationManager"
+            ) as mock_clustered,
+        ):
             mock_saas.get_instance.return_value = MagicMock()
             mock_clustered.get_instance.return_value = MagicMock()
 
@@ -441,14 +444,14 @@ class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_get_runtime_raises_exception(self, legacy_manager):
         """Test behavior when _get_runtime raises an exception."""
-        conversation_id = 'test_conversation'
+        conversation_id = "test_conversation"
 
         legacy_manager.conversation_manager._get_runtime.side_effect = Exception(
-            'Runtime error'
+            "Runtime error"
         )
 
         # Should propagate the exception
-        with pytest.raises(Exception, match='Runtime error'):
+        with pytest.raises(Exception, match="Runtime error"):
             await legacy_manager.should_start_in_legacy_mode(conversation_id)
 
     @pytest.mark.asyncio
@@ -458,12 +461,12 @@ class TestEdgeCases:
 
         # Add many cache entries
         for i in range(1000):
-            legacy_manager._legacy_cache[f'conversation_{i}'] = LegacyCacheEntry(
+            legacy_manager._legacy_cache[f"conversation_{i}"] = LegacyCacheEntry(
                 i % 2 == 0, current_time - i
             )
 
         # This should work without issues
-        await legacy_manager.should_start_in_legacy_mode('new_conversation')
+        await legacy_manager.should_start_in_legacy_mode("new_conversation")
 
         # Should have added one more entry
         assert len(legacy_manager._legacy_cache) == 1001
@@ -475,7 +478,7 @@ class TestEdgeCases:
 
         # Add expired entries
         legacy_manager._legacy_cache = {
-            f'conversation_{i}': LegacyCacheEntry(True, expired_time) for i in range(10)
+            f"conversation_{i}": LegacyCacheEntry(True, expired_time) for i in range(10)
         }
 
         # This should work without raising exceptions

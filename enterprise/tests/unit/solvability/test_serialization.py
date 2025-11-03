@@ -35,7 +35,7 @@ def test_rfc_serialization_deserialization(mock_classifier):
 def test_invalid_rfc_serialization():
     """Test that invalid RFC serialization raises an error."""
     with pytest.raises(ValueError):
-        SolvabilityClassifier._json_to_rfc('invalid_base64')
+        SolvabilityClassifier._json_to_rfc("invalid_base64")
 
     with pytest.raises(ValueError):
         SolvabilityClassifier._json_to_rfc(123)

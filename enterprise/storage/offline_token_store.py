@@ -53,7 +53,7 @@ class OfflineTokenStore:
         cls, config: OpenHandsConfig, user_id: str
     ) -> OfflineTokenStore:
         """Get an instance of the OfflineTokenStore."""
-        logger.debug(f'offline_token_store.get_instance::{user_id}')
+        logger.debug(f"offline_token_store.get_instance::{user_id}")
         if user_id:
             user_id = str(user_id)
         return OfflineTokenStore(user_id, session_maker, config)

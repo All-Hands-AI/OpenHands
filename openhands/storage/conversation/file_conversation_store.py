@@ -40,12 +40,12 @@ class FileConversationStore(ConversationStore):
 
         # Validate the JSON
         json_obj = json.loads(json_str)
-        if 'created_at' not in json_obj:
+        if "created_at" not in json_obj:
             raise FileNotFoundError(path)
 
         # Remove github_user_id if it exists
-        if 'github_user_id' in json_obj:
-            json_obj.pop('github_user_id')
+        if "github_user_id" in json_obj:
+            json_obj.pop("github_user_id")
 
         result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result
@@ -75,7 +75,7 @@ class FileConversationStore(ConversationStore):
             conversation_ids = [
                 Path(path).name
                 for path in self.file_store.list(metadata_dir)
-                if not Path(path).name.startswith('.')
+                if not Path(path).name.startswith(".")
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
@@ -88,7 +88,7 @@ class FileConversationStore(ConversationStore):
                 conversations.append(await self.get_metadata(conversation_id))
             except Exception:
                 logger.warning(
-                    f'Could not load conversation metadata: {conversation_id}'
+                    f"Could not load conversation metadata: {conversation_id}"
                 )
         conversations.sort(key=_sort_key, reverse=True)
         conversations = conversations[start:end]
@@ -119,4 +119,4 @@ def _sort_key(conversation: ConversationMetadata) -> str:
     created_at = conversation.created_at
     if created_at:
         return created_at.isoformat()  # YYYY-MM-DDTHH:MM:SS for sorting
-    return ''
+    return ""

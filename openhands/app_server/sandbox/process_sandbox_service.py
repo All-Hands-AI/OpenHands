@@ -90,11 +90,11 @@ class ProcessSandboxService(SandboxService):
         while port < self.base_port + 10000:  # Try up to 10000 ports
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.bind(('', port))
+                    s.bind(("", port))
                     return port
             except OSError:
                 port += 1
-        raise SandboxError('No available ports found')
+        raise SandboxError("No available ports found")
 
     def _create_sandbox_directory(self, sandbox_id: str) -> str:
         """Create a dedicated directory for the sandbox."""
@@ -111,23 +111,22 @@ class ProcessSandboxService(SandboxService):
         sandbox_spec: SandboxSpecInfo,
     ) -> subprocess.Popen:
         """Start the agent server process."""
-
         # Prepare environment variables
         env = os.environ.copy()
         env.update(sandbox_spec.initial_env)
-        env['SESSION_API_KEY'] = session_api_key
+        env["SESSION_API_KEY"] = session_api_key
 
         # Prepare command arguments
         cmd = [
             self.python_executable,
-            '-m',
+            "-m",
             self.agent_server_module,
-            '--port',
+            "--port",
             str(port),
         ]
 
         _logger.info(
-            f'Starting agent process for sandbox {sandbox_id}: {" ".join(cmd)}'
+            f"Starting agent process for sandbox {sandbox_id}: {' '.join(cmd)}"
         )
 
         try:
@@ -146,12 +145,12 @@ class ProcessSandboxService(SandboxService):
             # Check if process is still running
             if process.poll() is not None:
                 stdout, stderr = process.communicate()
-                raise SandboxError(f'Agent process failed to start: {stderr.decode()}')
+                raise SandboxError(f"Agent process failed to start: {stderr.decode()}")
 
             return process
 
         except Exception as e:
-            raise SandboxError(f'Failed to start agent process: {e}')
+            raise SandboxError(f"Failed to start agent process: {e}")
 
     async def _wait_for_server_ready(self, port: int, timeout: int = 30) -> bool:
         """Wait for the agent server to be ready."""
@@ -159,11 +158,11 @@ class ProcessSandboxService(SandboxService):
         while time.time() - start_time < timeout:
             try:
                 response = await self.httpx_client.get(
-                    f'http://localhost:{port}/alive', timeout=5.0
+                    f"http://localhost:{port}/alive", timeout=5.0
                 )
                 if response.status_code == 200:
                     data = response.json()
-                    if data.get('status') == 'ok':
+                    if data.get("status") == "ok":
                         return True
             except Exception:
                 pass
@@ -200,14 +199,14 @@ class ProcessSandboxService(SandboxService):
             # Check if server is actually responding
             try:
                 response = await self.httpx_client.get(
-                    f'http://localhost:{process_info.port}{self.health_check_path}',
+                    f"http://localhost:{process_info.port}{self.health_check_path}",
                     timeout=5.0,
                 )
                 if response.status_code == 200:
                     exposed_urls = [
                         ExposedUrl(
                             name=AGENT_SERVER,
-                            url=f'http://localhost:{process_info.port}',
+                            url=f"http://localhost:{process_info.port}",
                         ),
                     ]
                     session_api_key = process_info.session_api_key
@@ -280,7 +279,7 @@ class ProcessSandboxService(SandboxService):
                 sandbox_spec_id
             )
             if sandbox_spec_maybe is None:
-                raise ValueError('Sandbox Spec not found')
+                raise ValueError("Sandbox Spec not found")
             sandbox_spec = sandbox_spec_maybe
 
         # Generate unique sandbox ID and session API key
@@ -318,7 +317,7 @@ class ProcessSandboxService(SandboxService):
         if not await self._wait_for_server_ready(port):
             # Clean up if server didn't start properly
             await self.delete_sandbox(sandbox_id)
-            raise SandboxError('Agent Server Failed to start properly')
+            raise SandboxError("Agent Server Failed to start properly")
 
         return await self._process_to_sandbox_info(sandbox_id, process_info)
 
@@ -381,7 +380,7 @@ class ProcessSandboxService(SandboxService):
             return True
 
         except (psutil.NoSuchProcess, psutil.AccessDenied, OSError) as e:
-            _logger.warning(f'Error deleting sandbox {sandbox_id}: {e}')
+            _logger.warning(f"Error deleting sandbox {sandbox_id}: {e}")
             # Still remove from tracking even if cleanup failed
             if sandbox_id in _processes:
                 del _processes[sandbox_id]
@@ -392,22 +391,22 @@ class ProcessSandboxServiceInjector(SandboxServiceInjector):
     """Dependency injector for process sandbox services."""
 
     base_working_dir: str = Field(
-        default='/tmp/openhands-sandboxes',
-        description='Base directory for sandbox working directories',
+        default="/tmp/openhands-sandboxes",
+        description="Base directory for sandbox working directories",
     )
     base_port: int = Field(
-        default=8000, description='Base port number for agent servers'
+        default=8000, description="Base port number for agent servers"
     )
     python_executable: str = Field(
         default=sys.executable,
-        description='Python executable to use for agent processes',
+        description="Python executable to use for agent processes",
     )
     agent_server_module: str = Field(
-        default='openhands.agent_server',
-        description='Python module for the agent server',
+        default="openhands.agent_server",
+        description="Python module for the agent server",
     )
     health_check_path: str = Field(
-        default='/alive', description='Health check endpoint path'
+        default="/alive", description="Health check endpoint path"
     )
 
     async def inject(

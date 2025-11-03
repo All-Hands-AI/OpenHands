@@ -29,14 +29,14 @@ def mock_config():
 
 @pytest.fixture
 def token_store(mock_session_maker, mock_config):
-    return OfflineTokenStore('test_user_id', mock_session_maker, mock_config)
+    return OfflineTokenStore("test_user_id", mock_session_maker, mock_config)
 
 
 @pytest.mark.asyncio
 async def test_store_token_new_record(token_store, mock_session):
     # Setup
     mock_session.query.return_value.filter.return_value.first.return_value = None
-    test_token = 'test_offline_token'
+    test_token = "test_offline_token"
 
     # Execute
     await token_store.store_token(test_token)
@@ -46,7 +46,7 @@ async def test_store_token_new_record(token_store, mock_session):
     mock_session.commit.assert_called_once()
     added_record = mock_session.add.call_args[0][0]
     assert isinstance(added_record, StoredOfflineToken)
-    assert added_record.user_id == 'test_user_id'
+    assert added_record.user_id == "test_user_id"
     assert added_record.offline_token == test_token
 
 
@@ -54,12 +54,12 @@ async def test_store_token_new_record(token_store, mock_session):
 async def test_store_token_existing_record(token_store, mock_session):
     # Setup
     existing_record = StoredOfflineToken(
-        user_id='test_user_id', offline_token='old_token'
+        user_id="test_user_id", offline_token="old_token"
     )
     mock_session.query.return_value.filter.return_value.first.return_value = (
         existing_record
     )
-    test_token = 'new_offline_token'
+    test_token = "new_offline_token"
 
     # Execute
     await token_store.store_token(test_token)
@@ -73,9 +73,9 @@ async def test_store_token_existing_record(token_store, mock_session):
 @pytest.mark.asyncio
 async def test_load_token_existing(token_store, mock_session):
     # Setup
-    test_token = 'test_offline_token'
+    test_token = "test_offline_token"
     mock_session.query.return_value.filter.return_value.first.return_value = (
-        StoredOfflineToken(user_id='test_user_id', offline_token=test_token)
+        StoredOfflineToken(user_id="test_user_id", offline_token=test_token)
     )
 
     # Execute
@@ -100,7 +100,7 @@ async def test_load_token_not_found(token_store, mock_session):
 @pytest.mark.asyncio
 async def test_get_instance(mock_config):
     # Setup
-    test_user_id = 'test_user_id'
+    test_user_id = "test_user_id"
 
     # Execute
     result = await OfflineTokenStore.get_instance(mock_config, test_user_id)

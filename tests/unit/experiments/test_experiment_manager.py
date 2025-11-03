@@ -19,18 +19,18 @@ class TestExperimentManager:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.user_id = 'test_user_123'
+        self.user_id = "test_user_123"
         self.conversation_id = uuid4()
 
         # Create a mock LLM
         self.mock_llm = Mock(spec=LLM)
-        self.mock_llm.model = 'gpt-4'
-        self.mock_llm.usage_id = 'agent'
+        self.mock_llm.model = "gpt-4"
+        self.mock_llm.usage_id = "agent"
 
         # Create a mock Agent
         self.mock_agent = Mock(spec=Agent)
         self.mock_agent.llm = self.mock_llm
-        self.mock_agent.system_prompt_filename = 'default_system_prompt.j2'
+        self.mock_agent.system_prompt_filename = "default_system_prompt.j2"
         self.mock_agent.model_copy = Mock(return_value=self.mock_agent)
 
     def test_run_agent_variant_tests__v1_returns_agent_unchanged(self):
@@ -75,21 +75,21 @@ class TestExperimentManagerIntegration:
 
     def setup_method(self):
         """Set up test fixtures."""
-        self.user_id = 'test_user_123'
+        self.user_id = "test_user_123"
         self.conversation_id = uuid4()
 
         # Create a mock LLM
         self.mock_llm = Mock(spec=LLM)
-        self.mock_llm.model = 'gpt-4'
-        self.mock_llm.usage_id = 'agent'
+        self.mock_llm.model = "gpt-4"
+        self.mock_llm.usage_id = "agent"
 
         # Create a mock Agent
         self.mock_agent = Mock(spec=Agent)
         self.mock_agent.llm = self.mock_llm
-        self.mock_agent.system_prompt_filename = 'default_system_prompt.j2'
+        self.mock_agent.system_prompt_filename = "default_system_prompt.j2"
         self.mock_agent.model_copy = Mock(return_value=self.mock_agent)
 
-    @patch('openhands.experiments.experiment_manager.ExperimentManagerImpl')
+    @patch("openhands.experiments.experiment_manager.ExperimentManagerImpl")
     def test_start_app_conversation_calls_experiment_manager_v1(
         self, mock_experiment_manager_impl
     ):
@@ -103,7 +103,7 @@ class TestExperimentManagerIntegration:
         mock_service = Mock(spec=LiveStatusAppConversationService)
 
         # Mock the _build_start_conversation_request_for_user method to simulate the call
-        with patch.object(mock_service, '_build_start_conversation_request_for_user'):
+        with patch.object(mock_service, "_build_start_conversation_request_for_user"):
             # Simulate the part of the code that calls the experiment manager
             from uuid import uuid4
 
@@ -124,32 +124,31 @@ class TestExperimentManagerIntegration:
     async def test_experiment_manager_called_with_correct_parameters_in_context__noop_pass_through(
         self,
     ):
-        """
-        Use the real LiveStatusAppConversationService to build a StartConversationRequest,
+        """Use the real LiveStatusAppConversationService to build a StartConversationRequest,
         and verify ExperimentManagerImpl.run_agent_variant_tests__v1:
         - is called exactly once with the (user_id, generated conversation_id, agent)
         - returns the *same* agent instance (no copy/mutation)
         - does not tweak agent fields (LLM, system prompt, etc.)
         """
         # --- Arrange: fixed UUID to assert call parameters deterministically
-        fixed_conversation_id = UUID('00000000-0000-0000-0000-000000000001')
+        fixed_conversation_id = UUID("00000000-0000-0000-0000-000000000001")
 
         # Create a stable Agent (and LLM) we can identity-check later
         mock_llm = Mock(spec=LLM)
-        mock_llm.model = 'gpt-4'
-        mock_llm.usage_id = 'agent'
+        mock_llm.model = "gpt-4"
+        mock_llm.usage_id = "agent"
 
         mock_agent = Mock(spec=Agent)
         mock_agent.llm = mock_llm
-        mock_agent.system_prompt_filename = 'default_system_prompt.j2'
+        mock_agent.system_prompt_filename = "default_system_prompt.j2"
 
         # Minimal, real-ish user context used by the service
         class DummyUserContext:
             async def get_user_info(self):
                 # confirmation_mode=False -> NeverConfirm()
                 return SimpleNamespace(
-                    id='test_user_123',
-                    llm_model='gpt-4',
+                    id="test_user_123",
+                    llm_model="gpt-4",
                     llm_base_url=None,
                     llm_api_key=None,
                     confirmation_mode=False,
@@ -162,7 +161,7 @@ class TestExperimentManagerIntegration:
                 return None
 
             async def get_user_id(self):
-                return 'test_user_123'
+                return "test_user_123"
 
         user_context = DummyUserContext()
 
@@ -192,11 +191,11 @@ class TestExperimentManagerIntegration:
         # Patch the pieces invoked by the service
         with (
             patch(
-                'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_agent',
+                "openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_agent",
                 return_value=mock_agent,
             ),
             patch(
-                'openhands.app_server.app_conversation.live_status_app_conversation_service.uuid4',
+                "openhands.app_server.app_conversation.live_status_app_conversation_service.uuid4",
                 return_value=fixed_conversation_id,
             ),
         ):
@@ -204,7 +203,7 @@ class TestExperimentManagerIntegration:
             start_req = await service._build_start_conversation_request_for_user(
                 initial_message=None,
                 git_provider=None,  # Keep secrets path simple
-                working_dir='/tmp/project',  # Arbitrary path
+                working_dir="/tmp/project",  # Arbitrary path
             )
 
             # The agent in the StartConversationRequest is the *same* object we provided
@@ -212,4 +211,4 @@ class TestExperimentManagerIntegration:
 
             # No tweaks to agent fields by the experiment manager (noop)
             assert start_req.agent.llm is mock_llm
-            assert start_req.agent.system_prompt_filename == 'default_system_prompt.j2'
+            assert start_req.agent.system_prompt_filename == "default_system_prompt.j2"

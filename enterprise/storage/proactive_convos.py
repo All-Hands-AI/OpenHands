@@ -5,7 +5,7 @@ from storage.base import Base
 
 
 class ProactiveConversation(Base):
-    __tablename__ = 'proactive_conversation_table'
+    __tablename__ = "proactive_conversation_table"
     id = Column(Integer, primary_key=True, autoincrement=True)
     repo_id = Column(String, nullable=False)
     pr_number = Column(Integer, nullable=False)

@@ -20,72 +20,72 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.user_auth.user_auth import get_user_auth
 
 # Environment variable to disable Jira webhooks
-JIRA_WEBHOOKS_ENABLED = os.environ.get('JIRA_WEBHOOKS_ENABLED', '0') in (
-    '1',
-    'true',
+JIRA_WEBHOOKS_ENABLED = os.environ.get("JIRA_WEBHOOKS_ENABLED", "0") in (
+    "1",
+    "true",
 )
-JIRA_REDIRECT_URI = f'https://{WEB_HOST}/integration/jira/callback'
-JIRA_SCOPES = 'read:me read:jira-user read:jira-work'
-JIRA_AUTH_URL = 'https://auth.atlassian.com/authorize'
-JIRA_TOKEN_URL = 'https://auth.atlassian.com/oauth/token'
-JIRA_RESOURCES_URL = 'https://api.atlassian.com/oauth/token/accessible-resources'
-JIRA_USER_INFO_URL = 'https://api.atlassian.com/me'
+JIRA_REDIRECT_URI = f"https://{WEB_HOST}/integration/jira/callback"
+JIRA_SCOPES = "read:me read:jira-user read:jira-work"
+JIRA_AUTH_URL = "https://auth.atlassian.com/authorize"
+JIRA_TOKEN_URL = "https://auth.atlassian.com/oauth/token"
+JIRA_RESOURCES_URL = "https://api.atlassian.com/oauth/token/accessible-resources"
+JIRA_USER_INFO_URL = "https://api.atlassian.com/me"
 
 
 # Request/Response models
 class JiraWorkspaceCreate(BaseModel):
-    workspace_name: str = Field(..., description='Workspace display name')
-    webhook_secret: str = Field(..., description='Webhook secret for verification')
-    svc_acc_email: str = Field(..., description='Service account email')
-    svc_acc_api_key: str = Field(..., description='Service account API token')
+    workspace_name: str = Field(..., description="Workspace display name")
+    webhook_secret: str = Field(..., description="Webhook secret for verification")
+    svc_acc_email: str = Field(..., description="Service account email")
+    svc_acc_api_key: str = Field(..., description="Service account API token")
     is_active: bool = Field(
         default=False,
-        description='Indicates if the workspace integration is active',
+        description="Indicates if the workspace integration is active",
     )
 
-    @field_validator('workspace_name')
+    @field_validator("workspace_name")
     @classmethod
     def validate_workspace_name(cls, v):
-        if not re.match(r'^[a-zA-Z0-9_.-]+$', v):
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
             raise ValueError(
-                'workspace_name can only contain alphanumeric characters, hyphens, underscores, and periods'
+                "workspace_name can only contain alphanumeric characters, hyphens, underscores, and periods"
             )
         return v
 
-    @field_validator('svc_acc_email')
+    @field_validator("svc_acc_email")
     @classmethod
     def validate_svc_acc_email(cls, v):
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(email_pattern, v):
-            raise ValueError('svc_acc_email must be a valid email address')
+            raise ValueError("svc_acc_email must be a valid email address")
         return v
 
-    @field_validator('webhook_secret')
+    @field_validator("webhook_secret")
     @classmethod
     def validate_webhook_secret(cls, v):
-        if ' ' in v:
-            raise ValueError('webhook_secret cannot contain spaces')
+        if " " in v:
+            raise ValueError("webhook_secret cannot contain spaces")
         return v
 
-    @field_validator('svc_acc_api_key')
+    @field_validator("svc_acc_api_key")
     @classmethod
     def validate_svc_acc_api_key(cls, v):
-        if ' ' in v:
-            raise ValueError('svc_acc_api_key cannot contain spaces')
+        if " " in v:
+            raise ValueError("svc_acc_api_key cannot contain spaces")
         return v
 
 
 class JiraLinkCreate(BaseModel):
     workspace_name: str = Field(
-        ..., description='Name of the Jira workspace to link to'
+        ..., description="Name of the Jira workspace to link to"
     )
 
-    @field_validator('workspace_name')
+    @field_validator("workspace_name")
     @classmethod
     def validate_workspace(cls, v):
-        if not re.match(r'^[a-zA-Z0-9_.-]+$', v):
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", v):
             raise ValueError(
-                'workspace can only contain alphanumeric characters, hyphens, underscores, and periods'
+                "workspace can only contain alphanumeric characters, hyphens, underscores, and periods"
             )
         return v
 
@@ -116,7 +116,7 @@ class JiraValidateWorkspaceResponse(BaseModel):
     message: str
 
 
-jira_integration_router = APIRouter(prefix='/integration/jira')
+jira_integration_router = APIRouter(prefix="/integration/jira")
 token_manager = TokenManager()
 jira_manager = JiraManager(token_manager)
 redis_client = create_redis_client()
@@ -136,7 +136,7 @@ async def _handle_workspace_link_creation(
             detail=f'Workspace "{target_workspace}" not found',
         )
 
-    if workspace.status.lower() != 'active':
+    if workspace.status.lower() != "active":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f'Workspace "{target_workspace}" is not active',
@@ -157,7 +157,7 @@ async def _handle_workspace_link_creation(
             # This is not allowed - they must unlink first
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='You already have an active workspace link. Please unlink from your current workspace before linking to a different one.',
+                detail="You already have an active workspace link. Please unlink from your current workspace before linking to a different one.",
             )
 
     # Check if user had a previous link to this specific workspace
@@ -170,7 +170,7 @@ async def _handle_workspace_link_creation(
     if existing_link:
         # Reactivate previous link to this workspace
         await jira_manager.integration_store.update_user_integration_status(
-            user_id, 'active'
+            user_id, "active"
         )
     else:
         # Create new workspace link
@@ -196,7 +196,7 @@ async def _validate_workspace_update_permissions(user_id: str, target_workspace:
     if workspace.admin_user_id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='You do not have permission to update this workspace',
+            detail="You do not have permission to update this workspace",
         )
 
     # Check if user's current link matches the workspace
@@ -206,13 +206,13 @@ async def _validate_workspace_update_permissions(user_id: str, target_workspace:
     if current_user_link and current_user_link.jira_workspace_id != workspace.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='You can only update the workspace you are currently linked to',
+            detail="You can only update the workspace you are currently linked to",
         )
 
     return workspace
 
 
-@jira_integration_router.post('/events')
+@jira_integration_router.post("/events")
 async def jira_events(
     request: Request,
     background_tasks: BackgroundTasks,
@@ -220,10 +220,10 @@ async def jira_events(
     """Handle Jira webhook events."""
     # Check if Jira webhooks are enabled
     if not JIRA_WEBHOOKS_ENABLED:
-        logger.info('[Jira] Webhooks are disabled')
+        logger.info("[Jira] Webhooks are disabled")
         return JSONResponse(
             status_code=200,
-            content={'message': 'Jira webhooks are disabled'},
+            content={"message": "Jira webhooks are disabled"},
         )
 
     try:
@@ -232,39 +232,39 @@ async def jira_events(
         )
 
         if not signature_valid:
-            logger.warning('[Jira] Invalid webhook signature')
-            raise HTTPException(status_code=403, detail='Invalid webhook signature!')
+            logger.warning("[Jira] Invalid webhook signature")
+            raise HTTPException(status_code=403, detail="Invalid webhook signature!")
 
         # Check for duplicate requests using Redis
-        key = f'jira:{signature}'
+        key = f"jira:{signature}"
         keyExists = redis_client.exists(key)
         if keyExists:
-            logger.info(f'Received duplicate Jira webhook event: {signature}')
-            return JSONResponse({'success': True})
+            logger.info(f"Received duplicate Jira webhook event: {signature}")
+            return JSONResponse({"success": True})
         else:
-            logger.info(f'Processing new Jira webhook event: {signature}')
-            redis_client.setex(key, 300, '1')
+            logger.info(f"Processing new Jira webhook event: {signature}")
+            redis_client.setex(key, 300, "1")
 
         # Process the webhook
-        message_payload = {'payload': payload}
+        message_payload = {"payload": payload}
         message = Message(source=SourceType.JIRA, message=message_payload)
 
         background_tasks.add_task(jira_manager.receive_message, message)
 
-        return JSONResponse({'success': True})
+        return JSONResponse({"success": True})
 
     except HTTPException:
         # Re-raise HTTP exceptions (like signature verification failures)
         raise
     except Exception as e:
-        logger.exception(f'Error processing Jira webhook: {e}')
+        logger.exception(f"Error processing Jira webhook: {e}")
         return JSONResponse(
             status_code=500,
-            content={'error': 'Internal server error processing webhook.'},
+            content={"error": "Internal server error processing webhook."},
         )
 
 
-@jira_integration_router.post('/workspaces')
+@jira_integration_router.post("/workspaces")
 async def create_jira_workspace(request: Request, workspace_data: JiraWorkspaceCreate):
     """Create a new Jira workspace registration."""
     try:
@@ -275,15 +275,15 @@ async def create_jira_workspace(request: Request, workspace_data: JiraWorkspaceC
         state = str(uuid.uuid4())
 
         integration_session = {
-            'operation_type': 'workspace_integration',
-            'keycloak_user_id': user_id,
-            'user_email': user_email,
-            'target_workspace': workspace_data.workspace_name,
-            'webhook_secret': workspace_data.webhook_secret,
-            'svc_acc_email': workspace_data.svc_acc_email,
-            'svc_acc_api_key': workspace_data.svc_acc_api_key,
-            'is_active': workspace_data.is_active,
-            'state': state,
+            "operation_type": "workspace_integration",
+            "keycloak_user_id": user_id,
+            "user_email": user_email,
+            "target_workspace": workspace_data.workspace_name,
+            "webhook_secret": workspace_data.webhook_secret,
+            "svc_acc_email": workspace_data.svc_acc_email,
+            "svc_acc_api_key": workspace_data.svc_acc_api_key,
+            "is_active": workspace_data.is_active,
+            "state": state,
         }
 
         created = redis_client.setex(
@@ -295,17 +295,17 @@ async def create_jira_workspace(request: Request, workspace_data: JiraWorkspaceC
         if not created:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail='Failed to create integration session',
+                detail="Failed to create integration session",
             )
 
         auth_params = {
-            'audience': 'api.atlassian.com',
-            'client_id': JIRA_CLIENT_ID,
-            'scope': JIRA_SCOPES,
-            'redirect_uri': JIRA_REDIRECT_URI,
-            'state': state,
-            'response_type': 'code',
-            'prompt': 'consent',
+            "audience": "api.atlassian.com",
+            "client_id": JIRA_CLIENT_ID,
+            "scope": JIRA_SCOPES,
+            "redirect_uri": JIRA_REDIRECT_URI,
+            "state": state,
+            "response_type": "code",
+            "prompt": "consent",
         }
 
         auth_url = (
@@ -314,23 +314,23 @@ async def create_jira_workspace(request: Request, workspace_data: JiraWorkspaceC
 
         return JSONResponse(
             content={
-                'success': True,
-                'redirect': True,
-                'authorizationUrl': auth_url,
+                "success": True,
+                "redirect": True,
+                "authorizationUrl": auth_url,
             }
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f'Error creating Jira workspace: {e}')
+        logger.exception(f"Error creating Jira workspace: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Failed to create workspace',
+            detail="Failed to create workspace",
         )
 
 
-@jira_integration_router.post('/workspaces/link')
+@jira_integration_router.post("/workspaces/link")
 async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
     """Register a user mapping to a Jira workspace."""
     try:
@@ -341,11 +341,11 @@ async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
         state = str(uuid.uuid4())
 
         integration_session = {
-            'operation_type': 'workspace_link',
-            'keycloak_user_id': user_id,
-            'user_email': user_email,
-            'target_workspace': link_data.workspace_name,
-            'state': state,
+            "operation_type": "workspace_link",
+            "keycloak_user_id": user_id,
+            "user_email": user_email,
+            "target_workspace": link_data.workspace_name,
+            "state": state,
         }
 
         created = redis_client.setex(
@@ -357,17 +357,17 @@ async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
         if not created:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail='Failed to create integration session',
+                detail="Failed to create integration session",
             )
 
         auth_params = {
-            'audience': 'api.atlassian.com',
-            'client_id': JIRA_CLIENT_ID,
-            'scope': JIRA_SCOPES,
-            'redirect_uri': JIRA_REDIRECT_URI,
-            'state': state,
-            'response_type': 'code',
-            'prompt': 'consent',
+            "audience": "api.atlassian.com",
+            "client_id": JIRA_CLIENT_ID,
+            "scope": JIRA_SCOPES,
+            "redirect_uri": JIRA_REDIRECT_URI,
+            "state": state,
+            "response_type": "code",
+            "prompt": "consent",
         }
         auth_url = (
             f"{JIRA_AUTH_URL}?{'&'.join([f'{k}={v}' for k, v in auth_params.items()])}"
@@ -375,118 +375,118 @@ async def create_workspace_link(request: Request, link_data: JiraLinkCreate):
 
         return JSONResponse(
             content={
-                'success': True,
-                'redirect': True,
-                'authorizationUrl': auth_url,
+                "success": True,
+                "redirect": True,
+                "authorizationUrl": auth_url,
             }
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f'Error registering Jira user: {e}')
+        logger.exception(f"Error registering Jira user: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Failed to register user',
+            detail="Failed to register user",
         )
 
 
-@jira_integration_router.get('/callback')
+@jira_integration_router.get("/callback")
 async def jira_callback(request: Request, code: str, state: str):
     integration_session_json = redis_client.get(state)
     if not integration_session_json:
         raise HTTPException(
-            status_code=400, detail='No active integration session found.'
+            status_code=400, detail="No active integration session found."
         )
 
     integration_session = json.loads(integration_session_json)
 
     # Security check: verify the state parameter
-    if integration_session.get('state') != state:
+    if integration_session.get("state") != state:
         raise HTTPException(
-            status_code=400, detail='State mismatch. Possible CSRF attack.'
+            status_code=400, detail="State mismatch. Possible CSRF attack."
         )
 
     token_payload = {
-        'grant_type': 'authorization_code',
-        'client_id': JIRA_CLIENT_ID,
-        'client_secret': JIRA_CLIENT_SECRET,
-        'code': code,
-        'redirect_uri': JIRA_REDIRECT_URI,
+        "grant_type": "authorization_code",
+        "client_id": JIRA_CLIENT_ID,
+        "client_secret": JIRA_CLIENT_SECRET,
+        "code": code,
+        "redirect_uri": JIRA_REDIRECT_URI,
     }
     response = requests.post(JIRA_TOKEN_URL, json=token_payload)
     if response.status_code != 200:
         raise HTTPException(
-            status_code=400, detail=f'Error fetching token: {response.text}'
+            status_code=400, detail=f"Error fetching token: {response.text}"
         )
 
     token_data = response.json()
-    access_token = token_data['access_token']
+    access_token = token_data["access_token"]
 
-    headers = {'Authorization': f'Bearer {access_token}'}
+    headers = {"Authorization": f"Bearer {access_token}"}
     response = requests.get(JIRA_RESOURCES_URL, headers=headers)
 
     if response.status_code != 200:
         raise HTTPException(
-            status_code=400, detail=f'Error fetching resources: {response.text}'
+            status_code=400, detail=f"Error fetching resources: {response.text}"
         )
 
     workspaces = response.json()
 
-    logger.info(f'Jira workspaces: {workspaces}')
+    logger.info(f"Jira workspaces: {workspaces}")
 
-    target_workspace = integration_session.get('target_workspace')
+    target_workspace = integration_session.get("target_workspace")
 
     # Filter workspaces based on the target workspace
     target_workspace_data = next(
         (
             ws
             for ws in workspaces
-            if urlparse(ws.get('url', '')).hostname == target_workspace
+            if urlparse(ws.get("url", "")).hostname == target_workspace
         ),
         None,
     )
     if not target_workspace_data:
         raise HTTPException(
             status_code=401,
-            detail=f'User is not authorized to access workspace: {target_workspace}',
+            detail=f"User is not authorized to access workspace: {target_workspace}",
         )
 
-    jira_cloud_id = target_workspace_data.get('id', '')
+    jira_cloud_id = target_workspace_data.get("id", "")
 
     jira_user_response = requests.get(JIRA_USER_INFO_URL, headers=headers)
     if jira_user_response.status_code != 200:
         raise HTTPException(
             status_code=400,
-            detail=f'Error fetching user info: {jira_user_response.text}',
+            detail=f"Error fetching user info: {jira_user_response.text}",
         )
 
     jira_user_info = jira_user_response.json()
-    jira_user_id = jira_user_info.get('account_id')
+    jira_user_id = jira_user_info.get("account_id")
 
-    user_id = integration_session['keycloak_user_id']
+    user_id = integration_session["keycloak_user_id"]
 
-    if integration_session.get('operation_type') == 'workspace_integration':
+    if integration_session.get("operation_type") == "workspace_integration":
         workspace = await jira_manager.integration_store.get_workspace_by_name(
             target_workspace
         )
         if not workspace:
             # Create new workspace if it doesn't exist
             encrypted_webhook_secret = token_manager.encrypt_text(
-                integration_session['webhook_secret']
+                integration_session["webhook_secret"]
             )
             encrypted_svc_acc_api_key = token_manager.encrypt_text(
-                integration_session['svc_acc_api_key']
+                integration_session["svc_acc_api_key"]
             )
 
             await jira_manager.integration_store.create_workspace(
                 name=target_workspace,
                 jira_cloud_id=jira_cloud_id,
-                admin_user_id=integration_session['keycloak_user_id'],
+                admin_user_id=integration_session["keycloak_user_id"],
                 encrypted_webhook_secret=encrypted_webhook_secret,
-                svc_acc_email=integration_session['svc_acc_email'],
+                svc_acc_email=integration_session["svc_acc_email"],
                 encrypted_svc_acc_api_key=encrypted_svc_acc_api_key,
-                status='active' if integration_session['is_active'] else 'inactive',
+                status="active" if integration_session["is_active"] else "inactive",
             )
 
             # Create a workspace link for the user (admin automatically gets linked)
@@ -498,10 +498,10 @@ async def jira_callback(request: Request, code: str, state: str):
             await _validate_workspace_update_permissions(user_id, target_workspace)
 
             encrypted_webhook_secret = token_manager.encrypt_text(
-                integration_session['webhook_secret']
+                integration_session["webhook_secret"]
             )
             encrypted_svc_acc_api_key = token_manager.encrypt_text(
-                integration_session['svc_acc_api_key']
+                integration_session["svc_acc_api_key"]
             )
 
             # Update workspace details
@@ -509,9 +509,9 @@ async def jira_callback(request: Request, code: str, state: str):
                 id=workspace.id,
                 jira_cloud_id=jira_cloud_id,
                 encrypted_webhook_secret=encrypted_webhook_secret,
-                svc_acc_email=integration_session['svc_acc_email'],
+                svc_acc_email=integration_session["svc_acc_email"],
                 encrypted_svc_acc_api_key=encrypted_svc_acc_api_key,
-                status='active' if integration_session['is_active'] else 'inactive',
+                status="active" if integration_session["is_active"] else "inactive",
             )
 
             await _handle_workspace_link_creation(
@@ -519,19 +519,19 @@ async def jira_callback(request: Request, code: str, state: str):
             )
 
         return RedirectResponse(
-            url='/settings/integrations', status_code=status.HTTP_302_FOUND
+            url="/settings/integrations", status_code=status.HTTP_302_FOUND
         )
-    elif integration_session.get('operation_type') == 'workspace_link':
+    elif integration_session.get("operation_type") == "workspace_link":
         await _handle_workspace_link_creation(user_id, jira_user_id, target_workspace)
         return RedirectResponse(
-            url='/settings/integrations', status_code=status.HTTP_302_FOUND
+            url="/settings/integrations", status_code=status.HTTP_302_FOUND
         )
     else:
-        raise HTTPException(status_code=400, detail='Invalid operation type')
+        raise HTTPException(status_code=400, detail="Invalid operation type")
 
 
 @jira_integration_router.get(
-    '/workspaces/link',
+    "/workspaces/link",
     response_model=JiraUserResponse,
 )
 async def get_current_workspace_link(request: Request):
@@ -546,7 +546,7 @@ async def get_current_workspace_link(request: Request):
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='User is not registered for Jira integration',
+                detail="User is not registered for Jira integration",
             )
 
         workspace = await jira_manager.integration_store.get_workspace_by_id(
@@ -555,7 +555,7 @@ async def get_current_workspace_link(request: Request):
         if not workspace:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='Workspace not found for the user',
+                detail="Workspace not found for the user",
             )
 
         return JiraUserResponse(
@@ -579,14 +579,14 @@ async def get_current_workspace_link(request: Request):
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f'Error retrieving Jira user: {e}')
+        logger.exception(f"Error retrieving Jira user: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Failed to retrieve user',
+            detail="Failed to retrieve user",
         )
 
 
-@jira_integration_router.post('/workspaces/unlink')
+@jira_integration_router.post("/workspaces/unlink")
 async def unlink_workspace(request: Request):
     """Unlink user from Jira integration by setting status to inactive."""
     try:
@@ -599,7 +599,7 @@ async def unlink_workspace(request: Request):
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='User is not registered for Jira integration',
+                detail="User is not registered for Jira integration",
             )
 
         workspace = await jira_manager.integration_store.get_workspace_by_id(
@@ -608,7 +608,7 @@ async def unlink_workspace(request: Request):
         if not workspace:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='Workspace not found for the user',
+                detail="Workspace not found for the user",
             )
 
         if workspace.admin_user_id == user_id:
@@ -617,33 +617,33 @@ async def unlink_workspace(request: Request):
             )
         else:
             await jira_manager.integration_store.update_user_integration_status(
-                user_id, 'inactive'
+                user_id, "inactive"
             )
 
-        return JSONResponse({'success': True})
+        return JSONResponse({"success": True})
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f'Error unlinking Jira user: {e}')
+        logger.exception(f"Error unlinking Jira user: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Failed to unlink user',
+            detail="Failed to unlink user",
         )
 
 
 @jira_integration_router.get(
-    '/workspaces/validate/{workspace_name}',
+    "/workspaces/validate/{workspace_name}",
     response_model=JiraValidateWorkspaceResponse,
 )
 async def validate_workspace_integration(request: Request, workspace_name: str):
     """Validate if the user's organization has an active Jira integration."""
     try:
         # Validate workspace_name format
-        if not re.match(r'^[a-zA-Z0-9_.-]+$', workspace_name):
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", workspace_name):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='workspace_name can only contain alphanumeric characters, hyphens, underscores, and periods',
+                detail="workspace_name can only contain alphanumeric characters, hyphens, underscores, and periods",
             )
 
         user_auth: SaasUserAuth = await get_user_auth(request)
@@ -651,7 +651,7 @@ async def validate_workspace_integration(request: Request, workspace_name: str):
         if not user_email:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Unable to retrieve user email',
+                detail="Unable to retrieve user email",
             )
 
         # Check if workspace exists
@@ -665,7 +665,7 @@ async def validate_workspace_integration(request: Request, workspace_name: str):
             )
 
         # Check if workspace is active
-        if workspace.status.lower() != 'active':
+        if workspace.status.lower() != "active":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Workspace '{workspace.name}' is not active",
@@ -674,14 +674,14 @@ async def validate_workspace_integration(request: Request, workspace_name: str):
         return JiraValidateWorkspaceResponse(
             name=workspace.name,
             status=workspace.status,
-            message='Workspace integration is active',
+            message="Workspace integration is active",
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception(f'Error validating Jira organization: {e}')
+        logger.exception(f"Error validating Jira organization: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Failed to validate organization',
+            detail="Failed to validate organization",
         )

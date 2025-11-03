@@ -39,8 +39,8 @@ class SaasSecretsStore(SecretsStore):
             kwargs = {}
             for secret in settings:
                 kwargs[secret.secret_name] = {
-                    'secret': secret.secret_value,
-                    'description': secret.description,
+                    "secret": secret.secret_value,
+                    "description": secret.description,
                 }
 
             self._decrypt_kwargs(kwargs)
@@ -56,19 +56,19 @@ class SaasSecretsStore(SecretsStore):
             ).delete()
 
             # Prepare the new secrets data
-            kwargs = item.model_dump(context={'expose_secrets': True})
+            kwargs = item.model_dump(context={"expose_secrets": True})
             del kwargs[
-                'provider_tokens'
+                "provider_tokens"
             ]  # Assuming provider_tokens is not part of custom_secrets
             self._encrypt_kwargs(kwargs)
 
-            secrets_json = kwargs.get('custom_secrets', {})
+            secrets_json = kwargs.get("custom_secrets", {})
 
             # Extract the secrets into tuples for insertion or updating
             secret_tuples = []
             for secret_name, secret_info in secrets_json.items():
-                secret_value = secret_info.get('secret')
-                description = secret_info.get('description')
+                secret_value = secret_info.get("secret")
+                description = secret_info.get("description")
 
                 secret_tuples.append((secret_name, secret_value, description))
 
@@ -112,7 +112,7 @@ class SaasSecretsStore(SecretsStore):
 
     def _fernet(self):
         if not self.config.jwt_secret:
-            raise Exception('config.jwt_secret must be set')
+            raise Exception("config.jwt_secret must be set")
         jwt_secret = self.config.jwt_secret.get_secret_value()
         fernet_key = b64encode(hashlib.sha256(jwt_secret.encode()).digest())
         return Fernet(fernet_key)
@@ -124,6 +124,6 @@ class SaasSecretsStore(SecretsStore):
         user_id: str | None,
     ) -> SaasSecretsStore:
         if not user_id:
-            raise Exception('SaasSecretsStore cannot be constructed with no user_id')
-        logger.debug(f'saas_secrets_store.get_instance::{user_id}')
+            raise Exception("SaasSecretsStore cannot be constructed with no user_id")
+        logger.debug(f"saas_secrets_store.get_instance::{user_id}")
         return SaasSecretsStore(user_id, session_maker, config)

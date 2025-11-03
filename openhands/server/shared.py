@@ -23,7 +23,7 @@ load_dotenv()
 config: OpenHandsConfig = load_openhands_config()
 server_config_interface: ServerConfigInterface = load_server_config()
 assert isinstance(server_config_interface, ServerConfig), (
-    'Loaded server config interface is not a ServerConfig, despite this being assumed'
+    "Loaded server config interface is not a ServerConfig, despite this being assumed"
 )
 server_config: ServerConfig = server_config_interface
 file_store: FileStore = get_file_store(
@@ -35,17 +35,17 @@ file_store: FileStore = get_file_store(
 )
 
 client_manager = None
-redis_host = os.environ.get('REDIS_HOST')
+redis_host = os.environ.get("REDIS_HOST")
 if redis_host:
     client_manager = socketio.AsyncRedisManager(
-        f'redis://{redis_host}',
-        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+        f"redis://{redis_host}",
+        redis_options={"password": os.environ.get("REDIS_PASSWORD")},
     )
 
 
 sio = socketio.AsyncServer(
-    async_mode='asgi',
-    cors_allowed_origins='*',
+    async_mode="asgi",
+    cors_allowed_origins="*",
     client_manager=client_manager,
     # Increase buffer size to 4MB (to handle 3MB files with base64 overhead)
     max_http_buffer_size=4 * 1024 * 1024,

@@ -12,25 +12,26 @@ class GoogleSheetsClient:
         """Initialize Google Sheets client using workload identity.
         Uses application default credentials which supports workload identity when running in GCP.
         """
-        logger.info('Initializing Google Sheets client with workload identity')
+        logger.info("Initializing Google Sheets client with workload identity")
         self.client = None
         self._cache: Dict[Tuple[str, str], Tuple[List[str], datetime]] = {}
         self._cache_ttl = timedelta(seconds=15)
         try:
             credentials, project = default(
-                scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+                scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
             )
-            logger.info(f'Successfully obtained credentials for project: {project}')
+            logger.info(f"Successfully obtained credentials for project: {project}")
             self.client = gspread.authorize(credentials)
-            logger.info('Successfully initialized Google Sheets API service')
+            logger.info("Successfully initialized Google Sheets API service")
         except Exception:
-            logger.exception('Failed to initialize Google Sheets client')
+            logger.exception("Failed to initialize Google Sheets client")
             self.client = None
 
     def _get_from_cache(
         self, spreadsheet_id: str, range_name: str
     ) -> Optional[List[str]]:
         """Get usernames from cache if available and not expired.
+
         Args:
             spreadsheet_id: The ID of the Google Sheet
             range_name: The A1 notation of the range to fetch
@@ -43,12 +44,12 @@ class GoogleSheetsClient:
 
         usernames, timestamp = self._cache[cache_key]
         if datetime.now() - timestamp > self._cache_ttl:
-            logger.info('Cache expired, will fetch fresh data')
+            logger.info("Cache expired, will fetch fresh data")
             return None
 
         logger.info(
-            f'Using cached data from {timestamp.isoformat()} '
-            f'({len(usernames)} usernames)'
+            f"Using cached data from {timestamp.isoformat()} "
+            f"({len(usernames)} usernames)"
         )
         return usernames
 
@@ -56,6 +57,7 @@ class GoogleSheetsClient:
         self, spreadsheet_id: str, range_name: str, usernames: List[str]
     ) -> None:
         """Update cache with new usernames and current timestamp.
+
         Args:
             spreadsheet_id: The ID of the Google Sheet
             range_name: The A1 notation of the range to fetch
@@ -64,9 +66,10 @@ class GoogleSheetsClient:
         cache_key = (spreadsheet_id, range_name)
         self._cache[cache_key] = (usernames, datetime.now())
 
-    def get_usernames(self, spreadsheet_id: str, range_name: str = 'A:A') -> List[str]:
+    def get_usernames(self, spreadsheet_id: str, range_name: str = "A:A") -> List[str]:
         """Get list of usernames from specified Google Sheet.
         Uses cached data if available and less than 15 seconds old.
+
         Args:
             spreadsheet_id: The ID of the Google Sheet
             range_name: The A1 notation of the range to fetch
@@ -74,7 +77,7 @@ class GoogleSheetsClient:
             List of usernames from the sheet
         """
         if not self.client:
-            logger.error('Google Sheets client not initialized')
+            logger.error("Google Sheets client not initialized")
             return []
 
         # Try to get from cache first
@@ -84,7 +87,7 @@ class GoogleSheetsClient:
 
         try:
             logger.info(
-                f'Fetching usernames from sheet {spreadsheet_id}, range {range_name}'
+                f"Fetching usernames from sheet {spreadsheet_id}, range {range_name}"
             )
             spreadsheet = self.client.open_by_key(spreadsheet_id)
             worksheet = spreadsheet.sheet1  # Get first worksheet
@@ -94,7 +97,7 @@ class GoogleSheetsClient:
                 str(cell[0]).strip() for cell in values if cell and cell[0].strip()
             ]
             logger.info(
-                f'Successfully fetched {len(usernames)} usernames from Google Sheet'
+                f"Successfully fetched {len(usernames)} usernames from Google Sheet"
             )
 
             # Update cache with new data
@@ -102,10 +105,10 @@ class GoogleSheetsClient:
             return usernames
 
         except gspread.exceptions.APIError:
-            logger.exception(f'Error accessing Google Sheet {spreadsheet_id}')
+            logger.exception(f"Error accessing Google Sheet {spreadsheet_id}")
             return []
         except Exception:
             logger.exception(
-                f'Unexpected error accessing Google Sheet {spreadsheet_id}'
+                f"Unexpected error accessing Google Sheet {spreadsheet_id}"
             )
             return []

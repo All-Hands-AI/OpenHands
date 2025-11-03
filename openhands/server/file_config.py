@@ -6,12 +6,12 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config as shared_config
 
 FILES_TO_IGNORE = [
-    '.git/',
-    '.DS_Store',
-    'node_modules/',
-    '__pycache__/',
-    'lost+found/',
-    '.vscode/',
+    ".git/",
+    ".DS_Store",
+    "node_modules/",
+    "__pycache__/",
+    "lost+found/",
+    ".vscode/",
 ]
 
 
@@ -20,7 +20,7 @@ def sanitize_filename(filename: str) -> str:
     # Remove any directory components
     filename = os.path.basename(filename)
     # Remove any non-alphanumeric characters except for .-_
-    filename = re.sub(r'[^\w\-_\.]', '', filename)
+    filename = re.sub(r"[^\w\-_\.]", "", filename)
     # Limit the filename length
     max_length = 255
     if len(filename) > max_length:
@@ -56,7 +56,7 @@ def load_file_upload_config(
     # Sanity check for max_file_size_mb
     if not isinstance(max_file_size_mb, int) or max_file_size_mb < 0:
         logger.warning(
-            f'Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit).'
+            f"Invalid max_file_size_mb: {max_file_size_mb}. Setting to 0 (no limit)."
         )
         max_file_size_mb = 0
 
@@ -65,22 +65,22 @@ def load_file_upload_config(
         logger.warning(
             f'Invalid allowed_extensions: {allowed_extensions}. Setting to [".*"].'
         )
-        allowed_extensions = ['.*']
+        allowed_extensions = [".*"]
     else:
         # Ensure all extensions start with a dot and are lowercase
         allowed_extensions = [
-            ext.lower() if ext.startswith('.') else f'.{ext.lower()}'
+            ext.lower() if ext.startswith(".") else f".{ext.lower()}"
             for ext in allowed_extensions
         ]
 
     # If restrictions are disabled, allow all
     if not restrict_file_types:
-        allowed_extensions = ['.*']
+        allowed_extensions = [".*"]
 
     logger.debug(
-        f'File upload config: max_size={max_file_size_mb}MB, '
-        f'restrict_types={restrict_file_types}, '
-        f'allowed_extensions={allowed_extensions}'
+        f"File upload config: max_size={max_file_size_mb}MB, "
+        f"restrict_types={restrict_file_types}, "
+        f"allowed_extensions={allowed_extensions}"
     )
 
     return max_file_size_mb, restrict_file_types, allowed_extensions
@@ -107,9 +107,9 @@ def is_extension_allowed(filename: str) -> bool:
 
     file_ext = os.path.splitext(filename)[1].lower()  # Convert to lowercase
     return (
-        '.*' in ALLOWED_EXTENSIONS
+        ".*" in ALLOWED_EXTENSIONS
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
-        or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
+        or (file_ext == "" and "." in ALLOWED_EXTENSIONS)
     )
 
 
@@ -131,9 +131,9 @@ def get_unique_filename(filename: str, folder_path: str) -> str:
 
     while os.path.exists(os.path.join(folder_path, filename_candidate)):
         if copy_index == 0:
-            filename_candidate = f'{name} copy{ext}'
+            filename_candidate = f"{name} copy{ext}"
         else:
-            filename_candidate = f'{name} copy({copy_index}){ext}'
+            filename_candidate = f"{name} copy({copy_index}){ext}"
         copy_index += 1
 
     return filename_candidate

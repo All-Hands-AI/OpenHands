@@ -1,5 +1,4 @@
-"""
-Unit tests for the run_maintenance_tasks.py module.
+"""Unit tests for the run_maintenance_tasks.py module.
 
 These tests verify the functionality of the maintenance task runner script
 that processes pending maintenance tasks.
@@ -15,7 +14,7 @@ import pytest
 # Mock the database module to avoid dependency on Google Cloud SQL
 mock_db = MagicMock()
 mock_db.session_maker = MagicMock()
-sys.modules['storage.database'] = mock_db
+sys.modules["storage.database"] = mock_db
 
 # Import after mocking
 from run_maintenance_tasks import (  # noqa: E402
@@ -36,7 +35,7 @@ class MockMaintenanceTaskProcessor(MaintenanceTaskProcessor):
 
     async def __call__(self, task: MaintenanceTask) -> dict:
         """Process a maintenance task."""
-        return {'processed': True, 'task_id': task.id}
+        return {"processed": True, "task_id": task.id}
 
 
 class TestRunMaintenanceTasks:
@@ -48,8 +47,8 @@ class TestRunMaintenanceTasks:
         with session_maker() as session:
             stale_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.WORKING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 started_at=datetime.now(timezone.utc) - timedelta(hours=2),
             )
             session.add(stale_task)
@@ -57,8 +56,8 @@ class TestRunMaintenanceTasks:
             # Create a non-stale task (working for less than 1 hour)
             recent_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.WORKING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 started_at=datetime.now(timezone.utc) - timedelta(minutes=30),
             )
             session.add(recent_task)
@@ -68,7 +67,7 @@ class TestRunMaintenanceTasks:
             recent_task_id = recent_task.id
 
         # Run the function
-        with patch('run_maintenance_tasks.session_maker', return_value=session_maker()):
+        with patch("run_maintenance_tasks.session_maker", return_value=session_maker()):
             set_stale_task_error()
 
         # Check that the stale task is marked as error
@@ -87,8 +86,8 @@ class TestRunMaintenanceTasks:
             # Create a pending task (older)
             older_pending_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 created_at=datetime.now(timezone.utc) - timedelta(hours=2),
             )
             session.add(older_pending_task)
@@ -96,8 +95,8 @@ class TestRunMaintenanceTasks:
             # Create another pending task (newer)
             newer_pending_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 created_at=datetime.now(timezone.utc) - timedelta(hours=1),
             )
             session.add(newer_pending_task)
@@ -105,29 +104,29 @@ class TestRunMaintenanceTasks:
             # Create tasks with other statuses
             working_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.WORKING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(working_task)
 
             completed_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.COMPLETED,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(completed_task)
 
             error_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.ERROR,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(error_task)
 
             inactive_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.INACTIVE,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(inactive_task)
 
@@ -138,7 +137,7 @@ class TestRunMaintenanceTasks:
         # Test next_task function
         with session_maker() as session:
             # Patch asyncio.sleep to avoid delays in tests
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 task = await next_task(session)
 
                 # Should return the oldest pending task
@@ -152,9 +151,9 @@ class TestRunMaintenanceTasks:
         # Create session with no pending tasks
         with session_maker() as session:
             # Patch asyncio.sleep to avoid delays in tests
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 # Patch NUM_RETRIES to make the test faster
-                with patch('run_maintenance_tasks.NUM_RETRIES', 1):
+                with patch("run_maintenance_tasks.NUM_RETRIES", 1):
                     task = await next_task(session)
 
                     # Should return None after retries
@@ -169,8 +168,8 @@ class TestRunMaintenanceTasks:
         with session_maker() as session:
             task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(task)
             session.commit()
@@ -196,9 +195,9 @@ class TestRunMaintenanceTasks:
 
         with session_maker() as session:
             # Patch asyncio.sleep to avoid delays
-            with patch('asyncio.sleep', new_callable=AsyncMock):
+            with patch("asyncio.sleep", new_callable=AsyncMock):
                 # Test the fixed version
-                with patch('run_maintenance_tasks.next_task', fixed_next_task):
+                with patch("run_maintenance_tasks.next_task", fixed_next_task):
                     # This should complete without hanging
                     result = await next_task(session)
                     assert result is not None
@@ -209,23 +208,23 @@ class TestRunMaintenanceTasks:
         """Test that run_tasks processes pending tasks in order."""
         # Create a mock processor
         processor = AsyncMock()
-        processor.return_value = {'processed': True}
+        processor.return_value = {"processed": True}
 
         # Create tasks
         with session_maker() as session:
             # Create two pending tasks
             task1 = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 created_at=datetime.now(timezone.utc) - timedelta(hours=2),
             )
             session.add(task1)
 
             task2 = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 created_at=datetime.now(timezone.utc) - timedelta(hours=1),
             )
             session.add(task2)
@@ -236,14 +235,14 @@ class TestRunMaintenanceTasks:
 
         # Mock the get_processor method to return our mock
         with patch(
-            'storage.maintenance_task.MaintenanceTask.get_processor',
+            "storage.maintenance_task.MaintenanceTask.get_processor",
             return_value=processor,
         ):
             with patch(
-                'run_maintenance_tasks.session_maker', return_value=session_maker()
+                "run_maintenance_tasks.session_maker", return_value=session_maker()
             ):
                 # Patch asyncio.sleep to avoid delays
-                with patch('asyncio.sleep', new_callable=AsyncMock):
+                with patch("asyncio.sleep", new_callable=AsyncMock):
                     # Run the function with a timeout to prevent infinite loop
                     try:
                         await asyncio.wait_for(run_tasks(), timeout=1.0)
@@ -257,8 +256,8 @@ class TestRunMaintenanceTasks:
 
             assert updated_task1.status == MaintenanceTaskStatus.COMPLETED
             assert updated_task2.status == MaintenanceTaskStatus.COMPLETED
-            assert updated_task1.info == {'processed': True}
-            assert updated_task2.info == {'processed': True}
+            assert updated_task1.info == {"processed": True}
+            assert updated_task2.info == {"processed": True}
             assert processor.call_count == 2
 
     @pytest.mark.asyncio
@@ -266,14 +265,14 @@ class TestRunMaintenanceTasks:
         """Test that run_tasks handles processor errors correctly."""
         # Create a mock processor that raises an exception
         processor = AsyncMock()
-        processor.side_effect = ValueError('Test error')
+        processor.side_effect = ValueError("Test error")
 
         # Create a task
         with session_maker() as session:
             task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(task)
             session.commit()
@@ -282,14 +281,14 @@ class TestRunMaintenanceTasks:
 
         # Mock the get_processor method to return our mock
         with patch(
-            'storage.maintenance_task.MaintenanceTask.get_processor',
+            "storage.maintenance_task.MaintenanceTask.get_processor",
             return_value=processor,
         ):
             with patch(
-                'run_maintenance_tasks.session_maker', return_value=session_maker()
+                "run_maintenance_tasks.session_maker", return_value=session_maker()
             ):
                 # Patch asyncio.sleep to avoid delays
-                with patch('asyncio.sleep', new_callable=AsyncMock):
+                with patch("asyncio.sleep", new_callable=AsyncMock):
                     # Run the function with a timeout
                     try:
                         await asyncio.wait_for(run_tasks(), timeout=1.0)
@@ -301,22 +300,22 @@ class TestRunMaintenanceTasks:
             updated_task = session.get(MaintenanceTask, task_id)
 
             assert updated_task.status == MaintenanceTaskStatus.ERROR
-            assert 'error' in updated_task.info
-            assert updated_task.info['error'] == 'Test error'
+            assert "error" in updated_task.info
+            assert updated_task.info["error"] == "Test error"
 
     @pytest.mark.asyncio
     async def test_run_tasks_respects_delay(self, session_maker):
         """Test that run_tasks respects the delay parameter."""
         # Create a mock processor
         processor = AsyncMock()
-        processor.return_value = {'processed': True}
+        processor.return_value = {"processed": True}
 
         # Create a task with delay
         with session_maker() as session:
             task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 delay=1,  # 1 second delay
             )
             session.add(task)
@@ -329,13 +328,13 @@ class TestRunMaintenanceTasks:
 
         # Mock the get_processor method
         with patch(
-            'storage.maintenance_task.MaintenanceTask.get_processor',
+            "storage.maintenance_task.MaintenanceTask.get_processor",
             return_value=processor,
         ):
             with patch(
-                'run_maintenance_tasks.session_maker', return_value=session_maker()
+                "run_maintenance_tasks.session_maker", return_value=session_maker()
             ):
-                with patch('asyncio.sleep', sleep_mock):
+                with patch("asyncio.sleep", sleep_mock):
                     # Run the function with a timeout
                     try:
                         await asyncio.wait_for(run_tasks(), timeout=1.0)
@@ -357,16 +356,16 @@ class TestRunMaintenanceTasks:
         with session_maker() as session:
             stale_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.WORKING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
                 started_at=datetime.now(timezone.utc) - timedelta(hours=2),
             )
             session.add(stale_task)
 
             pending_task = MaintenanceTask(
                 status=MaintenanceTaskStatus.PENDING,
-                processor_type='test.processor',
-                processor_json='{}',
+                processor_type="test.processor",
+                processor_json="{}",
             )
             session.add(pending_task)
             session.commit()
@@ -376,18 +375,18 @@ class TestRunMaintenanceTasks:
 
         # Mock the processor
         processor = AsyncMock()
-        processor.return_value = {'processed': True}
+        processor.return_value = {"processed": True}
 
         # Mock the functions
         with patch(
-            'storage.maintenance_task.MaintenanceTask.get_processor',
+            "storage.maintenance_task.MaintenanceTask.get_processor",
             return_value=processor,
         ):
             with patch(
-                'run_maintenance_tasks.session_maker', return_value=session_maker()
+                "run_maintenance_tasks.session_maker", return_value=session_maker()
             ):
                 # Patch asyncio.sleep to avoid delays
-                with patch('asyncio.sleep', new_callable=AsyncMock):
+                with patch("asyncio.sleep", new_callable=AsyncMock):
                     # Run the main function with a timeout
                     try:
                         await asyncio.wait_for(main(), timeout=1.0)
@@ -404,4 +403,4 @@ class TestRunMaintenanceTasks:
 
             # Pending task should be processed and completed
             assert updated_pending_task.status == MaintenanceTaskStatus.COMPLETED
-            assert updated_pending_task.info == {'processed': True}
+            assert updated_pending_task.info == {"processed": True}

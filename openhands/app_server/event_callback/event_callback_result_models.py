@@ -9,13 +9,13 @@ from openhands.sdk.event.types import EventID
 
 
 class EventCallbackResultStatus(Enum):
-    SUCCESS = 'SUCCESS'
-    ERROR = 'ERROR'
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
 
 
 class EventCallbackResultSortOrder(Enum):
-    CREATED_AT = 'CREATED_AT'
-    CREATED_AT_DESC = 'CREATED_AT_DESC'
+    CREATED_AT = "CREATED_AT"
+    CREATED_AT_DESC = "CREATED_AT_DESC"
 
 
 class EventCallbackResult(BaseModel):

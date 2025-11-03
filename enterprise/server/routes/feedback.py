@@ -12,7 +12,7 @@ from openhands.server.shared import file_store
 from openhands.server.user_auth import get_user_id
 from openhands.utils.async_utils import call_sync_from_async
 
-router = APIRouter(prefix='/feedback', tags=['feedback'])
+router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 
 async def get_event_ids(conversation_id: str, user_id: str) -> List[int]:
@@ -43,7 +43,7 @@ async def get_event_ids(conversation_id: str, user_id: str) -> List[int]:
             if not metadata:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f'Conversation {conversation_id} not found',
+                    detail=f"Conversation {conversation_id} not found",
                 )
 
     await call_sync_from_async(_verify_conversation)
@@ -71,10 +71,9 @@ class FeedbackRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 
-@router.post('/conversation', status_code=status.HTTP_201_CREATED)
+@router.post("/conversation", status_code=status.HTTP_201_CREATED)
 async def submit_conversation_feedback(feedback: FeedbackRequest):
-    """
-    Submit feedback for a conversation.
+    """Submit feedback for a conversation.
 
     This endpoint accepts a rating (1-5) and optional reason for the feedback.
     The feedback is associated with a specific conversation and optionally a specific event.
@@ -83,7 +82,7 @@ async def submit_conversation_feedback(feedback: FeedbackRequest):
     if feedback.rating < 1 or feedback.rating > 5:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Rating must be between 1 and 5',
+            detail="Rating must be between 1 and 5",
         )
 
     # Create new feedback record
@@ -103,13 +102,12 @@ async def submit_conversation_feedback(feedback: FeedbackRequest):
 
     await call_sync_from_async(_save_feedback)
 
-    return {'status': 'success', 'message': 'Feedback submitted successfully'}
+    return {"status": "success", "message": "Feedback submitted successfully"}
 
 
-@router.get('/conversation/{conversation_id}/batch')
+@router.get("/conversation/{conversation_id}/batch")
 async def get_batch_feedback(conversation_id: str, user_id: str = Depends(get_user_id)):
-    """
-    Get feedback for all events in a conversation.
+    """Get feedback for all events in a conversation.
 
     Returns feedback status for each event, including whether feedback exists
     and if so, the rating and reason.
@@ -132,9 +130,9 @@ async def get_batch_feedback(conversation_id: str, user_id: str = Depends(get_us
             # Create a mapping of event_id to feedback
             feedback_map = {
                 feedback.event_id: {
-                    'exists': True,
-                    'rating': feedback.rating,
-                    'reason': feedback.reason,
+                    "exists": True,
+                    "rating": feedback.rating,
+                    "reason": feedback.reason,
                 }
                 for feedback in result.scalars()
             }
@@ -142,7 +140,7 @@ async def get_batch_feedback(conversation_id: str, user_id: str = Depends(get_us
             # Build response including all events
             response = {}
             for event_id in event_ids:
-                response[str(event_id)] = feedback_map.get(event_id, {'exists': False})
+                response[str(event_id)] = feedback_map.get(event_id, {"exists": False})
 
             return response
 

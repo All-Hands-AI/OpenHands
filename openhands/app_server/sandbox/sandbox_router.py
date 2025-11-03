@@ -11,21 +11,21 @@ from openhands.app_server.sandbox.sandbox_service import (
     SandboxService,
 )
 
-router = APIRouter(prefix='/sandboxes', tags=['Sandbox'])
+router = APIRouter(prefix="/sandboxes", tags=["Sandbox"])
 sandbox_service_dependency = depends_sandbox_service()
 
 # Read methods
 
 
-@router.get('/search')
+@router.get("/search")
 async def search_sandboxes(
     page_id: Annotated[
         str | None,
-        Query(title='Optional next_page_id from the previously returned page'),
+        Query(title="Optional next_page_id from the previously returned page"),
     ] = None,
     limit: Annotated[
         int,
-        Query(title='The max number of results in the page', gt=0, lte=100),
+        Query(title="The max number of results in the page", gt=0, lte=100),
     ] = 100,
     sandbox_service: SandboxService = sandbox_service_dependency,
 ) -> SandboxPage:
@@ -35,7 +35,7 @@ async def search_sandboxes(
     return await sandbox_service.search_sandboxes(page_id=page_id, limit=limit)
 
 
-@router.get('')
+@router.get("")
 async def batch_get_sandboxes(
     id: Annotated[list[str], Query()],
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -49,7 +49,7 @@ async def batch_get_sandboxes(
 # Write Methods
 
 
-@router.post('')
+@router.post("")
 async def start_sandbox(
     sandbox_spec_id: str | None = None,
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -58,7 +58,7 @@ async def start_sandbox(
     return info
 
 
-@router.post('/{sandbox_id}/pause', responses={404: {'description': 'Item not found'}})
+@router.post("/{sandbox_id}/pause", responses={404: {"description": "Item not found"}})
 async def pause_sandbox(
     sandbox_id: str,
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -69,7 +69,7 @@ async def pause_sandbox(
     return Success()
 
 
-@router.post('/{sandbox_id}/resume', responses={404: {'description': 'Item not found'}})
+@router.post("/{sandbox_id}/resume", responses={404: {"description": "Item not found"}})
 async def resume_sandbox(
     sandbox_id: str,
     sandbox_service: SandboxService = sandbox_service_dependency,
@@ -80,7 +80,7 @@ async def resume_sandbox(
     return Success()
 
 
-@router.delete('/{id}', responses={404: {'description': 'Item not found'}})
+@router.delete("/{id}", responses={404: {"description": "Item not found"}})
 async def delete_sandbox(
     sandbox_id: str,
     sandbox_service: SandboxService = sandbox_service_dependency,

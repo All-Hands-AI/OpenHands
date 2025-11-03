@@ -29,9 +29,9 @@ from openhands.app_server.utils.sql_utils import Base
 async def async_engine():
     """Create an async SQLite engine for testing."""
     engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
+        "sqlite+aiosqlite:///:memory:",
         poolclass=StaticPool,
-        connect_args={'check_same_thread': False},
+        connect_args={"check_same_thread": False},
         echo=False,
     )
 
@@ -74,7 +74,7 @@ def sample_request(
     return CreateEventCallbackRequest(
         conversation_id=uuid4(),
         processor=sample_processor,
-        event_kind='ActionEvent',
+        event_kind="ActionEvent",
     )
 
 
@@ -160,12 +160,12 @@ class TestSQLEventCallbackService:
         callback1_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
         callback2_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,
-            event_kind='ObservationEvent',
+            event_kind="ObservationEvent",
         )
 
         await service.create_event_callback(callback1_request)
@@ -190,12 +190,12 @@ class TestSQLEventCallbackService:
         callback1_request = CreateEventCallbackRequest(
             conversation_id=conversation_id1,
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
         callback2_request = CreateEventCallbackRequest(
             conversation_id=conversation_id2,
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
 
         await service.create_event_callback(callback1_request)
@@ -221,22 +221,22 @@ class TestSQLEventCallbackService:
         callback1_request = CreateEventCallbackRequest(
             conversation_id=conversation_id,
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
         callback2_request = CreateEventCallbackRequest(
             conversation_id=conversation_id,
             processor=sample_processor,
-            event_kind='ObservationEvent',
+            event_kind="ObservationEvent",
         )
 
         await service.create_event_callback(callback1_request)
         await service.create_event_callback(callback2_request)
 
         # Search by event_kind
-        result = await service.search_event_callbacks(event_kind__eq='ActionEvent')
+        result = await service.search_event_callbacks(event_kind__eq="ActionEvent")
 
         assert len(result.items) == 1
-        assert result.items[0].event_kind == 'ActionEvent'
+        assert result.items[0].event_kind == "ActionEvent"
 
     async def test_search_callbacks_with_pagination(
         self,
@@ -249,7 +249,7 @@ class TestSQLEventCallbackService:
             callback_request = CreateEventCallbackRequest(
                 conversation_id=uuid4(),
                 processor=sample_processor,
-                event_kind='ActionEvent',
+                event_kind="ActionEvent",
             )
             await service.create_event_callback(callback_request)
 
@@ -282,7 +282,7 @@ class TestSQLEventCallbackService:
         callback2_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
 
         await service.create_event_callback(callback1_request)
@@ -323,12 +323,12 @@ class TestSQLEventCallbackService:
         callback1_request = CreateEventCallbackRequest(
             conversation_id=conversation_id,
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
         callback2_request = CreateEventCallbackRequest(
             conversation_id=conversation_id,
             processor=sample_processor,
-            event_kind='ObservationEvent',
+            event_kind="ObservationEvent",
         )
 
         callback1 = await service.create_event_callback(callback1_request)
@@ -355,14 +355,14 @@ class TestSQLEventCallbackService:
         callback1_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,
-            event_kind='ActionEvent',
+            event_kind="ActionEvent",
         )
         callback1 = await service.create_event_callback(callback1_request)
 
         callback2_request = CreateEventCallbackRequest(
             conversation_id=uuid4(),
             processor=sample_processor,
-            event_kind='ObservationEvent',
+            event_kind="ObservationEvent",
         )
         callback2 = await service.create_event_callback(callback2_request)
 

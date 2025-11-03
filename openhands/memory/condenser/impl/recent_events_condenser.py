@@ -25,7 +25,7 @@ class RecentEventsCondenser(Condenser):
     def from_config(
         cls, config: RecentEventsCondenserConfig, llm_registry: LLMRegistry
     ) -> RecentEventsCondenser:
-        return RecentEventsCondenser(**config.model_dump(exclude={'type'}))
+        return RecentEventsCondenser(**config.model_dump(exclude={"type"}))
 
 
 RecentEventsCondenser.register_config(RecentEventsCondenserConfig)

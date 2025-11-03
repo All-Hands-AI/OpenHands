@@ -9,15 +9,13 @@ from openhands.integrations.service_types import (
 
 
 class GitLabFeaturesMixin(GitLabMixinBase):
-    """
-    Methods used for custom features in UI driven via GitLab integration
-    """
+    """Methods used for custom features in UI driven via GitLab integration"""
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
         project_id = self._extract_project_id(repository)
         return (
-            f'{self.BASE_URL}/projects/{project_id}/repository/files/.cursorrules/raw'
+            f"{self.BASE_URL}/projects/{project_id}/repository/files/.cursorrules/raw"
         )
 
     async def _get_microagents_directory_url(
@@ -25,27 +23,27 @@ class GitLabFeaturesMixin(GitLabMixinBase):
     ) -> str:
         """Get the URL for checking microagents directory."""
         project_id = self._extract_project_id(repository)
-        return f'{self.BASE_URL}/projects/{project_id}/repository/tree'
+        return f"{self.BASE_URL}/projects/{project_id}/repository/tree"
 
     def _get_microagents_directory_params(self, microagents_path: str) -> dict:
         """Get parameters for the microagents directory request."""
-        return {'path': microagents_path, 'recursive': 'true'}
+        return {"path": microagents_path, "recursive": "true"}
 
     def _is_valid_microagent_file(self, item: dict) -> bool:
         """Check if an item represents a valid microagent file."""
         return (
-            item['type'] == 'blob'
-            and item['name'].endswith('.md')
-            and item['name'] != 'README.md'
+            item["type"] == "blob"
+            and item["name"].endswith(".md")
+            and item["name"] != "README.md"
         )
 
     def _get_file_name_from_item(self, item: dict) -> str:
         """Extract file name from directory item."""
-        return item['name']
+        return item["name"]
 
     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
         """Extract file path from directory item."""
-        return item['path']
+        return item["path"]
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -98,33 +96,33 @@ class GitLabFeaturesMixin(GitLabMixinBase):
 
             # Get merge requests using GraphQL
             response = await self.execute_graphql_query(query)
-            data = response.get('currentUser', {})
+            data = response.get("currentUser", {})
 
             # Process merge requests
-            merge_requests = data.get('authoredMergeRequests', {}).get('nodes', [])
+            merge_requests = data.get("authoredMergeRequests", {}).get("nodes", [])
             for mr in merge_requests:
-                repo_name = mr.get('project', {}).get('fullPath', '')
-                mr_number = mr.get('iid')
-                title = mr.get('title', '')
+                repo_name = mr.get("project", {}).get("fullPath", "")
+                mr_number = mr.get("iid")
+                title = mr.get("title", "")
 
                 # Start with default task type
                 task_type = TaskType.OPEN_PR
 
                 # Check for specific states
-                if mr.get('conflicts'):
+                if mr.get("conflicts"):
                     task_type = TaskType.MERGE_CONFLICTS
                 elif (
-                    mr.get('pipelines', {}).get('nodes', [])
-                    and mr.get('pipelines', {}).get('nodes', [])[0].get('status')
-                    == 'FAILED'
+                    mr.get("pipelines", {}).get("nodes", [])
+                    and mr.get("pipelines", {}).get("nodes", [])[0].get("status")
+                    == "FAILED"
                 ):
                     task_type = TaskType.FAILING_CHECKS
                 else:
                     # Check for unresolved comments
                     has_unresolved_comments = False
-                    for discussion in mr.get('discussions', {}).get('nodes', []):
-                        for note in discussion.get('notes', {}).get('nodes', []):
-                            if note.get('resolvable') and not note.get('resolved'):
+                    for discussion in mr.get("discussions", {}).get("nodes", []):
+                        for note in discussion.get("notes", {}).get("nodes", []):
+                            if note.get("resolvable") and not note.get("resolved"):
                                 has_unresolved_comments = True
                                 break
                         if has_unresolved_comments:
@@ -146,11 +144,11 @@ class GitLabFeaturesMixin(GitLabMixinBase):
                     )
 
             # Get assigned issues using REST API
-            url = f'{self.BASE_URL}/issues'
+            url = f"{self.BASE_URL}/issues"
             params = {
-                'assignee_username': username,
-                'state': 'opened',
-                'scope': 'assigned_to_me',
+                "assignee_username": username,
+                "state": "opened",
+                "scope": "assigned_to_me",
             }
 
             issues_response, _ = await self._make_request(
@@ -160,10 +158,10 @@ class GitLabFeaturesMixin(GitLabMixinBase):
             # Process issues
             for issue in issues_response:
                 repo_name = (
-                    issue.get('references', {}).get('full', '').split('#')[0].strip()
+                    issue.get("references", {}).get("full", "").split("#")[0].strip()
                 )
-                issue_number = issue.get('iid')
-                title = issue.get('title', '')
+                issue_number = issue.get("iid")
+                title = issue.get("title", "")
 
                 tasks.append(
                     SuggestedTask(
@@ -197,9 +195,9 @@ class GitLabFeaturesMixin(GitLabMixinBase):
         # Extract project_id from repository name
         project_id = self._extract_project_id(repository)
 
-        encoded_file_path = file_path.replace('/', '%2F')
-        base_url = f'{self.BASE_URL}/projects/{project_id}'
-        file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
+        encoded_file_path = file_path.replace("/", "%2F")
+        base_url = f"{self.BASE_URL}/projects/{project_id}"
+        file_url = f"{base_url}/repository/files/{encoded_file_path}/raw"
 
         response, _ = await self._make_request(file_url)
 

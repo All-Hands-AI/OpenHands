@@ -59,15 +59,15 @@ from openhands.utils.utils import create_registry_and_conversation_stats
 
 # Pattern for accessing runtime pods externally
 RUNTIME_URL_PATTERN = os.getenv(
-    'RUNTIME_URL_PATTERN', 'https://{runtime_id}.prod-runtime.all-hands.dev'
+    "RUNTIME_URL_PATTERN", "https://{runtime_id}.prod-runtime.all-hands.dev"
 )
-RUNTIME_ROUTING_MODE = os.getenv('RUNTIME_ROUTING_MODE', 'subdomain').lower()
+RUNTIME_ROUTING_MODE = os.getenv("RUNTIME_ROUTING_MODE", "subdomain").lower()
 
 # Pattern for base URL for the runtime
 RUNTIME_CONVERSATION_URL = RUNTIME_URL_PATTERN + (
-    '/runtime/api/conversations/{conversation_id}'
-    if RUNTIME_ROUTING_MODE == 'path'
-    else '/api/conversations/{conversation_id}'
+    "/runtime/api/conversations/{conversation_id}"
+    if RUNTIME_ROUTING_MODE == "path"
+    else "/api/conversations/{conversation_id}"
 )
 
 # Time in seconds before a Redis entry is considered expired if not refreshed
@@ -83,9 +83,9 @@ _HTTP_TIMEOUT = 15
 class EventRetrieval(Enum):
     """Determine mode for getting events out of the nested runtime back into the main app."""
 
-    WEBHOOK_PUSH = 'WEBHOOK_PUSH'
-    POLLING = 'POLLING'
-    NONE = 'NONE'
+    WEBHOOK_PUSH = "WEBHOOK_PUSH"
+    POLLING = "POLLING"
+    NONE = "NONE"
 
 
 @dataclass
@@ -115,11 +115,11 @@ class SaasNestedConversationManager(ConversationManager):
         self, sid: str, user_id: str | None = None
     ) -> ServerConversation | None:
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def detach_from_conversation(self, conversation: ServerConversation):
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def join_conversation(
         self,
@@ -129,17 +129,15 @@ class SaasNestedConversationManager(ConversationManager):
         user_id: str | None,
     ) -> AgentLoopInfo:
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     def get_agent_session(self, sid: str):
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """
-        Get the running agent loops directly from the remote runtime.
-        """
+        """Get the running agent loops directly from the remote runtime."""
         conversation_ids = await self._get_all_running_conversation_ids()
 
         if filter_to_sids is not None:
@@ -162,7 +160,7 @@ class SaasNestedConversationManager(ConversationManager):
         runtime = await self._get_runtime(sid)
         if runtime is None:
             return False
-        result = runtime.get('status') == 'running'
+        result = runtime.get("status") == "running"
         return result
 
     async def get_connections(
@@ -192,9 +190,9 @@ class SaasNestedConversationManager(ConversationManager):
         status = ConversationStatus.STOPPED
         event_store = EventStore(sid, self.file_store, user_id)
         if runtime:
-            nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
-            session_api_key = runtime.get('session_api_key')
-            status_str = (runtime.get('status') or 'stopped').upper()
+            nested_url = self._get_nested_url_for_runtime(runtime["runtime_id"], sid)
+            session_api_key = runtime.get("session_api_key")
+            status_str = (runtime.get("status") or "stopped").upper()
             if status_str in ConversationStatus:
                 status = ConversationStatus[status_str]
         if status is ConversationStatus.STOPPED and starting:
@@ -223,7 +221,7 @@ class SaasNestedConversationManager(ConversationManager):
         self, sid, settings, user_id, initial_user_msg=None, replay_json=None
     ):
         try:
-            logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+            logger.info(f"starting_agent_loop:{sid}", extra={"session_id": sid})
             await self.ensure_num_conversations_below_limit(sid, user_id)
             provider_handler = self._get_provider_handler(settings)
             runtime = await self._create_runtime(
@@ -234,11 +232,11 @@ class SaasNestedConversationManager(ConversationManager):
             if not self._runtime_container_image:
                 self._runtime_container_image = getattr(
                     runtime,
-                    'container_image',
+                    "container_image",
                     self.config.sandbox.runtime_container_image,
                 )
 
-            session_api_key = runtime.session.headers['X-Session-API-Key']
+            session_api_key = runtime.session.headers["X-Session-API-Key"]
 
             await self._start_conversation(
                 sid,
@@ -265,11 +263,11 @@ class SaasNestedConversationManager(ConversationManager):
         api_url: str,
         session_api_key: str,
     ):
-        logger.info('starting_nested_conversation', extra={'sid': sid})
+        logger.info("starting_nested_conversation", extra={"sid": sid})
         async with httpx.AsyncClient(
             verify=httpx_verify_option(),
             headers={
-                'X-Session-API-Key': session_api_key,
+                "X-Session-API-Key": session_api_key,
             },
         ) as client:
             await self._setup_nested_settings(client, api_url, settings)
@@ -296,14 +294,14 @@ class SaasNestedConversationManager(ConversationManager):
 
         experiment_config = ExperimentConfig(
             config={
-                'system_prompt_filename': config.get_agent_config(
+                "system_prompt_filename": config.get_agent_config(
                     config.default_agent
                 ).system_prompt_filename
             }
         )
 
         response = await client.post(
-            f'{api_url}/api/conversations/{sid}/exp-config',
+            f"{api_url}/api/conversations/{sid}/exp-config",
             json=experiment_config.model_dump(),
         )
         response.raise_for_status()
@@ -312,13 +310,13 @@ class SaasNestedConversationManager(ConversationManager):
         self, client: httpx.AsyncClient, api_url: str, settings: Settings
     ) -> None:
         """Setup the settings for the nested conversation."""
-        settings_json = settings.model_dump(context={'expose_secrets': True})
-        settings_json.pop('custom_secrets', None)
-        settings_json.pop('git_provider_tokens', None)
-        if settings_json.get('git_provider'):
-            settings_json['git_provider'] = settings_json['git_provider'].value
-        settings_json.pop('secrets_store', None)
-        response = await client.post(f'{api_url}/api/settings', json=settings_json)
+        settings_json = settings.model_dump(context={"expose_secrets": True})
+        settings_json.pop("custom_secrets", None)
+        settings_json.pop("git_provider_tokens", None)
+        if settings_json.get("git_provider"):
+            settings_json["git_provider"] = settings_json["git_provider"].value
+        settings_json.pop("secrets_store", None)
+        response = await client.post(f"{api_url}/api/settings", json=settings_json)
         response.raise_for_status()
 
     async def _setup_provider_tokens(
@@ -330,17 +328,17 @@ class SaasNestedConversationManager(ConversationManager):
         if provider_tokens:
             provider_tokens_json = {
                 k.value: {
-                    'token': v.token.get_secret_value(),
-                    'user_id': v.user_id,
-                    'host': v.host,
+                    "token": v.token.get_secret_value(),
+                    "user_id": v.user_id,
+                    "host": v.host,
                 }
                 for k, v in provider_tokens.items()
                 if v.token
             }
             response = await client.post(
-                f'{api_url}/api/add-git-providers',
+                f"{api_url}/api/add-git-providers",
                 json={
-                    'provider_tokens': provider_tokens_json,
+                    "provider_tokens": provider_tokens_json,
                 },
             )
             response.raise_for_status()
@@ -360,26 +358,26 @@ class SaasNestedConversationManager(ConversationManager):
             for key, secret in custom_secrets.items():
                 try:
                     response = await client.post(
-                        f'{api_url}/api/secrets',
+                        f"{api_url}/api/secrets",
                         json={
-                            'name': key,
-                            'description': secret.description,
-                            'value': secret.secret.get_secret_value(),
+                            "name": key,
+                            "description": secret.description,
+                            "value": secret.secret.get_secret_value(),
                         },
                     )
                     response.raise_for_status()
-                    logger.debug(f'Successfully created secret: {key}')
+                    logger.debug(f"Successfully created secret: {key}")
                 except httpx.HTTPStatusError as e:
                     if e.response.status_code == 400:
                         # Only ignore if it's actually a duplicate error
                         try:
                             error_data = e.response.json()
-                            error_msg = error_data.get('message', '')
+                            error_msg = error_data.get("message", "")
                             # The API returns: "Secret {secret_name} already exists"
-                            if 'already exists' in error_msg:
+                            if "already exists" in error_msg:
                                 logger.info(
                                     f'Secret "{key}" already exists, continuing - ignoring duplicate',
-                                    extra={'api_url': api_url},
+                                    extra={"api_url": api_url},
                                 )
                                 continue
                         except (KeyError, ValueError, TypeError):
@@ -388,8 +386,8 @@ class SaasNestedConversationManager(ConversationManager):
                     logger.error(
                         f'Failed to setup secret "{key}": HTTP {e.response.status_code}',
                         extra={
-                            'api_url': api_url,
-                            'response_text': e.response.text[:200],
+                            "api_url": api_url,
+                            "response_text": e.response.text[:200],
                         },
                     )
                     raise
@@ -398,12 +396,12 @@ class SaasNestedConversationManager(ConversationManager):
         api_key_store = ApiKeyStore.get_instance()
         mcp_api_key = api_key_store.retrieve_mcp_api_key(user_id)
         if not mcp_api_key:
-            mcp_api_key = api_key_store.create_api_key(user_id, 'MCP_API_KEY', None)
+            mcp_api_key = api_key_store.create_api_key(user_id, "MCP_API_KEY", None)
         if not mcp_api_key:
             return None
-        web_host = os.environ.get('WEB_HOST', 'app.all-hands.dev')
+        web_host = os.environ.get("WEB_HOST", "app.all-hands.dev")
         shttp_servers = [
-            MCPSHTTPServerConfig(url=f'https://{web_host}/mcp/mcp', api_key=mcp_api_key)
+            MCPSHTTPServerConfig(url=f"https://{web_host}/mcp/mcp", api_key=mcp_api_key)
         ]
         return MCPConfig(shttp_servers=shttp_servers)
 
@@ -419,10 +417,10 @@ class SaasNestedConversationManager(ConversationManager):
     ):
         """Create the nested conversation."""
         init_conversation: dict[str, Any] = {
-            'initial_user_msg': initial_user_msg.content if initial_user_msg else None,
-            'image_urls': [],
-            'replay_json': replay_json,
-            'conversation_id': sid,
+            "initial_user_msg": initial_user_msg.content if initial_user_msg else None,
+            "image_urls": [],
+            "replay_json": replay_json,
+            "conversation_id": sid,
         }
 
         mcp_config = self._get_mcp_config(user_id)
@@ -432,22 +430,22 @@ class SaasNestedConversationManager(ConversationManager):
                 mcp_config = mcp_config.merge(settings.mcp_config)
             # Check again since theoretically merge could return None.
             if mcp_config:
-                init_conversation['mcp_config'] = mcp_config.model_dump()
+                init_conversation["mcp_config"] = mcp_config.model_dump()
 
         if isinstance(settings, ConversationInitData):
-            init_conversation['repository'] = settings.selected_repository
-            init_conversation['selected_branch'] = settings.selected_branch
-            init_conversation['git_provider'] = (
+            init_conversation["repository"] = settings.selected_repository
+            init_conversation["selected_branch"] = settings.selected_branch
+            init_conversation["git_provider"] = (
                 settings.git_provider.value if settings.git_provider else None
             )
-            init_conversation['conversation_instructions'] = (
+            init_conversation["conversation_instructions"] = (
                 settings.conversation_instructions
             )
 
         response = await client.post(
-            f'{api_url}/api/conversations', json=init_conversation
+            f"{api_url}/api/conversations", json=init_conversation
         )
-        logger.info(f'_start_agent_loop:{response.status_code}:{response.json()}')
+        logger.info(f"_start_agent_loop:{response.status_code}:{response.json()}")
         response.raise_for_status()
 
     async def _wait_for_conversation_ready(
@@ -457,18 +455,18 @@ class SaasNestedConversationManager(ConversationManager):
         # TODO: Find out why /api/conversations/{sid} returns RUNNING when events are not available
         for _ in range(5):
             try:
-                logger.info('checking_events_endpoint_running', extra={'sid': sid})
-                response = await client.get(f'{api_url}/api/conversations/{sid}/events')
+                logger.info("checking_events_endpoint_running", extra={"sid": sid})
+                response = await client.get(f"{api_url}/api/conversations/{sid}/events")
                 if response.is_success:
-                    logger.info('events_endpoint_is_running', extra={'sid': sid})
+                    logger.info("events_endpoint_is_running", extra={"sid": sid})
                     break
             except Exception:
-                logger.warning('events_endpoint_not_ready', extra={'sid': sid})
+                logger.warning("events_endpoint_not_ready", extra={"sid": sid})
             await asyncio.sleep(5)
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def request_llm_completion(
         self,
@@ -478,52 +476,49 @@ class SaasNestedConversationManager(ConversationManager):
         messages: list[dict[str, str]],
     ) -> str:
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def send_event_to_conversation(self, sid: str, data: dict):
         runtime = await self._get_runtime(sid)
         if runtime is None:
-            raise ValueError(f'no_such_conversation:{sid}')
-        nested_url = self._get_nested_url_for_runtime(runtime['runtime_id'], sid)
+            raise ValueError(f"no_such_conversation:{sid}")
+        nested_url = self._get_nested_url_for_runtime(runtime["runtime_id"], sid)
         async with httpx.AsyncClient(
             verify=httpx_verify_option(),
             headers={
-                'X-Session-API-Key': runtime['session_api_key'],
+                "X-Session-API-Key": runtime["session_api_key"],
             },
         ) as client:
-            response = await client.post(f'{nested_url}/events', json=data)
+            response = await client.post(f"{nested_url}/events", json=data)
             response.raise_for_status()
 
     async def disconnect_from_session(self, connection_id: str):
         # Not supported - clients should connect directly to the nested server!
-        raise ValueError('unsupported_operation')
+        raise ValueError("unsupported_operation")
 
     async def close_session(self, sid: str):
-        logger.info('close_session', extra={'sid': sid})
+        logger.info("close_session", extra={"sid": sid})
         runtime = await self._get_runtime(sid)
         if runtime is None:
-            logger.info('no_session_to_close', extra={'sid': sid})
+            logger.info("no_session_to_close", extra={"sid": sid})
             return
         async with self._httpx_client() as client:
             response = await client.post(
-                f'{self.remote_runtime_api_url}/pause',
-                json={'runtime_id': runtime['runtime_id']},
+                f"{self.remote_runtime_api_url}/pause",
+                json={"runtime_id": runtime["runtime_id"]},
             )
             if not response.is_success:
                 logger.info(
-                    'failed_to_close_session',
+                    "failed_to_close_session",
                     {
-                        'sid': sid,
-                        'status_code': response.status_code,
-                        'detail': (response.content or b'').decode(),
+                        "sid": sid,
+                        "status_code": response.status_code,
+                        "detail": (response.content or b"").decode(),
                     },
                 )
 
     def _get_user_id_from_conversation(self, conversation_id: str) -> str:
-        """
-        Get user_id from conversation_id.
-        """
-
+        """Get user_id from conversation_id."""
         with session_maker() as session:
             conversation_metadata = (
                 session.query(StoredConversationMetadata)
@@ -532,7 +527,7 @@ class SaasNestedConversationManager(ConversationManager):
             )
 
             if not conversation_metadata:
-                raise ValueError(f'No conversation found {conversation_id}')
+                raise ValueError(f"No conversation found {conversation_id}")
 
             return conversation_metadata.user_id
 
@@ -556,25 +551,25 @@ class SaasNestedConversationManager(ConversationManager):
             async with httpx.AsyncClient(
                 verify=httpx_verify_option(),
                 headers={
-                    'X-Session-API-Key': session_api_key,
+                    "X-Session-API-Key": session_api_key,
                 },
             ) as client:
                 # Query the nested runtime for conversation info
                 response = await client.get(nested_url)
                 if response.status_code == 200:
                     conversation_data = response.json()
-                    runtime_status_str = conversation_data.get('runtime_status')
+                    runtime_status_str = conversation_data.get("runtime_status")
                     if runtime_status_str:
                         # Convert string back to RuntimeStatus enum
                         return RuntimeStatus(runtime_status_str)
                 else:
                     logger.debug(
-                        f'Failed to get conversation info for {conversation_id}: {response.status_code}'
+                        f"Failed to get conversation info for {conversation_id}: {response.status_code}"
                     )
         except ValueError:
-            logger.debug(f'Invalid runtime status value: {runtime_status_str}')
+            logger.debug(f"Invalid runtime status value: {runtime_status_str}")
         except Exception as e:
-            logger.debug(f'Could not get runtime status for {conversation_id}: {e}')
+            logger.debug(f"Could not get runtime status for {conversation_id}: {e}")
 
         return None
 
@@ -589,12 +584,12 @@ class SaasNestedConversationManager(ConversationManager):
 
         # Get starting agent loops from redis...
         if user_id:
-            pattern = self._get_redis_conversation_key(user_id, '*')
+            pattern = self._get_redis_conversation_key(user_id, "*")
         else:
-            pattern = self._get_redis_conversation_key('*', '*')
+            pattern = self._get_redis_conversation_key("*", "*")
         redis = self._get_redis_client()
         async for key in redis.scan_iter(pattern):
-            conversation_user_id, conversation_id = key.decode().split(':')[1:]
+            conversation_user_id, conversation_id = key.decode().split(":")[1:]
             conversation_ids.add(conversation_id)
             if filter_to_sids is None or conversation_id in filter_to_sids:
                 results.append(
@@ -618,7 +613,7 @@ class SaasNestedConversationManager(ConversationManager):
         else:
             runtimes = await self._get_runtimes()
         for runtime in runtimes:
-            conversation_id = runtime['session_id']
+            conversation_id = runtime["session_id"]
             if conversation_id in conversation_ids:
                 continue
             if filter_to_sids is not None and conversation_id not in filter_to_sids:
@@ -634,9 +629,9 @@ class SaasNestedConversationManager(ConversationManager):
                     continue
 
             nested_url = self._get_nested_url_for_runtime(
-                runtime['runtime_id'], conversation_id
+                runtime["runtime_id"], conversation_id
             )
-            session_api_key = runtime.get('session_api_key')
+            session_api_key = runtime.get("session_api_key")
 
             # Get runtime status from nested runtime
             runtime_status = await self._get_runtime_status_from_nested_runtime(
@@ -668,7 +663,7 @@ class SaasNestedConversationManager(ConversationManager):
         server_config: ServerConfig,
         monitoring_listener: MonitoringListener,
     ) -> ConversationManager:
-        if 'localhost' in WEB_HOST:
+        if "localhost" in WEB_HOST:
             event_retrieval = EventRetrieval.POLLING
         else:
             event_retrieval = EventRetrieval.WEBHOOK_PUSH
@@ -698,8 +693,8 @@ class SaasNestedConversationManager(ConversationManager):
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                f'too_many_sessions_for:{user_id or ""}',
-                extra={'session_id': sid, 'user_id': user_id},
+                f"too_many_sessions_for:{user_id or ''}",
+                extra={"session_id": sid, "user_id": user_id},
             )
             # Get the conversations sorted (oldest first)
             conversation_store = await self._get_conversation_store(user_id)
@@ -709,18 +704,18 @@ class SaasNestedConversationManager(ConversationManager):
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
                 logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
-                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+                    f"closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}",
+                    extra={"session_id": oldest_conversation_id, "user_id": user_id},
                 )
                 # Send status message to client and close session.
                 status_update_dict = {
-                    'status_update': True,
-                    'type': 'error',
-                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
-                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
+                    "status_update": True,
+                    "type": "error",
+                    "id": "AGENT_ERROR$TOO_MANY_CONVERSATIONS",
+                    "message": "Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue",
                 }
                 await self.sio.emit(
-                    'oh_event',
+                    "oh_event",
                     status_update_dict,
                     to=ROOM_KEY.format(sid=oldest_conversation_id),
                 )
@@ -765,41 +760,41 @@ class SaasNestedConversationManager(ConversationManager):
 
         config = self.config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars
-        env_vars['CONVERSATION_MANAGER_CLASS'] = (
-            'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
+        env_vars["CONVERSATION_MANAGER_CLASS"] = (
+            "openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager"
         )
-        env_vars['LOG_JSON'] = '1'
-        env_vars['SERVE_FRONTEND'] = '0'
-        env_vars['RUNTIME'] = 'local'
+        env_vars["LOG_JSON"] = "1"
+        env_vars["SERVE_FRONTEND"] = "0"
+        env_vars["RUNTIME"] = "local"
         # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
-        env_vars['USER'] = 'openhands' if config.run_as_openhands else 'root'
-        env_vars['PERMITTED_CORS_ORIGINS'] = ','.join(PERMITTED_CORS_ORIGINS)
-        env_vars['port'] = '60000'
+        env_vars["USER"] = "openhands" if config.run_as_openhands else "root"
+        env_vars["PERMITTED_CORS_ORIGINS"] = ",".join(PERMITTED_CORS_ORIGINS)
+        env_vars["port"] = "60000"
         # TODO: These values are static in the runtime-api project, but do not get copied into the runtime ENV
-        env_vars['VSCODE_PORT'] = '60001'
-        env_vars['WORK_PORT_1'] = '12000'
-        env_vars['WORK_PORT_2'] = '12001'
+        env_vars["VSCODE_PORT"] = "60001"
+        env_vars["WORK_PORT_1"] = "12000"
+        env_vars["WORK_PORT_2"] = "12001"
         # We need to be able to specify the nested conversation id within the nested runtime
-        env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
-        env_vars['FILE_STORE_PATH'] = '/workspace/.openhands/file_store'
-        env_vars['WORKSPACE_BASE'] = '/workspace/project'
-        env_vars['WORKSPACE_MOUNT_PATH_IN_SANDBOX'] = '/workspace/project'
-        env_vars['SANDBOX_CLOSE_DELAY'] = '0'
-        env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
-        env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
-        env_vars['INIT_GIT_IN_EMPTY_WORKSPACE'] = '1'
-        env_vars['ENABLE_V1'] = '0'
+        env_vars["ALLOW_SET_CONVERSATION_ID"] = "1"
+        env_vars["FILE_STORE_PATH"] = "/workspace/.openhands/file_store"
+        env_vars["WORKSPACE_BASE"] = "/workspace/project"
+        env_vars["WORKSPACE_MOUNT_PATH_IN_SANDBOX"] = "/workspace/project"
+        env_vars["SANDBOX_CLOSE_DELAY"] = "0"
+        env_vars["SKIP_DEPENDENCY_CHECK"] = "1"
+        env_vars["INITIAL_NUM_WARM_SERVERS"] = "1"
+        env_vars["INIT_GIT_IN_EMPTY_WORKSPACE"] = "1"
+        env_vars["ENABLE_V1"] = "0"
 
         # We need this for LLM traces tracking to identify the source of the LLM calls
-        env_vars['WEB_HOST'] = WEB_HOST
+        env_vars["WEB_HOST"] = WEB_HOST
         if self.event_retrieval == EventRetrieval.WEBHOOK_PUSH:
             # If we are retrieving events using push, we tell the nested runtime about the webhook.
             # The nested runtime will automatically authenticate using the SESSION_API_KEY
-            env_vars['FILE_STORE_WEB_HOOK_URL'] = (
-                f'{PERMITTED_CORS_ORIGINS[0]}/event-webhook/batch'
+            env_vars["FILE_STORE_WEB_HOOK_URL"] = (
+                f"{PERMITTED_CORS_ORIGINS[0]}/event-webhook/batch"
             )
             # Enable batched webhook mode for better performance
-            env_vars['FILE_STORE_WEB_HOOK_BATCH'] = '1'
+            env_vars["FILE_STORE_WEB_HOOK_BATCH"] = "1"
 
         if self._runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
@@ -815,7 +810,7 @@ class SaasNestedConversationManager(ConversationManager):
             headless_mode=False,
             user_id=user_id,
             # git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
-            main_module='openhands.server',
+            main_module="openhands.server",
             llm_registry=llm_registry,
         )
 
@@ -833,24 +828,24 @@ class SaasNestedConversationManager(ConversationManager):
     async def _httpx_client(self):
         async with httpx.AsyncClient(
             verify=httpx_verify_option(),
-            headers={'X-API-Key': self.config.sandbox.api_key or ''},
+            headers={"X-API-Key": self.config.sandbox.api_key or ""},
             timeout=_HTTP_TIMEOUT,
         ) as client:
             yield client
 
     async def _get_runtimes(self) -> list[dict]:
         async with self._httpx_client() as client:
-            response = await client.get(f'{self.remote_runtime_api_url}/list')
+            response = await client.get(f"{self.remote_runtime_api_url}/list")
             response_json = response.json()
-            runtimes = response_json['runtimes']
+            runtimes = response_json["runtimes"]
             return runtimes
 
     async def _get_all_running_conversation_ids(self) -> set[str]:
         runtimes = await self._get_runtimes()
         conversation_ids = {
-            runtime['session_id']
+            runtime["session_id"]
             for runtime in runtimes
-            if runtime.get('status') == 'running'
+            if runtime.get("status") == "running"
         }
         return conversation_ids
 
@@ -867,22 +862,22 @@ class SaasNestedConversationManager(ConversationManager):
 
     async def _get_runtime(self, sid: str) -> dict | None:
         async with self._httpx_client() as client:
-            response = await client.get(f'{self.remote_runtime_api_url}/sessions/{sid}')
+            response = await client.get(f"{self.remote_runtime_api_url}/sessions/{sid}")
             if not response.is_success:
                 return None
             response_json = response.json()
 
             # Hack: This endpoint doesn't return the session_id
-            response_json['session_id'] = sid
+            response_json["session_id"] = sid
 
             return response_json
 
     def _parse_status(self, runtime: dict):
         # status is one of running, stoppped, paused, error, starting
-        status = (runtime.get('status') or '').upper()
-        if status == 'PAUSED':
+        status = (runtime.get("status") or "").upper()
+        if status == "PAUSED":
             return ConversationStatus.STOPPED
-        elif status == 'STOPPED':
+        elif status == "STOPPED":
             return ConversationStatus.ARCHIVED
         if status in ConversationStatus:
             return ConversationStatus[status]
@@ -894,10 +889,10 @@ class SaasNestedConversationManager(ConversationManager):
         )
 
     def _get_redis_client(self):
-        return getattr(self.sio.manager, 'redis', None)
+        return getattr(self.sio.manager, "redis", None)
 
     def _get_redis_conversation_key(self, user_id: str, conversation_id: str):
-        return f'ohcnv:{user_id}:{conversation_id}'
+        return f"ohcnv:{user_id}:{conversation_id}"
 
     async def _poll_events(self):
         """Poll events in nested runtimes. This is primarily used in debug / single server environments"""
@@ -913,11 +908,11 @@ class SaasNestedConversationManager(ConversationManager):
                         try:
                             await self._poll_agent_loop_events(agent_loop_info, session)
                         except Exception as e:
-                            logger.exception(f'error_polling_events:{str(e)}')
+                            logger.exception(f"error_polling_events:{str(e)}")
             except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.exception(f'error_polling_events:{str(e)}')
+                    logger.exception(f"error_polling_events:{str(e)}")
                 except RuntimeError:
                     # Loop has been shut down, exit gracefully
                     return
@@ -974,14 +969,14 @@ class SaasNestedConversationManager(ConversationManager):
                 self.file_store.write(path, contents)
 
                 # Process the event using shared logic from event_webhook
-                subpath = f'events/{event.id}.json'
+                subpath = f"events/{event.id}.json"
                 await process_event(
                     user_id, conversation_id, subpath, event_to_dict(event)
                 )
 
         # Update conversation metadata using shared logic
         metadata_content = {
-            'last_updated_at': last_updated_at.isoformat() if last_updated_at else None,
+            "last_updated_at": last_updated_at.isoformat() if last_updated_at else None,
         }
         update_conversation_metadata(conversation_id, metadata_content)
 
@@ -995,7 +990,7 @@ def _last_updated_at_key(conversation: ConversationMetadata) -> float:
 
 def _get_id_from_filename(filename: str) -> int:
     try:
-        return int(filename.split('/')[-1].split('.')[0])
+        return int(filename.split("/")[-1].split(".")[0])
     except ValueError:
-        logger.warning(f'get id from filename ({filename}) failed.')
+        logger.warning(f"get id from filename ({filename}) failed.")
         return -1

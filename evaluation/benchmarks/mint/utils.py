@@ -14,7 +14,7 @@ from typing import Any
 # which can leads to too many open files error
 @functools.lru_cache(maxsize=128)
 def load_file(filepath: str) -> str:
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         content = f.read()
     return content
 
@@ -44,7 +44,7 @@ def unsafe_execute(
         reliability_guard()
 
         # Construct the check program and run it.
-        check_program = solution_code + '\n' + test_code
+        check_program = solution_code + "\n" + test_code
 
         try:
             exec_globals = {}
@@ -61,11 +61,11 @@ def unsafe_execute(
                     # Once you have read this disclaimer and taken appropriate precautions,
                     # uncomment the following line and proceed at your own risk:
                     exec(check_program, exec_globals)
-            result.append('passed')
+            result.append("passed")
         except TimeoutException:
-            result.append('timed out')
+            result.append("timed out")
         except BaseException as e:
-            result.append(f'failed: {e}')
+            result.append(f"failed: {e}")
 
         # Needed for cleaning up.
         shutil.rmtree = rmtree
@@ -97,10 +97,10 @@ def check_correctness(
         p.kill()
 
     if not result:
-        result.append('timed out')
+        result.append("timed out")
 
     return dict(
-        success=result[0] == 'passed',
+        success=result[0] == "passed",
         result=result[0],
         completion_id=completion_id,
     )
@@ -109,7 +109,7 @@ def check_correctness(
 @contextlib.contextmanager
 def time_limit(seconds: float):
     def signal_handler(signum, frame):
-        raise TimeoutException('Timed out!')
+        raise TimeoutException("Timed out!")
 
     signal.setitimer(signal.ITIMER_REAL, seconds)
     signal.signal(signal.SIGALRM, signal_handler)
@@ -160,12 +160,12 @@ class WriteOnlyStringIO(io.StringIO):
 
 
 class redirect_stdin(contextlib._RedirectStream):  # type: ignore
-    _stream = 'stdin'
+    _stream = "stdin"
 
 
 @contextlib.contextmanager
 def chdir(root):
-    if root == '.':
+    if root == ".":
         yield
         return
     cwd = os.getcwd()
@@ -198,7 +198,7 @@ def reliability_guard(maximum_memory_bytes: int | None = None):
         resource.setrlimit(
             resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes)
         )
-        if not platform.uname().system == 'Darwin':
+        if not platform.uname().system == "Darwin":
             resource.setrlimit(
                 resource.RLIMIT_STACK, (maximum_memory_bytes, maximum_memory_bytes)
             )
@@ -212,7 +212,7 @@ def reliability_guard(maximum_memory_bytes: int | None = None):
 
     import os
 
-    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ["OMP_NUM_THREADS"] = "1"
 
     os.kill = None
     os.system = None
@@ -252,12 +252,12 @@ def reliability_guard(maximum_memory_bytes: int | None = None):
 
     subprocess.Popen = None  # type: ignore
 
-    __builtins__['help'] = None
+    __builtins__["help"] = None
 
     import sys
 
-    sys.modules['ipdb'] = None
-    sys.modules['joblib'] = None
-    sys.modules['resource'] = None
-    sys.modules['psutil'] = None
-    sys.modules['tkinter'] = None
+    sys.modules["ipdb"] = None
+    sys.modules["joblib"] = None
+    sys.modules["resource"] = None
+    sys.modules["psutil"] = None
+    sys.modules["tkinter"] = None

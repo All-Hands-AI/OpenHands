@@ -13,8 +13,7 @@ from openhands.core.config import load_openhands_config
 
 
 class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
-    """
-    Processor for upgrading user settings to the current version.
+    """Processor for upgrading user settings to the current version.
 
     This processor takes a list of user IDs and upgrades any users
     whose user_version is less than CURRENT_USER_SETTINGS_VERSION.
@@ -23,8 +22,7 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
     user_ids: List[str]
 
     async def __call__(self, task: MaintenanceTask) -> dict:
-        """
-        Process user version upgrades for the specified user IDs.
+        """Process user version upgrades for the specified user IDs.
 
         Args:
             task: The maintenance task being processed
@@ -33,17 +31,17 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
             dict: Results containing successful and failed user IDs
         """
         logger.info(
-            'user_version_upgrade_processor:start',
+            "user_version_upgrade_processor:start",
             extra={
-                'task_id': task.id,
-                'user_count': len(self.user_ids),
-                'current_version': CURRENT_USER_SETTINGS_VERSION,
+                "task_id": task.id,
+                "user_count": len(self.user_ids),
+                "current_version": CURRENT_USER_SETTINGS_VERSION,
             },
         )
 
         if len(self.user_ids) > 100:
             raise ValueError(
-                f'Too many user IDs: {len(self.user_ids)}. Maximum is 100.'
+                f"Too many user IDs: {len(self.user_ids)}. Maximum is 100."
             )
 
         config = load_openhands_config()
@@ -71,12 +69,12 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
             ]
 
             logger.info(
-                'user_version_upgrade_processor:found_users',
+                "user_version_upgrade_processor:found_users",
                 extra={
-                    'task_id': task.id,
-                    'users_to_upgrade': len(users_to_upgrade),
-                    'users_already_current': len(users_already_current),
-                    'total_requested': len(self.user_ids),
+                    "task_id": task.id,
+                    "users_to_upgrade": len(users_to_upgrade),
+                    "users_already_current": len(users_already_current),
+                    "total_requested": len(self.user_ids),
                 },
             )
 
@@ -87,12 +85,12 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
 
             try:
                 logger.info(
-                    'user_version_upgrade_processor:upgrading_user',
+                    "user_version_upgrade_processor:upgrading_user",
                     extra={
-                        'task_id': task.id,
-                        'user_id': user_id,
-                        'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        "task_id": task.id,
+                        "user_id": user_id,
+                        "old_version": old_version,
+                        "new_version": CURRENT_USER_SETTINGS_VERSION,
                     },
                 )
 
@@ -102,54 +100,54 @@ class UserVersionUpgradeProcessor(MaintenanceTaskProcessor):
 
                 successful_upgrades.append(
                     {
-                        'user_id': user_id,
-                        'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        "user_id": user_id,
+                        "old_version": old_version,
+                        "new_version": CURRENT_USER_SETTINGS_VERSION,
                     }
                 )
 
                 logger.info(
-                    'user_version_upgrade_processor:user_upgraded',
+                    "user_version_upgrade_processor:user_upgraded",
                     extra={
-                        'task_id': task.id,
-                        'user_id': user_id,
-                        'old_version': old_version,
-                        'new_version': CURRENT_USER_SETTINGS_VERSION,
+                        "task_id": task.id,
+                        "user_id": user_id,
+                        "old_version": old_version,
+                        "new_version": CURRENT_USER_SETTINGS_VERSION,
                     },
                 )
 
             except Exception as e:
                 failed_upgrades.append(
-                    {'user_id': user_id, 'old_version': old_version, 'error': str(e)}
+                    {"user_id": user_id, "old_version": old_version, "error": str(e)}
                 )
 
                 logger.error(
-                    'user_version_upgrade_processor:user_upgrade_failed',
+                    "user_version_upgrade_processor:user_upgrade_failed",
                     extra={
-                        'task_id': task.id,
-                        'user_id': user_id,
-                        'old_version': old_version,
-                        'error': str(e),
+                        "task_id": task.id,
+                        "user_id": user_id,
+                        "old_version": old_version,
+                        "error": str(e),
                     },
                 )
 
         # Create result summary
         result = {
-            'total_users': len(self.user_ids),
-            'users_already_current': users_already_current,
-            'successful_upgrades': successful_upgrades,
-            'failed_upgrades': failed_upgrades,
-            'summary': (
-                f'Processed {len(self.user_ids)} users: '
-                f'{len(successful_upgrades)} upgraded, '
-                f'{len(users_already_current)} already current, '
-                f'{len(failed_upgrades)} errors'
+            "total_users": len(self.user_ids),
+            "users_already_current": users_already_current,
+            "successful_upgrades": successful_upgrades,
+            "failed_upgrades": failed_upgrades,
+            "summary": (
+                f"Processed {len(self.user_ids)} users: "
+                f"{len(successful_upgrades)} upgraded, "
+                f"{len(users_already_current)} already current, "
+                f"{len(failed_upgrades)} errors"
             ),
         }
 
         logger.info(
-            'user_version_upgrade_processor:completed',
-            extra={'task_id': task.id, 'result': result},
+            "user_version_upgrade_processor:completed",
+            extra={"task_id": task.id, "result": result},
         )
 
         return result

@@ -7,13 +7,13 @@ from integrations.solvability.models.importance_strategy import ImportanceStrate
 from sklearn.ensemble import RandomForestClassifier
 
 
-@pytest.mark.parametrize('random_state', [None, 42])
+@pytest.mark.parametrize("random_state", [None, 42])
 def test_random_state_initialization(random_state, featurizer):
     """Test initialization of the solvability classifier random state propagates to the RFC."""
     # If the RFC has no random state, the solvability classifier should propagate
     # its random state down.
     solvability_classifier = SolvabilityClassifier(
-        identifier='test',
+        identifier="test",
         featurizer=featurizer,
         classifier=RandomForestClassifier(random_state=None),
         random_state=random_state,
@@ -26,7 +26,7 @@ def test_random_state_initialization(random_state, featurizer):
     # If the RFC somehow has a random state, as long as it matches the solvability
     # classifier's random state initialization should succeed.
     solvability_classifier = SolvabilityClassifier(
-        identifier='test',
+        identifier="test",
         featurizer=featurizer,
         classifier=RandomForestClassifier(random_state=random_state),
         random_state=random_state,
@@ -42,7 +42,7 @@ def test_inconsistent_random_state(featurizer):
 
     with pytest.raises(ValueError):
         SolvabilityClassifier(
-            identifier='test',
+            identifier="test",
             featurizer=featurizer,
             classifier=classifier,
             random_state=24,
@@ -51,7 +51,7 @@ def test_inconsistent_random_state(featurizer):
 
 def test_transform_produces_feature_columns(solvability_classifier, mock_llm_config):
     """Test transform method produces expected feature columns."""
-    issues = pd.Series(['Test issue'])
+    issues = pd.Series(["Test issue"])
     features = solvability_classifier.transform(issues, llm_config=mock_llm_config)
 
     assert isinstance(features, pd.DataFrame)
@@ -62,7 +62,7 @@ def test_transform_produces_feature_columns(solvability_classifier, mock_llm_con
 
 def test_transform_sets_classifier_attrs(solvability_classifier, mock_llm_config):
     """Test transform method sets classifier attributes `features_` and `cost_`."""
-    issues = pd.Series(['Test issue'])
+    issues = pd.Series(["Test issue"])
     features = solvability_classifier.transform(issues, llm_config=mock_llm_config)
 
     # Make sure the features_ attr is set and equivalent to the transformed features.
@@ -71,52 +71,52 @@ def test_transform_sets_classifier_attrs(solvability_classifier, mock_llm_config
     # Make sure the cost attr exists and has all the columns we'd expect.
     assert solvability_classifier.cost_ is not None
     assert isinstance(solvability_classifier.cost_, pd.DataFrame)
-    assert 'prompt_tokens' in solvability_classifier.cost_.columns
-    assert 'completion_tokens' in solvability_classifier.cost_.columns
-    assert 'response_latency' in solvability_classifier.cost_.columns
+    assert "prompt_tokens" in solvability_classifier.cost_.columns
+    assert "completion_tokens" in solvability_classifier.cost_.columns
+    assert "response_latency" in solvability_classifier.cost_.columns
 
 
 def test_fit_sets_classifier_attrs(solvability_classifier, mock_llm_config):
     """Test fit method sets classifier attribute `feature_importances_`."""
-    issues = pd.Series(['Test issue'])
+    issues = pd.Series(["Test issue"])
     labels = pd.Series([1])
 
     # Fit the classifier
     solvability_classifier.fit(issues, labels, llm_config=mock_llm_config)
 
     # Check that the feature importances are set
-    assert 'feature_importances_' in solvability_classifier._classifier_attrs
+    assert "feature_importances_" in solvability_classifier._classifier_attrs
     assert isinstance(solvability_classifier.feature_importances_, np.ndarray)
 
 
 def test_predict_proba_sets_classifier_attrs(solvability_classifier, mock_llm_config):
     """Test predict_proba method sets classifier attribute `feature_importances_`."""
-    issues = pd.Series(['Test issue'])
+    issues = pd.Series(["Test issue"])
 
     # Call predict_proba -- we don't care about the output here, just the side
     # effects.
     _ = solvability_classifier.predict_proba(issues, llm_config=mock_llm_config)
 
     # Check that the feature importances are set
-    assert 'feature_importances_' in solvability_classifier._classifier_attrs
+    assert "feature_importances_" in solvability_classifier._classifier_attrs
     assert isinstance(solvability_classifier.feature_importances_, np.ndarray)
 
 
 def test_predict_sets_classifier_attrs(solvability_classifier, mock_llm_config):
     """Test predict method sets classifier attribute `feature_importances_`."""
-    issues = pd.Series(['Test issue'])
+    issues = pd.Series(["Test issue"])
 
     # Call predict -- we don't care about the output here, just the side effects.
     _ = solvability_classifier.predict(issues, llm_config=mock_llm_config)
 
     # Check that the feature importances are set
-    assert 'feature_importances_' in solvability_classifier._classifier_attrs
+    assert "feature_importances_" in solvability_classifier._classifier_attrs
     assert isinstance(solvability_classifier.feature_importances_, np.ndarray)
 
 
 def test_add_single_feature(solvability_classifier):
     """Test that a single feature can be added."""
-    feature = Feature(identifier='new_feature', description='New test feature')
+    feature = Feature(identifier="new_feature", description="New test feature")
 
     assert feature not in solvability_classifier.featurizer.features
 
@@ -126,8 +126,8 @@ def test_add_single_feature(solvability_classifier):
 
 def test_add_multiple_features(solvability_classifier):
     """Test that multiple features can be added."""
-    feature_1 = Feature(identifier='new_feature_1', description='New test feature 1')
-    feature_2 = Feature(identifier='new_feature_2', description='New test feature 2')
+    feature_1 = Feature(identifier="new_feature_1", description="New test feature 1")
+    feature_2 = Feature(identifier="new_feature_2", description="New test feature 2")
 
     assert feature_1 not in solvability_classifier.featurizer.features
     assert feature_2 not in solvability_classifier.featurizer.features
@@ -140,7 +140,7 @@ def test_add_multiple_features(solvability_classifier):
 
 def test_add_features_idempotency(solvability_classifier):
     """Test that adding the same feature multiple times does not duplicate it."""
-    feature = Feature(identifier='new_feature', description='New test feature')
+    feature = Feature(identifier="new_feature", description="New test feature")
 
     # Add the feature once
     solvability_classifier.add_features([feature])
@@ -151,11 +151,11 @@ def test_add_features_idempotency(solvability_classifier):
     assert len(solvability_classifier.featurizer.features) == num_features
 
 
-@pytest.mark.parametrize('strategy', list(ImportanceStrategy))
+@pytest.mark.parametrize("strategy", list(ImportanceStrategy))
 def test_importance_strategies(strategy, solvability_classifier, mock_llm_config):
     """Test different importance strategies."""
     # Setup
-    issues = pd.Series(['Test issue', 'Another test issue'])
+    issues = pd.Series(["Test issue", "Another test issue"])
     labels = pd.Series([1, 0])
 
     # Set the importance strategy
@@ -165,7 +165,7 @@ def test_importance_strategies(strategy, solvability_classifier, mock_llm_config
     # and set them in the feature_importances_ attribute.
     solvability_classifier.fit(issues, labels, llm_config=mock_llm_config)
 
-    assert 'feature_importances_' in solvability_classifier._classifier_attrs
+    assert "feature_importances_" in solvability_classifier._classifier_attrs
     assert isinstance(solvability_classifier.feature_importances_, np.ndarray)
 
     # Make sure the feature importances actually have some values to them.
@@ -174,7 +174,7 @@ def test_importance_strategies(strategy, solvability_classifier, mock_llm_config
 
 def test_is_fitted_property(solvability_classifier, mock_llm_config):
     """Test the is_fitted property accurately reflects the classifier's state."""
-    issues = pd.Series(['Test issue', 'Another test issue'])
+    issues = pd.Series(["Test issue", "Another test issue"])
     labels = pd.Series([1, 0])
 
     # Set the solvability classifier's RFC to a fresh instance to ensure it's not fitted.
@@ -187,7 +187,7 @@ def test_is_fitted_property(solvability_classifier, mock_llm_config):
 
 def test_solvability_report_well_formed(solvability_classifier, mock_llm_config):
     """Test that the SolvabilityReport is well-formed and all required fields are present."""
-    issues = pd.Series(['Test issue', 'Another test issue'])
+    issues = pd.Series(["Test issue", "Another test issue"])
     labels = pd.Series([1, 0])
     # Fit the classifier
     solvability_classifier.fit(issues, labels, llm_config=mock_llm_config)

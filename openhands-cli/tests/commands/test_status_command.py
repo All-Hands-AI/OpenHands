@@ -1,16 +1,16 @@
 """Simplified tests for the /status command functionality."""
 
 from datetime import datetime, timedelta
-from uuid import uuid4
 from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import pytest
-
-from openhands_cli.tui.status import display_status
 from openhands.sdk.llm.utils.metrics import Metrics, TokenUsage
 
+from openhands_cli.tui.status import display_status
 
 # ---------- Fixtures & helpers ----------
+
 
 @pytest.fixture
 def conversation():
@@ -32,8 +32,10 @@ def make_metrics(cost=None, usage=None) -> Metrics:
 
 def call_display_status(conversation, session_start):
     """Call display_status with prints patched; return (mock_pf, mock_pc, text)."""
-    with patch('openhands_cli.tui.status.print_formatted_text') as pf, \
-         patch('openhands_cli.tui.status.print_container') as pc:
+    with (
+        patch("openhands_cli.tui.status.print_formatted_text") as pf,
+        patch("openhands_cli.tui.status.print_container") as pc,
+    ):
         display_status(conversation, session_start_time=session_start)
         # First container call; extract the Frame/TextArea text
         container = pc.call_args_list[0][0][0]
@@ -43,12 +45,15 @@ def call_display_status(conversation, session_start):
 
 # ---------- Tests ----------
 
+
 def test_display_status_box_title(conversation):
     session_start = datetime.now()
     conversation.conversation_stats.get_combined_metrics.return_value = make_metrics()
 
-    with patch('openhands_cli.tui.status.print_formatted_text') as pf, \
-         patch('openhands_cli.tui.status.print_container') as pc:
+    with (
+        patch("openhands_cli.tui.status.print_formatted_text") as pf,
+        patch("openhands_cli.tui.status.print_container") as pc,
+    ):
         display_status(conversation, session_start_time=session_start)
 
         assert pf.called and pc.called
@@ -71,8 +76,10 @@ def test_display_status_uptime(conversation, delta, expected):
     session_start = datetime.now() - delta
     conversation.conversation_stats.get_combined_metrics.return_value = make_metrics()
 
-    with patch('openhands_cli.tui.status.print_formatted_text') as pf, \
-         patch('openhands_cli.tui.status.print_container'):
+    with (
+        patch("openhands_cli.tui.status.print_formatted_text") as pf,
+        patch("openhands_cli.tui.status.print_container"),
+    ):
         display_status(conversation, session_start_time=session_start)
         # uptime is printed in the 2nd print_formatted_text call
         uptime_call_str = str(pf.call_args_list[1])
@@ -115,7 +122,9 @@ def test_display_status_uptime(conversation, delta, expected):
 )
 def test_display_status_metrics(conversation, cost, usage, expecteds):
     session_start = datetime.now()
-    conversation.conversation_stats.get_combined_metrics.return_value = make_metrics(cost, usage)
+    conversation.conversation_stats.get_combined_metrics.return_value = make_metrics(
+        cost, usage
+    )
 
     pf, pc, text = call_display_status(conversation, session_start)
 

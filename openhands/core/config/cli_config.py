@@ -6,4 +6,4 @@ class CLIConfig(BaseModel):
 
     vi_mode: bool = Field(default=False)
 
-    model_config = {'extra': 'forbid'}
+    model_config = {"extra": "forbid"}

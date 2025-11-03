@@ -2,7 +2,7 @@ import importlib
 from functools import lru_cache
 from typing import TypeVar
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def import_from(qual_name: str):
@@ -23,8 +23,8 @@ def import_from(qual_name: str):
         >>> UserAuth = import_from('openhands.server.user_auth.UserAuth')
         >>> auth = UserAuth()
     """
-    parts = qual_name.split('.')
-    module_name = '.'.join(parts[:-1])
+    parts = qual_name.split(".")
+    module_name = ".".join(parts[:-1])
     module = importlib.import_module(module_name)
     result = getattr(module, parts[-1])
     return result

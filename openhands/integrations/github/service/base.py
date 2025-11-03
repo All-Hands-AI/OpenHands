@@ -15,9 +15,7 @@ from openhands.utils.http_session import httpx_verify_option
 
 
 class GitHubMixinBase(BaseGitService, HTTPClient):
-    """
-    Declares common attributes and method signatures used across mixins.
-    """
+    """Declares common attributes and method signatures used across mixins."""
 
     BASE_URL: str
     GRAPHQL_URL: str
@@ -30,8 +28,8 @@ class GitHubMixinBase(BaseGitService, HTTPClient):
                 self.token = latest_token
 
         return {
-            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
-            'Accept': 'application/vnd.github.v3+json',
+            "Authorization": f"Bearer {self.token.get_secret_value() if self.token else ''}",
+            "Accept": "application/vnd.github.v3+json",
         }
 
     async def get_latest_token(self) -> SecretStr | None:  # type: ignore[override]
@@ -70,8 +68,8 @@ class GitHubMixinBase(BaseGitService, HTTPClient):
 
                 response.raise_for_status()
                 headers: dict = {}
-                if 'Link' in response.headers:
-                    headers['Link'] = response.headers['Link']
+                if "Link" in response.headers:
+                    headers["Link"] = response.headers["Link"]
 
                 return response.json(), headers
 
@@ -90,14 +88,14 @@ class GitHubMixinBase(BaseGitService, HTTPClient):
                 response = await client.post(
                     self.GRAPHQL_URL,
                     headers=github_headers,
-                    json={'query': query, 'variables': variables},
+                    json={"query": query, "variables": variables},
                 )
                 response.raise_for_status()
 
                 result = response.json()
-                if 'errors' in result:
+                if "errors" in result:
                     raise UnknownException(
-                        f'GraphQL query error: {json.dumps(result["errors"])}'
+                        f"GraphQL query error: {json.dumps(result['errors'])}"
                     )
 
                 return dict(result)
@@ -108,19 +106,19 @@ class GitHubMixinBase(BaseGitService, HTTPClient):
             raise self.handle_http_error(e)
 
     async def verify_access(self) -> bool:
-        url = f'{self.BASE_URL}'
+        url = f"{self.BASE_URL}"
         await self._make_request(url)
         return True
 
     async def get_user(self):
-        url = f'{self.BASE_URL}/user'
+        url = f"{self.BASE_URL}/user"
         response, _ = await self._make_request(url)
 
         return User(
-            id=str(response.get('id', '')),
-            login=cast(str, response.get('login') or ''),
-            avatar_url=cast(str, response.get('avatar_url') or ''),
-            company=response.get('company'),
-            name=response.get('name'),
-            email=response.get('email'),
+            id=str(response.get("id", "")),
+            login=cast(str, response.get("login") or ""),
+            avatar_url=cast(str, response.get("avatar_url") or ""),
+            company=response.get("company"),
+            name=response.get("name"),
+            email=response.get("email"),
         )

@@ -33,19 +33,19 @@ class NestedEventStore(EventStoreABC):
         end_cursor: int | None = None  # Used only for reverse pagination
         while True:
             search_params: dict[str, int | bool] = {
-                'start_id': start_cursor,
-                'reverse': reverse,
+                "start_id": start_cursor,
+                "reverse": reverse,
             }
             if reverse and end_cursor is not None:
                 # Bound the upper end when scanning backwards to avoid duplicates
-                search_params['end_id'] = end_cursor
+                search_params["end_id"] = end_cursor
             if limit is not None:
-                search_params['limit'] = min(100, limit)
+                search_params["limit"] = min(100, limit)
             search_str = urlencode(search_params)
-            url = f'{self.base_url}/events?{search_str}'
+            url = f"{self.base_url}/events?{search_str}"
             headers: dict[str, str] = {}
             if self.session_api_key:
-                headers['X-Session-API-Key'] = self.session_api_key
+                headers["X-Session-API-Key"] = self.session_api_key
             response = httpx.get(url, headers=headers)
             if response.status_code == status.HTTP_404_NOT_FOUND:
                 # Follow pattern of event store not throwing errors on not found
@@ -54,7 +54,7 @@ class NestedEventStore(EventStoreABC):
 
             page_min_id: int | None = None
             forward_next_start = start_cursor
-            for result in result_set['events']:
+            for result in result_set["events"]:
                 event = event_from_dict(result)
                 if reverse:
                     page_min_id = (
@@ -81,19 +81,19 @@ class NestedEventStore(EventStoreABC):
             elif not reverse:
                 start_cursor = forward_next_start
 
-            if not result_set['has_more']:
+            if not result_set["has_more"]:
                 return
 
     def get_event(self, id: int) -> Event:
         events = list(self.search_events(start_id=id, limit=1))
         if not events:
-            raise FileNotFoundError('no_event')
+            raise FileNotFoundError("no_event")
         return events[0]
 
     def get_latest_event(self) -> Event:
         events = list(self.search_events(reverse=True, limit=1))
         if not events:
-            raise FileNotFoundError('no_event')
+            raise FileNotFoundError("no_event")
         return events[0]
 
     def get_latest_event_id(self) -> int:

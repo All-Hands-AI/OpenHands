@@ -13,11 +13,9 @@ class WebhookStatus(IntEnum):
 
 
 class GitlabWebhook(Base):  # type: ignore
-    """
-    Represents a Gitlab webhook configuration for a repository or group.
-    """
+    """Represents a Gitlab webhook configuration for a repository or group."""
 
-    __tablename__ = 'gitlab_webhook'
+    __tablename__ = "gitlab_webhook"
     id = Column(Integer, primary_key=True, autoincrement=True)
     group_id = Column(String, nullable=True)
     project_id = Column(String, nullable=True)
@@ -27,16 +25,16 @@ class GitlabWebhook(Base):  # type: ignore
     webhook_secret = Column(String, nullable=True)
     webhook_uuid = Column(String, nullable=True)
     # Use Text for tests (SQLite compatibility) and ARRAY for production (PostgreSQL)
-    scopes = Column(Text if 'pytest' in sys.modules else ARRAY(Text), nullable=True)
+    scopes = Column(Text if "pytest" in sys.modules else ARRAY(Text), nullable=True)
     last_synced = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
-        onupdate=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"),
         nullable=True,
     )
 
     def __repr__(self) -> str:
         return (
-            f'<GitlabWebhook(id={self.id}, group_id={self.group_id}, '
-            f'project_id={self.project_id}, last_synced={self.last_synced})>'
+            f"<GitlabWebhook(id={self.id}, group_id={self.group_id}, "
+            f"project_id={self.project_id}, last_synced={self.last_synced})>"
         )

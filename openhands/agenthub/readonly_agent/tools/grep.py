@@ -11,27 +11,27 @@ _GREP_DESCRIPTION = """Fast content search tool.
 """
 
 GrepTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='grep',
+        name="grep",
         description=_GREP_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'pattern': {
-                    'type': 'string',
-                    'description': 'The regex pattern to search for in file contents',
+            "type": "object",
+            "properties": {
+                "pattern": {
+                    "type": "string",
+                    "description": "The regex pattern to search for in file contents",
                 },
-                'path': {
-                    'type': 'string',
-                    'description': 'The directory (absolute path) to search in. Defaults to the current working directory.',
+                "path": {
+                    "type": "string",
+                    "description": "The directory (absolute path) to search in. Defaults to the current working directory.",
                 },
-                'include': {
-                    'type': 'string',
-                    'description': 'Optional file pattern to filter which files to search (e.g., "*.js", "*.{ts,tsx}")',
+                "include": {
+                    "type": "string",
+                    "description": 'Optional file pattern to filter which files to search (e.g., "*.js", "*.{ts,tsx}")',
                 },
             },
-            'required': ['pattern'],
+            "required": ["pattern"],
         },
     ),
 )

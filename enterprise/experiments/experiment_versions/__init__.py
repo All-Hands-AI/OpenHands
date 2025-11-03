@@ -1,5 +1,4 @@
-"""
-Experiment versions package.
+"""Experiment versions package.
 
 This package contains handlers for different experiment versions.
 """
@@ -18,8 +17,8 @@ from experiments.experiment_versions._004_condenser_max_step_experiment import (
 )
 
 __all__ = [
-    'handle_litellm_default_model_experiment',
-    'handle_system_prompt_experiment',
-    'handle_claude4_vs_gpt5_experiment',
-    'handle_condenser_max_step_experiment',
+    "handle_litellm_default_model_experiment",
+    "handle_system_prompt_experiment",
+    "handle_claude4_vs_gpt5_experiment",
+    "handle_condenser_max_step_experiment",
 ]

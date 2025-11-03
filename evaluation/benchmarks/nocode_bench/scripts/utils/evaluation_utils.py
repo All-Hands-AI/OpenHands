@@ -23,11 +23,11 @@ def update_progress_nc(
 ):
     """Update the progress bar and write the result to the output file."""
     pbar.update(1)
-    pbar.set_description(f'Instance {result.instance_id}')
-    pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
+    pbar.set_description(f"Instance {result.instance_id}")
+    pbar.set_postfix_str(f"Test Result: {str(result.test_result)[:300]}...")
     logger.info(
-        f'Finished evaluation for instance {result.instance_id}: '
-        f'{str(result.test_result)[:300]}...\n'
+        f"Finished evaluation for instance {result.instance_id}: "
+        f"{str(result.test_result)[:300]}...\n"
     )
 
     def make_serializable(obj):
@@ -62,32 +62,32 @@ def update_progress_nc(
             return obj
 
     try:
-        raw_data = result.model_dump(mode='python', round_trip=False)
+        raw_data = result.model_dump(mode="python", round_trip=False)
         safe_data = make_serializable(raw_data)
-        output_fp.write(json.dumps(safe_data, ensure_ascii=False) + '\n')
+        output_fp.write(json.dumps(safe_data, ensure_ascii=False) + "\n")
         output_fp.flush()
 
     except Exception as e:
-        logger.error(f'Failed to write full result: {e}')
+        logger.error(f"Failed to write full result: {e}")
 
         fallback = {
-            'instance_id': result.instance_id,
-            'model_patch': result.test_result.get('git_patch', ''),
+            "instance_id": result.instance_id,
+            "model_patch": result.test_result.get("git_patch", ""),
         }
         try:
-            output_fp.write(json.dumps(fallback, ensure_ascii=False) + '\n')
+            output_fp.write(json.dumps(fallback, ensure_ascii=False) + "\n")
             output_fp.flush()
             logger.info(
-                f'Wrote fallback result for instance {result.instance_id}: only instance_id and model_patch.'
+                f"Wrote fallback result for instance {result.instance_id}: only instance_id and model_patch."
             )
         except Exception as e2:
-            logger.error(f'Failed to write fallback result: {e2}')
+            logger.error(f"Failed to write fallback result: {e2}")
 
 
 def cleanup():
-    print('Cleaning up child processes...')
+    print("Cleaning up child processes...")
     for process in mp.active_children():
-        print(f'Terminating child process: {process.name}')
+        print(f"Terminating child process: {process.name}")
         process.terminate()
         process.join()
 
@@ -107,16 +107,16 @@ def run_evaluation_nocode_bench(
 
     if metadata is not None:
         logger.info(
-            f'Evaluation started with Agent {metadata.agent_class}:\n'
-            f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
+            f"Evaluation started with Agent {metadata.agent_class}:\n"
+            f"model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n"
         )
     else:
-        logger.warning('Running evaluation without metadata.')
-        logger.info(f'Evaluation started with {num_workers} workers.')
+        logger.warning("Running evaluation without metadata.")
+        logger.info(f"Evaluation started with {num_workers} workers.")
 
     total_instances = len(dataset)
-    pbar = tqdm(total=total_instances, desc='Instances processed')
-    output_fp = open(output_file, 'a')
+    pbar = tqdm(total=total_instances, desc="Instances processed")
+    output_fp = open(output_file, "a")
 
     try:
         if use_multiprocessing:
@@ -147,8 +147,8 @@ def run_evaluation_nocode_bench(
                 update_progress_nc(result, pbar, output_fp)
 
     except KeyboardInterrupt:
-        print('\nKeyboardInterrupt received. Cleaning up...\n')
+        print("\nKeyboardInterrupt received. Cleaning up...\n")
         cleanup()
 
     output_fp.close()
-    logger.info('\nEvaluation finished.\n')
+    logger.info("\nEvaluation finished.\n")

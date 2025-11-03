@@ -1,5 +1,4 @@
-"""
-Standalone tests for the UserVersionUpgradeProcessor.
+"""Standalone tests for the UserVersionUpgradeProcessor.
 
 These tests are designed to work without the full OpenHands dependency chain.
 They test the core logic and behavior of the processor using comprehensive mocking.
@@ -20,7 +19,7 @@ class TestUserVersionUpgradeProcessorStandalone:
     def test_processor_creation_and_serialization(self):
         """Test processor creation and JSON serialization without dependencies."""
         # Mock the processor class structure
-        with patch('pydantic.BaseModel'):
+        with patch("pydantic.BaseModel"):
             # Create a mock processor class
             class MockUserVersionUpgradeProcessor:
                 def __init__(self, user_ids):
@@ -29,23 +28,23 @@ class TestUserVersionUpgradeProcessorStandalone:
                 def model_dump_json(self):
                     import json
 
-                    return json.dumps({'user_ids': self.user_ids})
+                    return json.dumps({"user_ids": self.user_ids})
 
                 @classmethod
                 def model_validate_json(cls, json_str):
                     import json
 
                     data = json.loads(json_str)
-                    return cls(user_ids=data['user_ids'])
+                    return cls(user_ids=data["user_ids"])
 
             # Test creation
-            processor = MockUserVersionUpgradeProcessor(user_ids=['user1', 'user2'])
-            assert processor.user_ids == ['user1', 'user2']
+            processor = MockUserVersionUpgradeProcessor(user_ids=["user1", "user2"])
+            assert processor.user_ids == ["user1", "user2"]
 
             # Test serialization
             json_data = processor.model_dump_json()
-            assert 'user1' in json_data
-            assert 'user2' in json_data
+            assert "user1" in json_data
+            assert "user2" in json_data
 
             # Test deserialization
             deserialized = MockUserVersionUpgradeProcessor.model_validate_json(
@@ -59,24 +58,23 @@ class TestUserVersionUpgradeProcessorStandalone:
         # Test the core validation logic that would be in the processor
         def validate_user_count(user_ids):
             if len(user_ids) > 100:
-                raise ValueError(f'Too many user IDs: {len(user_ids)}. Maximum is 100.')
+                raise ValueError(f"Too many user IDs: {len(user_ids)}. Maximum is 100.")
             return True
 
         # Test valid counts
-        assert validate_user_count(['user1']) is True
-        assert validate_user_count(['user' + str(i) for i in range(100)]) is True
+        assert validate_user_count(["user1"]) is True
+        assert validate_user_count(["user" + str(i) for i in range(100)]) is True
 
         # Test invalid count
-        with pytest.raises(ValueError, match='Too many user IDs: 101. Maximum is 100.'):
-            validate_user_count(['user' + str(i) for i in range(101)])
+        with pytest.raises(ValueError, match="Too many user IDs: 101. Maximum is 100."):
+            validate_user_count(["user" + str(i) for i in range(101)])
 
     def test_user_filtering_logic(self):
         """Test the logic for filtering users that need upgrades."""
 
         # Mock the filtering logic that would be in the processor
         def filter_users_needing_upgrade(all_user_ids, users_from_db, current_version):
-            """
-            Simulate the logic from the processor:
+            """Simulate the logic from the processor:
             - users_from_db contains users with version < current_version
             - users not in users_from_db are already current
             """
@@ -93,10 +91,10 @@ class TestUserVersionUpgradeProcessorStandalone:
                 self.user_version = version
 
         # Test scenario: 3 users requested, 2 need upgrade, 1 already current
-        all_users = ['user1', 'user2', 'user3']
+        all_users = ["user1", "user2", "user3"]
         users_from_db = [
-            MockUser('user1', 1),  # needs upgrade
-            MockUser('user2', 1),  # needs upgrade
+            MockUser("user1", 1),  # needs upgrade
+            MockUser("user2", 1),  # needs upgrade
             # user3 not in db results = already current
         ]
         current_version = 2
@@ -105,10 +103,10 @@ class TestUserVersionUpgradeProcessorStandalone:
             all_users, users_from_db, current_version
         )
 
-        assert already_current == ['user3']
+        assert already_current == ["user3"]
         assert len(needing_upgrade) == 2
-        assert needing_upgrade[0].keycloak_user_id == 'user1'
-        assert needing_upgrade[1].keycloak_user_id == 'user2'
+        assert needing_upgrade[0].keycloak_user_id == "user1"
+        assert needing_upgrade[1].keycloak_user_id == "user2"
 
     def test_result_summary_generation(self):
         """Test the result summary generation logic."""
@@ -118,15 +116,15 @@ class TestUserVersionUpgradeProcessorStandalone:
         ):
             """Simulate the result generation logic from the processor."""
             return {
-                'total_users': total_users,
-                'users_already_current': users_already_current,
-                'successful_upgrades': successful_upgrades,
-                'failed_upgrades': failed_upgrades,
-                'summary': (
-                    f'Processed {total_users} users: '
-                    f'{len(successful_upgrades)} upgraded, '
-                    f'{len(users_already_current)} already current, '
-                    f'{len(failed_upgrades)} errors'
+                "total_users": total_users,
+                "users_already_current": users_already_current,
+                "successful_upgrades": successful_upgrades,
+                "failed_upgrades": failed_upgrades,
+                "summary": (
+                    f"Processed {total_users} users: "
+                    f"{len(successful_upgrades)} upgraded, "
+                    f"{len(users_already_current)} already current, "
+                    f"{len(failed_upgrades)} errors"
                 ),
             }
 
@@ -134,22 +132,22 @@ class TestUserVersionUpgradeProcessorStandalone:
         result = generate_result_summary(
             total_users=4,
             successful_upgrades=[
-                {'user_id': 'user1', 'old_version': 1, 'new_version': 2},
-                {'user_id': 'user2', 'old_version': 1, 'new_version': 2},
+                {"user_id": "user1", "old_version": 1, "new_version": 2},
+                {"user_id": "user2", "old_version": 1, "new_version": 2},
             ],
-            users_already_current=['user3'],
+            users_already_current=["user3"],
             failed_upgrades=[
-                {'user_id': 'user4', 'old_version': 1, 'error': 'Database error'},
+                {"user_id": "user4", "old_version": 1, "error": "Database error"},
             ],
         )
 
-        assert result['total_users'] == 4
-        assert len(result['successful_upgrades']) == 2
-        assert len(result['users_already_current']) == 1
-        assert len(result['failed_upgrades']) == 1
-        assert '2 upgraded' in result['summary']
-        assert '1 already current' in result['summary']
-        assert '1 errors' in result['summary']
+        assert result["total_users"] == 4
+        assert len(result["successful_upgrades"]) == 2
+        assert len(result["users_already_current"]) == 1
+        assert len(result["failed_upgrades"]) == 1
+        assert "2 upgraded" in result["summary"]
+        assert "1 already current" in result["summary"]
+        assert "1 errors" in result["summary"]
 
     def test_error_handling_logic(self):
         """Test error handling and recovery logic."""
@@ -158,34 +156,34 @@ class TestUserVersionUpgradeProcessorStandalone:
             """Simulate processing a single user with error handling."""
             try:
                 if should_fail:
-                    raise Exception(f'Processing failed for {user_id}')
+                    raise Exception(f"Processing failed for {user_id}")
 
                 # Simulate successful processing
                 return {
-                    'success': True,
-                    'user_id': user_id,
-                    'old_version': 1,
-                    'new_version': 2,
+                    "success": True,
+                    "user_id": user_id,
+                    "old_version": 1,
+                    "new_version": 2,
                 }
             except Exception as e:
                 return {
-                    'success': False,
-                    'user_id': user_id,
-                    'old_version': 1,
-                    'error': str(e),
+                    "success": False,
+                    "user_id": user_id,
+                    "old_version": 1,
+                    "error": str(e),
                 }
 
         # Test successful processing
-        result = process_user_with_error_handling('user1', should_fail=False)
-        assert result['success'] is True
-        assert result['user_id'] == 'user1'
-        assert 'error' not in result
+        result = process_user_with_error_handling("user1", should_fail=False)
+        assert result["success"] is True
+        assert result["user_id"] == "user1"
+        assert "error" not in result
 
         # Test failed processing
-        result = process_user_with_error_handling('user2', should_fail=True)
-        assert result['success'] is False
-        assert result['user_id'] == 'user2'
-        assert 'Processing failed for user2' in result['error']
+        result = process_user_with_error_handling("user2", should_fail=True)
+        assert result["success"] is False
+        assert result["user_id"] == "user2"
+        assert "Processing failed for user2" in result["error"]
 
     def test_batch_processing_logic(self):
         """Test batch processing logic."""
@@ -197,20 +195,20 @@ class TestUserVersionUpgradeProcessorStandalone:
 
             for user in users:
                 result = processor_func(user)
-                if result['success']:
+                if result["success"]:
                     successful.append(
                         {
-                            'user_id': result['user_id'],
-                            'old_version': result['old_version'],
-                            'new_version': result['new_version'],
+                            "user_id": result["user_id"],
+                            "old_version": result["old_version"],
+                            "new_version": result["new_version"],
                         }
                     )
                 else:
                     failed.append(
                         {
-                            'user_id': result['user_id'],
-                            'old_version': result['old_version'],
-                            'error': result['error'],
+                            "user_id": result["user_id"],
+                            "old_version": result["old_version"],
+                            "error": result["error"],
                         }
                     )
 
@@ -222,33 +220,33 @@ class TestUserVersionUpgradeProcessorStandalone:
                 self.keycloak_user_id = user_id
                 self.user_version = 1
 
-        users = [MockUser('user1'), MockUser('user2'), MockUser('user3')]
+        users = [MockUser("user1"), MockUser("user2"), MockUser("user3")]
 
         def mock_processor(user):
             # Simulate user2 failing
-            should_fail = user.keycloak_user_id == 'user2'
+            should_fail = user.keycloak_user_id == "user2"
             if should_fail:
                 return {
-                    'success': False,
-                    'user_id': user.keycloak_user_id,
-                    'old_version': user.user_version,
-                    'error': 'Simulated failure',
+                    "success": False,
+                    "user_id": user.keycloak_user_id,
+                    "old_version": user.user_version,
+                    "error": "Simulated failure",
                 }
             return {
-                'success': True,
-                'user_id': user.keycloak_user_id,
-                'old_version': user.user_version,
-                'new_version': 2,
+                "success": True,
+                "user_id": user.keycloak_user_id,
+                "old_version": user.user_version,
+                "new_version": 2,
             }
 
         successful, failed = process_users_in_batch(users, mock_processor)
 
         assert len(successful) == 2
         assert len(failed) == 1
-        assert successful[0]['user_id'] == 'user1'
-        assert successful[1]['user_id'] == 'user3'
-        assert failed[0]['user_id'] == 'user2'
-        assert 'Simulated failure' in failed[0]['error']
+        assert successful[0]["user_id"] == "user1"
+        assert successful[1]["user_id"] == "user3"
+        assert failed[0]["user_id"] == "user2"
+        assert "Simulated failure" in failed[0]["error"]
 
     def test_version_comparison_logic(self):
         """Test version comparison logic."""
@@ -269,39 +267,39 @@ class TestUserVersionUpgradeProcessorStandalone:
         log_calls = []
 
         def mock_logger_info(message, extra=None):
-            log_calls.append({'message': message, 'extra': extra})
+            log_calls.append({"message": message, "extra": extra})
 
         def mock_logger_error(message, extra=None):
-            log_calls.append({'message': message, 'extra': extra, 'level': 'error'})
+            log_calls.append({"message": message, "extra": extra, "level": "error"})
 
         # Simulate the logging that would happen in the processor
         def simulate_processor_logging(task_id, user_count, current_version):
             mock_logger_info(
-                'user_version_upgrade_processor:start',
+                "user_version_upgrade_processor:start",
                 extra={
-                    'task_id': task_id,
-                    'user_count': user_count,
-                    'current_version': current_version,
+                    "task_id": task_id,
+                    "user_count": user_count,
+                    "current_version": current_version,
                 },
             )
 
             mock_logger_info(
-                'user_version_upgrade_processor:found_users',
+                "user_version_upgrade_processor:found_users",
                 extra={
-                    'task_id': task_id,
-                    'users_to_upgrade': 2,
-                    'users_already_current': 1,
-                    'total_requested': user_count,
+                    "task_id": task_id,
+                    "users_to_upgrade": 2,
+                    "users_already_current": 1,
+                    "total_requested": user_count,
                 },
             )
 
             mock_logger_error(
-                'user_version_upgrade_processor:user_upgrade_failed',
+                "user_version_upgrade_processor:user_upgrade_failed",
                 extra={
-                    'task_id': task_id,
-                    'user_id': 'user1',
-                    'old_version': 1,
-                    'error': 'Test error',
+                    "task_id": task_id,
+                    "user_id": "user1",
+                    "old_version": 1,
+                    "error": "Test error",
                 },
             )
 
@@ -312,27 +310,26 @@ class TestUserVersionUpgradeProcessorStandalone:
         assert len(log_calls) == 3
 
         start_log = log_calls[0]
-        assert 'start' in start_log['message']
-        assert start_log['extra']['task_id'] == 123
-        assert start_log['extra']['user_count'] == 3
-        assert start_log['extra']['current_version'] == 2
+        assert "start" in start_log["message"]
+        assert start_log["extra"]["task_id"] == 123
+        assert start_log["extra"]["user_count"] == 3
+        assert start_log["extra"]["current_version"] == 2
 
         found_log = log_calls[1]
-        assert 'found_users' in found_log['message']
-        assert found_log['extra']['users_to_upgrade'] == 2
-        assert found_log['extra']['users_already_current'] == 1
+        assert "found_users" in found_log["message"]
+        assert found_log["extra"]["users_to_upgrade"] == 2
+        assert found_log["extra"]["users_already_current"] == 1
 
         error_log = log_calls[2]
-        assert 'failed' in error_log['message']
-        assert error_log['level'] == 'error'
-        assert error_log['extra']['user_id'] == 'user1'
-        assert error_log['extra']['error'] == 'Test error'
+        assert "failed" in error_log["message"]
+        assert error_log["level"] == "error"
+        assert error_log["extra"]["user_id"] == "user1"
+        assert error_log["extra"]["error"] == "Test error"
 
 
 # Additional integration test scenarios that would work with full dependencies
 class TestUserVersionUpgradeProcessorIntegration:
-    """
-    Integration test scenarios for when OpenHands dependencies are available.
+    """Integration test scenarios for when OpenHands dependencies are available.
 
     These tests would require:
     1. OpenHands to be installed and available
@@ -341,8 +338,7 @@ class TestUserVersionUpgradeProcessorIntegration:
     """
 
     def test_full_processor_workflow_description(self):
-        """
-        Describe the full workflow test that would be implemented with dependencies.
+        """Describe the full workflow test that would be implemented with dependencies.
 
         This test would:
         1. Create a real UserVersionUpgradeProcessor instance
@@ -358,8 +354,7 @@ class TestUserVersionUpgradeProcessorIntegration:
         pass
 
     def test_database_integration_description(self):
-        """
-        Describe database integration test that would be implemented.
+        """Describe database integration test that would be implemented.
 
         This test would:
         1. Use the session_maker fixture from conftest.py
@@ -371,8 +366,7 @@ class TestUserVersionUpgradeProcessorIntegration:
         pass
 
     def test_saas_settings_store_integration_description(self):
-        """
-        Describe SaasSettingsStore integration test.
+        """Describe SaasSettingsStore integration test.
 
         This test would:
         1. Mock SaasSettingsStore.get_instance to return a mock store

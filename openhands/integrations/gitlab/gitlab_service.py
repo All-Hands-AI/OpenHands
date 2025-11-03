@@ -26,8 +26,7 @@ class GitLabService(
     BaseGitService,
     GitService,
 ):
-    """
-    Assembled GitLab service class combining mixins by feature area.
+    """Assembled GitLab service class combining mixins by feature area.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
     This is an extension point in OpenHands that allows applications to customize GitLab
@@ -39,8 +38,8 @@ class GitLabService(
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'https://gitlab.com/api/v4'
-    GRAPHQL_URL = 'https://gitlab.com/api/graphql'
+    BASE_URL = "https://gitlab.com/api/v4"
+    GRAPHQL_URL = "https://gitlab.com/api/graphql"
 
     def __init__(
         self,
@@ -61,14 +60,14 @@ class GitLabService(
 
         if base_domain:
             # Check if protocol is already included
-            if base_domain.startswith(('http://', 'https://')):
+            if base_domain.startswith(("http://", "https://")):
                 # Use the provided protocol
-                self.BASE_URL = f'{base_domain}/api/v4'
-                self.GRAPHQL_URL = f'{base_domain}/api/graphql'
+                self.BASE_URL = f"{base_domain}/api/v4"
+                self.GRAPHQL_URL = f"{base_domain}/api/graphql"
             else:
                 # Default to https if no protocol specified
-                self.BASE_URL = f'https://{base_domain}/api/v4'
-                self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+                self.BASE_URL = f"https://{base_domain}/api/v4"
+                self.GRAPHQL_URL = f"https://{base_domain}/api/graphql"
 
     @property
     def provider(self) -> str:
@@ -76,7 +75,7 @@ class GitLabService(
 
 
 gitlab_service_cls = os.environ.get(
-    'OPENHANDS_GITLAB_SERVICE_CLS',
-    'openhands.integrations.gitlab.gitlab_service.GitLabService',
+    "OPENHANDS_GITLAB_SERVICE_CLS",
+    "openhands.integrations.gitlab.gitlab_service.GitLabService",
 )
 GitLabServiceImpl = get_impl(GitLabService, gitlab_service_cls)

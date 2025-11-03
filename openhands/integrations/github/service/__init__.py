@@ -8,10 +8,10 @@ from .repos import GitHubReposMixin
 from .resolver import GitHubResolverMixin
 
 __all__ = [
-    'GitHubMixinBase',
-    'GitHubBranchesMixin',
-    'GitHubFeaturesMixin',
-    'GitHubPRsMixin',
-    'GitHubReposMixin',
-    'GitHubResolverMixin',
+    "GitHubMixinBase",
+    "GitHubBranchesMixin",
+    "GitHubFeaturesMixin",
+    "GitHubPRsMixin",
+    "GitHubReposMixin",
+    "GitHubResolverMixin",
 ]

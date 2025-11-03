@@ -55,10 +55,10 @@ def mock_request():
 def sample_spec():
     """Sample sandbox spec for testing."""
     return SandboxSpecInfo(
-        id='test-image:latest',
-        command=['/bin/bash'],
-        initial_env={'TEST_VAR': 'test_value'},
-        working_dir='/test/workspace',
+        id="test-image:latest",
+        command=["/bin/bash"],
+        initial_env={"TEST_VAR": "test_value"},
+        working_dir="/test/workspace",
     )
 
 
@@ -68,10 +68,10 @@ def sample_specs(sample_spec):
     return [
         sample_spec,
         SandboxSpecInfo(
-            id='another-image:v1.0',
-            command=['/usr/bin/python'],
-            initial_env={'PYTHON_ENV': 'test'},
-            working_dir='/python/workspace',
+            id="another-image:v1.0",
+            command=["/usr/bin/python"],
+            initial_env={"PYTHON_ENV": "test"},
+            working_dir="/python/workspace",
         ),
     ]
 
@@ -100,7 +100,7 @@ class TestDockerSandboxSpecServiceInjector:
         assert injector.specs == sample_specs
         assert injector.pull_if_missing is False
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_inject_with_pull_if_missing_true(
         self, mock_get_docker_client, sample_specs, mock_state
     ):
@@ -124,14 +124,14 @@ class TestDockerSandboxSpecServiceInjector:
 
             # Should check for images
             assert mock_docker_client.images.get.call_count == len(sample_specs)
-            mock_docker_client.images.get.assert_any_call('test-image:latest')
-            mock_docker_client.images.get.assert_any_call('another-image:v1.0')
+            mock_docker_client.images.get.assert_any_call("test-image:latest")
+            mock_docker_client.images.get.assert_any_call("another-image:v1.0")
 
             # pull_if_missing should be set to False after first run
             assert injector.pull_if_missing is False
             break
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_inject_with_pull_if_missing_false(
         self, mock_get_docker_client, sample_specs, mock_state
     ):
@@ -155,7 +155,7 @@ class TestDockerSandboxSpecServiceInjector:
             mock_docker_client.images.get.assert_not_called()
             break
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_inject_with_request(
         self, mock_get_docker_client, sample_specs, mock_request
     ):
@@ -176,7 +176,7 @@ class TestDockerSandboxSpecServiceInjector:
             assert service.specs == sample_specs
             break
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_missing_specs_all_exist(
         self, mock_get_docker_client, sample_specs
     ):
@@ -195,7 +195,7 @@ class TestDockerSandboxSpecServiceInjector:
         assert mock_docker_client.images.get.call_count == len(sample_specs)
         mock_docker_client.images.pull.assert_not_called()
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_missing_specs_some_missing(
         self, mock_get_docker_client, sample_specs
     ):
@@ -206,10 +206,10 @@ class TestDockerSandboxSpecServiceInjector:
 
         # First image exists, second is missing
         def mock_get_side_effect(image_id):
-            if image_id == 'test-image:latest':
+            if image_id == "test-image:latest":
                 return MagicMock()  # Exists
             else:
-                raise ImageNotFound('Image not found')
+                raise ImageNotFound("Image not found")
 
         mock_docker_client.images.get.side_effect = mock_get_side_effect
         mock_docker_client.images.pull.return_value = MagicMock()
@@ -221,9 +221,9 @@ class TestDockerSandboxSpecServiceInjector:
 
         # Verify
         assert mock_docker_client.images.get.call_count == len(sample_specs)
-        mock_docker_client.images.pull.assert_called_once_with('another-image:v1.0')
+        mock_docker_client.images.pull.assert_called_once_with("another-image:v1.0")
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_spec_if_missing_image_exists(
         self, mock_get_docker_client, sample_spec
     ):
@@ -239,10 +239,10 @@ class TestDockerSandboxSpecServiceInjector:
         await injector.pull_spec_if_missing(sample_spec)
 
         # Verify
-        mock_docker_client.images.get.assert_called_once_with('test-image:latest')
+        mock_docker_client.images.get.assert_called_once_with("test-image:latest")
         mock_docker_client.images.pull.assert_not_called()
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_spec_if_missing_image_not_found(
         self, mock_get_docker_client, sample_spec
     ):
@@ -250,7 +250,7 @@ class TestDockerSandboxSpecServiceInjector:
         # Setup
         mock_docker_client = MagicMock()
         mock_get_docker_client.return_value = mock_docker_client
-        mock_docker_client.images.get.side_effect = ImageNotFound('Image not found')
+        mock_docker_client.images.get.side_effect = ImageNotFound("Image not found")
         mock_docker_client.images.pull.return_value = MagicMock()
 
         injector = DockerSandboxSpecServiceInjector()
@@ -259,10 +259,10 @@ class TestDockerSandboxSpecServiceInjector:
         await injector.pull_spec_if_missing(sample_spec)
 
         # Verify
-        mock_docker_client.images.get.assert_called_once_with('test-image:latest')
-        mock_docker_client.images.pull.assert_called_once_with('test-image:latest')
+        mock_docker_client.images.get.assert_called_once_with("test-image:latest")
+        mock_docker_client.images.pull.assert_called_once_with("test-image:latest")
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_spec_if_missing_api_error(
         self, mock_get_docker_client, sample_spec
     ):
@@ -270,17 +270,17 @@ class TestDockerSandboxSpecServiceInjector:
         # Setup
         mock_docker_client = MagicMock()
         mock_get_docker_client.return_value = mock_docker_client
-        mock_docker_client.images.get.side_effect = APIError('Docker daemon error')
+        mock_docker_client.images.get.side_effect = APIError("Docker daemon error")
 
         injector = DockerSandboxSpecServiceInjector()
 
         # Execute & Verify
         with pytest.raises(
-            SandboxError, match='Error Getting Docker Image: test-image:latest'
+            SandboxError, match="Error Getting Docker Image: test-image:latest"
         ):
             await injector.pull_spec_if_missing(sample_spec)
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_spec_if_missing_pull_api_error(
         self, mock_get_docker_client, sample_spec
     ):
@@ -288,18 +288,18 @@ class TestDockerSandboxSpecServiceInjector:
         # Setup
         mock_docker_client = MagicMock()
         mock_get_docker_client.return_value = mock_docker_client
-        mock_docker_client.images.get.side_effect = ImageNotFound('Image not found')
-        mock_docker_client.images.pull.side_effect = APIError('Pull failed')
+        mock_docker_client.images.get.side_effect = ImageNotFound("Image not found")
+        mock_docker_client.images.pull.side_effect = APIError("Pull failed")
 
         injector = DockerSandboxSpecServiceInjector()
 
         # Execute & Verify
         with pytest.raises(
-            SandboxError, match='Error Getting Docker Image: test-image:latest'
+            SandboxError, match="Error Getting Docker Image: test-image:latest"
         ):
             await injector.pull_spec_if_missing(sample_spec)
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_spec_if_missing_uses_executor(
         self, mock_get_docker_client, sample_spec
     ):
@@ -307,13 +307,13 @@ class TestDockerSandboxSpecServiceInjector:
         # Setup
         mock_docker_client = MagicMock()
         mock_get_docker_client.return_value = mock_docker_client
-        mock_docker_client.images.get.side_effect = ImageNotFound('Image not found')
+        mock_docker_client.images.get.side_effect = ImageNotFound("Image not found")
         mock_docker_client.images.pull.return_value = MagicMock()
 
         injector = DockerSandboxSpecServiceInjector()
 
         # Mock the event loop and executor
-        with patch('asyncio.get_running_loop') as mock_get_loop:
+        with patch("asyncio.get_running_loop") as mock_get_loop:
             mock_loop = MagicMock()
             mock_get_loop.return_value = mock_loop
             mock_loop.run_in_executor.return_value = asyncio.Future()
@@ -324,10 +324,10 @@ class TestDockerSandboxSpecServiceInjector:
 
             # Verify executor was used
             mock_loop.run_in_executor.assert_called_once_with(
-                None, mock_docker_client.images.pull, 'test-image:latest'
+                None, mock_docker_client.images.pull, "test-image:latest"
             )
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_concurrent_pull_operations(
         self, mock_get_docker_client, sample_specs
     ):
@@ -335,13 +335,13 @@ class TestDockerSandboxSpecServiceInjector:
         # Setup
         mock_docker_client = MagicMock()
         mock_get_docker_client.return_value = mock_docker_client
-        mock_docker_client.images.get.side_effect = ImageNotFound('Image not found')
+        mock_docker_client.images.get.side_effect = ImageNotFound("Image not found")
         mock_docker_client.images.pull.return_value = MagicMock()
 
         injector = DockerSandboxSpecServiceInjector(specs=sample_specs)
 
         # Mock asyncio.gather to verify concurrent execution
-        with patch('asyncio.gather') as mock_gather:
+        with patch("asyncio.gather") as mock_gather:
             mock_gather.return_value = asyncio.Future()
             mock_gather.return_value.set_result([None, None])
 
@@ -359,19 +359,19 @@ class TestDockerSandboxSpecServiceInjector:
 
         assert len(specs) == 1
         assert isinstance(specs[0], SandboxSpecInfo)
-        assert specs[0].id.startswith('ghcr.io/openhands/agent-server:')
-        assert specs[0].id.endswith('-python')
-        assert specs[0].command == ['--port', '8000']
-        assert 'OPENVSCODE_SERVER_ROOT' in specs[0].initial_env
-        assert 'OH_ENABLE_VNC' in specs[0].initial_env
-        assert 'LOG_JSON' in specs[0].initial_env
-        assert specs[0].working_dir == '/workspace/project'
+        assert specs[0].id.startswith("ghcr.io/openhands/agent-server:")
+        assert specs[0].id.endswith("-python")
+        assert specs[0].command == ["--port", "8000"]
+        assert "OPENVSCODE_SERVER_ROOT" in specs[0].initial_env
+        assert "OH_ENABLE_VNC" in specs[0].initial_env
+        assert "LOG_JSON" in specs[0].initial_env
+        assert specs[0].working_dir == "/workspace/project"
 
     @patch(
-        'openhands.app_server.sandbox.docker_sandbox_spec_service._global_docker_client',
+        "openhands.app_server.sandbox.docker_sandbox_spec_service._global_docker_client",
         None,
     )
-    @patch('docker.from_env')
+    @patch("docker.from_env")
     def test_get_docker_client_creates_new_client(self, mock_from_env):
         """Test get_docker_client creates new client when none exists."""
         mock_client = MagicMock()
@@ -383,9 +383,9 @@ class TestDockerSandboxSpecServiceInjector:
         mock_from_env.assert_called_once()
 
     @patch(
-        'openhands.app_server.sandbox.docker_sandbox_spec_service._global_docker_client'
+        "openhands.app_server.sandbox.docker_sandbox_spec_service._global_docker_client"
     )
-    @patch('docker.from_env')
+    @patch("docker.from_env")
     def test_get_docker_client_reuses_existing_client(
         self, mock_from_env, mock_global_client
     ):
@@ -415,7 +415,7 @@ class TestDockerSandboxSpecServiceInjector:
         assert len(services) == 1
         assert isinstance(services[0], PresetSandboxSpecService)
 
-    @patch('openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client')
+    @patch("openhands.app_server.sandbox.docker_sandbox_spec_service.get_docker_client")
     async def test_pull_if_missing_flag_reset_after_first_inject(
         self, mock_get_docker_client, sample_specs, mock_state
     ):

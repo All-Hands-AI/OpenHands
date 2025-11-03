@@ -62,7 +62,7 @@ from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
-GIT_TOKEN = 'GIT_TOKEN'
+GIT_TOKEN = "GIT_TOKEN"
 
 
 @dataclass
@@ -204,11 +204,11 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
             # Start conversation...
             response = await self.httpx_client.post(
-                f'{agent_server_url}/api/conversations',
+                f"{agent_server_url}/api/conversations",
                 json=start_conversation_request.model_dump(
-                    mode='json', context={'expose_secrets': True}
+                    mode="json", context={"expose_secrets": True}
                 ),
-                headers={'X-Session-API-Key': sandbox.session_api_key},
+                headers={"X-Session-API-Key": sandbox.session_api_key},
                 timeout=self.sandbox_startup_timeout,
             )
             response.raise_for_status()
@@ -219,7 +219,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             app_conversation_info = AppConversationInfo(
                 id=info.id,
                 # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
-                title=f'Conversation {info.id}',
+                title=f"Conversation {info.id}",
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
@@ -240,7 +240,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             yield task
 
         except Exception as exc:
-            _logger.exception('Error starting conversation', stack_info=True)
+            _logger.exception("Error starting conversation", stack_info=True)
             task.status = AppConversationStartTaskStatus.ERROR
             task.detail = str(exc)
             yield task
@@ -302,13 +302,13 @@ class LiveStatusAppConversationService(GitAppConversationService):
         try:
             # Build the URL with query parameters
             agent_server_url = self._get_agent_server_url(sandbox)
-            url = f'{agent_server_url.rstrip("/")}/api/conversations'
-            params = {'ids': conversation_ids}
+            url = f"{agent_server_url.rstrip('/')}/api/conversations"
+            params = {"ids": conversation_ids}
 
             # Set up headers
             headers = {}
             if sandbox.session_api_key:
-                headers['X-Session-API-Key'] = sandbox.session_api_key
+                headers["X-Session-API-Key"] = sandbox.session_api_key
 
             response = await self.httpx_client.get(url, params=params, headers=headers)
             response.raise_for_status()
@@ -320,7 +320,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         except Exception:
             # Not getting a status is not a fatal error - we just mark the conversation as stopped
             _logger.exception(
-                f'Error getting conversation status from sandbox {sandbox.id}',
+                f"Error getting conversation status from sandbox {sandbox.id}",
                 stack_info=True,
             )
             return []
@@ -347,7 +347,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 None,
             )
             if conversation_url:
-                conversation_url += f'/api/conversations/{app_conversation_info.id.hex}'
+                conversation_url += f"/api/conversations/{app_conversation_info.id.hex}"
             session_api_key = sandbox.session_api_key
 
         return AppConversation(
@@ -380,7 +380,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 task.request.sandbox_id
             )
             if sandbox_info is None:
-                raise SandboxError(f'Sandbox not found: {task.request.sandbox_id}')
+                raise SandboxError(f"Sandbox not found: {task.request.sandbox_id}")
             sandbox = sandbox_info
 
         # Update the listener
@@ -391,23 +391,23 @@ class LiveStatusAppConversationService(GitAppConversationService):
         if sandbox.status == SandboxStatus.PAUSED:
             await self.sandbox_service.resume_sandbox(sandbox.id)
         if sandbox.status in (None, SandboxStatus.ERROR):
-            raise SandboxError(f'Sandbox status: {sandbox.status}')
+            raise SandboxError(f"Sandbox status: {sandbox.status}")
         if sandbox.status == SandboxStatus.RUNNING:
             return
         if sandbox.status != SandboxStatus.STARTING:
-            raise SandboxError(f'Sandbox not startable: {sandbox.id}')
+            raise SandboxError(f"Sandbox not startable: {sandbox.id}")
 
         start = time()
         while time() - start <= self.sandbox_startup_timeout:
             await asyncio.sleep(self.sandbox_startup_poll_frequency)
             sandbox_info = await self.sandbox_service.get_sandbox(sandbox.id)
             if sandbox_info is None:
-                raise SandboxError(f'Sandbox not found: {sandbox.id}')
+                raise SandboxError(f"Sandbox not found: {sandbox.id}")
             if sandbox.status not in (SandboxStatus.STARTING, SandboxStatus.RUNNING):
-                raise SandboxError(f'Sandbox not startable: {sandbox.id}')
+                raise SandboxError(f"Sandbox not startable: {sandbox.id}")
             if sandbox_info.status == SandboxStatus.RUNNING:
                 return
-        raise SandboxError(f'Sandbox failed to start: {sandbox.id}')
+        raise SandboxError(f"Sandbox failed to start: {sandbox.id}")
 
     def _get_agent_server_url(self, sandbox: SandboxInfo) -> str:
         """Get agent server url for running sandbox."""
@@ -437,14 +437,14 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # only this provider, with a timeout
                 access_token = self.jwt_service.create_jws_token(
                     payload={
-                        'user_id': user.id,
-                        'provider_type': git_provider.value,
+                        "user_id": user.id,
+                        "provider_type": git_provider.value,
                     },
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + '/api/v1/webhooks/secrets',
-                    headers={'X-Access-Token': access_token},
+                    url=self.web_url + "/api/v1/webhooks/secrets",
+                    headers={"X-Access-Token": access_token},
                 )
             else:
                 # If there is no URL specified where the sandbox can access the app server
@@ -460,7 +460,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             model=user.llm_model,
             base_url=user.llm_base_url,
             api_key=user.llm_api_key,
-            usage_id='agent',
+            usage_id="agent",
         )
         agent = get_default_agent(llm=llm)
 
@@ -499,22 +499,22 @@ class LiveStatusAppConversationService(GitAppConversationService):
             app_conversation_info.sandbox_id
         )
         assert sandbox is not None, (
-            f'Sandbox {app_conversation_info.sandbox_id} not found for conversation {conversation_id}'
+            f"Sandbox {app_conversation_info.sandbox_id} not found for conversation {conversation_id}"
         )
         assert sandbox.exposed_urls is not None, (
-            f'Sandbox {app_conversation_info.sandbox_id} has no exposed URLs for conversation {conversation_id}'
+            f"Sandbox {app_conversation_info.sandbox_id} has no exposed URLs for conversation {conversation_id}"
         )
 
         # Use the existing method to get the agent-server URL
         agent_server_url = self._get_agent_server_url(sandbox)
 
         # Prepare the request
-        url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id}'
+        url = f"{agent_server_url.rstrip('/')}/api/conversations/{conversation_id}"
         headers = {}
         if sandbox.session_api_key:
-            headers['X-Session-API-Key'] = sandbox.session_api_key
+            headers["X-Session-API-Key"] = sandbox.session_api_key
 
-        payload = {'title': new_title}
+        payload = {"title": new_title}
 
         # Make the PATCH request to the agent-server
         response = await self.httpx_client.patch(
@@ -532,20 +532,20 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
 class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
     sandbox_startup_timeout: int = Field(
-        default=120, description='The max timeout time for sandbox startup'
+        default=120, description="The max timeout time for sandbox startup"
     )
     sandbox_startup_poll_frequency: int = Field(
-        default=2, description='The frequency to poll for sandbox readiness'
+        default=2, description="The frequency to poll for sandbox readiness"
     )
     init_git_in_empty_workspace: bool = Field(
         default=True,
-        description='Whether to initialize a git repo when the workspace is empty',
+        description="Whether to initialize a git repo when the workspace is empty",
     )
     access_token_hard_timeout: int | None = Field(
         default=14 * 86400,
         description=(
-            'A security measure - the time after which git tokens may no longer '
-            'be retrieved by a sandboxed conversation.'
+            "A security measure - the time after which git tokens may no longer "
+            "be retrieved by a sandboxed conversation."
         ),
     )
 
@@ -587,7 +587,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
             web_url = config.web_url
             if web_url is None:
                 if isinstance(sandbox_service, DockerSandboxService):
-                    web_url = f'http://host.docker.internal:{sandbox_service.host_port}'
+                    web_url = f"http://host.docker.internal:{sandbox_service.host_port}"
 
             yield LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,

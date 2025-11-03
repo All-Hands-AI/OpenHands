@@ -1,5 +1,4 @@
-"""
-Database model for experiment assignments.
+"""Database model for experiment assignments.
 
 This model tracks which experiments a conversation is assigned to and what variant
 they received from PostHog feature flags.
@@ -13,7 +12,7 @@ from storage.base import Base
 
 
 class ExperimentAssignment(Base):  # type: ignore
-    __tablename__ = 'experiment_assignments'
+    __tablename__ = "experiment_assignments"
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     conversation_id = Column(String, nullable=True, index=True)
@@ -34,8 +33,8 @@ class ExperimentAssignment(Base):  # type: ignore
 
     __table_args__ = (
         UniqueConstraint(
-            'conversation_id',
-            'experiment_name',
-            name='uq_experiment_assignments_conversation_experiment',
+            "conversation_id",
+            "experiment_name",
+            name="uq_experiment_assignments_conversation_experiment",
         ),
     )

@@ -57,7 +57,7 @@ class ConversationWindowCondenser(RollingCondenser):
 
         if first_user_msg is None:
             logger.warning(
-                'No first user message found in history during condensation.'
+                "No first user message found in history during condensation."
             )
             # Return empty condensation if no user message
             action = CondensationAction(forgotten_event_ids=[])
@@ -126,7 +126,7 @@ class ConversationWindowCondenser(RollingCondenser):
         # Check if all events in the recent slice are dangling observations
         if first_valid_event_index_in_slice == len(recent_events_slice):
             logger.warning(
-                'All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen.'
+                "All recent events are dangling observations, which we truncate. This means the agent has only the essential first events. This should not happen."
             )
 
         # Calculate the actual index in the full events list
@@ -134,8 +134,8 @@ class ConversationWindowCondenser(RollingCondenser):
 
         if first_valid_event_index_in_slice > 0:
             logger.debug(
-                f'Removed {first_valid_event_index_in_slice} dangling observation(s) '
-                f'from the start of recent event slice.'
+                f"Removed {first_valid_event_index_in_slice} dangling observation(s) "
+                f"from the start of recent event slice."
             )
 
         # 4. Determine which events to keep and which to forget
@@ -150,8 +150,8 @@ class ConversationWindowCondenser(RollingCondenser):
         forgotten_event_ids = sorted(all_event_ids - events_to_keep)
 
         logger.info(
-            f'ConversationWindowCondenser: Keeping {len(events_to_keep)} events, '
-            f'forgetting {len(forgotten_event_ids)} events.'
+            f"ConversationWindowCondenser: Keeping {len(events_to_keep)} events, "
+            f"forgetting {len(forgotten_event_ids)} events."
         )
 
         # Create the condensation action

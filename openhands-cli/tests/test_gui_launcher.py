@@ -22,14 +22,14 @@ class TestFormatDockerCommand:
         "cmd,expected",
         [
             (
-                ['docker', 'run', 'hello-world'],
-                '<grey>Running Docker command: docker run hello-world</grey>',
+                ["docker", "run", "hello-world"],
+                "<grey>Running Docker command: docker run hello-world</grey>",
             ),
             (
-                ['docker', 'run', '-it', '--rm', '-p', '3000:3000', 'openhands:latest'],
-                '<grey>Running Docker command: docker run -it --rm -p 3000:3000 openhands:latest</grey>',
+                ["docker", "run", "-it", "--rm", "-p", "3000:3000", "openhands:latest"],
+                "<grey>Running Docker command: docker run -it --rm -p 3000:3000 openhands:latest</grey>",
             ),
-            ([], '<grey>Running Docker command: </grey>'),
+            ([], "<grey>Running Docker command: </grey>"),
         ],
     )
     def test_format_docker_command(self, cmd, expected):
@@ -47,17 +47,23 @@ class TestCheckDockerRequirements:
             # Docker not installed
             (None, None, False, 2),
             # Docker daemon not running
-            ('/usr/bin/docker', MagicMock(returncode=1), False, 2),
+            ("/usr/bin/docker", MagicMock(returncode=1), False, 2),
             # Docker timeout
-            ('/usr/bin/docker', subprocess.TimeoutExpired('docker info', 10), False, 2),
+            ("/usr/bin/docker", subprocess.TimeoutExpired("docker info", 10), False, 2),
             # Docker available
-            ('/usr/bin/docker', MagicMock(returncode=0), True, 0),
+            ("/usr/bin/docker", MagicMock(returncode=0), True, 0),
         ],
     )
-    @patch('shutil.which')
-    @patch('subprocess.run')
+    @patch("shutil.which")
+    @patch("subprocess.run")
     def test_docker_requirements(
-        self, mock_run, mock_which, which_return, run_side_effect, expected_result, expected_print_count
+        self,
+        mock_run,
+        mock_which,
+        which_return,
+        run_side_effect,
+        expected_result,
+        expected_print_count,
     ):
         """Test Docker requirements checking scenarios."""
         mock_which.return_value = which_return
@@ -67,7 +73,7 @@ class TestCheckDockerRequirements:
             else:
                 mock_run.return_value = run_side_effect
 
-        with patch('openhands_cli.gui_launcher.print_formatted_text') as mock_print:
+        with patch("openhands_cli.gui_launcher.print_formatted_text") as mock_print:
             result = check_docker_requirements()
 
         assert result is expected_result
@@ -80,14 +86,14 @@ class TestGetOpenHandsVersion:
     @pytest.mark.parametrize(
         "env_value,expected",
         [
-            (None, 'latest'),  # No environment variable set
-            ('1.2.3', '1.2.3'),  # Environment variable set
+            (None, "latest"),  # No environment variable set
+            ("1.2.3", "1.2.3"),  # Environment variable set
         ],
     )
     def test_version_retrieval(self, env_value, expected):
         """Test version retrieval from environment."""
         if env_value:
-            os.environ['OPENHANDS_VERSION'] = env_value
+            os.environ["OPENHANDS_VERSION"] = env_value
         result = get_openhands_version()
         assert result == expected
 
@@ -95,9 +101,11 @@ class TestGetOpenHandsVersion:
 class TestLaunchGuiServer:
     """Test GUI server launching."""
 
-    @patch('openhands_cli.gui_launcher.check_docker_requirements')
-    @patch('openhands_cli.gui_launcher.print_formatted_text')
-    def test_launch_gui_server_docker_not_available(self, mock_print, mock_check_docker):
+    @patch("openhands_cli.gui_launcher.check_docker_requirements")
+    @patch("openhands_cli.gui_launcher.print_formatted_text")
+    def test_launch_gui_server_docker_not_available(
+        self, mock_print, mock_check_docker
+    ):
         """Test that launch_gui_server exits when Docker is not available."""
         mock_check_docker.return_value = False
 
@@ -110,9 +118,15 @@ class TestLaunchGuiServer:
         "pull_side_effect,run_side_effect,expected_exit_code,mount_cwd,gpu",
         [
             # Docker pull failure
-            (subprocess.CalledProcessError(1, 'docker pull'), None, 1, False, False),
+            (subprocess.CalledProcessError(1, "docker pull"), None, 1, False, False),
             # Docker run failure
-            (MagicMock(returncode=0), subprocess.CalledProcessError(1, 'docker run'), 1, False, False),
+            (
+                MagicMock(returncode=0),
+                subprocess.CalledProcessError(1, "docker run"),
+                1,
+                False,
+                False,
+            ),
             # KeyboardInterrupt during run
             (MagicMock(returncode=0), KeyboardInterrupt(), 0, False, False),
             # Success with mount_cwd
@@ -121,13 +135,13 @@ class TestLaunchGuiServer:
             (MagicMock(returncode=0), MagicMock(returncode=0), None, False, True),
         ],
     )
-    @patch('openhands_cli.gui_launcher.check_docker_requirements')
-    @patch('openhands_cli.gui_launcher.ensure_config_dir_exists')
-    @patch('openhands_cli.gui_launcher.get_openhands_version')
-    @patch('subprocess.run')
-    @patch('subprocess.check_output')
-    @patch('pathlib.Path.cwd')
-    @patch('openhands_cli.gui_launcher.print_formatted_text')
+    @patch("openhands_cli.gui_launcher.check_docker_requirements")
+    @patch("openhands_cli.gui_launcher.ensure_config_dir_exists")
+    @patch("openhands_cli.gui_launcher.get_openhands_version")
+    @patch("subprocess.run")
+    @patch("subprocess.check_output")
+    @patch("pathlib.Path.cwd")
+    @patch("openhands_cli.gui_launcher.print_formatted_text")
     def test_launch_gui_server_scenarios(
         self,
         mock_print,
@@ -146,10 +160,10 @@ class TestLaunchGuiServer:
         """Test various GUI server launch scenarios."""
         # Setup mocks
         mock_check_docker.return_value = True
-        mock_config_dir.return_value = Path('/home/user/.openhands')
-        mock_version.return_value = 'latest'
-        mock_check_output.return_value = '1000\n'
-        mock_cwd.return_value = Path('/current/dir')
+        mock_config_dir.return_value = Path("/home/user/.openhands")
+        mock_version.return_value = "latest"
+        mock_check_output.return_value = "1000\n"
+        mock_cwd.return_value = Path("/current/dir")
 
         # Configure subprocess.run side effects
         side_effects = []
@@ -182,18 +196,22 @@ class TestLaunchGuiServer:
             # Check pull command
             pull_call = mock_run.call_args_list[0]
             pull_cmd = pull_call[0][0]
-            assert pull_cmd[0:3] == ['docker', 'pull', 'docker.openhands.dev/openhands/runtime:latest-nikolaik']
+            assert pull_cmd[0:3] == [
+                "docker",
+                "pull",
+                "docker.openhands.dev/openhands/runtime:latest-nikolaik",
+            ]
 
             # Check run command
             run_call = mock_run.call_args_list[1]
             run_cmd = run_call[0][0]
-            assert run_cmd[0:2] == ['docker', 'run']
+            assert run_cmd[0:2] == ["docker", "run"]
 
             if mount_cwd:
-                assert 'SANDBOX_VOLUMES=/current/dir:/workspace:rw' in ' '.join(run_cmd)
-                assert 'SANDBOX_USER_ID=1000' in ' '.join(run_cmd)
+                assert "SANDBOX_VOLUMES=/current/dir:/workspace:rw" in " ".join(run_cmd)
+                assert "SANDBOX_USER_ID=1000" in " ".join(run_cmd)
 
             if gpu:
-                assert '--gpus' in run_cmd
-                assert 'all' in run_cmd
-                assert 'SANDBOX_ENABLE_GPU=true' in ' '.join(run_cmd)
+                assert "--gpus" in run_cmd
+                assert "all" in run_cmd
+                assert "SANDBOX_ENABLE_GPU=true" in " ".join(run_cmd)

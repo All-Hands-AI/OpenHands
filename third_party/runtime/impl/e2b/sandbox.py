@@ -30,24 +30,24 @@ class E2BBox:
             raise ValueError(
                 "E2B_API_KEY environment variable is required for E2B runtime"
             )
-        
+
         # Read custom E2B domain if provided
         e2b_domain = os.getenv("E2B_DOMAIN")
         if e2b_domain:
-            logger.info(f'Using custom E2B domain: {e2b_domain}')
+            logger.info(f"Using custom E2B domain: {e2b_domain}")
 
         # E2B v2 requires using create() method or connect to existing
         try:
             # Configure E2B client with custom domain if provided
             create_kwargs = {}
             connect_kwargs = {}
-            
+
             if e2b_domain:
                 # Set up custom domain configuration
                 # Note: This depends on E2B SDK version and may need adjustment
-                os.environ['E2B_API_URL'] = f'https://{e2b_domain}'
-                logger.info(f'Set E2B_API_URL to https://{e2b_domain}')
-            
+                os.environ["E2B_API_URL"] = f"https://{e2b_domain}"
+                logger.info(f"Set E2B_API_URL to https://{e2b_domain}")
+
             if sandbox_id:
                 # Connect to existing sandbox
                 self.sandbox = Sandbox.connect(sandbox_id, **connect_kwargs)
@@ -64,7 +64,9 @@ class E2BBox:
     @property
     def filesystem(self):
         # E2B v2 uses 'files' instead of 'filesystem'
-        return getattr(self.sandbox, 'files', None) or getattr(self.sandbox, 'filesystem', None)
+        return getattr(self.sandbox, "files", None) or getattr(
+            self.sandbox, "filesystem", None
+        )
 
     def _archive(self, host_src: str, recursive: bool = False):
         if recursive:
@@ -91,16 +93,16 @@ class E2BBox:
 
     def execute(self, cmd: str, timeout: int | None = None) -> tuple[int, str]:
         timeout = timeout if timeout is not None else self.config.timeout
-        
+
         # E2B code-interpreter uses commands.run()
         try:
             result = self.sandbox.commands.run(cmd)
             output = ""
-            if hasattr(result, 'stdout') and result.stdout:
+            if hasattr(result, "stdout") and result.stdout:
                 output += result.stdout
-            if hasattr(result, 'stderr') and result.stderr:
+            if hasattr(result, "stderr") and result.stderr:
                 output += result.stderr
-            exit_code = getattr(result, 'exit_code', 0) or 0
+            exit_code = getattr(result, "exit_code", 0) or 0
             return exit_code, output
         except TimeoutException:
             logger.debug("Command timed out")
@@ -139,9 +141,9 @@ class E2BBox:
 
     def close(self):
         # E2B v2 uses kill() instead of close()
-        if hasattr(self.sandbox, 'kill'):
+        if hasattr(self.sandbox, "kill"):
             self.sandbox.kill()
-        elif hasattr(self.sandbox, 'close'):
+        elif hasattr(self.sandbox, "close"):
             self.sandbox.close()
 
     def get_working_directory(self):

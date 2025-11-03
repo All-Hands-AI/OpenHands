@@ -1,5 +1,4 @@
-"""
-Standalone tests for the MaintenanceTaskRunner.
+"""Standalone tests for the MaintenanceTaskRunner.
 
 These tests work without OpenHands dependencies and focus on testing the core
 logic and behavior of the task runner using comprehensive mocking.
@@ -158,7 +157,7 @@ class TestMaintenanceTaskRunnerStandalone:
                 self.attempt_count += 1
                 # Only fail on the first attempt
                 if self.attempt_count == 1:
-                    raise Exception('Simulated processing error')
+                    raise Exception("Simulated processing error")
                 # Subsequent calls succeed
 
         runner = MockMaintenanceTaskRunner()
@@ -179,7 +178,7 @@ class TestMaintenanceTaskRunnerStandalone:
             """Simulate the database query logic."""
             pending_tasks = []
             for task in all_tasks:
-                if task['status'] == 'PENDING' and task['start_at'] <= current_time:
+                if task["status"] == "PENDING" and task["start_at"] <= current_time:
                     pending_tasks.append(task)
             return pending_tasks
 
@@ -189,32 +188,32 @@ class TestMaintenanceTaskRunnerStandalone:
 
         # Mock tasks with different statuses and start times
         all_tasks = [
-            {'id': 1, 'status': 'PENDING', 'start_at': past_time},  # Should be selected
-            {'id': 2, 'status': 'PENDING', 'start_at': now},  # Should be selected
+            {"id": 1, "status": "PENDING", "start_at": past_time},  # Should be selected
+            {"id": 2, "status": "PENDING", "start_at": now},  # Should be selected
             {
-                'id': 3,
-                'status': 'PENDING',
-                'start_at': future_time,
+                "id": 3,
+                "status": "PENDING",
+                "start_at": future_time,
             },  # Should NOT be selected (future)
             {
-                'id': 4,
-                'status': 'WORKING',
-                'start_at': past_time,
+                "id": 4,
+                "status": "WORKING",
+                "start_at": past_time,
             },  # Should NOT be selected (working)
             {
-                'id': 5,
-                'status': 'COMPLETED',
-                'start_at': past_time,
+                "id": 5,
+                "status": "COMPLETED",
+                "start_at": past_time,
             },  # Should NOT be selected (completed)
             {
-                'id': 6,
-                'status': 'ERROR',
-                'start_at': past_time,
+                "id": 6,
+                "status": "ERROR",
+                "start_at": past_time,
             },  # Should NOT be selected (error)
             {
-                'id': 7,
-                'status': 'INACTIVE',
-                'start_at': past_time,
+                "id": 7,
+                "status": "INACTIVE",
+                "start_at": past_time,
             },  # Should NOT be selected (inactive)
         ]
 
@@ -222,8 +221,8 @@ class TestMaintenanceTaskRunnerStandalone:
 
         # Should only return tasks 1 and 2
         assert len(pending_tasks) == 2
-        assert pending_tasks[0]['id'] == 1
-        assert pending_tasks[1]['id'] == 2
+        assert pending_tasks[0]["id"] == 1
+        assert pending_tasks[1]["id"] == 2
 
     @pytest.mark.asyncio
     async def test_task_processing_success(self):
@@ -234,14 +233,14 @@ class TestMaintenanceTaskRunnerStandalone:
             def __init__(self, task_id, processor_type):
                 self.id = task_id
                 self.processor_type = processor_type
-                self.status = 'PENDING'
+                self.status = "PENDING"
                 self.info = None
                 self.updated_at = None
 
             def get_processor(self):
                 # Mock processor
                 processor = AsyncMock()
-                processor.return_value = {'result': 'success', 'processed_items': 5}
+                processor.return_value = {"result": "success", "processed_items": 5}
                 return processor
 
         class MockMaintenanceTaskRunner:
@@ -251,10 +250,10 @@ class TestMaintenanceTaskRunnerStandalone:
 
             async def _process_task(self, task):
                 # Simulate updating status to WORKING
-                task.status = 'WORKING'
+                task.status = "WORKING"
                 task.updated_at = datetime.now()
-                self.status_updates.append(('WORKING', task.id))
-                self.commits.append('working_commit')
+                self.status_updates.append(("WORKING", task.id))
+                self.commits.append("working_commit")
 
                 try:
                     # Get and execute processor
@@ -262,35 +261,35 @@ class TestMaintenanceTaskRunnerStandalone:
                     result = await processor(task)
 
                     # Mark as completed
-                    task.status = 'COMPLETED'
+                    task.status = "COMPLETED"
                     task.info = result
                     task.updated_at = datetime.now()
-                    self.status_updates.append(('COMPLETED', task.id))
-                    self.commits.append('completed_commit')
+                    self.status_updates.append(("COMPLETED", task.id))
+                    self.commits.append("completed_commit")
 
                     return result
                 except Exception as e:
                     # Handle error (not expected in this test)
-                    task.status = 'ERROR'
-                    task.info = {'error': str(e)}
-                    self.status_updates.append(('ERROR', task.id))
-                    self.commits.append('error_commit')
+                    task.status = "ERROR"
+                    task.info = {"error": str(e)}
+                    self.status_updates.append(("ERROR", task.id))
+                    self.commits.append("error_commit")
                     raise
 
         runner = MockMaintenanceTaskRunner()
-        task = MockTask(123, 'test_processor')
+        task = MockTask(123, "test_processor")
 
         # Process the task
         result = await runner._process_task(task)
 
         # Verify the processing flow
         assert len(runner.status_updates) == 2
-        assert runner.status_updates[0] == ('WORKING', 123)
-        assert runner.status_updates[1] == ('COMPLETED', 123)
+        assert runner.status_updates[0] == ("WORKING", 123)
+        assert runner.status_updates[1] == ("COMPLETED", 123)
         assert len(runner.commits) == 2
-        assert task.status == 'COMPLETED'
-        assert task.info == {'result': 'success', 'processed_items': 5}
-        assert result == {'result': 'success', 'processed_items': 5}
+        assert task.status == "COMPLETED"
+        assert task.info == {"result": "success", "processed_items": 5}
+        assert result == {"result": "success", "processed_items": 5}
 
     @pytest.mark.asyncio
     async def test_task_processing_failure(self):
@@ -300,14 +299,14 @@ class TestMaintenanceTaskRunnerStandalone:
             def __init__(self, task_id, processor_type):
                 self.id = task_id
                 self.processor_type = processor_type
-                self.status = 'PENDING'
+                self.status = "PENDING"
                 self.info = None
                 self.updated_at = None
 
             def get_processor(self):
                 # Mock processor that fails
                 processor = AsyncMock()
-                processor.side_effect = ValueError('Processing failed')
+                processor.side_effect = ValueError("Processing failed")
                 return processor
 
         class MockMaintenanceTaskRunner:
@@ -317,9 +316,9 @@ class TestMaintenanceTaskRunnerStandalone:
 
             async def _process_task(self, task):
                 # Simulate updating status to WORKING
-                task.status = 'WORKING'
+                task.status = "WORKING"
                 task.updated_at = datetime.now()
-                self.status_updates.append(('WORKING', task.id))
+                self.status_updates.append(("WORKING", task.id))
 
                 try:
                     # Get and execute processor
@@ -327,40 +326,40 @@ class TestMaintenanceTaskRunnerStandalone:
                     result = await processor(task)
 
                     # This shouldn't be reached
-                    task.status = 'COMPLETED'
+                    task.status = "COMPLETED"
                     task.info = result
-                    self.status_updates.append(('COMPLETED', task.id))
+                    self.status_updates.append(("COMPLETED", task.id))
 
                 except Exception as e:
                     # Handle error
                     error_info = {
-                        'error': str(e),
-                        'error_type': type(e).__name__,
-                        'processor_type': task.processor_type,
+                        "error": str(e),
+                        "error_type": type(e).__name__,
+                        "processor_type": task.processor_type,
                     }
 
-                    task.status = 'ERROR'
+                    task.status = "ERROR"
                     task.info = error_info
                     task.updated_at = datetime.now()
-                    self.status_updates.append(('ERROR', task.id))
+                    self.status_updates.append(("ERROR", task.id))
                     self.error_logged = error_info
 
         runner = MockMaintenanceTaskRunner()
-        task = MockTask(456, 'failing_processor')
+        task = MockTask(456, "failing_processor")
 
         # Process the task
         await runner._process_task(task)
 
         # Verify the error handling flow
         assert len(runner.status_updates) == 2
-        assert runner.status_updates[0] == ('WORKING', 456)
-        assert runner.status_updates[1] == ('ERROR', 456)
-        assert task.status == 'ERROR'
+        assert runner.status_updates[0] == ("WORKING", 456)
+        assert runner.status_updates[1] == ("ERROR", 456)
+        assert task.status == "ERROR"
         info = task.info
         assert info is not None
-        assert info['error'] == 'Processing failed'
-        assert info['error_type'] == 'ValueError'
-        assert info['processor_type'] == 'failing_processor'
+        assert info["error"] == "Processing failed"
+        assert info["error_type"] == "ValueError"
+        assert info["processor_type"] == "failing_processor"
         assert runner.error_logged is not None
 
     def test_database_session_handling_pattern(self):
@@ -404,7 +403,7 @@ class TestMaintenanceTaskRunnerStandalone:
         def process_pending_tasks_pattern():
             with mock_session_maker() as session:
                 # Query for pending tasks
-                pending_tasks = session.query('MaintenanceTask').filter().all()
+                pending_tasks = session.query("MaintenanceTask").filter().all()
                 return session, pending_tasks
 
         def process_task_pattern(task):
@@ -427,7 +426,7 @@ class TestMaintenanceTaskRunnerStandalone:
         assert len(query_session.queries) == 1
         assert query_session.closed is True
 
-        mock_task = {'id': 1}
+        mock_task = {"id": 1}
         working_session, final_session = process_task_pattern(mock_task)
         assert len(working_session.merges) == 1
         assert len(working_session.commits) == 1
@@ -441,56 +440,56 @@ class TestMaintenanceTaskRunnerStandalone:
         log_calls = []
 
         def mock_logger_info(message, extra=None):
-            log_calls.append({'level': 'info', 'message': message, 'extra': extra})
+            log_calls.append({"level": "info", "message": message, "extra": extra})
 
         def mock_logger_error(message, extra=None):
-            log_calls.append({'level': 'error', 'message': message, 'extra': extra})
+            log_calls.append({"level": "error", "message": message, "extra": extra})
 
         # Simulate the logging that would happen in the runner
         def simulate_runner_logging():
             # Start logging
-            mock_logger_info('maintenance_task_runner:started')
+            mock_logger_info("maintenance_task_runner:started")
 
             # Found pending tasks
             mock_logger_info(
-                'maintenance_task_runner:found_pending_tasks', extra={'count': 3}
+                "maintenance_task_runner:found_pending_tasks", extra={"count": 3}
             )
 
             # Processing task
             mock_logger_info(
-                'maintenance_task_runner:processing_task',
-                extra={'task_id': 123, 'processor_type': 'test_processor'},
+                "maintenance_task_runner:processing_task",
+                extra={"task_id": 123, "processor_type": "test_processor"},
             )
 
             # Task completed
             mock_logger_info(
-                'maintenance_task_runner:task_completed',
+                "maintenance_task_runner:task_completed",
                 extra={
-                    'task_id': 123,
-                    'processor_type': 'test_processor',
-                    'info': {'result': 'success'},
+                    "task_id": 123,
+                    "processor_type": "test_processor",
+                    "info": {"result": "success"},
                 },
             )
 
             # Task failed
             mock_logger_error(
-                'maintenance_task_runner:task_failed',
+                "maintenance_task_runner:task_failed",
                 extra={
-                    'task_id': 456,
-                    'processor_type': 'failing_processor',
-                    'error': 'Processing failed',
-                    'error_type': 'ValueError',
+                    "task_id": 456,
+                    "processor_type": "failing_processor",
+                    "error": "Processing failed",
+                    "error_type": "ValueError",
                 },
             )
 
             # Loop error
             mock_logger_error(
-                'maintenance_task_runner:loop_error',
-                extra={'error': 'Database connection failed'},
+                "maintenance_task_runner:loop_error",
+                extra={"error": "Database connection failed"},
             )
 
             # Stop logging
-            mock_logger_info('maintenance_task_runner:stopped')
+            mock_logger_info("maintenance_task_runner:stopped")
 
         # Run the simulation
         simulate_runner_logging()
@@ -500,41 +499,41 @@ class TestMaintenanceTaskRunnerStandalone:
 
         # Check start log
         start_log = log_calls[0]
-        assert start_log['level'] == 'info'
-        assert 'started' in start_log['message']
-        assert start_log['extra'] is None
+        assert start_log["level"] == "info"
+        assert "started" in start_log["message"]
+        assert start_log["extra"] is None
 
         # Check found tasks log
         found_log = log_calls[1]
-        assert 'found_pending_tasks' in found_log['message']
-        assert found_log['extra']['count'] == 3
+        assert "found_pending_tasks" in found_log["message"]
+        assert found_log["extra"]["count"] == 3
 
         # Check processing log
         processing_log = log_calls[2]
-        assert 'processing_task' in processing_log['message']
-        assert processing_log['extra']['task_id'] == 123
-        assert processing_log['extra']['processor_type'] == 'test_processor'
+        assert "processing_task" in processing_log["message"]
+        assert processing_log["extra"]["task_id"] == 123
+        assert processing_log["extra"]["processor_type"] == "test_processor"
 
         # Check completed log
         completed_log = log_calls[3]
-        assert 'task_completed' in completed_log['message']
-        assert completed_log['extra']['info']['result'] == 'success'
+        assert "task_completed" in completed_log["message"]
+        assert completed_log["extra"]["info"]["result"] == "success"
 
         # Check failed log
         failed_log = log_calls[4]
-        assert failed_log['level'] == 'error'
-        assert 'task_failed' in failed_log['message']
-        assert failed_log['extra']['error'] == 'Processing failed'
-        assert failed_log['extra']['error_type'] == 'ValueError'
+        assert failed_log["level"] == "error"
+        assert "task_failed" in failed_log["message"]
+        assert failed_log["extra"]["error"] == "Processing failed"
+        assert failed_log["extra"]["error_type"] == "ValueError"
 
         # Check loop error log
         loop_error_log = log_calls[5]
-        assert loop_error_log['level'] == 'error'
-        assert 'loop_error' in loop_error_log['message']
+        assert loop_error_log["level"] == "error"
+        assert "loop_error" in loop_error_log["message"]
 
         # Check stop log
         stop_log = log_calls[6]
-        assert 'stopped' in stop_log['message']
+        assert "stopped" in stop_log["message"]
 
     @pytest.mark.asyncio
     async def test_concurrent_task_processing(self):
@@ -543,16 +542,16 @@ class TestMaintenanceTaskRunnerStandalone:
         class MockTask:
             def __init__(self, task_id, should_fail=False):
                 self.id = task_id
-                self.processor_type = f'processor_{task_id}'
-                self.status = 'PENDING'
+                self.processor_type = f"processor_{task_id}"
+                self.status = "PENDING"
                 self.should_fail = should_fail
 
             def get_processor(self):
                 processor = AsyncMock()
                 if self.should_fail:
-                    processor.side_effect = Exception(f'Task {self.id} failed')
+                    processor.side_effect = Exception(f"Task {self.id} failed")
                 else:
-                    processor.return_value = {'task_id': self.id, 'result': 'success'}
+                    processor.return_value = {"task_id": self.id, "result": "success"}
                 return processor
 
         class MockMaintenanceTaskRunner:
@@ -603,7 +602,7 @@ class TestMaintenanceTaskRunnerStandalone:
         # Check failed task
         failed_id, error = runner.failed_tasks[0]
         assert failed_id == 2
-        assert 'Task 2 failed' in error
+        assert "Task 2 failed" in error
 
     def test_global_instance_pattern(self):
         """Test the global instance pattern."""
@@ -657,8 +656,7 @@ class TestMaintenanceTaskRunnerStandalone:
 
 # Additional integration test scenarios that would work with full dependencies
 class TestMaintenanceTaskRunnerIntegration:
-    """
-    Integration test scenarios for when OpenHands dependencies are available.
+    """Integration test scenarios for when OpenHands dependencies are available.
 
     These tests would require:
     1. OpenHands to be installed and available
@@ -667,8 +665,7 @@ class TestMaintenanceTaskRunnerIntegration:
     """
 
     def test_full_runner_workflow_description(self):
-        """
-        Describe the full workflow test that would be implemented with dependencies.
+        """Describe the full workflow test that would be implemented with dependencies.
 
         This test would:
         1. Create a real MaintenanceTaskRunner instance
@@ -682,8 +679,7 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_database_integration_description(self):
-        """
-        Describe database integration test that would be implemented.
+        """Describe database integration test that would be implemented.
 
         This test would:
         1. Use the session_maker fixture from conftest.py
@@ -695,8 +691,7 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_processor_integration_description(self):
-        """
-        Describe processor integration test.
+        """Describe processor integration test.
 
         This test would:
         1. Create real processor instances (UserVersionUpgradeProcessor, etc.)
@@ -708,8 +703,7 @@ class TestMaintenanceTaskRunnerIntegration:
         pass
 
     def test_performance_and_scalability_description(self):
-        """
-        Describe performance test scenarios.
+        """Describe performance test scenarios.
 
         This test would:
         1. Create a large number of pending tasks

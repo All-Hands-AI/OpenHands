@@ -4,9 +4,7 @@ from openhands.server.types import AppMode
 
 
 class GitLabReposMixin(GitLabMixinBase):
-    """
-    Methods for interacting with GitLab repositories
-    """
+    """Methods for interacting with GitLab repositories"""
 
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
@@ -21,18 +19,18 @@ class GitLabReposMixin(GitLabMixinBase):
             Repository object
         """
         return Repository(
-            id=str(repo.get('id')),  # type: ignore[arg-type]
-            full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
-            stargazers_count=repo.get('star_count'),
+            id=str(repo.get("id")),  # type: ignore[arg-type]
+            full_name=repo.get("path_with_namespace"),  # type: ignore[arg-type]
+            stargazers_count=repo.get("star_count"),
             git_provider=ProviderType.GITLAB,
-            is_public=repo.get('visibility') == 'public',
+            is_public=repo.get("visibility") == "public",
             owner_type=(
                 OwnerType.ORGANIZATION
-                if repo.get('namespace', {}).get('kind') == 'group'
+                if repo.get("namespace", {}).get("kind") == "group"
                 else OwnerType.USER
             ),
             link_header=link_header,
-            main_branch=repo.get('default_branch'),
+            main_branch=repo.get("default_branch"),
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:
@@ -43,27 +41,27 @@ class GitLabReposMixin(GitLabMixinBase):
         """
         try:
             # Remove protocol and domain
-            if '://' in url:
-                url = url.split('://', 1)[1]
-            if '/' in url:
-                path = url.split('/', 1)[1]
+            if "://" in url:
+                url = url.split("://", 1)[1]
+            if "/" in url:
+                path = url.split("/", 1)[1]
             else:
                 return None
 
             # Clean up the path
-            path = path.strip('/')
+            path = path.strip("/")
             if not path:
                 return None
 
             # Split the path and remove empty parts
-            path_parts = [part for part in path.split('/') if part]
+            path_parts = [part for part in path.split("/") if part]
 
             # We need at least 2 parts: group/repo
             if len(path_parts) < 2:
                 return None
 
             # Join all parts to form the full repository path
-            return '/'.join(path_parts)
+            return "/".join(path_parts)
 
         except Exception:
             return None
@@ -72,8 +70,8 @@ class GitLabReposMixin(GitLabMixinBase):
         self,
         query: str,
         per_page: int = 30,
-        sort: str = 'updated',
-        order: str = 'desc',
+        sort: str = "updated",
+        order: str = "desc",
         public: bool = False,
         app_mode: AppMode = AppMode.OSS,
     ) -> list[Repository]:
@@ -96,29 +94,29 @@ class GitLabReposMixin(GitLabMixinBase):
         installation_id: str | None,
         query: str | None = None,
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/projects'
+        url = f"{self.BASE_URL}/projects"
         order_by = {
-            'pushed': 'last_activity_at',
-            'updated': 'last_activity_at',
-            'created': 'created_at',
-            'full_name': 'name',
-        }.get(sort, 'last_activity_at')
+            "pushed": "last_activity_at",
+            "updated": "last_activity_at",
+            "created": "created_at",
+            "full_name": "name",
+        }.get(sort, "last_activity_at")
 
         params = {
-            'page': str(page),
-            'per_page': str(per_page),
-            'order_by': order_by,
-            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-            'membership': True,  # Include projects user is a member of
+            "page": str(page),
+            "per_page": str(per_page),
+            "order_by": order_by,
+            "sort": "desc",  # GitLab uses sort for direction (asc/desc)
+            "membership": True,  # Include projects user is a member of
         }
 
         if query:
-            params['search'] = query
-            params['search_namespaces'] = True
+            params["search"] = query
+            params["search_namespaces"] = True
 
         response, headers = await self._make_request(url, params)
 
-        next_link: str = headers.get('Link', '')
+        next_link: str = headers.get("Link", "")
         repos = [
             self._parse_repository(repo, link_header=next_link) for repo in response
         ]
@@ -132,22 +130,22 @@ class GitLabReposMixin(GitLabMixinBase):
         all_repos: list[dict] = []
         page = 1
 
-        url = f'{self.BASE_URL}/projects'
+        url = f"{self.BASE_URL}/projects"
         # Map GitHub's sort values to GitLab's order_by values
         order_by = {
-            'pushed': 'last_activity_at',
-            'updated': 'last_activity_at',
-            'created': 'created_at',
-            'full_name': 'name',
-        }.get(sort, 'last_activity_at')
+            "pushed": "last_activity_at",
+            "updated": "last_activity_at",
+            "created": "created_at",
+            "full_name": "name",
+        }.get(sort, "last_activity_at")
 
         while len(all_repos) < MAX_REPOS:
             params = {
-                'page': str(page),
-                'per_page': str(PER_PAGE),
-                'order_by': order_by,
-                'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
-                'membership': 1,  # Use 1 instead of True
+                "page": str(page),
+                "per_page": str(PER_PAGE),
+                "order_by": order_by,
+                "sort": "desc",  # GitLab uses sort for direction (asc/desc)
+                "membership": 1,  # Use 1 instead of True
             }
             response, headers = await self._make_request(url, params)
 
@@ -158,7 +156,7 @@ class GitLabReposMixin(GitLabMixinBase):
             page += 1
 
             # Check if we've reached the last page
-            link_header = headers.get('Link', '')
+            link_header = headers.get("Link", "")
             if 'rel="next"' not in link_header:
                 break
 
@@ -169,9 +167,9 @@ class GitLabReposMixin(GitLabMixinBase):
     async def get_repository_details_from_repo_name(
         self, repository: str
     ) -> Repository:
-        encoded_name = repository.replace('/', '%2F')
+        encoded_name = repository.replace("/", "%2F")
 
-        url = f'{self.BASE_URL}/projects/{encoded_name}'
+        url = f"{self.BASE_URL}/projects/{encoded_name}"
         repo, _ = await self._make_request(url)
 
         return self._parse_repository(repo)

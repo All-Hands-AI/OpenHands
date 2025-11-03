@@ -46,22 +46,22 @@ from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
-WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+WEBHOOK_CALLBACK_VARIABLE = "OH_WEBHOOKS_0_BASE_URL"
 polling_task: asyncio.Task | None = None
 POD_STATUS_MAPPING = {
-    'ready': SandboxStatus.RUNNING,
-    'pending': SandboxStatus.STARTING,
-    'running': SandboxStatus.STARTING,
-    'failed': SandboxStatus.ERROR,
-    'unknown': SandboxStatus.ERROR,
-    'crashloopbackoff': SandboxStatus.ERROR,
+    "ready": SandboxStatus.RUNNING,
+    "pending": SandboxStatus.STARTING,
+    "running": SandboxStatus.STARTING,
+    "failed": SandboxStatus.ERROR,
+    "unknown": SandboxStatus.ERROR,
+    "crashloopbackoff": SandboxStatus.ERROR,
 }
 STATUS_MAPPING = {
-    'running': SandboxStatus.RUNNING,
-    'paused': SandboxStatus.PAUSED,
-    'stopped': SandboxStatus.MISSING,
-    'starting': SandboxStatus.STARTING,
-    'error': SandboxStatus.ERROR,
+    "running": SandboxStatus.RUNNING,
+    "paused": SandboxStatus.PAUSED,
+    "stopped": SandboxStatus.MISSING,
+    "starting": SandboxStatus.STARTING,
+    "error": SandboxStatus.ERROR,
 }
 
 
@@ -71,9 +71,10 @@ class StoredRemoteSandbox(Base):  # type: ignore
     The remote runtime API does not return some variables we need, and does not
     return stopped runtimes in list operations, so we need a local copy. We use
     the remote api as a source of truth on what is currently running, not what was
-    run historicallly."""
+    run historicallly.
+    """
 
-    __tablename__ = 'v1_remote_sandbox'
+    __tablename__ = "v1_remote_sandbox"
     id = Column(String, primary_key=True)
     created_by_user_id = Column(String, nullable=True, index=True)
     sandbox_spec_id = Column(String, index=True)  # shadows runtime['image']
@@ -107,13 +108,13 @@ class RemoteSandboxService(SandboxService):
         try:
             url = self.api_url + path
             return await self.httpx_client.request(
-                method, url, headers={'X-API-Key': self.api_key}, **kwargs
+                method, url, headers={"X-API-Key": self.api_key}, **kwargs
             )
         except httpx.TimeoutException:
-            _logger.error(f'No response received within timeout for URL: {url}')
+            _logger.error(f"No response received within timeout for URL: {url}")
             raise
         except httpx.HTTPError as e:
-            _logger.error(f'HTTP error for URL {url}: {e}')
+            _logger.error(f"HTTP error for URL {url}: {e}")
             raise
 
     async def _to_sandbox_info(
@@ -125,41 +126,41 @@ class RemoteSandboxService(SandboxService):
                 runtime = await self._get_runtime(stored.id)
             except Exception:
                 _logger.exception(
-                    f'Error getting runtime: {stored.id}', stack_info=True
+                    f"Error getting runtime: {stored.id}", stack_info=True
                 )
 
         if runtime:
             # Translate status
             status = None
-            pod_status = runtime['pod_status'].lower()
+            pod_status = runtime["pod_status"].lower()
             if pod_status:
                 status = POD_STATUS_MAPPING.get(pod_status, None)
 
             # If we failed to get the status from the pod status, fall back to status
             if status is None:
-                runtime_status = runtime.get('status')
+                runtime_status = runtime.get("status")
                 if runtime_status:
                     status = STATUS_MAPPING.get(runtime_status.lower(), None)
 
             if status is None:
                 status = SandboxStatus.MISSING
 
-            session_api_key = runtime['session_api_key']
+            session_api_key = runtime["session_api_key"]
             if status == SandboxStatus.RUNNING:
                 exposed_urls = []
-                url = runtime.get('url', None)
+                url = runtime.get("url", None)
                 if url:
                     exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
                     vscode_url = (
-                        _build_service_url(url, 'vscode')
-                        + f'/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject'
+                        _build_service_url(url, "vscode")
+                        + f"/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject"
                     )
                     exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
+                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, "work-1"))
                     )
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'))
+                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, "work-2"))
                     )
             else:
                 exposed_urls = None
@@ -195,8 +196,8 @@ class RemoteSandboxService(SandboxService):
 
     async def _get_runtime(self, sandbox_id: str) -> dict[str, Any]:
         response = await self._send_runtime_api_request(
-            'GET',
-            f'/sessions/{sandbox_id}',
+            "GET",
+            f"/sessions/{sandbox_id}",
         )
         response.raise_for_status()
         runtime_data = response.json()
@@ -211,7 +212,7 @@ class RemoteSandboxService(SandboxService):
         # If a public facing url is defined, add a callback to the agent server environment.
         if self.web_url:
             environment[WEBHOOK_CALLBACK_VARIABLE] = (
-                f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
+                f"{self.web_url}/api/v1/webhooks/{sandbox_id}"
             )
 
         return environment
@@ -284,7 +285,7 @@ class RemoteSandboxService(SandboxService):
                     sandbox_spec_id
                 )
                 if sandbox_spec_maybe is None:
-                    raise ValueError('Sandbox Spec not found')
+                    raise ValueError("Sandbox Spec not found")
                 sandbox_spec = sandbox_spec_maybe
 
             # Create a unique id
@@ -308,38 +309,38 @@ class RemoteSandboxService(SandboxService):
 
             # Prepare start request
             start_request: dict[str, Any] = {
-                'image': sandbox_spec.id,  # Use sandbox_spec.id as the container image
-                'command': sandbox_spec.command,
-                'working_dir': '/workspace',
-                'environment': environment,
-                'session_id': sandbox_id,  # Use sandbox_id as session_id
-                'resource_factor': self.resource_factor,
-                'run_as_user': 10001,
-                'run_as_group': 10001,
-                'fs_group': 10001,
+                "image": sandbox_spec.id,  # Use sandbox_spec.id as the container image
+                "command": sandbox_spec.command,
+                "working_dir": "/workspace",
+                "environment": environment,
+                "session_id": sandbox_id,  # Use sandbox_id as session_id
+                "resource_factor": self.resource_factor,
+                "run_as_user": 10001,
+                "run_as_group": 10001,
+                "fs_group": 10001,
             }
 
             # Add runtime class if specified
-            if self.runtime_class == 'sysbox':
-                start_request['runtime_class'] = 'sysbox-runc'
+            if self.runtime_class == "sysbox":
+                start_request["runtime_class"] = "sysbox-runc"
 
             # Start the runtime
             response = await self._send_runtime_api_request(
-                'POST',
-                '/start',
+                "POST",
+                "/start",
                 json=start_request,
             )
             response.raise_for_status()
             runtime_data = response.json()
 
             # Hack - result doesn't contain this
-            runtime_data['pod_status'] = 'pending'
+            runtime_data["pod_status"] = "pending"
 
             return await self._to_sandbox_info(stored_sandbox, runtime_data)
 
         except httpx.HTTPError as e:
-            _logger.error(f'Failed to start sandbox: {e}')
-            raise SandboxError(f'Failed to start sandbox: {e}')
+            _logger.error(f"Failed to start sandbox: {e}")
+            raise SandboxError(f"Failed to start sandbox: {e}")
 
     async def resume_sandbox(self, sandbox_id: str) -> bool:
         """Resume a paused sandbox."""
@@ -351,16 +352,16 @@ class RemoteSandboxService(SandboxService):
                 return False
             runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
-                'POST',
-                '/resume',
-                json={'runtime_id': runtime_data['runtime_id']},
+                "POST",
+                "/resume",
+                json={"runtime_id": runtime_data["runtime_id"]},
             )
             if response.status_code == 404:
                 return False
             response.raise_for_status()
             return True
         except httpx.HTTPError as e:
-            _logger.error(f'Error resuming sandbox {sandbox_id}: {e}')
+            _logger.error(f"Error resuming sandbox {sandbox_id}: {e}")
             return False
 
     async def pause_sandbox(self, sandbox_id: str) -> bool:
@@ -370,9 +371,9 @@ class RemoteSandboxService(SandboxService):
                 return False
             runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
-                'POST',
-                '/pause',
-                json={'runtime_id': runtime_data['runtime_id']},
+                "POST",
+                "/pause",
+                json={"runtime_id": runtime_data["runtime_id"]},
             )
             if response.status_code == 404:
                 return False
@@ -380,7 +381,7 @@ class RemoteSandboxService(SandboxService):
             return True
 
         except httpx.HTTPError as e:
-            _logger.error(f'Error pausing sandbox {sandbox_id}: {e}')
+            _logger.error(f"Error pausing sandbox {sandbox_id}: {e}")
             return False
 
     async def delete_sandbox(self, sandbox_id: str) -> bool:
@@ -393,28 +394,29 @@ class RemoteSandboxService(SandboxService):
             await self.db_session.commit()
             runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
-                'POST',
-                '/stop',
-                json={'runtime_id': runtime_data['runtime_id']},
+                "POST",
+                "/stop",
+                json={"runtime_id": runtime_data["runtime_id"]},
             )
             if response.status_code != 404:
                 response.raise_for_status()
             return True
         except httpx.HTTPError as e:
-            _logger.error(f'Error deleting sandbox {sandbox_id}: {e}')
+            _logger.error(f"Error deleting sandbox {sandbox_id}: {e}")
             return False
 
 
 def _build_service_url(url: str, service_name: str):
-    scheme, host_and_path = url.split('://')
-    return scheme + '://' + service_name + '-' + host_and_path
+    scheme, host_and_path = url.split("://")
+    return scheme + "://" + service_name + "-" + host_and_path
 
 
 async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
     """When the app server does not have a public facing url, we poll the agent
     servers for the most recent data.
 
-    This is because webhook callbacks cannot be invoked."""
+    This is because webhook callbacks cannot be invoked.
+    """
     from openhands.app_server.config import (
         get_app_conversation_info_service,
         get_event_callback_service,
@@ -432,16 +434,16 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
                 # (This will not return runtimes that have been stopped for a while)
                 async with get_httpx_client(state) as httpx_client:
                     response = await httpx_client.get(
-                        f'{api_url}/list', headers={'X-API-Key': api_key}
+                        f"{api_url}/list", headers={"X-API-Key": api_key}
                     )
                     response.raise_for_status()
-                    runtimes = response.json()['runtimes']
+                    runtimes = response.json()["runtimes"]
                     runtimes_by_sandbox_id = {
-                        runtime['session_id']: runtime
+                        runtime["session_id"]: runtime
                         for runtime in runtimes
                         # The runtime API currently reports a running status when
                         # pods are still starting. Resync can tolerate this.
-                        if runtime['status'] == 'running'
+                        if runtime["status"] == "running"
                     }
 
                 # We allow access to all items here
@@ -477,13 +479,13 @@ async def poll_agent_servers(api_url: str, api_key: str, sleep_interval: int):
                         page_id = page.next_page_id
                         if page_id is None:
                             _logger.debug(
-                                f'Matched {len(runtimes_by_sandbox_id)} Runtimes with {matches} Conversations.'
+                                f"Matched {len(runtimes_by_sandbox_id)} Runtimes with {matches} Conversations."
                             )
                             break
 
             except Exception as exc:
                 _logger.exception(
-                    f'Error when polling agent servers: {exc}', stack_info=True
+                    f"Error when polling agent servers: {exc}", stack_info=True
                 )
 
             # Sleep between retries
@@ -504,17 +506,18 @@ async def refresh_conversation(
     """Refresh a conversation.
 
     Grab ConversationInfo and all events from the agent server and make sure they
-    exist in the app server."""
-    _logger.debug(f'Started Refreshing Conversation {app_conversation_info.id}')
+    exist in the app server.
+    """
+    _logger.debug(f"Started Refreshing Conversation {app_conversation_info.id}")
     try:
-        url = runtime['url']
+        url = runtime["url"]
 
         # TODO: Maybe we can use RemoteConversation here?
 
         # First get conversation...
-        conversation_url = f'{url}/api/conversations/{app_conversation_info.id.hex}'
+        conversation_url = f"{url}/api/conversations/{app_conversation_info.id.hex}"
         response = await httpx_client.get(
-            conversation_url, headers={'X-Session-API-Key': runtime['session_api_key']}
+            conversation_url, headers={"X-Session-API-Key": runtime["session_api_key"]}
         )
         response.raise_for_status()
 
@@ -531,17 +534,17 @@ async def refresh_conversation(
         # TODO: It would be nice to have an updated_at__gte filter parameter in the
         # agent server so that we don't pull the full event list each time
         event_url = (
-            f'{url}/api/conversations/{app_conversation_info.id.hex}/events/search'
+            f"{url}/api/conversations/{app_conversation_info.id.hex}/events/search"
         )
         page_id = None
         while True:
             params: dict[str, str] = {}
             if page_id:
-                params['page_id'] = page_id  # type: ignore[unreachable]
+                params["page_id"] = page_id  # type: ignore[unreachable]
             response = await httpx_client.get(
                 event_url,
                 params=params,
-                headers={'X-Session-API-Key': runtime['session_api_key']},
+                headers={"X-Session-API-Key": runtime["session_api_key"]},
             )
             response.raise_for_status()
             page = EventPage.model_validate(response.json())
@@ -561,44 +564,44 @@ async def refresh_conversation(
             page_id = page.next_page_id
             if page_id is None:
                 _logger.debug(
-                    f'Finished Refreshing Conversation {app_conversation_info.id}'
+                    f"Finished Refreshing Conversation {app_conversation_info.id}"
                 )
                 break
 
     except Exception as exc:
-        _logger.exception(f'Error Refreshing Conversation: {exc}', stack_info=True)
+        _logger.exception(f"Error Refreshing Conversation: {exc}", stack_info=True)
 
 
 class RemoteSandboxServiceInjector(SandboxServiceInjector):
     """Dependency injector for remote sandbox services."""
 
-    api_url: str = Field(description='The API URL for remote runtimes')
-    api_key: str = Field(description='The API Key for remote runtimes')
+    api_url: str = Field(description="The API URL for remote runtimes")
+    api_key: str = Field(description="The API Key for remote runtimes")
     polling_interval: int = Field(
         default=15,
         description=(
-            'The sleep time between poll operations against agent servers when there is '
-            'no public facing web_url'
+            "The sleep time between poll operations against agent servers when there is "
+            "no public facing web_url"
         ),
     )
     resource_factor: int = Field(
         default=1,
-        description='Factor by which to scale resources in sandbox: 1, 2, 4, or 8',
+        description="Factor by which to scale resources in sandbox: 1, 2, 4, or 8",
     )
     runtime_class: str = Field(
-        default='gvisor',
+        default="gvisor",
         description='can be "gvisor" or "sysbox" (support docker inside runtime + more stable)',
     )
     start_sandbox_timeout: int = Field(
         default=120,
         description=(
-            'The max time to wait for a sandbox to start before considering it to '
-            'be in an error state.'
+            "The max time to wait for a sandbox to start before considering it to "
+            "be in an error state."
         ),
     )
     max_num_sandboxes: int = Field(
         default=10,
-        description='Maximum number of sandboxes allowed to run simultaneously',
+        description="Maximum number of sandboxes allowed to run simultaneously",
     )
 
     async def inject(

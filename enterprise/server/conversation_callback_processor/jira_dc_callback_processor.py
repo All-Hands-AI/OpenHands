@@ -25,8 +25,7 @@ jira_dc_manager = JiraDcManager(token_manager)
 
 
 class JiraDcCallbackProcessor(ConversationCallbackProcessor):
-    """
-    Processor for sending conversation summaries to Jira DC.
+    """Processor for sending conversation summaries to Jira DC.
 
     This processor is used to send summaries of conversations to Jira DC issues
     when agent state changes occur.
@@ -37,8 +36,7 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
     base_api_url: str
 
     async def _send_comment_to_jira_dc(self, message: str) -> None:
-        """
-        Send a comment to Jira DC issue.
+        """Send a comment to Jira DC issue.
 
         Args:
             message: The message content to send to Jira DC
@@ -49,11 +47,11 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
                 self.workspace_name
             )
             if not workspace:
-                logger.error(f'[Jira DC] Workspace {self.workspace_name} not found')
+                logger.error(f"[Jira DC] Workspace {self.workspace_name} not found")
                 return
 
-            if workspace.status != 'active':
-                logger.error(f'[Jira DC] Workspace {workspace.id} is not active')
+            if workspace.status != "active":
+                logger.error(f"[Jira DC] Workspace {workspace.id} is not active")
                 return
 
             # Decrypt API key
@@ -69,25 +67,24 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
             )
 
             logger.info(
-                f'[Jira DC] Sent summary comment to issue {self.issue_key} '
-                f'(workspace {self.workspace_name})'
+                f"[Jira DC] Sent summary comment to issue {self.issue_key} "
+                f"(workspace {self.workspace_name})"
             )
         except Exception as e:
-            logger.error(f'[Jira DC] Failed to send summary comment: {str(e)}')
+            logger.error(f"[Jira DC] Failed to send summary comment: {str(e)}")
 
     async def __call__(
         self,
         callback: ConversationCallback,
         observation: AgentStateChangedObservation,
     ) -> None:
-        """
-        Process a conversation event by sending a summary to Jira DC.
+        """Process a conversation event by sending a summary to Jira DC.
 
         Args:
             callback: The conversation callback
             observation: The AgentStateChangedObservation that triggered the callback
         """
-        logger.info(f'[Jira DC] Callback agent state was {observation.agent_state}')
+        logger.info(f"[Jira DC] Callback agent state was {observation.agent_state}")
         if observation.agent_state not in (
             AgentState.AWAITING_USER_INPUT,
             AgentState.FINISHED,
@@ -97,7 +94,7 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
         conversation_id = callback.conversation_id
         try:
             logger.info(
-                f'[Jira DC] Sending summary instruction for conversation {conversation_id}'
+                f"[Jira DC] Sending summary instruction for conversation {conversation_id}"
             )
 
             # Get the summary instruction
@@ -110,10 +107,10 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
                 conversation_manager, conversation_id
             )
             logger.info(
-                'last_user_msg',
+                "last_user_msg",
                 extra={
-                    'last_user_msg': [m.content for m in last_user_msg],
-                    'summary_instruction': summary_instruction,
+                    "last_user_msg": [m.content for m in last_user_msg],
+                    "summary_instruction": summary_instruction,
                 },
             )
             if (
@@ -122,7 +119,7 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
             ):
                 # Extract the summary from the event store
                 logger.info(
-                    f'[Jira DC] Extracting summary for conversation {conversation_id}'
+                    f"[Jira DC] Extracting summary for conversation {conversation_id}"
                 )
 
                 summary_markdown = await extract_summary_from_conversation_manager(
@@ -134,25 +131,25 @@ class JiraDcCallbackProcessor(ConversationCallbackProcessor):
                 asyncio.create_task(self._send_comment_to_jira_dc(summary))
 
                 logger.info(
-                    f'[Jira DC] Summary sent for conversation {conversation_id}'
+                    f"[Jira DC] Summary sent for conversation {conversation_id}"
                 )
                 return
 
             # Add the summary instruction to the event stream
             logger.info(
-                f'[Jira DC] Sending summary instruction to conversation {conversation_id} {summary_event}'
+                f"[Jira DC] Sending summary instruction to conversation {conversation_id} {summary_event}"
             )
             await conversation_manager.send_event_to_conversation(
                 conversation_id, summary_event
             )
 
             logger.info(
-                f'[Jira DC] Sent summary instruction to conversation {conversation_id} {summary_event}'
+                f"[Jira DC] Sent summary instruction to conversation {conversation_id} {summary_event}"
             )
 
         except Exception:
             logger.error(
-                '[Jira DC] Error processing conversation callback',
+                "[Jira DC] Error processing conversation callback",
                 exc_info=True,
                 stack_info=True,
             )

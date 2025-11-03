@@ -12,20 +12,20 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '007'
-down_revision: Union[str, None] = '006'
+revision: str = "007"
+down_revision: Union[str, None] = "006"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     op.add_column(
-        'settings',
+        "settings",
         sa.Column(
-            'enable_sound_notifications', sa.Boolean(), nullable=True, default=False
+            "enable_sound_notifications", sa.Boolean(), nullable=True, default=False
         ),
     )
 
 
 def downgrade() -> None:
-    op.drop_column('settings', 'enable_sound_notifications')
+    op.drop_column("settings", "enable_sound_notifications")

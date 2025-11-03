@@ -46,15 +46,15 @@ def test_cookie_error_instantiation():
 
 def test_auth_error_with_message():
     """Test that auth errors can be instantiated with a message."""
-    error = AuthError('Test error message')
-    assert str(error) == 'Test error message'
+    error = AuthError("Test error message")
+    assert str(error) == "Test error message"
 
 
 def test_auth_error_with_cause():
     """Test that auth errors can be instantiated with a cause."""
-    cause = ValueError('Original error')
+    cause = ValueError("Original error")
     try:
-        raise AuthError('Wrapped error') from cause
+        raise AuthError("Wrapped error") from cause
     except AuthError as e:
-        assert str(e) == 'Wrapped error'
+        assert str(e) == "Wrapped error"
         assert e.__cause__ == cause

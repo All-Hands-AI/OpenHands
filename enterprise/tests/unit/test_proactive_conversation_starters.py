@@ -30,13 +30,13 @@ def mock_session():
 async def test_get_user_proactive_conversation_setting_no_user_id():
     """Test that the function returns False when no user ID is provided."""
     with patch(
-        'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+        "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
         True,
     ):
         assert await get_user_proactive_conversation_setting(None) is False
 
     with patch(
-        'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+        "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
         False,
     ):
         assert await get_user_proactive_conversation_setting(None) is False
@@ -47,16 +47,16 @@ async def test_get_user_proactive_conversation_setting_user_not_found(mock_sessi
     session, query, filter = mock_session
     filter.first.return_value = None
 
-    with patch('integrations.github.github_view.session_maker', return_value=session):
+    with patch("integrations.github.github_view.session_maker", return_value=session):
         with patch(
-            'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+            "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
             True,
         ):
             with patch(
-                'integrations.github.github_view.call_sync_from_async',
+                "integrations.github.github_view.call_sync_from_async",
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting("user-id") is False
 
 
 async def test_get_user_proactive_conversation_setting_user_setting_none(mock_session):
@@ -66,16 +66,16 @@ async def test_get_user_proactive_conversation_setting_user_setting_none(mock_se
     user_settings.enable_proactive_conversation_starters = None
     filter.first.return_value = user_settings
 
-    with patch('integrations.github.github_view.session_maker', return_value=session):
+    with patch("integrations.github.github_view.session_maker", return_value=session):
         with patch(
-            'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+            "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
             True,
         ):
             with patch(
-                'integrations.github.github_view.call_sync_from_async',
+                "integrations.github.github_view.call_sync_from_async",
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting("user-id") is False
 
 
 async def test_get_user_proactive_conversation_setting_user_setting_true(mock_session):
@@ -85,16 +85,16 @@ async def test_get_user_proactive_conversation_setting_user_setting_true(mock_se
     user_settings.enable_proactive_conversation_starters = True
     filter.first.return_value = user_settings
 
-    with patch('integrations.github.github_view.session_maker', return_value=session):
+    with patch("integrations.github.github_view.session_maker", return_value=session):
         with patch(
-            'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+            "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
             True,
         ):
             with patch(
-                'integrations.github.github_view.call_sync_from_async',
+                "integrations.github.github_view.call_sync_from_async",
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is True
+                assert await get_user_proactive_conversation_setting("user-id") is True
 
 
 async def test_get_user_proactive_conversation_setting_user_setting_false(mock_session):
@@ -104,13 +104,13 @@ async def test_get_user_proactive_conversation_setting_user_setting_false(mock_s
     user_settings.enable_proactive_conversation_starters = False
     filter.first.return_value = user_settings
 
-    with patch('integrations.github.github_view.session_maker', return_value=session):
+    with patch("integrations.github.github_view.session_maker", return_value=session):
         with patch(
-            'integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS',
+            "integrations.github.github_view.ENABLE_PROACTIVE_CONVERSATION_STARTERS",
             True,
         ):
             with patch(
-                'integrations.github.github_view.call_sync_from_async',
+                "integrations.github.github_view.call_sync_from_async",
                 side_effect=mock_call_sync_from_async,
             ):
-                assert await get_user_proactive_conversation_setting('user-id') is False
+                assert await get_user_proactive_conversation_setting("user-id") is False

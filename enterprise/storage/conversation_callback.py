@@ -15,8 +15,7 @@ from openhands.utils.import_utils import get_impl
 
 
 class ConversationCallbackProcessor(BaseModel, ABC):
-    """
-    Abstract base class for conversation callback processors.
+    """Abstract base class for conversation callback processors.
 
     Conversation processors are invoked when events occur in a conversation
     to perform additional processing, notifications, or integrations.
@@ -24,7 +23,7 @@ class ConversationCallbackProcessor(BaseModel, ABC):
 
     model_config = ConfigDict(
         # Allow extra fields for flexibility
-        extra='allow',
+        extra="allow",
         # Allow arbitrary types
         arbitrary_types_allowed=True,
     )
@@ -35,8 +34,7 @@ class ConversationCallbackProcessor(BaseModel, ABC):
         callback: ConversationCallback,
         observation: AgentStateChangedObservation,
     ) -> None:
-        """
-        Process a conversation event.
+        """Process a conversation event.
 
         Args:
             conversation_id: The ID of the conversation to process
@@ -48,22 +46,20 @@ class ConversationCallbackProcessor(BaseModel, ABC):
 class CallbackStatus(Enum):
     """Status of a conversation callback."""
 
-    ACTIVE = 'ACTIVE'
-    COMPLETED = 'COMPLETED'
-    ERROR = 'ERROR'
+    ACTIVE = "ACTIVE"
+    COMPLETED = "COMPLETED"
+    ERROR = "ERROR"
 
 
 class ConversationCallback(Base):  # type: ignore
-    """
-    Model for storing conversation callbacks that process conversation events.
-    """
+    """Model for storing conversation callbacks that process conversation events."""
 
-    __tablename__ = 'conversation_callbacks'
+    __tablename__ = "conversation_callbacks"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(
         String,
-        ForeignKey('conversation_metadata.conversation_id'),
+        ForeignKey("conversation_metadata.conversation_id"),
         nullable=False,
         index=True,
     )
@@ -74,19 +70,18 @@ class ConversationCallback(Base):  # type: ignore
     processor_json = Column(Text, nullable=False)
     created_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         onupdate=datetime.now,
         nullable=False,
     )
 
     def get_processor(self) -> ConversationCallbackProcessor:
-        """
-        Get the processor instance from the stored processor type and JSON data.
+        """Get the processor instance from the stored processor type and JSON data.
 
         Returns:
             ConversationCallbackProcessor: The processor instance
@@ -99,13 +94,12 @@ class ConversationCallback(Base):  # type: ignore
         return processor
 
     def set_processor(self, processor: ConversationCallbackProcessor) -> None:
-        """
-        Set the processor instance, storing its type and JSON representation.
+        """Set the processor instance, storing its type and JSON representation.
 
         Args:
             processor: The ConversationCallbackProcessor instance to store
         """
         self.processor_type = (
-            f'{processor.__class__.__module__}.{processor.__class__.__name__}'
+            f"{processor.__class__.__module__}.{processor.__class__.__name__}"
         )
         self.processor_json = processor.model_dump_json()

@@ -12,7 +12,7 @@ from server.auth.constants import (
 from server.logger import logger
 
 logger.debug(
-    f'KEYCLOAK_SERVER_URL:{KEYCLOAK_SERVER_URL}, KEYCLOAK_SERVER_URL_EXT:{KEYCLOAK_SERVER_URL_EXT}, KEYCLOAK_PROVIDER_NAME:{KEYCLOAK_PROVIDER_NAME}, KEYCLOAK_CLIENT_ID:{KEYCLOAK_CLIENT_ID}'
+    f"KEYCLOAK_SERVER_URL:{KEYCLOAK_SERVER_URL}, KEYCLOAK_SERVER_URL_EXT:{KEYCLOAK_SERVER_URL_EXT}, KEYCLOAK_PROVIDER_NAME:{KEYCLOAK_PROVIDER_NAME}, KEYCLOAK_CLIENT_ID:{KEYCLOAK_CLIENT_ID}"
 )
 
 _keycloak_instances = {}
@@ -38,10 +38,10 @@ def get_keycloak_admin(external=False) -> KeycloakAdmin:
     if external not in _keycloak_admin_instances:
         keycloak_admin = KeycloakAdmin(
             server_url=KEYCLOAK_SERVER_URL_EXT if external else KEYCLOAK_SERVER_URL,
-            username='admin',
+            username="admin",
             password=KEYCLOAK_ADMIN_PASSWORD,
-            realm_name='master',
-            client_id='admin-cli',
+            realm_name="master",
+            client_id="admin-cli",
             verify=True,
         )
         keycloak_admin.get_realm(KEYCLOAK_REALM_NAME)

@@ -1,5 +1,4 @@
-"""
-E2E: Web browsing catchphrase test (Issue #10378)
+"""E2E: Web browsing catchphrase test (Issue #10378)
 
 Goal: In a new conversation, instruct the agent to browse to all-hands.dev and
 return the page's main catchphrase. We assert that a browsing action/observation
@@ -16,13 +15,13 @@ import time
 from playwright.sync_api import Page, expect
 
 CATCHPHRASE_PATTERNS = [
-    r'\bcode\s*less\W*make\s*more\b',
+    r"\bcode\s*less\W*make\s*more\b",
 ]
 
 
 def _screenshot(page: Page, name: str) -> None:
-    os.makedirs('test-results', exist_ok=True)
-    page.screenshot(path=f'test-results/browse_{name}.png')
+    os.makedirs("test-results", exist_ok=True)
+    page.screenshot(path=f"test-results/browse_{name}.png")
 
 
 def _wait_for_home_and_repo_selection(page: Page) -> None:
@@ -40,8 +39,8 @@ def _wait_for_home_and_repo_selection(page: Page) -> None:
 
     # Try to search and pick the official repo
     try:
-        page.keyboard.press('Control+a')
-        page.keyboard.type('openhands-agent/OpenHands')
+        page.keyboard.press("Control+a")
+        page.keyboard.type("openhands-agent/OpenHands")
     except Exception:
         pass
 
@@ -100,19 +99,19 @@ def _launch_conversation(page: Page) -> None:
         # Last resort: try pressing Enter
         try:
             launch_button.focus()
-            page.keyboard.press('Enter')
+            page.keyboard.press("Enter")
         except Exception:
             pass
 
-    _screenshot(page, 'after_launch_click')
+    _screenshot(page, "after_launch_click")
 
     # Wait for conversation route
     # Also wait for possible loading indicators to disappear
     loading_selectors = [
         '[data-testid="loading-indicator"]',
         '[data-testid="loading-spinner"]',
-        '.loading-spinner',
-        '.spinner',
+        ".loading-spinner",
+        ".spinner",
         'div:has-text("Loading...")',
         'div:has-text("Initializing...")',
         'div:has-text("Please wait...")',
@@ -139,8 +138,8 @@ def _send_prompt(page: Page, prompt: str) -> None:
     selectors = [
         '[data-testid="chat-input"] textarea',
         '[data-testid="message-input"]',
-        'textarea',
-        'form textarea',
+        "textarea",
+        "form textarea",
     ]
     message_input = None
     for sel in selectors:
@@ -153,7 +152,7 @@ def _send_prompt(page: Page, prompt: str) -> None:
             continue
 
     if not message_input:
-        raise AssertionError('Message input not found')
+        raise AssertionError("Message input not found")
 
     message_input.fill(prompt)
 
@@ -187,17 +186,17 @@ def _send_prompt(page: Page, prompt: str) -> None:
             continue
 
     if not submitted:
-        message_input.press('Enter')
+        message_input.press("Enter")
 
-    _screenshot(page, 'prompt_sent')
+    _screenshot(page, "prompt_sent")
 
 
 def _wait_for_browsing_event(page: Page, timeout_s: int = 240) -> None:
     start = time.time()
     browse_indicators = [
-        'Interactive browsing in progress',
-        'Browsing the web',
-        'Browsing completed',
+        "Interactive browsing in progress",
+        "Browsing the web",
+        "Browsing completed",
     ]
 
     while time.time() - start < timeout_s:
@@ -205,36 +204,36 @@ def _wait_for_browsing_event(page: Page, timeout_s: int = 240) -> None:
             try:
                 # Use partial match for robustness
                 if page.get_by_text(text, exact=False).is_visible(timeout=2000):
-                    _screenshot(page, 'browsing_event_seen')
+                    _screenshot(page, "browsing_event_seen")
                     return
             except Exception:
                 continue
 
         # Also look for generic observation text that hints at web browsing
         try:
-            if page.get_by_text('Current URL:', exact=False).is_visible(timeout=1000):
-                _screenshot(page, 'browsing_url_seen')
+            if page.get_by_text("Current URL:", exact=False).is_visible(timeout=1000):
+                _screenshot(page, "browsing_url_seen")
                 return
         except Exception:
             pass
 
         page.wait_for_timeout(2000)
 
-    raise AssertionError('Did not observe a browsing action/observation in time')
+    raise AssertionError("Did not observe a browsing action/observation in time")
 
 
 def _wait_for_catchphrase(page: Page, timeout_s: int = 300) -> None:
     start = time.time()
-    pattern = re.compile('|'.join(CATCHPHRASE_PATTERNS), re.IGNORECASE)
+    pattern = re.compile("|".join(CATCHPHRASE_PATTERNS), re.IGNORECASE)
 
     while time.time() - start < timeout_s:
         try:
             messages = page.locator('[data-testid="agent-message"]').all()
             for i, msg in enumerate(messages):
                 try:
-                    content = msg.text_content() or ''
+                    content = msg.text_content() or ""
                     if pattern.search(content):
-                        _screenshot(page, f'catchphrase_found_{i}')
+                        _screenshot(page, f"catchphrase_found_{i}")
                         return
                 except Exception:
                     continue
@@ -243,10 +242,10 @@ def _wait_for_catchphrase(page: Page, timeout_s: int = 300) -> None:
 
         # also search globally on page for the phrase in case rendering differs
         try:
-            if page.get_by_text('Code Less, Make More', exact=False).is_visible(
+            if page.get_by_text("Code Less, Make More", exact=False).is_visible(
                 timeout=1000
             ):
-                _screenshot(page, 'catchphrase_found_global')
+                _screenshot(page, "catchphrase_found_global")
                 return
         except Exception:
             pass
@@ -254,31 +253,31 @@ def _wait_for_catchphrase(page: Page, timeout_s: int = 300) -> None:
         page.wait_for_timeout(2000)
 
     raise AssertionError(
-        'Agent did not return the expected catchphrase within time limit'
+        "Agent did not return the expected catchphrase within time limit"
     )
 
 
 def test_browsing_catchphrase(page: Page):
-    os.makedirs('test-results', exist_ok=True)
+    os.makedirs("test-results", exist_ok=True)
 
     # 1) Navigate to app
-    page.goto('http://localhost:12000')
-    page.wait_for_load_state('networkidle', timeout=30000)
-    _screenshot(page, 'initial_load')
+    page.goto("http://localhost:12000")
+    page.wait_for_load_state("networkidle", timeout=30000)
+    _screenshot(page, "initial_load")
 
     # If we land on home, proceed with selection and launch
     _wait_for_home_and_repo_selection(page)
-    _screenshot(page, 'home_ready')
+    _screenshot(page, "home_ready")
 
     # 2) Launch conversation
     _launch_conversation(page)
-    _screenshot(page, 'conversation_loaded')
+    _screenshot(page, "conversation_loaded")
 
     # 3) Send browsing instruction
     prompt = (
-        'Use the web-browsing tool to navigate to https://www.all-hands.dev and '
-        'tell me the main catchphrase displayed on the page. Do not answer from '
-        'memory; perform the browsing action and respond with only the exact catchphrase.'
+        "Use the web-browsing tool to navigate to https://www.all-hands.dev and "
+        "tell me the main catchphrase displayed on the page. Do not answer from "
+        "memory; perform the browsing action and respond with only the exact catchphrase."
     )
     _send_prompt(page, prompt)
 
@@ -288,4 +287,4 @@ def test_browsing_catchphrase(page: Page):
     # 5) Wait for agent final answer containing the catchphrase
     _wait_for_catchphrase(page)
 
-    _screenshot(page, 'final_state')
+    _screenshot(page, "final_state")

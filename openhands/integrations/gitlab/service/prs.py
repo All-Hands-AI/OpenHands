@@ -4,9 +4,7 @@ from openhands.integrations.service_types import RequestMethod
 
 
 class GitLabPRsMixin(GitLabMixinBase):
-    """
-    Methods for interacting with GitLab merge requests (PRs)
-    """
+    """Methods for interacting with GitLab merge requests (PRs)"""
 
     async def create_mr(
         self,
@@ -32,31 +30,31 @@ class GitLabPRsMixin(GitLabMixinBase):
             - Error message when unsuccessful
         """
         # Convert string ID to URL-encoded path if needed
-        project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
-        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
+        project_id = str(id).replace("/", "%2F") if isinstance(id, str) else id
+        url = f"{self.BASE_URL}/projects/{project_id}/merge_requests"
 
         # Set default description if none provided
         if not description:
-            description = f'Merging changes from {source_branch} into {target_branch}'
+            description = f"Merging changes from {source_branch} into {target_branch}"
 
         # Prepare the request payload
         payload = {
-            'source_branch': source_branch,
-            'target_branch': target_branch,
-            'title': title,
-            'description': description,
+            "source_branch": source_branch,
+            "target_branch": target_branch,
+            "title": title,
+            "description": description,
         }
 
         # Add labels if provided
         if labels and len(labels) > 0:
-            payload['labels'] = ','.join(labels)
+            payload["labels"] = ",".join(labels)
 
         # Make the POST request to create the MR
         response, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
         )
 
-        return response['web_url']
+        return response["web_url"]
 
     async def get_pr_details(self, repository: str, pr_number: int) -> dict:
         """Get detailed information about a specific merge request
@@ -69,7 +67,7 @@ class GitLabPRsMixin(GitLabMixinBase):
             Raw GitLab API response for the merge request
         """
         project_id = self._extract_project_id(repository)
-        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}'
+        url = f"{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}"
         mr_data, _ = await self._make_request(url)
 
         return mr_data
@@ -89,23 +87,23 @@ class GitLabPRsMixin(GitLabMixinBase):
 
             # GitLab API response structure
             # https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
-            if 'state' in mr_details:
-                return mr_details['state'] == 'opened'
-            elif 'merged_at' in mr_details and 'closed_at' in mr_details:
+            if "state" in mr_details:
+                return mr_details["state"] == "opened"
+            elif "merged_at" in mr_details and "closed_at" in mr_details:
                 # Check if MR is merged or closed
-                return not (mr_details['merged_at'] or mr_details['closed_at'])
+                return not (mr_details["merged_at"] or mr_details["closed_at"])
 
             # If we can't determine the state, assume it's active (safer default)
             logger.warning(
-                f'Could not determine GitLab MR status for {repository}#{pr_number}. '
-                f'Response keys: {list(mr_details.keys())}. Assuming MR is active.'
+                f"Could not determine GitLab MR status for {repository}#{pr_number}. "
+                f"Response keys: {list(mr_details.keys())}. Assuming MR is active."
             )
             return True
 
         except Exception as e:
             logger.warning(
-                f'Could not determine GitLab MR status for {repository}#{pr_number}: {e}. '
-                f'Including conversation to be safe.'
+                f"Could not determine GitLab MR status for {repository}#{pr_number}: {e}. "
+                f"Including conversation to be safe."
             )
             # If we can't determine the MR status, include the conversation to be safe
             return True

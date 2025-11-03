@@ -4,7 +4,7 @@ from storage.base import Base
 
 
 class UserSettings(Base):  # type: ignore
-    __tablename__ = 'user_settings'
+    __tablename__ = "user_settings"
     id = Column(Integer, Identity(), primary_key=True)
     keycloak_user_id = Column(String, nullable=True, index=True)
     language = Column(String, nullable=True)

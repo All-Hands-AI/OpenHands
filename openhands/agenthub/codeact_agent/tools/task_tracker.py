@@ -155,49 +155,49 @@ def create_task_tracker_tool(
         else _DETAILED_TASK_TRACKER_DESCRIPTION
     )
     return ChatCompletionToolParam(
-        type='function',
+        type="function",
         function=ChatCompletionToolParamFunctionChunk(
             name=TASK_TRACKER_TOOL_NAME,
             description=description,
             parameters={
-                'type': 'object',
-                'properties': {
-                    'command': {
-                        'type': 'string',
-                        'enum': ['view', 'plan'],
-                        'description': 'The command to execute. `view` shows the current task list. `plan` creates or updates the task list based on provided requirements and progress. Always `view` the current list before making changes.',
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "enum": ["view", "plan"],
+                        "description": "The command to execute. `view` shows the current task list. `plan` creates or updates the task list based on provided requirements and progress. Always `view` the current list before making changes.",
                     },
-                    'task_list': {
-                        'type': 'array',
-                        'description': 'The full task list. Required parameter of `plan` command.',
-                        'items': {
-                            'type': 'object',
-                            'properties': {
-                                'id': {
-                                    'type': 'string',
-                                    'description': 'Unique task identifier',
+                    "task_list": {
+                        "type": "array",
+                        "description": "The full task list. Required parameter of `plan` command.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "description": "Unique task identifier",
                                 },
-                                'title': {
-                                    'type': 'string',
-                                    'description': 'Brief task description',
+                                "title": {
+                                    "type": "string",
+                                    "description": "Brief task description",
                                 },
-                                'status': {
-                                    'type': 'string',
-                                    'description': 'Current task status',
-                                    'enum': ['todo', 'in_progress', 'done'],
+                                "status": {
+                                    "type": "string",
+                                    "description": "Current task status",
+                                    "enum": ["todo", "in_progress", "done"],
                                 },
-                                'notes': {
-                                    'type': 'string',
-                                    'description': 'Optional additional context or details',
+                                "notes": {
+                                    "type": "string",
+                                    "description": "Optional additional context or details",
                                 },
                             },
-                            'required': ['title', 'status', 'id'],
-                            'additionalProperties': False,
+                            "required": ["title", "status", "id"],
+                            "additionalProperties": False,
                         },
                     },
                 },
-                'required': ['command'],
-                'additionalProperties': False,
+                "required": ["command"],
+                "additionalProperties": False,
             },
         ),
     )

@@ -35,7 +35,7 @@ def mock_conversation_stats():
     """Create a mock ConversationStats that properly simulates metrics tracking"""
     file_store = InMemoryFileStore({})
     stats = ConversationStats(
-        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+        file_store=file_store, conversation_id="test-conversation", user_id="test-user"
     )
     return stats
 
@@ -54,8 +54,8 @@ def make_mock_agent():
         agent = MagicMock(spec=Agent)
         agent_config = MagicMock(spec=AgentConfig)
         llm_config = LLMConfig(
-            model='gpt-4o',
-            api_key='test_key',
+            model="gpt-4o",
+            api_key="test_key",
             num_retries=2,
             retry_min_wait=1,
             retry_max_wait=2,
@@ -63,9 +63,9 @@ def make_mock_agent():
         agent_config.disabled_microagents = []
         agent_config.enable_mcp = True
         llm_registry.service_to_llm.clear()
-        mock_llm = llm_registry.get_llm('agent_llm', llm_config)
+        mock_llm = llm_registry.get_llm("agent_llm", llm_config)
         agent.llm = mock_llm
-        agent.name = 'test-agent'
+        agent.name = "test-agent"
         agent.sandbox_plugins = []
         agent.config = agent_config
         agent.prompt_manager = MagicMock()
@@ -83,7 +83,7 @@ async def test_agent_session_start_with_no_state(
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
         llm_registry=mock_llm_registry,
         conversation_stats=mock_conversation_stats,
@@ -119,26 +119,26 @@ async def test_agent_session_start_with_no_state(
             super().set_initial_state(*args, state=state, **kwargs)
 
     # Create a real Memory instance with the mock event stream
-    memory = Memory(event_stream=mock_event_stream, sid='test-session')
-    memory.microagents_dir = 'test-dir'
+    memory = Memory(event_stream=mock_event_stream, sid="test-session")
+    memory.microagents_dir = "test-dir"
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
     with (
         patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
+            "openhands.server.session.agent_session.AgentController", SpyAgentController
         ),
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            "openhands.server.session.agent_session.EventStream",
             return_value=mock_event_stream,
         ),
         patch(
-            'openhands.controller.state.state.State.restore_from_session',
-            side_effect=Exception('No state found'),
+            "openhands.controller.state.state.State.restore_from_session",
+            side_effect=Exception("No state found"),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch("openhands.server.session.agent_session.Memory", return_value=memory),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
@@ -161,7 +161,7 @@ async def test_agent_session_start_with_no_state(
         assert session.controller.set_initial_state_call_count == 1
         assert session.controller.test_initial_state is None
         assert session.controller.state.iteration_flag.max_value == 10
-        assert session.controller.agent.name == 'test-agent'
+        assert session.controller.agent.name == "test-agent"
         assert session.controller.state.start_id == 0
         assert session.controller.state.end_id == -1
 
@@ -175,7 +175,7 @@ async def test_agent_session_start_with_restored_state(
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
         llm_registry=mock_llm_registry,
         conversation_stats=mock_conversation_stats,
@@ -226,20 +226,20 @@ async def test_agent_session_start_with_restored_state(
     # Patch AgentController and State.restore_from_session to succeed, patch Memory in AgentSession
     with (
         patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
+            "openhands.server.session.agent_session.AgentController", SpyAgentController
         ),
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            "openhands.server.session.agent_session.EventStream",
             return_value=mock_event_stream,
         ),
         patch(
-            'openhands.controller.state.state.State.restore_from_session',
+            "openhands.controller.state.state.State.restore_from_session",
             return_value=mock_restored_state,
         ),
-        patch('openhands.server.session.agent_session.Memory', mock_memory),
+        patch("openhands.server.session.agent_session.Memory", mock_memory),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
@@ -266,14 +266,13 @@ async def test_metrics_centralization_via_conversation_stats(
     make_mock_agent, connected_registry_and_stats
 ):
     """Test that metrics are centralized through the ConversationStats service."""
-
     mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
     mock_agent = make_mock_agent(mock_llm_registry)
 
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
         llm_registry=mock_llm_registry,
         conversation_stats=mock_conversation_stats,
@@ -299,25 +298,25 @@ async def test_metrics_centralization_via_conversation_stats(
     session.event_stream = mock_event_stream
 
     # Create a real Memory instance with the mock event stream
-    memory = Memory(event_stream=mock_event_stream, sid='test-session')
-    memory.microagents_dir = 'test-dir'
+    memory = Memory(event_stream=mock_event_stream, sid="test-session")
+    memory.microagents_dir = "test-dir"
 
     # The registry already has a real metrics object set up in the fixture
 
     # Patch necessary components
     with (
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            "openhands.server.session.agent_session.EventStream",
             return_value=mock_event_stream,
         ),
         patch(
-            'openhands.controller.state.state.State.restore_from_session',
-            side_effect=Exception('No state found'),
+            "openhands.controller.state.state.State.restore_from_session",
+            side_effect=Exception("No state found"),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch("openhands.server.session.agent_session.Memory", return_value=memory),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
@@ -361,13 +360,12 @@ async def test_budget_control_flag_syncs_with_metrics(
     make_mock_agent, connected_registry_and_stats
 ):
     """Test that BudgetControlFlag's current value matches the accumulated costs."""
-
     mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
     mock_agent = make_mock_agent(mock_llm_registry)
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
         llm_registry=mock_llm_registry,
         conversation_stats=mock_conversation_stats,
@@ -393,26 +391,26 @@ async def test_budget_control_flag_syncs_with_metrics(
     session.event_stream = mock_event_stream
 
     # Create a real Memory instance with the mock event stream
-    memory = Memory(event_stream=mock_event_stream, sid='test-session')
-    memory.microagents_dir = 'test-dir'
+    memory = Memory(event_stream=mock_event_stream, sid="test-session")
+    memory.microagents_dir = "test-dir"
 
     # The registry already has a real metrics object set up in the fixture
 
     # Patch necessary components
     with (
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            "openhands.server.session.agent_session.EventStream",
             return_value=mock_event_stream,
         ),
         patch(
-            'openhands.controller.state.state.State.restore_from_session',
-            side_effect=Exception('No state found'),
+            "openhands.controller.state.state.State.restore_from_session",
+            side_effect=Exception("No state found"),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch("openhands.server.session.agent_session.Memory", return_value=memory),
     ):
         # Start the session with a budget limit
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
@@ -467,7 +465,7 @@ def test_override_provider_tokens_with_custom_secret(
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
         llm_registry=mock_llm_registry,
         conversation_stats=mock_conversation_stats,
@@ -475,16 +473,16 @@ def test_override_provider_tokens_with_custom_secret(
 
     # Create test data
     git_provider_tokens = {
-        ProviderType.GITHUB: 'github_token_123',
-        ProviderType.GITLAB: 'gitlab_token_456',
-        ProviderType.BITBUCKET: 'bitbucket_token_789',
+        ProviderType.GITHUB: "github_token_123",
+        ProviderType.GITLAB: "gitlab_token_456",
+        ProviderType.BITBUCKET: "bitbucket_token_789",
     }
 
     # Custom secrets that will cause some providers to be removed
     # Tests both lowercase and uppercase variants to ensure comprehensive coverage
     custom_secrets = {
-        'github_token': 'custom_github_token',
-        'GITLAB_TOKEN': 'custom_gitlab_token',
+        "github_token": "custom_github_token",
+        "GITLAB_TOKEN": "custom_gitlab_token",
     }
 
     # This should work without raising RuntimeError: dictionary changed size during iteration
@@ -498,4 +496,4 @@ def test_override_provider_tokens_with_custom_secret(
 
     # Verify that Bitbucket token remains (no custom secret for it)
     assert ProviderType.BITBUCKET in result
-    assert result[ProviderType.BITBUCKET] == 'bitbucket_token_789'
+    assert result[ProviderType.BITBUCKET] == "bitbucket_token_789"

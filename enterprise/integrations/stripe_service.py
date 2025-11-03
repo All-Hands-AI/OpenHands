@@ -25,7 +25,7 @@ async def find_customer_id_by_user_id(user_id: str) -> str | None:
     )
     data = search_result.data
     if not data:
-        logger.info('no_customer_for_user_id', extra={'user_id': user_id})
+        logger.info("no_customer_for_user_id", extra={"user_id": user_id})
         return None
     return data[0].id  # type: ignore [attr-defined]
 
@@ -34,7 +34,7 @@ async def find_or_create_customer(user_id: str) -> str:
     customer_id = await find_customer_id_by_user_id(user_id)
     if customer_id:
         return customer_id
-    logger.info('creating_customer', extra={'user_id': user_id})
+    logger.info("creating_customer", extra={"user_id": user_id})
 
     # Get the user info from keycloak
     token_manager = TokenManager()
@@ -42,8 +42,8 @@ async def find_or_create_customer(user_id: str) -> str:
 
     # Create the customer in stripe
     customer = await stripe.Customer.create_async(
-        email=str(user_info.get('email', '')),
-        metadata={'user_id': user_id},
+        email=str(user_info.get("email", "")),
+        metadata={"user_id": user_id},
     )
 
     # Save the stripe customer in the local db
@@ -54,8 +54,8 @@ async def find_or_create_customer(user_id: str) -> str:
         session.commit()
 
     logger.info(
-        'created_customer',
-        extra={'user_id': user_id, 'stripe_customer_id': customer.id},
+        "created_customer",
+        extra={"user_id": user_id, "stripe_customer_id": customer.id},
     )
     return customer.id
 
@@ -68,6 +68,6 @@ async def has_payment_method(user_id: str) -> bool:
         customer_id,
     )
     logger.info(
-        f'has_payment_method:{user_id}:{customer_id}:{bool(payment_methods.data)}'
+        f"has_payment_method:{user_id}:{customer_id}:{bool(payment_methods.data)}"
     )
     return bool(payment_methods.data)

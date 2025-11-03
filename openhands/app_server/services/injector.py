@@ -5,7 +5,7 @@ from typing import AsyncGenerator, Generic, TypeAlias, TypeVar
 from fastapi import Request
 from starlette.datastructures import State
 
-T = TypeVar('T')
+T = TypeVar("T")
 InjectorState: TypeAlias = State
 
 
@@ -17,7 +17,8 @@ class Injector(Generic[T], ABC):
         self, state: InjectorState, request: Request | None = None
     ) -> AsyncGenerator[T, None]:
         """Inject an object. The state object may be used to store variables for
-        reuse by other injectors, as injection operations may be nested."""
+        reuse by other injectors, as injection operations may be nested.
+        """
         yield None  # type: ignore
 
     @contextlib.asynccontextmanager

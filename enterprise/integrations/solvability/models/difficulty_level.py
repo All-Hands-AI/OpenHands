@@ -6,9 +6,9 @@ from enum import Enum
 class DifficultyLevel(Enum):
     """Enum representing the difficulty level based on solvability score."""
 
-    EASY = ('EASY', 0.7, '🟢')
-    MEDIUM = ('MEDIUM', 0.4, '🟡')
-    HARD = ('HARD', 0.0, '🔴')
+    EASY = ("EASY", 0.7, "🟢")
+    MEDIUM = ("MEDIUM", 0.4, "🟡")
+    HARD = ("HARD", 0.0, "🔴")
 
     def __init__(self, label: str, threshold: float, emoji: str):
         self.label = label
@@ -35,4 +35,4 @@ class DifficultyLevel(Enum):
 
     def format_display(self) -> str:
         """Format the difficulty level for display."""
-        return f'{self.emoji} **Solvability: {self.label}**'
+        return f"{self.emoji} **Solvability: {self.label}**"

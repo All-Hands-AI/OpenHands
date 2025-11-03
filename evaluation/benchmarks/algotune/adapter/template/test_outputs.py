@@ -12,8 +12,8 @@ from evaluator import Task
 task = Task()
 
 # --- Configuration ---
-SOLVER_PATH = Path('/workspace/solver.py')
-BEST_SOLVER_SPEEDUP_FILE = Path('/workspace/.best_solver_speedup.txt')
+SOLVER_PATH = Path("/workspace/solver.py")
+BEST_SOLVER_SPEEDUP_FILE = Path("/workspace/.best_solver_speedup.txt")
 
 # --- Problem Generation and Dynamic Measurement Parameters ---
 PROBLEM_SIZE = 100  # Task difficulty (i.e. "n" in AlgoTune)
@@ -24,26 +24,26 @@ STABILITY_THRESHOLD = 0.01  # Stop when median changes by less than 1%
 IQR_STABILITY_THRESHOLD = 0.05  # Stop when IQR changes by less than 5%
 
 # --- Setup ---
-logging.basicConfig(level=logging.INFO, format='%(name)s - %(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(name)s - %(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def solver_instance() -> Any:
     """Loads the user's 'Solver' class from solver.py."""
     if not SOLVER_PATH.exists():
-        pytest.fail(f'Solver file not found at {SOLVER_PATH}')
+        pytest.fail(f"Solver file not found at {SOLVER_PATH}")
 
-    spec = importlib.util.spec_from_file_location('solver', SOLVER_PATH)
+    spec = importlib.util.spec_from_file_location("solver", SOLVER_PATH)
     solver_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(solver_module)
     return solver_module.Solver()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def problem_set() -> list[Any]:
     """Generates a fixed, reproducible set of up to MAX_SAMPLES problems."""
-    logger.info(f'Generating {MAX_SAMPLES} unique problems for performance testing...')
+    logger.info(f"Generating {MAX_SAMPLES} unique problems for performance testing...")
     problems = []
     for i in range(MAX_SAMPLES):
         # Use the index 'i' as the seed for reproducibility.
@@ -55,8 +55,7 @@ def problem_set() -> list[Any]:
 def _measure_stable_median_time(
     solve_func: Callable[[Any], Any], problems: list[Any]
 ) -> tuple[Union[float, str], int]:
-    """
-    Measures the median execution time, adding samples until both the median
+    """Measures the median execution time, adding samples until both the median
     and the Interquartile Range (IQR) of the timings stabilize.
     """
     measured_times = []
@@ -69,7 +68,7 @@ def _measure_stable_median_time(
         end = time.perf_counter_ns()
 
         if not task.is_solution(problem, solution):
-            return 'Solver produced an invalid solution.', i + 1
+            return "Solver produced an invalid solution.", i + 1
 
         measured_times.append(end - start)
 
@@ -97,9 +96,9 @@ def _measure_stable_median_time(
 
                 if median_is_stable and iqr_is_stable:
                     logger.info(
-                        f'Measurements stabilized after {num_samples} samples. '
-                        f'(Median change < {STABILITY_THRESHOLD * 100:.1f}%, '
-                        f'IQR change < {IQR_STABILITY_THRESHOLD * 100:.1f}%)'
+                        f"Measurements stabilized after {num_samples} samples. "
+                        f"(Median change < {STABILITY_THRESHOLD * 100:.1f}%, "
+                        f"IQR change < {IQR_STABILITY_THRESHOLD * 100:.1f}%)"
                     )
                     return current_median, num_samples
 
@@ -109,17 +108,15 @@ def _measure_stable_median_time(
     # Fallback if stability wasn't reached by MAX_SAMPLES
     final_median = np.median(measured_times) if measured_times else 0
     logger.warning(
-        f'Measurements did not stabilize. Reporting result from all {len(measured_times)} samples.'
+        f"Measurements did not stabilize. Reporting result from all {len(measured_times)} samples."
     )
     return final_median, len(measured_times)
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def performance_results(solver_instance, problem_set) -> dict:
-    """
-    Calculates performance by running the solver and baseline until timing stabilizes.
-    """
-    logger.info('Calculating performance with dynamic sampling...')
+    """Calculates performance by running the solver and baseline until timing stabilizes."""
+    logger.info("Calculating performance with dynamic sampling...")
 
     # Measure time for the user's solver dynamically
     median_solver_time, solver_samples = _measure_stable_median_time(
@@ -141,38 +138,36 @@ def performance_results(solver_instance, problem_set) -> dict:
         speedup = (
             median_baseline_time / median_solver_time
             if median_solver_time > 0
-            else float('inf')
+            else float("inf")
         )
 
-    print('\n--- Performance Summary ---')
-    print(f'Validity: {validity}')
+    print("\n--- Performance Summary ---")
+    print(f"Validity: {validity}")
     print(
-        f'Baseline Median Time: {median_baseline_time / 1e9:.4f}s (over {baseline_samples} samples)'
+        f"Baseline Median Time: {median_baseline_time / 1e9:.4f}s (over {baseline_samples} samples)"
     )
     print(
-        f'Solver Median Time:   {median_solver_time / 1e9:.4f}s (over {solver_samples} samples)'
+        f"Solver Median Time:   {median_solver_time / 1e9:.4f}s (over {solver_samples} samples)"
     )
-    print(f'Calculated Speedup:   {speedup:.2f} x')
-    print('Keep improving your result!')
-    print('---------------------------')
+    print(f"Calculated Speedup:   {speedup:.2f} x")
+    print("Keep improving your result!")
+    print("---------------------------")
 
-    return {'speedup': speedup, 'validity': validity}
+    return {"speedup": speedup, "validity": validity}
 
 
 def test_solver_exists():
     """Checks if the solver.py file exists."""
-    assert SOLVER_PATH.is_file(), f'Solver file not found at {SOLVER_PATH}'
+    assert SOLVER_PATH.is_file(), f"Solver file not found at {SOLVER_PATH}"
 
 
 def test_solver_is_solution(performance_results):
-    assert performance_results['validity'], performance_results['validity']
+    assert performance_results["validity"], performance_results["validity"]
 
 
 def test_solver_is_faster_than_baseline(performance_results):
-    """
-    Checks if the solver is at least as fast as the baseline.
-    """
-    speedup = performance_results['speedup']
+    """Checks if the solver is at least as fast as the baseline."""
+    speedup = performance_results["speedup"]
     assert speedup >= 0.9  # A tolerance margin
 
 
@@ -180,20 +175,20 @@ def test_solver_meets_target_speedup(performance_results):
     """Checks if the solver meets the speedup target from the best submission."""
     if not BEST_SOLVER_SPEEDUP_FILE.exists():
         pytest.skip(
-            f'No best speedup file found at {BEST_SOLVER_SPEEDUP_FILE}. Skipping target test.'
+            f"No best speedup file found at {BEST_SOLVER_SPEEDUP_FILE}. Skipping target test."
         )
 
     try:
         target_speedup = float(
-            BEST_SOLVER_SPEEDUP_FILE.read_text(encoding='utf-8').strip()
+            BEST_SOLVER_SPEEDUP_FILE.read_text(encoding="utf-8").strip()
         )
     except (ValueError, FileNotFoundError):
-        pytest.skip('Could not read target speedup. Skipping target test.')
+        pytest.skip("Could not read target speedup. Skipping target test.")
 
-    speedup = performance_results['speedup']
+    speedup = performance_results["speedup"]
     assert speedup >= target_speedup * 0.9  # A tolerance margin
 
 
 # For agent to use
-if __name__ == '__main__':
-    pytest.main([__file__, '-v', '-s'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v", "-s"])

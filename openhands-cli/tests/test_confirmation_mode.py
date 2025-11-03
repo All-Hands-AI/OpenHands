@@ -10,13 +10,6 @@ from typing import Any
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
-from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import MissingAgentSpec, setup_conversation
-from openhands_cli.user_actions import agent_action, ask_user_confirmation, utils
-from openhands_cli.user_actions.types import ConfirmationResult, UserConfirmation
-from prompt_toolkit.input.defaults import create_pipe_input
-from prompt_toolkit.output.defaults import DummyOutput
-
 from openhands.sdk import Action
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
@@ -24,6 +17,13 @@ from openhands.sdk.security.confirmation_policy import (
     NeverConfirm,
     SecurityRisk,
 )
+from prompt_toolkit.input.defaults import create_pipe_input
+from prompt_toolkit.output.defaults import DummyOutput
+
+from openhands_cli.runner import ConversationRunner
+from openhands_cli.setup import MissingAgentSpec, setup_conversation
+from openhands_cli.user_actions import agent_action, ask_user_confirmation, utils
+from openhands_cli.user_actions.types import ConfirmationResult, UserConfirmation
 from tests.utils import _send_keys
 
 
@@ -38,13 +38,13 @@ class TestConfirmationMode:
 
     def test_setup_conversation_creates_conversation(self) -> None:
         """Test that setup_conversation creates a conversation successfully."""
-        with patch.dict(os.environ, {'LLM_MODEL': 'test-model'}):
+        with patch.dict(os.environ, {"LLM_MODEL": "test-model"}):
             with (
-                patch('openhands_cli.setup.Conversation') as mock_conversation_class,
-                patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
-                patch('openhands_cli.setup.print_formatted_text') as mock_print,
-                patch('openhands_cli.setup.HTML'),
-                patch('openhands_cli.setup.uuid') as mock_uuid,
+                patch("openhands_cli.setup.Conversation") as mock_conversation_class,
+                patch("openhands_cli.setup.AgentStore") as mock_agent_store_class,
+                patch("openhands_cli.setup.print_formatted_text") as mock_print,
+                patch("openhands_cli.setup.HTML"),
+                patch("openhands_cli.setup.uuid") as mock_uuid,
             ):
                 # Mock dependencies
                 mock_conversation_id = MagicMock()
@@ -53,7 +53,7 @@ class TestConfirmationMode:
                 # Mock AgentStore
                 mock_agent_store_instance = MagicMock()
                 mock_agent_instance = MagicMock()
-                mock_agent_instance.llm.model = 'test-model'
+                mock_agent_instance.llm.model = "test-model"
                 mock_agent_store_instance.load.return_value = mock_agent_instance
                 mock_agent_store_class.return_value = mock_agent_store_instance
 
@@ -77,7 +77,7 @@ class TestConfirmationMode:
     def test_setup_conversation_raises_missing_agent_spec(self) -> None:
         """Test that setup_conversation raises MissingAgentSpec when agent is not found."""
         with (
-            patch('openhands_cli.setup.AgentStore') as mock_agent_store_class,
+            patch("openhands_cli.setup.AgentStore") as mock_agent_store_class,
         ):
             # Mock AgentStore to return None (no agent found)
             mock_agent_store_instance = MagicMock()
@@ -88,7 +88,7 @@ class TestConfirmationMode:
             with pytest.raises(MissingAgentSpec) as exc_info:
                 setup_conversation(uuid.uuid4())
 
-            assert 'Agent specification not found' in str(exc_info.value)
+            assert "Agent specification not found" in str(exc_info.value)
             mock_agent_store_class.assert_called_once()
             mock_agent_store_instance.load.assert_called_once()
 
@@ -125,81 +125,89 @@ class TestConfirmationMode:
         assert isinstance(result, ConfirmationResult)
         assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
         assert result.policy_change is None
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_yes(self, mock_cli_confirm: Any) -> None:
         """Test that ask_user_confirmation returns ACCEPT when user selects yes."""
         mock_cli_confirm.return_value = 0  # First option (Yes, proceed)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'ls -la'
+        mock_action.tool_name = "bash"
+        mock_action.action = "ls -la"
 
         result = ask_user_confirmation([mock_action])
         assert isinstance(result, ConfirmationResult)
         assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
         assert result.policy_change is None
 
-    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
-    def test_ask_user_confirmation_no(self, mock_cli_confirm: Any, mock_cli_text_input: Any) -> None:
+    @patch("openhands_cli.user_actions.agent_action.cli_text_input")
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
+    def test_ask_user_confirmation_no(
+        self, mock_cli_confirm: Any, mock_cli_text_input: Any
+    ) -> None:
         """Test that ask_user_confirmation returns REJECT when user selects reject without reason."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.return_value = ''  # Empty reason (reject without reason)
+        mock_cli_text_input.return_value = ""  # Empty reason (reject without reason)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'rm -rf /'
+        mock_action.tool_name = "bash"
+        mock_action.action = "rm -rf /"
 
         result = ask_user_confirmation([mock_action])
         assert isinstance(result, ConfirmationResult)
         assert result.decision == UserConfirmation.REJECT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
+        mock_cli_text_input.assert_called_once_with(
+            "Reason (and let OpenHands know why): "
+        )
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_y_shorthand(self, mock_cli_confirm: Any) -> None:
         """Test that ask_user_confirmation accepts first option as yes."""
         mock_cli_confirm.return_value = 0  # First option (Yes, proceed)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo hello'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo hello"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
 
-    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
-    def test_ask_user_confirmation_n_shorthand(self, mock_cli_confirm: Any, mock_cli_text_input: Any) -> None:
+    @patch("openhands_cli.user_actions.agent_action.cli_text_input")
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
+    def test_ask_user_confirmation_n_shorthand(
+        self, mock_cli_confirm: Any, mock_cli_text_input: Any
+    ) -> None:
         """Test that ask_user_confirmation accepts second option as reject."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.return_value = ''  # Empty reason (reject without reason)
+        mock_cli_text_input.return_value = ""  # Empty reason (reject without reason)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'dangerous command'
+        mock_action.tool_name = "bash"
+        mock_action.action = "dangerous command"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.REJECT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
+        mock_cli_text_input.assert_called_once_with(
+            "Reason (and let OpenHands know why): "
+        )
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_invalid_then_yes(
         self, mock_cli_confirm: Any
     ) -> None:
@@ -207,17 +215,17 @@ class TestConfirmationMode:
         mock_cli_confirm.return_value = 0  # First option (Yes, proceed)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo test'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo test"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
         assert mock_cli_confirm.call_count == 1
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_keyboard_interrupt(
         self, mock_cli_confirm: Any
     ) -> None:
@@ -225,118 +233,128 @@ class TestConfirmationMode:
         mock_cli_confirm.side_effect = KeyboardInterrupt()
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo test'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo test"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.DEFER
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_eof_error(self, mock_cli_confirm: Any) -> None:
         """Test that ask_user_confirmation handles EOFError gracefully."""
         mock_cli_confirm.side_effect = EOFError()
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo test'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo test"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.DEFER
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
 
     def test_ask_user_confirmation_multiple_actions(self) -> None:
         """Test that ask_user_confirmation displays multiple actions correctly."""
         with (
             patch(
-                'openhands_cli.user_actions.agent_action.cli_confirm'
+                "openhands_cli.user_actions.agent_action.cli_confirm"
             ) as mock_cli_confirm,
             patch(
-                'openhands_cli.user_actions.agent_action.print_formatted_text'
+                "openhands_cli.user_actions.agent_action.print_formatted_text"
             ) as mock_print,
         ):
             mock_cli_confirm.return_value = 0  # First option (Yes, proceed)
 
             mock_action1 = MagicMock()
-            mock_action1.tool_name = 'bash'
-            mock_action1.action = 'ls -la'
+            mock_action1.tool_name = "bash"
+            mock_action1.action = "ls -la"
 
             mock_action2 = MagicMock()
-            mock_action2.tool_name = 'str_replace_editor'
-            mock_action2.action = 'create file.txt'
+            mock_action2.tool_name = "str_replace_editor"
+            mock_action2.action = "create file.txt"
 
             result = ask_user_confirmation([mock_action1, mock_action2])
             assert isinstance(result, ConfirmationResult)
             assert result.decision == UserConfirmation.ACCEPT
-            assert result.reason == ''
+            assert result.reason == ""
             assert result.policy_change is None
 
             # Verify that both actions were displayed
             assert mock_print.call_count >= 3  # Header + 2 actions
 
-    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_text_input")
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_no_with_reason(
         self, mock_cli_confirm: Any, mock_cli_text_input: Any
     ) -> None:
         """Test that ask_user_confirmation returns REJECT when user selects 'Reject' and provides a reason."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.return_value = 'This action is too risky'
+        mock_cli_text_input.return_value = "This action is too risky"
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'rm -rf /'
+        mock_action.tool_name = "bash"
+        mock_action.action = "rm -rf /"
 
         result = ask_user_confirmation([mock_action])
         assert isinstance(result, ConfirmationResult)
         assert result.decision == UserConfirmation.REJECT
-        assert result.reason == 'This action is too risky'
+        assert result.reason == "This action is too risky"
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
+        mock_cli_text_input.assert_called_once_with(
+            "Reason (and let OpenHands know why): "
+        )
 
-    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_text_input")
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_no_with_reason_cancelled(
         self, mock_cli_confirm: Any, mock_cli_text_input: Any
     ) -> None:
         """Test that ask_user_confirmation falls back to DEFER when reason input is cancelled."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.side_effect = KeyboardInterrupt()  # User cancelled reason input
+        mock_cli_text_input.side_effect = (
+            KeyboardInterrupt()
+        )  # User cancelled reason input
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'dangerous command'
+        mock_action.tool_name = "bash"
+        mock_action.action = "dangerous command"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.DEFER
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
+        mock_cli_text_input.assert_called_once_with(
+            "Reason (and let OpenHands know why): "
+        )
 
-    @patch('openhands_cli.user_actions.agent_action.cli_text_input')
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_text_input")
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_reject_empty_reason(
         self, mock_cli_confirm: Any, mock_cli_text_input: Any
     ) -> None:
         """Test that ask_user_confirmation handles empty reason input correctly."""
         mock_cli_confirm.return_value = 1  # Second option (Reject)
-        mock_cli_text_input.return_value = '   '  # Whitespace-only reason (should be treated as empty)
+        mock_cli_text_input.return_value = (
+            "   "  # Whitespace-only reason (should be treated as empty)
+        )
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'dangerous command'
+        mock_action.tool_name = "bash"
+        mock_action.action = "dangerous command"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.REJECT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''  # Should be empty after stripping whitespace
+        assert result.reason == ""  # Should be empty after stripping whitespace
         assert result.policy_change is None
-        mock_cli_text_input.assert_called_once_with('Reason (and let OpenHands know why): ')
+        mock_cli_text_input.assert_called_once_with(
+            "Reason (and let OpenHands know why): "
+        )
 
     def test_user_confirmation_is_escapable_e2e(
         self, monkeypatch: pytest.MonkeyPatch
@@ -365,35 +383,35 @@ class TestConfirmationMode:
                 )
 
             # Patch the symbol the caller uses
-            monkeypatch.setattr(agent_action, 'cli_confirm', wrapper, raising=True)
+            monkeypatch.setattr(agent_action, "cli_confirm", wrapper, raising=True)
 
             with ThreadPoolExecutor(max_workers=1) as ex:
                 fut = ex.submit(
-                    ask_user_confirmation, [MockAction(command='echo hello world')]
+                    ask_user_confirmation, [MockAction(command="echo hello world")]
                 )
 
-                _send_keys(pipe, '\x03')  # Ctrl-C (ignored)
+                _send_keys(pipe, "\x03")  # Ctrl-C (ignored)
                 result = fut.result(timeout=2.0)
                 assert isinstance(result, ConfirmationResult)
                 assert (
                     result.decision == UserConfirmation.DEFER
                 )  # escaped confirmation view
-                assert result.reason == ''
+                assert result.reason == ""
                 assert result.policy_change is None
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_always_accept(self, mock_cli_confirm: Any) -> None:
         """Test that ask_user_confirmation returns ACCEPT with NeverConfirm policy when user selects third option."""
         mock_cli_confirm.return_value = 2  # Third option (Always proceed)
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo test'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo test"
 
         result = ask_user_confirmation([mock_action])
         assert result.decision == UserConfirmation.ACCEPT
         assert isinstance(result, ConfirmationResult)
-        assert result.reason == ''
+        assert result.reason == ""
         assert isinstance(result.policy_change, NeverConfirm)
 
     def test_conversation_runner_handles_always_accept(self) -> None:
@@ -409,25 +427,25 @@ class TestConfirmationMode:
 
         # Mock get_unmatched_actions to return some actions
         with patch(
-            'openhands_cli.runner.ConversationState.get_unmatched_actions'
+            "openhands_cli.runner.ConversationState.get_unmatched_actions"
         ) as mock_get_actions:
             mock_action = MagicMock()
-            mock_action.tool_name = 'bash'
-            mock_action.action = 'echo test'
+            mock_action.tool_name = "bash"
+            mock_action.action = "echo test"
             mock_get_actions.return_value = [mock_action]
 
             # Mock ask_user_confirmation to return ACCEPT with NeverConfirm policy
-            with patch('openhands_cli.runner.ask_user_confirmation') as mock_ask:
+            with patch("openhands_cli.runner.ask_user_confirmation") as mock_ask:
                 mock_ask.return_value = ConfirmationResult(
                     decision=UserConfirmation.ACCEPT,
-                    reason='',
+                    reason="",
                     policy_change=NeverConfirm(),
                 )
 
                 # Mock print_formatted_text to avoid output during test
-                with patch('openhands_cli.runner.print_formatted_text'):
+                with patch("openhands_cli.runner.print_formatted_text"):
                     # Mock setup_conversation to avoid real conversation creation
-                    with patch('openhands_cli.runner.setup_conversation') as mock_setup:
+                    with patch("openhands_cli.runner.setup_conversation") as mock_setup:
                         # Return a new mock conversation with confirmation mode disabled
                         new_mock_conversation = MagicMock()
                         new_mock_conversation.id = mock_conversation.id
@@ -447,7 +465,7 @@ class TestConfirmationMode:
                             NeverConfirm()
                         )
 
-    @patch('openhands_cli.user_actions.agent_action.cli_confirm')
+    @patch("openhands_cli.user_actions.agent_action.cli_confirm")
     def test_ask_user_confirmation_auto_confirm_safe(
         self, mock_cli_confirm: Any
     ) -> None:
@@ -457,13 +475,13 @@ class TestConfirmationMode:
         )
 
         mock_action = MagicMock()
-        mock_action.tool_name = 'bash'
-        mock_action.action = 'echo test'
+        mock_action.tool_name = "bash"
+        mock_action.action = "echo test"
 
         result = ask_user_confirmation([mock_action])
         assert isinstance(result, ConfirmationResult)
         assert result.decision == UserConfirmation.ACCEPT
-        assert result.reason == ''
+        assert result.reason == ""
         assert result.policy_change is not None
         assert isinstance(result.policy_change, ConfirmRisky)
         assert result.policy_change.threshold == SecurityRisk.HIGH
@@ -481,24 +499,24 @@ class TestConfirmationMode:
 
         # Mock get_unmatched_actions to return some actions
         with patch(
-            'openhands_cli.runner.ConversationState.get_unmatched_actions'
+            "openhands_cli.runner.ConversationState.get_unmatched_actions"
         ) as mock_get_actions:
             mock_action = MagicMock()
-            mock_action.tool_name = 'bash'
-            mock_action.action = 'echo test'
+            mock_action.tool_name = "bash"
+            mock_action.action = "echo test"
             mock_get_actions.return_value = [mock_action]
 
             # Mock ask_user_confirmation to return ConfirmationResult with policy_change
-            with patch('openhands_cli.runner.ask_user_confirmation') as mock_ask:
+            with patch("openhands_cli.runner.ask_user_confirmation") as mock_ask:
                 expected_policy = ConfirmRisky(threshold=SecurityRisk.HIGH)
                 mock_ask.return_value = ConfirmationResult(
                     decision=UserConfirmation.ACCEPT,
-                    reason='',
+                    reason="",
                     policy_change=expected_policy,
                 )
 
                 # Mock print_formatted_text to avoid output during test
-                with patch('openhands_cli.runner.print_formatted_text'):
+                with patch("openhands_cli.runner.print_formatted_text"):
                     result = runner._handle_confirmation_request()
 
                     # Verify that security-based confirmation policy was set

@@ -22,11 +22,11 @@ from openhands.storage.data_models.settings import Settings
 def mock_settings():
     """Create a real Settings object with minimal required fields."""
     return Settings(
-        language='en',
-        agent='CodeActAgent',
+        language="en",
+        agent="CodeActAgent",
         max_iterations=100,
-        llm_model='anthropic/claude-3-5-sonnet-20241022',
-        llm_api_key=SecretStr('test_api_key_12345'),
+        llm_model="anthropic/claude-3-5-sonnet-20241022",
+        llm_api_key=SecretStr("test_api_key_12345"),
         llm_base_url=None,
     )
 
@@ -37,7 +37,7 @@ def mock_provider_tokens():
     return MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(
-                token=SecretStr('ghp_real_token_test123'), user_id='test_user_456'
+                token=SecretStr("ghp_real_token_test123"), user_id="test_user_456"
             )
         }
     )
@@ -47,11 +47,11 @@ def mock_provider_tokens():
 def mock_conversation_metadata():
     """Create a real ConversationMetadata object."""
     return ConversationMetadata(
-        conversation_id='test_conv_123',
-        user_id='test_user_456',
-        title='Test Conversation',
-        selected_repository='test/repo',
-        selected_branch='main',
+        conversation_id="test_conv_123",
+        user_id="test_user_456",
+        title="Test Conversation",
+        selected_repository="test/repo",
+        selected_branch="main",
         git_provider=ProviderType.GITHUB,
     )
 
@@ -64,8 +64,8 @@ async def test_start_endpoint_passes_provider_tokens(
 
     This test verifies the full end-to-end flow with real tokens through to ConversationInitData.
     """
-    conversation_id = 'test_conv_123'
-    user_id = 'test_user_456'
+    conversation_id = "test_conv_123"
+    user_id = "test_user_456"
     providers_set = ProvidersSetModel(providers_set=[ProviderType.GITHUB])
 
     # Mock conversation store
@@ -85,17 +85,17 @@ async def test_start_endpoint_passes_provider_tokens(
 
     # Mock only infrastructure - let setup_init_conversation_settings run for real
     with patch(
-        'openhands.server.routes.manage_conversations.conversation_manager'
+        "openhands.server.routes.manage_conversations.conversation_manager"
     ) as mock_manager:
         # Mock the stores that setup_init_conversation_settings needs
         with patch(
-            'openhands.server.services.conversation_service.SettingsStoreImpl.get_instance'
+            "openhands.server.services.conversation_service.SettingsStoreImpl.get_instance"
         ) as mock_settings_store_cls:
             with patch(
-                'openhands.server.services.conversation_service.SecretsStoreImpl.get_instance'
+                "openhands.server.services.conversation_service.SecretsStoreImpl.get_instance"
             ) as mock_secrets_store_cls:
                 with patch(
-                    'openhands.server.services.conversation_service.server_config'
+                    "openhands.server.services.conversation_service.server_config"
                 ) as mock_server_config:
                     # Setup store mocks
                     mock_settings_store = AsyncMock()
@@ -125,7 +125,7 @@ async def test_start_endpoint_passes_provider_tokens(
                     # Verify ConversationInitData has real provider tokens
                     mock_manager.maybe_start_agent_loop.assert_called_once()
                     call_kwargs = mock_manager.maybe_start_agent_loop.call_args[1]
-                    conversation_init_data = call_kwargs['settings']
+                    conversation_init_data = call_kwargs["settings"]
 
                     assert conversation_init_data.git_provider_tokens is not None
                     assert (
@@ -142,9 +142,9 @@ async def test_start_endpoint_passes_provider_tokens(
                     ]
                     assert (
                         github_token.token.get_secret_value()
-                        == 'ghp_real_token_test123'
+                        == "ghp_real_token_test123"
                     )
-                    assert github_token.user_id == 'test_user_456'
+                    assert github_token.user_id == "test_user_456"
 
-                    assert response.status == 'ok'
+                    assert response.status == "ok"
                     assert response.conversation_id == conversation_id

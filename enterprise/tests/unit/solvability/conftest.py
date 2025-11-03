@@ -1,6 +1,4 @@
-"""
-Shared fixtures for all tests.
-"""
+"""Shared fixtures for all tests."""
 
 from typing import Any
 from unittest.mock import MagicMock
@@ -22,9 +20,9 @@ from openhands.core.config import LLMConfig
 def features() -> list[Feature]:
     """Create a list of features for testing."""
     return [
-        Feature(identifier='feature1', description='Test feature 1'),
-        Feature(identifier='feature2', description='Test feature 2'),
-        Feature(identifier='feature3', description='Test feature 3'),
+        Feature(identifier="feature1", description="Test feature 1"),
+        Feature(identifier="feature2", description="Test feature 2"),
+        Feature(identifier="feature3", description="Test feature 3"),
     ]
 
 
@@ -33,8 +31,8 @@ def feature_embedding() -> FeatureEmbedding:
     """Create a feature embedding for testing."""
     return FeatureEmbedding(
         samples=[
-            {'feature1': True, 'feature2': False, 'feature3': True},
-            {'feature1': False, 'feature2': True, 'feature3': True},
+            {"feature1": True, "feature2": False, "feature3": True},
+            {"feature1": False, "feature2": True, "feature3": True},
         ],
         prompt_tokens=10,
         completion_tokens=5,
@@ -44,19 +42,18 @@ def feature_embedding() -> FeatureEmbedding:
 
 @pytest.fixture
 def featurizer(mock_llm, features) -> Featurizer:
-    """
-    Create a featurizer for testing.
+    """Create a featurizer for testing.
 
     Mocks out any calls to LLM.completion
     """
     pytest.MonkeyPatch().setattr(
-        'integrations.solvability.models.featurizer.LLM',
+        "integrations.solvability.models.featurizer.LLM",
         lambda *args, **kwargs: mock_llm,
     )
 
     featurizer = Featurizer(
-        system_prompt='Test system prompt',
-        message_prefix='Test message prefix: ',
+        system_prompt="Test system prompt",
+        message_prefix="Test message prefix: ",
         features=features,
     )
 
@@ -88,7 +85,7 @@ def mock_llm(mock_completion_response):
 @pytest.fixture
 def mock_llm_config():
     """Create a mock LLM config for testing."""
-    return LLMConfig(model='test-model')
+    return LLMConfig(model="test-model")
 
 
 @pytest.fixture
@@ -106,7 +103,7 @@ def mock_classifier():
 def solvability_classifier(featurizer, mock_classifier):
     """Create a SolvabilityClassifier instance for testing."""
     return SolvabilityClassifier(
-        identifier='test-classifier',
+        identifier="test-classifier",
         featurizer=featurizer,
         classifier=mock_classifier,
         random_state=42,

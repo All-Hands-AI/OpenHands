@@ -25,12 +25,12 @@ from storage.stored_conversation_metadata import StoredConversationMetadata
 
 from openhands.server.shared import conversation_manager
 
-event_webhook_router = APIRouter(prefix='/event-webhook')
+event_webhook_router = APIRouter(prefix="/event-webhook")
 
 
 class BatchMethod(Enum):
-    POST = 'POST'
-    DELETE = 'DELETE'
+    POST = "POST"
+    DELETE = "DELETE"
 
 
 class BatchOperation(BaseModel):
@@ -41,10 +41,10 @@ class BatchOperation(BaseModel):
 
     def get_content(self) -> bytes:
         if self.content is None:
-            raise ValueError('empty_content_in_batch')
-        if self.encoding == 'base64':
-            return base64.b64decode(self.content.encode('ascii'))
-        return self.content.encode('utf-8')
+            raise ValueError("empty_content_in_batch")
+        if self.encoding == "base64":
+            return base64.b64decode(self.content.encode("ascii"))
+        return self.content.encode("utf-8")
 
     def get_content_json(self) -> dict:
         return json.loads(self.get_content())
@@ -63,16 +63,16 @@ async def _process_batch_operations_background(
             if batch_op.method != BatchMethod.POST:
                 # Log unhandled methods for future implementation
                 logger.info(
-                    'invalid_operation_in_batch_webhook',
+                    "invalid_operation_in_batch_webhook",
                     extra={
-                        'method': str(batch_op.method),
-                        'path': batch_op.path,
+                        "method": str(batch_op.method),
+                        "path": batch_op.path,
                     },
                 )
                 continue
 
             # Updates to certain paths in the nested runtime are ignored
-            if batch_op.path in {'settings.json', 'secrets.json'}:
+            if batch_op.path in {"settings.json", "secrets.json"}:
                 continue
 
             conversation_id, subpath = _parse_conversation_id_and_subpath(batch_op.path)
@@ -84,66 +84,66 @@ async def _process_batch_operations_background(
                 prev_conversation_id = conversation_id
                 if session_api_key != x_session_api_key:
                     logger.error(
-                        'authentication_failed_in_batch_webhook_background',
+                        "authentication_failed_in_batch_webhook_background",
                         extra={
-                            'conversation_id': conversation_id,
-                            'user_id': user_id,
-                            'path': batch_op.path,
+                            "conversation_id": conversation_id,
+                            "user_id": user_id,
+                            "path": batch_op.path,
                         },
                     )
                     continue  # Skip this operation but continue with others
 
-            if subpath == 'agent_state.pkl':
+            if subpath == "agent_state.pkl":
                 update_agent_state(user_id, conversation_id, batch_op.get_content())
                 continue
 
-            if subpath == 'conversation_stats.pkl':
+            if subpath == "conversation_stats.pkl":
                 update_conversation_stats(
                     user_id, conversation_id, batch_op.get_content()
                 )
                 continue
 
-            if subpath == 'metadata.json':
+            if subpath == "metadata.json":
                 update_conversation_metadata(
                     conversation_id, batch_op.get_content_json()
                 )
                 continue
 
-            if subpath.startswith('events/'):
+            if subpath.startswith("events/"):
                 await process_event(
                     user_id, conversation_id, subpath, batch_op.get_content_json()
                 )
                 continue
 
-            if subpath.startswith('event_cache'):
+            if subpath.startswith("event_cache"):
                 # No action required
                 continue
 
-            if subpath == 'exp_config.json':
+            if subpath == "exp_config.json":
                 # No action required
                 continue
 
             # Log unhandled paths for future implementation
             logger.warning(
-                'unknown_path_in_batch_webhook',
+                "unknown_path_in_batch_webhook",
                 extra={
-                    'path': subpath,
-                    'user_id': user_id,
-                    'conversation_id': conversation_id,
+                    "path": subpath,
+                    "user_id": user_id,
+                    "conversation_id": conversation_id,
                 },
             )
         except Exception as e:
             logger.error(
-                'error_processing_batch_operation',
+                "error_processing_batch_operation",
                 extra={
-                    'path': batch_op.path,
-                    'method': str(batch_op.method),
-                    'error': str(e),
+                    "path": batch_op.path,
+                    "method": str(batch_op.method),
+                    "error": str(e),
                 },
             )
 
 
-@event_webhook_router.post('/batch')
+@event_webhook_router.post("/batch")
 async def on_batch_write(
     batch_ops: list[BatchOperation],
     background_tasks: BackgroundTasks,
@@ -161,7 +161,7 @@ async def on_batch_write(
     return Response(status_code=status.HTTP_202_ACCEPTED)
 
 
-@event_webhook_router.post('/{path:path}')
+@event_webhook_router.post("/{path:path}")
 async def on_write(
     path: str,
     request: Request,
@@ -176,7 +176,7 @@ async def on_write(
     if session_api_key != x_session_api_key:
         return Response(status_code=status.HTTP_403_FORBIDDEN)
 
-    if subpath == 'agent_state.pkl':
+    if subpath == "agent_state.pkl":
         content = await request.body()
         update_agent_state(user_id, conversation_id, content)
         return Response(status_code=status.HTTP_200_OK)
@@ -186,39 +186,39 @@ async def on_write(
     except Exception as exc:
         return Response(status_code=status.HTTP_400_BAD_REQUEST, content=str(exc))
 
-    if subpath == 'metadata.json':
+    if subpath == "metadata.json":
         update_conversation_metadata(conversation_id, content)
         return Response(status_code=status.HTTP_200_OK)
 
-    if subpath.startswith('events/'):
+    if subpath.startswith("events/"):
         await process_event(user_id, conversation_id, subpath, content)
         return Response(status_code=status.HTTP_200_OK)
 
-    if subpath.startswith('event_cache'):
+    if subpath.startswith("event_cache"):
         # No actionr required
         return Response(status_code=status.HTTP_200_OK)
 
     logger.error(
-        'invalid_subpath_in_webhook',
+        "invalid_subpath_in_webhook",
         extra={
-            'path': path,
-            'user_id': user_id,
+            "path": path,
+            "user_id": user_id,
         },
     )
     return Response(status_code=status.HTTP_400_BAD_REQUEST)
 
 
-@event_webhook_router.delete('/{path:path}')
+@event_webhook_router.delete("/{path:path}")
 async def on_delete(path: str, x_session_api_key: Annotated[str | None, Header()]):
     return Response(status_code=status.HTTP_200_OK)
 
 
 def _parse_conversation_id_and_subpath(path: str) -> Tuple[str, str]:
     try:
-        items = path.split('/')
-        assert items[0] == 'sessions'
+        items = path.split("/")
+        assert items[0] == "sessions"
         conversation_id = items[1]
-        subpath = '/'.join(items[2:])
+        subpath = "/".join(items[2:])
         return conversation_id, subpath
     except (AssertionError, IndexError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST) from e

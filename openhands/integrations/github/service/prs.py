@@ -4,9 +4,7 @@ from openhands.integrations.service_types import RequestMethod
 
 
 class GitHubPRsMixin(GitHubMixinBase):
-    """
-    Methods for interacting with GitHub PRs
-    """
+    """Methods for interacting with GitHub PRs"""
 
     async def create_pr(
         self,
@@ -33,19 +31,19 @@ class GitHubPRsMixin(GitHubMixinBase):
             - PR URL when successful
             - Error message when unsuccessful
         """
-        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
+        url = f"{self.BASE_URL}/repos/{repo_name}/pulls"
 
         # Set default body if none provided
         if not body:
-            body = f'Merging changes from {source_branch} into {target_branch}'
+            body = f"Merging changes from {source_branch} into {target_branch}"
 
         # Prepare the request payload
         payload = {
-            'title': title,
-            'head': source_branch,
-            'base': target_branch,
-            'body': body,
-            'draft': draft,
+            "title": title,
+            "head": source_branch,
+            "base": target_branch,
+            "body": body,
+            "draft": draft,
         }
 
         # Make the POST request to create the PR
@@ -55,15 +53,15 @@ class GitHubPRsMixin(GitHubMixinBase):
 
         # Add labels if provided (PRs are a type of issue in GitHub's API)
         if labels and len(labels) > 0:
-            pr_number = response['number']
-            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'
-            labels_payload = {'labels': labels}
+            pr_number = response["number"]
+            labels_url = f"{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels"
+            labels_payload = {"labels": labels}
             await self._make_request(
                 url=labels_url, params=labels_payload, method=RequestMethod.POST
             )
 
         # Return the HTML URL of the created PR
-        return response['html_url']
+        return response["html_url"]
 
     async def get_pr_details(self, repository: str, pr_number: int) -> dict:
         """Get detailed information about a specific pull request
@@ -75,7 +73,7 @@ class GitHubPRsMixin(GitHubMixinBase):
         Returns:
             Raw GitHub API response for the pull request
         """
-        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}'
+        url = f"{self.BASE_URL}/repos/{repository}/pulls/{pr_number}"
         pr_data, _ = await self._make_request(url)
 
         return pr_data
@@ -95,23 +93,23 @@ class GitHubPRsMixin(GitHubMixinBase):
 
             # GitHub API response structure
             # https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request
-            if 'state' in pr_details:
-                return pr_details['state'] == 'open'
-            elif 'merged' in pr_details and 'closed_at' in pr_details:
+            if "state" in pr_details:
+                return pr_details["state"] == "open"
+            elif "merged" in pr_details and "closed_at" in pr_details:
                 # Check if PR is merged or closed
-                return not (pr_details['merged'] or pr_details['closed_at'])
+                return not (pr_details["merged"] or pr_details["closed_at"])
 
             # If we can't determine the state, assume it's active (safer default)
             logger.warning(
-                f'Could not determine GitHub PR status for {repository}#{pr_number}. '
-                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
+                f"Could not determine GitHub PR status for {repository}#{pr_number}. "
+                f"Response keys: {list(pr_details.keys())}. Assuming PR is active."
             )
             return True
 
         except Exception as e:
             logger.warning(
-                f'Could not determine GitHub PR status for {repository}#{pr_number}: {e}. '
-                f'Including conversation to be safe.'
+                f"Could not determine GitHub PR status for {repository}#{pr_number}: {e}. "
+                f"Including conversation to be safe."
             )
             # If we can't determine the PR status, include the conversation to be safe
             return True

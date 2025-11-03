@@ -5,21 +5,19 @@ from openhands.integrations.service_types import Comment
 
 
 class GitLabResolverMixin(GitLabMixinBase):
-    """
-    Helper methods used for the GitLab Resolver
-    """
+    """Helper methods used for the GitLab Resolver"""
 
     async def get_review_thread_comments(
         self, project_id: str, issue_iid: int, discussion_id: str
     ) -> list[Comment]:
         url = (
-            f'{self.BASE_URL}/projects/{project_id}'
-            f'/merge_requests/{issue_iid}/discussions/{discussion_id}'
+            f"{self.BASE_URL}/projects/{project_id}"
+            f"/merge_requests/{issue_iid}/discussions/{discussion_id}"
         )
 
         # Single discussion fetch; notes are returned inline.
         response, _ = await self._make_request(url)
-        notes = response.get('notes') or []
+        notes = response.get("notes") or []
         return self._process_raw_comments(notes)
 
     async def get_issue_or_mr_title_and_body(
@@ -37,16 +35,16 @@ class GitLabResolverMixin(GitLabMixinBase):
             A tuple of (title, body)
         """
         if is_mr:
-            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}'
+            url = f"{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}"
             response, _ = await self._make_request(url)
-            title = response.get('title') or ''
-            body = response.get('description') or ''
+            title = response.get("title") or ""
+            body = response.get("description") or ""
             return title, body
 
-        url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
+        url = f"{self.BASE_URL}/projects/{project_id}/issues/{issue_number}"
         response, _ = await self._make_request(url)
-        title = response.get('title') or ''
-        body = response.get('description') or ''
+        title = response.get("title") or ""
+        body = response.get("description") or ""
         return title, body
 
     async def get_issue_or_mr_comments(
@@ -73,17 +71,17 @@ class GitLabResolverMixin(GitLabMixinBase):
         per_page = min(max_comments, 10)
 
         url = (
-            f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/discussions'
+            f"{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/discussions"
             if is_mr
-            else f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+            else f"{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes"
         )
 
         while len(all_comments) < max_comments:
             params = {
-                'per_page': per_page,
-                'page': page,
-                'order_by': 'created_at',
-                'sort': 'asc',
+                "per_page": per_page,
+                "page": page,
+                "order_by": "created_at",
+                "sort": "asc",
             }
 
             response, headers = await self._make_request(url, params)
@@ -93,11 +91,11 @@ class GitLabResolverMixin(GitLabMixinBase):
             if is_mr:
                 for discussions in response:
                     # Keep root level comments
-                    all_comments.append(discussions['notes'][0])
+                    all_comments.append(discussions["notes"][0])
             else:
                 all_comments.extend(response)
 
-            link_header = headers.get('Link', '')
+            link_header = headers.get("Link", "")
             if 'rel="next"' not in link_header:
                 break
 
@@ -112,20 +110,20 @@ class GitLabResolverMixin(GitLabMixinBase):
         all_comments: list[Comment] = []
         for comment_data in comments:
             comment = Comment(
-                id=str(comment_data.get('id', 'unknown')),
-                body=self._truncate_comment(comment_data.get('body', '')),
-                author=comment_data.get('author', {}).get('username', 'unknown'),
+                id=str(comment_data.get("id", "unknown")),
+                body=self._truncate_comment(comment_data.get("body", "")),
+                author=comment_data.get("author", {}).get("username", "unknown"),
                 created_at=datetime.fromisoformat(
-                    comment_data.get('created_at', '').replace('Z', '+00:00')
+                    comment_data.get("created_at", "").replace("Z", "+00:00")
                 )
-                if comment_data.get('created_at')
+                if comment_data.get("created_at")
                 else datetime.fromtimestamp(0),
                 updated_at=datetime.fromisoformat(
-                    comment_data.get('updated_at', '').replace('Z', '+00:00')
+                    comment_data.get("updated_at", "").replace("Z", "+00:00")
                 )
-                if comment_data.get('updated_at')
+                if comment_data.get("updated_at")
                 else datetime.fromtimestamp(0),
-                system=comment_data.get('system', False),
+                system=comment_data.get("system", False),
             )
             all_comments.append(comment)
 

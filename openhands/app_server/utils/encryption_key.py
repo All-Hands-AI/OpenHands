@@ -18,27 +18,27 @@ class EncryptionKey(BaseModel):
     notes: str | None = None
     created_at: datetime = Field(default_factory=utc_now)
 
-    @field_serializer('key')
+    @field_serializer("key")
     def serialize_key(self, key: SecretStr, info: Any):
         """Conditionally serialize the key based on context."""
-        if info.context and info.context.get('expose_secrets'):
+        if info.context and info.context.get("expose_secrets"):
             return key.get_secret_value()
         return str(key)  # Returns '**********' by default
 
 
 def get_default_encryption_keys(workspace_dir: Path) -> list[EncryptionKey]:
     """Generate default encryption keys."""
-    master_key = os.getenv('JWT_SECRET')
+    master_key = os.getenv("JWT_SECRET")
     if master_key:
         return [
             EncryptionKey(
                 key=SecretStr(master_key),
                 active=True,
-                notes='jwt secret master key',
+                notes="jwt secret master key",
             )
         ]
 
-    key_file = workspace_dir / '.keys'
+    key_file = workspace_dir / ".keys"
     type_adapter = TypeAdapter(list[EncryptionKey])
     if key_file.exists():
         encryption_keys = type_adapter.validate_json(key_file.read_text())
@@ -48,11 +48,11 @@ def get_default_encryption_keys(workspace_dir: Path) -> list[EncryptionKey]:
         EncryptionKey(
             key=SecretStr(base62.encodebytes(os.urandom(32))),
             active=True,
-            notes='generated master key',
+            notes="generated master key",
         )
     ]
     json_data = type_adapter.dump_json(
-        encryption_keys, context={'expose_secrets': True}
+        encryption_keys, context={"expose_secrets": True}
     )
     key_file.write_bytes(json_data)
     return encryption_keys

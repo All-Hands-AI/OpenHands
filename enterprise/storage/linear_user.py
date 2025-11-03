@@ -3,7 +3,7 @@ from storage.base import Base
 
 
 class LinearUser(Base):  # type: ignore
-    __tablename__ = 'linear_users'
+    __tablename__ = "linear_users"
     id = Column(Integer, primary_key=True, autoincrement=True)
     keycloak_user_id = Column(String, nullable=False, index=True)
     linear_user_id = Column(String, nullable=False, index=True)
@@ -11,12 +11,12 @@ class LinearUser(Base):  # type: ignore
     status = Column(String, nullable=False)
     created_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
-        onupdate=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )

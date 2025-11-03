@@ -20,9 +20,9 @@ from openhands.events.observation.observation import Observation
 
 class StuckDetector:
     SYNTAX_ERROR_MESSAGES = [
-        'SyntaxError: unterminated string literal (detected at line',
-        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-        'SyntaxError: incomplete input',
+        "SyntaxError: unterminated string literal (detected at line",
+        "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+        "SyntaxError: incomplete input",
     ]
 
     @dataclass
@@ -152,9 +152,9 @@ class StuckDetector:
             )
 
             if actions_equal and observations_equal:
-                logger.warning('Action, Observation loop detected')
+                logger.warning("Action, Observation loop detected")
                 self.stuck_analysis = StuckDetector.StuckAnalysis(
-                    loop_type='repeating_action_observation',
+                    loop_type="repeating_action_observation",
                     loop_repeat_times=4,
                     loop_start_idx=filtered_history.index(last_actions[-1])
                     + filtered_history_offset,
@@ -181,9 +181,9 @@ class StuckDetector:
         if all(self._eq_no_pid(last_actions[0], action) for action in last_actions[:3]):
             # and the last three observations are all errors?
             if all(isinstance(obs, ErrorObservation) for obs in last_observations[:3]):
-                logger.warning('Action, ErrorObservation loop detected')
+                logger.warning("Action, ErrorObservation loop detected")
                 self.stuck_analysis = StuckDetector.StuckAnalysis(
-                    loop_type='repeating_action_error',
+                    loop_type="repeating_action_error",
                     loop_repeat_times=3,
                     loop_start_idx=filtered_history.index(last_actions[-1])
                     + filtered_history_offset,
@@ -194,10 +194,10 @@ class StuckDetector:
                 isinstance(obs, IPythonRunCellObservation)
                 for obs in last_observations[:3]
             ):
-                warning = 'Action, IPythonRunCellObservation loop detected'
+                warning = "Action, IPythonRunCellObservation loop detected"
                 for error_message in self.SYNTAX_ERROR_MESSAGES:
                     if error_message.startswith(
-                        'SyntaxError: unterminated string literal (detected at line'
+                        "SyntaxError: unterminated string literal (detected at line"
                     ):
                         if self._check_for_consistent_line_error(
                             [
@@ -209,15 +209,15 @@ class StuckDetector:
                         ):
                             logger.warning(warning)
                             self.stuck_analysis = StuckDetector.StuckAnalysis(
-                                loop_type='repeating_action_error',
+                                loop_type="repeating_action_error",
                                 loop_repeat_times=3,
                                 loop_start_idx=filtered_history.index(last_actions[-1])
                                 + filtered_history_offset,
                             )
                             return True
                     elif error_message in (
-                        'SyntaxError: invalid syntax. Perhaps you forgot a comma?',
-                        'SyntaxError: incomplete input',
+                        "SyntaxError: invalid syntax. Perhaps you forgot a comma?",
+                        "SyntaxError: incomplete input",
                     ) and self._check_for_consistent_invalid_syntax(
                         [
                             obs
@@ -228,7 +228,7 @@ class StuckDetector:
                     ):
                         logger.warning(warning)
                         self.stuck_analysis = StuckDetector.StuckAnalysis(
-                            loop_type='repeating_action_error',
+                            loop_type="repeating_action_error",
                             loop_repeat_times=3,
                             loop_start_idx=filtered_history.index(last_actions[-1])
                             + filtered_history_offset,
@@ -244,21 +244,21 @@ class StuckDetector:
 
         for obs in observations:
             content = obs.content
-            lines = content.strip().split('\n')
+            lines = content.strip().split("\n")
 
             if len(lines) < 6:  # 6 because a real syntax error has at least 6 lines
                 return False
 
             line1 = lines[0].strip()
-            if not line1.startswith('Cell In[1], line'):
+            if not line1.startswith("Cell In[1], line"):
                 return False
 
             first_lines.append(line1)  # Store the first line of each observation
 
             # Check last three lines
             if (
-                lines[-1].startswith('[Jupyter Python interpreter:')
-                and lines[-2].startswith('[Jupyter current working directory:')
+                lines[-1].startswith("[Jupyter Python interpreter:")
+                and lines[-2].startswith("[Jupyter current working directory:")
                 and error_message in lines[-3]
             ):
                 valid_observations.append(obs)
@@ -272,7 +272,7 @@ class StuckDetector:
             and len(valid_observations) == 3
             and len(
                 set(
-                    obs.content.strip().split('\n')[:-2][-1]
+                    obs.content.strip().split("\n")[:-2][-1]
                     for obs in valid_observations
                 )
             )
@@ -286,7 +286,7 @@ class StuckDetector:
 
         for obs in observations:
             content = obs.content
-            lines = content.strip().split('\n')
+            lines = content.strip().split("\n")
 
             if len(lines) < 3:
                 return False
@@ -295,8 +295,8 @@ class StuckDetector:
 
             # Check if the last two lines are our own
             if not (
-                last_lines[-2].startswith('[Jupyter current working directory:')
-                and last_lines[-1].startswith('[Jupyter Python interpreter:')
+                last_lines[-2].startswith("[Jupyter current working directory:")
+                and last_lines[-1].startswith("[Jupyter Python interpreter:")
             ):
                 return False
 
@@ -340,9 +340,9 @@ class StuckDetector:
                         break
 
                 if not has_observation_between:
-                    logger.warning('Repeated MessageAction with source=AGENT detected')
+                    logger.warning("Repeated MessageAction with source=AGENT detected")
                     self.stuck_analysis = StuckDetector.StuckAnalysis(
-                        loop_type='monologue',
+                        loop_type="monologue",
                         loop_repeat_times=3,
                         loop_start_idx=start_index + filtered_history_offset,
                     )
@@ -389,9 +389,9 @@ class StuckDetector:
             )
 
             if actions_equal and observations_equal:
-                logger.warning('Action, Observation pattern detected')
+                logger.warning("Action, Observation pattern detected")
                 self.stuck_analysis = StuckDetector.StuckAnalysis(
-                    loop_type='repeating_action_observation_pattern',
+                    loop_type="repeating_action_observation_pattern",
                     loop_repeat_times=3,
                     loop_start_idx=filtered_history.index(last_six_actions[-1])
                     + filtered_history_offset,
@@ -443,10 +443,10 @@ class StuckDetector:
 
             if not has_other_events:
                 logger.warning(
-                    'Context window error loop detected - repeated condensation events'
+                    "Context window error loop detected - repeated condensation events"
                 )
                 self.stuck_analysis = StuckDetector.StuckAnalysis(
-                    loop_type='context_window_error',
+                    loop_type="context_window_error",
                     loop_repeat_times=2,
                     loop_start_idx=start_idx + filtered_history_offset,
                 )
@@ -461,12 +461,12 @@ class StuckDetector:
             # for loop detection on edit actions, ignore the thought, compare some code
             # the code should have at least 3 lines, to avoid simple one-liners
             if (
-                'edit_file_by_replace(' in obj1.code
-                and 'edit_file_by_replace(' in obj2.code
+                "edit_file_by_replace(" in obj1.code
+                and "edit_file_by_replace(" in obj2.code
             ):
                 return (
-                    len(obj1.code.split('\n')) > 2
-                    and obj1.code.split('\n')[:3] == obj2.code.split('\n')[:3]
+                    len(obj1.code.split("\n")) > 2
+                    and obj1.code.split("\n")[:3] == obj2.code.split("\n")[:3]
                 )
             else:
                 # default comparison

@@ -21,7 +21,7 @@ class ObservationMaskingCondenser(Condenser):
         results: list[Event] = []
         for i, event in enumerate(view):
             if isinstance(event, Observation) and i < len(view) - self.attention_window:
-                results.append(AgentCondensationObservation('<MASKED>'))
+                results.append(AgentCondensationObservation("<MASKED>"))
             else:
                 results.append(event)
 
@@ -33,7 +33,7 @@ class ObservationMaskingCondenser(Condenser):
         config: ObservationMaskingCondenserConfig,
         llm_registry: LLMRegistry,
     ) -> ObservationMaskingCondenser:
-        return ObservationMaskingCondenser(**config.model_dump(exclude={'type'}))
+        return ObservationMaskingCondenser(**config.model_dump(exclude={"type"}))
 
 
 ObservationMaskingCondenser.register_config(ObservationMaskingCondenserConfig)

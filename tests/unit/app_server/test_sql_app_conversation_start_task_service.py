@@ -27,9 +27,9 @@ from openhands.app_server.utils.sql_utils import Base
 async def async_engine():
     """Create an async SQLite engine for testing."""
     engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
+        "sqlite+aiosqlite:///:memory:",
         poolclass=StaticPool,
-        connect_args={'check_same_thread': False},
+        connect_args={"check_same_thread": False},
         echo=False,
     )
 
@@ -65,11 +65,11 @@ def sample_request() -> AppConversationStartRequest:
         sandbox_id=None,
         initial_message=None,
         processors=[],
-        llm_model='gpt-4',
+        llm_model="gpt-4",
         selected_repository=None,
         selected_branch=None,
         git_provider=None,
-        title='Test Conversation',
+        title="Test Conversation",
         trigger=None,
         pr_number=[],
     )
@@ -82,7 +82,7 @@ def sample_task(
     """Create a sample AppConversationStartTask for testing."""
     return AppConversationStartTask(
         id=uuid4(),
-        created_by_user_id='test_user',
+        created_by_user_id="test_user",
         status=AppConversationStartTaskStatus.WORKING,
         detail=None,
         app_conversation_id=None,
@@ -137,19 +137,19 @@ class TestSQLAppConversationStartTaskService:
         # Create multiple tasks
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user2',
+            created_by_user_id="user2",
             status=AppConversationStartTaskStatus.READY,
             request=sample_request,
         )
         task3 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user3',
+            created_by_user_id="user3",
             status=AppConversationStartTaskStatus.ERROR,
             request=sample_request,
         )
@@ -209,8 +209,8 @@ class TestSQLAppConversationStartTaskService:
         # Update the task status
         sample_task.status = AppConversationStartTaskStatus.READY
         sample_task.app_conversation_id = uuid4()
-        sample_task.sandbox_id = 'test_sandbox'
-        sample_task.agent_server_url = 'http://localhost:8000'
+        sample_task.sandbox_id = "test_sandbox"
+        sample_task.agent_server_url = "http://localhost:8000"
 
         # Save the updated task
         updated_task = await service.save_app_conversation_start_task(sample_task)
@@ -218,8 +218,8 @@ class TestSQLAppConversationStartTaskService:
         # Verify the update
         assert updated_task.status == AppConversationStartTaskStatus.READY
         assert updated_task.app_conversation_id == sample_task.app_conversation_id
-        assert updated_task.sandbox_id == 'test_sandbox'
-        assert updated_task.agent_server_url == 'http://localhost:8000'
+        assert updated_task.sandbox_id == "test_sandbox"
+        assert updated_task.agent_server_url == "http://localhost:8000"
 
         # Retrieve and verify persistence
         retrieved_task = await service.get_app_conversation_start_task(sample_task.id)
@@ -235,22 +235,22 @@ class TestSQLAppConversationStartTaskService:
         """Test that users can only access their own tasks."""
         # Create services for different users
         user1_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user1'
+            session=async_session, user_id="user1"
         )
         user2_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user2'
+            session=async_session, user_id="user2"
         )
 
         # Create tasks for different users
         user1_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         user2_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user2',
+            created_by_user_id="user2",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
@@ -291,22 +291,22 @@ class TestSQLAppConversationStartTaskService:
         """Test batch retrieval with user isolation."""
         # Create services for different users
         user1_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user1'
+            session=async_session, user_id="user1"
         )
         user2_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user2'
+            session=async_session, user_id="user2"
         )
 
         # Create tasks for different users
         user1_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         user2_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user2',
+            created_by_user_id="user2",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
@@ -360,13 +360,13 @@ class TestSQLAppConversationStartTaskService:
         # Create multiple tasks
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             request=sample_request,
         )
@@ -398,21 +398,21 @@ class TestSQLAppConversationStartTaskService:
         # Create tasks with different conversation IDs
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             app_conversation_id=conversation_id1,
             request=sample_request,
         )
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             app_conversation_id=conversation_id2,
             request=sample_request,
         )
         task3 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             app_conversation_id=None,
             request=sample_request,
@@ -441,7 +441,7 @@ class TestSQLAppConversationStartTaskService:
         # Create tasks with slight time differences
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
@@ -449,7 +449,7 @@ class TestSQLAppConversationStartTaskService:
 
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             request=sample_request,
         )
@@ -482,7 +482,7 @@ class TestSQLAppConversationStartTaskService:
         for i in range(5):
             task = AppConversationStartTask(
                 id=uuid4(),
-                created_by_user_id='user1',
+                created_by_user_id="user1",
                 status=AppConversationStartTaskStatus.WORKING,
                 request=sample_request,
             )
@@ -492,18 +492,18 @@ class TestSQLAppConversationStartTaskService:
         # Test first page with limit 2
         result_page1 = await service.search_app_conversation_start_tasks(limit=2)
         assert len(result_page1.items) == 2
-        assert result_page1.next_page_id == '2'
+        assert result_page1.next_page_id == "2"
 
         # Test second page
         result_page2 = await service.search_app_conversation_start_tasks(
-            page_id='2', limit=2
+            page_id="2", limit=2
         )
         assert len(result_page2.items) == 2
-        assert result_page2.next_page_id == '4'
+        assert result_page2.next_page_id == "4"
 
         # Test last page
         result_page3 = await service.search_app_conversation_start_tasks(
-            page_id='4', limit=2
+            page_id="4", limit=2
         )
         assert len(result_page3.items) == 1
         assert result_page3.next_page_id is None
@@ -521,13 +521,13 @@ class TestSQLAppConversationStartTaskService:
         # Create and save tasks
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             request=sample_request,
         )
@@ -552,21 +552,21 @@ class TestSQLAppConversationStartTaskService:
         # Create tasks with different conversation IDs
         task1 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             app_conversation_id=conversation_id1,
             request=sample_request,
         )
         task2 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.READY,
             app_conversation_id=conversation_id2,
             request=sample_request,
         )
         task3 = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             app_conversation_id=conversation_id1,
             request=sample_request,
@@ -600,22 +600,22 @@ class TestSQLAppConversationStartTaskService:
         """Test search and count with user isolation."""
         # Create services for different users
         user1_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user1'
+            session=async_session, user_id="user1"
         )
         user2_service = SQLAppConversationStartTaskService(
-            session=async_session, user_id='user2'
+            session=async_session, user_id="user2"
         )
 
         # Create tasks for different users
         user1_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user1',
+            created_by_user_id="user1",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )
         user2_task = AppConversationStartTask(
             id=uuid4(),
-            created_by_user_id='user2',
+            created_by_user_id="user2",
             status=AppConversationStartTaskStatus.WORKING,
             request=sample_request,
         )

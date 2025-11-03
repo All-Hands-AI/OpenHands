@@ -51,9 +51,9 @@ class FilesystemEventService(EventService):
         """Convert timestamp to YYYYMMDDHHMMSS format."""
         if isinstance(timestamp, str):
             # Parse ISO format timestamp string
-            dt = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-            return dt.strftime('%Y%m%d%H%M%S')
-        return timestamp.strftime('%Y%m%d%H%M%S')
+            dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            return dt.strftime("%Y%m%d%H%M%S")
+        return timestamp.strftime("%Y%m%d%H%M%S")
 
     def _get_event_filename(self, conversation_id: UUID, event: Event) -> str:
         """Generate filename using YYYYMMDDHHMMSS_kind_id.hex format."""
@@ -61,10 +61,10 @@ class FilesystemEventService(EventService):
         kind = event.__class__.__name__
         # Handle both UUID objects and string UUIDs
         if isinstance(event.id, str):
-            id_hex = event.id.replace('-', '')
+            id_hex = event.id.replace("-", "")
         else:
             id_hex = event.id.hex
-        return f'{timestamp_str}_{kind}_{id_hex}'
+        return f"{timestamp_str}_{kind}_{id_hex}"
 
     def _save_event_to_file(self, conversation_id: UUID, event: Event) -> None:
         """Save an event to a file."""
@@ -72,9 +72,9 @@ class FilesystemEventService(EventService):
         filename = self._get_event_filename(conversation_id, event)
         filepath = events_path / filename
 
-        with open(filepath, 'w') as f:
+        with open(filepath, "w") as f:
             # Use model_dump with mode='json' to handle UUID serialization
-            data = event.model_dump(mode='json')
+            data = event.model_dump(mode="json")
             f.write(json.dumps(data, indent=2))
 
     def _load_events_from_files(self, file_paths: list[Path]) -> list[Event]:
@@ -100,7 +100,7 @@ class FilesystemEventService(EventService):
         if conversation_id:
             search_path = self.events_dir / str(conversation_id) / pattern
         else:
-            search_path = self.events_dir / '*' / pattern
+            search_path = self.events_dir / "*" / pattern
 
         files = glob.glob(str(search_path))
         return sorted([Path(f) for f in files])
@@ -108,12 +108,12 @@ class FilesystemEventService(EventService):
     def _parse_filename(self, filename: str) -> dict[str, str] | None:
         """Parse filename to extract timestamp, kind, and event_id."""
         try:
-            parts = filename.split('_')
+            parts = filename.split("_")
             if len(parts) >= 3:
                 timestamp_str = parts[0]
-                kind = '_'.join(parts[1:-1])  # Handle kinds with underscores
+                kind = "_".join(parts[1:-1])  # Handle kinds with underscores
                 event_id = parts[-1]
-                return {'timestamp': timestamp_str, 'kind': kind, 'event_id': event_id}
+                return {"timestamp": timestamp_str, "kind": kind, "event_id": event_id}
         except Exception:
             pass
         return None
@@ -173,14 +173,14 @@ class FilesystemEventService(EventService):
                 continue
 
             # Check kind filter
-            if kind__eq and filename_info['kind'] != kind__eq:
+            if kind__eq and filename_info["kind"] != kind__eq:
                 continue
 
             # Check timestamp filters
             if timestamp__gte or timestamp__lt:
                 try:
                     file_timestamp = datetime.strptime(
-                        filename_info['timestamp'], '%Y%m%d%H%M%S'
+                        filename_info["timestamp"], "%Y%m%d%H%M%S"
                     )
                     if timestamp__gte and file_timestamp < timestamp__gte:
                         continue
@@ -196,13 +196,13 @@ class FilesystemEventService(EventService):
     async def get_event(self, event_id: str) -> Event | None:
         """Get the event with the given id, or None if not found."""
         # Convert event_id to hex format (remove dashes) for filename matching
-        if isinstance(event_id, str) and '-' in event_id:
-            id_hex = event_id.replace('-', '')
+        if isinstance(event_id, str) and "-" in event_id:
+            id_hex = event_id.replace("-", "")
         else:
             id_hex = event_id
 
         # Use glob pattern to find files ending with the event_id
-        pattern = f'*_{id_hex}'
+        pattern = f"*_{id_hex}"
         files = self._get_event_files_by_pattern(pattern)
 
         if not files:
@@ -236,7 +236,7 @@ class FilesystemEventService(EventService):
     ) -> EventPage:
         """Search for events matching the given filters."""
         # Build the search pattern
-        pattern = '*'
+        pattern = "*"
         files = self._get_event_files_by_pattern(pattern, conversation_id__eq)
 
         files = await self._filter_files_by_conversation(files)
@@ -282,7 +282,7 @@ class FilesystemEventService(EventService):
     ) -> int:
         """Count events matching the given filters."""
         # Build the search pattern
-        pattern = '*'
+        pattern = "*"
         files = self._get_event_files_by_pattern(pattern, conversation_id__eq)
 
         files = await self._filter_files_by_conversation(files)
@@ -302,7 +302,7 @@ class FilesystemEventService(EventService):
         )
         if not conversation:
             # This is either an illegal state or somebody is trying to hack
-            raise OpenHandsError('No such conversation: {conversaiont_id}')
+            raise OpenHandsError("No such conversation: {conversaiont_id}")
         self._save_event_to_file(conversation_id, event)
 
 
@@ -322,5 +322,5 @@ class FilesystemEventServiceInjector(EventServiceInjector):
 
             yield FilesystemEventService(
                 app_conversation_info_service=app_conversation_info_service,
-                events_dir=persistence_dir / 'v1' / 'events',
+                events_dir=persistence_dir / "v1" / "events",
             )

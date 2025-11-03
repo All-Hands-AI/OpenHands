@@ -111,10 +111,10 @@ class ClusteredConversationManager(StandaloneConversationManager):
         This method creates a Redis pub/sub subscription to receive messages from
         other server instances. It runs in a continuous loop until cancelled.
         """
-        logger.debug('_redis_subscribe')
+        logger.debug("_redis_subscribe")
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
-        await pubsub.subscribe('session_msg')
+        await pubsub.subscribe("session_msg")
         while should_continue():
             try:
                 message = await pubsub.get_message(
@@ -123,12 +123,12 @@ class ClusteredConversationManager(StandaloneConversationManager):
                 if message:
                     await self._process_message(message)
             except asyncio.CancelledError:
-                logger.debug('redis_subscribe_cancelled')
+                logger.debug("redis_subscribe_cancelled")
                 return
             except Exception as e:
                 try:
                     asyncio.get_running_loop()
-                    logger.exception(f'error_reading_from_redis:{str(e)}')
+                    logger.exception(f"error_reading_from_redis:{str(e)}")
                 except RuntimeError:
                     # Loop has been shut down, exit gracefully
                     return
@@ -144,46 +144,46 @@ class ClusteredConversationManager(StandaloneConversationManager):
         Args:
             message: The Redis pub/sub message containing the action to perform
         """
-        data = json.loads(message['data'])
-        logger.debug(f'got_published_message:{message}')
-        message_type = data['message_type']
+        data = json.loads(message["data"])
+        logger.debug(f"got_published_message:{message}")
+        message_type = data["message_type"]
 
-        if message_type == 'event':
+        if message_type == "event":
             # Forward an event to a local session if it exists
-            sid = data['sid']
+            sid = data["sid"]
             session = self._local_agent_loops_by_sid.get(sid)
             if session:
-                await session.dispatch(data['data'])
-        elif message_type == 'close_session':
+                await session.dispatch(data["data"])
+        elif message_type == "close_session":
             # Close a local session if it exists
-            sid = data['sid']
+            sid = data["sid"]
             if sid in self._local_agent_loops_by_sid:
                 await self._close_session(sid)
-        elif message_type == 'session_closing':
+        elif message_type == "session_closing":
             # Handle connections to a session that is closing on another node
             # We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
-            sid = data['sid']
-            user_id = data['user_id']
-            logger.debug(f'session_closing:{sid}')
+            sid = data["sid"]
+            user_id = data["user_id"]
+            logger.debug(f"session_closing:{sid}")
 
             # Create a list of items to process to avoid modifying dict during iteration
             items = list(self._local_connection_id_to_session_id.items())
             for connection_id, local_sid in items:
                 if sid == local_sid:
                     logger.warning(
-                        f'local_connection_to_closing_session:{connection_id}:{sid}'
+                        f"local_connection_to_closing_session:{connection_id}:{sid}"
                     )
                     await self._handle_remote_conversation_stopped(
                         user_id, connection_id
                     )
-        elif message_type == 'llm_completion':
+        elif message_type == "llm_completion":
             # Request extraneous llm completion from session's LLM Registry
-            sid = data['sid']
-            service_id = data['service_id']
-            messages = data['messages']
-            llm_config = data['llm_config']
-            query_id = data['query_id']
+            sid = data["sid"]
+            service_id = data["service_id"]
+            messages = data["messages"]
+            llm_config = data["llm_config"]
+            query_id = data["query_id"]
 
             session = self._local_agent_loops_by_sid.get(sid)
             if session:
@@ -195,44 +195,44 @@ class ClusteredConversationManager(StandaloneConversationManager):
                     messages,
                 )
                 await self._get_redis_client().publish(
-                    'session_msg',
+                    "session_msg",
                     json.dumps(
                         {
-                            'query_id': query_id,
-                            'response': response,
-                            'message_type': 'llm_completion_response',
+                            "query_id": query_id,
+                            "response": response,
+                            "message_type": "llm_completion_response",
                         }
                     ),
                 )
-        elif message_type == 'llm_completion_response':
-            query_id = data['query_id']
+        elif message_type == "llm_completion_response":
+            query_id = data["query_id"]
             llm_response = self._llm_responses.get(query_id)
             if llm_response:
-                llm_response.response = data['response']
+                llm_response.response = data["response"]
                 llm_response.flag.set()
 
     def _get_redis_client(self):
-        return getattr(self.sio.manager, 'redis', None)
+        return getattr(self.sio.manager, "redis", None)
 
     def _get_redis_conversation_key(self, user_id: str | None, conversation_id: str):
-        return f'ohcnv:{user_id}:{conversation_id}'
+        return f"ohcnv:{user_id}:{conversation_id}"
 
     def _get_redis_connection_key(
         self, user_id: str, conversation_id: str, connection_id: str
     ):
-        return f'ohcnct:{user_id}:{conversation_id}:{connection_id}'
+        return f"ohcnct:{user_id}:{conversation_id}:{connection_id}"
 
     async def _get_event_store(self, sid, user_id) -> EventStoreABC | None:
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
-            logger.debug('found_local_agent_loop', extra={'sid': sid})
+            logger.debug("found_local_agent_loop", extra={"sid": sid})
             return session.agent_session.event_stream
 
         redis = self._get_redis_client()
         key = self._get_redis_conversation_key(user_id, sid)
         value = await redis.get(key)
         if value:
-            logger.debug('found_remote_agent_loop', extra={'sid': sid})
+            logger.debug("found_remote_agent_loop", extra={"sid": sid})
             return EventStore(sid, self.file_store, user_id)
 
         return None
@@ -271,13 +271,13 @@ class ClusteredConversationManager(StandaloneConversationManager):
         if filter_to_sids is not None and not filter_to_sids:
             return set()
         if user_id:
-            pattern = self._get_redis_conversation_key(user_id, '*')
+            pattern = self._get_redis_conversation_key(user_id, "*")
         else:
-            pattern = self._get_redis_conversation_key('*', '*')
+            pattern = self._get_redis_conversation_key("*", "*")
         redis = self._get_redis_client()
         result = set()
         async for key in redis.scan_iter(pattern):
-            conversation_id = key.decode().split(':')[2]
+            conversation_id = key.decode().split(":")[2]
             if filter_to_sids is None or conversation_id in filter_to_sids:
                 result.add(conversation_id)
         return result
@@ -301,13 +301,13 @@ class ClusteredConversationManager(StandaloneConversationManager):
         if filter_to_sids is not None and not filter_to_sids:
             return {}
         if user_id:
-            pattern = self._get_redis_connection_key(user_id, '*', '*')
+            pattern = self._get_redis_connection_key(user_id, "*", "*")
         else:
-            pattern = self._get_redis_connection_key('*', '*', '*')
+            pattern = self._get_redis_connection_key("*", "*", "*")
         redis = self._get_redis_client()
         result = {}
         async for key in redis.scan_iter(pattern):
-            parts = key.decode().split(':')
+            parts = key.decode().split(":")
             conversation_id = parts[2]
             connection_id = parts[3]
             if filter_to_sids is None or conversation_id in filter_to_sids:
@@ -341,15 +341,15 @@ class ClusteredConversationManager(StandaloneConversationManager):
         try:
             redis_client = self._get_redis_client()
             await redis_client.publish(
-                'session_msg',
+                "session_msg",
                 json.dumps(
                     {
-                        'message_type': 'llm_completion',
-                        'query_id': query_id,
-                        'sid': sid,
-                        'service_id': service_id,
-                        'llm_config': llm_config,
-                        'message': messages,
+                        "message_type": "llm_completion",
+                        "query_id": query_id,
+                        "sid": sid,
+                        "service_id": service_id,
+                        "llm_config": llm_config,
+                        "message": messages,
                     }
                 ),
             )
@@ -360,9 +360,9 @@ class ClusteredConversationManager(StandaloneConversationManager):
             if query.response:
                 return query.response
 
-            raise Exception('Failed to perform LLM completion')
+            raise Exception("Failed to perform LLM completion")
         except TimeoutError:
-            raise Exception('Timeout occured')
+            raise Exception("Timeout occured")
 
     async def send_event_to_conversation(self, sid: str, data: dict):
         if not sid:
@@ -374,16 +374,16 @@ class ClusteredConversationManager(StandaloneConversationManager):
             # The session is running on another node
             redis_client = self._get_redis_client()
             await redis_client.publish(
-                'session_msg',
-                json.dumps({'message_type': 'event', 'sid': sid, 'data': data}),
+                "session_msg",
+                json.dumps({"message_type": "event", "sid": sid, "data": data}),
             )
 
     async def close_session(self, sid: str):
         # Send a message to other nodes telling them to close this session if they have the agent loop, and close any connections.
         redis_client = self._get_redis_client()
         await redis_client.publish(
-            'session_msg',
-            json.dumps({'message_type': 'close_session', 'sid': sid}),
+            "session_msg",
+            json.dumps({"message_type": "close_session", "sid": sid}),
         )
         await self._close_session(sid)
 
@@ -407,10 +407,10 @@ class ClusteredConversationManager(StandaloneConversationManager):
         event_store = await self._get_event_store(sid, user_id)
         if not event_store:
             logger.error(
-                f'No event stream after starting agent loop: {sid}',
-                extra={'sid': sid},
+                f"No event stream after starting agent loop: {sid}",
+                extra={"sid": sid},
             )
-            raise RuntimeError(f'no_event_stream:{sid}')
+            raise RuntimeError(f"no_event_stream:{sid}")
 
         return AgentLoopInfo(
             conversation_id=sid,
@@ -429,7 +429,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
             except Exception:
                 try:
                     asyncio.get_running_loop()
-                    logger.exception('error_reading_from_redis')
+                    logger.exception("error_reading_from_redis")
                 except RuntimeError:
                     return  # Loop has been shut down
 
@@ -447,10 +447,10 @@ class ClusteredConversationManager(StandaloneConversationManager):
         redis = self._get_redis_client()
 
         # Build a mapping of conversation_id -> user_id from existing Redis keys
-        pattern = self._get_redis_conversation_key('*', '*')
+        pattern = self._get_redis_conversation_key("*", "*")
         conversation_user_ids = {}
         async for key in redis.scan_iter(pattern):
-            parts = key.decode().split(':')
+            parts = key.decode().split(":")
             conversation_user_ids[parts[2]] = parts[1]
 
         pipe = redis.pipeline()
@@ -484,8 +484,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
         await pipe.execute()
 
     async def _disconnect_from_stopped(self):
-        """
-        Handle connections to conversations that have stopped unexpectedly.
+        """Handle connections to conversations that have stopped unexpectedly.
 
         This method detects when a local connection is pointing to a conversation
         that was running on another server that has crashed or been terminated
@@ -505,10 +504,10 @@ class ClusteredConversationManager(StandaloneConversationManager):
 
         # Get the list of sessions which are actually running
         redis = self._get_redis_client()
-        pattern = self._get_redis_conversation_key('*', '*')
+        pattern = self._get_redis_conversation_key("*", "*")
         running_remote = set()
         async for key in redis.scan_iter(pattern):
-            parts = key.decode().split(':')
+            parts = key.decode().split(":")
             running_remote.add(parts[2])
 
         # Get the list of connections locally where the remote agentloop has died.
@@ -521,7 +520,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
         for connection_id, conversation_id in items:
             if conversation_id in stopped_conversation_ids:
                 logger.warning(
-                    f'local_connection_to_stopped_conversation:{connection_id}:{conversation_id}'
+                    f"local_connection_to_stopped_conversation:{connection_id}:{conversation_id}"
                 )
                 # Look up the user_id from the database
                 with session_maker() as session:
@@ -583,12 +582,12 @@ class ClusteredConversationManager(StandaloneConversationManager):
         while should_continue():
             try:
                 logger.info(
-                    'conversation_manager',
+                    "conversation_manager",
                     extra={
-                        'attached': len(self._active_conversations),
-                        'detached': len(self._detached_conversations),
-                        'running': len(self._local_agent_loops_by_sid),
-                        'local_conn': len(self._local_connection_id_to_session_id),
+                        "attached": len(self._active_conversations),
+                        "detached": len(self._detached_conversations),
+                        "running": len(self._local_agent_loops_by_sid),
+                        "local_conn": len(self._local_connection_id_to_session_id),
                     },
                 )
                 await self._disconnect_from_stopped()
@@ -608,11 +607,11 @@ class ClusteredConversationManager(StandaloneConversationManager):
                 )
                 return
             except Exception:
-                logger.warning('error_cleaning_stale', exc_info=True, stack_info=True)
+                logger.warning("error_cleaning_stale", exc_info=True, stack_info=True)
                 await asyncio.sleep(_CLEANUP_INTERVAL_SECONDS)
 
     async def _close_session(self, sid: str):
-        logger.info(f'_close_session:{sid}')
+        logger.info(f"_close_session:{sid}")
         redis = self._get_redis_client()
 
         # Keys to delete from redis
@@ -626,14 +625,14 @@ class ClusteredConversationManager(StandaloneConversationManager):
         )
 
         if connection_ids_to_remove:
-            pattern = self._get_redis_connection_key('*', sid, '*')
+            pattern = self._get_redis_connection_key("*", sid, "*")
             async for key in redis.scan_iter(pattern):
-                parts = key.decode().split(':')
+                parts = key.decode().split(":")
                 connection_id = parts[3]
                 if connection_id in connection_ids_to_remove:
                     to_delete.append(key)
 
-            logger.info(f'removing connections: {connection_ids_to_remove}')
+            logger.info(f"removing connections: {connection_ids_to_remove}")
             for connection_id in connection_ids_to_remove:
                 await self.sio.disconnect(connection_id)
                 self._local_connection_id_to_session_id.pop(connection_id, None)
@@ -641,7 +640,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
         # Delete the conversation key if running locally
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
-            logger.info(f'no_session_to_close:{sid}')
+            logger.info(f"no_session_to_close:{sid}")
             if to_delete:
                 redis.delete(*to_delete)
             return
@@ -652,34 +651,34 @@ class ClusteredConversationManager(StandaloneConversationManager):
             redis_client = self._get_redis_client()
             if redis_client:
                 await redis_client.publish(
-                    'session_msg',
+                    "session_msg",
                     json.dumps(
                         {
-                            'sid': session.sid,
-                            'message_type': 'session_closing',
-                            'user_id': session.user_id,
+                            "sid": session.sid,
+                            "message_type": "session_closing",
+                            "user_id": session.user_id,
                         }
                     ),
                 )
         except Exception:
             logger.info(
-                'error_publishing_close_session_event', exc_info=True, stack_info=True
+                "error_publishing_close_session_event", exc_info=True, stack_info=True
             )
 
         await session.close()
-        logger.info(f'closed_session:{session.sid}')
+        logger.info(f"closed_session:{session.sid}")
 
     async def get_agent_loop_info(self, user_id=None, filter_to_sids=None):
         # conversation_ids = await self.get_running_agent_loops(user_id=user_id, filter_to_sids=filter_to_sids)
         redis = self._get_redis_client()
         results = []
         if user_id:
-            pattern = self._get_redis_conversation_key(user_id, '*')
+            pattern = self._get_redis_conversation_key(user_id, "*")
         else:
-            pattern = self._get_redis_conversation_key('*', '*')
+            pattern = self._get_redis_conversation_key("*", "*")
 
         async for key in redis.scan_iter(pattern):
-            uid, conversation_id = key.decode().split(':')[1:]
+            uid, conversation_id = key.decode().split(":")[1:]
             if filter_to_sids is None or conversation_id in filter_to_sids:
                 results.append(
                     AgentLoopInfo(
@@ -780,8 +779,8 @@ class ClusteredConversationManager(StandaloneConversationManager):
                     )
             except Exception as e:
                 logger.error(
-                    f'Error invoking conversation callbacks for {sid}: {str(e)}',
-                    extra={'session_id': sid, 'error': str(e)},
+                    f"Error invoking conversation callbacks for {sid}: {str(e)}",
+                    extra={"session_id": sid, "error": str(e)},
                     exc_info=True,
                 )
 
@@ -790,7 +789,7 @@ class ClusteredConversationManager(StandaloneConversationManager):
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
                 conversation_callback_handler,
-                'conversation_callbacks',
+                "conversation_callbacks",
             )
         except ValueError:
             # Already subscribed - this can happen if the method is called multiple times

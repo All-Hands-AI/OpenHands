@@ -19,8 +19,8 @@ from sqlalchemy.util import await_only
 from openhands.app_server.services.injector import Injector, InjectorState
 
 _logger = logging.getLogger(__name__)
-DB_SESSION_ATTR = 'db_session'
-DB_SESSION_KEEP_OPEN_ATTR = 'db_session_keep_open'
+DB_SESSION_ATTR = "db_session"
+DB_SESSION_KEEP_OPEN_ATTR = "db_session_keep_open"
 
 
 class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
@@ -43,25 +43,25 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
     _session_maker: sessionmaker | None = PrivateAttr(default=None)
     _async_session_maker: async_sessionmaker | None = PrivateAttr(default=None)
 
-    @model_validator(mode='after')
+    @model_validator(mode="after")
     def fill_empty_fields(self):
         """Override any defaults with values from legacy enviroment variables"""
         if self.host is None:
-            self.host = os.getenv('DB_HOST')
+            self.host = os.getenv("DB_HOST")
         if self.port is None:
-            self.port = int(os.getenv('DB_PORT', '5432'))
+            self.port = int(os.getenv("DB_PORT", "5432"))
         if self.name is None:
-            self.name = os.getenv('DB_NAME', 'openhands')
+            self.name = os.getenv("DB_NAME", "openhands")
         if self.user is None:
-            self.user = os.getenv('DB_USER', 'postgres')
+            self.user = os.getenv("DB_USER", "postgres")
         if self.password is None:
-            self.password = SecretStr(os.getenv('DB_PASS', 'postgres').strip())
+            self.password = SecretStr(os.getenv("DB_PASS", "postgres").strip())
         if self.gcp_db_instance is None:
-            self.gcp_db_instance = os.getenv('GCP_DB_INSTANCE')
+            self.gcp_db_instance = os.getenv("GCP_DB_INSTANCE")
         if self.gcp_project is None:
-            self.gcp_project = os.getenv('GCP_PROJECT')
+            self.gcp_project = os.getenv("GCP_PROJECT")
         if self.gcp_region is None:
-            self.gcp_region = os.getenv('GCP_REGION')
+            self.gcp_region = os.getenv("GCP_REGION")
         return self
 
     def _create_gcp_db_connection(self):
@@ -69,12 +69,12 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
         from google.cloud.sql.connector import Connector
 
         connector = Connector()
-        instance_string = f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}'
+        instance_string = f"{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}"
         password = self.password
         assert password is not None
         return connector.connect(
             instance_string,
-            'pg8000',
+            "pg8000",
             user=self.user,
             password=password.get_secret_value(),
             db=self.name,
@@ -89,8 +89,8 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             password = self.password
             assert password is not None
             conn = await connector.connect_async(
-                f'{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}',
-                'asyncpg',
+                f"{self.gcp_project}:{self.gcp_region}:{self.gcp_db_instance}",
+                "asyncpg",
                 user=self.user,
                 password=password.get_secret_value(),
                 db=self.name,
@@ -99,7 +99,7 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
 
     def _create_gcp_engine(self):
         engine = create_engine(
-            'postgresql+pg8000://',
+            "postgresql+pg8000://",
             creator=self._create_gcp_db_connection,
             pool_size=self.pool_size,
             max_overflow=self.max_overflow,
@@ -136,7 +136,7 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
             )
 
         return create_async_engine(
-            'postgresql+asyncpg://',
+            "postgresql+asyncpg://",
             creator=adapted_creator,
             pool_size=self.pool_size,
             max_overflow=self.max_overflow,
@@ -159,15 +159,15 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
                     ) from e
                 password = self.password.get_secret_value() if self.password else None
                 url = URL.create(
-                    'postgresql+asyncpg',
-                    username=self.user or '',
+                    "postgresql+asyncpg",
+                    username=self.user or "",
                     password=password,
                     host=self.host,
                     port=self.port,
                     database=self.name,
                 )
             else:
-                url = f'sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db'
+                url = f"sqlite+aiosqlite:///{str(self.persistence_dir)}/openhands.db"
 
             if self.host:
                 async_engine = create_async_engine(
@@ -201,15 +201,15 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
                     ) from e
                 password = self.password.get_secret_value() if self.password else None
                 url = URL.create(
-                    'postgresql+pg8000',
-                    username=self.user or '',
+                    "postgresql+pg8000",
+                    username=self.user or "",
                     password=password,
                     host=self.host,
                     port=self.port,
                     database=self.name,
                 )
             else:
-                url = f'sqlite:///{self.persistence_dir}/openhands.db'
+                url = f"sqlite:///{self.persistence_dir}/openhands.db"
             engine = create_engine(
                 url,
                 pool_size=self.pool_size,
@@ -283,7 +283,7 @@ class DbSessionInjector(BaseModel, Injector[async_sessionmaker]):
                 if not getattr(state, DB_SESSION_KEEP_OPEN_ATTR, False):
                     await db_session.commit()
             except Exception:
-                _logger.exception('Rolling back SQL due to error', stack_info=True)
+                _logger.exception("Rolling back SQL due to error", stack_info=True)
                 await db_session.rollback()
                 raise
             finally:

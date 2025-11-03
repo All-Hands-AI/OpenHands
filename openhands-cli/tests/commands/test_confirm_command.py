@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, call, patch
+
 import pytest
+from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 
 from openhands_cli.runner import ConversationRunner
-from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 
 CONV_ID = "test-conversation-id"
 
@@ -49,7 +50,9 @@ def test_toggle_confirmation_mode_transitions(
     runner = ConversationRunner(make_conv(enabled=start_enabled))
     target_conv = make_conv(enabled=expected_enabled)
 
-    with patch("openhands_cli.runner.setup_conversation", return_value=target_conv) as mock_setup:
+    with patch(
+        "openhands_cli.runner.setup_conversation", return_value=target_conv
+    ) as mock_setup:
         # Act
         runner.toggle_confirmation_mode()
 
@@ -58,11 +61,15 @@ def test_toggle_confirmation_mode_transitions(
         assert runner.conversation is target_conv
 
         # Assert setup called with same conversation ID + correct analyzer flag
-        mock_setup.assert_called_once_with(CONV_ID, include_security_analyzer=include_security_analyzer)
+        mock_setup.assert_called_once_with(
+            CONV_ID, include_security_analyzer=include_security_analyzer
+        )
 
         # Assert policy applied to the *new* conversation
         target_conv.set_confirmation_policy.assert_called_once()
-        assert isinstance(target_conv.set_confirmation_policy.call_args.args[0], expected_policy_cls)
+        assert isinstance(
+            target_conv.set_confirmation_policy.call_args.args[0], expected_policy_cls
+        )
 
 
 # ---------- Conversation ID is preserved across multiple toggles ----------
@@ -88,12 +95,19 @@ def test_maintains_conversation_id_across_toggles(runner_disabled: ConversationR
 
 
 # ---------- Idempotency under rapid alternating toggles ----------
-def test_rapid_alternating_toggles_produce_expected_states(runner_disabled: ConversationRunner):
+def test_rapid_alternating_toggles_produce_expected_states(
+    runner_disabled: ConversationRunner,
+):
     enabled_conv = make_conv(enabled=True)
     disabled_conv = make_conv(enabled=False)
 
     with patch("openhands_cli.runner.setup_conversation") as mock_setup:
-        mock_setup.side_effect = [enabled_conv, disabled_conv, enabled_conv, disabled_conv]
+        mock_setup.side_effect = [
+            enabled_conv,
+            disabled_conv,
+            enabled_conv,
+            disabled_conv,
+        ]
 
         # Start disabled
         assert runner_disabled.is_confirmation_mode_active is False

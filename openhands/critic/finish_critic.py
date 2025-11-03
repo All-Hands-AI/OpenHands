@@ -18,9 +18,9 @@ class AgentFinishedCritic(BaseCritic):
         last_action = next((h for h in reversed(events) if isinstance(h, Action)), None)
 
         if git_patch is not None and len(git_patch.strip()) == 0:
-            return CriticResult(score=0, message='Git patch is empty.')
+            return CriticResult(score=0, message="Git patch is empty.")
 
         if isinstance(last_action, AgentFinishAction):
-            return CriticResult(score=1, message='Agent finished.')
+            return CriticResult(score=1, message="Agent finished.")
         else:
-            return CriticResult(score=0, message='Agent did not finish.')
+            return CriticResult(score=0, message="Agent did not finish.")

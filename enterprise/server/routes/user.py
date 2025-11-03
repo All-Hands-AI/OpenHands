@@ -38,11 +38,11 @@ from openhands.server.user_auth import (
     get_user_id,
 )
 
-saas_user_router = APIRouter(prefix='/api/user', dependencies=get_dependencies())
+saas_user_router = APIRouter(prefix="/api/user", dependencies=get_dependencies())
 token_manager = TokenManager()
 
 
-@saas_user_router.get('/installations', response_model=list[str])
+@saas_user_router.get("/installations", response_model=list[str])
 async def saas_get_user_installations(
     provider: ProviderType,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
@@ -65,9 +65,9 @@ async def saas_get_user_installations(
     )
 
 
-@saas_user_router.get('/repositories', response_model=list[Repository])
+@saas_user_router.get("/repositories", response_model=list[Repository])
 async def saas_get_user_repositories(
-    sort: str = 'pushed',
+    sort: str = "pushed",
     selected_provider: ProviderType | None = None,
     page: int | None = None,
     per_page: int | None = None,
@@ -96,7 +96,7 @@ async def saas_get_user_repositories(
     )
 
 
-@saas_user_router.get('/info', response_model=User)
+@saas_user_router.get("/info", response_model=User)
 async def saas_get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -105,22 +105,22 @@ async def saas_get_user(
     if not provider_tokens:
         if not access_token:
             return JSONResponse(
-                content='User is not authenticated.',
+                content="User is not authenticated.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
         user_info = await token_manager.get_user_info(access_token.get_secret_value())
         if not user_info:
             return JSONResponse(
-                content='Failed to retrieve user_info.',
+                content="Failed to retrieve user_info.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
         retval = await _check_idp(
             access_token=access_token,
             default_value=User(
-                id=(user_info.get('sub') if user_info else '') or '',
-                login=(user_info.get('preferred_username') if user_info else '') or '',
-                avatar_url='',
-                email=user_info.get('email') if user_info else None,
+                id=(user_info.get("sub") if user_info else "") or "",
+                login=(user_info.get("preferred_username") if user_info else "") or "",
+                avatar_url="",
+                email=user_info.get("email") if user_info else None,
             ),
             user_info=user_info,
         )
@@ -132,12 +132,12 @@ async def saas_get_user(
     )
 
 
-@saas_user_router.get('/search/repositories', response_model=list[Repository])
+@saas_user_router.get("/search/repositories", response_model=list[Repository])
 async def saas_search_repositories(
     query: str,
     per_page: int = 5,
-    sort: str = 'stars',
-    order: str = 'desc',
+    sort: str = "stars",
+    order: str = "desc",
     selected_provider: ProviderType | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -163,7 +163,7 @@ async def saas_search_repositories(
     )
 
 
-@saas_user_router.get('/suggested-tasks', response_model=list[SuggestedTask])
+@saas_user_router.get("/suggested-tasks", response_model=list[SuggestedTask])
 async def saas_get_suggested_tasks(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -188,7 +188,7 @@ async def saas_get_suggested_tasks(
     )
 
 
-@saas_user_router.get('/repository/branches', response_model=PaginatedBranchesResponse)
+@saas_user_router.get("/repository/branches", response_model=PaginatedBranchesResponse)
 async def saas_get_repository_branches(
     repository: str,
     page: int = 1,
@@ -223,7 +223,7 @@ async def saas_get_repository_branches(
     )
 
 
-@saas_user_router.get('/search/branches', response_model=list[Branch])
+@saas_user_router.get("/search/branches", response_model=list[Branch])
 async def saas_search_branches(
     repository: str,
     query: str,
@@ -253,7 +253,7 @@ async def saas_search_branches(
 
 
 @saas_user_router.get(
-    '/repository/{repository_name:path}/microagents',
+    "/repository/{repository_name:path}/microagents",
     response_model=list[MicroagentResponse],
 )
 async def saas_get_repository_microagents(
@@ -298,13 +298,13 @@ async def saas_get_repository_microagents(
 
 
 @saas_user_router.get(
-    '/repository/{repository_name:path}/microagents/content',
+    "/repository/{repository_name:path}/microagents/content",
     response_model=MicroagentContentResponse,
 )
 async def saas_get_repository_microagent_content(
     repository_name: str,
     file_path: str = Query(
-        ..., description='Path to the microagent file within the repository'
+        ..., description="Path to the microagent file within the repository"
     ),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -328,7 +328,7 @@ async def saas_get_repository_microagent_content(
     if not provider_tokens:
         retval = await _check_idp(
             access_token=access_token,
-            default_value=MicroagentContentResponse(content='', path=''),
+            default_value=MicroagentContentResponse(content="", path=""),
         )
         if retval is not None:
             return retval
@@ -349,7 +349,7 @@ async def _check_idp(
 ):
     if not access_token:
         return JSONResponse(
-            content='User is not authenticated.',
+            content="User is not authenticated.",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
     user_info = (
@@ -359,17 +359,17 @@ async def _check_idp(
     )
     if not user_info:
         return JSONResponse(
-            content='Failed to retrieve user_info.',
+            content="Failed to retrieve user_info.",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-    idp: str | None = user_info.get('identity_provider')
+    idp: str | None = user_info.get("identity_provider")
     if not idp:
         return JSONResponse(
-            content='IDP not found.',
+            content="IDP not found.",
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-    if ':' in idp:
-        idp, _ = idp.rsplit(':', 1)
+    if ":" in idp:
+        idp, _ = idp.rsplit(":", 1)
 
     # Will return empty dict if IDP doesn't support provider tokens
     if not await token_manager.get_idp_tokens_from_keycloak(

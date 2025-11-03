@@ -47,7 +47,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '2.2'
+    VERSION = "2.2"
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -82,7 +82,7 @@ class CodeActAgent(Agent):
         - config (AgentConfig): The configuration for this agent
         """
         super().__init__(config, llm_registry)
-        self.pending_actions: deque['Action'] = deque()
+        self.pending_actions: deque["Action"] = deque()
         self.reset()
         self.tools = self._get_tools()
 
@@ -90,7 +90,7 @@ class CodeActAgent(Agent):
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
         self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
-        logger.debug(f'Using condenser: {type(self.condenser)}')
+        logger.debug(f"Using condenser: {type(self.condenser)}")
 
         # Override with router if needed
         self.llm = self.llm_registry.get_router(self.config)
@@ -99,16 +99,16 @@ class CodeActAgent(Agent):
     def prompt_manager(self) -> PromptManager:
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+                prompt_dir=os.path.join(os.path.dirname(__file__), "prompts"),
                 system_prompt_filename=self.config.resolved_system_prompt_filename,
             )
 
         return self._prompt_manager
 
-    def _get_tools(self) -> list['ChatCompletionToolParam']:
+    def _get_tools(self) -> list["ChatCompletionToolParam"]:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
-        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-4', 'o3', 'o1', 'o4']
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ["gpt-4", "o3", "o1", "o4"]
 
         use_short_tool_desc = False
         if self.llm is not None:
@@ -132,8 +132,8 @@ class CodeActAgent(Agent):
         if self.config.enable_condensation_request:
             tools.append(CondensationRequestTool)
         if self.config.enable_browsing:
-            if sys.platform == 'win32':
-                logger.warning('Windows runtime does not support browsing yet')
+            if sys.platform == "win32":
+                logger.warning("Windows runtime does not support browsing yet")
             else:
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
@@ -158,7 +158,7 @@ class CodeActAgent(Agent):
         # Only clear pending actions, not LLM metrics
         self.pending_actions.clear()
 
-    def step(self, state: State) -> 'Action':
+    def step(self, state: State) -> "Action":
         """Performs one step using the CodeAct Agent.
 
         This includes gathering info on previous steps and prompting the model to make a command to execute.
@@ -186,7 +186,7 @@ class CodeActAgent(Agent):
 
         # if we're done, go back
         latest_user_message = state.get_last_user_message()
-        if latest_user_message and latest_user_message.content.strip() == '/exit':
+        if latest_user_message and latest_user_message.content.strip() == "/exit":
             return AgentFinishAction()
 
         # Condense the events from the state. If we get a view we'll pass those
@@ -202,24 +202,24 @@ class CodeActAgent(Agent):
                 return condensation_action
 
         logger.debug(
-            f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
+            f"Processing {len(condensed_history)} events from a total of {len(state.history)} events"
         )
 
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': messages,
+            "messages": messages,
         }
-        params['tools'] = check_tools(self.tools, self.llm.config)
-        params['extra_body'] = {
-            'metadata': state.to_llm_metadata(
+        params["tools"] = check_tools(self.tools, self.llm.config)
+        params["extra_body"] = {
+            "metadata": state.to_llm_metadata(
                 model_name=self.llm.config.model, agent_name=self.name
             )
         }
         response = self.llm.completion(**params)
-        logger.debug(f'Response from LLM: {response}')
+        logger.debug(f"Response from LLM: {response}")
         actions = self.response_to_actions(response)
-        logger.debug(f'Actions after response_to_actions: {actions}')
+        logger.debug(f"Actions after response_to_actions: {actions}")
         for action in actions:
             self.pending_actions.append(action)
         return self.pending_actions.popleft()
@@ -228,19 +228,19 @@ class CodeActAgent(Agent):
         """Finds the initial user message action from the full history."""
         initial_user_message: MessageAction | None = None
         for event in history:
-            if isinstance(event, MessageAction) and event.source == 'user':
+            if isinstance(event, MessageAction) and event.source == "user":
                 initial_user_message = event
                 break
 
         if initial_user_message is None:
             # This should not happen in a valid conversation
             logger.error(
-                f'CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history.'
+                f"CRITICAL: Could not find the initial user MessageAction in the full {len(history)} events history."
             )
             # Depending on desired robustness, could raise error or create a dummy action
             # and log the error
             raise ValueError(
-                'Initial user message not found in history. Please report this issue.'
+                "Initial user message not found in history. Please report this issue."
             )
         return initial_user_message
 
@@ -278,7 +278,7 @@ class CodeActAgent(Agent):
             - For Anthropic models, specific messages are cached according to their documentation
         """
         if not self.prompt_manager:
-            raise Exception('Prompt Manager not instantiated.')
+            raise Exception("Prompt Manager not instantiated.")
 
         # Use ConversationMemory to process events (including SystemMessageAction)
         messages = self.conversation_memory.process_events(
@@ -293,7 +293,7 @@ class CodeActAgent(Agent):
 
         return messages
 
-    def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
+    def response_to_actions(self, response: "ModelResponse") -> list["Action"]:
         return codeact_function_calling.response_to_actions(
             response,
             mcp_tool_names=list(self.mcp_tools.keys()),

@@ -15,9 +15,7 @@ class OpenhandsPRStore:
     session_maker: sessionmaker
 
     def insert_pr(self, pr: OpenhandsPR) -> None:
-        """
-        Insert a new PR or delete and recreate if repo_id and pr_number already exist.
-        """
+        """Insert a new PR or delete and recreate if repo_id and pr_number already exist."""
         with self.session_maker() as session:
             # Check if PR already exists
             existing_pr = (
@@ -39,8 +37,7 @@ class OpenhandsPRStore:
             session.commit()
 
     def increment_process_attempts(self, repo_id: str, pr_number: int) -> bool:
-        """
-        Increment the process attempts counter for a PR.
+        """Increment the process attempts counter for a PR.
 
         Args:
             repo_id: Repository identifier
@@ -75,8 +72,7 @@ class OpenhandsPRStore:
         num_openhands_review_comments: int,
         num_openhands_general_comments: int,
     ) -> bool:
-        """
-        Update OpenHands statistics for a PR with row-level locking and timestamp validation.
+        """Update OpenHands statistics for a PR with row-level locking and timestamp validation.
 
         Args:
             repo_id: Repository identifier
@@ -103,7 +99,7 @@ class OpenhandsPRStore:
 
             if not pr:
                 # Current PR snapshot is stale
-                logger.warning('Did not find PR {pr_number} for repo {repo_id}')
+                logger.warning("Did not find PR {pr_number} for repo {repo_id}")
                 return False
 
             # Check if the updated_at timestamp has changed (indicating concurrent modification)
@@ -126,8 +122,7 @@ class OpenhandsPRStore:
     def get_unprocessed_prs(
         self, limit: int = 50, max_retries: int = 3
     ) -> list[OpenhandsPR]:
-        """
-        Get unprocessed PR entries from the OpenhandsPR table.
+        """Get unprocessed PR entries from the OpenhandsPR table.
 
         Args:
             limit: Maximum number of PRs to retrieve (default: 50)

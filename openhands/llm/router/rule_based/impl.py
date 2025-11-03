@@ -7,8 +7,8 @@ from openhands.llm.router.base import ROUTER_LLM_REGISTRY, RouterLLM
 
 
 class MultimodalRouter(RouterLLM):
-    SECONDARY_MODEL_CONFIG_NAME = 'secondary_model'
-    ROUTER_NAME = 'multimodal_router'
+    SECONDARY_MODEL_CONFIG_NAME = "secondary_model"
+    ROUTER_NAME = "multimodal_router"
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class MultimodalRouter(RouterLLM):
         for message in messages:
             if message.contains_image:
                 logger.info(
-                    'Multimodal content detected in messages. Routing to the primary model.'
+                    "Multimodal content detected in messages. Routing to the primary model."
                 )
                 route_to_primary = True
 
@@ -48,16 +48,16 @@ class MultimodalRouter(RouterLLM):
         ):
             logger.warning(
                 f"Messages having {secondary_llm.get_token_count(messages)} tokens, exceed secondary model's max input tokens ({secondary_llm.config.max_input_tokens} tokens). "
-                'Routing to the primary model.'
+                "Routing to the primary model."
             )
             self.max_token_exceeded = True
             route_to_primary = True
 
         if route_to_primary:
-            logger.info('Routing to the primary model...')
-            return 'primary'
+            logger.info("Routing to the primary model...")
+            return "primary"
         else:
-            logger.info('Routing to the secondary model...')
+            logger.info("Routing to the secondary model...")
             return self.SECONDARY_MODEL_CONFIG_NAME
 
     def vision_is_active(self):
@@ -66,7 +66,7 @@ class MultimodalRouter(RouterLLM):
     def _validate_model_routing_config(self, llms_for_routing: dict[str, LLM]):
         if self.SECONDARY_MODEL_CONFIG_NAME not in llms_for_routing:
             raise ValueError(
-                f'Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found.'
+                f"Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found."
             )
 
 

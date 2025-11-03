@@ -12,17 +12,17 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '040'
-down_revision: Union[str, None] = '039'
+revision: str = "040"
+down_revision: Union[str, None] = "039"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
     op.add_column(
-        'user_settings', sa.Column('search_api_key', sa.String(), nullable=True)
+        "user_settings", sa.Column("search_api_key", sa.String(), nullable=True)
     )
 
 
 def downgrade() -> None:
-    op.drop_column('user_settings', 'search_api_key')
+    op.drop_column("user_settings", "search_api_key")

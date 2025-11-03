@@ -72,7 +72,7 @@ class EventFilter:
         ):
             return False
 
-        if self.exclude_hidden and getattr(event, 'hidden', False):
+        if self.exclude_hidden and getattr(event, "hidden", False):
             return False
 
         # Text search in event content if query provided

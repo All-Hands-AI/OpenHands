@@ -14,7 +14,7 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""
-        return {'status': 'ok'}
+        return {"status": "ok"}
 
     async def security_risk(self, action: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level.
@@ -23,10 +23,10 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         If it does, it uses that value. Otherwise, it returns UNKNOWN.
         """
         # Check if the action has a security_risk attribute set by the LLM
-        if not hasattr(action, 'security_risk'):
+        if not hasattr(action, "security_risk"):
             return ActionSecurityRisk.UNKNOWN
 
-        security_risk = getattr(action, 'security_risk')
+        security_risk = getattr(action, "security_risk")
 
         if security_risk in {
             ActionSecurityRisk.LOW,
@@ -38,5 +38,5 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
             return ActionSecurityRisk.UNKNOWN
         else:
             # Default to UNKNOWN if security_risk value is not recognized
-            logger.warning(f'Unrecognized security_risk value: {security_risk}')
+            logger.warning(f"Unrecognized security_risk value: {security_risk}")
             return ActionSecurityRisk.UNKNOWN

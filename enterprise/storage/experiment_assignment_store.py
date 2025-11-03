@@ -1,5 +1,4 @@
-"""
-Store for managing experiment assignments.
+"""Store for managing experiment assignments.
 
 This store handles creating and updating experiment assignments for conversations.
 """
@@ -20,8 +19,7 @@ class ExperimentAssignmentStore:
         experiment_name: str,
         variant: str,
     ) -> None:
-        """
-        Update the variant for a specific experiment.
+        """Update the variant for a specific experiment.
 
         Args:
             conversation_id: The conversation ID
@@ -36,17 +34,17 @@ class ExperimentAssignmentStore:
                 variant=variant,
             )
             stmt = stmt.on_conflict_do_nothing(
-                constraint='uq_experiment_assignments_conversation_experiment'
+                constraint="uq_experiment_assignments_conversation_experiment"
             )
 
             session.execute(stmt)
             session.commit()
 
             logger.info(
-                'experiment_assignment_store:upserted_variant',
+                "experiment_assignment_store:upserted_variant",
                 extra={
-                    'conversation_id': conversation_id,
-                    'experiment_name': experiment_name,
-                    'variant': variant,
+                    "conversation_id": conversation_id,
+                    "experiment_name": experiment_name,
+                    "variant": variant,
                 },
             )

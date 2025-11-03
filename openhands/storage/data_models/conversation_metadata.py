@@ -6,16 +6,16 @@ from openhands.integrations.service_types import ProviderType
 
 
 class ConversationTrigger(Enum):
-    RESOLVER = 'resolver'
-    GUI = 'gui'
-    SUGGESTED_TASK = 'suggested_task'
-    REMOTE_API_KEY = 'openhands_api'
-    SLACK = 'slack'
-    MICROAGENT_MANAGEMENT = 'microagent_management'
-    JIRA = 'jira'
-    JIRA_DC = 'jira_dc'
-    LINEAR = 'linear'
-    BITBUCKET = 'bitbucket'
+    RESOLVER = "resolver"
+    GUI = "gui"
+    SUGGESTED_TASK = "suggested_task"
+    REMOTE_API_KEY = "openhands_api"
+    SLACK = "slack"
+    MICROAGENT_MANAGEMENT = "microagent_management"
+    JIRA = "jira"
+    JIRA_DC = "jira_dc"
+    LINEAR = "linear"
+    BITBUCKET = "bitbucket"
 
 
 @dataclass

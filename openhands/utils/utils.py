@@ -12,7 +12,7 @@ def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsCo
     config = deepcopy(config)
 
     llm_config = config.get_llm_config()
-    llm_config.model = settings.llm_model or ''
+    llm_config.model = settings.llm_model or ""
     llm_config.api_key = settings.llm_api_key
     llm_config.base_url = settings.llm_base_url
     config.set_llm_config(llm_config)

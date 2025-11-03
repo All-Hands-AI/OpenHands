@@ -34,9 +34,9 @@ def display_status(
     uptime_str = f"{hours}h {minutes}m {seconds}s"
 
     # Display conversation ID and uptime
-    print_formatted_text(HTML(f'<grey>Conversation ID: {conversation.id}</grey>'))
-    print_formatted_text(HTML(f'<grey>Uptime:          {uptime_str}</grey>'))
-    print_formatted_text('')
+    print_formatted_text(HTML(f"<grey>Conversation ID: {conversation.id}</grey>"))
+    print_formatted_text(HTML(f"<grey>Uptime:          {uptime_str}</grey>"))
+    print_formatted_text("")
 
     # Calculate token metrics
     token_usage = stats.accumulated_token_usage
@@ -54,7 +54,7 @@ def display_status(
         total_output_tokens,
         cache_hits,
         cache_writes,
-        total_tokens
+        total_tokens,
     )
 
 
@@ -64,26 +64,26 @@ def _display_usage_metrics_container(
     total_output_tokens: int,
     cache_hits: int,
     cache_writes: int,
-    total_tokens: int
+    total_tokens: int,
 ) -> None:
     """Display usage metrics using prompt_toolkit containers."""
     # Format values with proper formatting
-    cost_str = f'${total_cost:.6f}'
-    input_tokens_str = f'{total_input_tokens:,}'
-    cache_read_str = f'{cache_hits:,}'
-    cache_write_str = f'{cache_writes:,}'
-    output_tokens_str = f'{total_output_tokens:,}'
-    total_tokens_str = f'{total_tokens:,}'
+    cost_str = f"${total_cost:.6f}"
+    input_tokens_str = f"{total_input_tokens:,}"
+    cache_read_str = f"{cache_hits:,}"
+    cache_write_str = f"{cache_writes:,}"
+    output_tokens_str = f"{total_output_tokens:,}"
+    total_tokens_str = f"{total_tokens:,}"
 
     labels_and_values = [
-        ('   Total Cost (USD):', cost_str),
-        ('', ''),
-        ('   Total Input Tokens:', input_tokens_str),
-        ('      Cache Hits:', cache_read_str),
-        ('      Cache Writes:', cache_write_str),
-        ('   Total Output Tokens:', output_tokens_str),
-        ('', ''),
-        ('   Total Tokens:', total_tokens_str),
+        ("   Total Cost (USD):", cost_str),
+        ("", ""),
+        ("   Total Input Tokens:", input_tokens_str),
+        ("      Cache Hits:", cache_read_str),
+        ("      Cache Writes:", cache_write_str),
+        ("   Total Output Tokens:", output_tokens_str),
+        ("", ""),
+        ("   Total Tokens:", total_tokens_str),
     ]
 
     # Calculate max widths for alignment
@@ -92,10 +92,10 @@ def _display_usage_metrics_container(
 
     # Construct the summary text with aligned columns
     summary_lines = [
-        f'{label:<{max_label_width}} {value:<{max_value_width}}'
+        f"{label:<{max_label_width}} {value:<{max_value_width}}"
         for label, value in labels_and_values
     ]
-    summary_text = '\n'.join(summary_lines)
+    summary_text = "\n".join(summary_lines)
 
     container = Frame(
         TextArea(
@@ -103,7 +103,7 @@ def _display_usage_metrics_container(
             read_only=True,
             wrap_lines=True,
         ),
-        title='Usage Metrics',
+        title="Usage Metrics",
     )
 
     print_container(container)

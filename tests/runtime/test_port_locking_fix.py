@@ -20,7 +20,7 @@ class TestPortLockingFix:
                 min_port=30000,
                 max_port=30010,  # Small range to force conflicts
                 max_attempts=5,
-                bind_address='0.0.0.0',
+                bind_address="0.0.0.0",
                 lock_timeout=2.0,
             )
 
@@ -44,7 +44,7 @@ class TestPortLockingFix:
 
         # Verify no duplicate ports were allocated
         assert len(successful_ports) == len(set(successful_ports)), (
-            f'Duplicate ports allocated: {successful_ports}'
+            f"Duplicate ports allocated: {successful_ports}"
         )
 
         # Clean up locks
@@ -53,7 +53,7 @@ class TestPortLockingFix:
                 lock.release()
 
         print(
-            f'Successfully allocated {len(successful_ports)} unique ports: {successful_ports}'
+            f"Successfully allocated {len(successful_ports)} unique ports: {successful_ports}"
         )
 
     def test_port_lock_basic_functionality(self):
@@ -113,7 +113,7 @@ class TestPortLockingFix:
                     min_port=31000,
                     max_port=31020,  # Small range to force contention
                     max_attempts=10,
-                    bind_address='0.0.0.0',
+                    bind_address="0.0.0.0",
                     lock_timeout=3.0,
                 )
 
@@ -125,11 +125,11 @@ class TestPortLockingFix:
                     time.sleep(0.05)
                     return port
                 else:
-                    errors.append(f'Worker {worker_id}: No port available')
+                    errors.append(f"Worker {worker_id}: No port available")
                     return None
 
             except Exception as e:
-                errors.append(f'Worker {worker_id}: {str(e)}')
+                errors.append(f"Worker {worker_id}: {str(e)}")
                 return None
 
         # Run many workers concurrently
@@ -145,7 +145,7 @@ class TestPortLockingFix:
                     result = future.result()
                     results[worker_id] = result
                 except Exception as e:
-                    errors.append(f'Worker {worker_id} exception: {str(e)}')
+                    errors.append(f"Worker {worker_id} exception: {str(e)}")
 
         # Analyze results
         successful_allocations = [
@@ -153,16 +153,16 @@ class TestPortLockingFix:
         ]
         allocated_port_numbers = [port for _, port in successful_allocations]
 
-        print(f'Successful allocations: {len(successful_allocations)}')
-        print(f'Allocated ports: {allocated_port_numbers}')
-        print(f'Errors: {len(errors)}')
+        print(f"Successful allocations: {len(successful_allocations)}")
+        print(f"Allocated ports: {allocated_port_numbers}")
+        print(f"Errors: {len(errors)}")
         if errors:
-            print(f'Error details: {errors[:5]}')  # Show first 5 errors
+            print(f"Error details: {errors[:5]}")  # Show first 5 errors
 
         # Verify no duplicate ports
         unique_ports = set(allocated_port_numbers)
         assert len(allocated_port_numbers) == len(unique_ports), (
-            f'Duplicate ports found: {allocated_port_numbers}'
+            f"Duplicate ports found: {allocated_port_numbers}"
         )
 
         # Clean up locks
@@ -198,10 +198,10 @@ class TestPortLockingFix:
         duplicates_found = len(results) != len(unique_ports)
 
         print(
-            f'Without locking - Total ports: {len(results)}, Unique: {len(unique_ports)}'
+            f"Without locking - Total ports: {len(results)}, Unique: {len(unique_ports)}"
         )
-        print(f'Ports allocated: {results}')
-        print(f'Race condition detected: {duplicates_found}')
+        print(f"Ports allocated: {results}")
+        print(f"Race condition detected: {duplicates_found}")
 
         # This test demonstrates the problem exists without locking
         # In a real race condition scenario, we might get duplicates
@@ -209,11 +209,11 @@ class TestPortLockingFix:
         assert len(results) == num_workers
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test = TestPortLockingFix()
     test.test_port_lock_prevents_duplicate_allocation()
     test.test_port_lock_basic_functionality()
     test.test_port_lock_context_manager()
     test.test_concurrent_port_allocation_stress_test()
     test.test_port_allocation_without_locking_shows_race_condition()
-    print('All tests passed!')
+    print("All tests passed!")

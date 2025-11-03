@@ -44,18 +44,18 @@ from openhands.server.middleware import (  # noqa: E402
 )
 from openhands.server.static import SPAStaticFiles  # noqa: E402
 
-directory = os.getenv('FRONTEND_DIRECTORY', './frontend/build')
+directory = os.getenv("FRONTEND_DIRECTORY", "./frontend/build")
 
 patch_mcp_server()
 
 
-@base_app.get('/saas')
+@base_app.get("/saas")
 def is_saas():
-    return {'saas': True}
+    return {"saas": True}
 
 
 # This requires a trailing slash to access, like /api/metrics/
-base_app.mount('/internal/metrics', metrics_app())
+base_app.mount("/internal/metrics", metrics_app())
 
 base_app.include_router(readiness_router)  # Add routes for readiness checks
 base_app.include_router(api_router)  # Add additional route for github auth
@@ -101,13 +101,13 @@ base_app.add_middleware(
     CORSMiddleware,
     allow_origins=PERMITTED_CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 base_app.add_middleware(CacheControlMiddleware)
-base_app.middleware('http')(SetAuthCookieMiddleware())
+base_app.middleware("http")(SetAuthCookieMiddleware())
 
-base_app.mount('/', SPAStaticFiles(directory=directory, html=True), name='dist')
+base_app.mount("/", SPAStaticFiles(directory=directory, html=True), name="dist")
 
 
 setup_rate_limit_handler(base_app)
@@ -117,14 +117,14 @@ setup_rate_limit_handler(base_app)
 async def no_credentials_exception_handler(request: Request, exc: NoCredentialsError):
     logger.info(exc.__class__.__name__)
     return JSONResponse(
-        {'error': NoCredentialsError.__name__}, status.HTTP_401_UNAUTHORIZED
+        {"error": NoCredentialsError.__name__}, status.HTTP_401_UNAUTHORIZED
     )
 
 
 @base_app.exception_handler(ExpiredError)
 async def expired_exception_handler(request: Request, exc: ExpiredError):
     logger.info(exc.__class__.__name__)
-    return JSONResponse({'error': ExpiredError.__name__}, status.HTTP_401_UNAUTHORIZED)
+    return JSONResponse({"error": ExpiredError.__name__}, status.HTTP_401_UNAUTHORIZED)
 
 
 app = socketio.ASGIApp(sio, other_asgi_app=base_app)

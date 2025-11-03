@@ -1,6 +1,4 @@
-"""
-Tests for the GitlabCallbackProcessor.
-"""
+"""Tests for the GitlabCallbackProcessor."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -21,24 +19,24 @@ def mock_gitlab_view():
     """Create a mock GitlabViewType for testing."""
     # Use a simple dict that matches GitlabIssue structure
     return GitlabIssueComment(
-        installation_id='test_installation',
+        installation_id="test_installation",
         issue_number=789,
         project_id=456,
-        full_repo_name='test/repo',
+        full_repo_name="test/repo",
         is_public_repo=True,
         user_info=UserData(
-            user_id=123, username='test_user', keycloak_user_id='test_keycloak_id'
+            user_id=123, username="test_user", keycloak_user_id="test_keycloak_id"
         ),
-        raw_payload={'source': 'gitlab', 'message': {'test': 'data'}},
-        conversation_id='test_conversation',
+        raw_payload={"source": "gitlab", "message": {"test": "data"}},
+        conversation_id="test_conversation",
         should_extract=True,
         send_summary_instruction=True,
-        title='',
-        description='',
+        title="",
+        description="",
         previous_comments=[],
         is_mr=False,
-        comment_body='sdfs',
-        discussion_id='test_discussion',
+        comment_body="sdfs",
+        discussion_id="test_discussion",
         confidential=False,
     )
 
@@ -62,9 +60,9 @@ class TestGitlabCallbackProcessor:
             gitlab_view=mock_gitlab_view,
         )
         # Check that gitlab_view was converted to a GitlabIssue object
-        assert hasattr(processor.gitlab_view, 'issue_number')
+        assert hasattr(processor.gitlab_view, "issue_number")
         assert processor.gitlab_view.issue_number == 789
-        assert processor.gitlab_view.full_repo_name == 'test/repo'
+        assert processor.gitlab_view.full_repo_name == "test/repo"
         assert processor.send_summary_instruction is True
 
         # Test with custom send_summary_instruction
@@ -72,7 +70,7 @@ class TestGitlabCallbackProcessor:
             gitlab_view=mock_gitlab_view,
             send_summary_instruction=False,
         )
-        assert hasattr(processor.gitlab_view, 'issue_number')
+        assert hasattr(processor.gitlab_view, "issue_number")
         assert processor.gitlab_view.issue_number == 789
         assert processor.send_summary_instruction is False
 
@@ -106,13 +104,13 @@ class TestGitlabCallbackProcessor:
 
     @pytest.mark.asyncio
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.get_summary_instruction'
+        "server.conversation_callback_processor.gitlab_callback_processor.get_summary_instruction"
     )
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.conversation_manager'
+        "server.conversation_callback_processor.gitlab_callback_processor.conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.session_maker'
+        "server.conversation_callback_processor.gitlab_callback_processor.session_maker"
     )
     async def test_call_with_send_summary_instruction(
         self,
@@ -132,13 +130,13 @@ class TestGitlabCallbackProcessor:
 
         # Create a callback and observation
         callback = ConversationCallback(
-            conversation_id='conv123',
+            conversation_id="conv123",
             status=CallbackStatus.ACTIVE,
-            processor_type=f'{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}',
+            processor_type=f"{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}",
             processor_json=gitlab_callback_processor.model_dump_json(),
         )
         observation = AgentStateChangedObservation(
-            content='', agent_state=AgentState.AWAITING_USER_INPUT
+            content="", agent_state=AgentState.AWAITING_USER_INPUT
         )
 
         # Call the processor
@@ -154,16 +152,16 @@ class TestGitlabCallbackProcessor:
 
     @pytest.mark.asyncio
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.conversation_manager'
+        "server.conversation_callback_processor.gitlab_callback_processor.conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.extract_summary_from_conversation_manager'
+        "server.conversation_callback_processor.gitlab_callback_processor.extract_summary_from_conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.asyncio.create_task'
+        "server.conversation_callback_processor.gitlab_callback_processor.asyncio.create_task"
     )
     @patch(
-        'server.conversation_callback_processor.gitlab_callback_processor.session_maker'
+        "server.conversation_callback_processor.gitlab_callback_processor.session_maker"
     )
     async def test_call_with_extract_summary(
         self,
@@ -177,7 +175,7 @@ class TestGitlabCallbackProcessor:
         # Setup mocks
         mock_session = MagicMock()
         mock_session_maker.return_value.__enter__.return_value = mock_session
-        mock_extract_summary.return_value = 'Test summary'
+        mock_extract_summary.return_value = "Test summary"
         # Ensure we don't leak an un-awaited coroutine when create_task is mocked
         mock_create_task.side_effect = lambda coro: (coro.close(), None)[1]
 
@@ -186,13 +184,13 @@ class TestGitlabCallbackProcessor:
 
         # Create a callback and observation
         callback = ConversationCallback(
-            conversation_id='conv123',
+            conversation_id="conv123",
             status=CallbackStatus.ACTIVE,
-            processor_type=f'{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}',
+            processor_type=f"{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}",
             processor_json=gitlab_callback_processor.model_dump_json(),
         )
         observation = AgentStateChangedObservation(
-            content='', agent_state=AgentState.FINISHED
+            content="", agent_state=AgentState.FINISHED
         )
 
         # Call the processor
@@ -200,7 +198,7 @@ class TestGitlabCallbackProcessor:
 
         # Verify that extract_summary_from_conversation_manager was called
         mock_extract_summary.assert_called_once_with(
-            mock_conversation_manager, 'conv123'
+            mock_conversation_manager, "conv123"
         )
 
         # Verify that create_task was called to send the message
@@ -216,13 +214,13 @@ class TestGitlabCallbackProcessor:
         """Test the __call__ method with a non-terminal agent state."""
         # Create a callback and observation with a non-terminal state
         callback = ConversationCallback(
-            conversation_id='conv123',
+            conversation_id="conv123",
             status=CallbackStatus.ACTIVE,
-            processor_type=f'{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}',
+            processor_type=f"{GitlabCallbackProcessor.__module__}.{GitlabCallbackProcessor.__name__}",
             processor_json=gitlab_callback_processor.model_dump_json(),
         )
         observation = AgentStateChangedObservation(
-            content='', agent_state=AgentState.RUNNING
+            content="", agent_state=AgentState.RUNNING
         )
 
         # Call the processor

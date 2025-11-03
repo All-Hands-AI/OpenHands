@@ -14,8 +14,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 
 
 def validate_conversation_id(conversation_id: str) -> str:
-    """
-    Validate conversation ID format and length.
+    """Validate conversation ID format and length.
 
     Args:
         conversation_id: The conversation ID to validate
@@ -30,28 +29,28 @@ def validate_conversation_id(conversation_id: str) -> str:
     if len(conversation_id) > 100:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Conversation ID is too long',
+            detail="Conversation ID is too long",
         )
 
     # Check for null bytes and other problematic characters
-    if '\x00' in conversation_id:
+    if "\x00" in conversation_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Conversation ID contains invalid characters',
+            detail="Conversation ID contains invalid characters",
         )
 
     # Check for path traversal attempts
-    if '..' in conversation_id or '/' in conversation_id or '\\' in conversation_id:
+    if ".." in conversation_id or "/" in conversation_id or "\\" in conversation_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Conversation ID contains invalid path characters',
+            detail="Conversation ID contains invalid path characters",
         )
 
     # Check for control characters and newlines
     if any(ord(c) < 32 for c in conversation_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail='Conversation ID contains control characters',
+            detail="Conversation ID contains control characters",
         )
 
     return conversation_id
@@ -59,7 +58,7 @@ def validate_conversation_id(conversation_id: str) -> str:
 
 async def get_conversation_store(request: Request) -> ConversationStore | None:
     conversation_store: ConversationStore | None = getattr(
-        request.state, 'conversation_store', None
+        request.state, "conversation_store", None
     )
     if conversation_store:
         return conversation_store
@@ -89,7 +88,7 @@ async def get_conversation_metadata(
     except FileNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Conversation {conversation_id} not found',
+            detail=f"Conversation {conversation_id} not found",
         )
 
 
@@ -102,12 +101,12 @@ async def get_conversation(
     )
     if not conversation:
         logger.warning(
-            f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
-            extra={'session_id': conversation_id, 'user_id': user_id},
+            f"get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None",
+            extra={"session_id": conversation_id, "user_id": user_id},
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f'Conversation {conversation_id} not found',
+            detail=f"Conversation {conversation_id} not found",
         )
     try:
         yield conversation

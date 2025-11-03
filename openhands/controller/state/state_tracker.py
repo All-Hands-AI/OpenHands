@@ -71,7 +71,7 @@ class StateTracker:
         # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
-                session_id=id.removesuffix('-delegate'),
+                session_id=id.removesuffix("-delegate"),
                 user_id=self.user_id,
                 inputs={},
                 conversation_stats=conversation_stats,
@@ -92,7 +92,7 @@ class StateTracker:
             self.state.start_id = 0
 
             logger.info(
-                f'AgentController {id} - created new state. start_id: {self.state.start_id}'
+                f"AgentController {id} - created new state. start_id: {self.state.start_id}"
             )
         else:
             self.state = state
@@ -124,7 +124,7 @@ class StateTracker:
         # sanity check
         if start_id > end_id + 1:
             logger.warning(
-                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
+                f"start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.",
             )
             self.state.history = []
             return
@@ -156,7 +156,7 @@ class StateTracker:
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
                     logger.warning(
-                        f'Found AgentDelegateObservation without matching action at id={event.id}',
+                        f"Found AgentDelegateObservation without matching action at id={event.id}",
                     )
                     continue
 

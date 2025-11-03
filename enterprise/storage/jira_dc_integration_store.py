@@ -20,10 +20,9 @@ class JiraDcIntegrationStore:
         encrypted_webhook_secret: str,
         svc_acc_email: str,
         encrypted_svc_acc_api_key: str,
-        status: str = 'active',
+        status: str = "active",
     ) -> JiraDcWorkspace:
         """Create a new Jira DC workspace with encrypted sensitive data."""
-
         with session_maker() as session:
             workspace = JiraDcWorkspace(
                 name=name.lower(),
@@ -36,7 +35,7 @@ class JiraDcIntegrationStore:
             session.add(workspace)
             session.commit()
             session.refresh(workspace)
-        logger.info(f'[Jira DC] Created workspace {workspace.name}')
+        logger.info(f"[Jira DC] Created workspace {workspace.name}")
         return workspace
 
     async def update_workspace(
@@ -72,7 +71,7 @@ class JiraDcIntegrationStore:
             session.commit()
             session.refresh(workspace)
 
-        logger.info(f'[Jira DC] Updated workspace {workspace.name}')
+        logger.info(f"[Jira DC] Updated workspace {workspace.name}")
         return workspace
 
     async def create_workspace_link(
@@ -80,10 +79,9 @@ class JiraDcIntegrationStore:
         keycloak_user_id: str,
         jira_dc_user_id: str,
         jira_dc_workspace_id: int,
-        status: str = 'active',
+        status: str = "active",
     ) -> JiraDcUser:
         """Create a new Jira DC workspace link."""
-
         jira_dc_user = JiraDcUser(
             keycloak_user_id=keycloak_user_id,
             jira_dc_user_id=jira_dc_user_id,
@@ -97,7 +95,7 @@ class JiraDcIntegrationStore:
             session.refresh(jira_dc_user)
 
         logger.info(
-            f'[Jira DC] Created user {jira_dc_user.id} for workspace {jira_dc_workspace_id}'
+            f"[Jira DC] Created user {jira_dc_user.id} for workspace {jira_dc_workspace_id}"
         )
         return jira_dc_user
 
@@ -125,13 +123,12 @@ class JiraDcIntegrationStore:
         self, keycloak_user_id: str
     ) -> Optional[JiraDcUser]:
         """Retrieve user by Keycloak user ID."""
-
         with session_maker() as session:
             return (
                 session.query(JiraDcUser)
                 .filter(
                     JiraDcUser.keycloak_user_id == keycloak_user_id,
-                    JiraDcUser.status == 'active',
+                    JiraDcUser.status == "active",
                 )
                 .first()
             )
@@ -160,7 +157,7 @@ class JiraDcIntegrationStore:
                 .filter(
                     JiraDcUser.jira_dc_user_id == jira_dc_user_id,
                     JiraDcUser.jira_dc_workspace_id == jira_dc_workspace_id,
-                    JiraDcUser.status == 'active',
+                    JiraDcUser.status == "active",
                 )
                 .first()
             )
@@ -175,7 +172,7 @@ class JiraDcIntegrationStore:
                 .filter(
                     JiraDcUser.keycloak_user_id == keycloak_user_id,
                     JiraDcUser.jira_dc_workspace_id == jira_dc_workspace_id,
-                    JiraDcUser.status == 'active',
+                    JiraDcUser.status == "active",
                 )
                 .first()
             )
@@ -184,7 +181,6 @@ class JiraDcIntegrationStore:
         self, keycloak_user_id: str, status: str
     ) -> JiraDcUser:
         """Update the status of a Jira DC user mapping."""
-
         with session_maker() as session:
             user = (
                 session.query(JiraDcUser)
@@ -200,7 +196,7 @@ class JiraDcIntegrationStore:
             user.status = status
             session.commit()
             session.refresh(user)
-            logger.info(f'[Jira DC] Updated user {keycloak_user_id} status to {status}')
+            logger.info(f"[Jira DC] Updated user {keycloak_user_id} status to {status}")
             return user
 
     async def deactivate_workspace(self, workspace_id: int):
@@ -210,13 +206,13 @@ class JiraDcIntegrationStore:
                 session.query(JiraDcUser)
                 .filter(
                     JiraDcUser.jira_dc_workspace_id == workspace_id,
-                    JiraDcUser.status == 'active',
+                    JiraDcUser.status == "active",
                 )
                 .all()
             )
 
             for user in users:
-                user.status = 'inactive'
+                user.status = "inactive"
                 session.add(user)
 
             workspace = (
@@ -225,13 +221,13 @@ class JiraDcIntegrationStore:
                 .first()
             )
             if workspace:
-                workspace.status = 'inactive'
+                workspace.status = "inactive"
                 session.add(workspace)
 
             session.commit()
 
         logger.info(
-            f'[Jira DC] Deactivated all user links for workspace {workspace_id}'
+            f"[Jira DC] Deactivated all user links for workspace {workspace_id}"
         )
 
     async def create_conversation(

@@ -13,11 +13,9 @@ from storage.base import Base
 
 
 class OpenhandsPR(Base):  # type: ignore
-    """
-    Represents a pull request created by OpenHands.
-    """
+    """Represents a pull request created by OpenHands."""
 
-    __tablename__ = 'openhands_prs'
+    __tablename__ = "openhands_prs"
     id = Column(Integer, Identity(), primary_key=True)
     repo_id = Column(String, nullable=False, index=True)
     repo_name = Column(String, nullable=False)
@@ -48,13 +46,13 @@ class OpenhandsPR(Base):  # type: ignore
     num_openhands_general_comments = Column(Integer, nullable=True)
 
     # Attributes to track progress on enrichment
-    processed = Column(Boolean, nullable=False, server_default=text('FALSE'))
+    processed = Column(Boolean, nullable=False, server_default=text("FALSE"))
     process_attempts = Column(
-        Integer, nullable=False, server_default=text('0')
+        Integer, nullable=False, server_default=text("0")
     )  # Max attempts in case we hit rate limits or information is no longer accessible
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )  # To buffer between attempts
     closed_at = Column(

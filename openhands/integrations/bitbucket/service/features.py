@@ -5,9 +5,7 @@ from openhands.microagent.types import MicroagentContentResponse
 
 
 class BitBucketFeaturesMixin(BitBucketMixinBase):
-    """
-    Mixin for BitBucket feature operations (microagents, cursor rules, etc.)
-    """
+    """Mixin for BitBucket feature operations (microagents, cursor rules, etc.)"""
 
     async def get_microagent_content(
         self, repository: str, file_path: str
@@ -29,16 +27,16 @@ class BitBucketFeaturesMixin(BitBucketMixinBase):
 
         if not repo_details.main_branch:
             logger.warning(
-                f'No main branch found in repository info for {repository}. '
-                f'Repository response: mainbranch field missing'
+                f"No main branch found in repository info for {repository}. "
+                f"Repository response: mainbranch field missing"
             )
             raise ResourceNotFoundError(
-                f'Main branch not found for repository {repository}. '
-                f'This repository may be empty or have no default branch configured.'
+                f"Main branch not found for repository {repository}. "
+                f"This repository may be empty or have no default branch configured."
             )
 
         # Step 2: Get file content using the main branch
-        file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
+        file_url = f"{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}"
         response, _ = await self._make_request(file_url)
 
         # Parse the content to extract triggers from frontmatter

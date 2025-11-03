@@ -59,31 +59,31 @@ class SolvabilitySummary(BaseModel):
     def tool_description() -> dict[str, Any]:
         """Get the tool description for the LLM."""
         return {
-            'type': 'function',
-            'function': {
-                'name': 'solvability_summary',
-                'description': 'Generate a human-readable summary of the solvability analysis.',
-                'parameters': {
-                    'type': 'object',
-                    'properties': {
-                        'summary': {
-                            'type': 'string',
-                            'description': 'A high-level (at most two sentences) summary of the solvability report.',
+            "type": "function",
+            "function": {
+                "name": "solvability_summary",
+                "description": "Generate a human-readable summary of the solvability analysis.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "summary": {
+                            "type": "string",
+                            "description": "A high-level (at most two sentences) summary of the solvability report.",
                         },
-                        'actionable_feedback': {
-                            'type': 'string',
-                            'description': (
-                                'Bullet list of 1-3 pieces of actionable feedback on how the user can address the lowest scoring relevant features.'
+                        "actionable_feedback": {
+                            "type": "string",
+                            "description": (
+                                "Bullet list of 1-3 pieces of actionable feedback on how the user can address the lowest scoring relevant features."
                             ),
                         },
-                        'positive_feedback': {
-                            'type': 'string',
-                            'description': (
-                                'Bullet list of 1-3 pieces of positive feedback on the issue, highlighting what is good about it.'
+                        "positive_feedback": {
+                            "type": "string",
+                            "description": (
+                                "Bullet list of 1-3 pieces of positive feedback on the issue, highlighting what is good about it."
                             ),
                         },
                     },
-                    'required': ['summary', 'actionable_feedback'],
+                    "required": ["summary", "actionable_feedback"],
                 },
             },
         }
@@ -92,9 +92,9 @@ class SolvabilitySummary(BaseModel):
     def tool_choice() -> dict[str, Any]:
         """Get the tool choice for the LLM."""
         return {
-            'type': 'function',
-            'function': {
-                'name': 'solvability_summary',
+            "type": "function",
+            "function": {
+                "name": "solvability_summary",
             },
         }
 
@@ -102,17 +102,17 @@ class SolvabilitySummary(BaseModel):
     def system_message() -> dict[str, Any]:
         """Get the system message for the LLM."""
         return {
-            'role': 'system',
-            'content': load_prompt('summary_system_message'),
+            "role": "system",
+            "content": load_prompt("summary_system_message"),
         }
 
     @staticmethod
     def user_message(report: SolvabilityReport) -> dict[str, Any]:
         """Get the user message for the LLM."""
         return {
-            'role': 'user',
-            'content': load_prompt(
-                'summary_user_message',
+            "role": "user",
+            "content": load_prompt(
+                "summary_user_message",
                 report=report.model_dump(),
                 difficulty_level=DifficultyLevel.from_score(report.score).value[0],
             ),
@@ -156,17 +156,17 @@ class SolvabilitySummary(BaseModel):
         difficulty_level = DifficultyLevel.from_score(self.score)
 
         # Create the main difficulty display
-        result = f'{difficulty_level.format_display()}\n\n{self.summary}'
+        result = f"{difficulty_level.format_display()}\n\n{self.summary}"
 
         # If not easy, show the three features with lowest importance scores
         if difficulty_level != DifficultyLevel.EASY:
             # Add dropdown with lowest importance features
-            result += '\n\nYou can make the issue easier to resolve by addressing these concerns in the conversation:\n\n'
+            result += "\n\nYou can make the issue easier to resolve by addressing these concerns in the conversation:\n\n"
             result += self.actionable_feedback
 
         # If the difficulty isn't hard, add some positive feedback
         if difficulty_level != DifficultyLevel.HARD:
-            result += '\n\nPositive feedback:\n\n'
+            result += "\n\nPositive feedback:\n\n"
             result += self.positive_feedback
 
         return result

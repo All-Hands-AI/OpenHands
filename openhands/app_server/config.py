@@ -51,12 +51,12 @@ from openhands.sdk.utils.models import OpenHandsModel
 
 def get_default_persistence_dir() -> Path:
     # Recheck env because this function is also used to generate other defaults
-    persistence_dir = os.getenv('OH_PERSISTENCE_DIR')
+    persistence_dir = os.getenv("OH_PERSISTENCE_DIR")
 
     if persistence_dir:
         result = Path(persistence_dir)
     else:
-        result = Path.home() / '.openhands'
+        result = Path.home() / ".openhands"
 
     result.mkdir(parents=True, exist_ok=True)
     return result
@@ -65,17 +65,18 @@ def get_default_persistence_dir() -> Path:
 def get_default_web_url() -> str | None:
     """Get legacy web host parameter.
 
-    If present, we assume we are running under https."""
-    web_host = os.getenv('WEB_HOST')
+    If present, we assume we are running under https.
+    """
+    web_host = os.getenv("WEB_HOST")
     if not web_host:
         return None
-    return f'https://{web_host}'
+    return f"https://{web_host}"
 
 
 def _get_default_lifespan():
     # Check legacy parameters for saas mode. If we are in SAAS mode do not apply
     # OSS alembic migrations
-    if 'saas' in (os.getenv('OPENHANDS_CONFIG_CLS') or '').lower():
+    if "saas" in (os.getenv("OPENHANDS_CONFIG_CLS") or "").lower():
         return None
     return OssAppLifespanService()
 
@@ -84,7 +85,7 @@ class AppServerConfig(OpenHandsModel):
     persistence_dir: Path = Field(default_factory=get_default_persistence_dir)
     web_url: str | None = Field(
         default_factory=get_default_web_url,
-        description='The URL where OpenHands is running (e.g., http://localhost:3000)',
+        description="The URL where OpenHands is running (e.g., http://localhost:3000)",
     )
     # Dependency Injection Injectors
     event: EventServiceInjector | None = None
@@ -146,7 +147,7 @@ def config_from_env() -> AppServerConfig:
         AuthUserContextInjector,
     )
 
-    config: AppServerConfig = from_env(AppServerConfig, 'OH')  # type: ignore
+    config: AppServerConfig = from_env(AppServerConfig, "OH")  # type: ignore
 
     if config.event is None:
         config.event = FilesystemEventServiceInjector()
@@ -156,20 +157,20 @@ def config_from_env() -> AppServerConfig:
 
     if config.sandbox is None:
         # Legacy fallback
-        if os.getenv('RUNTIME') == 'remote':
+        if os.getenv("RUNTIME") == "remote":
             config.sandbox = RemoteSandboxServiceInjector(
-                api_key=os.environ['SANDBOX_API_KEY'],
-                api_url=os.environ['SANDBOX_REMOTE_RUNTIME_API_URL'],
+                api_key=os.environ["SANDBOX_API_KEY"],
+                api_url=os.environ["SANDBOX_REMOTE_RUNTIME_API_URL"],
             )
-        elif os.getenv('RUNTIME') in ('local', 'process'):
+        elif os.getenv("RUNTIME") in ("local", "process"):
             config.sandbox = ProcessSandboxServiceInjector()
         else:
             config.sandbox = DockerSandboxServiceInjector()
 
     if config.sandbox_spec is None:
-        if os.getenv('RUNTIME') == 'remote':
+        if os.getenv("RUNTIME") == "remote":
             config.sandbox_spec = RemoteSandboxSpecServiceInjector()
-        elif os.getenv('RUNTIME') in ('local', 'process'):
+        elif os.getenv("RUNTIME") in ("local", "process"):
             config.sandbox_spec = ProcessSandboxSpecServiceInjector()
         else:
             config.sandbox_spec = DockerSandboxSpecServiceInjector()

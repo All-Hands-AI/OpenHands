@@ -53,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class StoredConversationMetadata(Base):  # type: ignore
-    __tablename__ = 'conversation_metadata'
+    __tablename__ = "conversation_metadata"
     conversation_id = Column(
         String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
@@ -86,7 +86,7 @@ class StoredConversationMetadata(Base):  # type: ignore
     # LLM model used for the conversation
     llm_model = Column(String, nullable=True)
 
-    conversation_version = Column(String, nullable=False, default='V0', index=True)
+    conversation_version = Column(String, nullable=False, default="V0", index=True)
     sandbox_id = Column(String, nullable=True, index=True)
 
 
@@ -208,7 +208,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         conditions = []
         if title__contains is not None:
             conditions.append(
-                StoredConversationMetadata.title.like(f'%{title__contains}%')
+                StoredConversationMetadata.title.like(f"%{title__contains}%")
             )
 
         if created_at__gte is not None:
@@ -285,7 +285,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         stored = StoredConversationMetadata(
             conversation_id=str(info.id),
             github_user_id=None,  # TODO: Should we add this to the conversation info?
-            user_id=info.created_by_user_id or '',
+            user_id=info.created_by_user_id or "",
             selected_repository=info.selected_repository,
             selected_branch=info.selected_branch,
             git_provider=info.git_provider.value if info.git_provider else None,
@@ -305,7 +305,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             context_window=usage.context_window,
             per_turn_token=usage.per_turn_token,
             llm_model=info.llm_model,
-            conversation_version='V1',
+            conversation_version="V1",
             sandbox_id=info.sandbox_id,
         )
 
@@ -315,7 +315,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
     async def _secure_select(self):
         query = select(StoredConversationMetadata).where(
-            StoredConversationMetadata.conversation_version == 'V1'
+            StoredConversationMetadata.conversation_version == "V1"
         )
         user_id = await self.user_context.get_user_id()
         if user_id:
@@ -370,7 +370,8 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
     def _fix_timezone(self, value: datetime) -> datetime:
         """Sqlite does not stpre timezones - and since we can't update the existing models
-        we assume UTC if the timezone is missing."""
+        we assume UTC if the timezone is missing.
+        """
         if not value.tzinfo:
             value = value.replace(tzinfo=UTC)
         return value

@@ -68,16 +68,16 @@ def _get_workspace_mount_path_from_env(runtime_type: str | None = None) -> str:
         The workspace mount path in sandbox, defaults to '/workspace' if not found.
     """
     # For LocalRuntime/CLIRuntime, try to get host path from SANDBOX_VOLUMES
-    if runtime_type in ('local', 'cli'):
-        sandbox_volumes = os.environ.get('SANDBOX_VOLUMES')
+    if runtime_type in ("local", "cli"):
+        sandbox_volumes = os.environ.get("SANDBOX_VOLUMES")
         if sandbox_volumes:
             # Split by commas to handle multiple mounts
-            mounts = sandbox_volumes.split(',')
+            mounts = sandbox_volumes.split(",")
 
             # Check if any mount explicitly targets /workspace
             for mount in mounts:
-                parts = mount.split(':')
-                if len(parts) >= 2 and parts[1] == '/workspace':
+                parts = mount.split(":")
+                if len(parts) >= 2 and parts[1] == "/workspace":
                     host_path = os.path.abspath(parts[0])
                     return host_path
 
@@ -106,56 +106,56 @@ def create_str_replace_editor_tool(
         else _DETAILED_STR_REPLACE_EDITOR_DESCRIPTION
     )
     return ChatCompletionToolParam(
-        type='function',
+        type="function",
         function=ChatCompletionToolParamFunctionChunk(
             name=STR_REPLACE_EDITOR_TOOL_NAME,
             description=description,
             parameters={
-                'type': 'object',
-                'properties': {
-                    'command': {
-                        'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.',
-                        'enum': [
-                            'view',
-                            'create',
-                            'str_replace',
-                            'insert',
-                            'undo_edit',
+                "type": "object",
+                "properties": {
+                    "command": {
+                        "description": "The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.",
+                        "enum": [
+                            "view",
+                            "create",
+                            "str_replace",
+                            "insert",
+                            "undo_edit",
                         ],
-                        'type': 'string',
+                        "type": "string",
                     },
-                    'path': {
-                        'description': f'Absolute path to file or directory, e.g. `{workspace_mount_path_in_sandbox}/file.py` or `{workspace_mount_path_in_sandbox}`.',
-                        'type': 'string',
+                    "path": {
+                        "description": f"Absolute path to file or directory, e.g. `{workspace_mount_path_in_sandbox}/file.py` or `{workspace_mount_path_in_sandbox}`.",
+                        "type": "string",
                     },
-                    'file_text': {
-                        'description': 'Required parameter of `create` command, with the content of the file to be created.',
-                        'type': 'string',
+                    "file_text": {
+                        "description": "Required parameter of `create` command, with the content of the file to be created.",
+                        "type": "string",
                     },
-                    'old_str': {
-                        'description': 'Required parameter of `str_replace` command containing the string in `path` to replace.',
-                        'type': 'string',
+                    "old_str": {
+                        "description": "Required parameter of `str_replace` command containing the string in `path` to replace.",
+                        "type": "string",
                     },
-                    'new_str': {
-                        'description': 'Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.',
-                        'type': 'string',
+                    "new_str": {
+                        "description": "Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.",
+                        "type": "string",
                     },
-                    'insert_line': {
-                        'description': 'Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.',
-                        'type': 'integer',
+                    "insert_line": {
+                        "description": "Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.",
+                        "type": "integer",
                     },
-                    'view_range': {
-                        'description': 'Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
-                        'items': {'type': 'integer'},
-                        'type': 'array',
+                    "view_range": {
+                        "description": "Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.",
+                        "items": {"type": "integer"},
+                        "type": "array",
                     },
-                    'security_risk': {
-                        'type': 'string',
-                        'description': SECURITY_RISK_DESC,
-                        'enum': RISK_LEVELS,
+                    "security_risk": {
+                        "type": "string",
+                        "description": SECURITY_RISK_DESC,
+                        "enum": RISK_LEVELS,
                     },
                 },
-                'required': ['command', 'path', 'security_risk'],
+                "required": ["command", "path", "security_risk"],
             },
         ),
     )

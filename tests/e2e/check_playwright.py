@@ -5,11 +5,11 @@ try:
 
     with sync_playwright() as p:
         if p.chromium.executable_path:
-            print('chromium_found')
+            print("chromium_found")
             sys.exit(0)
         else:
-            print('chromium_not_found')
+            print("chromium_not_found")
             sys.exit(1)
 except Exception as e:
-    print(f'error: {e}')
+    print(f"error: {e}")
     sys.exit(1)

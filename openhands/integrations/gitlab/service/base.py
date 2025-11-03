@@ -14,9 +14,7 @@ from openhands.utils.http_session import httpx_verify_option
 
 
 class GitLabMixinBase(BaseGitService, HTTPClient):
-    """
-    Declares common attributes and method signatures used across mixins.
-    """
+    """Declares common attributes and method signatures used across mixins."""
 
     BASE_URL: str
     GRAPHQL_URL: str
@@ -29,7 +27,7 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
                 self.token = latest_token
 
         return {
-            'Authorization': f'Bearer {self.token.get_secret_value()}',
+            "Authorization": f"Bearer {self.token.get_secret_value()}",
         }
 
     async def get_latest_token(self) -> SecretStr | None:  # type: ignore[override]
@@ -68,14 +66,14 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
 
                 response.raise_for_status()
                 headers = {}
-                if 'Link' in response.headers:
-                    headers['Link'] = response.headers['Link']
+                if "Link" in response.headers:
+                    headers["Link"] = response.headers["Link"]
 
-                if 'X-Total' in response.headers:
-                    headers['X-Total'] = response.headers['X-Total']
+                if "X-Total" in response.headers:
+                    headers["X-Total"] = response.headers["X-Total"]
 
-                content_type = response.headers.get('Content-Type', '')
-                if 'application/json' in content_type:
+                content_type = response.headers.get("Content-Type", "")
+                if "application/json" in content_type:
                     return response.json(), headers
                 else:
                     return response.text, headers
@@ -103,11 +101,11 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
             async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
                 gitlab_headers = await self._get_headers()
                 # Add content type header for GraphQL
-                gitlab_headers['Content-Type'] = 'application/json'
+                gitlab_headers["Content-Type"] = "application/json"
 
                 payload = {
-                    'query': query,
-                    'variables': variables if variables is not None else {},
+                    "query": query,
+                    "variables": variables if variables is not None else {},
                 }
 
                 response = await client.post(
@@ -117,7 +115,7 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     gitlab_headers = await self._get_headers()
-                    gitlab_headers['Content-Type'] = 'application/json'
+                    gitlab_headers["Content-Type"] = "application/json"
                     response = await client.post(
                         self.GRAPHQL_URL, headers=gitlab_headers, json=payload
                     )
@@ -126,33 +124,33 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
                 result = response.json()
 
                 # Check for GraphQL errors
-                if 'errors' in result:
-                    error_message = result['errors'][0].get(
-                        'message', 'Unknown GraphQL error'
+                if "errors" in result:
+                    error_message = result["errors"][0].get(
+                        "message", "Unknown GraphQL error"
                     )
-                    raise UnknownException(f'GraphQL error: {error_message}')
+                    raise UnknownException(f"GraphQL error: {error_message}")
 
-                return result.get('data')
+                return result.get("data")
         except httpx.HTTPStatusError as e:
             raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
     async def get_user(self) -> User:
-        url = f'{self.BASE_URL}/user'
+        url = f"{self.BASE_URL}/user"
         response, _ = await self._make_request(url)
 
         # Use a default avatar URL if not provided
         # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
-        avatar_url = response.get('avatar_url') or ''
+        avatar_url = response.get("avatar_url") or ""
 
         return User(
-            id=str(response.get('id', '')),
-            login=response.get('username'),  # type: ignore[call-arg]
+            id=str(response.get("id", "")),
+            login=response.get("username"),  # type: ignore[call-arg]
             avatar_url=avatar_url,
-            name=response.get('name'),
-            email=response.get('email'),
-            company=response.get('organization'),
+            name=response.get("name"),
+            email=response.get("email"),
+            company=response.get("organization"),
         )
 
     def _extract_project_id(self, repository: str) -> str:
@@ -164,14 +162,14 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
         Returns:
             URL-encoded project ID for GitLab API
         """
-        if '/' in repository:
-            parts = repository.split('/')
-            if len(parts) >= 3 and '.' in parts[0]:
+        if "/" in repository:
+            parts = repository.split("/")
+            if len(parts) >= 3 and "." in parts[0]:
                 # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
-                project_id = '/'.join(parts[1:]).replace('/', '%2F')
+                project_id = "/".join(parts[1:]).replace("/", "%2F")
             else:
                 # Regular GitLab: 'owner/repo' -> 'owner/repo'
-                project_id = repository.replace('/', '%2F')
+                project_id = repository.replace("/", "%2F")
         else:
             project_id = repository
 

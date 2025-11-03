@@ -17,7 +17,7 @@ class SaaSBitBucketService(BitBucketService):
         base_domain: str | None = None,
     ):
         logger.info(
-            f'SaaSBitBucketService created with user_id {user_id}, external_auth_id {external_auth_id}, external_auth_token {'set' if external_auth_token else 'None'}, bitbucket_token {'set' if token else 'None'}, external_token_manager {external_token_manager}'
+            f"SaaSBitBucketService created with user_id {user_id}, external_auth_id {external_auth_id}, external_auth_token {'set' if external_auth_token else 'None'}, bitbucket_token {'set' if token else 'None'}, external_token_manager {external_token_manager}"
         )
         super().__init__(
             user_id=user_id,
@@ -42,7 +42,7 @@ class SaaSBitBucketService(BitBucketService):
                 )
             )
             logger.debug(
-                f'Got BitBucket token {bitbucket_token} from access token: {self.external_auth_token}'
+                f"Got BitBucket token {bitbucket_token} from access token: {self.external_auth_token}"
             )
         elif self.external_auth_id:
             offline_token = await self.token_manager.load_offline_token(
@@ -54,7 +54,7 @@ class SaaSBitBucketService(BitBucketService):
                 )
             )
             logger.info(
-                f'Got BitBucket token {bitbucket_token.get_secret_value()} from external auth user ID: {self.external_auth_id}'
+                f"Got BitBucket token {bitbucket_token.get_secret_value()} from external auth user ID: {self.external_auth_id}"
             )
         elif self.user_id:
             bitbucket_token = SecretStr(
@@ -63,8 +63,8 @@ class SaaSBitBucketService(BitBucketService):
                 )
             )
             logger.debug(
-                f'Got BitBucket token {bitbucket_token} from user ID: {self.user_id}'
+                f"Got BitBucket token {bitbucket_token} from user ID: {self.user_id}"
             )
         else:
-            logger.warning('external_auth_token and user_id not set!')
+            logger.warning("external_auth_token and user_id not set!")
         return bitbucket_token

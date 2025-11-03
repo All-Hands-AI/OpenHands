@@ -53,7 +53,7 @@ from openhands.app_server.config import (
     get_app_conversation_service,
 )
 
-router = APIRouter(prefix='/app-conversations', tags=['Conversations'])
+router = APIRouter(prefix="/app-conversations", tags=["Conversations"])
 app_conversation_service_dependency = depends_app_conversation_service()
 app_conversation_start_task_service_dependency = (
     depends_app_conversation_start_task_service()
@@ -65,36 +65,36 @@ httpx_client_dependency = depends_httpx_client()
 # Read methods
 
 
-@router.get('/search')
+@router.get("/search")
 async def search_app_conversations(
     title__contains: Annotated[
         str | None,
-        Query(title='Filter by title containing this string'),
+        Query(title="Filter by title containing this string"),
     ] = None,
     created_at__gte: Annotated[
         datetime | None,
-        Query(title='Filter by created_at greater than or equal to this datetime'),
+        Query(title="Filter by created_at greater than or equal to this datetime"),
     ] = None,
     created_at__lt: Annotated[
         datetime | None,
-        Query(title='Filter by created_at less than this datetime'),
+        Query(title="Filter by created_at less than this datetime"),
     ] = None,
     updated_at__gte: Annotated[
         datetime | None,
-        Query(title='Filter by updated_at greater than or equal to this datetime'),
+        Query(title="Filter by updated_at greater than or equal to this datetime"),
     ] = None,
     updated_at__lt: Annotated[
         datetime | None,
-        Query(title='Filter by updated_at less than this datetime'),
+        Query(title="Filter by updated_at less than this datetime"),
     ] = None,
     page_id: Annotated[
         str | None,
-        Query(title='Optional next_page_id from the previously returned page'),
+        Query(title="Optional next_page_id from the previously returned page"),
     ] = None,
     limit: Annotated[
         int,
         Query(
-            title='The max number of results in the page',
+            title="The max number of results in the page",
             gt=0,
             lte=100,
         ),
@@ -117,27 +117,27 @@ async def search_app_conversations(
     )
 
 
-@router.get('/count')
+@router.get("/count")
 async def count_app_conversations(
     title__contains: Annotated[
         str | None,
-        Query(title='Filter by title containing this string'),
+        Query(title="Filter by title containing this string"),
     ] = None,
     created_at__gte: Annotated[
         datetime | None,
-        Query(title='Filter by created_at greater than or equal to this datetime'),
+        Query(title="Filter by created_at greater than or equal to this datetime"),
     ] = None,
     created_at__lt: Annotated[
         datetime | None,
-        Query(title='Filter by created_at less than this datetime'),
+        Query(title="Filter by created_at less than this datetime"),
     ] = None,
     updated_at__gte: Annotated[
         datetime | None,
-        Query(title='Filter by updated_at greater than or equal to this datetime'),
+        Query(title="Filter by updated_at greater than or equal to this datetime"),
     ] = None,
     updated_at__lt: Annotated[
         datetime | None,
-        Query(title='Filter by updated_at less than this datetime'),
+        Query(title="Filter by updated_at less than this datetime"),
     ] = None,
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
@@ -153,7 +153,7 @@ async def count_app_conversations(
     )
 
 
-@router.get('')
+@router.get("")
 async def batch_get_app_conversations(
     ids: Annotated[list[UUID], Query()],
     app_conversation_service: AppConversationService = (
@@ -166,7 +166,7 @@ async def batch_get_app_conversations(
     return app_conversations
 
 
-@router.post('')
+@router.post("")
 async def start_app_conversation(
     request: Request,
     start_request: AppConversationStartRequest,
@@ -187,38 +187,39 @@ async def start_app_conversation(
     return result
 
 
-@router.post('/stream-start')
+@router.post("/stream-start")
 async def stream_app_conversation_start(
     request: AppConversationStartRequest,
     user_context: UserContext = user_context_dependency,
 ) -> list[AppConversationStartTask]:
     """Start an app conversation start task and stream updates from it.
-    Leaves the connection open until either the conversation starts or there was an error"""
+    Leaves the connection open until either the conversation starts or there was an error
+    """
     response = StreamingResponse(
         _stream_app_conversation_start(request, user_context),
-        media_type='application/json',
+        media_type="application/json",
     )
     return response
 
 
-@router.get('/start-tasks/search')
+@router.get("/start-tasks/search")
 async def search_app_conversation_start_tasks(
     conversation_id__eq: Annotated[
         UUID | None,
-        Query(title='Filter by conversation ID equal to this value'),
+        Query(title="Filter by conversation ID equal to this value"),
     ] = None,
     sort_order: Annotated[
         AppConversationStartTaskSortOrder,
-        Query(title='Sort order for the results'),
+        Query(title="Sort order for the results"),
     ] = AppConversationStartTaskSortOrder.CREATED_AT_DESC,
     page_id: Annotated[
         str | None,
-        Query(title='Optional next_page_id from the previously returned page'),
+        Query(title="Optional next_page_id from the previously returned page"),
     ] = None,
     limit: Annotated[
         int,
         Query(
-            title='The max number of results in the page',
+            title="The max number of results in the page",
             gt=0,
             lte=100,
         ),
@@ -240,11 +241,11 @@ async def search_app_conversation_start_tasks(
     )
 
 
-@router.get('/start-tasks/count')
+@router.get("/start-tasks/count")
 async def count_app_conversation_start_tasks(
     conversation_id__eq: Annotated[
         UUID | None,
-        Query(title='Filter by conversation ID equal to this value'),
+        Query(title="Filter by conversation ID equal to this value"),
     ] = None,
     app_conversation_start_task_service: AppConversationStartTaskService = (
         app_conversation_start_task_service_dependency
@@ -256,7 +257,7 @@ async def count_app_conversation_start_tasks(
     )
 
 
-@router.get('/start-tasks')
+@router.get("/start-tasks")
 async def batch_get_app_conversation_start_tasks(
     ids: Annotated[list[UUID], Query()],
     app_conversation_start_task_service: AppConversationStartTaskService = (
@@ -290,18 +291,17 @@ async def _stream_app_conversation_start(
     user_context: UserContext,
 ) -> AsyncGenerator[str, None]:
     """Stream a json list, item by item."""
-
     # Because the original dependencies are closed after the method returns, we need
     # a new dependency context which will continue intil the stream finishes.
     state = InjectorState()
     setattr(state, USER_CONTEXT_ATTR, user_context)
     async with get_app_conversation_service(state) as app_conversation_service:
-        yield '[\n'
+        yield "[\n"
         comma = False
         async for task in app_conversation_service.start_app_conversation(request):
             chunk = task.model_dump_json()
             if comma:
-                chunk = ',\n' + chunk
+                chunk = ",\n" + chunk
             comma = True
             yield chunk
-        yield ']'
+        yield "]"

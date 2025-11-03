@@ -23,7 +23,7 @@ class GetMessageMock:
 
     async def get_message(self, **kwargs):
         await asyncio.sleep(self.sleep_time)
-        return {'data': json.dumps(self.message)}
+        return {"data": json.dumps(self.message)}
 
 
 class AsyncIteratorMock:
@@ -88,7 +88,7 @@ async def test_session_not_running_in_cluster():
         sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
     ) as conversation_manager:
         result = await conversation_manager._get_running_agent_loops_remotely(
-            filter_to_sids={'non-existant-session'}
+            filter_to_sids={"non-existant-session"}
         )
         assert result == set()
         # Verify scan_iter was called with the correct pattern
@@ -99,15 +99,15 @@ async def test_session_not_running_in_cluster():
 async def test_get_running_agent_loops_remotely():
     # Create a mock SIO with scan results for 'existing-session'
     # The key format is 'ohcnv:{user_id}:{conversation_id}'
-    sio = get_mock_sio(scan_keys=[b'ohcnv:1:existing-session'])
+    sio = get_mock_sio(scan_keys=[b"ohcnv:1:existing-session"])
 
     async with ClusteredConversationManager(
         sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
     ) as conversation_manager:
         result = await conversation_manager._get_running_agent_loops_remotely(
-            1, {'existing-session'}
+            1, {"existing-session"}
         )
-        assert result == {'existing-session'}
+        assert result == {"existing-session"}
         # Verify scan_iter was called with the correct pattern
         sio.manager.redis.scan_iter.assert_called_once()
 
@@ -117,7 +117,7 @@ async def test_init_new_local_session():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
     session_instance.agent_session.event_stream.cur_id = 1
-    session_instance.user_id = '1'  # Add user_id for Redis key creation
+    session_instance.user_id = "1"  # Add user_id for Redis key creation
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio(scan_keys=[])
@@ -125,15 +125,15 @@ async def test_init_new_local_session():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
+            "openhands.server.conversation_manager.standalone_conversation_manager.Session",
             mock_session,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops',
+            "server.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops",
             get_running_agent_loops_mock,
         ),
     ):
@@ -141,10 +141,10 @@ async def test_init_new_local_session():
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), 1
+                "new-session-id", ConversationInitData(), 1
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), 1
+                "new-session-id", "new-session-id", ConversationInitData(), 1
             )
     assert session_instance.initialize_agent.call_count == 2
     assert sio.enter_room.await_count == 1
@@ -163,15 +163,15 @@ async def test_join_local_session():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
+            "openhands.server.conversation_manager.standalone_conversation_manager.Session",
             mock_session,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_running_agent_loops',
+            "openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_running_agent_loops",
             get_running_agent_loops_mock,
         ),
     ):
@@ -179,13 +179,13 @@ async def test_join_local_session():
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), None
+                "new-session-id", ConversationInitData(), None
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
+                "new-session-id", "new-session-id", ConversationInitData(), None
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), None
+                "new-session-id", "new-session-id", ConversationInitData(), None
             )
     assert session_instance.initialize_agent.call_count == 3
     assert sio.enter_room.await_count == 2
@@ -195,12 +195,12 @@ async def test_join_local_session():
 async def test_join_cluster_session():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
-    session_instance.user_id = '1'  # Add user_id for Redis key creation
+    session_instance.user_id = "1"  # Add user_id for Redis key creation
     mock_session = MagicMock()
     mock_session.return_value = session_instance
 
     # Create a mock SIO with scan results for 'new-session-id'
-    sio = get_mock_sio(scan_keys=[b'ohcnv:1:new-session-id'])
+    sio = get_mock_sio(scan_keys=[b"ohcnv:1:new-session-id"])
 
     # Mock the Redis set method to return False (key already exists)
     # This simulates that the conversation is already running on another server
@@ -212,15 +212,15 @@ async def test_join_cluster_session():
 
     with (
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
+            "openhands.server.conversation_manager.standalone_conversation_manager.Session",
             mock_session,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._get_event_store',
+            "server.clustered_conversation_manager.ClusteredConversationManager._get_event_store",
             get_event_store_mock,
         ),
     ):
@@ -230,7 +230,7 @@ async def test_join_cluster_session():
             # Call join_conversation with the same parameters as in the original test
             # The user_id is passed directly to the join_conversation method
             await conversation_manager.join_conversation(
-                'new-session-id', 'new-session-id', ConversationInitData(), '1'
+                "new-session-id", "new-session-id", ConversationInitData(), "1"
             )
 
     # Verify that the agent was not initialized (since it's running on another server)
@@ -245,7 +245,7 @@ async def test_add_to_local_event_stream():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
     session_instance.agent_session.event_stream.cur_id = 1
-    session_instance.user_id = '1'  # Add user_id for Redis key creation
+    session_instance.user_id = "1"  # Add user_id for Redis key creation
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio(scan_keys=[])
@@ -253,15 +253,15 @@ async def test_add_to_local_event_stream():
     get_running_agent_loops_mock.return_value = set()
     with (
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
+            "openhands.server.conversation_manager.standalone_conversation_manager.Session",
             mock_session,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops',
+            "server.clustered_conversation_manager.ClusteredConversationManager.get_running_agent_loops",
             get_running_agent_loops_mock,
         ),
     ):
@@ -269,27 +269,27 @@ async def test_add_to_local_event_stream():
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             await conversation_manager.maybe_start_agent_loop(
-                'new-session-id', ConversationInitData(), 1
+                "new-session-id", ConversationInitData(), 1
             )
             await conversation_manager.join_conversation(
-                'new-session-id', 'connection-id', ConversationInitData(), 1
+                "new-session-id", "connection-id", ConversationInitData(), 1
             )
             await conversation_manager.send_to_event_stream(
-                'connection-id', {'event_type': 'some_event'}
+                "connection-id", {"event_type": "some_event"}
             )
-    session_instance.dispatch.assert_called_once_with({'event_type': 'some_event'})
+    session_instance.dispatch.assert_called_once_with({"event_type": "some_event"})
 
 
 @pytest.mark.asyncio
 async def test_add_to_cluster_event_stream():
     session_instance = AsyncMock()
     session_instance.agent_session = MagicMock()
-    session_instance.user_id = '1'  # Add user_id for Redis key creation
+    session_instance.user_id = "1"  # Add user_id for Redis key creation
     mock_session = MagicMock()
     mock_session.return_value = session_instance
 
     # Create a mock SIO with scan results for 'new-session-id'
-    sio = get_mock_sio(scan_keys=[b'ohcnv:1:new-session-id'])
+    sio = get_mock_sio(scan_keys=[b"ohcnv:1:new-session-id"])
 
     # Mock the Redis set method to return False (key already exists)
     # This simulates that the conversation is already running on another server
@@ -297,11 +297,11 @@ async def test_add_to_cluster_event_stream():
 
     with (
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.Session',
+            "openhands.server.conversation_manager.standalone_conversation_manager.Session",
             mock_session,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
     ):
@@ -309,13 +309,13 @@ async def test_add_to_cluster_event_stream():
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
         ) as conversation_manager:
             # Set up the connection mapping
-            conversation_manager._local_connection_id_to_session_id['connection-id'] = (
-                'new-session-id'
+            conversation_manager._local_connection_id_to_session_id["connection-id"] = (
+                "new-session-id"
             )
 
             # Call send_to_event_stream
             await conversation_manager.send_to_event_stream(
-                'connection-id', {'event_type': 'some_event'}
+                "connection-id", {"event_type": "some_event"}
             )
 
     # In the refactored implementation, we publish a message to Redis
@@ -327,7 +327,7 @@ async def test_cleanup_session_connections():
     sio = get_mock_sio(scan_keys=[])
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
     ):
@@ -336,30 +336,30 @@ async def test_cleanup_session_connections():
         ) as conversation_manager:
             conversation_manager._local_connection_id_to_session_id.update(
                 {
-                    'conn1': 'session1',
-                    'conn2': 'session1',
-                    'conn3': 'session2',
-                    'conn4': 'session2',
+                    "conn1": "session1",
+                    "conn2": "session1",
+                    "conn3": "session2",
+                    "conn4": "session2",
                 }
             )
 
-            await conversation_manager._close_session('session1')
+            await conversation_manager._close_session("session1")
 
             # Verify disconnect was called for each connection to session1
             assert sio.disconnect.await_count == 2
-            sio.disconnect.assert_any_await('conn1')
-            sio.disconnect.assert_any_await('conn2')
+            sio.disconnect.assert_any_await("conn1")
+            sio.disconnect.assert_any_await("conn2")
 
             # Verify connections were removed from the mapping
             remaining_connections = (
                 conversation_manager._local_connection_id_to_session_id
             )
-            assert 'conn1' not in remaining_connections
-            assert 'conn2' not in remaining_connections
-            assert 'conn3' in remaining_connections
-            assert 'conn4' in remaining_connections
-            assert remaining_connections['conn3'] == 'session2'
-            assert remaining_connections['conn4'] == 'session2'
+            assert "conn1" not in remaining_connections
+            assert "conn2" not in remaining_connections
+            assert "conn3" in remaining_connections
+            assert "conn4" in remaining_connections
+            assert remaining_connections["conn3"] == "session2"
+            assert remaining_connections["conn4"] == "session2"
 
 
 @pytest.mark.asyncio
@@ -368,7 +368,7 @@ async def test_disconnect_from_stopped_no_remote_connections():
     sio = get_mock_sio(scan_keys=[])
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
     ):
@@ -378,11 +378,11 @@ async def test_disconnect_from_stopped_no_remote_connections():
             # Setup: All connections are to local sessions
             conversation_manager._local_connection_id_to_session_id.update(
                 {
-                    'conn1': 'session1',
-                    'conn2': 'session1',
+                    "conn1": "session1",
+                    "conn2": "session1",
                 }
             )
-            conversation_manager._local_agent_loops_by_sid['session1'] = MagicMock()
+            conversation_manager._local_agent_loops_by_sid["session1"] = MagicMock()
 
             # Execute
             await conversation_manager._disconnect_from_stopped()
@@ -397,21 +397,21 @@ async def test_disconnect_from_stopped_with_running_remote():
     """Test _disconnect_from_stopped when remote sessions are still running."""
     # Create a mock SIO with scan results for remote sessions
     sio = get_mock_sio(
-        scan_keys=[b'ohcnv:1:remote_session1', b'ohcnv:1:remote_session2']
+        scan_keys=[b"ohcnv:1:remote_session1", b"ohcnv:1:remote_session2"]
     )
     get_running_agent_loops_remotely_mock = AsyncMock()
     get_running_agent_loops_remotely_mock.return_value = {
-        'remote_session1',
-        'remote_session2',
+        "remote_session1",
+        "remote_session2",
     }
 
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._get_running_agent_loops_remotely',
+            "server.clustered_conversation_manager.ClusteredConversationManager._get_running_agent_loops_remotely",
             get_running_agent_loops_remotely_mock,
         ),
     ):
@@ -421,12 +421,12 @@ async def test_disconnect_from_stopped_with_running_remote():
             # Setup: Some connections are to remote sessions
             conversation_manager._local_connection_id_to_session_id.update(
                 {
-                    'conn1': 'local_session1',
-                    'conn2': 'remote_session1',
-                    'conn3': 'remote_session2',
+                    "conn1": "local_session1",
+                    "conn2": "remote_session1",
+                    "conn3": "remote_session2",
                 }
             )
-            conversation_manager._local_agent_loops_by_sid['local_session1'] = (
+            conversation_manager._local_agent_loops_by_sid["local_session1"] = (
                 MagicMock()
             )
 
@@ -442,7 +442,7 @@ async def test_disconnect_from_stopped_with_running_remote():
 async def test_disconnect_from_stopped_with_stopped_remote():
     """Test _disconnect_from_stopped when some remote sessions have stopped."""
     # Create a mock SIO with scan results for only remote_session1
-    sio = get_mock_sio(scan_keys=[b'ohcnv:user1:remote_session1'])
+    sio = get_mock_sio(scan_keys=[b"ohcnv:user1:remote_session1"])
 
     # Mock the database connection to avoid actual database connections
     db_mock = MagicMock()
@@ -452,14 +452,14 @@ async def test_disconnect_from_stopped_with_stopped_remote():
 
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.session_maker',
+            "server.clustered_conversation_manager.session_maker",
             session_maker_mock,
         ),
-        patch('asyncio.create_task', MagicMock()),
+        patch("asyncio.create_task", MagicMock()),
     ):
         async with ClusteredConversationManager(
             sio, OpenHandsConfig(), InMemoryFileStore(), MonitoringListener()
@@ -467,26 +467,26 @@ async def test_disconnect_from_stopped_with_stopped_remote():
             # Setup: Some connections are to remote sessions, one of which has stopped
             conversation_manager._local_connection_id_to_session_id.update(
                 {
-                    'conn1': 'local_session1',
-                    'conn2': 'remote_session1',  # Running
-                    'conn3': 'remote_session2',  # Stopped
-                    'conn4': 'remote_session2',  # Stopped (another connection to the same stopped session)
+                    "conn1": "local_session1",
+                    "conn2": "remote_session1",  # Running
+                    "conn3": "remote_session2",  # Stopped
+                    "conn4": "remote_session2",  # Stopped (another connection to the same stopped session)
                 }
             )
 
             # Mock the _get_running_agent_loops_remotely method
             conversation_manager._get_running_agent_loops_remotely = AsyncMock(
-                return_value={'remote_session1'}  # Only remote_session1 is running
+                return_value={"remote_session1"}  # Only remote_session1 is running
             )
 
             # Add a local session
-            conversation_manager._local_agent_loops_by_sid['local_session1'] = (
+            conversation_manager._local_agent_loops_by_sid["local_session1"] = (
                 MagicMock()
             )
 
             # Create a mock for the database query result
             mock_user = MagicMock()
-            mock_user.user_id = 'user1'
+            mock_user.user_id = "user1"
             db_session_mock.query.return_value.filter.return_value.first.return_value = mock_user
 
             # Mock the _handle_remote_conversation_stopped method with the correct signature
@@ -501,10 +501,10 @@ async def test_disconnect_from_stopped_with_stopped_remote():
             )
             # The method is called with user_id and connection_id in the refactored implementation
             conversation_manager._handle_remote_conversation_stopped.assert_any_call(
-                'user1', 'conn3'
+                "user1", "conn3"
             )
             conversation_manager._handle_remote_conversation_stopped.assert_any_call(
-                'user1', 'conn4'
+                "user1", "conn4"
             )
 
 
@@ -515,7 +515,7 @@ async def test_close_disconnected_detached_conversations():
 
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
     ):
@@ -527,8 +527,8 @@ async def test_close_disconnected_detached_conversations():
             conversation2 = AsyncMock()
             conversation_manager._detached_conversations.update(
                 {
-                    'session1': (conversation1, time.time()),
-                    'session2': (conversation2, time.time()),
+                    "session1": (conversation1, time.time()),
+                    "session2": (conversation2, time.time()),
                 }
             )
 
@@ -557,23 +557,23 @@ async def test_close_disconnected_inactive_sessions():
 
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_connections',
+            "openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_connections",
             get_connections_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._get_connections_remotely',
+            "server.clustered_conversation_manager.ClusteredConversationManager._get_connections_remotely",
             get_connections_remotely_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._close_session',
+            "server.clustered_conversation_manager.ClusteredConversationManager._close_session",
             close_session_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._cleanup_stale',
+            "server.clustered_conversation_manager.ClusteredConversationManager._cleanup_stale",
             AsyncMock(),
         ),
     ):
@@ -599,9 +599,9 @@ async def test_close_disconnected_inactive_sessions():
 
             conversation_manager._local_agent_loops_by_sid.update(
                 {
-                    'session1': session1,
-                    'session2': session2,
-                    'session3': session3,
+                    "session1": session1,
+                    "session2": session2,
+                    "session3": session3,
                 }
             )
 
@@ -610,7 +610,7 @@ async def test_close_disconnected_inactive_sessions():
 
             # Verify: Only session1 should be closed
             assert close_session_mock.await_count == 1
-            close_session_mock.assert_called_once_with('session1')
+            close_session_mock.assert_called_once_with("session1")
 
 
 @pytest.mark.asyncio
@@ -621,13 +621,13 @@ async def test_close_disconnected_with_connections():
     # Mock local connections
     get_connections_mock = AsyncMock()
     get_connections_mock.return_value = {
-        'conn1': 'session1'
+        "conn1": "session1"
     }  # session1 has a connection
 
     # Mock remote connections
     get_connections_remotely_mock = AsyncMock()
     get_connections_remotely_mock.return_value = {
-        'remote_conn': 'session2'
+        "remote_conn": "session2"
     }  # session2 has a remote connection
 
     close_session_mock = AsyncMock()
@@ -638,23 +638,23 @@ async def test_close_disconnected_with_connections():
 
     with (
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_connections',
+            "openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager.get_connections",
             get_connections_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._get_connections_remotely',
+            "server.clustered_conversation_manager.ClusteredConversationManager._get_connections_remotely",
             get_connections_remotely_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._close_session',
+            "server.clustered_conversation_manager.ClusteredConversationManager._close_session",
             close_session_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._cleanup_stale',
+            "server.clustered_conversation_manager.ClusteredConversationManager._cleanup_stale",
             AsyncMock(),
         ),
     ):
@@ -680,9 +680,9 @@ async def test_close_disconnected_with_connections():
 
             conversation_manager._local_agent_loops_by_sid.update(
                 {
-                    'session1': session1,
-                    'session2': session2,
-                    'session3': session3,
+                    "session1": session1,
+                    "session2": session2,
+                    "session3": session3,
                 }
             )
 
@@ -691,7 +691,7 @@ async def test_close_disconnected_with_connections():
 
             # Verify: Only session3 should be closed
             assert close_session_mock.await_count == 1
-            close_session_mock.assert_called_once_with('session3')
+            close_session_mock.assert_called_once_with("session3")
 
 
 @pytest.mark.asyncio
@@ -704,23 +704,23 @@ async def test_cleanup_stale_integration():
 
     with (
         patch(
-            'server.clustered_conversation_manager._CLEANUP_INTERVAL_SECONDS',
+            "server.clustered_conversation_manager._CLEANUP_INTERVAL_SECONDS",
             0.01,  # Short interval for testing
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe',
+            "server.clustered_conversation_manager.ClusteredConversationManager._redis_subscribe",
             AsyncMock(),
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._disconnect_from_stopped',
+            "server.clustered_conversation_manager.ClusteredConversationManager._disconnect_from_stopped",
             disconnect_from_stopped_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.ClusteredConversationManager._close_disconnected',
+            "server.clustered_conversation_manager.ClusteredConversationManager._close_disconnected",
             close_disconnected_mock,
         ),
         patch(
-            'server.clustered_conversation_manager.should_continue',
+            "server.clustered_conversation_manager.should_continue",
             MagicMock(side_effect=[True, True, False]),  # Run the loop 2 times
         ),
     ):

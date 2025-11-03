@@ -14,11 +14,11 @@ from openhands.agenthub import (  # noqa: E402
 from openhands.controller.agent import Agent  # noqa: E402
 
 __all__ = [
-    'Agent',
-    'codeact_agent',
-    'dummy_agent',
-    'browsing_agent',
-    'visualbrowsing_agent',
-    'readonly_agent',
-    'loc_agent',
+    "Agent",
+    "codeact_agent",
+    "dummy_agent",
+    "browsing_agent",
+    "visualbrowsing_agent",
+    "readonly_agent",
+    "loc_agent",
 ]

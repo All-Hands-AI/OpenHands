@@ -26,8 +26,8 @@ class SaaSExperimentManager(ExperimentManager):
     ) -> Agent:
         if not ENABLE_EXPERIMENT_MANAGER:
             logger.info(
-                'experiment_manager:run_conversation_variant_test:skipped',
-                extra={'reason': 'experiment_manager_disabled'},
+                "experiment_manager:run_conversation_variant_test:skipped",
+                extra={"reason": "experiment_manager_disabled"},
             )
             return agent
 
@@ -37,7 +37,7 @@ class SaaSExperimentManager(ExperimentManager):
 
         if EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT:
             agent = agent.model_copy(
-                update={'system_prompt_filename': 'system_prompt_long_horizon.j2'}
+                update={"system_prompt_filename": "system_prompt_long_horizon.j2"}
             )
 
         return agent
@@ -46,8 +46,7 @@ class SaaSExperimentManager(ExperimentManager):
     def run_conversation_variant_test(
         user_id, conversation_id, conversation_settings
     ) -> ConversationInitData:
-        """
-        Run conversation variant test and potentially modify the conversation settings
+        """Run conversation variant test and potentially modify the conversation settings
         based on the PostHog feature flags.
 
         Args:
@@ -59,15 +58,15 @@ class SaaSExperimentManager(ExperimentManager):
             The modified conversation settings
         """
         logger.debug(
-            'experiment_manager:run_conversation_variant_test:started',
-            extra={'user_id': user_id},
+            "experiment_manager:run_conversation_variant_test:started",
+            extra={"user_id": user_id},
         )
 
         # Skip all experiment processing if the experiment manager is disabled
         if not ENABLE_EXPERIMENT_MANAGER:
             logger.info(
-                'experiment_manager:run_conversation_variant_test:skipped',
-                extra={'reason': 'experiment_manager_disabled'},
+                "experiment_manager:run_conversation_variant_test:skipped",
+                extra={"reason": "experiment_manager_disabled"},
             )
             return conversation_settings
 
@@ -82,8 +81,7 @@ class SaaSExperimentManager(ExperimentManager):
     def run_config_variant_test(
         user_id: str | None, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
-        """
-        Run agent config variant test and potentially modify the OpenHands config
+        """Run agent config variant test and potentially modify the OpenHands config
         based on the current experiment type and PostHog feature flags.
 
         Args:
@@ -95,15 +93,15 @@ class SaaSExperimentManager(ExperimentManager):
             The modified OpenHands configuration
         """
         logger.info(
-            'experiment_manager:run_config_variant_test:started',
-            extra={'user_id': user_id},
+            "experiment_manager:run_config_variant_test:started",
+            extra={"user_id": user_id},
         )
 
         # Skip all experiment processing if the experiment manager is disabled
         if not ENABLE_EXPERIMENT_MANAGER:
             logger.info(
-                'experiment_manager:run_config_variant_test:skipped',
-                extra={'reason': 'experiment_manager_disabled'},
+                "experiment_manager:run_config_variant_test:skipped",
+                extra={"reason": "experiment_manager_disabled"},
             )
             return config
 

@@ -22,17 +22,17 @@ class OssAppLifespanService(AppLifespanService):
 
     def run_alembic(self):
         # Run alembic upgrade head to ensure database is up to date
-        alembic_dir = Path(__file__).parent / 'alembic'
-        alembic_ini = alembic_dir / 'alembic.ini'
+        alembic_dir = Path(__file__).parent / "alembic"
+        alembic_ini = alembic_dir / "alembic.ini"
 
         # Create alembic config with absolute paths
         alembic_cfg = Config(str(alembic_ini))
-        alembic_cfg.set_main_option('script_location', str(alembic_dir))
+        alembic_cfg.set_main_option("script_location", str(alembic_dir))
 
         # Change to alembic directory for the command execution
         original_cwd = os.getcwd()
         try:
             os.chdir(str(alembic_dir.parent))
-            command.upgrade(alembic_cfg, 'head')
+            command.upgrade(alembic_cfg, "head")
         finally:
             os.chdir(original_cwd)

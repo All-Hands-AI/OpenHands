@@ -34,8 +34,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 async def process_event(
     user_id: str, conversation_id: str, subpath: str, content: dict
 ):
-    """
-    Process a conversation event and invoke any registered callbacks.
+    """Process a conversation event and invoke any registered callbacks.
 
     Args:
         user_id: The user ID associated with the conversation
@@ -44,11 +43,11 @@ async def process_event(
         content: The event content
     """
     logger.debug(
-        'process_event',
+        "process_event",
         extra={
-            'user_id': user_id,
-            'conversation_id': conversation_id,
-            'content': content,
+            "user_id": user_id,
+            "conversation_id": conversation_id,
+            "content": content,
         },
     )
     write_path = get_conversation_dir(conversation_id, user_id) + subpath
@@ -72,8 +71,7 @@ async def process_event(
 async def invoke_conversation_callbacks(
     conversation_id: str, observation: AgentStateChangedObservation
 ):
-    """
-    Load and invoke all active callbacks for a conversation.
+    """Load and invoke all active callbacks for a conversation.
 
     Args:
         conversation_id: The conversation ID to process callbacks for
@@ -94,21 +92,21 @@ async def invoke_conversation_callbacks(
                 processor = callback.get_processor()
                 await processor.__call__(callback, observation)
                 logger.info(
-                    'callback_invoked_successfully',
+                    "callback_invoked_successfully",
                     extra={
-                        'conversation_id': conversation_id,
-                        'callback_id': callback.id,
-                        'processor_type': callback.processor_type,
+                        "conversation_id": conversation_id,
+                        "callback_id": callback.id,
+                        "processor_type": callback.processor_type,
                     },
                 )
             except Exception as e:
                 logger.error(
-                    'callback_invocation_failed',
+                    "callback_invocation_failed",
                     extra={
-                        'conversation_id': conversation_id,
-                        'callback_id': callback.id,
-                        'processor_type': callback.processor_type,
-                        'error': str(e),
+                        "conversation_id": conversation_id,
+                        "callback_id": callback.id,
+                        "processor_type": callback.processor_type,
+                        "error": str(e),
                     },
                 )
                 # Mark callback as error status
@@ -119,18 +117,17 @@ async def invoke_conversation_callbacks(
 
 
 def update_conversation_metadata(conversation_id: str, content: dict):
-    """
-    Update conversation metadata with new content.
+    """Update conversation metadata with new content.
 
     Args:
         conversation_id: The conversation ID to update
         content: The metadata content to update
     """
     logger.debug(
-        'update_conversation_metadata',
+        "update_conversation_metadata",
         extra={
-            'conversation_id': conversation_id,
-            'content': content,
+            "conversation_id": conversation_id,
+            "content": content,
         },
     )
     with session_maker() as session:
@@ -139,19 +136,19 @@ def update_conversation_metadata(conversation_id: str, content: dict):
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
             .first()
         )
-        conversation.title = content.get('title') or conversation.title
+        conversation.title = content.get("title") or conversation.title
         conversation.last_updated_at = datetime.now()
         conversation.accumulated_cost = (
-            content.get('accumulated_cost') or conversation.accumulated_cost
+            content.get("accumulated_cost") or conversation.accumulated_cost
         )
         conversation.prompt_tokens = (
-            content.get('prompt_tokens') or conversation.prompt_tokens
+            content.get("prompt_tokens") or conversation.prompt_tokens
         )
         conversation.completion_tokens = (
-            content.get('completion_tokens') or conversation.completion_tokens
+            content.get("completion_tokens") or conversation.completion_tokens
         )
         conversation.total_tokens = (
-            content.get('total_tokens') or conversation.total_tokens
+            content.get("total_tokens") or conversation.total_tokens
         )
         session.commit()
 
@@ -159,8 +156,7 @@ def update_conversation_metadata(conversation_id: str, content: dict):
 def register_callback_processor(
     conversation_id: str, processor: ConversationCallbackProcessor
 ) -> int:
-    """
-    Register a callback processor for a conversation.
+    """Register a callback processor for a conversation.
 
     Args:
         conversation_id: The conversation ID to register the callback for
@@ -182,8 +178,7 @@ def register_callback_processor(
 def update_active_working_seconds(
     event_store: EventStore, conversation_id: str, user_id: str, file_store: FileStore
 ):
-    """
-    Calculate and update the total active working seconds for a conversation.
+    """Calculate and update the total active working seconds for a conversation.
 
     This function reads all events for the conversation, looks for AgentStateChanged
     observations, and calculates the total time spent in a running state.
@@ -240,28 +235,27 @@ def update_active_working_seconds(
             session.commit()
 
         logger.info(
-            'updated_active_working_seconds',
+            "updated_active_working_seconds",
             extra={
-                'conversation_id': conversation_id,
-                'user_id': user_id,
-                'total_seconds': total_running_seconds,
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "total_seconds": total_running_seconds,
             },
         )
 
     except Exception as e:
         logger.error(
-            'failed_to_update_active_working_seconds',
+            "failed_to_update_active_working_seconds",
             extra={
-                'conversation_id': conversation_id,
-                'user_id': user_id,
-                'error': str(e),
+                "conversation_id": conversation_id,
+                "user_id": user_id,
+                "error": str(e),
             },
         )
 
 
 def update_agent_state(user_id: str, conversation_id: str, content: bytes):
-    """
-    Update agent state file for a conversation.
+    """Update agent state file for a conversation.
 
     Args:
         user_id: The user ID associated with the conversation
@@ -269,11 +263,11 @@ def update_agent_state(user_id: str, conversation_id: str, content: bytes):
         content: The agent state content as bytes
     """
     logger.debug(
-        'update_agent_state',
+        "update_agent_state",
         extra={
-            'user_id': user_id,
-            'conversation_id': conversation_id,
-            'content_size': len(content),
+            "user_id": user_id,
+            "conversation_id": conversation_id,
+            "content_size": len(content),
         },
     )
     write_path = get_conversation_agent_state_filename(conversation_id, user_id)

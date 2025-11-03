@@ -35,15 +35,15 @@ def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
             id=AGENT_SERVER_IMAGE,
-            command=['--port', '8000'],
+            command=["--port", "8000"],
             initial_env={
-                'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
-                'OH_ENABLE_VNC': '0',
-                'LOG_JSON': 'true',
-                'OH_CONVERSATIONS_PATH': '/workspace/conversations',
-                'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
+                "OPENVSCODE_SERVER_ROOT": "/openhands/.openvscode-server",
+                "OH_ENABLE_VNC": "0",
+                "LOG_JSON": "true",
+                "OH_CONVERSATIONS_PATH": "/workspace/conversations",
+                "OH_BASH_EVENTS_DIR": "/workspace/bash_events",
             },
-            working_dir='/workspace/project',
+            working_dir="/workspace/project",
         )
     ]
 
@@ -51,13 +51,13 @@ def get_default_sandbox_specs():
 class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     specs: list[SandboxSpecInfo] = Field(
         default_factory=get_default_sandbox_specs,
-        description='Preset list of sandbox specs',
+        description="Preset list of sandbox specs",
     )
     pull_if_missing: bool = Field(
         default=True,
         description=(
-            'Flag indicating that any missing specs should be pulled from '
-            'remote repositories.'
+            "Flag indicating that any missing specs should be pulled from "
+            "remote repositories."
         ),
     )
 
@@ -75,16 +75,16 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         await asyncio.gather(*[self.pull_spec_if_missing(spec) for spec in self.specs])
 
     async def pull_spec_if_missing(self, spec: SandboxSpecInfo):
-        _logger.debug(f'Checking Docker Image: {spec.id}')
+        _logger.debug(f"Checking Docker Image: {spec.id}")
         try:
             docker_client = get_docker_client()
             try:
                 docker_client.images.get(spec.id)
             except docker.errors.ImageNotFound:
-                _logger.info(f'⬇️ Pulling Docker Image: {spec.id}')
+                _logger.info(f"⬇️ Pulling Docker Image: {spec.id}")
                 # Pull in a background thread to prevent locking up the main runloop
                 loop = asyncio.get_running_loop()
                 await loop.run_in_executor(None, docker_client.images.pull, spec.id)
-                _logger.info(f'⬇️ Finished Pulling Docker Image: {spec.id}')
+                _logger.info(f"⬇️ Finished Pulling Docker Image: {spec.id}")
         except docker.errors.APIError as exc:
-            raise SandboxError(f'Error Getting Docker Image: {spec.id}') from exc
+            raise SandboxError(f"Error Getting Docker Image: {spec.id}") from exc

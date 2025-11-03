@@ -46,7 +46,7 @@ from openhands.utils.utils import create_registry_and_conversation_stats
 from .conversation_manager import ConversationManager
 
 _CLEANUP_INTERVAL = 15
-UPDATED_AT_CALLBACK_ID = 'updated_at_callback_id'
+UPDATED_AT_CALLBACK_ID = "updated_at_callback_id"
 
 
 @dataclass
@@ -101,7 +101,7 @@ class StandaloneConversationManager(ConversationManager):
                 conversation, count = self._active_conversations[sid]
                 self._active_conversations[sid] = (conversation, count + 1)
                 logger.info(
-                    f'Reusing active conversation {sid}', extra={'session_id': sid}
+                    f"Reusing active conversation {sid}", extra={"session_id": sid}
                 )
                 return conversation
 
@@ -110,7 +110,7 @@ class StandaloneConversationManager(ConversationManager):
                 conversation, _ = self._detached_conversations.pop(sid)
                 self._active_conversations[sid] = (conversation, 1)
                 logger.info(
-                    f'Reusing detached conversation {sid}', extra={'session_id': sid}
+                    f"Reusing detached conversation {sid}", extra={"session_id": sid}
                 )
                 return conversation
 
@@ -135,15 +135,15 @@ class StandaloneConversationManager(ConversationManager):
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
                 logger.error(
-                    f'Error connecting to conversation {c.sid}: {e}',
-                    extra={'session_id': sid},
+                    f"Error connecting to conversation {c.sid}: {e}",
+                    extra={"session_id": sid},
                 )
                 await c.disconnect()
                 return None
             end_time = time.time()
             logger.info(
-                f'ServerConversation {c.sid} connected in {end_time - start_time} seconds',
-                extra={'session_id': sid},
+                f"ServerConversation {c.sid} connected in {end_time - start_time} seconds",
+                extra={"session_id": sid},
             )
             self._active_conversations[sid] = (c, 1)
             return c
@@ -156,8 +156,8 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
     ) -> AgentLoopInfo:
         logger.info(
-            f'join_conversation:{sid}:{connection_id}',
-            extra={'session_id': sid, 'user_id': user_id},
+            f"join_conversation:{sid}:{connection_id}",
+            extra={"session_id": sid, "user_id": user_id},
         )
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self._local_connection_id_to_session_id[connection_id] = sid
@@ -224,7 +224,7 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 return
             except Exception:
-                logger.error('error_cleaning_stale')
+                logger.error("error_cleaning_stale")
                 await asyncio.sleep(_CLEANUP_INTERVAL)
 
     async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
@@ -285,7 +285,7 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> AgentLoopInfo:
-        logger.info(f'maybe_start_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(f"maybe_start_agent_loop:{sid}", extra={"session_id": sid})
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
             session = await self._start_agent_loop(
@@ -301,13 +301,13 @@ class StandaloneConversationManager(ConversationManager):
         initial_user_msg: MessageAction | None = None,
         replay_json: str | None = None,
     ) -> Session:
-        logger.info(f'starting_agent_loop:{sid}', extra={'session_id': sid})
+        logger.info(f"starting_agent_loop:{sid}", extra={"session_id": sid})
 
         response_ids = await self.get_running_agent_loops(user_id)
         if len(response_ids) >= self.config.max_concurrent_conversations:
             logger.info(
-                f'too_many_sessions_for:{user_id or ""}',
-                extra={'session_id': sid, 'user_id': user_id},
+                f"too_many_sessions_for:{user_id or ''}",
+                extra={"session_id": sid, "user_id": user_id},
             )
             # Get the conversations sorted (oldest first)
             conversation_store = await self._get_conversation_store(user_id)
@@ -317,19 +317,19 @@ class StandaloneConversationManager(ConversationManager):
             while len(conversations) >= self.config.max_concurrent_conversations:
                 oldest_conversation_id = conversations.pop().conversation_id
                 logger.debug(
-                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
-                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+                    f"closing_from_too_many_sessions:{user_id or ''}:{oldest_conversation_id}",
+                    extra={"session_id": oldest_conversation_id, "user_id": user_id},
                 )
                 # Send status message to client and close session.
                 status_update_dict = {
-                    'status_update': True,
-                    'type': 'error',
-                    'id': 'AGENT_ERROR$TOO_MANY_CONVERSATIONS',
-                    'message': 'Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue',
+                    "status_update": True,
+                    "type": "error",
+                    "id": "AGENT_ERROR$TOO_MANY_CONVERSATIONS",
+                    "message": "Too many conversations at once. If you are still using this one, try reactivating it by prompting the agent to continue",
                 }
                 await run_in_loop(
                     self.sio.emit(
-                        'oh_event',
+                        "oh_event",
                         status_update_dict,
                         to=ROOM_KEY.format(sid=oldest_conversation_id),
                     ),
@@ -370,13 +370,13 @@ class StandaloneConversationManager(ConversationManager):
         # If there is a local session running, send to that
         sid = self._local_connection_id_to_session_id.get(connection_id)
         if not sid:
-            raise RuntimeError(f'no_connected_session:{connection_id}')
+            raise RuntimeError(f"no_connected_session:{connection_id}")
         await self.send_event_to_conversation(sid, data)
 
     async def send_event_to_conversation(self, sid: str, data: dict):
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
-            raise RuntimeError(f'no_conversation:{sid}')
+            raise RuntimeError(f"no_conversation:{sid}")
         await session.dispatch(data)
 
     async def request_llm_completion(
@@ -388,7 +388,7 @@ class StandaloneConversationManager(ConversationManager):
     ):
         session = self._local_agent_loops_by_sid.get(sid)
         if not session:
-            raise RuntimeError(f'no_conversation:{sid}')
+            raise RuntimeError(f"no_conversation:{sid}")
         llm_registry = session.llm_registry
         return llm_registry.request_extraneous_completion(
             service_id, llm_config, messages
@@ -397,13 +397,13 @@ class StandaloneConversationManager(ConversationManager):
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
         logger.info(
-            f'disconnect_from_session:{connection_id}:{sid}', extra={'session_id': sid}
+            f"disconnect_from_session:{connection_id}:{sid}", extra={"session_id": sid}
         )
         if not sid:
             # This can occur if the init action was never run.
             logger.warning(
-                f'disconnect_from_uninitialized_session:{connection_id}',
-                extra={'session_id': sid},
+                f"disconnect_from_uninitialized_session:{connection_id}",
+                extra={"session_id": sid},
             )
             return
 
@@ -427,7 +427,7 @@ class StandaloneConversationManager(ConversationManager):
         return None
 
     async def _close_session(self, sid: str):
-        logger.info(f'_close_session:{sid}', extra={'session_id': sid})
+        logger.info(f"_close_session:{sid}", extra={"session_id": sid})
 
         # Clear up local variables
         connection_ids_to_remove = list(
@@ -436,8 +436,8 @@ class StandaloneConversationManager(ConversationManager):
             if sid == conn_sid
         )
         logger.info(
-            f'removing connections: {connection_ids_to_remove}',
-            extra={'session_id': sid},
+            f"removing connections: {connection_ids_to_remove}",
+            extra={"session_id": sid},
         )
         # Perform a graceful shutdown of each connection
         for connection_id in connection_ids_to_remove:
@@ -446,12 +446,12 @@ class StandaloneConversationManager(ConversationManager):
 
         session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
-            logger.warning(f'no_session_to_close:{sid}', extra={'session_id': sid})
+            logger.warning(f"no_session_to_close:{sid}", extra={"session_id": sid})
             return
 
-        logger.info(f'closing_session:{session.sid}', extra={'session_id': sid})
+        logger.info(f"closing_session:{session.sid}", extra={"session_id": sid})
         await session.close()
-        logger.info(f'closed_session:{session.sid}', extra={'session_id': sid})
+        logger.info(f"closed_session:{session.sid}", extra={"session_id": sid})
 
     @classmethod
     def get_instance(
@@ -503,15 +503,15 @@ class StandaloneConversationManager(ConversationManager):
         conversation.last_updated_at = datetime.now(timezone.utc)
 
         # Update cost/token metrics if event has llm_metrics
-        if event and hasattr(event, 'llm_metrics') and event.llm_metrics:
+        if event and hasattr(event, "llm_metrics") and event.llm_metrics:
             metrics = event.llm_metrics
 
             # Update accumulated cost
-            if hasattr(metrics, 'accumulated_cost'):
+            if hasattr(metrics, "accumulated_cost"):
                 conversation.accumulated_cost = metrics.accumulated_cost
 
             # Update token usage
-            if hasattr(metrics, 'accumulated_token_usage'):
+            if hasattr(metrics, "accumulated_token_usage"):
                 token_usage = metrics.accumulated_token_usage
                 conversation.prompt_tokens = token_usage.prompt_tokens
                 conversation.completion_tokens = token_usage.completion_tokens
@@ -522,10 +522,10 @@ class StandaloneConversationManager(ConversationManager):
         # Check for branch changes if this is a git-related event
         if event and self._is_git_related_event(event):
             logger.info(
-                f'Git-related event detected, updating conversation branch for {conversation_id}',
+                f"Git-related event detected, updating conversation branch for {conversation_id}",
                 extra={
-                    'session_id': conversation_id,
-                    'command': getattr(event, 'command', 'unknown'),
+                    "session_id": conversation_id,
+                    "command": getattr(event, "command", "unknown"),
                 },
             )
             await self._update_conversation_branch(conversation)
@@ -542,29 +542,28 @@ class StandaloneConversationManager(ConversationManager):
                 try:
                     # Emit a status update to the client with the new title
                     status_update_dict = {
-                        'status_update': True,
-                        'type': 'info',
-                        'message': conversation_id,
-                        'conversation_title': conversation.title,
+                        "status_update": True,
+                        "type": "info",
+                        "message": conversation_id,
+                        "conversation_title": conversation.title,
                     }
                     await run_in_loop(
                         self.sio.emit(
-                            'oh_event',
+                            "oh_event",
                             status_update_dict,
                             to=ROOM_KEY.format(sid=conversation_id),
                         ),
                         self._loop,  # type:ignore
                     )
                 except Exception as e:
-                    logger.error(f'Error emitting title update event: {e}')
+                    logger.error(f"Error emitting title update event: {e}")
             else:
                 conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
 
     def _is_git_related_event(self, event) -> bool:
-        """
-        Determine if an event is related to git operations that could change the branch.
+        """Determine if an event is related to git operations that could change the branch.
 
         Args:
             event: The event to check
@@ -587,20 +586,20 @@ class StandaloneConversationManager(ConversationManager):
             # Check if any git command that changes branches is present anywhere in the command
             # This handles compound commands like "cd workspace && git checkout feature-branch"
             git_commands = [
-                'git checkout',
-                'git switch',
-                'git merge',
-                'git rebase',
-                'git reset',
-                'git branch',
+                "git checkout",
+                "git switch",
+                "git merge",
+                "git rebase",
+                "git reset",
+                "git branch",
             ]
 
             is_git_related = any(git_cmd in command for git_cmd in git_commands)
 
             if is_git_related:
                 logger.debug(
-                    f'Detected git-related command: {command} with exit code {event.metadata.exit_code}',
-                    extra={'command': command, 'exit_code': event.metadata.exit_code},
+                    f"Detected git-related command: {command} with exit code {event.metadata.exit_code}",
+                    extra={"command": command, "exit_code": event.metadata.exit_code},
                 )
 
             return is_git_related
@@ -608,8 +607,7 @@ class StandaloneConversationManager(ConversationManager):
         return False
 
     async def _update_conversation_branch(self, conversation: ConversationMetadata):
-        """
-        Update the conversation's current branch if it has changed.
+        """Update the conversation's current branch if it has changed.
 
         Args:
             conversation: The conversation metadata to update
@@ -634,15 +632,14 @@ class StandaloneConversationManager(ConversationManager):
         except Exception as e:
             # Log an error that occurred during branch update
             logger.warning(
-                f'Failed to update conversation branch: {e}',
-                extra={'session_id': conversation.conversation_id},
+                f"Failed to update conversation branch: {e}",
+                extra={"session_id": conversation.conversation_id},
             )
 
     def _get_session_and_runtime(
         self, conversation_id: str
     ) -> tuple[Session | None, Any | None]:
-        """
-        Get the session and runtime for a conversation.
+        """Get the session and runtime for a conversation.
 
         Args:
             conversation_id: The conversation ID
@@ -658,8 +655,7 @@ class StandaloneConversationManager(ConversationManager):
     def _get_current_workspace_branch(
         self, runtime: Any, selected_repository: str | None
     ) -> str | None:
-        """
-        Get the current branch from the workspace.
+        """Get the current branch from the workspace.
 
         Args:
             runtime: The runtime instance
@@ -673,15 +669,14 @@ class StandaloneConversationManager(ConversationManager):
             primary_repo_path = None
         else:
             # Extract the repository name from the full path (e.g., "org/repo" -> "repo")
-            primary_repo_path = selected_repository.split('/')[-1]
+            primary_repo_path = selected_repository.split("/")[-1]
 
         return runtime.get_workspace_branch(primary_repo_path)
 
     def _should_update_branch(
         self, current_branch: str | None, new_branch: str | None
     ) -> bool:
-        """
-        Determine if the branch should be updated.
+        """Determine if the branch should be updated.
 
         Args:
             current_branch: The current branch in conversation metadata
@@ -695,8 +690,7 @@ class StandaloneConversationManager(ConversationManager):
     def _update_branch_in_conversation(
         self, conversation: ConversationMetadata, new_branch: str | None
     ):
-        """
-        Update the branch in the conversation metadata.
+        """Update the branch in the conversation metadata.
 
         Args:
             conversation: The conversation metadata to update
@@ -706,8 +700,8 @@ class StandaloneConversationManager(ConversationManager):
         conversation.selected_branch = new_branch
 
         logger.info(
-            f'Branch changed from {old_branch} to {new_branch}',
-            extra={'session_id': conversation.conversation_id},
+            f"Branch changed from {old_branch} to {new_branch}",
+            extra={"session_id": conversation.conversation_id},
         )
 
     async def get_agent_loop_info(
@@ -730,12 +724,12 @@ class StandaloneConversationManager(ConversationManager):
             event_store=session.agent_session.event_stream,
             status=_get_status_from_session(session),
             runtime_status=getattr(
-                session.agent_session.runtime, 'runtime_status', None
+                session.agent_session.runtime, "runtime_status", None
             ),
         )
 
     def _get_conversation_url(self, conversation_id: str):
-        return f'/api/conversations/{conversation_id}'
+        return f"/api/conversations/{conversation_id}"
 
 
 def _get_status_from_session(session: Session) -> ConversationStatus:

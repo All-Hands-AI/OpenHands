@@ -3,4 +3,4 @@
 from openhands.server.session.session import WebSession
 from openhands.server.session.session import WebSession as Session
 
-__all__ = ['WebSession', 'Session']
+__all__ = ["WebSession", "Session"]

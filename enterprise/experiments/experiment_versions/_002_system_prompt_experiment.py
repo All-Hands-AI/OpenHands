@@ -1,5 +1,4 @@
-"""
-System prompt experiment handler.
+"""System prompt experiment handler.
 
 This module contains the handler for the system prompt experiment that uses
 the PostHog variant as the system prompt filename.
@@ -17,8 +16,7 @@ from openhands.core.logger import openhands_logger as logger
 
 
 def _get_system_prompt_variant(user_id, conversation_id):
-    """
-    Get the system prompt variant for the experiment.
+    """Get the system prompt variant for the experiment.
 
     Args:
         user_id: The user ID
@@ -30,11 +28,11 @@ def _get_system_prompt_variant(user_id, conversation_id):
     # No-op if the specific experiment is not enabled
     if not EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT:
         logger.info(
-            'experiment_manager_002:ab_testing:skipped',
+            "experiment_manager_002:ab_testing:skipped",
             extra={
-                'convo_id': conversation_id,
-                'reason': 'experiment_not_enabled',
-                'experiment': EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
+                "convo_id": conversation_id,
+                "reason": "experiment_not_enabled",
+                "experiment": EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
             },
         )
         return None
@@ -46,11 +44,11 @@ def _get_system_prompt_variant(user_id, conversation_id):
         )
     except Exception as e:
         logger.error(
-            'experiment_manager:get_feature_flag:failed',
+            "experiment_manager:get_feature_flag:failed",
             extra={
-                'convo_id': conversation_id,
-                'experiment': EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
-                'error': str(e),
+                "convo_id": conversation_id,
+                "experiment": EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
+                "error": str(e),
             },
         )
         return None
@@ -60,17 +58,17 @@ def _get_system_prompt_variant(user_id, conversation_id):
         experiment_store = ExperimentAssignmentStore()
         experiment_store.update_experiment_variant(
             conversation_id=conversation_id,
-            experiment_name='system_prompt_experiment',
+            experiment_name="system_prompt_experiment",
             variant=enabled_variant,
         )
     except Exception as e:
         logger.error(
-            'experiment_manager:store_assignment:failed',
+            "experiment_manager:store_assignment:failed",
             extra={
-                'convo_id': conversation_id,
-                'experiment': EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
-                'variant': enabled_variant,
-                'error': str(e),
+                "convo_id": conversation_id,
+                "experiment": EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
+                "variant": enabled_variant,
+                "error": str(e),
             },
         )
         # Fail the experiment if we cannot track the splits - results would not be explainable
@@ -78,38 +76,38 @@ def _get_system_prompt_variant(user_id, conversation_id):
 
     # Log the experiment event
     # If this is a feature environment, add "FEATURE_" prefix to user_id for PostHog
-    posthog_user_id = f'FEATURE_{user_id}' if IS_FEATURE_ENV else user_id
+    posthog_user_id = f"FEATURE_{user_id}" if IS_FEATURE_ENV else user_id
 
     try:
         posthog.capture(
             distinct_id=posthog_user_id,
-            event='system_prompt_set',
+            event="system_prompt_set",
             properties={
-                'conversation_id': conversation_id,
-                'variant': enabled_variant,
-                'original_user_id': user_id,
-                'is_feature_env': IS_FEATURE_ENV,
+                "conversation_id": conversation_id,
+                "variant": enabled_variant,
+                "original_user_id": user_id,
+                "is_feature_env": IS_FEATURE_ENV,
             },
         )
     except Exception as e:
         logger.error(
-            'experiment_manager:posthog_capture:failed',
+            "experiment_manager:posthog_capture:failed",
             extra={
-                'convo_id': conversation_id,
-                'experiment': EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
-                'error': str(e),
+                "convo_id": conversation_id,
+                "experiment": EXPERIMENT_SYSTEM_PROMPT_EXPERIMENT,
+                "error": str(e),
             },
         )
         # Continue execution as this is not critical
 
     logger.info(
-        'posthog_capture',
+        "posthog_capture",
         extra={
-            'event': 'system_prompt_set',
-            'posthog_user_id': posthog_user_id,
-            'is_feature_env': IS_FEATURE_ENV,
-            'conversation_id': conversation_id,
-            'variant': enabled_variant,
+            "event": "system_prompt_set",
+            "posthog_user_id": posthog_user_id,
+            "is_feature_env": IS_FEATURE_ENV,
+            "conversation_id": conversation_id,
+            "variant": enabled_variant,
         },
     )
 
@@ -119,8 +117,7 @@ def _get_system_prompt_variant(user_id, conversation_id):
 def handle_system_prompt_experiment(
     user_id, conversation_id, config: OpenHandsConfig
 ) -> OpenHandsConfig:
-    """
-    Handle the system prompt experiment for OpenHands config.
+    """Handle the system prompt experiment for OpenHands config.
 
     Args:
         user_id: The user ID
@@ -140,41 +137,41 @@ def handle_system_prompt_experiment(
     modified_config = copy.deepcopy(config)
 
     # Set the system prompt filename based on the variant
-    if enabled_variant == 'control':
+    if enabled_variant == "control":
         # Use the long-horizon system prompt for the control variant
         agent_config = modified_config.get_agent_config(modified_config.default_agent)
-        agent_config.system_prompt_filename = 'system_prompt_long_horizon.j2'
+        agent_config.system_prompt_filename = "system_prompt_long_horizon.j2"
         agent_config.enable_plan_mode = True
-    elif enabled_variant == 'interactive':
+    elif enabled_variant == "interactive":
         modified_config.get_agent_config(
             modified_config.default_agent
-        ).system_prompt_filename = 'system_prompt_interactive.j2'
-    elif enabled_variant == 'no_tools':
+        ).system_prompt_filename = "system_prompt_interactive.j2"
+    elif enabled_variant == "no_tools":
         modified_config.get_agent_config(
             modified_config.default_agent
-        ).system_prompt_filename = 'system_prompt.j2'
+        ).system_prompt_filename = "system_prompt.j2"
     else:
         logger.error(
-            'system_prompt_experiment:unknown_variant',
+            "system_prompt_experiment:unknown_variant",
             extra={
-                'user_id': user_id,
-                'convo_id': conversation_id,
-                'variant': enabled_variant,
-                'reason': 'no explicit mapping; returning original config',
+                "user_id": user_id,
+                "convo_id": conversation_id,
+                "variant": enabled_variant,
+                "reason": "no explicit mapping; returning original config",
             },
         )
         return config
 
     # Log which prompt is being used
     logger.info(
-        'system_prompt_experiment:prompt_selected',
+        "system_prompt_experiment:prompt_selected",
         extra={
-            'user_id': user_id,
-            'convo_id': conversation_id,
-            'system_prompt_filename': modified_config.get_agent_config(
+            "user_id": user_id,
+            "convo_id": conversation_id,
+            "system_prompt_filename": modified_config.get_agent_config(
                 modified_config.default_agent
             ).system_prompt_filename,
-            'variant': enabled_variant,
+            "variant": enabled_variant,
         },
     )
 

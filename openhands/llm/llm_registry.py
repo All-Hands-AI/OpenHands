@@ -38,9 +38,9 @@ class LLMRegistry:
         if agent_cls:
             selected_agent_cls = agent_cls
 
-        agent_name = selected_agent_cls if selected_agent_cls is not None else 'agent'
+        agent_name = selected_agent_cls if selected_agent_cls is not None else "agent"
         llm_config = self.config.get_llm_config_from_agent(agent_name)
-        self.active_agent_llm: LLM = self.get_llm('agent', llm_config)
+        self.active_agent_llm: LLM = self.get_llm("agent", llm_config)
 
     def _create_new_llm(
         self, service_id: str, config: LLMConfig, with_listener: bool = True
@@ -58,7 +58,7 @@ class LLMRegistry:
     def request_extraneous_completion(
         self, service_id: str, llm_config: LLMConfig, messages: list[dict[str, str]]
     ) -> str:
-        logger.info(f'extraneous completion: {service_id}')
+        logger.info(f"extraneous completion: {service_id}")
         if service_id not in self.service_to_llm:
             self._create_new_llm(
                 config=llm_config, service_id=service_id, with_listener=False
@@ -85,7 +85,7 @@ class LLMRegistry:
         config: LLMConfig | None = None,
     ):
         logger.info(
-            f'[LLM registry {self.registry_id}]: Registering service for {service_id}'
+            f"[LLM registry {self.registry_id}]: Registering service for {service_id}"
         )
 
         # Attempting to switch configs for existing LLM
@@ -94,32 +94,30 @@ class LLMRegistry:
             and self.service_to_llm[service_id].config != config
         ):
             raise ValueError(
-                f'Requesting same service ID {service_id} with different config, use a new service ID'
+                f"Requesting same service ID {service_id} with different config, use a new service ID"
             )
 
         if service_id in self.service_to_llm:
             return self.service_to_llm[service_id]
 
         if not config:
-            raise ValueError('Requesting new LLM without specifying LLM config')
+            raise ValueError("Requesting new LLM without specifying LLM config")
 
         return self._create_new_llm(config=config, service_id=service_id)
 
     def get_active_llm(self) -> LLM:
         return self.active_agent_llm
 
-    def get_router(self, agent_config: AgentConfig) -> 'LLM':
-        """
-        Get a router instance that inherits from LLM.
-        """
+    def get_router(self, agent_config: AgentConfig) -> "LLM":
+        """Get a router instance that inherits from LLM."""
         # Import here to avoid circular imports
         from openhands.llm.router import RouterLLM
 
         router_name = agent_config.model_routing.router_name
 
-        if router_name == 'noop_router':
+        if router_name == "noop_router":
             # Return the main LLM directly (no routing)
-            return self.get_llm_from_agent_config('agent', agent_config)
+            return self.get_llm_from_agent_config("agent", agent_config)
 
         return RouterLLM.from_config(
             agent_config=agent_config,
@@ -143,4 +141,4 @@ class LLMRegistry:
             try:
                 self.subscriber(event)
             except Exception as e:
-                logger.warning(f'Failed to emit event: {e}')
+                logger.warning(f"Failed to emit event: {e}")

@@ -23,7 +23,7 @@ from storage.user_settings import UserSettings
 
 @pytest.fixture
 def engine():
-    engine = create_engine('sqlite:///:memory:')
+    engine = create_engine("sqlite:///:memory:")
     Base.metadata.create_all(engine)
     return engine
 
@@ -37,39 +37,39 @@ def add_minimal_fixtures(session_maker):
     with session_maker() as session:
         session.add(
             BillingSession(
-                id='mock-billing-session-id',
-                user_id='mock-user-id',
-                status='completed',
+                id="mock-billing-session-id",
+                user_id="mock-user-id",
+                status="completed",
                 price=20,
-                price_code='NA',
-                created_at=datetime.fromisoformat('2025-03-03'),
-                updated_at=datetime.fromisoformat('2025-03-04'),
+                price_code="NA",
+                created_at=datetime.fromisoformat("2025-03-03"),
+                updated_at=datetime.fromisoformat("2025-03-04"),
             )
         )
         session.add(
             Feedback(
-                id='mock-feedback-id',
-                version='1.0',
-                email='user@all-hands.dev',
-                polarity='positive',
-                permissions='public',
+                id="mock-feedback-id",
+                version="1.0",
+                email="user@all-hands.dev",
+                polarity="positive",
+                permissions="public",
                 trajectory=[],
             )
         )
         session.add(
             GithubAppInstallation(
-                installation_id='mock-installation-id',
-                encrypted_token='',
-                created_at=datetime.fromisoformat('2025-03-05'),
-                updated_at=datetime.fromisoformat('2025-03-06'),
+                installation_id="mock-installation-id",
+                encrypted_token="",
+                created_at=datetime.fromisoformat("2025-03-05"),
+                updated_at=datetime.fromisoformat("2025-03-06"),
             )
         )
         session.add(
             StoredConversationMetadata(
-                conversation_id='mock-conversation-id',
-                user_id='mock-user-id',
-                created_at=datetime.fromisoformat('2025-03-07'),
-                last_updated_at=datetime.fromisoformat('2025-03-08'),
+                conversation_id="mock-conversation-id",
+                user_id="mock-user-id",
+                created_at=datetime.fromisoformat("2025-03-07"),
+                last_updated_at=datetime.fromisoformat("2025-03-08"),
                 accumulated_cost=5.25,
                 prompt_tokens=500,
                 completion_tokens=250,
@@ -78,34 +78,34 @@ def add_minimal_fixtures(session_maker):
         )
         session.add(
             StoredOfflineToken(
-                user_id='mock-user-id',
-                offline_token='mock-offline-token',
-                created_at=datetime.fromisoformat('2025-03-07'),
-                updated_at=datetime.fromisoformat('2025-03-08'),
+                user_id="mock-user-id",
+                offline_token="mock-offline-token",
+                created_at=datetime.fromisoformat("2025-03-07"),
+                updated_at=datetime.fromisoformat("2025-03-08"),
             )
         )
 
         session.add(
             StripeCustomer(
-                keycloak_user_id='mock-user-id',
-                stripe_customer_id='mock-stripe-customer-id',
-                created_at=datetime.fromisoformat('2025-03-09'),
-                updated_at=datetime.fromisoformat('2025-03-10'),
+                keycloak_user_id="mock-user-id",
+                stripe_customer_id="mock-stripe-customer-id",
+                created_at=datetime.fromisoformat("2025-03-09"),
+                updated_at=datetime.fromisoformat("2025-03-10"),
             )
         )
         session.add(
             UserSettings(
-                keycloak_user_id='mock-user-id',
+                keycloak_user_id="mock-user-id",
                 user_consents_to_analytics=True,
                 user_version=CURRENT_USER_SETTINGS_VERSION,
             )
         )
         session.add(
             ConversationWork(
-                conversation_id='mock-conversation-id',
-                user_id='mock-user-id',
-                created_at=datetime.fromisoformat('2025-03-07'),
-                updated_at=datetime.fromisoformat('2025-03-08'),
+                conversation_id="mock-conversation-id",
+                user_id="mock-user-id",
+                created_at=datetime.fromisoformat("2025-03-07"),
+                updated_at=datetime.fromisoformat("2025-03-08"),
             )
         )
         maintenance_task = MaintenanceTask(
@@ -113,9 +113,9 @@ def add_minimal_fixtures(session_maker):
         )
         maintenance_task.set_processor(
             UserVersionUpgradeProcessor(
-                user_ids=['mock-user-id'],
-                created_at=datetime.fromisoformat('2025-03-07'),
-                updated_at=datetime.fromisoformat('2025-03-08'),
+                user_ids=["mock-user-id"],
+                created_at=datetime.fromisoformat("2025-03-07"),
+                updated_at=datetime.fromisoformat("2025-03-08"),
             )
         )
         session.add(maintenance_task)

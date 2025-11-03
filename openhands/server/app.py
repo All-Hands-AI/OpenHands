@@ -6,7 +6,7 @@ from typing import AsyncIterator
 from fastapi.routing import Mount
 
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
+    warnings.simplefilter("ignore")
 
 from fastapi import (
     FastAPI,
@@ -36,7 +36,7 @@ from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
 from openhands.version import get_version
 
-mcp_app = mcp_server.http_app(path='/mcp')
+mcp_app = mcp_server.http_app(path="/mcp")
 
 
 def combine_lifespans(*lifespans):
@@ -64,11 +64,11 @@ if app_lifespan_:
 
 
 app = FastAPI(
-    title='OpenHands',
-    description='OpenHands: Code Less, Make More',
+    title="OpenHands",
+    description="OpenHands: Code Less, Make More",
     version=get_version(),
     lifespan=combine_lifespans(*lifespans),
-    routes=[Mount(path='/mcp', app=mcp_app)],
+    routes=[Mount(path="/mcp", app=mcp_app)],
 )
 
 

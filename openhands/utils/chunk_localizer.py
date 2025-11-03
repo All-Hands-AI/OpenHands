@@ -17,22 +17,22 @@ class Chunk(BaseModel):
     normalized_lcs: float | None = None
 
     def visualize(self) -> str:
-        lines = self.text.split('\n')
+        lines = self.text.split("\n")
         assert len(lines) == self.line_range[1] - self.line_range[0] + 1
-        ret = ''
+        ret = ""
         for i, line in enumerate(lines):
-            ret += f'{self.line_range[0] + i}|{line}\n'
+            ret += f"{self.line_range[0] + i}|{line}\n"
         return ret
 
 
 def _create_chunks_from_raw_string(content: str, size: int):
-    lines = content.split('\n')
+    lines = content.split("\n")
     ret = []
     for i in range(0, len(lines), size):
         _cur_lines = lines[i : i + size]
         ret.append(
             Chunk(
-                text='\n'.join(_cur_lines),
+                text="\n".join(_cur_lines),
                 line_range=(i + 1, i + len(_cur_lines)),
             )
         )
@@ -45,7 +45,7 @@ def create_chunks(
     try:
         parser = get_parser(language) if language is not None else None
     except AttributeError:
-        logger.debug(f'Language {language} not supported. Falling back to raw string.')
+        logger.debug(f"Language {language} not supported. Falling back to raw string.")
         parser = None
 
     if parser is None:
@@ -54,7 +54,7 @@ def create_chunks(
 
     # TODO: implement tree-sitter chunking
     # return _create_chunks_from_tree_sitter(parser.parse(bytes(text, 'utf-8')), max_chunk_lines=size)
-    raise NotImplementedError('Tree-sitter chunking not implemented yet.')
+    raise NotImplementedError("Tree-sitter chunking not implemented yet.")
 
 
 def normalized_lcs(chunk: str, query: str) -> float:

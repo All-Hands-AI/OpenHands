@@ -5,19 +5,18 @@ from storage.base import Base
 
 
 class SubscriptionAccess(Base):  # type: ignore
-    """
-    Represents a user's subscription access record.
+    """Represents a user's subscription access record.
     Tracks subscription status, duration, payment information, and cancellation status.
     """
 
-    __tablename__ = 'subscription_access'
+    __tablename__ = "subscription_access"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     status = Column(
         Enum(
-            'ACTIVE',
-            'DISABLED',
-            name='subscription_access_status_enum',
+            "ACTIVE",
+            "DISABLED",
+            name="subscription_access_status_enum",
         ),
         nullable=False,
         index=True,

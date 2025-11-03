@@ -10,7 +10,7 @@ class TaskTrackingObservation(Observation):
     """This data class represents the result of a task tracking operation."""
 
     observation: str = ObservationType.TASK_TRACKING
-    command: str = ''
+    command: str = ""
     task_list: list[dict[str, Any]] = field(default_factory=list)
 
     @property

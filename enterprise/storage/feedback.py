@@ -4,22 +4,22 @@ from storage.base import Base
 
 
 class Feedback(Base):  # type: ignore
-    __tablename__ = 'feedback'
+    __tablename__ = "feedback"
 
     id = Column(String, primary_key=True)
     version = Column(String, nullable=False)
     email = Column(String, nullable=False)
     polarity = Column(
-        Enum('positive', 'negative', name='polarity_enum'), nullable=False
+        Enum("positive", "negative", name="polarity_enum"), nullable=False
     )
     permissions = Column(
-        Enum('public', 'private', name='permissions_enum'), nullable=False
+        Enum("public", "private", name="permissions_enum"), nullable=False
     )
     trajectory = Column(JSON, nullable=True)
 
 
 class ConversationFeedback(Base):  # type: ignore
-    __tablename__ = 'conversation_feedback'
+    __tablename__ = "conversation_feedback"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(String, nullable=False, index=True)

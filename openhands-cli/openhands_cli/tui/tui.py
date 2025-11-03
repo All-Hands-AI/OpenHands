@@ -7,22 +7,21 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
-from openhands_cli import __version__
 from openhands_cli.pt_style import get_cli_style
 
 DEFAULT_STYLE = get_cli_style()
 
 # Available commands with descriptions
 COMMANDS = {
-    '/exit': 'Exit the application',
-    '/help': 'Display available commands',
-    '/clear': 'Clear the screen',
-    '/new': 'Start a fresh conversation',
-    '/status': 'Display conversation details',
-    '/confirm': 'Toggle confirmation mode on/off',
-    '/resume': 'Resume a paused conversation',
-    '/settings': 'Display and modify current settings',
-    '/mcp': 'View MCP (Model Context Protocol) server configuration',
+    "/exit": "Exit the application",
+    "/help": "Display available commands",
+    "/clear": "Clear the screen",
+    "/new": "Start a fresh conversation",
+    "/status": "Display conversation details",
+    "/confirm": "Toggle confirmation mode on/off",
+    "/resume": "Resume a paused conversation",
+    "/settings": "Display and modify current settings",
+    "/mcp": "View MCP (Model Context Protocol) server configuration",
 }
 
 
@@ -33,14 +32,14 @@ class CommandCompleter(Completer):
         self, document: Document, complete_event: CompleteEvent
     ) -> Generator[Completion, None, None]:
         text = document.text_before_cursor.lstrip()
-        if text.startswith('/'):
+        if text.startswith("/"):
             for command, description in COMMANDS.items():
                 if command.startswith(text):
                     yield Completion(
                         command,
                         start_position=-len(text),
                         display_meta=description,
-                        style='bg:ansidarkgray fg:gold',
+                        style="bg:ansidarkgray fg:gold",
                     )
 
 
@@ -57,34 +56,34 @@ def display_banner(conversation_id: str, resume: bool = False) -> None:
         style=DEFAULT_STYLE,
     )
 
-    print_formatted_text('')
+    print_formatted_text("")
     if not resume:
         print_formatted_text(
-            HTML(f'<grey>Initialized conversation {conversation_id}</grey>')
+            HTML(f"<grey>Initialized conversation {conversation_id}</grey>")
         )
     else:
         print_formatted_text(
-            HTML(f'<grey>Resumed conversation {conversation_id}</grey>')
+            HTML(f"<grey>Resumed conversation {conversation_id}</grey>")
         )
-    print_formatted_text('')
+    print_formatted_text("")
 
 
 def display_help() -> None:
     """Display help information about available commands."""
-    print_formatted_text('')
-    print_formatted_text(HTML('<gold>🤖 OpenHands CLI Help</gold>'))
-    print_formatted_text(HTML('<grey>Available commands:</grey>'))
-    print_formatted_text('')
+    print_formatted_text("")
+    print_formatted_text(HTML("<gold>🤖 OpenHands CLI Help</gold>"))
+    print_formatted_text(HTML("<grey>Available commands:</grey>"))
+    print_formatted_text("")
 
     for command, description in COMMANDS.items():
-        print_formatted_text(HTML(f'  <white>{command}</white> - {description}'))
+        print_formatted_text(HTML(f"  <white>{command}</white> - {description}"))
 
-    print_formatted_text('')
-    print_formatted_text(HTML('<grey>Tips:</grey>'))
-    print_formatted_text('  • Type / and press Tab to see command suggestions')
-    print_formatted_text('  • Use arrow keys to navigate through suggestions')
-    print_formatted_text('  • Press Enter to select a command')
-    print_formatted_text('')
+    print_formatted_text("")
+    print_formatted_text(HTML("<grey>Tips:</grey>"))
+    print_formatted_text("  • Type / and press Tab to see command suggestions")
+    print_formatted_text("  • Use arrow keys to navigate through suggestions")
+    print_formatted_text("  • Press Enter to select a command")
+    print_formatted_text("")
 
 
 def display_welcome(conversation_id: UUID, resume: bool = False) -> None:
@@ -94,7 +93,7 @@ def display_welcome(conversation_id: UUID, resume: bool = False) -> None:
     print_formatted_text(HTML("<gold>Let's start building!</gold>"))
     print_formatted_text(
         HTML(
-            '<green>What do you want to build? <grey>Type /help for help</grey></green>'
+            "<green>What do you want to build? <grey>Type /help for help</grey></green>"
         )
     )
     print()

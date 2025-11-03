@@ -20,7 +20,7 @@ class ApiKeyStore:
     def generate_api_key(self, length: int = 32) -> str:
         """Generate a random API key."""
         alphabet = string.ascii_letters + string.digits
-        return ''.join(secrets.choice(alphabet) for _ in range(length))
+        return "".join(secrets.choice(alphabet) for _ in range(length))
 
     def create_api_key(
         self, user_id: str, name: str | None = None, expires_at: datetime | None = None
@@ -58,7 +58,7 @@ class ApiKeyStore:
 
             # Check if the key has expired
             if key_record.expires_at and key_record.expires_at < now:
-                logger.info(f'API key has expired: {key_record.id}')
+                logger.info(f"API key has expired: {key_record.id}")
                 return None
 
             # Update last_used_at timestamp
@@ -104,14 +104,14 @@ class ApiKeyStore:
 
             return [
                 {
-                    'id': key.id,
-                    'name': key.name,
-                    'created_at': key.created_at,
-                    'last_used_at': key.last_used_at,
-                    'expires_at': key.expires_at,
+                    "id": key.id,
+                    "name": key.name,
+                    "created_at": key.created_at,
+                    "last_used_at": key.last_used_at,
+                    "expires_at": key.expires_at,
                 }
                 for key in keys
-                if 'MCP_API_KEY' != key.name
+                if "MCP_API_KEY" != key.name
             ]
 
     def retrieve_mcp_api_key(self, user_id: str) -> str | None:
@@ -120,7 +120,7 @@ class ApiKeyStore:
                 session.query(ApiKey).filter(ApiKey.user_id == user_id).all()
             )
             for key in keys:
-                if key.name == 'MCP_API_KEY':
+                if key.name == "MCP_API_KEY":
                     return key.key
 
         return None
@@ -128,5 +128,5 @@ class ApiKeyStore:
     @classmethod
     def get_instance(cls) -> ApiKeyStore:
         """Get an instance of the ApiKeyStore."""
-        logger.debug('api_key_store.get_instance')
+        logger.debug("api_key_store.get_instance")
         return ApiKeyStore(session_maker)

@@ -12,11 +12,11 @@ class TestLLMRegistry(unittest.TestCase):
     def setUp(self):
         """Set up test environment before each test."""
         # Create a basic LLM config for testing
-        self.llm_config = LLMConfig(model='test-model')
+        self.llm_config = LLMConfig(model="test-model")
 
         # Create a basic OpenHands config for testing
         self.config = OpenHandsConfig(
-            llms={'llm': self.llm_config}, default_agent='CodeActAgent'
+            llms={"llm": self.llm_config}, default_agent="CodeActAgent"
         )
 
         # Create a registry for testing
@@ -24,10 +24,10 @@ class TestLLMRegistry(unittest.TestCase):
 
     def test_get_llm_creates_new_llm(self):
         """Test that get_llm creates a new LLM when service doesn't exist."""
-        service_id = 'test-service'
+        service_id = "test-service"
 
         # Mock the _create_new_llm method to avoid actual LLM initialization
-        with patch.object(self.registry, '_create_new_llm') as mock_create:
+        with patch.object(self.registry, "_create_new_llm") as mock_create:
             mock_llm = MagicMock()
             mock_llm.config = self.llm_config
             mock_create.return_value = mock_llm
@@ -43,10 +43,10 @@ class TestLLMRegistry(unittest.TestCase):
 
     def test_get_llm_returns_existing_llm(self):
         """Test that get_llm returns existing LLM when service already exists."""
-        service_id = 'test-service'
+        service_id = "test-service"
 
         # Mock the _create_new_llm method to avoid actual LLM initialization
-        with patch.object(self.registry, '_create_new_llm') as mock_create:
+        with patch.object(self.registry, "_create_new_llm") as mock_create:
             mock_llm = MagicMock()
             mock_llm.config = self.llm_config
             mock_create.return_value = mock_llm
@@ -69,8 +69,8 @@ class TestLLMRegistry(unittest.TestCase):
 
     def test_get_llm_with_different_config_raises_error(self):
         """Test that requesting same service ID with different config raises an error."""
-        service_id = 'test-service'
-        different_config = LLMConfig(model='different-model')
+        service_id = "test-service"
+        different_config = LLMConfig(model="different-model")
 
         # Manually add an LLM to the registry to simulate existing service
         mock_llm = MagicMock()
@@ -81,32 +81,32 @@ class TestLLMRegistry(unittest.TestCase):
         with self.assertRaises(ValueError) as context:
             self.registry.get_llm(service_id, different_config)
 
-        self.assertIn('Requesting same service ID', str(context.exception))
-        self.assertIn('with different config', str(context.exception))
+        self.assertIn("Requesting same service ID", str(context.exception))
+        self.assertIn("with different config", str(context.exception))
 
     def test_get_llm_without_config_raises_error(self):
         """Test that requesting new LLM without config raises an error."""
-        service_id = 'test-service'
+        service_id = "test-service"
 
         # Attempt to get LLM without providing config should raise ValueError
         with self.assertRaises(ValueError) as context:
             self.registry.get_llm(service_id, None)
 
         self.assertIn(
-            'Requesting new LLM without specifying LLM config', str(context.exception)
+            "Requesting new LLM without specifying LLM config", str(context.exception)
         )
 
     def test_request_extraneous_completion(self):
         """Test that requesting an extraneous completion creates a new LLM if needed."""
-        service_id = 'extraneous-service'
-        messages = [{'role': 'user', 'content': 'Hello, world!'}]
+        service_id = "extraneous-service"
+        messages = [{"role": "user", "content": "Hello, world!"}]
 
         # Mock the _create_new_llm method to avoid actual LLM initialization
-        with patch.object(self.registry, '_create_new_llm') as mock_create:
+        with patch.object(self.registry, "_create_new_llm") as mock_create:
             mock_llm = MagicMock()
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
-            mock_response.choices[0].message.content = '  Hello from the LLM!  '
+            mock_response.choices[0].message.content = "  Hello from the LLM!  "
             mock_llm.completion.return_value = mock_response
             mock_create.return_value = mock_llm
 
@@ -125,7 +125,7 @@ class TestLLMRegistry(unittest.TestCase):
             )
 
             # Verify the response (should be stripped)
-            self.assertEqual(response, 'Hello from the LLM!')
+            self.assertEqual(response, "Hello from the LLM!")
 
             # Verify that _create_new_llm was called with correct parameters
             mock_create.assert_called_once_with(
@@ -161,7 +161,7 @@ class TestLLMRegistry(unittest.TestCase):
         self.assertIsNotNone(self.registry.subscriber)
 
         # Test notify method directly with a mock event
-        with patch.object(self.registry, 'subscriber') as mock_subscriber:
+        with patch.object(self.registry, "subscriber") as mock_subscriber:
             mock_event = MagicMock()
             self.registry.notify(mock_event)
             mock_subscriber.assert_called_once_with(mock_event)
@@ -174,5 +174,5 @@ class TestLLMRegistry(unittest.TestCase):
         self.assertTrue(len(registry2.registry_id) > 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

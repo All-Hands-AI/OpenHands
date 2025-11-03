@@ -13,22 +13,22 @@ from openhands.app_server.sandbox.sandbox_spec_service import (
     SandboxSpecService,
 )
 
-router = APIRouter(prefix='/sandbox-specs', tags=['Sandbox'])
+router = APIRouter(prefix="/sandbox-specs", tags=["Sandbox"])
 sandbox_spec_service_dependency = depends_sandbox_spec_service()
 
 
 # Read methods
 
 
-@router.get('/search')
+@router.get("/search")
 async def search_sandbox_specs(
     page_id: Annotated[
         str | None,
-        Query(title='Optional next_page_id from the previously returned page'),
+        Query(title="Optional next_page_id from the previously returned page"),
     ] = None,
     limit: Annotated[
         int,
-        Query(title='The max number of results in the page', gt=0, lte=100),
+        Query(title="The max number of results in the page", gt=0, lte=100),
     ] = 100,
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,
 ) -> SandboxSpecInfoPage:
@@ -38,7 +38,7 @@ async def search_sandbox_specs(
     return await sandbox_spec_service.search_sandbox_specs(page_id=page_id, limit=limit)
 
 
-@router.get('')
+@router.get("")
 async def batch_get_sandbox_specs(
     id: Annotated[list[str], Query()],
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,

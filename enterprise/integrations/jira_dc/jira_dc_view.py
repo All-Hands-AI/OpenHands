@@ -38,26 +38,24 @@ class JiraDcNewConversationView(JiraDcViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
-        instructions_template = jinja_env.get_template('jira_dc_instructions.j2')
+        instructions_template = jinja_env.get_template("jira_dc_instructions.j2")
         instructions = instructions_template.render()
 
-        user_msg_template = jinja_env.get_template('jira_dc_new_conversation.j2')
+        user_msg_template = jinja_env.get_template("jira_dc_new_conversation.j2")
 
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
             issue_title=self.job_context.issue_title,
             issue_description=self.job_context.issue_description,
-            user_message=self.job_context.user_msg or '',
+            user_message=self.job_context.user_msg or "",
         )
 
         return instructions, user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Create a new Jira DC conversation"""
-
         if not self.selected_repo:
-            raise StartingConvoException('No repository selected for this conversation')
+            raise StartingConvoException("No repository selected for this conversation")
 
         provider_tokens = await self.saas_user_auth.get_provider_tokens()
         user_secrets = await self.saas_user_auth.get_secrets()
@@ -79,7 +77,7 @@ class JiraDcNewConversationView(JiraDcViewInterface):
 
             self.conversation_id = agent_loop_info.conversation_id
 
-            logger.info(f'[Jira DC] Created conversation {self.conversation_id}')
+            logger.info(f"[Jira DC] Created conversation {self.conversation_id}")
 
             # Store Jira DC conversation mapping
             jira_dc_conversation = JiraDcConversation(
@@ -94,9 +92,9 @@ class JiraDcNewConversationView(JiraDcViewInterface):
             return self.conversation_id
         except Exception as e:
             logger.error(
-                f'[Jira DC] Failed to create conversation: {str(e)}', exc_info=True
+                f"[Jira DC] Failed to create conversation: {str(e)}", exc_info=True
             )
-            raise StartingConvoException(f'Failed to create conversation: {str(e)}')
+            raise StartingConvoException(f"Failed to create conversation: {str(e)}")
 
     def get_response_msg(self) -> str:
         """Get the response message to send back to Jira DC"""
@@ -115,20 +113,18 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
-        user_msg_template = jinja_env.get_template('jira_dc_existing_conversation.j2')
+        user_msg_template = jinja_env.get_template("jira_dc_existing_conversation.j2")
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
-            user_message=self.job_context.user_msg or '',
+            user_message=self.job_context.user_msg or "",
             issue_title=self.job_context.issue_title,
             issue_description=self.job_context.issue_description,
         )
 
-        return '', user_msg
+        return "", user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Update an existing Jira conversation"""
-
         user_id = self.jira_dc_user.keycloak_user_id
 
         try:
@@ -139,11 +135,11 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
             try:
                 await conversation_store.get_metadata(self.conversation_id)
             except FileNotFoundError:
-                raise StartingConvoException('Conversation no longer exists.')
+                raise StartingConvoException("Conversation no longer exists.")
 
             provider_tokens = await self.saas_user_auth.get_provider_tokens()
             if provider_tokens is None:
-                raise ValueError('Could not load provider tokens')
+                raise ValueError("Could not load provider tokens")
             providers_set = list(provider_tokens.keys())
 
             conversation_init_data = await setup_init_conversation_settings(
@@ -165,7 +161,7 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
             )
 
             if not agent_state or agent_state == AgentState.LOADING:
-                raise StartingConvoException('Conversation is still starting')
+                raise StartingConvoException("Conversation is still starting")
 
             _, user_msg = self._get_instructions(jinja_env)
             user_message_event = MessageAction(content=user_msg)
@@ -176,9 +172,9 @@ class JiraDcExistingConversationView(JiraDcViewInterface):
             return self.conversation_id
         except Exception as e:
             logger.error(
-                f'[Jira] Failed to create conversation: {str(e)}', exc_info=True
+                f"[Jira] Failed to create conversation: {str(e)}", exc_info=True
             )
-            raise StartingConvoException(f'Failed to create conversation: {str(e)}')
+            raise StartingConvoException(f"Failed to create conversation: {str(e)}")
 
     def get_response_msg(self) -> str:
         """Get the response message to send back to Jira"""
@@ -197,9 +193,8 @@ class JiraDcFactory:
         jira_dc_workspace: JiraDcWorkspace,
     ) -> JiraDcViewInterface:
         """Create appropriate Jira DC view based on the payload."""
-
         if not jira_dc_user or not saas_user_auth or not jira_dc_workspace:
-            raise StartingConvoException('User not authenticated with Jira integration')
+            raise StartingConvoException("User not authenticated with Jira integration")
 
         conversation = await integration_store.get_user_conversations_by_issue_id(
             job_context.issue_id, jira_dc_user.id
@@ -221,5 +216,5 @@ class JiraDcFactory:
             jira_dc_user=jira_dc_user,
             jira_dc_workspace=jira_dc_workspace,
             selected_repo=None,  # Will be set later after repo inference
-            conversation_id='',  # Will be set when conversation is created
+            conversation_id="",  # Will be set when conversation is created
         )

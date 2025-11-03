@@ -10,7 +10,7 @@ from openhands.llm.metrics import Metrics
 
 class FakeEventStream:
     def __init__(self):
-        self.sid = 'test-sid'
+        self.sid = "test-sid"
         self.file_store = None
         self.user_id = None
 
@@ -27,7 +27,7 @@ class FakeEventStream:
 class FakeRuntime:
     def __init__(self):
         self.event_stream = FakeEventStream()
-        self.workspace_root = '/workspace'
+        self.workspace_root = "/workspace"
 
     async def connect(self):
         return None
@@ -41,7 +41,7 @@ class DummyState:
         self.conversation_stats = conversation_stats
         self.metrics = Metrics()
         self.history = []
-        self.last_error = ''
+        self.last_error = ""
         self.extra_data = {}
 
 
@@ -80,16 +80,16 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
     # Prepare conversation stats with one service metrics
     store = InMemoryFileStore({})
     conv_stats = ConversationStats(
-        file_store=store, conversation_id='cid', user_id=None
+        file_store=store, conversation_id="cid", user_id=None
     )
     m = Metrics()
     m.add_cost(0.5)
-    conv_stats.service_to_metrics['svc'] = m
+    conv_stats.service_to_metrics["svc"] = m
 
     # Create a new tracker and initialize state
-    tracker = StateTracker(sid='sid', file_store=store, user_id=None)
+    tracker = StateTracker(sid="sid", file_store=store, user_id=None)
     tracker.set_initial_state(
-        id='sid',
+        id="sid",
         state=None,
         conversation_stats=conv_stats,
         max_iterations=1,
@@ -115,7 +115,7 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
 
     cfg = OpenHandsConfig()
     # Prevent run_controller from trying to persist state via DummyState
-    cfg.file_store = 'memory'
+    cfg.file_store = "memory"
 
     fake_conv_stats = FakeConversationStats(cost=2.5)
 
@@ -128,13 +128,13 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
             enable_mcp = False
 
         class _LLMCfg:
-            model = 'test-model'
+            model = "test-model"
 
         class _LLM:
             config = _LLMCfg()
 
         class _Agent:
-            name = 'FakeAgent'
+            name = "FakeAgent"
             config = _AgentCfg()
             llm = _LLM()
 
@@ -177,25 +177,25 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
     # Invoke run_controller under patch context
     with (
         patch(
-            'openhands.core.main.create_registry_and_conversation_stats',
+            "openhands.core.main.create_registry_and_conversation_stats",
             side_effect=fake_create_registry_and_conversation_stats,
         ),
-        patch('openhands.core.main.create_agent', side_effect=fake_create_agent),
-        patch('openhands.core.main.create_runtime', side_effect=fake_create_runtime),
-        patch('openhands.core.main.create_memory', side_effect=fake_create_memory),
+        patch("openhands.core.main.create_agent", side_effect=fake_create_agent),
+        patch("openhands.core.main.create_runtime", side_effect=fake_create_runtime),
+        patch("openhands.core.main.create_memory", side_effect=fake_create_memory),
         patch(
-            'openhands.core.main.create_controller', side_effect=fake_create_controller
+            "openhands.core.main.create_controller", side_effect=fake_create_controller
         ),
         patch(
-            'openhands.core.main.run_agent_until_done',
+            "openhands.core.main.run_agent_until_done",
             side_effect=lambda *args, **kwargs: None,
         ),
     ):
         state = asyncio.run(
             run_controller(
                 config=cfg,
-                initial_user_action=MessageAction(content='hi'),
-                sid='sid',
+                initial_user_action=MessageAction(content="hi"),
+                sid="sid",
                 fake_user_response_fn=None,
             )
         )
@@ -203,4 +203,4 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
     assert state is not None
     # get_metrics must prefer conversation_stats and reflect its values
     m = get_metrics(state)
-    assert pytest.approx(m.get('accumulated_cost', 0.0), rel=1e-6) == 2.5
+    assert pytest.approx(m.get("accumulated_cost", 0.0), rel=1e-6) == 2.5

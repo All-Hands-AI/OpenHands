@@ -1,5 +1,3 @@
-from prompt_toolkit import HTML, print_formatted_text
-
 from openhands.sdk import BaseConversation, Message
 from openhands.sdk.conversation.state import AgentExecutionStatus, ConversationState
 from openhands.sdk.security.confirmation_policy import (
@@ -8,10 +6,12 @@ from openhands.sdk.security.confirmation_policy import (
     ConfirmRisky,
     NeverConfirm,
 )
+from prompt_toolkit import HTML, print_formatted_text
+
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
+from openhands_cli.setup import setup_conversation
 from openhands_cli.user_actions import ask_user_confirmation
 from openhands_cli.user_actions.types import UserConfirmation
-from openhands_cli.setup import setup_conversation
 
 
 class ConversationRunner:
@@ -28,8 +28,7 @@ class ConversationRunner:
         new_confirmation_mode_state = not self.is_confirmation_mode_active
 
         self.conversation = setup_conversation(
-            self.conversation.id,
-            include_security_analyzer=new_confirmation_mode_state
+            self.conversation.id, include_security_analyzer=new_confirmation_mode_state
         )
 
         if new_confirmation_mode_state:
@@ -44,27 +43,26 @@ class ConversationRunner:
     ) -> None:
         self.conversation.set_confirmation_policy(confirmation_policy)
 
-
     def _start_listener(self) -> None:
         self.listener = PauseListener(on_pause=self.conversation.pause)
         self.listener.start()
 
     def _print_run_status(self) -> None:
-        print_formatted_text('')
+        print_formatted_text("")
         if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
             print_formatted_text(
                 HTML(
-                    '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
+                    "<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>"
                 )
             )
 
         else:
             print_formatted_text(
                 HTML(
-                    '<yellow>Agent running...</yellow><grey> (Press Ctrl-P to pause)</grey>'
+                    "<yellow>Agent running...</yellow><grey> (Press Ctrl-P to pause)</grey>"
                 )
             )
-        print_formatted_text('')
+        print_formatted_text("")
 
     def process_message(self, message: Message | None) -> None:
         """Process a user message through the conversation.
@@ -118,8 +116,7 @@ class ConversationRunner:
                     return
 
             else:
-                raise Exception('Infinite loop')
-
+                raise Exception("Infinite loop")
 
     def _handle_confirmation_request(self) -> UserConfirmation:
         """Handle confirmation request from user.
@@ -143,7 +140,7 @@ class ConversationRunner:
 
         if decision == UserConfirmation.REJECT:
             self.conversation.reject_pending_actions(
-                result.reason or 'User rejected the actions'
+                result.reason or "User rejected the actions"
             )
             return decision
 
@@ -154,7 +151,7 @@ class ConversationRunner:
         if isinstance(policy_change, NeverConfirm):
             print_formatted_text(
                 HTML(
-                    '<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>'
+                    "<yellow>Confirmation mode disabled. Agent will proceed without asking.</yellow>"
                 )
             )
 
@@ -165,8 +162,8 @@ class ConversationRunner:
         if isinstance(policy_change, ConfirmRisky):
             print_formatted_text(
                 HTML(
-                    '<yellow>Security-based confirmation enabled. '
-                    'LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>'
+                    "<yellow>Security-based confirmation enabled. "
+                    "LOW/MEDIUM risk actions will auto-confirm, HIGH risk actions will ask for confirmation.</yellow>"
                 )
             )
 

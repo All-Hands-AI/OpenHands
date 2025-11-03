@@ -8,9 +8,9 @@ from openhands.server.shared import (
 )
 
 RUNNING_AGENT_LOOPS_GAUGE = Gauge(
-    'saas_running_agent_loops',
-    'Count of running agent loops, aggregate by session_id to dedupe',
-    ['session_id'],
+    "saas_running_agent_loops",
+    "Count of running agent loops, aggregate by session_id to dedupe",
+    ["session_id"],
 )
 
 
@@ -33,8 +33,7 @@ def metrics_app() -> Callable:
     metrics_callable = make_asgi_app()
 
     async def wrapped_handler(scope, receive, send):
-        """
-        Call _update_metrics before serving Prometheus metrics endpoint.
+        """Call _update_metrics before serving Prometheus metrics endpoint.
         Not wrapped in a `try`, failing would make metrics endpoint unavailable.
         """
         await _update_metrics()

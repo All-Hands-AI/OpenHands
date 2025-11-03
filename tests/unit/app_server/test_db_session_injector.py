@@ -22,12 +22,12 @@ from sqlalchemy.orm import sessionmaker
 # Mock the storage.database module to avoid import-time engine creation
 mock_storage_database = MagicMock()
 mock_storage_database.sessionmaker = sessionmaker
-sys.modules['storage.database'] = mock_storage_database
+sys.modules["storage.database"] = mock_storage_database
 
 # Mock database drivers to avoid import errors
-sys.modules['pg8000'] = MagicMock()
-sys.modules['asyncpg'] = MagicMock()
-sys.modules['google.cloud.sql.connector'] = MagicMock()
+sys.modules["pg8000"] = MagicMock()
+sys.modules["asyncpg"] = MagicMock()
+sys.modules["google.cloud.sql.connector"] = MagicMock()
 
 # Import after mocking to avoid import-time issues
 from openhands.app_server.services.db_session_injector import (  # noqa: E402
@@ -60,11 +60,11 @@ def postgres_db_session_injector(temp_persistence_dir):
     """Create a DbSessionInjector instance configured for PostgreSQL."""
     return DbSessionInjector(
         persistence_dir=temp_persistence_dir,
-        host='localhost',
+        host="localhost",
         port=5432,
-        name='test_db',
-        user='test_user',
-        password=SecretStr('test_password'),
+        name="test_db",
+        user="test_user",
+        password=SecretStr("test_password"),
     )
 
 
@@ -73,12 +73,12 @@ def gcp_db_session_injector(temp_persistence_dir):
     """Create a DbSessionInjector instance configured for GCP Cloud SQL."""
     return DbSessionInjector(
         persistence_dir=temp_persistence_dir,
-        gcp_db_instance='test-instance',
-        gcp_project='test-project',
-        gcp_region='us-central1',
-        name='test_db',
-        user='test_user',
-        password=SecretStr('test_password'),
+        gcp_db_instance="test-instance",
+        gcp_project="test-project",
+        gcp_region="us-central1",
+        name="test_db",
+        user="test_user",
+        password=SecretStr("test_password"),
     )
 
 
@@ -92,10 +92,10 @@ class TestDbSessionInjectorConfiguration:
         assert service.persistence_dir == temp_persistence_dir
         assert service.host is None
         assert service.port == 5432  # Default from env var processing
-        assert service.name == 'openhands'  # Default from env var processing
-        assert service.user == 'postgres'  # Default from env var processing
+        assert service.name == "openhands"  # Default from env var processing
+        assert service.user == "postgres"  # Default from env var processing
         assert (
-            service.password.get_secret_value() == 'postgres'
+            service.password.get_secret_value() == "postgres"
         )  # Default from env var processing
         assert service.echo is False
         assert service.pool_size == 25
@@ -107,53 +107,53 @@ class TestDbSessionInjectorConfiguration:
     def test_environment_variable_processing(self, temp_persistence_dir):
         """Test that environment variables are properly processed."""
         env_vars = {
-            'DB_HOST': 'env_host',
-            'DB_PORT': '3306',
-            'DB_NAME': 'env_db',
-            'DB_USER': 'env_user',
-            'DB_PASS': 'env_password',
-            'GCP_DB_INSTANCE': 'env_instance',
-            'GCP_PROJECT': 'env_project',
-            'GCP_REGION': 'env_region',
+            "DB_HOST": "env_host",
+            "DB_PORT": "3306",
+            "DB_NAME": "env_db",
+            "DB_USER": "env_user",
+            "DB_PASS": "env_password",
+            "GCP_DB_INSTANCE": "env_instance",
+            "GCP_PROJECT": "env_project",
+            "GCP_REGION": "env_region",
         }
 
         with patch.dict(os.environ, env_vars):
             service = DbSessionInjector(persistence_dir=temp_persistence_dir)
 
-            assert service.host == 'env_host'
+            assert service.host == "env_host"
             assert service.port == 3306
-            assert service.name == 'env_db'
-            assert service.user == 'env_user'
-            assert service.password.get_secret_value() == 'env_password'
-            assert service.gcp_db_instance == 'env_instance'
-            assert service.gcp_project == 'env_project'
-            assert service.gcp_region == 'env_region'
+            assert service.name == "env_db"
+            assert service.user == "env_user"
+            assert service.password.get_secret_value() == "env_password"
+            assert service.gcp_db_instance == "env_instance"
+            assert service.gcp_project == "env_project"
+            assert service.gcp_region == "env_region"
 
     def test_explicit_values_override_env_vars(self, temp_persistence_dir):
         """Test that explicitly provided values override environment variables."""
         env_vars = {
-            'DB_HOST': 'env_host',
-            'DB_PORT': '3306',
-            'DB_NAME': 'env_db',
-            'DB_USER': 'env_user',
-            'DB_PASS': 'env_password',
+            "DB_HOST": "env_host",
+            "DB_PORT": "3306",
+            "DB_NAME": "env_db",
+            "DB_USER": "env_user",
+            "DB_PASS": "env_password",
         }
 
         with patch.dict(os.environ, env_vars):
             service = DbSessionInjector(
                 persistence_dir=temp_persistence_dir,
-                host='explicit_host',
+                host="explicit_host",
                 port=5432,
-                name='explicit_db',
-                user='explicit_user',
-                password=SecretStr('explicit_password'),
+                name="explicit_db",
+                user="explicit_user",
+                password=SecretStr("explicit_password"),
             )
 
-            assert service.host == 'explicit_host'
+            assert service.host == "explicit_host"
             assert service.port == 5432
-            assert service.name == 'explicit_db'
-            assert service.user == 'explicit_user'
-            assert service.password.get_secret_value() == 'explicit_password'
+            assert service.name == "explicit_db"
+            assert service.user == "explicit_user"
+            assert service.password.get_secret_value() == "explicit_password"
 
 
 class TestDbSessionInjectorConnections:
@@ -165,7 +165,7 @@ class TestDbSessionInjectorConnections:
 
         assert isinstance(engine, Engine)
         expected_url = (
-            f'sqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
+            f"sqlite:///{basic_db_session_injector.persistence_dir}/openhands.db"
         )
         assert str(engine.url) == expected_url
 
@@ -175,13 +175,13 @@ class TestDbSessionInjectorConnections:
         engine = await basic_db_session_injector.get_async_db_engine()
 
         assert isinstance(engine, AsyncEngine)
-        expected_url = f'sqlite+aiosqlite:///{basic_db_session_injector.persistence_dir}/openhands.db'
+        expected_url = f"sqlite+aiosqlite:///{basic_db_session_injector.persistence_dir}/openhands.db"
         assert str(engine.url) == expected_url
 
     def test_postgres_connection_with_host(self, postgres_db_session_injector):
         """Test PostgreSQL connection when host is defined."""
         with patch(
-            'openhands.app_server.services.db_session_injector.create_engine'
+            "openhands.app_server.services.db_session_injector.create_engine"
         ) as mock_create_engine:
             mock_engine = MagicMock()
             mock_create_engine.return_value = mock_engine
@@ -195,17 +195,17 @@ class TestDbSessionInjectorConnections:
 
             # Verify the URL contains the expected components
             url_str = str(call_args[0][0])
-            assert 'postgresql+pg8000://' in url_str
-            assert 'test_user' in url_str
+            assert "postgresql+pg8000://" in url_str
+            assert "test_user" in url_str
             # Password may be masked in URL string representation
-            assert 'test_password' in url_str or '***' in url_str
-            assert 'localhost:5432' in url_str
-            assert 'test_db' in url_str
+            assert "test_password" in url_str or "***" in url_str
+            assert "localhost:5432" in url_str
+            assert "test_db" in url_str
 
             # Verify other parameters
-            assert call_args[1]['pool_size'] == 25
-            assert call_args[1]['max_overflow'] == 10
-            assert call_args[1]['pool_pre_ping']
+            assert call_args[1]["pool_size"] == 25
+            assert call_args[1]["max_overflow"] == 10
+            assert call_args[1]["pool_pre_ping"]
 
     @pytest.mark.asyncio
     async def test_postgres_async_connection_with_host(
@@ -213,7 +213,7 @@ class TestDbSessionInjectorConnections:
     ):
         """Test PostgreSQL async connection when host is defined."""
         with patch(
-            'openhands.app_server.services.db_session_injector.create_async_engine'
+            "openhands.app_server.services.db_session_injector.create_async_engine"
         ) as mock_create_async_engine:
             mock_engine = MagicMock()
             mock_create_async_engine.return_value = mock_engine
@@ -227,20 +227,20 @@ class TestDbSessionInjectorConnections:
 
             # Verify the URL contains the expected components
             url_str = str(call_args[0][0])
-            assert 'postgresql+asyncpg://' in url_str
-            assert 'test_user' in url_str
+            assert "postgresql+asyncpg://" in url_str
+            assert "test_user" in url_str
             # Password may be masked in URL string representation
-            assert 'test_password' in url_str or '***' in url_str
-            assert 'localhost:5432' in url_str
-            assert 'test_db' in url_str
+            assert "test_password" in url_str or "***" in url_str
+            assert "localhost:5432" in url_str
+            assert "test_db" in url_str
 
             # Verify other parameters
-            assert call_args[1]['pool_size'] == 25
-            assert call_args[1]['max_overflow'] == 10
-            assert call_args[1]['pool_pre_ping']
+            assert call_args[1]["pool_size"] == 25
+            assert call_args[1]["max_overflow"] == 10
+            assert call_args[1]["pool_pre_ping"]
 
     @patch(
-        'openhands.app_server.services.db_session_injector.DbSessionInjector._create_gcp_engine'
+        "openhands.app_server.services.db_session_injector.DbSessionInjector._create_gcp_engine"
     )
     def test_gcp_connection_configuration(
         self, mock_create_gcp_engine, gcp_db_session_injector
@@ -255,7 +255,7 @@ class TestDbSessionInjectorConnections:
         mock_create_gcp_engine.assert_called_once()
 
     @patch(
-        'openhands.app_server.services.db_session_injector.DbSessionInjector._create_async_gcp_engine'
+        "openhands.app_server.services.db_session_injector.DbSessionInjector._create_async_gcp_engine"
     )
     @pytest.mark.asyncio
     async def test_gcp_async_connection_configuration(
@@ -322,7 +322,7 @@ class TestDbSessionInjectorSessionManagement:
         session1 = await session_generator1.__anext__()
 
         # Verify session is stored in request state
-        assert hasattr(request.state, 'db_session')
+        assert hasattr(request.state, "db_session")
         assert request.state.db_session is session1
 
         # Second call should return the same session from request state
@@ -348,7 +348,7 @@ class TestDbSessionInjectorSessionManagement:
 
         # Mock the async session maker and session
         with patch(
-            'openhands.app_server.services.db_session_injector.async_sessionmaker'
+            "openhands.app_server.services.db_session_injector.async_sessionmaker"
         ) as mock_sessionmaker_class:
             mock_session = AsyncMock()
             mock_session_context = AsyncMock()
@@ -362,7 +362,7 @@ class TestDbSessionInjectorSessionManagement:
             session_gen = basic_db_session_injector.depends(request)
             session = await session_gen.__anext__()
 
-            assert hasattr(request.state, 'db_session')
+            assert hasattr(request.state, "db_session")
             assert request.state.db_session is session
 
             # Simulate completion by exhausting the generator
@@ -384,7 +384,7 @@ class TestDbSessionInjectorSessionManagement:
 
         # Mock the async session maker and session
         with patch(
-            'openhands.app_server.services.db_session_injector.async_sessionmaker'
+            "openhands.app_server.services.db_session_injector.async_sessionmaker"
         ) as mock_sessionmaker_class:
             mock_session = AsyncMock()
             mock_session_context = AsyncMock()
@@ -432,8 +432,8 @@ class TestDbSessionInjectorGCPIntegration:
     def test_gcp_connection_creation(self, gcp_db_session_injector):
         """Test GCP database connection creation."""
         # Mock the google.cloud.sql.connector module
-        with patch.dict('sys.modules', {'google.cloud.sql.connector': MagicMock()}):
-            mock_connector_module = sys.modules['google.cloud.sql.connector']
+        with patch.dict("sys.modules", {"google.cloud.sql.connector": MagicMock()}):
+            mock_connector_module = sys.modules["google.cloud.sql.connector"]
             mock_connector = MagicMock()
             mock_connector_module.Connector.return_value = mock_connector
             mock_connection = MagicMock()
@@ -443,19 +443,19 @@ class TestDbSessionInjectorGCPIntegration:
 
             assert connection == mock_connection
             mock_connector.connect.assert_called_once_with(
-                'test-project:us-central1:test-instance',
-                'pg8000',
-                user='test_user',
-                password='test_password',
-                db='test_db',
+                "test-project:us-central1:test-instance",
+                "pg8000",
+                user="test_user",
+                password="test_password",
+                db="test_db",
             )
 
     @pytest.mark.asyncio
     async def test_gcp_async_connection_creation(self, gcp_db_session_injector):
         """Test GCP async database connection creation."""
         # Mock the google.cloud.sql.connector module
-        with patch.dict('sys.modules', {'google.cloud.sql.connector': MagicMock()}):
-            mock_connector_module = sys.modules['google.cloud.sql.connector']
+        with patch.dict("sys.modules", {"google.cloud.sql.connector": MagicMock()}):
+            mock_connector_module = sys.modules["google.cloud.sql.connector"]
             mock_connector = AsyncMock()
             mock_connector_module.Connector.return_value.__aenter__.return_value = (
                 mock_connector
@@ -468,11 +468,11 @@ class TestDbSessionInjectorGCPIntegration:
 
             assert connection == mock_connection
             mock_connector.connect_async.assert_called_once_with(
-                'test-project:us-central1:test-instance',
-                'asyncpg',
-                user='test_user',
-                password='test_password',
-                db='test_db',
+                "test-project:us-central1:test-instance",
+                "asyncpg",
+                user="test_user",
+                password="test_password",
+                db="test_db",
             )
 
 
@@ -482,13 +482,13 @@ class TestDbSessionInjectorEdgeCases:
     def test_none_password_handling(self, temp_persistence_dir):
         """Test handling of None password values."""
         with patch(
-            'openhands.app_server.services.db_session_injector.create_engine'
+            "openhands.app_server.services.db_session_injector.create_engine"
         ) as mock_create_engine:
             mock_engine = MagicMock()
             mock_create_engine.return_value = mock_engine
 
             service = DbSessionInjector(
-                persistence_dir=temp_persistence_dir, host='localhost', password=None
+                persistence_dir=temp_persistence_dir, host="localhost", password=None
             )
 
             # Should not raise an exception
@@ -497,9 +497,9 @@ class TestDbSessionInjectorEdgeCases:
 
     def test_empty_string_password_from_env(self, temp_persistence_dir):
         """Test handling of empty string password from environment."""
-        with patch.dict(os.environ, {'DB_PASS': ''}):
+        with patch.dict(os.environ, {"DB_PASS": ""}):
             service = DbSessionInjector(persistence_dir=temp_persistence_dir)
-            assert service.password.get_secret_value() == ''
+            assert service.password.get_secret_value() == ""
 
     @pytest.mark.asyncio
     async def test_multiple_request_contexts_isolated(self, basic_db_session_injector):

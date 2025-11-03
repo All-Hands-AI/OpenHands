@@ -1,6 +1,4 @@
-"""
-Tests for the SlackCallbackProcessor.
-"""
+"""Tests for the SlackCallbackProcessor."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -21,18 +19,18 @@ from openhands.server.shared import conversation_manager
 def slack_callback_processor():
     """Create a SlackCallbackProcessor instance for testing."""
     return SlackCallbackProcessor(
-        slack_user_id='test_slack_user_id',
-        channel_id='test_channel_id',
-        message_ts='test_message_ts',
-        thread_ts='test_thread_ts',
-        team_id='test_team_id',
+        slack_user_id="test_slack_user_id",
+        channel_id="test_channel_id",
+        message_ts="test_message_ts",
+        thread_ts="test_thread_ts",
+        team_id="test_team_id",
     )
 
 
 @pytest.fixture
 def agent_state_changed_observation():
     """Create an AgentStateChangedObservation for testing."""
-    return AgentStateChangedObservation('', AgentState.AWAITING_USER_INPUT)
+    return AgentStateChangedObservation("", AgentState.AWAITING_USER_INPUT)
 
 
 @pytest.fixture
@@ -46,16 +44,16 @@ class TestSlackCallbackProcessor:
     """Test the SlackCallbackProcessor class."""
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_summary_instruction'
+        "server.conversation_callback_processor.slack_callback_processor.get_summary_instruction"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.event_to_dict'
+        "server.conversation_callback_processor.slack_callback_processor.event_to_dict"
     )
     async def test_call_with_send_summary_instruction(
         self,
@@ -70,16 +68,16 @@ class TestSlackCallbackProcessor:
         """Test the __call__ method when send_summary_instruction is True."""
         # Setup mocks
         mock_get_summary_instruction.return_value = (
-            'Please summarize this conversation.'
+            "Please summarize this conversation."
         )
         mock_msg = MagicMock()
         mock_msg.id = 126
-        mock_msg.content = 'Hello'
+        mock_msg.content = "Hello"
         mock_get_last_user_msg.return_value = [mock_msg]  # Mock message with ID
         mock_conversation_manager.send_event_to_conversation = AsyncMock()
         mock_event_to_dict.return_value = {
-            'type': 'message_action',
-            'content': 'Please summarize this conversation.',
+            "type": "message_action",
+            "content": "Please summarize this conversation.",
         }
 
         # Call the method
@@ -105,12 +103,12 @@ class TestSlackCallbackProcessor:
         )
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.extract_summary_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.extract_summary_from_conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager"
     )
-    @patch('server.conversation_callback_processor.slack_callback_processor.asyncio')
+    @patch("server.conversation_callback_processor.slack_callback_processor.asyncio")
     async def test_call_with_extract_summary(
         self,
         mock_asyncio,
@@ -124,14 +122,14 @@ class TestSlackCallbackProcessor:
         # Setup - simulate that last message was the summary instruction
         mock_last_msg = MagicMock()
         mock_last_msg.id = 127
-        mock_last_msg.content = 'Please summarize this conversation.'
+        mock_last_msg.content = "Please summarize this conversation."
         mock_get_last_user_msg.return_value = [mock_last_msg]
-        mock_extract_summary.return_value = 'This is a summary of the conversation.'
+        mock_extract_summary.return_value = "This is a summary of the conversation."
 
         # Mock get_summary_instruction to return the same content
         with patch(
-            'server.conversation_callback_processor.slack_callback_processor.get_summary_instruction',
-            return_value='Please summarize this conversation.',
+            "server.conversation_callback_processor.slack_callback_processor.get_summary_instruction",
+            return_value="Please summarize this conversation.",
         ):
             # Call the method
             await slack_callback_processor(
@@ -159,7 +157,7 @@ class TestSlackCallbackProcessor:
         """Test the __call__ method when agent state is ERROR."""
         # Create an observation with ERROR state
         observation = AgentStateChangedObservation(
-            content='', agent_state=AgentState.ERROR, reason=''
+            content="", agent_state=AgentState.ERROR, reason=""
         )
 
         # Call the method
@@ -170,12 +168,12 @@ class TestSlackCallbackProcessor:
         # Verify that nothing happens when agent state is ERROR (method returns early)
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.extract_summary_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.extract_summary_from_conversation_manager"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager"
     )
-    @patch('server.conversation_callback_processor.slack_callback_processor.asyncio')
+    @patch("server.conversation_callback_processor.slack_callback_processor.asyncio")
     async def test_call_with_completed_agent_state(
         self,
         mock_asyncio,
@@ -188,21 +186,21 @@ class TestSlackCallbackProcessor:
         # Setup - simulate that last message was the summary instruction
         mock_last_msg = MagicMock()
         mock_last_msg.id = 124
-        mock_last_msg.content = 'Please summarize this conversation.'
+        mock_last_msg.content = "Please summarize this conversation."
         mock_get_last_user_msg.return_value = [mock_last_msg]
         mock_extract_summary.return_value = (
-            'This is a summary of the completed conversation.'
+            "This is a summary of the completed conversation."
         )
 
         # Create an observation with FINISHED state (COMPLETED doesn't exist)
         observation = AgentStateChangedObservation(
-            content='', agent_state=AgentState.FINISHED, reason=''
+            content="", agent_state=AgentState.FINISHED, reason=""
         )
 
         # Mock get_summary_instruction to return the same content
         with patch(
-            'server.conversation_callback_processor.slack_callback_processor.get_summary_instruction',
-            return_value='Please summarize this conversation.',
+            "server.conversation_callback_processor.slack_callback_processor.get_summary_instruction",
+            return_value="Please summarize this conversation.",
         ):
             # Call the method
             await slack_callback_processor(
@@ -224,7 +222,7 @@ class TestSlackCallbackProcessor:
         )
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.slack_manager'
+        "server.conversation_callback_processor.slack_callback_processor.slack_manager"
     )
     async def test_send_message_to_slack(
         self, mock_slack_manager, slack_callback_processor
@@ -243,7 +241,7 @@ class TestSlackCallbackProcessor:
 
         # Mock the SlackFactory
         with patch(
-            'server.conversation_callback_processor.slack_callback_processor.SlackFactory'
+            "server.conversation_callback_processor.slack_callback_processor.SlackFactory"
         ) as mock_slack_factory:
             mock_slack_factory.create_slack_view_from_payload.return_value = (
                 mock_slack_view
@@ -254,7 +252,7 @@ class TestSlackCallbackProcessor:
             mock_slack_manager.send_message = AsyncMock()
 
             # Call the method
-            await slack_callback_processor._send_message_to_slack('Test message')
+            await slack_callback_processor._send_message_to_slack("Test message")
 
             # Verify the behavior
             mock_slack_manager.authenticate_user.assert_called_once_with(
@@ -267,60 +265,60 @@ class TestSlackCallbackProcessor:
             ][0]
             assert isinstance(message_call, Message)
             assert (
-                message_call.message['slack_user_id']
+                message_call.message["slack_user_id"]
                 == slack_callback_processor.slack_user_id
             )
             assert (
-                message_call.message['channel_id']
+                message_call.message["channel_id"]
                 == slack_callback_processor.channel_id
             )
             assert (
-                message_call.message['message_ts']
+                message_call.message["message_ts"]
                 == slack_callback_processor.message_ts
             )
             assert (
-                message_call.message['thread_ts'] == slack_callback_processor.thread_ts
+                message_call.message["thread_ts"] == slack_callback_processor.thread_ts
             )
-            assert message_call.message['team_id'] == slack_callback_processor.team_id
+            assert message_call.message["team_id"] == slack_callback_processor.team_id
 
             # Verify the slack manager methods were called correctly
             mock_slack_manager.create_outgoing_message.assert_called_once_with(
-                'Test message'
+                "Test message"
             )
             mock_slack_manager.send_message.assert_called_once_with(
                 mock_outgoing_message, mock_slack_view
             )
 
-    @patch('server.conversation_callback_processor.slack_callback_processor.logger')
+    @patch("server.conversation_callback_processor.slack_callback_processor.logger")
     async def test_send_message_to_slack_exception(
         self, mock_logger, slack_callback_processor
     ):
         """Test the _send_message_to_slack method when an exception occurs."""
         # Setup mock to raise an exception
         with patch(
-            'server.conversation_callback_processor.slack_callback_processor.slack_manager'
+            "server.conversation_callback_processor.slack_callback_processor.slack_manager"
         ) as mock_slack_manager:
             mock_slack_manager.authenticate_user = AsyncMock(
-                side_effect=Exception('Test exception')
+                side_effect=Exception("Test exception")
             )
 
             # Call the method
-            await slack_callback_processor._send_message_to_slack('Test message')
+            await slack_callback_processor._send_message_to_slack("Test message")
 
         # Verify that the exception was caught and logged
         mock_logger.error.assert_called_once()
         assert (
-            'Failed to send summary message: Test exception'
+            "Failed to send summary message: Test exception"
             in mock_logger.error.call_args[0][0]
         )
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_summary_instruction'
+        "server.conversation_callback_processor.slack_callback_processor.get_summary_instruction"
     )
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.conversation_manager"
     )
-    @patch('server.conversation_callback_processor.slack_callback_processor.logger')
+    @patch("server.conversation_callback_processor.slack_callback_processor.logger")
     async def test_call_with_exception(
         self,
         mock_logger,
@@ -332,7 +330,7 @@ class TestSlackCallbackProcessor:
     ):
         """Test the __call__ method when an exception occurs."""
         # Setup mock to raise an exception
-        mock_get_summary_instruction.side_effect = Exception('Test exception')
+        mock_get_summary_instruction.side_effect = Exception("Test exception")
 
         # Call the method
         await slack_callback_processor(
@@ -347,26 +345,26 @@ class TestSlackCallbackProcessor:
         """Test the model validation of SlackCallbackProcessor."""
         # Test with all required fields
         processor = SlackCallbackProcessor(
-            slack_user_id='test_user',
-            channel_id='test_channel',
-            message_ts='test_message_ts',
-            thread_ts='test_thread_ts',
-            team_id='test_team_id',
+            slack_user_id="test_user",
+            channel_id="test_channel",
+            message_ts="test_message_ts",
+            thread_ts="test_thread_ts",
+            team_id="test_team_id",
         )
-        assert processor.slack_user_id == 'test_user'
-        assert processor.channel_id == 'test_channel'
-        assert processor.message_ts == 'test_message_ts'
-        assert processor.thread_ts == 'test_thread_ts'
-        assert processor.team_id == 'test_team_id'
+        assert processor.slack_user_id == "test_user"
+        assert processor.channel_id == "test_channel"
+        assert processor.message_ts == "test_message_ts"
+        assert processor.thread_ts == "test_thread_ts"
+        assert processor.team_id == "test_team_id"
         assert processor.last_user_msg_id is None
 
         # Test with last_user_msg_id provided
         processor_with_msg_id = SlackCallbackProcessor(
-            slack_user_id='test_user',
-            channel_id='test_channel',
-            message_ts='test_message_ts',
-            thread_ts='test_thread_ts',
-            team_id='test_team_id',
+            slack_user_id="test_user",
+            channel_id="test_channel",
+            message_ts="test_message_ts",
+            thread_ts="test_thread_ts",
+            team_id="test_team_id",
             last_user_msg_id=456,
         )
         assert processor_with_msg_id.last_user_msg_id == 456
@@ -375,11 +373,11 @@ class TestSlackCallbackProcessor:
         """Test serialization and deserialization of SlackCallbackProcessor."""
         # Create a processor
         original_processor = SlackCallbackProcessor(
-            slack_user_id='test_user',
-            channel_id='test_channel',
-            message_ts='test_message_ts',
-            thread_ts='test_thread_ts',
-            team_id='test_team_id',
+            slack_user_id="test_user",
+            channel_id="test_channel",
+            message_ts="test_message_ts",
+            thread_ts="test_thread_ts",
+            team_id="test_team_id",
             last_user_msg_id=125,
         )
 
@@ -401,9 +399,9 @@ class TestSlackCallbackProcessor:
         )
 
     @patch(
-        'server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager'
+        "server.conversation_callback_processor.slack_callback_processor.get_last_user_msg_from_conversation_manager"
     )
-    @patch('server.conversation_callback_processor.slack_callback_processor.logger')
+    @patch("server.conversation_callback_processor.slack_callback_processor.logger")
     async def test_call_with_unchanged_message_id(
         self,
         mock_logger,
@@ -416,7 +414,7 @@ class TestSlackCallbackProcessor:
         # Setup - simulate that the message ID hasn't changed
         mock_last_msg = MagicMock()
         mock_last_msg.id = 123
-        mock_last_msg.content = 'Hello'
+        mock_last_msg.content = "Hello"
         mock_get_last_user_msg.return_value = [mock_last_msg]
 
         # Set the last_user_msg_id to the same value
@@ -436,11 +434,11 @@ class TestSlackCallbackProcessor:
         """Test integration with ConversationCallback."""
         # Create a processor
         processor = SlackCallbackProcessor(
-            slack_user_id='test_user',
-            channel_id='test_channel',
-            message_ts='test_message_ts',
-            thread_ts='test_thread_ts',
-            team_id='test_team_id',
+            slack_user_id="test_user",
+            channel_id="test_channel",
+            message_ts="test_message_ts",
+            thread_ts="test_thread_ts",
+            team_id="test_team_id",
         )
 
         # Set the processor on the callback
@@ -449,13 +447,13 @@ class TestSlackCallbackProcessor:
 
         # Verify set_processor was called with the correct processor type
         expected_processor_type = (
-            f'{SlackCallbackProcessor.__module__}.{SlackCallbackProcessor.__name__}'
+            f"{SlackCallbackProcessor.__module__}.{SlackCallbackProcessor.__name__}"
         )
         assert callback.processor_type == expected_processor_type
 
         # Verify processor_json contains the serialized processor
-        assert 'slack_user_id' in callback.processor_json
-        assert 'channel_id' in callback.processor_json
-        assert 'message_ts' in callback.processor_json
-        assert 'thread_ts' in callback.processor_json
-        assert 'team_id' in callback.processor_json
+        assert "slack_user_id" in callback.processor_json
+        assert "channel_id" in callback.processor_json
+        assert "message_ts" in callback.processor_json
+        assert "thread_ts" in callback.processor_json
+        assert "team_id" in callback.processor_json

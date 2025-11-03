@@ -1,5 +1,4 @@
-"""
-Solvability Models Package
+"""Solvability Models Package
 
 This package contains the core machine learning models and components for predicting
 the solvability of GitHub issues and similar technical problems.
@@ -28,11 +27,11 @@ from integrations.solvability.models.importance_strategy import ImportanceStrate
 from integrations.solvability.models.report import SolvabilityReport
 
 __all__ = [
-    'Feature',
-    'EmbeddingDimension',
-    'FeatureEmbedding',
-    'Featurizer',
-    'ImportanceStrategy',
-    'SolvabilityClassifier',
-    'SolvabilityReport',
+    "Feature",
+    "EmbeddingDimension",
+    "FeatureEmbedding",
+    "Featurizer",
+    "ImportanceStrategy",
+    "SolvabilityClassifier",
+    "SolvabilityReport",
 ]

@@ -13,7 +13,7 @@ from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.view import View
 
-CONDENSER_METADATA_KEY = 'condenser_meta'
+CONDENSER_METADATA_KEY = "condenser_meta"
 """Key identifying where metadata is stored in a `State` object's `extra_data` field."""
 
 
@@ -103,13 +103,13 @@ class Condenser(ABC):
 
     def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
-        if hasattr(self, 'llm'):
+        if hasattr(self, "llm"):
             model_name = self.llm.config.model
         else:
-            model_name = 'unknown'
+            model_name = "unknown"
 
         self._llm_metadata = state.to_llm_metadata(
-            model_name=model_name, agent_name='condenser'
+            model_name=model_name, agent_name="condenser"
         )
         with self.metadata_batch(state):
             return self.condense(state.view)
@@ -122,7 +122,7 @@ class Condenser(ABC):
         """
         if not self._llm_metadata:
             logger.warning(
-                'LLM metadata is empty. Ensure to set it in the condenser implementation.'
+                "LLM metadata is empty. Ensure to set it in the condenser implementation."
             )
         return self._llm_metadata
 
@@ -140,7 +140,7 @@ class Condenser(ABC):
         """
         if configuration_type in CONDENSER_REGISTRY:
             raise ValueError(
-                f'Condenser configuration {configuration_type} is already registered'
+                f"Condenser configuration {configuration_type} is already registered"
             )
         CONDENSER_REGISTRY[configuration_type] = cls
 
@@ -163,7 +163,7 @@ class Condenser(ABC):
             condenser_class = CONDENSER_REGISTRY[type(config)]
             return condenser_class.from_config(config, llm_registry)
         except KeyError:
-            raise ValueError(f'Unknown condenser config: {config}')
+            raise ValueError(f"Unknown condenser config: {config}")
 
 
 class RollingCondenser(Condenser, ABC):

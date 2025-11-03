@@ -35,7 +35,7 @@ def get_config():
     return _config
 
 
-def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -> str:
+def sign_token(payload: dict[str, object], jwt_secret: str, algorithm="HS256") -> str:
     """Signs a JWT token."""
     return jwt.encode(payload, jwt_secret, algorithm=algorithm)
 
@@ -43,13 +43,13 @@ def sign_token(payload: dict[str, object], jwt_secret: str, algorithm='HS256') -
 def verify_signature(payload: bytes, signature: str):
     if not signature:
         raise HTTPException(
-            status_code=403, detail='x-hub-signature-256 header is missing!'
+            status_code=403, detail="x-hub-signature-256 header is missing!"
         )
 
     expected_signature = (
-        'sha256='
+        "sha256="
         + hmac.new(
-            GITHUB_APP_WEBHOOK_SECRET.encode('utf-8'),
+            GITHUB_APP_WEBHOOK_SECRET.encode("utf-8"),
             msg=payload,
             digestmod=hashlib.sha256,
         ).hexdigest()
@@ -60,29 +60,29 @@ def verify_signature(payload: bytes, signature: str):
 
 
 class SaaSServerConfig(ServerConfig):
-    config_cls: str = os.environ.get('OPENHANDS_CONFIG_CLS', '')
+    config_cls: str = os.environ.get("OPENHANDS_CONFIG_CLS", "")
     app_mode: AppMode = AppMode.SAAS
-    posthog_client_key: str = os.environ.get('POSTHOG_CLIENT_KEY', '')
-    github_client_id: str = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
-    hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
-    auth_url: str | None = os.environ.get('AUTH_URL')
-    settings_store_class: str = 'storage.saas_settings_store.SaasSettingsStore'
-    secret_store_class: str = 'storage.saas_secrets_store.SaasSecretsStore'
+    posthog_client_key: str = os.environ.get("POSTHOG_CLIENT_KEY", "")
+    github_client_id: str = os.environ.get("GITHUB_APP_CLIENT_ID", "")
+    enable_billing = os.environ.get("ENABLE_BILLING", "false") == "true"
+    hide_llm_settings = os.environ.get("HIDE_LLM_SETTINGS", "false") == "true"
+    auth_url: str | None = os.environ.get("AUTH_URL")
+    settings_store_class: str = "storage.saas_settings_store.SaasSettingsStore"
+    secret_store_class: str = "storage.saas_secrets_store.SaasSecretsStore"
     conversation_store_class: str = (
-        'storage.saas_conversation_store.SaasConversationStore'
+        "storage.saas_conversation_store.SaasConversationStore"
     )
     conversation_manager_class: str = os.environ.get(
-        'CONVERSATION_MANAGER_CLASS',
-        'server.clustered_conversation_manager.ClusteredConversationManager',
+        "CONVERSATION_MANAGER_CLASS",
+        "server.clustered_conversation_manager.ClusteredConversationManager",
     )
     monitoring_listener_class: str = (
-        'server.saas_monitoring_listener.SaaSMonitoringListener'
+        "server.saas_monitoring_listener.SaaSMonitoringListener"
     )
-    user_auth_class: str = 'server.auth.saas_user_auth.SaasUserAuth'
+    user_auth_class: str = "server.auth.saas_user_auth.SaasUserAuth"
     # Maintenance window configuration
     maintenance_start_time: str = os.environ.get(
-        'MAINTENANCE_START_TIME', ''
+        "MAINTENANCE_START_TIME", ""
     )  # Timestamp in EST e.g 2025-07-29T14:18:01.219616-04:00
     enable_jira = ENABLE_JIRA
     enable_jira_dc = ENABLE_JIRA_DC
@@ -105,47 +105,47 @@ class SaaSServerConfig(ServerConfig):
         # Generate a JWT for the GitHub App
         now = int(time.time())
         payload = {
-            'iat': now - 60,  # Issued at time (backdate 60 seconds for clock skew)
-            'exp': now
+            "iat": now - 60,  # Issued at time (backdate 60 seconds for clock skew)
+            "exp": now
             + (
                 9 * 60
             ),  # Expiration time (set to 9 minutes as 10 was causing error if there is time drift)
-            'iss': GITHUB_APP_CLIENT_ID,  # GitHub App ID
+            "iss": GITHUB_APP_CLIENT_ID,  # GitHub App ID
         }
 
-        encoded_jwt = sign_token(payload, GITHUB_APP_PRIVATE_KEY, algorithm='RS256')  # type: ignore
+        encoded_jwt = sign_token(payload, GITHUB_APP_PRIVATE_KEY, algorithm="RS256")  # type: ignore
 
         # Define the headers for the GitHub API request
         headers = {
-            'Authorization': f'Bearer {encoded_jwt}',
-            'Accept': 'application/vnd.github+json',
+            "Authorization": f"Bearer {encoded_jwt}",
+            "Accept": "application/vnd.github+json",
         }
 
         # Make a request to the GitHub API /app endpoint
-        response = requests.get('https://api.github.com/app', headers=headers)
+        response = requests.get("https://api.github.com/app", headers=headers)
 
         # Check if the response is successful
         if response.status_code != 200:
             raise ValueError(
-                f'Failed to retrieve app info, status code:{response.status_code}, message:{response.content.decode('utf-8')}'
+                f"Failed to retrieve app info, status code:{response.status_code}, message:{response.content.decode('utf-8')}"
             )
 
         # Extract the app slug from the response
         app_data = response.json()
-        self.app_slug = app_data.get('slug')
+        self.app_slug = app_data.get("slug")
 
         if not self.app_slug:
             raise ValueError("GitHub app slug is missing in the API response.'")
 
     def verify_config(self):
         if not self.config_cls:
-            raise ValueError('Config path not provided!')
+            raise ValueError("Config path not provided!")
 
         if not self.posthog_client_key:
-            raise ValueError('Missing posthog client key in env')
+            raise ValueError("Missing posthog client key in env")
 
         if GITHUB_APP_CLIENT_ID and not self.github_client_id:
-            raise ValueError('Missing Github client id')
+            raise ValueError("Missing Github client id")
 
     def get_config(self):
         # These providers are configurable via helm charts for self hosted deployments
@@ -164,27 +164,27 @@ class SaaSServerConfig(ServerConfig):
             providers_configured.append(ProviderType.ENTERPRISE_SSO)
 
         config: dict[str, typing.Any] = {
-            'APP_MODE': self.app_mode,
-            'APP_SLUG': self.app_slug,
-            'GITHUB_CLIENT_ID': self.github_client_id,
-            'POSTHOG_CLIENT_KEY': self.posthog_client_key,
-            'FEATURE_FLAGS': {
-                'ENABLE_BILLING': self.enable_billing,
-                'HIDE_LLM_SETTINGS': self.hide_llm_settings,
-                'ENABLE_JIRA': self.enable_jira,
-                'ENABLE_JIRA_DC': self.enable_jira_dc,
-                'ENABLE_LINEAR': self.enable_linear,
+            "APP_MODE": self.app_mode,
+            "APP_SLUG": self.app_slug,
+            "GITHUB_CLIENT_ID": self.github_client_id,
+            "POSTHOG_CLIENT_KEY": self.posthog_client_key,
+            "FEATURE_FLAGS": {
+                "ENABLE_BILLING": self.enable_billing,
+                "HIDE_LLM_SETTINGS": self.hide_llm_settings,
+                "ENABLE_JIRA": self.enable_jira,
+                "ENABLE_JIRA_DC": self.enable_jira_dc,
+                "ENABLE_LINEAR": self.enable_linear,
             },
-            'PROVIDERS_CONFIGURED': providers_configured,
+            "PROVIDERS_CONFIGURED": providers_configured,
         }
 
         # Add maintenance window if configured
         if self.maintenance_start_time:
-            config['MAINTENANCE'] = {
-                'startTime': self.maintenance_start_time,
+            config["MAINTENANCE"] = {
+                "startTime": self.maintenance_start_time,
             }
 
         if self.auth_url:
-            config['AUTH_URL'] = self.auth_url
+            config["AUTH_URL"] = self.auth_url
 
         return config

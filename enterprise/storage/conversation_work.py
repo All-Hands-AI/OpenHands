@@ -5,7 +5,7 @@ from storage.base import Base
 
 
 class ConversationWork(Base):  # type: ignore
-    __tablename__ = 'conversation_work'
+    __tablename__ = "conversation_work"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(String, nullable=False, unique=True, index=True)
@@ -23,5 +23,5 @@ class ConversationWork(Base):  # type: ignore
 
     # Create composite index for efficient queries
     __table_args__ = (
-        Index('ix_conversation_work_user_conversation', 'user_id', 'conversation_id'),
+        Index("ix_conversation_work_user_conversation", "user_id", "conversation_id"),
     )

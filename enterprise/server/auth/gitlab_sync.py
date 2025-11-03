@@ -23,9 +23,9 @@ def schedule_gitlab_repo_sync(
                 external_auth_id=user_id, external_auth_token=keycloak_access_token
             )
             await service.get_all_repositories(
-                'pushed', AppMode.SAAS, store_in_background=False
+                "pushed", AppMode.SAAS, store_in_background=False
             )
         except Exception:
-            logger.warning('gitlab_repo_sync_failed', exc_info=True)
+            logger.warning("gitlab_repo_sync_failed", exc_info=True)
 
     asyncio.create_task(_run())

@@ -4,9 +4,9 @@ from pydantic import BaseModel
 
 
 class WorkflowRunStatus(Enum):
-    FAILURE = 'failure'
-    COMPLETED = 'completed'
-    PENDING = 'pending'
+    FAILURE = "failure"
+    COMPLETED = "completed"
+    PENDING = "pending"
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -19,7 +19,7 @@ class WorkflowRun(BaseModel):
     name: str
     status: WorkflowRunStatus
 
-    model_config = {'use_enum_values': True}
+    model_config = {"use_enum_values": True}
 
 
 class WorkflowRunGroup(BaseModel):

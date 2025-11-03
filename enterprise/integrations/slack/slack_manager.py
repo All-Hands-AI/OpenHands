@@ -34,8 +34,8 @@ from openhands.server.user_auth.user_auth import UserAuth
 
 authorize_url_generator = AuthorizeUrlGenerator(
     client_id=SLACK_CLIENT_ID,
-    scopes=['app_mentions:read', 'chat:write'],
-    user_scopes=['search:read'],
+    scopes=["app_mentions:read", "chat:write"],
+    user_scopes=["search:read"],
 )
 
 
@@ -43,21 +43,21 @@ class SlackManager(Manager):
     def __init__(self, token_manager):
         self.token_manager = token_manager
         self.login_link = (
-            'User has not yet authenticated: [Click here to Login to OpenHands]({}).'
+            "User has not yet authenticated: [Click here to Login to OpenHands]({})."
         )
 
         self.jinja_env = Environment(
-            loader=FileSystemLoader(OPENHANDS_RESOLVER_TEMPLATES_DIR + 'slack')
+            loader=FileSystemLoader(OPENHANDS_RESOLVER_TEMPLATES_DIR + "slack")
         )
 
     def _confirm_incoming_source_type(self, message: Message):
         if message.source != SourceType.SLACK:
-            raise ValueError(f'Unexpected message source {message.source}')
+            raise ValueError(f"Unexpected message source {message.source}")
 
     async def _get_user_auth(self, keycloak_user_id: str) -> UserAuth:
         offline_token = await self.token_manager.load_offline_token(keycloak_user_id)
         if offline_token is None:
-            logger.info('no_offline_token_found')
+            logger.info("no_offline_token_found")
 
         user_auth = SaasUserAuth(
             user_id=keycloak_user_id,
@@ -88,7 +88,7 @@ class SlackManager(Manager):
 
     def _infer_repo_from_message(self, user_msg: str) -> str | None:
         # Regular expression to match patterns like "OpenHands/OpenHands" or "deploy repo"
-        pattern = r'([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)|([a-zA-Z0-9_-]+)(?=\s+repo)'
+        pattern = r"([a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)|([a-zA-Z0-9_-]+)(?=\s+repo)"
         match = re.search(pattern, user_msg)
 
         if match:
@@ -109,7 +109,7 @@ class SlackManager(Manager):
             external_auth_id=user_id,
         )
         repos: list[Repository] = await client.get_repositories(
-            'pushed', server_config.app_mode, None, None, None, None
+            "pushed", server_config.app_mode, None, None, None, None
         )
         return repos
 
@@ -118,37 +118,37 @@ class SlackManager(Manager):
     ):
         options = [
             {
-                'text': {'type': 'plain_text', 'text': 'No Repository'},
-                'value': '-',
+                "text": {"type": "plain_text", "text": "No Repository"},
+                "value": "-",
             }
         ]
         options.extend(
             {
-                'text': {
-                    'type': 'plain_text',
-                    'text': repo.full_name,
+                "text": {
+                    "type": "plain_text",
+                    "text": repo.full_name,
                 },
-                'value': repo.full_name,
+                "value": repo.full_name,
             }
             for repo in repo_list
         )
 
         return [
             {
-                'type': 'header',
-                'text': {
-                    'type': 'plain_text',
-                    'text': 'Choose a repository',
-                    'emoji': True,
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Choose a repository",
+                    "emoji": True,
                 },
             },
             {
-                'type': 'actions',
-                'elements': [
+                "type": "actions",
+                "elements": [
                     {
-                        'type': 'static_select',
-                        'action_id': f'repository_select:{message_ts}:{thread_ts}',
-                        'options': options,
+                        "type": "static_select",
+                        "action_id": f"repository_select:{message_ts}:{thread_ts}",
+                        "options": options,
                     }
                 ],
             },
@@ -181,7 +181,7 @@ class SlackManager(Manager):
         self._confirm_incoming_source_type(message)
 
         slack_user, saas_user_auth = await self.authenticate_user(
-            slack_user_id=message.message['slack_user_id']
+            slack_user_id=message.message["slack_user_id"]
         )
 
         try:
@@ -190,7 +190,7 @@ class SlackManager(Manager):
             )
         except Exception as e:
             logger.error(
-                f'[Slack]: Failed to create slack view: {e}',
+                f"[Slack]: Failed to create slack view: {e}",
                 exc_info=True,
                 stack_info=True,
             )
@@ -199,14 +199,14 @@ class SlackManager(Manager):
         if isinstance(slack_view, SlackUnkownUserView):
             jwt_secret = config.jwt_secret
             if not jwt_secret:
-                raise ValueError('Must configure jwt_secret')
+                raise ValueError("Must configure jwt_secret")
             state = jwt.encode(
-                message.message, jwt_secret.get_secret_value(), algorithm='HS256'
+                message.message, jwt_secret.get_secret_value(), algorithm="HS256"
             )
             link = authorize_url_generator.generate(state)
             msg = self.login_link.format(link)
 
-            logger.info('slack_not_yet_authenticated')
+            logger.info("slack_not_yet_authenticated")
             await self.send_message(
                 self.create_outgoing_message(msg, ephemeral=True), slack_view
             )
@@ -231,8 +231,8 @@ class SlackManager(Manager):
                 channel=slack_view.channel_id,
                 user=slack_view.slack_user_id,
                 thread_ts=slack_view.thread_ts,
-                text=message.message['text'],
-                blocks=message.message['blocks'],
+                text=message.message["text"],
+                blocks=message.message["blocks"],
             )
         else:
             await client.chat_postMessage(
@@ -244,13 +244,11 @@ class SlackManager(Manager):
     async def is_job_requested(
         self, message: Message, slack_view: SlackViewInterface
     ) -> bool:
-        """
-        A job is always request we only receive webhooks for events associated with the slack bot
+        """A job is always request we only receive webhooks for events associated with the slack bot
         This method really just checks
             1. Is the user is authenticated
             2. Do we have the necessary information to start a job (either by inferring the selected repo, otherwise asking the user)
         """
-
         # Infer repo from user message is not needed; user selected repo from the form or is updating existing convo
         if isinstance(slack_view, SlackUpdateExistingConversationView):
             return True
@@ -271,18 +269,18 @@ class SlackManager(Manager):
                 return True
 
             logger.info(
-                'render_repository_selector',
+                "render_repository_selector",
                 extra={
-                    'slack_user_id': user,
-                    'keycloak_user_id': user.keycloak_user_id,
-                    'message_ts': slack_view.message_ts,
-                    'thread_ts': slack_view.thread_ts,
+                    "slack_user_id": user,
+                    "keycloak_user_id": user.keycloak_user_id,
+                    "message_ts": slack_view.message_ts,
+                    "thread_ts": slack_view.thread_ts,
                 },
             )
 
             repo_selection_msg = {
-                'text': 'Choose a Repository:',
-                'blocks': self._generate_repo_selection_form(
+                "text": "Choose a Repository:",
+                "blocks": self._generate_repo_selection_form(
                     repos, slack_view.message_ts, slack_view.thread_ts
                 ),
             }
@@ -306,15 +304,15 @@ class SlackManager(Manager):
             user_info: SlackUser = slack_view.slack_to_openhands_user
             try:
                 logger.info(
-                    f'[Slack] Starting job for user {user_info.slack_display_name} (id={user_info.slack_user_id})',
-                    extra={'keyloak_user_id': user_info.keycloak_user_id},
+                    f"[Slack] Starting job for user {user_info.slack_display_name} (id={user_info.slack_user_id})",
+                    extra={"keyloak_user_id": user_info.keycloak_user_id},
                 )
                 conversation_id = await slack_view.create_or_update_conversation(
                     self.jinja_env
                 )
 
                 logger.info(
-                    f'[Slack] Created conversation {conversation_id} for user {user_info.slack_display_name}'
+                    f"[Slack] Created conversation {conversation_id} for user {user_info.slack_display_name}"
                 )
 
                 if not isinstance(slack_view, SlackUpdateExistingConversationView):
@@ -333,24 +331,24 @@ class SlackManager(Manager):
                     register_callback_processor(conversation_id, processor)
 
                     logger.info(
-                        f'[Slack] Created callback processor for conversation {conversation_id}'
+                        f"[Slack] Created callback processor for conversation {conversation_id}"
                     )
 
                 msg_info = slack_view.get_response_msg()
 
             except MissingSettingsError as e:
                 logger.warning(
-                    f'[Slack] Missing settings error for user {user_info.slack_display_name}: {str(e)}'
+                    f"[Slack] Missing settings error for user {user_info.slack_display_name}: {str(e)}"
                 )
 
-                msg_info = f'{user_info.slack_display_name} please re-login into [OpenHands Cloud]({HOST_URL}) before starting a job.'
+                msg_info = f"{user_info.slack_display_name} please re-login into [OpenHands Cloud]({HOST_URL}) before starting a job."
 
             except LLMAuthenticationError as e:
                 logger.warning(
-                    f'[Slack] LLM authentication error for user {user_info.slack_display_name}: {str(e)}'
+                    f"[Slack] LLM authentication error for user {user_info.slack_display_name}: {str(e)}"
                 )
 
-                msg_info = f'@{user_info.slack_display_name} please set a valid LLM API key in [OpenHands Cloud]({HOST_URL}) before starting a job.'
+                msg_info = f"@{user_info.slack_display_name} please set a valid LLM API key in [OpenHands Cloud]({HOST_URL}) before starting a job."
 
             except StartingConvoException as e:
                 msg_info = str(e)
@@ -358,6 +356,6 @@ class SlackManager(Manager):
             await self.send_message(self.create_outgoing_message(msg_info), slack_view)
 
         except Exception:
-            logger.exception('[Slack]: Error starting job')
-            msg = 'Uh oh! There was an unexpected error starting the job :('
+            logger.exception("[Slack]: Error starting job")
+            msg = "Uh oh! There was an unexpected error starting the job :("
             await self.send_message(self.create_outgoing_message(msg), slack_view)

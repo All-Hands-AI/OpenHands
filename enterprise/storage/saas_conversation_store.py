@@ -35,44 +35,44 @@ class SaasConversationStore(ConversationStore):
             session.query(StoredConversationMetadata)
             .filter(StoredConversationMetadata.user_id == self.user_id)
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
-            .filter(StoredConversationMetadata.conversation_version == 'V0')
+            .filter(StoredConversationMetadata.conversation_version == "V0")
         )
 
     def _to_external_model(self, conversation_metadata: StoredConversationMetadata):
         kwargs = {
             c.name: getattr(conversation_metadata, c.name)
             for c in StoredConversationMetadata.__table__.columns
-            if c.name != 'github_user_id'  # Skip github_user_id field
+            if c.name != "github_user_id"  # Skip github_user_id field
         }
         # TODO: I'm not sure why the timezone is not set on the dates coming back out of the db
-        kwargs['created_at'] = kwargs['created_at'].replace(tzinfo=UTC)
-        kwargs['last_updated_at'] = kwargs['last_updated_at'].replace(tzinfo=UTC)
-        if kwargs['trigger']:
-            kwargs['trigger'] = ConversationTrigger(kwargs['trigger'])
-        if kwargs['git_provider'] and isinstance(kwargs['git_provider'], str):
+        kwargs["created_at"] = kwargs["created_at"].replace(tzinfo=UTC)
+        kwargs["last_updated_at"] = kwargs["last_updated_at"].replace(tzinfo=UTC)
+        if kwargs["trigger"]:
+            kwargs["trigger"] = ConversationTrigger(kwargs["trigger"])
+        if kwargs["git_provider"] and isinstance(kwargs["git_provider"], str):
             # Convert string to ProviderType enum
-            kwargs['git_provider'] = ProviderType(kwargs['git_provider'])
+            kwargs["git_provider"] = ProviderType(kwargs["git_provider"])
 
         # Remove V1 attributes
-        kwargs.pop('max_budget_per_task', None)
-        kwargs.pop('cache_read_tokens', None)
-        kwargs.pop('cache_write_tokens', None)
-        kwargs.pop('reasoning_tokens', None)
-        kwargs.pop('context_window', None)
-        kwargs.pop('per_turn_token', None)
+        kwargs.pop("max_budget_per_task", None)
+        kwargs.pop("cache_read_tokens", None)
+        kwargs.pop("cache_write_tokens", None)
+        kwargs.pop("reasoning_tokens", None)
+        kwargs.pop("context_window", None)
+        kwargs.pop("per_turn_token", None)
 
         return ConversationMetadata(**kwargs)
 
     async def save_metadata(self, metadata: ConversationMetadata):
         kwargs = dataclasses.asdict(metadata)
-        kwargs['user_id'] = self.user_id
+        kwargs["user_id"] = self.user_id
 
         # Convert ProviderType enum to string for storage
-        if kwargs.get('git_provider') is not None:
-            kwargs['git_provider'] = (
-                kwargs['git_provider'].value
-                if hasattr(kwargs['git_provider'], 'value')
-                else kwargs['git_provider']
+        if kwargs.get("git_provider") is not None:
+            kwargs["git_provider"] = (
+                kwargs["git_provider"].value
+                if hasattr(kwargs["git_provider"], "value")
+                else kwargs["git_provider"]
             )
 
         stored_metadata = StoredConversationMetadata(**kwargs)
@@ -124,7 +124,7 @@ class SaasConversationStore(ConversationStore):
                 conversations = (
                     session.query(StoredConversationMetadata)
                     .filter(StoredConversationMetadata.user_id == self.user_id)
-                    .filter(StoredConversationMetadata.conversation_version == 'V0')
+                    .filter(StoredConversationMetadata.conversation_version == "V0")
                     .order_by(StoredConversationMetadata.created_at.desc())
                     .offset(offset)
                     .limit(limit + 1)

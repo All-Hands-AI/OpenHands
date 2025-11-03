@@ -53,7 +53,7 @@ class Settings(BaseModel):
         validate_assignment=True,
     )
 
-    @field_serializer('llm_api_key', 'search_api_key')
+    @field_serializer("llm_api_key", "search_api_key")
     def api_key_serializer(self, api_key: SecretStr | None, info: SerializationInfo):
         """Custom serializer for API keys.
 
@@ -68,61 +68,61 @@ class Settings(BaseModel):
             return None
 
         context = info.context
-        if context and context.get('expose_secrets', False):
+        if context and context.get("expose_secrets", False):
             return secret_value
 
         return str(api_key)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def convert_provider_tokens(cls, data: dict | object) -> dict | object:
         """Convert provider tokens from JSON format to Secrets format."""
         if not isinstance(data, dict):
             return data
 
-        secrets_store = data.get('secrets_store')
+        secrets_store = data.get("secrets_store")
         if not isinstance(secrets_store, dict):
             return data
 
-        custom_secrets = secrets_store.get('custom_secrets')
-        tokens = secrets_store.get('provider_tokens')
+        custom_secrets = secrets_store.get("custom_secrets")
+        tokens = secrets_store.get("provider_tokens")
 
         secret_store = Secrets(provider_tokens={}, custom_secrets={})  # type: ignore[arg-type]
 
         if isinstance(tokens, dict):
             converted_store = Secrets(provider_tokens=tokens)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
-                update={'provider_tokens': converted_store.provider_tokens}
+                update={"provider_tokens": converted_store.provider_tokens}
             )
         else:
-            secret_store.model_copy(update={'provider_tokens': tokens})
+            secret_store.model_copy(update={"provider_tokens": tokens})
 
         if isinstance(custom_secrets, dict):
             converted_store = Secrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
-                update={'custom_secrets': converted_store.custom_secrets}
+                update={"custom_secrets": converted_store.custom_secrets}
             )
         else:
             secret_store = secret_store.model_copy(
-                update={'custom_secrets': custom_secrets}
+                update={"custom_secrets": custom_secrets}
             )
-        data['secret_store'] = secret_store
+        data["secret_store"] = secret_store
         return data
 
-    @field_validator('condenser_max_size')
+    @field_validator("condenser_max_size")
     @classmethod
     def validate_condenser_max_size(cls, v: int | None) -> int | None:
         if v is None:
             return v
         if v < 20:
-            raise ValueError('condenser_max_size must be at least 20')
+            raise ValueError("condenser_max_size must be at least 20")
         return v
 
-    @field_serializer('secrets_store')
+    @field_serializer("secrets_store")
     def secrets_store_serializer(self, secrets: Secrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
         """Force invalidate secret store"""
-        return {'provider_tokens': {}}
+        return {"provider_tokens": {}}
 
     @staticmethod
     def from_config() -> Settings | None:
@@ -135,11 +135,11 @@ class Settings(BaseModel):
 
         # Get MCP config if available
         mcp_config = None
-        if hasattr(app_config, 'mcp'):
+        if hasattr(app_config, "mcp"):
             mcp_config = app_config.mcp
 
         settings = Settings(
-            language='en',
+            language="en",
             agent=app_config.default_agent,
             max_iterations=app_config.max_iterations,
             security_analyzer=security.security_analyzer,
@@ -154,7 +154,7 @@ class Settings(BaseModel):
         )
         return settings
 
-    def merge_with_config_settings(self) -> 'Settings':
+    def merge_with_config_settings(self) -> "Settings":
         """Merge config.toml settings with stored settings.
 
         Config.toml takes priority for MCP settings, but they are merged rather than replaced.

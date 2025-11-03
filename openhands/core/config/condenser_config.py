@@ -11,31 +11,31 @@ from openhands.core.config.llm_config import LLMConfig
 class NoOpCondenserConfig(BaseModel):
     """Configuration for NoOpCondenser."""
 
-    type: Literal['noop'] = Field(default='noop')
+    type: Literal["noop"] = Field(default="noop")
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class ObservationMaskingCondenserConfig(BaseModel):
     """Configuration for ObservationMaskingCondenser."""
 
-    type: Literal['observation_masking'] = Field(default='observation_masking')
+    type: Literal["observation_masking"] = Field(default="observation_masking")
     attention_window: int = Field(
         default=100,
-        description='The number of most-recent events where observations will not be masked.',
+        description="The number of most-recent events where observations will not be masked.",
         ge=1,
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class BrowserOutputCondenserConfig(BaseModel):
     """Configuration for the BrowserOutputCondenser."""
 
-    type: Literal['browser_output_masking'] = Field(default='browser_output_masking')
+    type: Literal["browser_output_masking"] = Field(default="browser_output_masking")
     attention_window: int = Field(
         default=1,
-        description='The number of most recent browser output observations that will not be masked.',
+        description="The number of most recent browser output observations that will not be masked.",
         ge=1,
     )
 
@@ -43,128 +43,128 @@ class BrowserOutputCondenserConfig(BaseModel):
 class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
-    type: Literal['recent'] = Field(default='recent')
+    type: Literal["recent"] = Field(default="recent")
 
     # at least one event by default, because the best guess is that it is the user task
     keep_first: int = Field(
         default=1,
-        description='The number of initial events to condense.',
+        description="The number of initial events to condense.",
         ge=0,
     )
     max_events: int = Field(
-        default=100, description='Maximum number of events to keep.', ge=1
+        default=100, description="Maximum number of events to keep.", ge=1
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class LLMSummarizingCondenserConfig(BaseModel):
     """Configuration for LLMCondenser."""
 
-    type: Literal['llm'] = Field(default='llm')
+    type: Literal["llm"] = Field(default="llm")
     llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for condensing.'
+        ..., description="Configuration for the LLM to use for condensing."
     )
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
         default=1,
-        description='Number of initial events to always keep in history.',
+        description="Number of initial events to always keep in history.",
         ge=0,
     )
     max_size: int = Field(
         default=100,
-        description='Maximum size of the condensed history before triggering forgetting.',
+        description="Maximum size of the condensed history before triggering forgetting.",
         ge=2,
     )
     max_event_length: int = Field(
         default=10_000,
-        description='Maximum length of the event representations to be passed to the LLM.',
+        description="Maximum length of the event representations to be passed to the LLM.",
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class AmortizedForgettingCondenserConfig(BaseModel):
     """Configuration for AmortizedForgettingCondenser."""
 
-    type: Literal['amortized'] = Field(default='amortized')
+    type: Literal["amortized"] = Field(default="amortized")
     max_size: int = Field(
         default=100,
-        description='Maximum size of the condensed history before triggering forgetting.',
+        description="Maximum size of the condensed history before triggering forgetting.",
         ge=2,
     )
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
         default=1,
-        description='Number of initial events to always keep in history.',
+        description="Number of initial events to always keep in history.",
         ge=0,
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class LLMAttentionCondenserConfig(BaseModel):
     """Configuration for LLMAttentionCondenser."""
 
-    type: Literal['llm_attention'] = Field(default='llm_attention')
+    type: Literal["llm_attention"] = Field(default="llm_attention")
     llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for attention.'
+        ..., description="Configuration for the LLM to use for attention."
     )
     max_size: int = Field(
         default=100,
-        description='Maximum size of the condensed history before triggering forgetting.',
+        description="Maximum size of the condensed history before triggering forgetting.",
         ge=2,
     )
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
         default=1,
-        description='Number of initial events to always keep in history.',
+        description="Number of initial events to always keep in history.",
         ge=0,
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class StructuredSummaryCondenserConfig(BaseModel):
     """Configuration for StructuredSummaryCondenser instances."""
 
-    type: Literal['structured'] = Field(default='structured')
+    type: Literal["structured"] = Field(default="structured")
     llm_config: LLMConfig = Field(
-        ..., description='Configuration for the LLM to use for condensing.'
+        ..., description="Configuration for the LLM to use for condensing."
     )
 
     # at least one event by default, because the best guess is that it's the user task
     keep_first: int = Field(
         default=1,
-        description='Number of initial events to always keep in history.',
+        description="Number of initial events to always keep in history.",
         ge=0,
     )
     max_size: int = Field(
         default=100,
-        description='Maximum size of the condensed history before triggering forgetting.',
+        description="Maximum size of the condensed history before triggering forgetting.",
         ge=2,
     )
     max_event_length: int = Field(
         default=10_000,
-        description='Maximum length of the event representations to be passed to the LLM.',
+        description="Maximum length of the event representations to be passed to the LLM.",
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class CondenserPipelineConfig(BaseModel):
     """Configuration for the CondenserPipeline."""
 
-    type: Literal['pipeline'] = Field(default='pipeline')
+    type: Literal["pipeline"] = Field(default="pipeline")
     condensers: list[CondenserConfig] = Field(
         default_factory=list,
-        description='List of condenser configurations to be used in the pipeline.',
+        description="List of condenser configurations to be used in the pipeline.",
     )
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 class ConversationWindowCondenserConfig(BaseModel):
@@ -173,9 +173,9 @@ class ConversationWindowCondenserConfig(BaseModel):
     Not currently supported by the TOML or ENV_VAR configuration strategies.
     """
 
-    type: Literal['conversation_window'] = Field(default='conversation_window')
+    type: Literal["conversation_window"] = Field(default="conversation_window")
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
 
 # Type alias for convenience
@@ -224,19 +224,19 @@ def condenser_config_from_toml_section(
     # Process config
     try:
         # Determine which condenser type to use based on 'type' field
-        condenser_type = data.get('type', 'noop')
+        condenser_type = data.get("type", "noop")
 
         # Handle LLM config reference if needed
         if (
-            condenser_type in ('llm', 'llm_attention')
-            and 'llm_config' in data
-            and isinstance(data['llm_config'], str)
+            condenser_type in ("llm", "llm_attention")
+            and "llm_config" in data
+            and isinstance(data["llm_config"], str)
         ):
-            llm_config_name = data['llm_config']
+            llm_config_name = data["llm_config"]
             if llm_configs and llm_config_name in llm_configs:
                 # Replace the string reference with the actual LLMConfig object
                 data_copy = data.copy()
-                data_copy['llm_config'] = llm_configs[llm_config_name]
+                data_copy["llm_config"] = llm_configs[llm_config_name]
                 config = create_condenser_config(condenser_type, data_copy)
             else:
                 logger.openhands_logger.warning(
@@ -246,19 +246,19 @@ def condenser_config_from_toml_section(
                 data_copy = data.copy()
                 # Try to use the fallback 'llm' config
                 if llm_configs is not None:
-                    data_copy['llm_config'] = llm_configs.get('llm')
+                    data_copy["llm_config"] = llm_configs.get("llm")
                 config = create_condenser_config(condenser_type, data_copy)
         else:
             config = create_condenser_config(condenser_type, data)
 
-        condenser_mapping['condenser'] = config
+        condenser_mapping["condenser"] = config
     except (ValidationError, ValueError) as e:
         logger.openhands_logger.warning(
-            f'Invalid condenser configuration: {e}. Using NoOpCondenserConfig.'
+            f"Invalid condenser configuration: {e}. Using NoOpCondenserConfig."
         )
         # Default to NoOpCondenserConfig if config fails
-        config = NoOpCondenserConfig(type='noop')
-        condenser_mapping['condenser'] = config
+        config = NoOpCondenserConfig(type="noop")
+        condenser_mapping["condenser"] = config
 
     return condenser_mapping
 
@@ -283,20 +283,20 @@ def create_condenser_config(condenser_type: str, data: dict) -> CondenserConfig:
     """
     # Mapping of condenser types to their config classes
     condenser_classes = {
-        'noop': NoOpCondenserConfig,
-        'observation_masking': ObservationMaskingCondenserConfig,
-        'recent': RecentEventsCondenserConfig,
-        'llm': LLMSummarizingCondenserConfig,
-        'amortized': AmortizedForgettingCondenserConfig,
-        'llm_attention': LLMAttentionCondenserConfig,
-        'structured': StructuredSummaryCondenserConfig,
-        'pipeline': CondenserPipelineConfig,
-        'conversation_window': ConversationWindowCondenserConfig,
-        'browser_output_masking': BrowserOutputCondenserConfig,
+        "noop": NoOpCondenserConfig,
+        "observation_masking": ObservationMaskingCondenserConfig,
+        "recent": RecentEventsCondenserConfig,
+        "llm": LLMSummarizingCondenserConfig,
+        "amortized": AmortizedForgettingCondenserConfig,
+        "llm_attention": LLMAttentionCondenserConfig,
+        "structured": StructuredSummaryCondenserConfig,
+        "pipeline": CondenserPipelineConfig,
+        "conversation_window": ConversationWindowCondenserConfig,
+        "browser_output_masking": BrowserOutputCondenserConfig,
     }
 
     if condenser_type not in condenser_classes:
-        raise ValueError(f'Unknown condenser type: {condenser_type}')
+        raise ValueError(f"Unknown condenser type: {condenser_type}")
 
     # Create and validate the config using direct instantiation
     # Explicitly handle ValidationError to provide more context

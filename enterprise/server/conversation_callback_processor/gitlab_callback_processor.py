@@ -28,8 +28,7 @@ gitlab_manager = GitlabManager(token_manager)
 
 
 class GitlabCallbackProcessor(ConversationCallbackProcessor):
-    """
-    Processor for sending conversation summaries to GitLab.
+    """Processor for sending conversation summaries to GitLab.
 
     This processor is used to send summaries of conversations to GitLab
     when agent state changes occur.
@@ -39,8 +38,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
     send_summary_instruction: bool = True
 
     async def _send_message_to_gitlab(self, message: str) -> None:
-        """
-        Send a message to GitLab.
+        """Send a message to GitLab.
 
         Args:
             message: The message content to send to GitLab
@@ -57,24 +55,23 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
             await gitlab_manager.send_message(message_obj, self.gitlab_view)
 
             logger.info(
-                f'[GitLab] Sent summary message to {self.gitlab_view.full_repo_name}#{self.gitlab_view.issue_number}'
+                f"[GitLab] Sent summary message to {self.gitlab_view.full_repo_name}#{self.gitlab_view.issue_number}"
             )
         except Exception as e:
-            logger.exception(f'[GitLab] Failed to send summary message: {str(e)}')
+            logger.exception(f"[GitLab] Failed to send summary message: {str(e)}")
 
     async def __call__(
         self,
         callback: ConversationCallback,
         observation: AgentStateChangedObservation,
     ) -> None:
-        """
-        Process a conversation event by sending a summary to GitLab.
+        """Process a conversation event by sending a summary to GitLab.
 
         Args:
             callback: The conversation callback
             observation: The AgentStateChangedObservation that triggered the callback
         """
-        logger.info(f'[GitLab] Callback agent state was {observation.agent_state}')
+        logger.info(f"[GitLab] Callback agent state was {observation.agent_state}")
         if observation.agent_state not in (
             AgentState.AWAITING_USER_INPUT,
             AgentState.FINISHED,
@@ -86,7 +83,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
             # If we need to send a summary instruction first
             if self.send_summary_instruction:
                 logger.info(
-                    f'[GitLab] Sending summary instruction for conversation {conversation_id}'
+                    f"[GitLab] Sending summary instruction for conversation {conversation_id}"
                 )
 
                 # Get the summary instruction
@@ -97,14 +94,14 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
 
                 # Add the summary instruction to the event stream
                 logger.info(
-                    f'[GitLab] Sending summary instruction to conversation {conversation_id} {summary_event}'
+                    f"[GitLab] Sending summary instruction to conversation {conversation_id} {summary_event}"
                 )
                 await conversation_manager.send_event_to_conversation(
                     conversation_id, summary_event
                 )
 
                 logger.info(
-                    f'[GitLab] Sent summary instruction to conversation {conversation_id} {summary_event}'
+                    f"[GitLab] Sent summary instruction to conversation {conversation_id} {summary_event}"
                 )
 
                 # Update the processor state
@@ -118,7 +115,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
 
             # Extract the summary from the event store
             logger.info(
-                f'[GitLab] Extracting summary for conversation {conversation_id}'
+                f"[GitLab] Extracting summary for conversation {conversation_id}"
             )
             summary = await extract_summary_from_conversation_manager(
                 conversation_manager, conversation_id
@@ -127,7 +124,7 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
             # Send the summary to GitLab
             asyncio.create_task(self._send_message_to_gitlab(summary))
 
-            logger.info(f'[GitLab] Summary sent for conversation {conversation_id}')
+            logger.info(f"[GitLab] Summary sent for conversation {conversation_id}")
 
             # Mark callback as completed status
             callback.status = CallbackStatus.COMPLETED
@@ -138,5 +135,5 @@ class GitlabCallbackProcessor(ConversationCallbackProcessor):
 
         except Exception as e:
             logger.exception(
-                f'[GitLab] Error processing conversation callback: {str(e)}'
+                f"[GitLab] Error processing conversation callback: {str(e)}"
             )

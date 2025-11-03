@@ -12,11 +12,11 @@ def slack_manager():
 
 
 @pytest.mark.parametrize(
-    'message,expected',
+    "message,expected",
     [
-        ('OpenHands/Openhands', 'OpenHands/Openhands'),
-        ('deploy repo', 'deploy'),
-        ('use hello world', None),
+        ("OpenHands/Openhands", "OpenHands/Openhands"),
+        ("deploy repo", "deploy"),
+        ("use hello world", None),
     ],
 )
 def test_infer_repo_from_message(message, expected, slack_manager):

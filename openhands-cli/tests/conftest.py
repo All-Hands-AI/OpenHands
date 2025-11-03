@@ -8,18 +8,18 @@ import pytest
 def mock_verified_models():
     with (
         patch(
-            'openhands_cli.user_actions.settings_action.VERIFIED_MODELS',
+            "openhands_cli.user_actions.settings_action.VERIFIED_MODELS",
             {
-                'openai': ['gpt-4o', 'gpt-4o-mini'],
-                'anthropic': ['claude-3-5-sonnet', 'claude-3-5-haiku'],
+                "openai": ["gpt-4o", "gpt-4o-mini"],
+                "anthropic": ["claude-3-5-sonnet", "claude-3-5-haiku"],
             },
         ),
         patch(
-            'openhands_cli.user_actions.settings_action.UNVERIFIED_MODELS_EXCLUDING_BEDROCK',
+            "openhands_cli.user_actions.settings_action.UNVERIFIED_MODELS_EXCLUDING_BEDROCK",
             {
-                'openai': ['gpt-custom'],
-                'anthropic': [],
-                'custom': ['my-model'],
+                "openai": ["gpt-custom"],
+                "anthropic": [],
+                "custom": ["my-model"],
             },
         ),
     ):
@@ -32,10 +32,10 @@ def mock_cli_interactions():
     class Mocks:
         def __init__(self):
             self.p_confirm = patch(
-                'openhands_cli.user_actions.settings_action.cli_confirm'
+                "openhands_cli.user_actions.settings_action.cli_confirm"
             )
             self.p_text = patch(
-                'openhands_cli.user_actions.settings_action.cli_text_input'
+                "openhands_cli.user_actions.settings_action.cli_text_input"
             )
             self.cli_confirm = None
             self.cli_text_input = None

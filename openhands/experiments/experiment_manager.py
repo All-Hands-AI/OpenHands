@@ -25,7 +25,7 @@ def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
     except FileNotFoundError:
         pass
     except Exception as e:
-        logger.warning(f'Failed to load experiment config: {e}')
+        logger.warning(f"Failed to load experiment config: {e}")
 
     return None
 
@@ -56,17 +56,17 @@ class ExperimentManager:
                 for attr, value in exp_config.config.items():
                     if hasattr(agent_cfg, attr):
                         logger.info(
-                            f'Set attrib {attr} to {value} for {conversation_id}'
+                            f"Set attrib {attr} to {value} for {conversation_id}"
                         )
                         setattr(agent_cfg, attr, value)
             except Exception as e:
-                logger.warning(f'Error processing exp config: {e}')
+                logger.warning(f"Error processing exp config: {e}")
 
         return config
 
 
 experiment_manager_cls = os.environ.get(
-    'OPENHANDS_EXPERIMENT_MANAGER_CLS',
-    'openhands.experiments.experiment_manager.ExperimentManager',
+    "OPENHANDS_EXPERIMENT_MANAGER_CLS",
+    "openhands.experiments.experiment_manager.ExperimentManager",
 )
 ExperimentManagerImpl = get_impl(ExperimentManager, experiment_manager_cls)

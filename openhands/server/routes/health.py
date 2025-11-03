@@ -4,14 +4,14 @@ from openhands.runtime.utils.system_stats import get_system_info
 
 
 def add_health_endpoints(app: FastAPI):
-    @app.get('/alive')
+    @app.get("/alive")
     async def alive():
-        return {'status': 'ok'}
+        return {"status": "ok"}
 
-    @app.get('/health')
+    @app.get("/health")
     async def health() -> str:
-        return 'OK'
+        return "OK"
 
-    @app.get('/server_info')
+    @app.get("/server_info")
     async def get_server_info():
         return get_system_info()

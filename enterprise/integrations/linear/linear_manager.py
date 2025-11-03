@@ -38,16 +38,15 @@ class LinearManager(Manager):
     def __init__(self, token_manager: TokenManager):
         self.token_manager = token_manager
         self.integration_store = LinearIntegrationStore.get_instance()
-        self.api_url = 'https://api.linear.app/graphql'
+        self.api_url = "https://api.linear.app/graphql"
         self.jinja_env = Environment(
-            loader=FileSystemLoader(OPENHANDS_RESOLVER_TEMPLATES_DIR + 'linear')
+            loader=FileSystemLoader(OPENHANDS_RESOLVER_TEMPLATES_DIR + "linear")
         )
 
     async def authenticate_user(
         self, linear_user_id: str, workspace_id: int
     ) -> tuple[LinearUser | None, UserAuth | None]:
         """Authenticate Linear user and get their OpenHands user auth."""
-
         # Find active Linear user by Linear user ID and workspace ID
         linear_user = await self.integration_store.get_active_user(
             linear_user_id, workspace_id
@@ -55,7 +54,7 @@ class LinearManager(Manager):
 
         if not linear_user:
             logger.warning(
-                f'[Linear] No active Linear user found for {linear_user_id} in workspace {workspace_id}'
+                f"[Linear] No active Linear user found for {linear_user_id} in workspace {workspace_id}"
             )
             return None, None
 
@@ -77,7 +76,7 @@ class LinearManager(Manager):
             external_auth_id=user_id,
         )
         repos: list[Repository] = await client.get_repositories(
-            'pushed', server_config.app_mode, None, None, None, None
+            "pushed", server_config.app_mode, None, None, None, None
         )
         return repos
 
@@ -85,119 +84,119 @@ class LinearManager(Manager):
         self, request: Request
     ) -> Tuple[bool, Optional[str], Optional[Dict]]:
         """Verify Linear webhook signature."""
-        signature = request.headers.get('linear-signature')
+        signature = request.headers.get("linear-signature")
         body = await request.body()
         payload = await request.json()
-        actor_url = payload.get('actor', {}).get('url', '')
-        workspace_name = ''
+        actor_url = payload.get("actor", {}).get("url", "")
+        workspace_name = ""
 
         # Extract workspace name from actor URL
         # Format: https://linear.app/{workspace}/profiles/{user}
-        if actor_url.startswith('https://linear.app/'):
-            url_parts = actor_url.split('/')
+        if actor_url.startswith("https://linear.app/"):
+            url_parts = actor_url.split("/")
             if len(url_parts) >= 4:
                 workspace_name = url_parts[3]  # Extract workspace name
             else:
-                logger.warning(f'[Linear] Invalid actor URL format: {actor_url}')
+                logger.warning(f"[Linear] Invalid actor URL format: {actor_url}")
                 return False, None, None
         else:
             logger.warning(
-                f'[Linear] Actor URL does not match expected format: {actor_url}'
+                f"[Linear] Actor URL does not match expected format: {actor_url}"
             )
             return False, None, None
 
         if not workspace_name:
-            logger.warning('[Linear] No workspace name found in webhook payload')
+            logger.warning("[Linear] No workspace name found in webhook payload")
             return False, None, None
 
         if not signature:
-            logger.warning('[Linear] No signature found in webhook headers')
+            logger.warning("[Linear] No signature found in webhook headers")
             return False, None, None
 
         workspace = await self.integration_store.get_workspace_by_name(workspace_name)
 
         if not workspace:
-            logger.warning('[Linear] Could not identify workspace for webhook')
+            logger.warning("[Linear] Could not identify workspace for webhook")
             return False, None, None
 
-        if workspace.status != 'active':
-            logger.warning(f'[Linear] Workspace {workspace.id} is not active')
+        if workspace.status != "active":
+            logger.warning(f"[Linear] Workspace {workspace.id} is not active")
             return False, None, None
 
         webhook_secret = self.token_manager.decrypt_text(workspace.webhook_secret)
         digest = hmac.new(webhook_secret.encode(), body, hashlib.sha256).hexdigest()
 
         if hmac.compare_digest(signature, digest):
-            logger.info('[Linear] Webhook signature verified successfully')
+            logger.info("[Linear] Webhook signature verified successfully")
             return True, signature, payload
 
         return False, None, None
 
     def parse_webhook(self, payload: Dict) -> JobContext | None:
-        action = payload.get('action')
-        type = payload.get('type')
+        action = payload.get("action")
+        type = payload.get("type")
 
-        if action == 'create' and type == 'Comment':
-            data = payload.get('data', {})
-            comment = data.get('body', '')
+        if action == "create" and type == "Comment":
+            data = payload.get("data", {})
+            comment = data.get("body", "")
 
-            if '@openhands' not in comment:
+            if "@openhands" not in comment:
                 return None
 
-            issue_data = data.get('issue', {})
-            issue_id = issue_data.get('id', '')
-            issue_key = issue_data.get('identifier', '')
-        elif action == 'update' and type == 'Issue':
-            data = payload.get('data', {})
-            labels = data.get('labels', [])
+            issue_data = data.get("issue", {})
+            issue_id = issue_data.get("id", "")
+            issue_key = issue_data.get("identifier", "")
+        elif action == "update" and type == "Issue":
+            data = payload.get("data", {})
+            labels = data.get("labels", [])
 
             has_openhands_label = False
-            label_id = ''
+            label_id = ""
             for label in labels:
-                if label.get('name') == 'openhands':
-                    label_id = label.get('id', '')
+                if label.get("name") == "openhands":
+                    label_id = label.get("id", "")
                     has_openhands_label = True
                     break
 
             if not has_openhands_label and not label_id:
                 return None
 
-            labelIdChanges = data.get('updatedFrom', {}).get('labelIds', [])
+            labelIdChanges = data.get("updatedFrom", {}).get("labelIds", [])
 
             if labelIdChanges and label_id in labelIdChanges:
                 return None  # Label was added previously, ignore this webhook
 
-            issue_id = data.get('id', '')
-            issue_key = data.get('identifier', '')
-            comment = ''
+            issue_id = data.get("id", "")
+            issue_key = data.get("identifier", "")
+            comment = ""
 
         else:
             return None
 
-        actor = payload.get('actor', {})
-        display_name = actor.get('name', '')
-        user_email = actor.get('email', '')
-        actor_url = actor.get('url', '')
-        actor_id = actor.get('id', '')
-        workspace_name = ''
+        actor = payload.get("actor", {})
+        display_name = actor.get("name", "")
+        user_email = actor.get("email", "")
+        actor_url = actor.get("url", "")
+        actor_id = actor.get("id", "")
+        workspace_name = ""
 
-        if actor_url.startswith('https://linear.app/'):
-            url_parts = actor_url.split('/')
+        if actor_url.startswith("https://linear.app/"):
+            url_parts = actor_url.split("/")
             if len(url_parts) >= 4:
                 workspace_name = url_parts[3]  # Extract workspace name
             else:
-                logger.warning(f'[Linear] Invalid actor URL format: {actor_url}')
+                logger.warning(f"[Linear] Invalid actor URL format: {actor_url}")
                 return None
         else:
             logger.warning(
-                f'[Linear] Actor URL does not match expected format: {actor_url}'
+                f"[Linear] Actor URL does not match expected format: {actor_url}"
             )
             return None
 
         if not all(
             [issue_id, issue_key, display_name, user_email, actor_id, workspace_name]
         ):
-            logger.warning('[Linear] Missing required fields in webhook payload')
+            logger.warning("[Linear] Missing required fields in webhook payload")
             return None
 
         return JobContext(
@@ -212,11 +211,11 @@ class LinearManager(Manager):
 
     async def receive_message(self, message: Message):
         """Process incoming Linear webhook message."""
-        payload = message.message.get('payload', {})
+        payload = message.message.get("payload", {})
         job_context = self.parse_webhook(payload)
 
         if not job_context:
-            logger.info('[Linear] Webhook does not match trigger conditions')
+            logger.info("[Linear] Webhook does not match trigger conditions")
             return
 
         # Get workspace by user email domain
@@ -225,11 +224,11 @@ class LinearManager(Manager):
         )
         if not workspace:
             logger.warning(
-                f'[Linear] No workspace found for email domain: {job_context.workspace_name}'
+                f"[Linear] No workspace found for email domain: {job_context.workspace_name}"
             )
             await self._send_error_comment(
                 job_context.issue_id,
-                'Your workspace is not configured with Linear integration.',
+                "Your workspace is not configured with Linear integration.",
                 None,
             )
             return
@@ -238,11 +237,11 @@ class LinearManager(Manager):
         if job_context.user_email == workspace.svc_acc_email:
             return
 
-        if workspace.status != 'active':
-            logger.warning(f'[Linear] Workspace {workspace.id} is not active')
+        if workspace.status != "active":
+            logger.warning(f"[Linear] Workspace {workspace.id} is not active")
             await self._send_error_comment(
                 job_context.issue_id,
-                'Linear integration is not active for your workspace.',
+                "Linear integration is not active for your workspace.",
                 workspace,
             )
             return
@@ -253,11 +252,11 @@ class LinearManager(Manager):
         )
         if not linear_user or not saas_user_auth:
             logger.warning(
-                f'[Linear] User authentication failed for {job_context.user_email}'
+                f"[Linear] User authentication failed for {job_context.user_email}"
             )
             await self._send_error_comment(
                 job_context.issue_id,
-                f'User {job_context.user_email} is not authenticated or active in the Linear integration.',
+                f"User {job_context.user_email} is not authenticated or active in the Linear integration.",
                 workspace,
             )
             return
@@ -271,10 +270,10 @@ class LinearManager(Manager):
             job_context.issue_title = issue_title
             job_context.issue_description = issue_description
         except Exception as e:
-            logger.error(f'[Linear] Failed to get issue context: {str(e)}')
+            logger.error(f"[Linear] Failed to get issue context: {str(e)}")
             await self._send_error_comment(
                 job_context.issue_id,
-                'Failed to retrieve issue details. Please check the issue ID and try again.',
+                "Failed to retrieve issue details. Please check the issue ID and try again.",
                 workspace,
             )
             return
@@ -289,11 +288,11 @@ class LinearManager(Manager):
             )
         except Exception as e:
             logger.error(
-                f'[Linear] Failed to create linear view: {str(e)}', exc_info=True
+                f"[Linear] Failed to create linear view: {str(e)}", exc_info=True
             )
             await self._send_error_comment(
                 job_context.issue_id,
-                'Failed to initialize conversation. Please try again.',
+                "Failed to initialize conversation. Please try again.",
                 workspace,
             )
             return
@@ -306,10 +305,7 @@ class LinearManager(Manager):
     async def is_job_requested(
         self, message: Message, linear_view: LinearViewInterface
     ) -> bool:
-        """
-        Check if a job is requested and handle repository selection.
-        """
-
+        """Check if a job is requested and handle repository selection."""
         if isinstance(linear_view, LinearExistingConversationView):
             return True
 
@@ -319,7 +315,7 @@ class LinearManager(Manager):
                 linear_view.saas_user_auth
             )
 
-            target_str = f'{linear_view.job_context.issue_description}\n{linear_view.job_context.user_msg}'
+            target_str = f"{linear_view.job_context.issue_description}\n{linear_view.job_context.user_msg}"
 
             # Try to infer repository from issue description
             match, repos = filter_potential_repos_by_user_msg(target_str, user_repos)
@@ -327,7 +323,7 @@ class LinearManager(Manager):
             if match:
                 # Found exact repository match
                 linear_view.selected_repo = repos[0].full_name
-                logger.info(f'[Linear] Inferred repository: {repos[0].full_name}')
+                logger.info(f"[Linear] Inferred repository: {repos[0].full_name}")
                 return True
             else:
                 # No clear match - send repository selection comment
@@ -335,7 +331,7 @@ class LinearManager(Manager):
                 return False
 
         except Exception as e:
-            logger.error(f'[Linear] Error in is_job_requested: {str(e)}')
+            logger.error(f"[Linear] Error in is_job_requested: {str(e)}")
             return False
 
     async def start_job(self, linear_view: LinearViewInterface):
@@ -348,8 +344,8 @@ class LinearManager(Manager):
         try:
             user_info: LinearUser = linear_view.linear_user
             logger.info(
-                f'[Linear] Starting job for user {user_info.keycloak_user_id} '
-                f'issue {linear_view.job_context.issue_key}',
+                f"[Linear] Starting job for user {user_info.keycloak_user_id} "
+                f"issue {linear_view.job_context.issue_key}",
             )
 
             # Create conversation
@@ -358,7 +354,7 @@ class LinearManager(Manager):
             )
 
             logger.info(
-                f'[Linear] Created/Updated conversation {conversation_id} for issue {linear_view.job_context.issue_key}'
+                f"[Linear] Created/Updated conversation {conversation_id} for issue {linear_view.job_context.issue_key}"
             )
 
             if isinstance(linear_view, LinearNewConversationView):
@@ -373,25 +369,25 @@ class LinearManager(Manager):
                 register_callback_processor(conversation_id, processor)
 
                 logger.info(
-                    f'[Linear] Created callback processor for conversation {conversation_id}'
+                    f"[Linear] Created callback processor for conversation {conversation_id}"
                 )
 
             # Send initial response
             msg_info = linear_view.get_response_msg()
 
         except MissingSettingsError as e:
-            logger.warning(f'[Linear] Missing settings error: {str(e)}')
-            msg_info = f'Please re-login into [OpenHands Cloud]({HOST_URL}) before starting a job.'
+            logger.warning(f"[Linear] Missing settings error: {str(e)}")
+            msg_info = f"Please re-login into [OpenHands Cloud]({HOST_URL}) before starting a job."
 
         except LLMAuthenticationError as e:
-            logger.warning(f'[Linear] LLM authentication error: {str(e)}')
-            msg_info = f'Please set a valid LLM API key in [OpenHands Cloud]({HOST_URL}) before starting a job.'
+            logger.warning(f"[Linear] LLM authentication error: {str(e)}")
+            msg_info = f"Please set a valid LLM API key in [OpenHands Cloud]({HOST_URL}) before starting a job."
 
         except Exception as e:
             logger.error(
-                f'[Linear] Unexpected error starting job: {str(e)}', exc_info=True
+                f"[Linear] Unexpected error starting job: {str(e)}", exc_info=True
             )
-            msg_info = 'Sorry, there was an unexpected error starting the job. Please try again.'
+            msg_info = "Sorry, there was an unexpected error starting the job. Please try again."
 
         # Send response comment
         try:
@@ -404,16 +400,16 @@ class LinearManager(Manager):
                 api_key,
             )
         except Exception as e:
-            logger.error(f'[Linear] Failed to send response message: {str(e)}')
+            logger.error(f"[Linear] Failed to send response message: {str(e)}")
 
     async def _query_api(self, query: str, variables: Dict, api_key: str) -> Dict:
         """Query Linear GraphQL API."""
-        headers = {'Authorization': api_key}
+        headers = {"Authorization": api_key}
         async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(
                 self.api_url,
                 headers=headers,
-                json={'query': query, 'variables': variables},
+                json={"query": query, "variables": variables},
             )
             response.raise_for_status()
             return response.json()
@@ -438,29 +434,29 @@ class LinearManager(Manager):
               }
             }
         """
-        issue_payload = await self._query_api(query, {'issueId': issue_id}, api_key)
+        issue_payload = await self._query_api(query, {"issueId": issue_id}, api_key)
 
         if not issue_payload:
-            raise ValueError(f'Issue with ID {issue_id} not found.')
+            raise ValueError(f"Issue with ID {issue_id} not found.")
 
-        issue_data = issue_payload.get('data', {}).get('issue', {})
-        title = issue_data.get('title', '')
-        description = issue_data.get('description', '')
-        synced_with = issue_data.get('syncedWith', [])
-        owner = ''
-        repo = ''
+        issue_data = issue_payload.get("data", {}).get("issue", {})
+        title = issue_data.get("title", "")
+        description = issue_data.get("description", "")
+        synced_with = issue_data.get("syncedWith", [])
+        owner = ""
+        repo = ""
         if synced_with:
-            owner = synced_with[0].get('metadata', {}).get('owner', '')
-            repo = synced_with[0].get('metadata', {}).get('repo', '')
+            owner = synced_with[0].get("metadata", {}).get("owner", "")
+            repo = synced_with[0].get("metadata", {}).get("repo", "")
 
         if not title:
-            raise ValueError(f'Issue with ID {issue_id} does not have a title.')
+            raise ValueError(f"Issue with ID {issue_id} does not have a title.")
 
         if not description:
-            raise ValueError(f'Issue with ID {issue_id} does not have a description.')
+            raise ValueError(f"Issue with ID {issue_id} does not have a description.")
 
         if owner and repo:
-            description += f'\n\nGit Repo: {owner}/{repo}'
+            description += f"\n\nGit Repo: {owner}/{repo}"
 
         return title, description
 
@@ -476,7 +472,7 @@ class LinearManager(Manager):
               }
             }
         """
-        variables = {'input': {'issueId': issue_id, 'body': message.message}}
+        variables = {"input": {"issueId": issue_id, "body": message.message}}
         return await self._query_api(query, variables, api_key)
 
     async def _send_error_comment(
@@ -484,7 +480,7 @@ class LinearManager(Manager):
     ):
         """Send error comment to Linear issue."""
         if not workspace:
-            logger.error('[Linear] Cannot send error comment - no workspace available')
+            logger.error("[Linear] Cannot send error comment - no workspace available")
             return
 
         try:
@@ -493,14 +489,14 @@ class LinearManager(Manager):
                 self.create_outgoing_message(msg=error_msg), issue_id, api_key
             )
         except Exception as e:
-            logger.error(f'[Linear] Failed to send error comment: {str(e)}')
+            logger.error(f"[Linear] Failed to send error comment: {str(e)}")
 
     async def _send_repo_selection_comment(self, linear_view: LinearViewInterface):
         """Send a comment with repository options for the user to choose."""
         try:
             comment_msg = (
-                'I need to know which repository to work with. '
-                'Please add it to your issue description or send a followup comment.'
+                "I need to know which repository to work with. "
+                "Please add it to your issue description or send a followup comment."
             )
 
             api_key = self.token_manager.decrypt_text(
@@ -514,10 +510,10 @@ class LinearManager(Manager):
             )
 
             logger.info(
-                f'[Linear] Sent repository selection comment for issue {linear_view.job_context.issue_key}'
+                f"[Linear] Sent repository selection comment for issue {linear_view.job_context.issue_key}"
             )
 
         except Exception as e:
             logger.error(
-                f'[Linear] Failed to send repository selection comment: {str(e)}'
+                f"[Linear] Failed to send repository selection comment: {str(e)}"
             )

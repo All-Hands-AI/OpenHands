@@ -8,18 +8,18 @@ from storage.base import Base
 
 target_metadata = Base.metadata
 
-DB_USER = os.getenv('DB_USER', 'postgres')
-DB_PASS = os.getenv('DB_PASS', 'postgres')
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_PORT = os.getenv('DB_PORT', '5432')
-DB_NAME = os.getenv('DB_NAME', 'openhands')
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASS = os.getenv("DB_PASS", "postgres")
+DB_HOST = os.getenv("DB_HOST", "localhost")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME", "openhands")
 
-GCP_DB_INSTANCE = os.getenv('GCP_DB_INSTANCE')
-GCP_PROJECT = os.getenv('GCP_PROJECT')
-GCP_REGION = os.getenv('GCP_REGION')
+GCP_DB_INSTANCE = os.getenv("GCP_DB_INSTANCE")
+GCP_PROJECT = os.getenv("GCP_PROJECT")
+GCP_REGION = os.getenv("GCP_REGION")
 
-POOL_SIZE = int(os.getenv('DB_POOL_SIZE', '25'))
-MAX_OVERFLOW = int(os.getenv('DB_MAX_OVERFLOW', '10'))
+POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "25"))
+MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "10"))
 
 
 def get_engine(database_name=DB_NAME):
@@ -28,24 +28,24 @@ def get_engine(database_name=DB_NAME):
 
         def get_db_connection():
             connector = Connector()
-            instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
+            instance_string = f"{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}"
             return connector.connect(
                 instance_string,
-                'pg8000',
+                "pg8000",
                 user=DB_USER,
                 password=DB_PASS.strip(),
                 db=database_name,
             )
 
         return create_engine(
-            'postgresql+pg8000://',
+            "postgresql+pg8000://",
             creator=get_db_connection,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
             pool_pre_ping=True,
         )
     else:
-        url = f'postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database_name}'
+        url = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{database_name}"
         return create_engine(
             url,
             pool_size=POOL_SIZE,
@@ -77,12 +77,12 @@ def run_migrations_offline() -> None:
     Calls to context.execute() here emit the given string to the
     script output.
     """
-    url = config.get_main_option('sqlalchemy.url')
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={'paramstyle': 'named'},
+        dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():

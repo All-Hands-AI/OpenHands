@@ -20,8 +20,8 @@ class MockRequest:
     def __init__(self):
         self.state = MagicMock()
         # Initialize state without httpx_client to simulate fresh request
-        if hasattr(self.state, 'httpx_client'):
-            delattr(self.state, 'httpx_client')
+        if hasattr(self.state, "httpx_client"):
+            delattr(self.state, "httpx_client")
 
 
 class TestHttpxClientInjector:
@@ -45,7 +45,7 @@ class TestHttpxClientInjector:
     @pytest.mark.asyncio
     async def test_creates_new_client_for_fresh_request(self, injector, mock_request):
         """Test that a new httpx client is created for a fresh request."""
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -62,7 +62,7 @@ class TestHttpxClientInjector:
         """Test that the same httpx client is reused within the same request context."""
         request, existing_client = self.mock_request_with_existing_client()
 
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             async for client in injector.depends(request):
                 # Verify no new client was created
                 mock_async_client.assert_not_called()
@@ -83,7 +83,7 @@ class TestHttpxClientInjector:
         request1 = MockRequest()
         request2 = MockRequest()
 
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             client1_instance = MagicMock()
             client2_instance = MagicMock()
             mock_async_client.side_effect = [client1_instance, client2_instance]
@@ -109,7 +109,7 @@ class TestHttpxClientInjector:
         self, injector, mock_request
     ):
         """Test that multiple calls within the same request reuse the same client."""
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -132,7 +132,7 @@ class TestHttpxClientInjector:
         self, injector_with_custom_timeout, mock_request
     ):
         """Test that custom timeout is properly applied to the httpx client."""
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -145,7 +145,7 @@ class TestHttpxClientInjector:
     @pytest.mark.asyncio
     async def test_default_timeout_applied_to_client(self, injector, mock_request):
         """Test that default timeout (15) is applied when no custom timeout is specified."""
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -158,14 +158,14 @@ class TestHttpxClientInjector:
     @pytest.mark.asyncio
     async def test_client_lifecycle_async_generator(self, injector, mock_request):
         """Test that the client is properly yielded in the async generator."""
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
             # Test that resolve returns an async generator
             resolver = injector.depends(mock_request)
-            assert hasattr(resolver, '__aiter__')
-            assert hasattr(resolver, '__anext__')
+            assert hasattr(resolver, "__aiter__")
+            assert hasattr(resolver, "__anext__")
 
             # Test async generator behavior
             async for client in resolver:
@@ -179,13 +179,13 @@ class TestHttpxClientInjector:
         """Test that the client persists in request state across multiple resolve calls."""
         request = MockRequest()
 
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
             # First resolve call
             async for client1 in injector.depends(request):
-                assert hasattr(request.state, 'httpx_client')
+                assert hasattr(request.state, "httpx_client")
                 assert request.state.httpx_client is mock_client_instance
                 break
 
@@ -213,7 +213,7 @@ class TestHttpxClientInjector:
 
         # Test that configuration is used in client creation
         request = MockRequest()
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -226,7 +226,7 @@ class TestHttpxClientInjector:
         """Test that concurrent access to the same request returns the same client."""
         import asyncio
 
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
@@ -255,7 +255,7 @@ class TestHttpxClientInjector:
         consider implementing a cleanup mechanism using FastAPI's
         dependency system or middleware.
         """
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_client_instance.aclose = MagicMock()
             mock_async_client.return_value = mock_client_instance
@@ -282,17 +282,17 @@ class TestHttpxClientInjector:
         injector = HttpxClientInjector()
 
         # Test that it's a Pydantic model
-        assert hasattr(injector, 'model_fields')
-        assert hasattr(injector, 'model_validate')
+        assert hasattr(injector, "model_fields")
+        assert hasattr(injector, "model_validate")
 
         # Test field configuration
-        assert 'timeout' in injector.model_fields
-        timeout_field = injector.model_fields['timeout']
+        assert "timeout" in injector.model_fields
+        timeout_field = injector.model_fields["timeout"]
         assert timeout_field.default == 15
-        assert timeout_field.description == 'Default timeout on all http requests'
+        assert timeout_field.description == "Default timeout on all http requests"
 
         # Test model validation
-        validated = HttpxClientInjector.model_validate({'timeout': 25})
+        validated = HttpxClientInjector.model_validate({"timeout": 25})
         assert validated.timeout == 25
 
     @pytest.mark.asyncio
@@ -301,15 +301,15 @@ class TestHttpxClientInjector:
         request = MockRequest()
 
         # Initially, request state should not have httpx_client
-        assert not hasattr(request.state, 'httpx_client')
+        assert not hasattr(request.state, "httpx_client")
 
-        with patch('httpx.AsyncClient') as mock_async_client:
+        with patch("httpx.AsyncClient") as mock_async_client:
             mock_client_instance = MagicMock()
             mock_async_client.return_value = mock_client_instance
 
             # After first resolve, client should be stored
             async for client in injector.depends(request):
-                assert hasattr(request.state, 'httpx_client')
+                assert hasattr(request.state, "httpx_client")
                 assert request.state.httpx_client is mock_client_instance
                 break
 

@@ -11,7 +11,7 @@ from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 # The version of the agent server to use for deployments.
 # Typically this will be the same as the values from the pyproject.toml
-AGENT_SERVER_IMAGE = 'ghcr.io/openhands/agent-server:3d8af53-python'
+AGENT_SERVER_IMAGE = "ghcr.io/openhands/agent-server:3d8af53-python"
 
 
 class SandboxSpecService(ABC):
@@ -37,7 +37,7 @@ class SandboxSpecService(ABC):
         """Get the default sandbox spec."""
         page = await self.search_sandbox_specs()
         if not page.items:
-            raise SandboxError('No sandbox specs available!')
+            raise SandboxError("No sandbox specs available!")
         return page.items[0]
 
     async def batch_get_sandbox_specs(

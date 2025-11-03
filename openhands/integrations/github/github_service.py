@@ -28,8 +28,7 @@ class GitHubService(
     GitService,
     InstallationsService,
 ):
-    """
-    Assembled GitHub service class combining mixins by feature area.
+    """Assembled GitHub service class combining mixins by feature area.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
     This is an extension point in OpenHands that allows applications to customize GitHub
@@ -41,8 +40,8 @@ class GitHubService(
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'https://api.github.com'
-    GRAPHQL_URL = 'https://api.github.com/graphql'
+    BASE_URL = "https://api.github.com"
+    GRAPHQL_URL = "https://api.github.com/graphql"
 
     def __init__(
         self,
@@ -59,9 +58,9 @@ class GitHubService(
         if token:
             self.token = token
 
-        if base_domain and base_domain != 'github.com':
-            self.BASE_URL = f'https://{base_domain}/api/v3'
-            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+        if base_domain and base_domain != "github.com":
+            self.BASE_URL = f"https://{base_domain}/api/v3"
+            self.GRAPHQL_URL = f"https://{base_domain}/api/graphql"
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
@@ -72,7 +71,7 @@ class GitHubService(
 
 
 github_service_cls = os.environ.get(
-    'OPENHANDS_GITHUB_SERVICE_CLS',
-    'openhands.integrations.github.github_service.GitHubService',
+    "OPENHANDS_GITHUB_SERVICE_CLS",
+    "openhands.integrations.github.github_service.GitHubService",
 )
 GithubServiceImpl = get_impl(GitHubService, github_service_cls)

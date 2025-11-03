@@ -14,13 +14,13 @@ def reset_litellm():
     litellm.suppress_debug_info = False
     litellm.set_verbose = False
     # Remove logger module from sys.modules to force reload
-    if 'openhands.core.logger' in sys.modules:
-        del sys.modules['openhands.core.logger']
+    if "openhands.core.logger" in sys.modules:
+        del sys.modules["openhands.core.logger"]
 
 
 def test_litellm_settings_debug_llm_disabled(reset_litellm):
     """Test that litellm settings are properly configured when DEBUG_LLM is disabled."""
-    with mock.patch.dict(os.environ, {'DEBUG_LLM': 'false'}):
+    with mock.patch.dict(os.environ, {"DEBUG_LLM": "false"}):
         import openhands.core.logger  # noqa: F401
 
         importlib.reload(openhands.core.logger)
@@ -32,8 +32,8 @@ def test_litellm_settings_debug_llm_disabled(reset_litellm):
 def test_litellm_settings_debug_llm_enabled(reset_litellm):
     """Test that litellm settings are properly configured when DEBUG_LLM is enabled and confirmed."""
     with (
-        mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}),
-        mock.patch('builtins.input', return_value='y'),
+        mock.patch.dict(os.environ, {"DEBUG_LLM": "true"}),
+        mock.patch("builtins.input", return_value="y"),
     ):
         import openhands.core.logger  # noqa: F401
 
@@ -46,8 +46,8 @@ def test_litellm_settings_debug_llm_enabled(reset_litellm):
 def test_litellm_settings_debug_llm_enabled_but_declined(reset_litellm):
     """Test that litellm settings remain disabled when DEBUG_LLM is enabled but user declines."""
     with (
-        mock.patch.dict(os.environ, {'DEBUG_LLM': 'true'}),
-        mock.patch('builtins.input', return_value='n'),
+        mock.patch.dict(os.environ, {"DEBUG_LLM": "true"}),
+        mock.patch("builtins.input", return_value="n"),
     ):
         import openhands.core.logger  # noqa: F401
 
@@ -58,8 +58,7 @@ def test_litellm_settings_debug_llm_enabled_but_declined(reset_litellm):
 
 
 def test_litellm_loggers_suppressed_with_uvicorn_json_config(reset_litellm):
-    """
-    Test that LiteLLM loggers remain suppressed after applying uvicorn JSON log config.
+    """Test that LiteLLM loggers remain suppressed after applying uvicorn JSON log config.
 
     This reproduces the bug that was introduced in v0.59.0 where calling
     logging.config.dictConfig() would reset the disabled flag on LiteLLM loggers,
@@ -77,28 +76,28 @@ def test_litellm_loggers_suppressed_with_uvicorn_json_config(reset_litellm):
     # We need to go up to tests/, then find openhands/core/logger.py
     test_dir = pathlib.Path(__file__).parent  # tests/unit/core/logger
     project_root = test_dir.parent.parent.parent.parent  # workspace/openhands
-    logger_file = project_root / 'openhands' / 'core' / 'logger.py'
+    logger_file = project_root / "openhands" / "core" / "logger.py"
 
     # Read the actual source file
-    with open(logger_file, 'r') as f:
+    with open(logger_file, "r") as f:
         source = f.read()
 
     # Verify that the fix is present in the source code
-    litellm_loggers = ['LiteLLM', 'LiteLLM Router', 'LiteLLM Proxy']
+    litellm_loggers = ["LiteLLM", "LiteLLM Router", "LiteLLM Proxy"]
     for logger_name in litellm_loggers:
         assert f"'{logger_name}'" in source or f'"{logger_name}"' in source, (
-            f'{logger_name} logger configuration should be present in logger.py source'
+            f"{logger_name} logger configuration should be present in logger.py source"
         )
 
     # Verify the fix has the correct settings by checking for key phrases
     assert "'handlers': []" in source or '"handlers": []' in source, (
-        'Fix should set handlers to empty list'
+        "Fix should set handlers to empty list"
     )
     assert "'propagate': False" in source or '"propagate": False' in source, (
-        'Fix should set propagate to False'
+        "Fix should set propagate to False"
     )
     assert "'level': 'CRITICAL'" in source or '"level": "CRITICAL"' in source, (
-        'Fix should set level to CRITICAL'
+        "Fix should set level to CRITICAL"
     )
 
     # Note: We don't do a functional test here because pytest's module caching

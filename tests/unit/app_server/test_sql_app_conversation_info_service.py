@@ -35,9 +35,9 @@ from openhands.storage.data_models.conversation_metadata import ConversationTrig
 async def async_engine():
     """Create an async SQLite engine for testing."""
     engine = create_async_engine(
-        'sqlite+aiosqlite:///:memory:',
+        "sqlite+aiosqlite:///:memory:",
         poolclass=StaticPool,
-        connect_args={'check_same_thread': False},
+        connect_args={"check_same_thread": False},
         echo=False,
     )
 
@@ -74,7 +74,7 @@ def service_with_user(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance with a user_id for testing."""
     return SQLAppConversationInfoService(
         db_session=async_session,
-        user_context=SpecifyUserContext(user_id='test_user_123'),
+        user_context=SpecifyUserContext(user_id="test_user_123"),
     )
 
 
@@ -83,15 +83,15 @@ def sample_conversation_info() -> AppConversationInfo:
     """Create a sample AppConversationInfo for testing."""
     return AppConversationInfo(
         id=uuid4(),
-        created_by_user_id='test_user_123',
-        sandbox_id='sandbox_123',
-        selected_repository='https://github.com/test/repo',
-        selected_branch='main',
+        created_by_user_id="test_user_123",
+        sandbox_id="sandbox_123",
+        selected_repository="https://github.com/test/repo",
+        selected_branch="main",
         git_provider=ProviderType.GITHUB,
-        title='Test Conversation',
+        title="Test Conversation",
         trigger=ConversationTrigger.GUI,
         pr_number=[123, 456],
-        llm_model='gpt-4',
+        llm_model="gpt-4",
         metrics=None,
         created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
         updated_at=datetime(2024, 1, 1, 12, 30, 0, tzinfo=timezone.utc),
@@ -106,15 +106,15 @@ def multiple_conversation_infos() -> list[AppConversationInfo]:
     return [
         AppConversationInfo(
             id=uuid4(),
-            created_by_user_id='test_user_123',
-            sandbox_id=f'sandbox_{i}',
-            selected_repository=f'https://github.com/test/repo{i}',
-            selected_branch='main',
+            created_by_user_id="test_user_123",
+            sandbox_id=f"sandbox_{i}",
+            selected_repository=f"https://github.com/test/repo{i}",
+            selected_branch="main",
             git_provider=ProviderType.GITHUB,
-            title=f'Test Conversation {i}',
+            title=f"Test Conversation {i}",
             trigger=ConversationTrigger.GUI,
             pr_number=[i * 100],
-            llm_model='gpt-4',
+            llm_model="gpt-4",
             metrics=None,
             created_at=base_time.replace(hour=12 + i),
             updated_at=base_time.replace(hour=12 + i, minute=30),
@@ -185,15 +185,15 @@ class TestSQLAppConversationInfoService:
         """Test round trip with all possible fields populated."""
         original_info = AppConversationInfo(
             id=uuid4(),
-            created_by_user_id='test_user_456',
-            sandbox_id='sandbox_full_test',
-            selected_repository='https://github.com/full/test',
-            selected_branch='feature/test',
+            created_by_user_id="test_user_456",
+            sandbox_id="sandbox_full_test",
+            selected_repository="https://github.com/full/test",
+            selected_branch="feature/test",
             git_provider=ProviderType.GITLAB,
-            title='Full Test Conversation',
+            title="Full Test Conversation",
             trigger=ConversationTrigger.RESOLVER,
             pr_number=[789, 101112],
-            llm_model='claude-3',
+            llm_model="claude-3",
             metrics=MetricsSnapshot(accumulated_token_usage=TokenUsage()),
             created_at=datetime(2024, 2, 15, 10, 30, 0, tzinfo=timezone.utc),
             updated_at=datetime(2024, 2, 15, 11, 45, 0, tzinfo=timezone.utc),
@@ -224,8 +224,8 @@ class TestSQLAppConversationInfoService:
         """Test round trip with only required fields."""
         minimal_info = AppConversationInfo(
             id=uuid4(),
-            created_by_user_id='minimal_user',
-            sandbox_id='minimal_sandbox',
+            created_by_user_id="minimal_user",
+            sandbox_id="minimal_sandbox",
         )
 
         # Save and retrieve
@@ -320,11 +320,11 @@ class TestSQLAppConversationInfoService:
             await service.save_app_conversation_info(info)
 
         # Search for conversations with "1" in title
-        page = await service.search_app_conversation_info(title__contains='1')
+        page = await service.search_app_conversation_info(title__contains="1")
 
         # Should find "Test Conversation 1"
         assert len(page.items) == 1
-        assert '1' in page.items[0].title
+        assert "1" in page.items[0].title
 
     @pytest.mark.asyncio
     async def test_search_conversation_info_date_filters(
@@ -474,7 +474,7 @@ class TestSQLAppConversationInfoService:
             await service.save_app_conversation_info(info)
 
         # Count with title filter
-        count = await service.count_app_conversation_info(title__contains='1')
+        count = await service.count_app_conversation_info(title__contains="1")
         assert count == 1
 
         # Count with date filter
@@ -483,7 +483,7 @@ class TestSQLAppConversationInfoService:
         assert count == 4
 
         # Count with no matches
-        count = await service.count_app_conversation_info(title__contains='nonexistent')
+        count = await service.count_app_conversation_info(title__contains="nonexistent")
         assert count == 0
 
     @pytest.mark.asyncio
@@ -495,25 +495,25 @@ class TestSQLAppConversationInfoService:
         """Test that user isolation works correctly."""
         # Create services for different users
         user1_service = SQLAppConversationInfoService(
-            db_session=async_session, user_context=SpecifyUserContext(user_id='user1')
+            db_session=async_session, user_context=SpecifyUserContext(user_id="user1")
         )
         user2_service = SQLAppConversationInfoService(
-            db_session=async_session, user_context=SpecifyUserContext(user_id='user2')
+            db_session=async_session, user_context=SpecifyUserContext(user_id="user2")
         )
 
         # Create conversations for different users
         user1_info = AppConversationInfo(
             id=uuid4(),
-            created_by_user_id='user1',
-            sandbox_id='sandbox_user1',
-            title='User 1 Conversation',
+            created_by_user_id="user1",
+            sandbox_id="sandbox_user1",
+            title="User 1 Conversation",
         )
 
         user2_info = AppConversationInfo(
             id=uuid4(),
-            created_by_user_id='user2',
-            sandbox_id='sandbox_user2',
-            title='User 2 Conversation',
+            created_by_user_id="user2",
+            sandbox_id="sandbox_user2",
+            title="User 2 Conversation",
         )
 
         # Save conversations
@@ -523,12 +523,12 @@ class TestSQLAppConversationInfoService:
         # User 1 should only see their conversation
         user1_page = await user1_service.search_app_conversation_info()
         assert len(user1_page.items) == 1
-        assert user1_page.items[0].created_by_user_id == 'user1'
+        assert user1_page.items[0].created_by_user_id == "user1"
 
         # User 2 should only see their conversation
         user2_page = await user2_service.search_app_conversation_info()
         assert len(user2_page.items) == 1
-        assert user2_page.items[0].created_by_user_id == 'user2'
+        assert user2_page.items[0].created_by_user_id == "user2"
 
         # User 1 should not be able to get user 2's conversation
         user2_from_user1 = await user1_service.get_app_conversation_info(user2_info.id)
@@ -550,8 +550,8 @@ class TestSQLAppConversationInfoService:
 
         # Update the conversation info
         updated_info = sample_conversation_info.model_copy()
-        updated_info.title = 'Updated Title'
-        updated_info.llm_model = 'gpt-4-turbo'
+        updated_info.title = "Updated Title"
+        updated_info.llm_model = "gpt-4-turbo"
         updated_info.pr_number = [789]
 
         # Save the updated info
@@ -562,8 +562,8 @@ class TestSQLAppConversationInfoService:
             sample_conversation_info.id
         )
         assert retrieved_info is not None
-        assert retrieved_info.title == 'Updated Title'
-        assert retrieved_info.llm_model == 'gpt-4-turbo'
+        assert retrieved_info.title == "Updated Title"
+        assert retrieved_info.llm_model == "gpt-4-turbo"
         assert retrieved_info.pr_number == [789]
 
         # Verify other fields remain unchanged
@@ -585,7 +585,7 @@ class TestSQLAppConversationInfoService:
             await service.save_app_conversation_info(info)
 
         # Search with invalid page_id (should start from beginning)
-        page = await service.search_app_conversation_info(page_id='invalid')
+        page = await service.search_app_conversation_info(page_id="invalid")
         assert len(page.items) == len(multiple_conversation_infos)
 
     @pytest.mark.asyncio

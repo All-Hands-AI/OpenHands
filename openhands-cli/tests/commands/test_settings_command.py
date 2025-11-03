@@ -1,6 +1,7 @@
 """Test for the /settings command functionality."""
 
 from unittest.mock import MagicMock, patch
+
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
@@ -8,12 +9,12 @@ from openhands_cli.agent_chat import run_cli_entry
 from openhands_cli.user_actions import UserConfirmation
 
 
-@patch('openhands_cli.agent_chat.exit_session_confirmation')
-@patch('openhands_cli.agent_chat.get_session_prompter')
-@patch('openhands_cli.agent_chat.setup_conversation')
-@patch('openhands_cli.agent_chat.verify_agent_exists_or_setup_agent')
-@patch('openhands_cli.agent_chat.ConversationRunner')
-@patch('openhands_cli.agent_chat.SettingsScreen')
+@patch("openhands_cli.agent_chat.exit_session_confirmation")
+@patch("openhands_cli.agent_chat.get_session_prompter")
+@patch("openhands_cli.agent_chat.setup_conversation")
+@patch("openhands_cli.agent_chat.verify_agent_exists_or_setup_agent")
+@patch("openhands_cli.agent_chat.ConversationRunner")
+@patch("openhands_cli.agent_chat.SettingsScreen")
 def test_settings_command_works_without_conversation(
     mock_settings_screen_class,
     mock_runner_cls,
@@ -38,7 +39,10 @@ def test_settings_command_works_without_conversation(
     mock_runner_cls.return_value = None
 
     # Real session fed by a pipe
-    from openhands_cli.user_actions.utils import get_session_prompter as real_get_session_prompter
+    from openhands_cli.user_actions.utils import (
+        get_session_prompter as real_get_session_prompter,
+    )
+
     with create_pipe_input() as pipe:
         output = DummyOutput()
         session = real_get_session_prompter(input=pipe, output=output)
@@ -52,6 +56,6 @@ def test_settings_command_works_without_conversation(
 
     # Assert SettingsScreen was created with None conversation (the bug fix)
     mock_settings_screen_class.assert_called_once_with(None)
-    
+
     # Assert display_settings was called (settings screen was shown)
     mock_settings_screen.display_settings.assert_called_once()

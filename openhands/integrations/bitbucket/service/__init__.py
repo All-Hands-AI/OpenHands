@@ -5,9 +5,9 @@ from .prs import BitBucketPRsMixin
 from .repos import BitBucketReposMixin
 
 __all__ = [
-    'BitBucketMixinBase',
-    'BitBucketBranchesMixin',
-    'BitBucketFeaturesMixin',
-    'BitBucketPRsMixin',
-    'BitBucketReposMixin',
+    "BitBucketMixinBase",
+    "BitBucketBranchesMixin",
+    "BitBucketFeaturesMixin",
+    "BitBucketPRsMixin",
+    "BitBucketReposMixin",
 ]

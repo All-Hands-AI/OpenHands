@@ -24,7 +24,7 @@ from openhands.server.utils import get_conversation, get_conversation_metadata
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+    prefix="/api/conversations/{conversation_id}", dependencies=get_dependencies()
 )
 
 # Dependency for app conversation service
@@ -75,11 +75,11 @@ async def _get_v1_conversation_config(
     )
 
     if app_conversation is None:
-        raise ValueError(f'V1 conversation {conversation_id} not found')
+        raise ValueError(f"V1 conversation {conversation_id} not found")
 
     return {
-        'runtime_id': app_conversation.sandbox_id,
-        'session_id': conversation_id,
+        "runtime_id": app_conversation.sandbox_id,
+        "session_id": conversation_id,
     }
 
 
@@ -95,16 +95,16 @@ def _get_v0_conversation_config(
         Dictionary with runtime_id and session_id from the runtime
     """
     runtime = conversation.runtime
-    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
-    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    runtime_id = runtime.runtime_id if hasattr(runtime, "runtime_id") else None
+    session_id = runtime.sid if hasattr(runtime, "sid") else None
 
     return {
-        'runtime_id': runtime_id,
-        'session_id': session_id,
+        "runtime_id": runtime_id,
+        "session_id": session_id,
     }
 
 
-@app.get('/config')
+@app.get("/config")
 async def get_remote_runtime_config(
     conversation_id: str,
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
@@ -129,7 +129,7 @@ async def get_remote_runtime_config(
         if not conversation:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f'Conversation {conversation_id} not found',
+                detail=f"Conversation {conversation_id} not found",
             )
         try:
             config = _get_v0_conversation_config(conversation)
@@ -139,7 +139,7 @@ async def get_remote_runtime_config(
     return JSONResponse(content=config)
 
 
-@app.get('/vscode-url')
+@app.get("/vscode-url")
 async def get_vscode_url(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -155,23 +155,23 @@ async def get_vscode_url(
     """
     try:
         runtime: Runtime = conversation.runtime
-        logger.debug(f'Runtime type: {type(runtime)}')
-        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        logger.debug(f"Runtime type: {type(runtime)}")
+        logger.debug(f"Runtime VSCode URL: {runtime.vscode_url}")
         return JSONResponse(
-            status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url}
+            status_code=status.HTTP_200_OK, content={"vscode_url": runtime.vscode_url}
         )
     except Exception as e:
-        logger.error(f'Error getting VSCode URL: {e}')
+        logger.error(f"Error getting VSCode URL: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                'vscode_url': None,
-                'error': f'Error getting VSCode URL: {e}',
+                "vscode_url": None,
+                "error": f"Error getting VSCode URL: {e}",
             },
         )
 
 
-@app.get('/web-hosts')
+@app.get("/web-hosts")
 async def get_hosts(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -187,21 +187,21 @@ async def get_hosts(
     """
     try:
         runtime: Runtime = conversation.runtime
-        logger.debug(f'Runtime type: {type(runtime)}')
-        logger.debug(f'Runtime hosts: {runtime.web_hosts}')
-        return JSONResponse(status_code=200, content={'hosts': runtime.web_hosts})
+        logger.debug(f"Runtime type: {type(runtime)}")
+        logger.debug(f"Runtime hosts: {runtime.web_hosts}")
+        return JSONResponse(status_code=200, content={"hosts": runtime.web_hosts})
     except Exception as e:
-        logger.error(f'Error getting runtime hosts: {e}')
+        logger.error(f"Error getting runtime hosts: {e}")
         return JSONResponse(
             status_code=500,
             content={
-                'hosts': None,
-                'error': f'Error getting runtime hosts: {e}',
+                "hosts": None,
+                "error": f"Error getting runtime hosts: {e}",
             },
         )
 
 
-@app.get('/events')
+@app.get("/events")
 async def search_events(
     conversation_id: str,
     start_id: int = 0,
@@ -234,7 +234,7 @@ async def search_events(
     """
     if limit < 0 or limit > 100:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid limit"
         )
 
     # Create an event store to access the events directly
@@ -262,18 +262,18 @@ async def search_events(
 
     events_json = [event_to_dict(event) for event in events]
     return {
-        'events': events_json,
-        'has_more': has_more,
+        "events": events_json,
+        "has_more": has_more,
     }
 
 
-@app.post('/events')
+@app.post("/events")
 async def add_event(
     request: Request, conversation: ServerConversation = Depends(get_conversation)
 ):
     data = await request.json()
     await conversation_manager.send_event_to_conversation(conversation.sid, data)
-    return JSONResponse({'success': True})
+    return JSONResponse({"success": True})
 
 
 class AddMessageRequest(BaseModel):
@@ -282,7 +282,7 @@ class AddMessageRequest(BaseModel):
     message: str
 
 
-@app.post('/message')
+@app.post("/message")
 async def add_message(
     data: AddMessageRequest,
     conversation: ServerConversation = Depends(get_conversation),
@@ -311,14 +311,14 @@ async def add_message(
             conversation.sid, message_data
         )
 
-        return JSONResponse({'success': True})
+        return JSONResponse({"success": True})
     except Exception as e:
-        logger.error(f'Error adding message to conversation: {e}')
+        logger.error(f"Error adding message to conversation: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                'success': False,
-                'error': f'Error adding message to conversation: {e}',
+                "success": False,
+                "error": f"Error adding message to conversation: {e}",
             },
         )
 
@@ -334,7 +334,7 @@ class MicroagentResponse(BaseModel):
     tools: list[str] = []
 
 
-@app.get('/microagents')
+@app.get("/microagents")
 async def get_microagents(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -352,7 +352,7 @@ async def get_microagents(
         if not agent_session:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Agent session not found for this conversation'},
+                content={"error": "Agent session not found for this conversation"},
             )
 
         # Access the memory to get the microagents
@@ -361,7 +361,7 @@ async def get_microagents(
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={
-                    'error': 'Memory is not yet initialized for this conversation'
+                    "error": "Memory is not yet initialized for this conversation"
                 },
             )
 
@@ -373,7 +373,7 @@ async def get_microagents(
             microagents.append(
                 MicroagentResponse(
                     name=name,
-                    type='repo',
+                    type="repo",
                     content=r_agent.content,
                     triggers=[],
                     inputs=r_agent.metadata.inputs,
@@ -393,7 +393,7 @@ async def get_microagents(
             microagents.append(
                 MicroagentResponse(
                     name=name,
-                    type='knowledge',
+                    type="knowledge",
                     content=k_agent.content,
                     triggers=k_agent.triggers,
                     inputs=k_agent.metadata.inputs,
@@ -410,11 +410,11 @@ async def get_microagents(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'microagents': [m.dict() for m in microagents]},
+            content={"microagents": [m.dict() for m in microagents]},
         )
     except Exception as e:
-        logger.error(f'Error getting microagents: {e}')
+        logger.error(f"Error getting microagents: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error getting microagents: {e}'},
+            content={"error": f"Error getting microagents: {e}"},
         )

@@ -48,12 +48,12 @@ class BitBucketService(
         self.external_token_manager = external_token_manager
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
-        self.base_domain = base_domain or 'bitbucket.org'
+        self.base_domain = base_domain or "bitbucket.org"
 
         if token:
             self.token = token
         if base_domain:
-            self.BASE_URL = f'https://api.{base_domain}/2.0'
+            self.BASE_URL = f"https://api.{base_domain}/2.0"
 
     @property
     def provider(self) -> str:
@@ -61,7 +61,7 @@ class BitBucketService(
 
 
 bitbucket_service_cls = os.environ.get(
-    'OPENHANDS_BITBUCKET_SERVICE_CLS',
-    'openhands.integrations.bitbucket.bitbucket_service.BitBucketService',
+    "OPENHANDS_BITBUCKET_SERVICE_CLS",
+    "openhands.integrations.bitbucket.bitbucket_service.BitBucketService",
 )
 BitBucketServiceImpl = get_impl(BitBucketService, bitbucket_service_cls)

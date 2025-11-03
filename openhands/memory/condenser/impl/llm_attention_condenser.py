@@ -31,12 +31,12 @@ class LLMAttentionCondenser(RollingCondenser):
     ):
         if keep_first >= max_size // 2:
             raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
+                f"keep_first ({keep_first}) must be less than half of max_size ({max_size})"
             )
         if keep_first < 0:
-            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
+            raise ValueError(f"keep_first ({keep_first}) cannot be negative")
         if max_size < 1:
-            raise ValueError(f'max_size ({keep_first}) cannot be non-positive')
+            raise ValueError(f"max_size ({keep_first}) cannot be non-positive")
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -66,20 +66,20 @@ class LLMAttentionCondenser(RollingCondenser):
 
         response = self.llm.completion(
             messages=[
-                {'content': message, 'role': 'user'},
+                {"content": message, "role": "user"},
                 *[
                     {
-                        'content': f'<ID>{e.id}</ID>\n<CONTENT>{e.message}</CONTENT>',
-                        'role': 'user',
+                        "content": f"<ID>{e.id}</ID>\n<CONTENT>{e.message}</CONTENT>",
+                        "role": "user",
                     }
                     for e in view
                 ],
             ],
             response_format={
-                'type': 'json_schema',
-                'json_schema': {
-                    'name': 'ImportantEventSelection',
-                    'schema': ImportantEventSelection.model_json_schema(),
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "ImportantEventSelection",
+                    "schema": ImportantEventSelection.model_json_schema(),
                 },
             },
         )
@@ -88,7 +88,7 @@ class LLMAttentionCondenser(RollingCondenser):
             response.choices[0].message.content
         ).ids
 
-        self.add_metadata('metrics', self.llm.metrics.get())
+        self.add_metadata("metrics", self.llm.metrics.get())
 
         # Filter out any IDs from the head and trim the results down
         response_ids = [
@@ -128,7 +128,7 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
 
-        llm = llm_registry.get_llm('condenser', llm_config)
+        llm = llm_registry.get_llm("condenser", llm_config)
 
         return LLMAttentionCondenser(
             llm=llm,

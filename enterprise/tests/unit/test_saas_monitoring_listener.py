@@ -15,13 +15,13 @@ def listener():
 
 
 def test_on_session_event_with_agent_state_changed_non_error(listener):
-    event = AgentStateChangedObservation('', AgentState.STOPPED)
+    event = AgentStateChangedObservation("", AgentState.STOPPED)
 
     listener.on_session_event(event)
 
 
 def test_on_session_event_with_agent_state_changed_error(listener):
-    event = AgentStateChangedObservation('', AgentState.ERROR)
+    event = AgentStateChangedObservation("", AgentState.ERROR)
 
     listener.on_session_event(event)
 

@@ -10,5 +10,5 @@ async def main():
     await convo_store.clean_old_convos(older_than_minutes=OLDER_THAN)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())

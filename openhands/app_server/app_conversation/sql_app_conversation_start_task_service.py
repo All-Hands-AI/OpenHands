@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 
 class StoredAppConversationStartTask(Base):  # type: ignore
-    __tablename__ = 'app_conversation_start_task'
+    __tablename__ = "app_conversation_start_task"
     id = Column(SQLUUID, primary_key=True)
     created_by_user_id = Column(String, index=True)
     status = Column(Enum(AppConversationStartTaskStatus), nullable=True)
@@ -67,7 +67,8 @@ class StoredAppConversationStartTask(Base):  # type: ignore
 class SQLAppConversationStartTaskService(AppConversationStartTaskService):
     """SQL implementation of AppConversationStartTaskService focused on db operations.
 
-    This allows storing and retrieving conversation start tasks from the database."""
+    This allows storing and retrieving conversation start tasks from the database.
+    """
 
     session: AsyncSession
     user_id: str | None = None

@@ -32,21 +32,21 @@ def test_conversation_count_query():
         with engine.connect() as connection:
             count_result = connection.execute(count_query)
             user_counts = [
-                {'user_id': row[0], 'conversation_count': row[1]}
+                {"user_id": row[0], "conversation_count": row[1]}
                 for row in count_result
             ]
 
-        print(f'Found {len(user_counts)} users with conversations')
+        print(f"Found {len(user_counts)} users with conversations")
 
         # Print the first 5 results
         for i, user_data in enumerate(user_counts[:5]):
             print(
-                f"User {i+1}: {user_data['user_id']} - {user_data['conversation_count']} conversations"
+                f"User {i + 1}: {user_data['user_id']} - {user_data['conversation_count']} conversations"
             )
 
         # Test the user_entity query for the first user (if any)
         if user_counts:
-            first_user_id = user_counts[0]['user_id']
+            first_user_id = user_counts[0]["user_id"]
 
             user_query = text("""
                 SELECT username, email, id
@@ -55,27 +55,27 @@ def test_conversation_count_query():
             """)
 
             with engine.connect() as connection:
-                user_result = connection.execute(user_query, {'user_id': first_user_id})
+                user_result = connection.execute(user_query, {"user_id": first_user_id})
                 user_row = user_result.fetchone()
 
                 if user_row:
-                    print(f'\nUser details for {first_user_id}:')
-                    print(f'  GitHub Username: {user_row[0]}')
-                    print(f'  Email: {user_row[1]}')
-                    print(f'  ID: {user_row[2]}')
+                    print(f"\nUser details for {first_user_id}:")
+                    print(f"  GitHub Username: {user_row[0]}")
+                    print(f"  Email: {user_row[1]}")
+                    print(f"  ID: {user_row[2]}")
                 else:
                     print(
-                        f'\nNo user details found for {first_user_id} in user_entity table'
+                        f"\nNo user details found for {first_user_id} in user_entity table"
                     )
 
-        print('\nTest completed successfully')
+        print("\nTest completed successfully")
     except Exception as e:
-        print(f'Error: {str(e)}')
+        print(f"Error: {str(e)}")
         import traceback
 
         traceback.print_exc()
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_conversation_count_query()

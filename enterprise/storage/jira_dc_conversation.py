@@ -3,7 +3,7 @@ from storage.base import Base
 
 
 class JiraDcConversation(Base):  # type: ignore
-    __tablename__ = 'jira_dc_conversations'
+    __tablename__ = "jira_dc_conversations"
     id = Column(Integer, primary_key=True, autoincrement=True)
     conversation_id = Column(String, nullable=False, index=True)
     issue_id = Column(String, nullable=False, index=True)
@@ -12,12 +12,12 @@ class JiraDcConversation(Base):  # type: ignore
     jira_dc_user_id = Column(Integer, nullable=False, index=True)
     created_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
-        onupdate=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )

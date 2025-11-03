@@ -81,23 +81,22 @@ class SlackNewConversationView(SlackViewInterface):
 
     def _get_initial_prompt(self, text: str, blocks: list[dict]):
         bot_id = self._get_bot_id(blocks)
-        text = text.replace(f'<@{bot_id}>', '').strip()
+        text = text.replace(f"<@{bot_id}>", "").strip()
         return text
 
     def _get_bot_id(self, blocks: list[dict]) -> str:
         for block in blocks:
-            type_ = block['type']
-            if type_ in ('rich_text', 'rich_text_section'):
-                bot_id = self._get_bot_id(block['elements'])
+            type_ = block["type"]
+            if type_ in ("rich_text", "rich_text_section"):
+                bot_id = self._get_bot_id(block["elements"])
                 if bot_id:
                     return bot_id
-            if type_ == 'user':
-                return block['user_id']
-        return ''
+            if type_ == "user":
+                return block["user_id"]
+        return ""
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
-        "Instructions passed when conversation is first initialized"
-
+        """Instructions passed when conversation is first initialized"""
         user_info: SlackUser = self.slack_to_openhands_user
 
         messages = []
@@ -111,7 +110,7 @@ class SlackNewConversationView(SlackViewInterface):
                 limit=CONTEXT_LIMIT,  # We can be smarter about getting more context/condensing it even in the future
             )
 
-            messages = result['messages']
+            messages = result["messages"]
 
         else:
             client = WebClient(token=self.bot_access_token)
@@ -122,26 +121,26 @@ class SlackNewConversationView(SlackViewInterface):
                 limit=CONTEXT_LIMIT,
             )
 
-            messages = result['messages']
+            messages = result["messages"]
             messages.reverse()
 
         if not messages:
-            raise ValueError('Failed to fetch information from slack API')
+            raise ValueError("Failed to fetch information from slack API")
 
-        logger.info('got_messages_from_slack', extra={'messages': messages})
+        logger.info("got_messages_from_slack", extra={"messages": messages})
 
         trigger_msg = messages[-1]
         user_message = self._get_initial_prompt(
-            trigger_msg['text'], trigger_msg['blocks']
+            trigger_msg["text"], trigger_msg["blocks"]
         )
 
-        conversation_instructions = ''
+        conversation_instructions = ""
 
         if len(messages) > 1:
             messages.pop()
-            text_messages = [m['text'] for m in messages if m.get('text')]
+            text_messages = [m["text"] for m in messages if m.get("text")]
             conversation_instructions_template = jinja_env.get_template(
-                'user_message_conversation_instructions.j2'
+                "user_message_conversation_instructions.j2"
             )
             conversation_instructions = conversation_instructions_template.render(
                 messages=text_messages,
@@ -154,7 +153,7 @@ class SlackNewConversationView(SlackViewInterface):
     def _verify_necessary_values_are_set(self):
         if not self.selected_repo:
             raise ValueError(
-                'Attempting to start conversation without confirming selected repo from user'
+                "Attempting to start conversation without confirming selected repo from user"
             )
 
     async def save_slack_convo(self):
@@ -162,12 +161,12 @@ class SlackNewConversationView(SlackViewInterface):
             user_info: SlackUser = self.slack_to_openhands_user
 
             logger.info(
-                'Create slack conversation',
+                "Create slack conversation",
                 extra={
-                    'channel_id': self.channel_id,
-                    'conversation_id': self.conversation_id,
-                    'keycloak_user_id': user_info.keycloak_user_id,
-                    'parent_id': self.thread_ts or self.message_ts,
+                    "channel_id": self.channel_id,
+                    "conversation_id": self.conversation_id,
+                    "keycloak_user_id": user_info.keycloak_user_id,
+                    "parent_id": self.thread_ts or self.message_ts,
                 },
             )
             slack_conversation = SlackConversation(
@@ -180,9 +179,7 @@ class SlackNewConversationView(SlackViewInterface):
             await slack_conversation_store.create_slack_conversation(slack_conversation)
 
     async def create_or_update_conversation(self, jinja: Environment) -> str:
-        """
-        Only creates a new conversation
-        """
+        """Only creates a new conversation"""
         self._verify_necessary_values_are_set()
 
         provider_tokens = await self.saas_user_auth.get_provider_tokens()
@@ -217,7 +214,7 @@ class SlackNewConversationView(SlackViewInterface):
         return self.conversation_id
 
     def get_callback_id(self) -> str:
-        return f'slack_{self.channel_id}_{self.message_ts}'
+        return f"slack_{self.channel_id}_{self.message_ts}"
 
     def get_response_msg(self) -> str:
         user_info: SlackUser = self.slack_to_openhands_user
@@ -247,17 +244,15 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
             limit=1,  # Get exact user message, in future we can be smarter with collecting additional context
         )
 
-        user_message = result['messages'][0]
+        user_message = result["messages"][0]
         user_message = self._get_initial_prompt(
-            user_message['text'], user_message['blocks']
+            user_message["text"], user_message["blocks"]
         )
 
-        return user_message, ''
+        return user_message, ""
 
     async def create_or_update_conversation(self, jinja: Environment) -> str:
-        """
-        Send new user message to converation
-        """
+        """Send new user message to converation"""
         user_info: SlackUser = self.slack_to_openhands_user
         saas_user_auth: UserAuth = self.saas_user_auth
         user_id = user_info.keycloak_user_id
@@ -266,7 +261,7 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
         # For now, only user that created the conversation can send follow up messages to it
         if user_id != self.slack_conversation.keycloak_user_id:
             raise StartingConvoException(
-                f'{user_info.slack_display_name} is not authorized to send messages to this conversation.'
+                f"{user_info.slack_display_name} is not authorized to send messages to this conversation."
             )
 
         # Check if conversation has been deleted
@@ -276,7 +271,7 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
         try:
             await conversation_store.get_metadata(self.conversation_id)
         except FileNotFoundError:
-            raise StartingConvoException('Conversation no longer exists.')
+            raise StartingConvoException("Conversation no longer exists.")
 
         provider_tokens = await saas_user_auth.get_provider_tokens()
 
@@ -302,7 +297,7 @@ class SlackUpdateExistingConversationView(SlackNewConversationView):
         )
 
         if not agent_state or agent_state == AgentState.LOADING:
-            raise StartingConvoException('Conversation is still starting')
+            raise StartingConvoException("Conversation is still starting")
 
         user_msg, _ = self._get_instructions(jinja)
         user_msg_action = MessageAction(content=user_msg)
@@ -322,15 +317,15 @@ class SlackFactory:
     @staticmethod
     def did_user_select_repo_from_form(message: Message):
         payload = message.message
-        return 'selected_repo' in payload
+        return "selected_repo" in payload
 
     @staticmethod
     async def determine_if_updating_existing_conversation(
         message: Message,
     ) -> SlackConversation | None:
         payload = message.message
-        channel_id = payload.get('channel_id')
-        thread_ts = payload.get('thread_ts')
+        channel_id = payload.get("channel_id")
+        thread_ts = payload.get("thread_ts")
 
         # Follow up conversations must be contained in-thread
         if not thread_ts:
@@ -345,23 +340,23 @@ class SlackFactory:
         message: Message, slack_user: SlackUser | None, saas_user_auth: UserAuth | None
     ):
         payload = message.message
-        slack_user_id = payload['slack_user_id']
-        channel_id = payload.get('channel_id')
-        message_ts = payload.get('message_ts')
-        thread_ts = payload.get('thread_ts')
-        team_id = payload['team_id']
-        user_msg = payload.get('user_msg')
+        slack_user_id = payload["slack_user_id"]
+        channel_id = payload.get("channel_id")
+        message_ts = payload.get("message_ts")
+        thread_ts = payload.get("thread_ts")
+        team_id = payload["team_id"]
+        user_msg = payload.get("user_msg")
 
         bot_access_token = slack_team_store.get_team_bot_token(team_id)
         if not bot_access_token:
             logger.error(
-                'Did not find slack team',
+                "Did not find slack team",
                 extra={
-                    'slack_user_id': slack_user_id,
-                    'channel_id': channel_id,
+                    "slack_user_id": slack_user_id,
+                    "channel_id": channel_id,
                 },
             )
-            raise Exception('Did not slack team')
+            raise Exception("Did not slack team")
 
         # Determine if this is a known slack user by openhands
         if not slack_user or not saas_user_auth or not channel_id:
@@ -377,7 +372,7 @@ class SlackFactory:
                 selected_repo=None,
                 should_extract=False,
                 send_summary_instruction=False,
-                conversation_id='',
+                conversation_id="",
                 team_id=team_id,
             )
 
@@ -388,10 +383,10 @@ class SlackFactory:
         )
         if conversation:
             logger.info(
-                'Found existing slack conversation',
+                "Found existing slack conversation",
                 extra={
-                    'conversation_id': conversation.conversation_id,
-                    'parent_id': conversation.parent_id,
+                    "conversation_id": conversation.conversation_id,
+                    "parent_id": conversation.parent_id,
                 },
             )
             return SlackUpdateExistingConversationView(
@@ -421,10 +416,10 @@ class SlackFactory:
                 channel_id=channel_id,
                 message_ts=message_ts,
                 thread_ts=thread_ts,
-                selected_repo=payload['selected_repo'],
+                selected_repo=payload["selected_repo"],
                 should_extract=True,
                 send_summary_instruction=True,
-                conversation_id='',
+                conversation_id="",
                 team_id=team_id,
             )
 
@@ -441,6 +436,6 @@ class SlackFactory:
                 selected_repo=None,
                 should_extract=True,
                 send_summary_instruction=True,
-                conversation_id='',
+                conversation_id="",
                 team_id=team_id,
             )

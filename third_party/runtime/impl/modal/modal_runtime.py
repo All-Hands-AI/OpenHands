@@ -150,7 +150,10 @@ class ModalRuntime(ActionExecutionClient):
             raise Exception("Sandbox not initialized")
         tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
-        self.log("info", "Waiting 20 secs for the container to be ready... (avoiding RemoteProtocolError)")
+        self.log(
+            "info",
+            "Waiting 20 secs for the container to be ready... (avoiding RemoteProtocolError)",
+        )
         sleep(20)
         self.log("debug", f"Container started. Server url: {self.api_url}")
 
@@ -253,7 +256,10 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 timeout=60 * 60,
             )
             MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
-            self.log("debug", f"Container started with modal sandbox ID: {self.sandbox.object_id}")
+            self.log(
+                "debug",
+                f"Container started with modal sandbox ID: {self.sandbox.object_id}",
+            )
 
         except Exception as e:
             self.log(

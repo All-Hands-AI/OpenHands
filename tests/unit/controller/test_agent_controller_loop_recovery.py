@@ -24,10 +24,10 @@ class TestAgentControllerLoopRecovery:
         mock_event_stream = MagicMock(
             spec=EventStream,
             event_stream=EventStream(
-                sid='test-session-id', file_store=InMemoryFileStore({})
+                sid="test-session-id", file_store=InMemoryFileStore({})
             ),
         )
-        mock_event_stream.sid = 'test-session-id'
+        mock_event_stream.sid = "test-session-id"
         mock_event_stream.get_latest_event_id.return_value = 0
 
         mock_conversation_stats = MagicMock(spec=ConversationStats)
@@ -66,7 +66,7 @@ class TestAgentControllerLoopRecovery:
         mock_controller._stuck_detector.is_stuck.return_value = True
         mock_controller._stuck_detector.stuck_analysis = MagicMock()
         mock_controller._stuck_detector.stuck_analysis.loop_type = (
-            'repeating_action_observation'
+            "repeating_action_observation"
         )
         mock_controller._stuck_detector.stuck_analysis.loop_start_idx = 5
 
@@ -91,16 +91,16 @@ class TestAgentControllerLoopRecovery:
 
             if isinstance(event, LoopDetectionObservation):
                 loop_detection_found = True
-                assert 'Agent detected in a loop!' in event.content
-                assert 'repeating_action_observation' in event.content
-                assert 'Loop detected at iteration 10' in event.content
+                assert "Agent detected in a loop!" in event.content
+                assert "repeating_action_observation" in event.content
+                assert "Loop detected at iteration 10" in event.content
             elif (
-                hasattr(event, 'agent_state') and event.agent_state == AgentState.PAUSED
+                hasattr(event, "agent_state") and event.agent_state == AgentState.PAUSED
             ):
                 pause_action_found = True
 
-        assert loop_detection_found, 'LoopDetectionObservation should be created'
-        assert pause_action_found, 'Agent should be paused'
+        assert loop_detection_found, "LoopDetectionObservation should be created"
+        assert pause_action_found, "Agent should be paused"
 
     @pytest.mark.asyncio
     async def test_controller_handles_loop_recovery_action_option_1(
@@ -217,13 +217,13 @@ class TestAgentControllerLoopRecovery:
             and (
                 isinstance(call[0][0], LoopDetectionObservation)
                 or (
-                    hasattr(call[0][0], 'agent_state')
+                    hasattr(call[0][0], "agent_state")
                     and call[0][0].agent_state == AgentState.PAUSED
                 )
             )
         ]
         assert len(loop_recovery_events) == 0, (
-            'No loop recovery events should be added when not stuck'
+            "No loop recovery events should be added when not stuck"
         )
 
     @pytest.mark.asyncio
@@ -237,7 +237,7 @@ class TestAgentControllerLoopRecovery:
         # Setup stuck detector to detect a loop
         mock_controller._stuck_detector.is_stuck.return_value = True
         mock_controller._stuck_detector.stuck_analysis = MagicMock()
-        mock_controller._stuck_detector.stuck_analysis.loop_type = 'monologue'
+        mock_controller._stuck_detector.stuck_analysis.loop_type = "monologue"
         mock_controller._stuck_detector.stuck_analysis.loop_start_idx = 3
 
         # Call attempt_loop_recovery
@@ -253,11 +253,11 @@ class TestAgentControllerLoopRecovery:
             args, _ = call
             # add_event only takes one argument (the event)
             event = args[0]
-            if hasattr(event, 'agent_state') and event.agent_state == AgentState.PAUSED:
+            if hasattr(event, "agent_state") and event.agent_state == AgentState.PAUSED:
                 pause_found = True
                 break
 
-        assert pause_found, 'Agent should be paused after loop detection'
+        assert pause_found, "Agent should be paused after loop detection"
 
     @pytest.mark.asyncio
     async def test_controller_resumes_after_loop_recovery(self, mock_controller):
@@ -295,26 +295,26 @@ class TestAgentControllerLoopRecovery:
 
         # Add initial user message
         user_msg = MessageAction(
-            content='Hello, help me with this task', wait_for_response=False
+            content="Hello, help me with this task", wait_for_response=False
         )
-        user_msg._source = 'user'
+        user_msg._source = "user"
         user_msg._id = 1
         mock_history.append(user_msg)
 
         # Add agent response
-        agent_obs = NullObservation(content='')
+        agent_obs = NullObservation(content="")
         agent_obs._id = 2
         mock_history.append(agent_obs)
 
         # Add some commands and observations (simulating a loop)
         for i in range(3, 11):
             if i % 2 == 1:  # Action
-                cmd = CmdRunAction(command='ls -la')
+                cmd = CmdRunAction(command="ls -la")
                 cmd._id = i
                 mock_history.append(cmd)
             else:  # Observation
                 obs = CmdOutputObservation(
-                    content='file1.txt file2.txt', command='ls -la'
+                    content="file1.txt file2.txt", command="ls -la"
                 )
                 obs._id = i
                 obs._cause = i - 1
@@ -338,37 +338,37 @@ class TestAgentControllerLoopRecovery:
 
         # Call the actual _perform_loop_recovery method directly
         print(
-            f'Before truncation: {len(mock_controller.state.history)} events, recovery_point={mock_controller._stuck_detector.stuck_analysis.loop_start_idx}'
+            f"Before truncation: {len(mock_controller.state.history)} events, recovery_point={mock_controller._stuck_detector.stuck_analysis.loop_start_idx}"
         )
         print(
-            f'_perform_loop_recovery method: {mock_controller._perform_loop_recovery}'
+            f"_perform_loop_recovery method: {mock_controller._perform_loop_recovery}"
         )
         print(
-            f'_truncate_memory_to_point method: {mock_controller._truncate_memory_to_point}'
+            f"_truncate_memory_to_point method: {mock_controller._truncate_memory_to_point}"
         )
         await mock_controller._perform_loop_recovery(
             mock_controller._stuck_detector.stuck_analysis
         )
 
         # Debug: print the actual history after truncation
-        print(f'History after truncation: {len(mock_controller.state.history)} events')
+        print(f"History after truncation: {len(mock_controller.state.history)} events")
         for i, event in enumerate(mock_controller.state.history):
-            print(f'  Event {i}: id={event.id}, type={type(event).__name__}')
+            print(f"  Event {i}: id={event.id}, type={type(event).__name__}")
 
         # Verify that history was truncated to the recovery point
         # The recovery point is index 5, so we should keep events 0-4 (5 events)
         assert len(mock_controller.state.history) == 5, (
-            f'Expected 5 events after truncation, got {len(mock_controller.state.history)}'
+            f"Expected 5 events after truncation, got {len(mock_controller.state.history)}"
         )
 
         # Verify the specific events that remain
         expected_ids = [1, 2, 3, 4, 5]
         for i, event in enumerate(mock_controller.state.history):
             assert event.id == expected_ids[i], (
-                f'Event at index {i} should have id {expected_ids[i]}, got {event.id}'
+                f"Event at index {i} should have id {expected_ids[i]}, got {event.id}"
             )
 
         # Verify end_id was updated
         assert mock_controller.state.end_id == 5, (
-            f'Expected end_id to be 5, got {mock_controller.state.end_id}'
+            f"Expected end_id to be 5, got {mock_controller.state.end_id}"
         )

@@ -3,7 +3,7 @@ from storage.base import Base
 
 
 class LinearWorkspace(Base):  # type: ignore
-    __tablename__ = 'linear_workspaces'
+    __tablename__ = "linear_workspaces"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     linear_org_id = Column(String, nullable=False)
@@ -14,12 +14,12 @@ class LinearWorkspace(Base):  # type: ignore
     status = Column(String, nullable=False)
     created_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
-        onupdate=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )

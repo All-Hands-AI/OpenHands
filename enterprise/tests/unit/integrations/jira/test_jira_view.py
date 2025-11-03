@@ -1,6 +1,4 @@
-"""
-Tests for Jira view classes and factory.
-"""
+"""Tests for Jira view classes and factory."""
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -22,13 +20,13 @@ class TestJiraNewConversationView:
         """Test _get_instructions method"""
         instructions, user_msg = new_conversation_view._get_instructions(mock_jinja_env)
 
-        assert instructions == 'Test Jira instructions template'
-        assert 'TEST-123' in user_msg
-        assert 'Test Issue' in user_msg
-        assert 'Fix this bug @openhands' in user_msg
+        assert instructions == "Test Jira instructions template"
+        assert "TEST-123" in user_msg
+        assert "Test Issue" in user_msg
+        assert "Fix this bug @openhands" in user_msg
 
-    @patch('integrations.jira.jira_view.create_new_conversation')
-    @patch('integrations.jira.jira_view.integration_store')
+    @patch("integrations.jira.jira_view.create_new_conversation")
+    @patch("integrations.jira.jira_view.integration_store")
     async def test_create_or_update_conversation_success(
         self,
         mock_store,
@@ -45,7 +43,7 @@ class TestJiraNewConversationView:
             mock_jinja_env
         )
 
-        assert result == 'conv-123'
+        assert result == "conv-123"
         mock_create_conversation.assert_called_once()
         mock_store.create_conversation.assert_called_once()
 
@@ -55,18 +53,18 @@ class TestJiraNewConversationView:
         """Test conversation creation without selected repo"""
         new_conversation_view.selected_repo = None
 
-        with pytest.raises(StartingConvoException, match='No repository selected'):
+        with pytest.raises(StartingConvoException, match="No repository selected"):
             await new_conversation_view.create_or_update_conversation(mock_jinja_env)
 
-    @patch('integrations.jira.jira_view.create_new_conversation')
+    @patch("integrations.jira.jira_view.create_new_conversation")
     async def test_create_or_update_conversation_failure(
         self, mock_create_conversation, new_conversation_view, mock_jinja_env
     ):
         """Test conversation creation failure"""
-        mock_create_conversation.side_effect = Exception('Creation failed')
+        mock_create_conversation.side_effect = Exception("Creation failed")
 
         with pytest.raises(
-            StartingConvoException, match='Failed to create conversation'
+            StartingConvoException, match="Failed to create conversation"
         ):
             await new_conversation_view.create_or_update_conversation(mock_jinja_env)
 
@@ -75,9 +73,9 @@ class TestJiraNewConversationView:
         response = new_conversation_view.get_response_msg()
 
         assert "I'm on it!" in response
-        assert 'Test User' in response
-        assert 'track my progress here' in response
-        assert 'conv-123' in response
+        assert "Test User" in response
+        assert "track my progress here" in response
+        assert "conv-123" in response
 
 
 class TestJiraExistingConversationView:
@@ -89,15 +87,15 @@ class TestJiraExistingConversationView:
             mock_jinja_env
         )
 
-        assert instructions == ''
-        assert 'TEST-123' in user_msg
-        assert 'Test Issue' in user_msg
-        assert 'Fix this bug @openhands' in user_msg
+        assert instructions == ""
+        assert "TEST-123" in user_msg
+        assert "Test Issue" in user_msg
+        assert "Fix this bug @openhands" in user_msg
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
-    @patch('integrations.jira.jira_view.setup_init_conversation_settings')
-    @patch('integrations.jira.jira_view.conversation_manager')
-    @patch('integrations.jira.jira_view.get_final_agent_observation')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
+    @patch("integrations.jira.jira_view.setup_init_conversation_settings")
+    @patch("integrations.jira.jira_view.conversation_manager")
+    @patch("integrations.jira.jira_view.get_final_agent_observation")
     async def test_create_or_update_conversation_success(
         self,
         mock_get_observation,
@@ -128,31 +126,31 @@ class TestJiraExistingConversationView:
             mock_jinja_env
         )
 
-        assert result == 'conv-123'
+        assert result == "conv-123"
         mock_conversation_manager.send_event_to_conversation.assert_called_once()
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
     async def test_create_or_update_conversation_no_metadata(
         self, mock_store_impl, existing_conversation_view, mock_jinja_env
     ):
         """Test conversation update with no metadata"""
         mock_store = AsyncMock()
         mock_store.get_metadata.side_effect = FileNotFoundError(
-            'No such file or directory'
+            "No such file or directory"
         )
         mock_store_impl.return_value = mock_store
 
         with pytest.raises(
-            StartingConvoException, match='Conversation no longer exists'
+            StartingConvoException, match="Conversation no longer exists"
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env
             )
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
-    @patch('integrations.jira.jira_view.setup_init_conversation_settings')
-    @patch('integrations.jira.jira_view.conversation_manager')
-    @patch('integrations.jira.jira_view.get_final_agent_observation')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
+    @patch("integrations.jira.jira_view.setup_init_conversation_settings")
+    @patch("integrations.jira.jira_view.conversation_manager")
+    @patch("integrations.jira.jira_view.get_final_agent_observation")
     async def test_create_or_update_conversation_loading_state(
         self,
         mock_get_observation,
@@ -178,21 +176,21 @@ class TestJiraExistingConversationView:
         mock_get_observation.return_value = [mock_observation]
 
         with pytest.raises(
-            StartingConvoException, match='Conversation is still starting'
+            StartingConvoException, match="Conversation is still starting"
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env
             )
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
     async def test_create_or_update_conversation_failure(
         self, mock_store_impl, existing_conversation_view, mock_jinja_env
     ):
         """Test conversation update failure"""
-        mock_store_impl.side_effect = Exception('Store error')
+        mock_store_impl.side_effect = Exception("Store error")
 
         with pytest.raises(
-            StartingConvoException, match='Failed to create conversation'
+            StartingConvoException, match="Failed to create conversation"
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env
@@ -203,15 +201,15 @@ class TestJiraExistingConversationView:
         response = existing_conversation_view.get_response_msg()
 
         assert "I'm on it!" in response
-        assert 'Test User' in response
-        assert 'continue tracking my progress here' in response
-        assert 'conv-123' in response
+        assert "Test User" in response
+        assert "continue tracking my progress here" in response
+        assert "conv-123" in response
 
 
 class TestJiraFactory:
     """Tests for JiraFactory"""
 
-    @patch('integrations.jira.jira_view.integration_store')
+    @patch("integrations.jira.jira_view.integration_store")
     async def test_create_jira_view_from_payload_existing_conversation(
         self,
         mock_store,
@@ -234,9 +232,9 @@ class TestJiraFactory:
         )
 
         assert isinstance(view, JiraExistingConversationView)
-        assert view.conversation_id == 'conv-123'
+        assert view.conversation_id == "conv-123"
 
-    @patch('integrations.jira.jira_view.integration_store')
+    @patch("integrations.jira.jira_view.integration_store")
     async def test_create_jira_view_from_payload_new_conversation(
         self,
         mock_store,
@@ -256,13 +254,13 @@ class TestJiraFactory:
         )
 
         assert isinstance(view, JiraNewConversationView)
-        assert view.conversation_id == ''
+        assert view.conversation_id == ""
 
     async def test_create_jira_view_from_payload_no_user(
         self, sample_job_context, sample_user_auth, sample_jira_workspace
     ):
         """Test factory with no Jira user"""
-        with pytest.raises(StartingConvoException, match='User not authenticated'):
+        with pytest.raises(StartingConvoException, match="User not authenticated"):
             await JiraFactory.create_jira_view_from_payload(
                 sample_job_context,
                 sample_user_auth,
@@ -274,7 +272,7 @@ class TestJiraFactory:
         self, sample_job_context, sample_jira_user, sample_jira_workspace
     ):
         """Test factory with no SaaS auth"""
-        with pytest.raises(StartingConvoException, match='User not authenticated'):
+        with pytest.raises(StartingConvoException, match="User not authenticated"):
             await JiraFactory.create_jira_view_from_payload(
                 sample_job_context,
                 None,
@@ -286,7 +284,7 @@ class TestJiraFactory:
         self, sample_job_context, sample_user_auth, sample_jira_user
     ):
         """Test factory with no workspace"""
-        with pytest.raises(StartingConvoException, match='User not authenticated'):
+        with pytest.raises(StartingConvoException, match="User not authenticated"):
             await JiraFactory.create_jira_view_from_payload(
                 sample_job_context,
                 sample_user_auth,
@@ -298,8 +296,8 @@ class TestJiraFactory:
 class TestJiraViewEdgeCases:
     """Tests for edge cases and error scenarios"""
 
-    @patch('integrations.jira.jira_view.create_new_conversation')
-    @patch('integrations.jira.jira_view.integration_store')
+    @patch("integrations.jira.jira_view.create_new_conversation")
+    @patch("integrations.jira.jira_view.integration_store")
     async def test_conversation_creation_with_no_user_secrets(
         self,
         mock_store,
@@ -317,13 +315,13 @@ class TestJiraViewEdgeCases:
             mock_jinja_env
         )
 
-        assert result == 'conv-123'
+        assert result == "conv-123"
         # Verify create_new_conversation was called with custom_secrets=None
         call_kwargs = mock_create_conversation.call_args[1]
-        assert call_kwargs['custom_secrets'] is None
+        assert call_kwargs["custom_secrets"] is None
 
-    @patch('integrations.jira.jira_view.create_new_conversation')
-    @patch('integrations.jira.jira_view.integration_store')
+    @patch("integrations.jira.jira_view.create_new_conversation")
+    @patch("integrations.jira.jira_view.integration_store")
     async def test_conversation_creation_store_failure(
         self,
         mock_store,
@@ -334,17 +332,17 @@ class TestJiraViewEdgeCases:
     ):
         """Test conversation creation when store creation fails"""
         mock_create_conversation.return_value = mock_agent_loop_info
-        mock_store.create_conversation = AsyncMock(side_effect=Exception('Store error'))
+        mock_store.create_conversation = AsyncMock(side_effect=Exception("Store error"))
 
         with pytest.raises(
-            StartingConvoException, match='Failed to create conversation'
+            StartingConvoException, match="Failed to create conversation"
         ):
             await new_conversation_view.create_or_update_conversation(mock_jinja_env)
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
-    @patch('integrations.jira.jira_view.setup_init_conversation_settings')
-    @patch('integrations.jira.jira_view.conversation_manager')
-    @patch('integrations.jira.jira_view.get_final_agent_observation')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
+    @patch("integrations.jira.jira_view.setup_init_conversation_settings")
+    @patch("integrations.jira.jira_view.conversation_manager")
+    @patch("integrations.jira.jira_view.get_final_agent_observation")
     async def test_existing_conversation_empty_observations(
         self,
         mock_get_observation,
@@ -366,7 +364,7 @@ class TestJiraViewEdgeCases:
         mock_get_observation.return_value = []  # Empty observations
 
         with pytest.raises(
-            StartingConvoException, match='Conversation is still starting'
+            StartingConvoException, match="Conversation is still starting"
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env
@@ -374,20 +372,20 @@ class TestJiraViewEdgeCases:
 
     def test_new_conversation_view_attributes(self, new_conversation_view):
         """Test new conversation view attribute access"""
-        assert new_conversation_view.job_context.issue_key == 'TEST-123'
-        assert new_conversation_view.selected_repo == 'test/repo1'
-        assert new_conversation_view.conversation_id == 'conv-123'
+        assert new_conversation_view.job_context.issue_key == "TEST-123"
+        assert new_conversation_view.selected_repo == "test/repo1"
+        assert new_conversation_view.conversation_id == "conv-123"
 
     def test_existing_conversation_view_attributes(self, existing_conversation_view):
         """Test existing conversation view attribute access"""
-        assert existing_conversation_view.job_context.issue_key == 'TEST-123'
-        assert existing_conversation_view.selected_repo == 'test/repo1'
-        assert existing_conversation_view.conversation_id == 'conv-123'
+        assert existing_conversation_view.job_context.issue_key == "TEST-123"
+        assert existing_conversation_view.selected_repo == "test/repo1"
+        assert existing_conversation_view.conversation_id == "conv-123"
 
-    @patch('integrations.jira.jira_view.ConversationStoreImpl.get_instance')
-    @patch('integrations.jira.jira_view.setup_init_conversation_settings')
-    @patch('integrations.jira.jira_view.conversation_manager')
-    @patch('integrations.jira.jira_view.get_final_agent_observation')
+    @patch("integrations.jira.jira_view.ConversationStoreImpl.get_instance")
+    @patch("integrations.jira.jira_view.setup_init_conversation_settings")
+    @patch("integrations.jira.jira_view.conversation_manager")
+    @patch("integrations.jira.jira_view.get_final_agent_observation")
     async def test_existing_conversation_message_send_failure(
         self,
         mock_get_observation,
@@ -407,7 +405,7 @@ class TestJiraViewEdgeCases:
             return_value=mock_agent_loop_info
         )
         mock_conversation_manager.send_event_to_conversation = AsyncMock(
-            side_effect=Exception('Send error')
+            side_effect=Exception("Send error")
         )
 
         # Mock agent observation with RUNNING state
@@ -416,7 +414,7 @@ class TestJiraViewEdgeCases:
         mock_get_observation.return_value = [mock_observation]
 
         with pytest.raises(
-            StartingConvoException, match='Failed to create conversation'
+            StartingConvoException, match="Failed to create conversation"
         ):
             await existing_conversation_view.create_or_update_conversation(
                 mock_jinja_env

@@ -10,24 +10,24 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '030'
-down_revision = '029'
+revision = "030"
+down_revision = "029"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     op.add_column(
-        'user_settings',
+        "user_settings",
         sa.Column(
-            'enable_proactive_conversation_starters',
+            "enable_proactive_conversation_starters",
             sa.Boolean(),
             nullable=False,
             default=True,
-            server_default='TRUE',
+            server_default="TRUE",
         ),
     )
 
 
 def downgrade():
-    op.drop_column('user_settings', 'enable_proactive_conversation_starters')
+    op.drop_column("user_settings", "enable_proactive_conversation_starters")

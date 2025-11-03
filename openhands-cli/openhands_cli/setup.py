@@ -1,34 +1,38 @@
 import uuid
 from datetime import datetime
 
-from prompt_toolkit import HTML, print_formatted_text
-
 from openhands.core.conversations.registry import (
     add_conversation,
     write_conversation_stub,
 )
-from openhands.sdk import Agent, BaseConversation, Conversation, Workspace, register_tool
-from openhands.tools.execute_bash import BashTool
-from openhands.tools.file_editor import FileEditorTool
-from openhands.tools.task_tracker import TaskTrackerTool
-from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
-from openhands_cli.tui.settings.store import AgentStore
+from openhands.sdk import (
+    Agent,
+    BaseConversation,
+    Conversation,
+    Workspace,
+    register_tool,
+)
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
 )
+from openhands.tools.execute_bash import BashTool
+from openhands.tools.file_editor import FileEditorTool
+from openhands.tools.task_tracker import TaskTrackerTool
+from prompt_toolkit import HTML, print_formatted_text
+
+from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
+from openhands_cli.tui.settings.store import AgentStore
 
-
-register_tool('BashTool', BashTool)
-register_tool('FileEditorTool', FileEditorTool)
-register_tool('TaskTrackerTool', TaskTrackerTool)
+register_tool("BashTool", BashTool)
+register_tool("FileEditorTool", FileEditorTool)
+register_tool("TaskTrackerTool", TaskTrackerTool)
 
 
 class MissingAgentSpec(Exception):
     """Raised when agent specification is not found or invalid."""
 
     pass
-
 
 
 def load_agent_specs(
@@ -38,15 +42,13 @@ def load_agent_specs(
     agent = agent_store.load(session_id=conversation_id)
     if not agent:
         raise MissingAgentSpec(
-            'Agent specification not found. Please configure your agent settings.'
+            "Agent specification not found. Please configure your agent settings."
         )
     return agent
 
 
 def verify_agent_exists_or_setup_agent() -> Agent:
-    """Verify agent specs exists by attempting to load it.
-
-    """
+    """Verify agent specs exists by attempting to load it."""
     settings_screen = SettingsScreen()
     try:
         agent = load_agent_specs()
@@ -55,14 +57,12 @@ def verify_agent_exists_or_setup_agent() -> Agent:
         # For first-time users, show the full settings flow with choice between basic/advanced
         settings_screen.configure_settings(first_time=True)
 
-
     # Try once again after settings setup attempt
     return load_agent_specs()
 
 
 def setup_conversation(
-    conversation_id: uuid,
-    include_security_analyzer: bool = True
+    conversation_id: uuid, include_security_analyzer: bool = True
 ) -> BaseConversation:
     """
     Setup the conversation with agent.
@@ -74,32 +74,30 @@ def setup_conversation(
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    print_formatted_text(
-        HTML(f'<white>Initializing agent...</white>')
-    )
+    print_formatted_text(HTML("<white>Initializing agent...</white>"))
 
     agent = load_agent_specs(str(conversation_id))
 
     conv_id_str = str(conversation_id)
-    model_name = getattr(getattr(agent, 'llm', None), 'model', None)
+    model_name = getattr(getattr(agent, "llm", None), "model", None)
     session_title = (
-        f'CLI Session - {model_name}' if isinstance(model_name, str) and model_name else None
+        f"CLI Session - {model_name}"
+        if isinstance(model_name, str) and model_name
+        else None
     )
-    add_conversation(conv_id_str, origin='cli', title=session_title)
+    add_conversation(conv_id_str, origin="cli", title=session_title)
     write_conversation_stub(
         conv_id_str,
         {
-            'origin': 'cli',
-            'title': session_title or 'CLI Session',
-            'updated_at': datetime.now().isoformat(),
+            "origin": "cli",
+            "title": session_title or "CLI Session",
+            "updated_at": datetime.now().isoformat(),
         },
     )
 
     if not include_security_analyzer:
         # Remove security analyzer from agent spec
-        agent = agent.model_copy(
-            update={"security_analyzer": None}
-        )
+        agent = agent.model_copy(update={"security_analyzer": None})
 
     # Create conversation - agent context is now set in AgentStore.load()
     conversation: BaseConversation = Conversation(
@@ -114,6 +112,6 @@ def setup_conversation(
         conversation.set_confirmation_policy(AlwaysConfirm())
 
     print_formatted_text(
-        HTML(f'<green>✓ Agent initialized with model: {agent.llm.model}</green>')
+        HTML(f"<green>✓ Agent initialized with model: {agent.llm.model}</green>")
     )
     return conversation

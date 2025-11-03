@@ -35,26 +35,24 @@ class LinearNewConversationView(LinearViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
-        instructions_template = jinja_env.get_template('linear_instructions.j2')
+        instructions_template = jinja_env.get_template("linear_instructions.j2")
         instructions = instructions_template.render()
 
-        user_msg_template = jinja_env.get_template('linear_new_conversation.j2')
+        user_msg_template = jinja_env.get_template("linear_new_conversation.j2")
 
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
             issue_title=self.job_context.issue_title,
             issue_description=self.job_context.issue_description,
-            user_message=self.job_context.user_msg or '',
+            user_message=self.job_context.user_msg or "",
         )
 
         return instructions, user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Create a new Linear conversation"""
-
         if not self.selected_repo:
-            raise StartingConvoException('No repository selected for this conversation')
+            raise StartingConvoException("No repository selected for this conversation")
 
         provider_tokens = await self.saas_user_auth.get_provider_tokens()
         user_secrets = await self.saas_user_auth.get_secrets()
@@ -76,7 +74,7 @@ class LinearNewConversationView(LinearViewInterface):
 
             self.conversation_id = agent_loop_info.conversation_id
 
-            logger.info(f'[Linear] Created conversation {self.conversation_id}')
+            logger.info(f"[Linear] Created conversation {self.conversation_id}")
 
             # Store Linear conversation mapping
             linear_conversation = LinearConversation(
@@ -91,9 +89,9 @@ class LinearNewConversationView(LinearViewInterface):
             return self.conversation_id
         except Exception as e:
             logger.error(
-                f'[Linear] Failed to create conversation: {str(e)}', exc_info=True
+                f"[Linear] Failed to create conversation: {str(e)}", exc_info=True
             )
-            raise StartingConvoException(f'Failed to create conversation: {str(e)}')
+            raise StartingConvoException(f"Failed to create conversation: {str(e)}")
 
     def get_response_msg(self) -> str:
         """Get the response message to send back to Linear"""
@@ -112,20 +110,18 @@ class LinearExistingConversationView(LinearViewInterface):
 
     def _get_instructions(self, jinja_env: Environment) -> tuple[str, str]:
         """Instructions passed when conversation is first initialized"""
-
-        user_msg_template = jinja_env.get_template('linear_existing_conversation.j2')
+        user_msg_template = jinja_env.get_template("linear_existing_conversation.j2")
         user_msg = user_msg_template.render(
             issue_key=self.job_context.issue_key,
-            user_message=self.job_context.user_msg or '',
+            user_message=self.job_context.user_msg or "",
             issue_title=self.job_context.issue_title,
             issue_description=self.job_context.issue_description,
         )
 
-        return '', user_msg
+        return "", user_msg
 
     async def create_or_update_conversation(self, jinja_env: Environment) -> str:
         """Update an existing Linear conversation"""
-
         user_id = self.linear_user.keycloak_user_id
 
         try:
@@ -136,11 +132,11 @@ class LinearExistingConversationView(LinearViewInterface):
             try:
                 await conversation_store.get_metadata(self.conversation_id)
             except FileNotFoundError:
-                raise StartingConvoException('Conversation no longer exists.')
+                raise StartingConvoException("Conversation no longer exists.")
 
             provider_tokens = await self.saas_user_auth.get_provider_tokens()
             if provider_tokens is None:
-                raise ValueError('Could not load provider tokens')
+                raise ValueError("Could not load provider tokens")
             providers_set = list(provider_tokens.keys())
 
             conversation_init_data = await setup_init_conversation_settings(
@@ -162,7 +158,7 @@ class LinearExistingConversationView(LinearViewInterface):
             )
 
             if not agent_state or agent_state == AgentState.LOADING:
-                raise StartingConvoException('Conversation is still starting')
+                raise StartingConvoException("Conversation is still starting")
 
             _, user_msg = self._get_instructions(jinja_env)
             user_message_event = MessageAction(content=user_msg)
@@ -173,9 +169,9 @@ class LinearExistingConversationView(LinearViewInterface):
             return self.conversation_id
         except Exception as e:
             logger.error(
-                f'[Linear] Failed to create conversation: {str(e)}', exc_info=True
+                f"[Linear] Failed to create conversation: {str(e)}", exc_info=True
             )
-            raise StartingConvoException(f'Failed to create conversation: {str(e)}')
+            raise StartingConvoException(f"Failed to create conversation: {str(e)}")
 
     def get_response_msg(self) -> str:
         """Get the response message to send back to Linear"""
@@ -194,10 +190,9 @@ class LinearFactory:
         linear_workspace: LinearWorkspace,
     ) -> LinearViewInterface:
         """Create appropriate Linear view based on the message and user state"""
-
         if not linear_user or not saas_user_auth or not linear_workspace:
             raise StartingConvoException(
-                'User not authenticated with Linear integration'
+                "User not authenticated with Linear integration"
             )
 
         conversation = await integration_store.get_user_conversations_by_issue_id(
@@ -205,7 +200,7 @@ class LinearFactory:
         )
         if conversation:
             logger.info(
-                f'[Linear] Found existing conversation for issue {job_context.issue_id}'
+                f"[Linear] Found existing conversation for issue {job_context.issue_id}"
             )
             return LinearExistingConversationView(
                 job_context=job_context,
@@ -222,5 +217,5 @@ class LinearFactory:
             linear_user=linear_user,
             linear_workspace=linear_workspace,
             selected_repo=None,  # Will be set later after repo inference
-            conversation_id='',  # Will be set when conversation is created
+            conversation_id="",  # Will be set when conversation is created
         )

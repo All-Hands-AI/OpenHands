@@ -15,13 +15,13 @@ class SecurityAnalyzer:
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""
         raise NotImplementedError(
-            'Need to implement handle_api_request method in SecurityAnalyzer subclass'
+            "Need to implement handle_api_request method in SecurityAnalyzer subclass"
         )
 
     async def security_risk(self, action: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level."""
         raise NotImplementedError(
-            'Need to implement security_risk method in SecurityAnalyzer subclass'
+            "Need to implement security_risk method in SecurityAnalyzer subclass"
         )
 
     def set_event_stream(self, event_stream) -> None:

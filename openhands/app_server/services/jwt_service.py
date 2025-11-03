@@ -32,7 +32,7 @@ class JwtService:
         """
         active_keys = [key for key in keys if key.active]
         if not active_keys:
-            raise ValueError('At least one active key is required')
+            raise ValueError("At least one active key is required")
 
         # Store keys by ID for quick lookup
         self._keys = {key.id: key for key in keys}
@@ -78,15 +78,15 @@ class JwtService:
 
         jwt_payload = {
             **payload,
-            'iat': int(now.timestamp()),
-            'exp': int((now + expires_in).timestamp()),
+            "iat": int(now.timestamp()),
+            "exp": int((now + expires_in).timestamp()),
         }
 
         # Use the raw key for JWT signing with key_id in header
         secret_key = self._keys[key_id].key.get_secret_value()
 
         return jwt.encode(
-            jwt_payload, secret_key, algorithm='HS256', headers={'kid': key_id}
+            jwt_payload, secret_key, algorithm="HS256", headers={"kid": key_id}
         )
 
     def verify_jws_token(self, token: str, key_id: str | None = None) -> dict[str, Any]:
@@ -108,11 +108,11 @@ class JwtService:
             # Try to extract key_id from the token's kid header
             try:
                 unverified_header = jwt.get_unverified_header(token)
-                key_id = unverified_header.get('kid')
+                key_id = unverified_header.get("kid")
                 if not key_id:
                     raise ValueError("Token does not contain 'kid' header with key ID")
             except jwt.DecodeError:
-                raise ValueError('Invalid JWT token format')
+                raise ValueError("Invalid JWT token format")
 
         if key_id not in self._keys:
             raise ValueError(f"Key ID '{key_id}' not found")
@@ -121,10 +121,10 @@ class JwtService:
         secret_key = self._keys[key_id].key.get_secret_value()
 
         try:
-            payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             return payload
         except jwt.InvalidTokenError as e:
-            raise jwt.InvalidTokenError(f'Token verification failed: {str(e)}')
+            raise jwt.InvalidTokenError(f"Token verification failed: {str(e)}")
 
     def create_jwe_token(
         self,
@@ -158,8 +158,8 @@ class JwtService:
 
         jwt_payload = {
             **payload,
-            'iat': int(now.timestamp()),
-            'exp': int((now + expires_in).timestamp()),
+            "iat": int(now.timestamp()),
+            "exp": int((now + expires_in).timestamp()),
         }
 
         # Get the raw key for JWE encryption and derive a 256-bit key
@@ -179,7 +179,7 @@ class JwtService:
         )
         # Ensure we return a string
         return (
-            encrypted_token.decode('utf-8')
+            encrypted_token.decode("utf-8")
             if isinstance(encrypted_token, bytes)
             else encrypted_token
         )
@@ -205,11 +205,11 @@ class JwtService:
             # Try to extract key_id from the token's header
             try:
                 header = jwe.get_unverified_header(token)
-                key_id = header.get('kid')
+                key_id = header.get("kid")
                 if not key_id:
                     raise ValueError("Token does not contain 'kid' header with key ID")
             except Exception:
-                raise ValueError('Invalid JWE token format')
+                raise ValueError("Invalid JWE token format")
 
         if key_id not in self._keys:
             raise ValueError(f"Key ID '{key_id}' not found")
@@ -227,7 +227,7 @@ class JwtService:
             payload = json.loads(payload_json)
             return payload
         except Exception as e:
-            raise Exception(f'Token decryption failed: {str(e)}')
+            raise Exception(f"Token decryption failed: {str(e)}")
 
 
 class JwtServiceInjector(BaseModel, Injector[JwtService]):

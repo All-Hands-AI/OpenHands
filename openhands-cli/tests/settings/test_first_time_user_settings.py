@@ -1,6 +1,8 @@
 from unittest.mock import patch
-from openhands_cli.agent_chat import run_cli_entry
+
 import pytest
+
+from openhands_cli.agent_chat import run_cli_entry
 
 
 @patch("openhands_cli.agent_chat.print_formatted_text")
@@ -10,7 +12,9 @@ import pytest
 @patch("openhands_cli.tui.settings.settings_screen.choose_llm_provider")
 @patch("openhands_cli.tui.settings.settings_screen.settings_type_confirmation")
 @patch("openhands_cli.tui.settings.store.AgentStore.load")
-@pytest.mark.parametrize("interrupt_step", ["settings_type", "provider", "model", "api_key", "save"])
+@pytest.mark.parametrize(
+    "interrupt_step", ["settings_type", "provider", "model", "api_key", "save"]
+)
 def test_first_time_users_can_escape_settings_flow_and_exit_app(
     mock_agentstore_load,
     mock_type,

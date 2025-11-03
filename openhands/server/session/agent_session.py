@@ -82,7 +82,7 @@ class AgentSession:
         self._status_callback = status_callback
         self.user_id = user_id
         self.logger = OpenHandsLoggerAdapter(
-            extra={'session_id': sid, 'user_id': user_id}
+            extra={"session_id": sid, "user_id": user_id}
         )
         self.llm_registry = llm_registry
         self.conversation_stats = conversation_stats
@@ -116,11 +116,11 @@ class AgentSession:
         """
         if self.controller or self.runtime:
             raise RuntimeError(
-                'Session already started. You need to close this session and start a new one.'
+                "Session already started. You need to close this session and start a new one."
             )
 
         if self._closed:
-            self.logger.warning('Session closed before starting')
+            self.logger.warning("Session closed before starting")
             return
         self._starting = True
         started_at = time.time()
@@ -144,7 +144,7 @@ class AgentSession:
 
             repo_directory = None
             if self.runtime and runtime_connected and selected_repository:
-                repo_directory = selected_repository.split('/')[-1]
+                repo_directory = selected_repository.split("/")[-1]
 
             if git_provider_tokens:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
@@ -207,18 +207,18 @@ class AgentSession:
             duration = time.time() - started_at
 
             log_metadata = {
-                'signal': 'agent_session_start',
-                'success': success,
-                'duration': duration,
-                'restored_state': restored_state,
+                "signal": "agent_session_start",
+                "success": success,
+                "duration": duration,
+                "restored_state": restored_state,
             }
             if success:
                 self.logger.info(
-                    f'Agent session start succeeded in {duration}s', extra=log_metadata
+                    f"Agent session start succeeded in {duration}s", extra=log_metadata
                 )
             else:
                 self.logger.error(
-                    f'Agent session start failed in {duration}s', extra=log_metadata
+                    f"Agent session start failed in {duration}s", extra=log_metadata
                 )
 
     async def close(self) -> None:
@@ -228,12 +228,12 @@ class AgentSession:
         self._closed = True
         while self._starting and should_continue():
             self.logger.debug(
-                f'Waiting for initialization to finish before closing session {self.sid}'
+                f"Waiting for initialization to finish before closing session {self.sid}"
             )
             await asyncio.sleep(WAIT_TIME_BEFORE_CLOSE_INTERVAL)
             if time.time() <= self._started_at + WAIT_TIME_BEFORE_CLOSE:
                 self.logger.error(
-                    f'Waited too long for initialization to finish before closing session {self.sid}'
+                    f"Waited too long for initialization to finish before closing session {self.sid}"
                 )
                 break
         if self.event_stream is not None:
@@ -314,12 +314,12 @@ class AgentSession:
         Raises if already created, possibly in other situations.
         """
         if self.runtime is not None:
-            raise RuntimeError('Runtime already created')
+            raise RuntimeError("Runtime already created")
 
         custom_secrets_handler = Secrets(custom_secrets=custom_secrets or {})  # type: ignore[arg-type]
         env_vars = custom_secrets_handler.get_env_vars()
 
-        self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
+        self.logger.debug(f"Initializing runtime `{runtime_name}` now...")
         runtime_cls = get_runtime_cls(runtime_name)
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
@@ -365,10 +365,10 @@ class AgentSession:
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:
-            self.logger.error(f'Runtime initialization failed: {e}')
+            self.logger.error(f"Runtime initialization failed: {e}")
             if self._status_callback:
                 self._status_callback(
-                    'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
+                    "error", RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
             return False
 
@@ -379,7 +379,7 @@ class AgentSession:
         await call_sync_from_async(self.runtime.maybe_setup_git_hooks)
 
         self.logger.debug(
-            f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
+            f"Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}"
         )
         return True
 
@@ -407,20 +407,20 @@ class AgentSession:
             Agent Controller and a bool indicating if state was restored from a previous conversation
         """
         if self.controller is not None:
-            raise RuntimeError('Controller already created')
+            raise RuntimeError("Controller already created")
         if self.runtime is None:
             raise RuntimeError(
-                'Runtime must be initialized before the agent controller'
+                "Runtime must be initialized before the agent controller"
             )
 
         msg = (
-            '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
-            f'LLM: {agent.llm.config.model}\n'
-            f'Base URL: {agent.llm.config.base_url}\n'
-            f'Agent: {agent.name}\n'
-            f'Runtime: {self.runtime.__class__.__name__}\n'
-            f'Plugins: {[p.name for p in agent.sandbox_plugins] if agent.sandbox_plugins else "None"}\n'
-            '-------------------------------------------------------------------------------------------'
+            "\n--------------------------------- OpenHands Configuration ---------------------------------\n"
+            f"LLM: {agent.llm.config.model}\n"
+            f"Base URL: {agent.llm.config.base_url}\n"
+            f"Agent: {agent.name}\n"
+            f"Runtime: {self.runtime.__class__.__name__}\n"
+            f"Plugins: {[p.name for p in agent.sandbox_plugins] if agent.sandbox_plugins else 'None'}\n"
+            "-------------------------------------------------------------------------------------------"
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
@@ -500,13 +500,13 @@ class AgentSession:
             restored_state = State.restore_from_session(
                 self.sid, self.file_store, self.user_id
             )
-            self.logger.debug(f'Restored state from session, sid: {self.sid}')
+            self.logger.debug(f"Restored state from session, sid: {self.sid}")
         except Exception as e:
             if self.event_stream.get_latest_event_id() > 0:
                 # if we have events, we should have a state
-                self.logger.warning(f'State could not be restored: {e}')
+                self.logger.warning(f"State could not be restored: {e}")
             else:
-                self.logger.debug('No events found, no state to restore')
+                self.logger.debug("No events found, no state to restore")
         return restored_state
 
     def is_closed(self) -> bool:

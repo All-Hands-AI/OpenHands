@@ -22,11 +22,11 @@ from openhands.storage.data_models.settings import Settings
 def mock_settings():
     """Create a real Settings object with minimal required fields."""
     return Settings(
-        language='en',
-        agent='CodeActAgent',
+        language="en",
+        agent="CodeActAgent",
         max_iterations=100,
-        llm_model='anthropic/claude-3-5-sonnet-20241022',
-        llm_api_key=SecretStr('test_api_key_12345'),
+        llm_model="anthropic/claude-3-5-sonnet-20241022",
+        llm_api_key=SecretStr("test_api_key_12345"),
         llm_base_url=None,
     )
 
@@ -37,7 +37,7 @@ def mock_provider_tokens():
     return MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(
-                token=SecretStr('ghp_real_token_test123'), user_id='test_user_456'
+                token=SecretStr("ghp_real_token_test123"), user_id="test_user_456"
             )
         }
     )
@@ -51,19 +51,19 @@ async def test_setup_with_provided_tokens_uses_real_tokens(
 
     Verifies provider tokens passed in are used in ConversationInitData.
     """
-    user_id = 'test_user_456'
-    conversation_id = 'test_conv_123'
+    user_id = "test_user_456"
+    conversation_id = "test_conv_123"
     providers_set = [ProviderType.GITHUB]
 
     # Mock the stores to return our test settings
     with patch(
-        'openhands.server.services.conversation_service.SettingsStoreImpl.get_instance'
+        "openhands.server.services.conversation_service.SettingsStoreImpl.get_instance"
     ) as mock_settings_store_cls:
         with patch(
-            'openhands.server.services.conversation_service.SecretsStoreImpl.get_instance'
+            "openhands.server.services.conversation_service.SecretsStoreImpl.get_instance"
         ) as mock_secrets_store_cls:
             with patch(
-                'openhands.server.services.conversation_service.server_config'
+                "openhands.server.services.conversation_service.server_config"
             ) as mock_server_config:
                 # Setup mocks
                 mock_settings_store = AsyncMock()
@@ -88,15 +88,15 @@ async def test_setup_with_provided_tokens_uses_real_tokens(
                 assert result.git_provider_tokens is not None
                 assert result.git_provider_tokens == mock_provider_tokens
                 assert ProviderType.GITHUB in result.git_provider_tokens, (
-                    'GitHub provider should be in tokens'
+                    "GitHub provider should be in tokens"
                 )
 
                 github_token = result.git_provider_tokens[ProviderType.GITHUB]
                 assert (
-                    github_token.token.get_secret_value() == 'ghp_real_token_test123'
-                ), 'Should use real token, not None'
-                assert github_token.user_id == 'test_user_456', (
-                    'Should preserve user_id from real token'
+                    github_token.token.get_secret_value() == "ghp_real_token_test123"
+                ), "Should use real token, not None"
+                assert github_token.user_id == "test_user_456", (
+                    "Should preserve user_id from real token"
                 )
 
 
@@ -106,8 +106,8 @@ async def test_setup_without_tokens_non_saas_uses_user_secrets(mock_settings):
 
     This test verifies OSS mode backward compatibility - tokens come from local config, not endpoint.
     """
-    user_id = 'test_user_456'
-    conversation_id = 'test_conv_123'
+    user_id = "test_user_456"
+    conversation_id = "test_conv_123"
     providers_set = [ProviderType.GITHUB]
 
     # Create user_secrets with real tokens
@@ -115,21 +115,21 @@ async def test_setup_without_tokens_non_saas_uses_user_secrets(mock_settings):
     mock_user_secrets.provider_tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(
-                token=SecretStr('ghp_local_token_from_config'),
-                user_id='local_user_123',
+                token=SecretStr("ghp_local_token_from_config"),
+                user_id="local_user_123",
             )
         }
     )
     mock_user_secrets.custom_secrets = MappingProxyType({})  # Empty dict is fine
 
     with patch(
-        'openhands.server.services.conversation_service.SettingsStoreImpl.get_instance'
+        "openhands.server.services.conversation_service.SettingsStoreImpl.get_instance"
     ) as mock_settings_store_cls:
         with patch(
-            'openhands.server.services.conversation_service.SecretsStoreImpl.get_instance'
+            "openhands.server.services.conversation_service.SecretsStoreImpl.get_instance"
         ) as mock_secrets_store_cls:
             with patch(
-                'openhands.server.services.conversation_service.server_config'
+                "openhands.server.services.conversation_service.server_config"
             ) as mock_server_config:
                 # Setup mocks
                 mock_settings_store = AsyncMock()
@@ -157,6 +157,6 @@ async def test_setup_without_tokens_non_saas_uses_user_secrets(mock_settings):
                 github_token = result.git_provider_tokens[ProviderType.GITHUB]
                 assert (
                     github_token.token.get_secret_value()
-                    == 'ghp_local_token_from_config'
+                    == "ghp_local_token_from_config"
                 )
-                assert github_token.user_id == 'local_user_123'
+                assert github_token.user_id == "local_user_123"

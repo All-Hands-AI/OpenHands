@@ -1,6 +1,4 @@
-"""
-Tests for ConversationCallbackProcessor and ConversationCallback models.
-"""
+"""Tests for ConversationCallbackProcessor and ConversationCallback models."""
 
 import json
 
@@ -18,10 +16,10 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 class MockConversationCallbackProcessor(ConversationCallbackProcessor):
     """Mock implementation of ConversationCallbackProcessor for testing."""
 
-    name: str = 'test'
+    name: str = "test"
     config: dict = {}
 
-    def __init__(self, name: str = 'test', config: dict | None = None, **kwargs):
+    def __init__(self, name: str = "test", config: dict | None = None, **kwargs):
         super().__init__(name=name, config=config or {}, **kwargs)
         self.call_count = 0
         self.last_conversation_id: str | None = None
@@ -40,36 +38,36 @@ class TestConversationCallbackProcessor:
     def test_mock_processor_creation(self):
         """Test that we can create a mock processor."""
         processor = MockConversationCallbackProcessor(
-            name='test_processor', config={'key': 'value'}
+            name="test_processor", config={"key": "value"}
         )
-        assert processor.name == 'test_processor'
-        assert processor.config == {'key': 'value'}
+        assert processor.name == "test_processor"
+        assert processor.config == {"key": "value"}
         assert processor.call_count == 0
         assert processor.last_conversation_id is None
 
     def test_mock_processor_call(self):
         """Test that the mock processor can be called."""
-        callback = ConversationCallback(conversation_id='test_conversation_id')
+        callback = ConversationCallback(conversation_id="test_conversation_id")
         processor = MockConversationCallbackProcessor()
         processor(
             callback,
-            AgentStateChangedObservation('foobar', 'awaiting_user_input'),
+            AgentStateChangedObservation("foobar", "awaiting_user_input"),
         )
 
         assert processor.call_count == 1
-        assert processor.last_conversation_id == 'test_conversation_id'
+        assert processor.last_conversation_id == "test_conversation_id"
 
     def test_processor_serialization(self):
         """Test that processors can be serialized to JSON."""
         processor = MockConversationCallbackProcessor(
-            name='test', config={'setting': 'value'}
+            name="test", config={"setting": "value"}
         )
         json_data = processor.model_dump_json()
 
         # Should be able to parse the JSON
         data = json.loads(json_data)
-        assert data['name'] == 'test'
-        assert data['config'] == {'setting': 'value'}
+        assert data["name"] == "test"
+        assert data["config"] == {"setting": "value"}
 
 
 class TestConversationCallback:
@@ -80,7 +78,7 @@ class TestConversationCallback:
         """Create a test conversation metadata record."""
         with session_maker() as session:
             metadata = StoredConversationMetadata(
-                conversation_id='test_conversation_123', user_id='test_user_456'
+                conversation_id="test_conversation_123", user_id="test_user_456"
             )
             session.add(metadata)
             session.commit()
@@ -93,13 +91,13 @@ class TestConversationCallback:
 
     def test_callback_creation(self, conversation_metadata, session_maker):
         """Test creating a conversation callback."""
-        processor = MockConversationCallbackProcessor(name='test_processor')
+        processor = MockConversationCallbackProcessor(name="test_processor")
 
         with session_maker() as session:
             callback = ConversationCallback(
                 conversation_id=conversation_metadata.conversation_id,
                 status=CallbackStatus.ACTIVE,
-                processor_type='tests.unit.test_conversation_processor.MockConversationCallbackProcessor',
+                processor_type="tests.unit.test_conversation_processor.MockConversationCallbackProcessor",
                 processor_json=processor.model_dump_json(),
             )
             session.add(callback)
@@ -119,7 +117,7 @@ class TestConversationCallback:
     def test_set_processor(self, conversation_metadata, session_maker):
         """Test setting a processor on a callback."""
         processor = MockConversationCallbackProcessor(
-            name='test_processor', config={'key': 'value'}
+            name="test_processor", config={"key": "value"}
         )
 
         callback = ConversationCallback(
@@ -129,18 +127,18 @@ class TestConversationCallback:
 
         assert (
             callback.processor_type
-            == 'enterprise.tests.unit.test_conversation_callback_processor.MockConversationCallbackProcessor'
+            == "enterprise.tests.unit.test_conversation_callback_processor.MockConversationCallbackProcessor"
         )
 
         # Verify the JSON contains the processor data
         processor_data = json.loads(callback.processor_json)
-        assert processor_data['name'] == 'test_processor'
-        assert processor_data['config'] == {'key': 'value'}
+        assert processor_data["name"] == "test_processor"
+        assert processor_data["config"] == {"key": "value"}
 
     def test_get_processor(self, conversation_metadata, session_maker):
         """Test getting a processor from a callback."""
         processor = MockConversationCallbackProcessor(
-            name='test_processor', config={'key': 'value'}
+            name="test_processor", config={"key": "value"}
         )
 
         callback = ConversationCallback(
@@ -152,14 +150,14 @@ class TestConversationCallback:
         retrieved_processor = callback.get_processor()
 
         assert isinstance(retrieved_processor, MockConversationCallbackProcessor)
-        assert retrieved_processor.name == 'test_processor'
-        assert retrieved_processor.config == {'key': 'value'}
+        assert retrieved_processor.name == "test_processor"
+        assert retrieved_processor.config == {"key": "value"}
 
     def test_callback_status_enum(self):
         """Test the CallbackStatus enum."""
-        assert CallbackStatus.ACTIVE.value == 'ACTIVE'
-        assert CallbackStatus.COMPLETED.value == 'COMPLETED'
-        assert CallbackStatus.ERROR.value == 'ERROR'
+        assert CallbackStatus.ACTIVE.value == "ACTIVE"
+        assert CallbackStatus.COMPLETED.value == "COMPLETED"
+        assert CallbackStatus.ERROR.value == "ERROR"
 
     def test_callback_foreign_key_constraint(
         self, conversation_metadata, session_maker
@@ -169,8 +167,8 @@ class TestConversationCallback:
             # This should work with valid conversation_id
             callback = ConversationCallback(
                 conversation_id=conversation_metadata.conversation_id,
-                processor_type='test.Processor',
-                processor_json='{}',
+                processor_type="test.Processor",
+                processor_json="{}",
             )
             session.add(callback)
             session.commit()

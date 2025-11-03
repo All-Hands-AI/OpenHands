@@ -2,9 +2,11 @@
 
 import os
 from typing import Any
+
+from openhands.sdk import LLM
 from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
 from openhands.tools.preset import get_default_agent
-from openhands.sdk import LLM
+
 
 def get_llm_metadata(
     model_name: str,
@@ -25,7 +27,7 @@ def get_llm_metadata(
         Dictionary containing metadata for LLM initialization
     """
     # Import here to avoid circular imports
-    openhands_sdk_version: str = 'n/a'
+    openhands_sdk_version: str = "n/a"
     try:
         import openhands.sdk
 
@@ -33,7 +35,7 @@ def get_llm_metadata(
     except (ModuleNotFoundError, AttributeError):
         pass
 
-    openhands_tools_version: str = 'n/a'
+    openhands_tools_version: str = "n/a"
     try:
         import openhands.tools
 
@@ -42,35 +44,26 @@ def get_llm_metadata(
         pass
 
     metadata = {
-        'trace_version': openhands_sdk_version,
-        'tags': [
-            'app:openhands',
-            f'model:{model_name}',
-            f'type:{llm_type}',
-            f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
-            f'openhands_sdk_version:{openhands_sdk_version}',
-            f'openhands_tools_version:{openhands_tools_version}',
+        "trace_version": openhands_sdk_version,
+        "tags": [
+            "app:openhands",
+            f"model:{model_name}",
+            f"type:{llm_type}",
+            f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
+            f"openhands_sdk_version:{openhands_sdk_version}",
+            f"openhands_tools_version:{openhands_tools_version}",
         ],
     }
     if session_id is not None:
-        metadata['session_id'] = session_id
+        metadata["session_id"] = session_id
     if user_id is not None:
-        metadata['trace_user_id'] = user_id
+        metadata["trace_user_id"] = user_id
     return metadata
 
 
-def get_default_cli_agent(
-    llm: LLM
-):
-    agent = get_default_agent(
-        llm=llm,
-        cli_mode=True
-    )
+def get_default_cli_agent(llm: LLM):
+    agent = get_default_agent(llm=llm, cli_mode=True)
 
-    agent = agent.model_copy(
-        update={
-            'security_analyzer': LLMSecurityAnalyzer()
-        }
-    )
-    
+    agent = agent.model_copy(update={"security_analyzer": LLMSecurityAnalyzer()})
+
     return agent

@@ -1,7 +1,5 @@
 # mypy: disable-error-code="unreachable"
-"""
-Tests for the GitLab resolver.
-"""
+"""Tests for the GitLab resolver."""
 
 import hashlib
 import json
@@ -13,9 +11,9 @@ from server.routes.integration.gitlab import gitlab_events
 
 
 @pytest.mark.asyncio
-@patch('server.routes.integration.gitlab.verify_gitlab_signature')
-@patch('server.routes.integration.gitlab.gitlab_manager')
-@patch('server.routes.integration.gitlab.sio')
+@patch("server.routes.integration.gitlab.verify_gitlab_signature")
+@patch("server.routes.integration.gitlab.gitlab_manager")
+@patch("server.routes.integration.gitlab.sio")
 async def test_gitlab_events_deduplication_with_object_id(
     mock_sio, mock_gitlab_manager, mock_verify_signature
 ):
@@ -33,11 +31,11 @@ async def test_gitlab_events_deduplication_with_object_id(
 
     # Create a mock request with a payload containing object_attributes.id
     payload = {
-        'object_kind': 'note',
-        'object_attributes': {
-            'discussion_id': 'test_discussion_id',
-            'note': '@openhands help me with this',
-            'id': 12345,
+        "object_kind": "note",
+        "object_attributes": {
+            "discussion_id": "test_discussion_id",
+            "note": "@openhands help me with this",
+            "id": 12345,
         },
     }
 
@@ -47,9 +45,9 @@ async def test_gitlab_events_deduplication_with_object_id(
     # Call the endpoint
     response = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the object_attributes.id
@@ -70,9 +68,9 @@ async def test_gitlab_events_deduplication_with_object_id(
     # Call the endpoint again with the same payload
     response = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the object_attributes.id
@@ -84,13 +82,13 @@ async def test_gitlab_events_deduplication_with_object_id(
     assert response.status_code == 200
     # mypy: disable-error-code="unreachable"
     response_body = json.loads(response.body)  # type: ignore
-    assert response_body['message'] == 'Duplicate GitLab event ignored.'
+    assert response_body["message"] == "Duplicate GitLab event ignored."
 
 
 @pytest.mark.asyncio
-@patch('server.routes.integration.gitlab.verify_gitlab_signature')
-@patch('server.routes.integration.gitlab.gitlab_manager')
-@patch('server.routes.integration.gitlab.sio')
+@patch("server.routes.integration.gitlab.verify_gitlab_signature")
+@patch("server.routes.integration.gitlab.gitlab_manager")
+@patch("server.routes.integration.gitlab.sio")
 async def test_gitlab_events_deduplication_without_object_id(
     mock_sio, mock_gitlab_manager, mock_verify_signature
 ):
@@ -108,10 +106,10 @@ async def test_gitlab_events_deduplication_without_object_id(
 
     # Create a mock request with a payload without object_attributes.id
     payload = {
-        'object_kind': 'pipeline',
-        'object_attributes': {
-            'ref': 'main',
-            'status': 'success',
+        "object_kind": "pipeline",
+        "object_attributes": {
+            "ref": "main",
+            "status": "success",
             # No 'id' field
         },
     }
@@ -122,14 +120,14 @@ async def test_gitlab_events_deduplication_without_object_id(
     # Calculate the expected hash
     dedup_json = json.dumps(payload, sort_keys=True)
     expected_hash = hashlib.sha256(dedup_json.encode()).hexdigest()
-    expected_key = f'gitlab_msg: {expected_hash}'  # Note the space after 'gitlab_msg:'
+    expected_key = f"gitlab_msg: {expected_hash}"  # Note the space after 'gitlab_msg:'
 
     # Call the endpoint
     response = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the hash
@@ -150,9 +148,9 @@ async def test_gitlab_events_deduplication_without_object_id(
     # Call the endpoint again with the same payload
     response = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the hash
@@ -164,13 +162,13 @@ async def test_gitlab_events_deduplication_without_object_id(
     assert response.status_code == 200
     # mypy: disable-error-code="unreachable"
     response_body = json.loads(response.body)  # type: ignore
-    assert response_body['message'] == 'Duplicate GitLab event ignored.'
+    assert response_body["message"] == "Duplicate GitLab event ignored."
 
 
 @pytest.mark.asyncio
-@patch('server.routes.integration.gitlab.verify_gitlab_signature')
-@patch('server.routes.integration.gitlab.gitlab_manager')
-@patch('server.routes.integration.gitlab.sio')
+@patch("server.routes.integration.gitlab.verify_gitlab_signature")
+@patch("server.routes.integration.gitlab.gitlab_manager")
+@patch("server.routes.integration.gitlab.sio")
 async def test_gitlab_events_different_payloads_not_deduplicated(
     mock_sio, mock_gitlab_manager, mock_verify_signature
 ):
@@ -186,8 +184,8 @@ async def test_gitlab_events_different_payloads_not_deduplicated(
 
     # First payload with ID 123
     payload1 = {
-        'object_kind': 'issue',
-        'object_attributes': {'id': 123, 'title': 'Test Issue', 'action': 'open'},
+        "object_kind": "issue",
+        "object_attributes": {"id": 123, "title": "Test Issue", "action": "open"},
     }
 
     mock_request1 = MagicMock()
@@ -196,9 +194,9 @@ async def test_gitlab_events_different_payloads_not_deduplicated(
     # Call the endpoint with first payload
     response1 = await gitlab_events(
         request=mock_request1,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the first ID
@@ -213,8 +211,8 @@ async def test_gitlab_events_different_payloads_not_deduplicated(
 
     # Second payload with different ID 456
     payload2 = {
-        'object_kind': 'issue',
-        'object_attributes': {'id': 456, 'title': 'Another Issue', 'action': 'open'},
+        "object_kind": "issue",
+        "object_attributes": {"id": 456, "title": "Another Issue", "action": "open"},
     }
 
     mock_request2 = MagicMock()
@@ -223,9 +221,9 @@ async def test_gitlab_events_different_payloads_not_deduplicated(
     # Call the endpoint with second payload
     response2 = await gitlab_events(
         request=mock_request2,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the second ID
@@ -238,9 +236,9 @@ async def test_gitlab_events_different_payloads_not_deduplicated(
 
 
 @pytest.mark.asyncio
-@patch('server.routes.integration.gitlab.verify_gitlab_signature')
-@patch('server.routes.integration.gitlab.gitlab_manager')
-@patch('server.routes.integration.gitlab.sio')
+@patch("server.routes.integration.gitlab.verify_gitlab_signature")
+@patch("server.routes.integration.gitlab.gitlab_manager")
+@patch("server.routes.integration.gitlab.sio")
 async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     mock_sio, mock_gitlab_manager, mock_verify_signature
 ):
@@ -255,12 +253,12 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
 
     # Create a payload with object_attributes.id
     payload = {
-        'object_kind': 'merge_request',
-        'object_attributes': {
-            'id': 789,
-            'title': 'Fix bug',
-            'description': 'This fixes the bug',
-            'state': 'opened',
+        "object_kind": "merge_request",
+        "object_attributes": {
+            "id": 789,
+            "title": "Fix bug",
+            "description": "This fixes the bug",
+            "state": "opened",
         },
     }
 
@@ -273,9 +271,9 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     # Call the endpoint first time
     response1 = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the object_attributes.id
@@ -287,8 +285,8 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     assert isinstance(response1, JSONResponse)
     assert response1.status_code == 200
     assert (
-        json.loads(response1.body)['message']
-        == 'GitLab events endpoint reached successfully.'
+        json.loads(response1.body)["message"]
+        == "GitLab events endpoint reached successfully."
     )
     mock_gitlab_manager.receive_message.reset_mock()
 
@@ -298,9 +296,9 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     # Call the endpoint second time with the same payload
     response2 = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the same object_attributes.id
@@ -313,7 +311,7 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     assert response2.status_code == 200
     # mypy: disable-error-code="unreachable"
     response2_body = json.loads(response2.body)  # type: ignore
-    assert response2_body['message'] == 'Duplicate GitLab event ignored.'
+    assert response2_body["message"] == "Duplicate GitLab event ignored."
 
     # Third request - Redis returns False again (key still exists)
     mock_redis.set.return_value = False
@@ -321,9 +319,9 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     # Call the endpoint third time with the same payload
     response3 = await gitlab_events(
         request=mock_request,
-        x_gitlab_token='test_token',
-        x_openhands_webhook_id='test_webhook_id',
-        x_openhands_user_id='test_user_id',
+        x_gitlab_token="test_token",
+        x_openhands_webhook_id="test_webhook_id",
+        x_openhands_user_id="test_user_id",
     )
 
     # Verify Redis was called to set the key with the same object_attributes.id
@@ -335,4 +333,4 @@ async def test_gitlab_events_multiple_identical_payloads_deduplicated(
     assert response3.status_code == 200
     # mypy: disable-error-code="unreachable"
     response3_body = json.loads(response3.body)  # type: ignore
-    assert response3_body['message'] == 'Duplicate GitLab event ignored.'
+    assert response3_body["message"] == "Duplicate GitLab event ignored."

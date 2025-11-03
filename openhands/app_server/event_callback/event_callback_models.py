@@ -48,7 +48,7 @@ class LoggingCallbackProcessor(EventCallbackProcessor):
         callback: EventCallback,
         event: Event,
     ) -> EventCallbackResult:
-        _logger.info(f'Callback {callback.id} Invoked for event {event}')
+        _logger.info(f"Callback {callback.id} Invoked for event {event}")
         return EventCallbackResult(
             status=EventCallbackResultStatus.SUCCESS,
             event_callback_id=callback.id,
@@ -61,14 +61,14 @@ class CreateEventCallbackRequest(OpenHandsModel):
     conversation_id: OpenHandsUUID | None = Field(
         default=None,
         description=(
-            'Optional filter on the conversation to which this callback applies'
+            "Optional filter on the conversation to which this callback applies"
         ),
     )
     processor: EventCallbackProcessor
     event_kind: EventKind | None = Field(
         default=None,
         description=(
-            'Optional filter on the type of events to which this callback applies'
+            "Optional filter on the type of events to which this callback applies"
         ),
     )
 

@@ -13,13 +13,14 @@ from openhands.integrations.provider import ProviderHandler, ProviderType
 from openhands.sdk.conversation.secret_source import SecretSource, StaticSecret
 from openhands.server.user_auth.user_auth import UserAuth, get_user_auth
 
-USER_AUTH_ATTR = 'user_auth'
+USER_AUTH_ATTR = "user_auth"
 
 
 @dataclass
 class AuthUserContext(UserContext):
     """Interface to old user settings service. Eventually we want to migrate
-    this to use true database asyncio."""
+    this to use true database asyncio.
+    """
 
     user_auth: UserAuth
     _user_info: UserInfo | None = None
@@ -39,7 +40,7 @@ class AuthUserContext(UserContext):
             assert settings is not None
             user_info = UserInfo(
                 id=user_id,
-                **settings.model_dump(context={'expose_secrets': True}),
+                **settings.model_dump(context={"expose_secrets": True}),
             )
             self._user_info = user_info
         return user_info
@@ -79,7 +80,7 @@ class AuthUserContext(UserContext):
         return results
 
 
-USER_ID_ATTR = 'user_id'
+USER_ID_ATTR = "user_id"
 
 
 class AuthUserContextInjector(UserContextInjector):

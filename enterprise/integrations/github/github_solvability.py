@@ -39,13 +39,12 @@ def fetch_github_issue_context(
     Returns:
         A comprehensive string containing the issue/PR context
     """
-
     # Build context string
     context_parts = []
 
     # Add title and body
-    context_parts.append(f'Title: {github_view.title}')
-    context_parts.append(f'Description:\n{github_view.description}')
+    context_parts.append(f"Title: {github_view.title}")
+    context_parts.append(f"Description:\n{github_view.description}")
 
     with Github(user_token) as github_client:
         repo = github_client.get_repo(github_view.full_repo_name)
@@ -55,9 +54,9 @@ def fetch_github_issue_context(
             context_parts.append(f"Labels: {', '.join(labels)}")
 
     for comment in github_view.previous_comments:
-        context_parts.append(f'- {comment.author}: {comment.body}')
+        context_parts.append(f"- {comment.author}: {comment.body}")
 
-    return '\n\n'.join(context_parts)
+    return "\n\n".join(context_parts)
 
 
 async def summarize_issue_solvability(
@@ -80,11 +79,11 @@ async def summarize_issue_solvability(
         asyncio.TimeoutError: If the operation exceeds the specified timeout
     """
     if not ENABLE_SOLVABILITY_ANALYSIS:
-        raise ValueError('Solvability report feature is disabled')
+        raise ValueError("Solvability report feature is disabled")
 
     if github_view.user_info.keycloak_user_id is None:
         raise ValueError(
-            f'[Solvability] No user ID found for user {github_view.user_info.username}'
+            f"[Solvability] No user ID found for user {github_view.user_info.username}"
         )
 
     # Grab the user's information so we can load their LLM configuration
@@ -98,14 +97,14 @@ async def summarize_issue_solvability(
 
     if user_settings is None:
         raise ValueError(
-            f'[Solvability] No user settings found for user ID {github_view.user_info.user_id}'
+            f"[Solvability] No user settings found for user ID {github_view.user_info.user_id}"
         )
 
     # Check if solvability analysis is enabled for this user, exit early if
     # needed
-    if not getattr(user_settings, 'enable_solvability_analysis', False):
+    if not getattr(user_settings, "enable_solvability_analysis", False):
         raise ValueError(
-            f'Solvability analysis disabled for user {github_view.user_info.user_id}'
+            f"Solvability analysis disabled for user {github_view.user_info.user_id}"
         )
 
     try:
@@ -116,19 +115,19 @@ async def summarize_issue_solvability(
         )
     except ValidationError as e:
         raise ValueError(
-            f'[Solvability] Invalid LLM configuration for user {github_view.user_info.user_id}: {str(e)}'
+            f"[Solvability] Invalid LLM configuration for user {github_view.user_info.user_id}: {str(e)}"
         )
 
     # Fetch the full GitHub issue/PR context using the GitHub API
     start_time = time.time()
     issue_context = fetch_github_issue_context(github_view, user_token)
     logger.info(
-        f'[Solvability] Grabbed issue context for {github_view.conversation_id}',
+        f"[Solvability] Grabbed issue context for {github_view.conversation_id}",
         extra={
-            'conversation_id': github_view.conversation_id,
-            'response_latency': time.time() - start_time,
-            'full_repo_name': github_view.full_repo_name,
-            'issue_number': github_view.issue_number,
+            "conversation_id": github_view.conversation_id,
+            "response_latency": time.time() - start_time,
+            "full_repo_name": github_view.full_repo_name,
+            "issue_number": github_view.issue_number,
         },
     )
 
@@ -136,9 +135,9 @@ async def summarize_issue_solvability(
     if isinstance(
         github_view, (GithubIssueComment, GithubPRComment, GithubInlinePRComment)
     ):
-        issue_context += f'\n\nTriggering Comment:\n{github_view.comment_body}'
+        issue_context += f"\n\nTriggering Comment:\n{github_view.comment_body}"
 
-    solvability_classifier = load_classifier('default-classifier')
+    solvability_classifier = load_classifier("default-classifier")
 
     async with asyncio.timeout(timeout):
         solvability_report: SolvabilityReport = await call_sync_from_async(
@@ -148,10 +147,10 @@ async def summarize_issue_solvability(
         )
 
         logger.info(
-            f'[Solvability] Generated report for {github_view.conversation_id}',
+            f"[Solvability] Generated report for {github_view.conversation_id}",
             extra={
-                'conversation_id': github_view.conversation_id,
-                'report': solvability_report.model_dump(exclude=['issue']),
+                "conversation_id": github_view.conversation_id,
+                "report": solvability_report.model_dump(exclude=["issue"]),
             },
         )
 
@@ -166,17 +165,17 @@ async def summarize_issue_solvability(
             lambda: SolvabilitySummary.from_report(
                 solvability_report,
                 llm=llm_registry.get_llm(
-                    service_id='solvability_analysis', config=llm_config
+                    service_id="solvability_analysis", config=llm_config
                 ),
             )
         )
         conversation_stats.save_metrics()
 
         logger.info(
-            f'[Solvability] Generated summary for {github_view.conversation_id}',
+            f"[Solvability] Generated summary for {github_view.conversation_id}",
             extra={
-                'conversation_id': github_view.conversation_id,
-                'summary': solvability_summary.model_dump(exclude=['content']),
+                "conversation_id": github_view.conversation_id,
+                "summary": solvability_summary.model_dump(exclude=["content"]),
             },
         )
 

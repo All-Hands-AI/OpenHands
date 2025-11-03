@@ -3,7 +3,7 @@ from storage.base import Base
 
 
 class JiraDcWorkspace(Base):  # type: ignore
-    __tablename__ = 'jira_dc_workspaces'
+    __tablename__ = "jira_dc_workspaces"
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     admin_user_id = Column(String, nullable=False)
@@ -13,12 +13,12 @@ class JiraDcWorkspace(Base):  # type: ignore
     status = Column(String, nullable=False)
     created_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )
     updated_at = Column(
         DateTime,
-        server_default=text('CURRENT_TIMESTAMP'),
-        onupdate=text('CURRENT_TIMESTAMP'),
+        server_default=text("CURRENT_TIMESTAMP"),
+        onupdate=text("CURRENT_TIMESTAMP"),
         nullable=False,
     )

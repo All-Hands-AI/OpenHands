@@ -21,12 +21,12 @@ def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
             id=AGENT_SERVER_IMAGE,
-            command=['python', '-m', 'openhands.agent_server'],
+            command=["python", "-m", "openhands.agent_server"],
             initial_env={
                 # VSCode disabled for now
-                'OH_ENABLE_VS_CODE': '0',
+                "OH_ENABLE_VS_CODE": "0",
             },
-            working_dir='',
+            working_dir="",
         )
     ]
 
@@ -34,7 +34,7 @@ def get_default_sandbox_specs():
 class ProcessSandboxSpecServiceInjector(SandboxSpecServiceInjector):
     specs: list[SandboxSpecInfo] = Field(
         default_factory=get_default_sandbox_specs,
-        description='Preset list of sandbox specs',
+        description="Preset list of sandbox specs",
     )
 
     async def inject(

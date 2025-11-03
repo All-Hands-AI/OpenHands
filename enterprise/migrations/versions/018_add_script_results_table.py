@@ -11,26 +11,26 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '018'
-down_revision: Union[str, None] = '017'
+revision: str = "018"
+down_revision: Union[str, None] = "017"
 branch_labels: Union[str, sa.Sequence[str], None] = None
 depends_on: Union[str, sa.Sequence[str], None] = None
 
 
 def upgrade() -> None:
     op.create_table(
-        'script_results',
-        sa.Column('id', sa.Integer(), sa.Identity(), nullable=False, primary_key=True),
-        sa.Column('revision', sa.String(), nullable=False, index=True),
-        sa.Column('data', sa.JSON()),
+        "script_results",
+        sa.Column("id", sa.Integer(), sa.Identity(), nullable=False, primary_key=True),
+        sa.Column("revision", sa.String(), nullable=False, index=True),
+        sa.Column("data", sa.JSON()),
         sa.Column(
-            'created_at',
+            "created_at",
             sa.DateTime(),
-            server_default=sa.text('CURRENT_TIMESTAMP'),
+            server_default=sa.text("CURRENT_TIMESTAMP"),
             nullable=False,
         ),
     )
 
 
 def downgrade() -> None:
-    op.drop_table('script_results')
+    op.drop_table("script_results")
