@@ -532,13 +532,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
         )
 
-    async def delete_app_conversation(self, app_conversation: AppConversation) -> bool:
+    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
         """Delete a V1 conversation and all its associated data.
 
         Args:
-            app_conversation: The app conversation object to delete (already fetched).
+            conversation_id: The UUID of the conversation to delete.
         """
-        conversation_id = app_conversation.id
         # Check if we have the required SQL implementation for transactional deletion
         if not isinstance(
             self.app_conversation_info_service, SQLAppConversationInfoService
@@ -550,6 +549,15 @@ class LiveStatusAppConversationService(GitAppConversationService):
             return False
 
         try:
+            # First, fetch the conversation to get the full object needed for agent server deletion
+            app_conversation = await self.get_app_conversation(conversation_id)
+            if not app_conversation:
+                _logger.warning(
+                    f'V1 conversation {conversation_id} not found for deletion',
+                    extra={'conversation_id': str(conversation_id)},
+                )
+                return False
+
             # Delete from agent server if sandbox is running
             await self._delete_from_agent_server(app_conversation)
 
