@@ -120,6 +120,7 @@ class ConversationRunner:
             else:
                 raise Exception('Infinite loop')
 
+
     def _handle_confirmation_request(self) -> UserConfirmation:
         """Handle confirmation request from user.
 
