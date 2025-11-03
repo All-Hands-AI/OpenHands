@@ -63,5 +63,6 @@ class SimpleSignalHandler:
             print_formatted_text(HTML('<red>Received second Ctrl+C. Force killing process...</red>'))
             if self.current_process and self.current_process.is_alive():
                 self.current_process.kill()
-            import os
-            os._exit(1)
+            # Reset the counter so user can continue with new messages
+            self.reset_count()
+            print_formatted_text(HTML('<green>Process stopped. You can continue sending messages.</green>'))

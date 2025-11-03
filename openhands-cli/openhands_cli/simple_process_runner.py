@@ -109,7 +109,13 @@ class SimpleProcessRunner:
                 return False
                 
         except Exception as e:
-            if self.current_process.is_alive():
+            # Check if process was killed by signal handler
+            if self.current_process and not self.current_process.is_alive():
+                # Process was killed, likely by Ctrl+C handler
+                return False
+            
+            # Clean up if process is still alive
+            if self.current_process and self.current_process.is_alive():
                 self.current_process.terminate()
                 self.current_process.join(timeout=2)
                 if self.current_process.is_alive():
