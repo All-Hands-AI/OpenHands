@@ -5,6 +5,7 @@ import os
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Any
 
 import base62
 from fastapi import APIRouter, Depends, status
@@ -26,6 +27,7 @@ from openhands.app_server.config import (
     depends_app_conversation_service,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.conversations.registry import list_conversations
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -95,6 +97,30 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = depends_app_conversation_service()
 app_conversation_info_service_dependency = depends_app_conversation_info_service()
+
+
+def _load_registry_entries() -> dict[str, dict[str, Any]]:
+    entries: dict[str, dict[str, Any]] = {}
+    try:
+        for entry in list_conversations():
+            conv_id = entry.get('id')
+            if conv_id:
+                entries[conv_id] = entry
+    except Exception:
+        return {}
+    return entries
+
+
+def _parse_registry_timestamp(value: str | None) -> datetime:
+    if not value:
+        return datetime.now(timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return datetime.now(timezone.utc)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
 
 
 def _filter_conversations_by_age(
@@ -336,9 +362,16 @@ async def search_conversations(
         created_at__gte=age_filter_date,
     )
 
+    registry_entries = _load_registry_entries()
+    origin_map = {conv_id: data.get('origin') for conv_id, data in registry_entries.items()}
+
     # Convert V1 conversations to ConversationInfo format
     v1_conversations = [
-        _to_conversation_info(app_conv) for app_conv in app_conversation_page.items
+        _to_conversation_info(
+            app_conv,
+            origin=origin_map.get(app_conv.id.hex, 'gui'),
+        )
+        for app_conv in app_conversation_page.items
     ]
 
     # Apply age filter to V0 conversations
@@ -367,6 +400,7 @@ async def search_conversations(
             agent_loop_info=v0_agent_loop_info_by_conversation_id.get(
                 conversation.conversation_id
             ),
+            origin=origin_map.get(conversation.conversation_id),
         )
         for conversation in v0_filtered_results
     )
@@ -396,7 +430,32 @@ async def search_conversations(
     v1_final_filtered = apply_filters(v1_conversations)
 
     # Combine results from both sources
-    all_conversations = v0_final_filtered + v1_final_filtered
+    existing_ids = {
+        conversation.conversation_id for conversation in v0_final_filtered
+    } | {conversation.conversation_id for conversation in v1_final_filtered}
+
+    registry_only_conversations: list[ConversationInfo] = []
+    for conv_id, entry in registry_entries.items():
+        if conv_id in existing_ids:
+            continue
+        if origin_map.get(conv_id) != 'cli':
+            continue
+        created_at = _parse_registry_timestamp(entry.get('timestamp'))
+        title = entry.get('title') or get_default_conversation_title(conv_id)
+        registry_only_conversations.append(
+            ConversationInfo(
+                conversation_id=conv_id,
+                title=title,
+                created_at=created_at,
+                last_updated_at=created_at,
+                status=ConversationStatus.STOPPED,
+                num_connections=0,
+                conversation_version='CLI',
+                origin='cli',
+            )
+        )
+
+    all_conversations = v0_final_filtered + v1_final_filtered + registry_only_conversations
 
     # Sort by created_at descending (most recent first)
     all_conversations.sort(
@@ -432,6 +491,8 @@ async def get_conversation(
     conversation_store: ConversationStore = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfo | None:
+    registry_entries = _load_registry_entries()
+    origin_map = {conv_id: data.get('origin') for conv_id, data in registry_entries.items()}
     try:
         # Shim to add V1 conversations
         try:
@@ -440,7 +501,10 @@ async def get_conversation(
                 conversation_uuid
             )
             if app_conversation:
-                return _to_conversation_info(app_conversation)
+                return _to_conversation_info(
+                    app_conversation,
+                    origin=origin_map.get(app_conversation.id.hex, 'gui'),
+                )
         except (ValueError, TypeError, Exception):
             # Not a V1 conversation or service error
             pass
@@ -454,11 +518,27 @@ async def get_conversation(
         )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
         conversation_info = await _get_conversation_info(
-            metadata, num_connections, agent_loop_info
+            metadata,
+            num_connections,
+            agent_loop_info,
+            origin=origin_map.get(conversation_id),
         )
         return conversation_info
     except FileNotFoundError:
-        return None
+        entry = registry_entries.get(conversation_id)
+        if not entry:
+            return None
+        created_at = _parse_registry_timestamp(entry.get('timestamp'))
+        title = entry.get('title') or get_default_conversation_title(conversation_id)
+        return ConversationInfo(
+            conversation_id=conversation_id,
+            title=title,
+            created_at=created_at,
+            last_updated_at=created_at,
+            status=ConversationStatus.STOPPED,
+            conversation_version='CLI',
+            origin=origin_map.get(conversation_id) or entry.get('origin'),
+        )
 
 
 @app.delete('/conversations/{conversation_id}')
@@ -553,6 +633,7 @@ async def _get_conversation_info(
     conversation: ConversationMetadata,
     num_connections: int,
     agent_loop_info: AgentLoopInfo | None,
+    origin: str | None = None,
 ) -> ConversationInfo | None:
     try:
         title = conversation.title
@@ -573,6 +654,7 @@ async def _get_conversation_info(
             url=agent_loop_info.url if agent_loop_info else None,
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
             pr_number=conversation.pr_number,
+            origin=origin,
         )
     except Exception as e:
         logger.error(
@@ -1122,7 +1204,9 @@ async def get_microagent_management_conversations(
     )
 
 
-def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo:
+def _to_conversation_info(
+    app_conversation: AppConversation, origin: str | None = None
+) -> ConversationInfo:
     """Convert a V1 AppConversation into an old style ConversationInfo"""
     from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 
@@ -1176,4 +1260,5 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
         created_at=app_conversation.created_at,
         pr_number=app_conversation.pr_number,
         conversation_version='V1',
+        origin=origin or 'gui',
     )

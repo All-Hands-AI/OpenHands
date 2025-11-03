@@ -1,7 +1,12 @@
 import uuid
+from datetime import datetime
 
 from prompt_toolkit import HTML, print_formatted_text
 
+from openhands.core.conversations.registry import (
+    add_conversation,
+    write_conversation_stub,
+)
 from openhands.sdk import Agent, BaseConversation, Conversation, Workspace, register_tool
 from openhands.tools.execute_bash import BashTool
 from openhands.tools.file_editor import FileEditorTool
@@ -75,6 +80,21 @@ def setup_conversation(
 
     agent = load_agent_specs(str(conversation_id))
 
+    conv_id_str = str(conversation_id)
+    model_name = getattr(getattr(agent, 'llm', None), 'model', None)
+    session_title = (
+        f'CLI Session - {model_name}' if isinstance(model_name, str) and model_name else None
+    )
+    add_conversation(conv_id_str, origin='cli', title=session_title)
+    write_conversation_stub(
+        conv_id_str,
+        {
+            'origin': 'cli',
+            'title': session_title or 'CLI Session',
+            'updated_at': datetime.now().isoformat(),
+        },
+    )
+
     if not include_security_analyzer:
         # Remove security analyzer from agent spec
         agent = agent.model_copy(
@@ -97,4 +117,3 @@ def setup_conversation(
         HTML(f'<green>✓ Agent initialized with model: {agent.llm.model}</green>')
     )
     return conversation
-

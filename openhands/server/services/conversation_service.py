@@ -1,8 +1,13 @@
 import uuid
+from datetime import datetime
 from types import MappingProxyType
 from typing import Any
 
 from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.conversations.registry import (
+    add_conversation,
+    write_conversation_stub,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
@@ -64,9 +69,40 @@ async def initialize_conversation(
         )
 
         await conversation_store.save_metadata(conversation_metadata)
+        add_conversation(conversation_id, origin='gui', title=conversation_title)
+        write_conversation_stub(
+            conversation_id,
+            {
+                'origin': 'gui',
+                'title': conversation_title,
+                'selected_repository': selected_repository,
+                'selected_branch': selected_branch,
+                'git_provider': getattr(git_provider, 'value', git_provider),
+                'updated_at': datetime.now().isoformat(),
+            },
+        )
         return conversation_metadata
 
     conversation_metadata = await conversation_store.get_metadata(conversation_id)
+    add_conversation(
+        conversation_id,
+        origin='gui',
+        title=conversation_metadata.title or get_default_conversation_title(conversation_id),
+    )
+    write_conversation_stub(
+        conversation_id,
+        {
+            'origin': 'gui',
+            'title': conversation_metadata.title
+            or get_default_conversation_title(conversation_id),
+            'selected_repository': conversation_metadata.selected_repository,
+            'selected_branch': conversation_metadata.selected_branch,
+            'git_provider': getattr(
+                conversation_metadata.git_provider, 'value', conversation_metadata.git_provider
+            ),
+            'updated_at': datetime.now().isoformat(),
+        },
+    )
     return conversation_metadata
 
 
