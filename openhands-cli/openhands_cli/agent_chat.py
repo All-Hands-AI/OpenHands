@@ -17,6 +17,8 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
+from openhands_cli.process_runner import ProcessBasedConversationRunner
+from openhands_cli.signal_handler import ProcessSignalHandler
 from openhands_cli.setup import (
     MissingAgentSpec,
     setup_conversation,
@@ -95,119 +97,180 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     # Track session start time for uptime calculation
     session_start_time = datetime.now()
 
-    # Create conversation runner to handle state machine logic
-    runner = None
+    # Create process-based conversation runner and signal handler
+    process_runner = None
+    signal_handler = ProcessSignalHandler()
     session = get_session_prompter()
 
-    # Main chat loop
-    while True:
-        try:
-            # Get user input
-            user_input = session.prompt(
-                HTML('<gold>> </gold>'),
-                multiline=False,
-            )
+    # Install signal handler for Ctrl+C management
+    signal_handler.install_handler()
 
-            if not user_input.strip():
-                continue
+    try:
+        # Main chat loop
+        while True:
+            try:
+                # Get user input
+                user_input = session.prompt(
+                    HTML('<gold>> </gold>'),
+                    multiline=False,
+                )
 
-            # Handle commands
-            command = user_input.strip().lower()
+                if not user_input.strip():
+                    continue
 
-            message = Message(
-                role='user',
-                content=[TextContent(text=user_input)],
-            )
+                # Handle commands
+                command = user_input.strip().lower()
 
-            if command == '/exit':
+                message = Message(
+                    role='user',
+                    content=[TextContent(text=user_input)],
+                )
+
+                if command == '/exit':
+                    exit_confirmation = exit_session_confirmation()
+                    if exit_confirmation == UserConfirmation.ACCEPT:
+                        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+                        _print_exit_hint(conversation_id)
+                        break
+
+                elif command == '/settings':
+                    # For process-based runner, we can't directly access the conversation
+                    # TODO: Implement settings access through process communication if needed
+                    settings_screen = SettingsScreen(None)
+                    settings_screen.display_settings()
+                    continue
+
+                elif command == '/mcp':
+                    mcp_screen = MCPScreen()
+                    mcp_screen.display_mcp_info(initialized_agent)
+                    continue
+
+                elif command == '/clear':
+                    display_welcome(conversation_id)
+                    continue
+
+                elif command == '/new':
+                    try:
+                        # Stop existing process runner if running
+                        if process_runner:
+                            process_runner.stop()
+                            
+                        # Start a fresh conversation with new process runner
+                        process_runner = ProcessBasedConversationRunner(conversation_id, setup_conversation)
+                        if process_runner.start():
+                            signal_handler.set_conversation_process(process_runner.process)
+                            display_welcome(conversation_id, resume=False)
+                            print_formatted_text(
+                                HTML('<green>✓ Started fresh conversation</green>')
+                            )
+                        else:
+                            print_formatted_text(
+                                HTML('<red>Failed to start fresh conversation</red>')
+                            )
+                            process_runner = None
+                        continue
+                    except Exception as e:
+                        print_formatted_text(
+                            HTML(f'<red>Error starting fresh conversation: {e}</red>')
+                        )
+                        continue
+
+                elif command == '/help':
+                    display_help()
+                    continue
+
+                elif command == '/status':
+                    if process_runner:
+                        status = process_runner.get_status()
+                        if status:
+                            # Display status using the retrieved information
+                            print_formatted_text(HTML(f'<yellow>Agent Status:</yellow> {status.get("agent_status", "Unknown")}'))
+                            print_formatted_text(HTML(f'<yellow>Confirmation Mode:</yellow> {"Enabled" if status.get("confirmation_mode") else "Disabled"}'))
+                            print_formatted_text(HTML(f'<yellow>Process Alive:</yellow> {process_runner.is_alive()}'))
+                        else:
+                            print_formatted_text(HTML('<red>Unable to get conversation status</red>'))
+                    else:
+                        print_formatted_text(HTML('<yellow>No active conversation</yellow>'))
+                    continue
+
+                elif command == '/confirm':
+                    if process_runner:
+                        result = process_runner.toggle_confirmation_mode()
+                        if result:
+                            print_formatted_text(HTML(f'<yellow>{result}</yellow>'))
+                        else:
+                            print_formatted_text(HTML('<red>Failed to toggle confirmation mode</red>'))
+                    else:
+                        print_formatted_text(HTML('<yellow>No active conversation</yellow>'))
+                    continue
+
+                elif command == '/resume':
+                    if not process_runner:
+                        print_formatted_text(
+                            HTML('<yellow>No active conversation running...</yellow>')
+                        )
+                        continue
+
+                    status = process_runner.get_status()
+                    if not status:
+                        print_formatted_text(
+                            HTML('<red>Unable to get conversation status</red>')
+                        )
+                        continue
+                        
+                    agent_status = status.get("agent_status")
+                    if not (
+                        agent_status == AgentExecutionStatus.PAUSED
+                        or agent_status == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                    ):
+                        print_formatted_text(
+                            HTML('<red>No paused conversation to resume...</red>')
+                        )
+                        continue
+
+                    # Resume without new message
+                    if process_runner.resume():
+                        print_formatted_text(HTML('<green>Conversation resumed</green>'))
+                    else:
+                        print_formatted_text(HTML('<red>Failed to resume conversation</red>'))
+                    continue
+
+                # Create process runner if it doesn't exist
+                if not process_runner:
+                    process_runner = ProcessBasedConversationRunner(conversation_id, setup_conversation)
+                    if not process_runner.start():
+                        print_formatted_text(HTML('<red>Failed to start conversation process</red>'))
+                        continue
+                    signal_handler.set_conversation_process(process_runner.process)
+                
+                # Process the message
+                if process_runner.process_message(message):
+                    print()  # Add spacing for successful processing
+                else:
+                    print_formatted_text(HTML('<red>Failed to process message</red>'))
+
+            except KeyboardInterrupt:
+                # KeyboardInterrupt should be handled by the signal handler now
+                # This is a fallback in case the signal handler doesn't catch it
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
                     _print_exit_hint(conversation_id)
                     break
-
-            elif command == '/settings':
-                settings_screen = SettingsScreen(runner.conversation if runner else None)
-                settings_screen.display_settings()
+            except Exception as e:
+                print_formatted_text(HTML(f'<red>Error in chat loop: {e}</red>'))
                 continue
 
-            elif command == '/mcp':
-                mcp_screen = MCPScreen()
-                mcp_screen.display_mcp_info(initialized_agent)
-                continue
+    except KeyboardInterrupt:
+        # Final fallback for KeyboardInterrupt
+        print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
+        _print_exit_hint(conversation_id)
 
-            elif command == '/clear':
-                display_welcome(conversation_id)
-                continue
-
-            elif command == '/new':
-                try:
-                    # Start a fresh conversation (no resume ID = new conversation)
-                    conversation = setup_conversation(conversation_id)
-                    runner = ConversationRunner(conversation)
-                    display_welcome(conversation_id, resume=False)
-                    print_formatted_text(
-                        HTML('<green>✓ Started fresh conversation</green>')
-                    )
-                    continue
-                except Exception as e:
-                    print_formatted_text(
-                        HTML(f'<red>Error starting fresh conversation: {e}</red>')
-                    )
-                    continue
-
-            elif command == '/help':
-                display_help()
-                continue
-
-            elif command == '/status':
-                display_status(conversation, session_start_time=session_start_time)
-                continue
-
-            elif command == '/confirm':
-                runner.toggle_confirmation_mode()
-                new_status = (
-                    'enabled' if runner.is_confirmation_mode_active else 'disabled'
-                )
-                print_formatted_text(
-                    HTML(f'<yellow>Confirmation mode {new_status}</yellow>')
-                )
-                continue
-
-            elif command == '/resume':
-                if not runner:
-                    print_formatted_text(
-                        HTML('<yellow>No active conversation running...</yellow>')
-                    )
-                    continue
-
-                conversation = runner.conversation
-                if not (
-                    conversation.state.agent_status == AgentExecutionStatus.PAUSED
-                    or conversation.state.agent_status
-                    == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
-                ):
-                    print_formatted_text(
-                        HTML('<red>No paused conversation to resume...</red>')
-                    )
-                    continue
-
-                # Resume without new message
-                message = None
-
-            if not runner:
-                conversation = setup_conversation(conversation_id)
-                runner = ConversationRunner(conversation)
-            runner.process_message(message)
-
-            print()  # Add spacing
-
-        except KeyboardInterrupt:
-            exit_confirmation = exit_session_confirmation()
-            if exit_confirmation == UserConfirmation.ACCEPT:
-                print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
-                _print_exit_hint(conversation_id)
-                break
-
-    # Clean up terminal state
-    _restore_tty()
+    finally:
+        # Clean up resources
+        if process_runner:
+            process_runner.stop()
+        signal_handler.uninstall_handler()
+        
+        # Clean up terminal state
+        _restore_tty()

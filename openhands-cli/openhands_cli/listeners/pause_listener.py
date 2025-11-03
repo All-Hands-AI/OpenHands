@@ -31,8 +31,9 @@ class PauseListener(threading.Thread):
 
         for key_press in self._input.read_keys():
             pause_detected = pause_detected or key_press.key == Keys.ControlP
-            pause_detected = pause_detected or key_press.key == Keys.ControlC
-            pause_detected = pause_detected or key_press.key == Keys.ControlD
+            # Note: Ctrl+C and Ctrl+D are now handled by the signal handler
+            # pause_detected = pause_detected or key_press.key == Keys.ControlC
+            # pause_detected = pause_detected or key_press.key == Keys.ControlD
 
         return pause_detected
 

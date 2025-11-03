@@ -18,6 +18,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.argparsers.main_parser import create_main_parser
+from openhands_cli.signal_handler import SignalHandler
 
 
 def main() -> None:
@@ -30,8 +31,15 @@ def main() -> None:
     parser = create_main_parser()
     args = parser.parse_args()
 
+    # Install basic signal handler for the main process
+    # The agent_chat module will install its own more sophisticated handler
+    signal_handler = SignalHandler()
+    
     try:
         if args.command == 'serve':
+            # For GUI mode, use basic signal handling
+            signal_handler.install()
+            
             # Import gui_launcher only when needed
             from openhands_cli.gui_launcher import launch_gui_server
 
@@ -41,7 +49,7 @@ def main() -> None:
             # Import agent_chat only when needed
             from openhands_cli.agent_chat import run_cli_entry
 
-            # Start agent chat
+            # Start agent chat (it will install its own signal handler)
             run_cli_entry(resume_conversation_id=args.resume)
     except KeyboardInterrupt:
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
@@ -53,6 +61,8 @@ def main() -> None:
 
         traceback.print_exc()
         raise
+    finally:
+        signal_handler.uninstall()
 
 
 if __name__ == '__main__':
