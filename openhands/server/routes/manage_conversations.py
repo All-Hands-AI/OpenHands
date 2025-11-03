@@ -503,13 +503,10 @@ async def get_prompt(
         raise ValueError('Settings not found')
 
     settings_base_url = settings.llm_base_url
-    if settings_base_url not in (None, ''):
-        effective_base_url = settings_base_url
-    else:
-        effective_base_url = get_effective_llm_base_url(
-            settings.llm_model,
-            settings_base_url,
-        )
+    effective_base_url = get_effective_llm_base_url(
+        settings.llm_model,
+        settings_base_url,
+    )
     llm_config = LLMConfig(
         model=settings.llm_model or '',
         api_key=settings.llm_api_key,

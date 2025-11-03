@@ -49,6 +49,10 @@ def get_effective_llm_base_url(
     custom_provider: str | None = None,
 ) -> str | None:
     """Return the runtime LLM base URL with provider-specific overrides."""
-    if is_lemonade_provider(model, custom_provider) and is_running_in_docker():
+    if (
+        base_url in (None, '')
+        and is_lemonade_provider(model, custom_provider)
+        and is_running_in_docker()
+    ):
         return LEMONADE_DOCKER_BASE_URL
     return base_url

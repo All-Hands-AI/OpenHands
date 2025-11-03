@@ -18,16 +18,17 @@ def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsCo
     llm_config.api_key = settings.llm_api_key
     env_base_url = os.environ.get('LLM_BASE_URL')
     settings_base_url = settings.llm_base_url
-    if env_base_url not in (None, ''):
-        llm_config.base_url = env_base_url
-    elif settings_base_url not in (None, ''):
-        llm_config.base_url = settings_base_url
-    else:
-        llm_config.base_url = get_effective_llm_base_url(
-            llm_config.model,
-            settings_base_url,
-            llm_config.custom_llm_provider,
-        )
+
+    # Use env_base_url if available, otherwise fall back to settings_base_url
+    base_url_to_use = (
+        env_base_url if env_base_url not in (None, '') else settings_base_url
+    )
+
+    llm_config.base_url = get_effective_llm_base_url(
+        llm_config.model,
+        base_url_to_use,
+        llm_config.custom_llm_provider,
+    )
     config.set_llm_config(llm_config)
     return config
 

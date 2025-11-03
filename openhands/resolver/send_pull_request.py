@@ -710,13 +710,10 @@ def main() -> None:
     api_key = my_args.llm_api_key or os.environ['LLM_API_KEY']
     model_name = my_args.llm_model or os.environ['LLM_MODEL']
     base_url = my_args.llm_base_url or os.environ.get('LLM_BASE_URL')
-    if base_url not in (None, ''):
-        resolved_base_url = base_url
-    else:
-        resolved_base_url = get_effective_llm_base_url(
-            model_name,
-            base_url,
-        )
+    resolved_base_url = get_effective_llm_base_url(
+        model_name,
+        base_url,
+    )
     llm_config = LLMConfig(
         model=model_name,
         api_key=SecretStr(api_key) if api_key else None,

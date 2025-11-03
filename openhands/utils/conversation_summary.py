@@ -116,13 +116,10 @@ async def auto_generate_title(
                 if settings and settings.llm_model:
                     # Create LLM config from settings
                     settings_base_url = settings.llm_base_url
-                    if settings_base_url not in (None, ''):
-                        effective_base_url = settings_base_url
-                    else:
-                        effective_base_url = get_effective_llm_base_url(
-                            settings.llm_model,
-                            settings_base_url,
-                        )
+                    effective_base_url = get_effective_llm_base_url(
+                        settings.llm_model,
+                        settings_base_url,
+                    )
                     llm_config = LLMConfig(
                         model=settings.llm_model,
                         api_key=settings.llm_api_key,
