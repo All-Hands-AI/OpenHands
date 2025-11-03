@@ -102,8 +102,11 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     signal_handler.install()
     session = get_session_prompter()
     
+    # Set up conversation
+    conversation = setup_conversation(conversation_id)
+    
     # Create simple process runner
-    process_runner = SimpleProcessRunner(str(conversation_id), setup_conversation)
+    process_runner = SimpleProcessRunner(conversation)
 
     try:
         # Main chat loop
@@ -157,7 +160,8 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                             
                         # Create fresh conversation with new process runner
                         conversation_id = uuid.uuid4()
-                        process_runner = SimpleProcessRunner(str(conversation_id), setup_conversation)
+                        conversation = setup_conversation(conversation_id)
+                        process_runner = SimpleProcessRunner(conversation)
                         display_welcome(conversation_id, resume=False)
                         print_formatted_text(
                             HTML('<green>✓ Started fresh conversation</green>')
@@ -202,7 +206,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                     # Set the current process for signal handling
                     signal_handler.set_process(process_runner.current_process)
                     
-                    result = process_runner.process_message(user_input)
+                    # Create message object
+                    message = Message(content=[TextContent(text=user_input)])
+                    result = process_runner.process_message(message)
                     print()  # Add spacing for successful processing
                     
                 except Exception as e:
