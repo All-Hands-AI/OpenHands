@@ -219,18 +219,14 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
             except KeyboardInterrupt:
                 # KeyboardInterrupt should be handled by the signal handler now
-                # This is a fallback in case the signal handler doesn't catch it
-                exit_confirmation = exit_session_confirmation()
-                if exit_confirmation == UserConfirmation.ACCEPT:
-                    print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
-                    _print_exit_hint(conversation_id)
-                    break
+                # Just continue the loop - the signal handler manages the process
+                continue
             except Exception as e:
                 print_formatted_text(HTML(f'<red>Error in chat loop: {e}</red>'))
                 continue
 
     except KeyboardInterrupt:
-        # Final fallback for KeyboardInterrupt
+        # Final fallback for KeyboardInterrupt - only exit if we're not in the main loop
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
         _print_exit_hint(conversation_id)
 
