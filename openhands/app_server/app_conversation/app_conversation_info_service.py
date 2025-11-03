@@ -58,13 +58,11 @@ class AppConversationInfoService(ABC):
         )
 
     @abstractmethod
-    async def delete_app_conversation_info(
-        self, app_conversation_info: AppConversationInfo
-    ) -> bool:
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
         """Delete a conversation info from the database.
 
         Args:
-            app_conversation_info: The app conversation info to delete (already fetched).
+            conversation_id: The ID of the conversation to delete.
 
         Returns True if the conversation was deleted successfully, False otherwise.
         """

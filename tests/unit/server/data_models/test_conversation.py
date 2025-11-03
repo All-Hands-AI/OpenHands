@@ -909,6 +909,12 @@ async def test_delete_conversation():
             # Return the mock store from get_instance
             mock_get_instance.return_value = mock_store
 
+            # Create a mock app conversation service
+            mock_app_conversation_service = MagicMock()
+            mock_app_conversation_service.get_app_conversation = AsyncMock(
+                return_value=None
+            )
+
             # Mock the conversation manager
             with patch(
                 'openhands.server.routes.manage_conversations.conversation_manager'
@@ -926,7 +932,9 @@ async def test_delete_conversation():
 
                     # Call delete_conversation
                     result = await delete_conversation(
-                        'some_conversation_id', user_id='12345'
+                        conversation_id='some_conversation_id',
+                        user_id='12345',
+                        app_conversation_service=mock_app_conversation_service,
                     )
 
                     # Verify the result
@@ -998,10 +1006,8 @@ async def test_delete_v1_conversation_success():
         # Verify that get_app_conversation was called
         mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
 
-        # Verify that delete_app_conversation was called with the app_conversation object
-        mock_service.delete_app_conversation.assert_called_once_with(
-            mock_app_conversation
-        )
+        # Verify that delete_app_conversation was called with the conversation ID
+        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
 
 
 @pytest.mark.asyncio
@@ -1223,10 +1229,8 @@ async def test_delete_v1_conversation_with_agent_server():
         # Verify that get_app_conversation was called
         mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
 
-        # Verify that delete_app_conversation was called with the app_conversation object
-        mock_service.delete_app_conversation.assert_called_once_with(
-            mock_app_conversation
-        )
+        # Verify that delete_app_conversation was called with the conversation ID
+        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
 
 
 @pytest.mark.asyncio

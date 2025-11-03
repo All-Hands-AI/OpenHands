@@ -375,23 +375,31 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             value = value.replace(tzinfo=UTC)
         return value
 
-    async def delete_app_conversation_info(
-        self, app_conversation_info: AppConversationInfo
-    ) -> bool:
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
         """Delete a conversation info from the database.
 
         Args:
-            app_conversation_info: The app conversation info to delete (already fetched).
+            conversation_id: The ID of the conversation to delete.
+
+        Returns True if the conversation was deleted successfully, False otherwise.
         """
         from sqlalchemy import delete
 
-        conversation_id = app_conversation_info.id
-        # No need to refetch - we already have the conversation info.
-        # Delete the conversation metadata directly using the provided info.
+        # Build secure delete query with user context filtering
         delete_query = delete(StoredConversationMetadata).where(
             StoredConversationMetadata.conversation_id == str(conversation_id)
         )
+
+        # Apply user security filtering - only allow deletion of conversations owned by the current user
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            delete_query = delete_query.where(
+                StoredConversationMetadata.user_id == user_id
+            )
+
+        # Execute the secure delete query
         result = await self.db_session.execute(delete_query)
+        await self.db_session.commit()
 
         return result.rowcount > 0
 

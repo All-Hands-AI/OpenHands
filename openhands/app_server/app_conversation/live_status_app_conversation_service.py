@@ -610,11 +610,11 @@ class LiveStatusAppConversationService(GitAppConversationService):
         # No need for explicit transaction management here
         deleted_info = (
             await self.app_conversation_info_service.delete_app_conversation_info(
-                app_conversation_info
+                app_conversation_info.id
             )
         )
         deleted_tasks = await self.app_conversation_start_task_service.delete_app_conversation_start_tasks(
-            app_conversation_info
+            app_conversation_info.id
         )
 
         return deleted_info or deleted_tasks
