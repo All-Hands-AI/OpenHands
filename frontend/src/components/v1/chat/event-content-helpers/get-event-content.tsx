@@ -134,9 +134,16 @@ const getObservationEventTitle = (event: OpenHandsEvent): React.ReactNode => {
     case "BrowserObservation":
       observationKey = "OBSERVATION_MESSAGE$BROWSE";
       break;
-    case "TaskTrackerObservation":
-      observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING";
+    case "TaskTrackerObservation": {
+      const { command } = event.observation;
+      if (command === "plan") {
+        observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING_PLAN";
+      } else {
+        // command === "view"
+        observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING_VIEW";
+      }
       break;
+    }
     default:
       // For unknown observations, use the type name
       return observationType.replace("Observation", "").toUpperCase();
