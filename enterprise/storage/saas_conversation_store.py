@@ -55,6 +55,7 @@ class SaasConversationStore(ConversationStore):
             .filter(StoredConversationMetadataSaas.user_id == UUID(self.user_id))
             .filter(StoredConversationMetadataSaas.org_id == self.org_id)
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
+            .filter(StoredConversationMetadata.conversation_version == 'V0')
         )
 
     def _to_external_model(self, conversation_metadata: StoredConversationMetadata):
@@ -190,6 +191,7 @@ class SaasConversationStore(ConversationStore):
                         StoredConversationMetadataSaas.user_id == UUID(self.user_id)
                     )
                     .filter(StoredConversationMetadataSaas.org_id == self.org_id)
+                    .filter(StoredConversationMetadata.conversation_version == 'V0')
                     .order_by(StoredConversationMetadata.created_at.desc())
                     .offset(offset)
                     .limit(limit + 1)
