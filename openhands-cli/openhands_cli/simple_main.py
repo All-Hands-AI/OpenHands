@@ -18,7 +18,7 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.argparsers.main_parser import create_main_parser
-from openhands_cli.signal_handler import SignalHandler
+from openhands_cli.simple_signal_handler import SimpleSignalHandler
 
 
 def main() -> None:
@@ -33,7 +33,7 @@ def main() -> None:
 
     # Install basic signal handler for the main process
     # The agent_chat module will install its own more sophisticated handler
-    signal_handler = SignalHandler()
+    signal_handler = SimpleSignalHandler()
     
     try:
         if args.command == 'serve':
