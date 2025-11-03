@@ -207,7 +207,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                     signal_handler.set_process(process_runner.current_process)
                     
                     # Create message object
-                    message = Message(content=[TextContent(text=user_input)])
+                    message = Message(role='user', content=[TextContent(text=user_input)])
                     result = process_runner.process_message(message)
                     print()  # Add spacing for successful processing
                     
