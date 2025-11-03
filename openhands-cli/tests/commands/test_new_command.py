@@ -97,7 +97,9 @@ def test_new_command_resets_confirmation_mode(
 
         from openhands_cli.agent_chat import run_cli_entry
 
-        # Trigger /new, then send a message to trigger runner creation, then /exit (exit will be auto-accepted)
+        # Trigger /new
+        # First user message should trigger runner creation
+        # Then /exit (exit will be auto-accepted)
         for ch in "/new\rhello\r/exit\r":
             pipe.send_text(ch)
 
