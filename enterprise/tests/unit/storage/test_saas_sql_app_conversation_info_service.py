@@ -4,22 +4,118 @@ This module tests the SAAS implementation of SQLAppConversationInfoService,
 focusing on user isolation, SAAS metadata handling, and multi-tenant functionality.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timezone
+from typing import AsyncGenerator
+from unittest.mock import AsyncMock, MagicMock
 from uuid import UUID, uuid4
 
 import pytest
-
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
 )
 from openhands.app_server.user.specifiy_user_context import SpecifyUserContext
+from openhands.app_server.utils.sql_utils import Base
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import StaticPool
 
 # Import the SAAS service
 from enterprise.storage.saas_app_conversation_info_injector import (
     SaasSQLAppConversationInfoService,
 )
+
+
+@pytest.fixture
+async def async_engine():
+    """Create an async SQLite engine for testing."""
+    engine = create_async_engine(
+        'sqlite+aiosqlite:///:memory:',
+        poolclass=StaticPool,
+        connect_args={'check_same_thread': False},
+        echo=False,
+    )
+
+    # Create all tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    yield engine
+
+    await engine.dispose()
+
+
+@pytest.fixture
+async def async_session(async_engine) -> AsyncGenerator[AsyncSession, None]:
+    """Create an async session for testing."""
+    async_session_maker = async_sessionmaker(
+        async_engine, class_=AsyncSession, expire_on_commit=False
+    )
+
+    async with async_session_maker() as db_session:
+        yield db_session
+
+
+@pytest.fixture
+def service(async_session) -> SaasSQLAppConversationInfoService:
+    """Create a SQLAppConversationInfoService instance for testing."""
+    return SaasSQLAppConversationInfoService(
+        db_session=async_session, user_context=SpecifyUserContext(user_id=None)
+    )
+
+
+@pytest.fixture
+def service_with_user(async_session) -> SaasSQLAppConversationInfoService:
+    """Create a SQLAppConversationInfoService instance with a user_id for testing."""
+    return SaasSQLAppConversationInfoService(
+        db_session=async_session,
+        user_context=SpecifyUserContext(user_id='11111111-1111-1111-1111-111111111111'),
+    )
+
+
+@pytest.fixture
+def sample_conversation_info() -> AppConversationInfo:
+    """Create a sample AppConversationInfo for testing."""
+    return AppConversationInfo(
+        id=uuid4(),
+        created_by_user_id='11111111-1111-1111-1111-111111111111',
+        sandbox_id='sandbox_123',
+        selected_repository='https://github.com/test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        title='Test Conversation',
+        trigger=ConversationTrigger.GUI,
+        pr_number=[123, 456],
+        llm_model='gpt-4',
+        metrics=None,
+        created_at=datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc),
+        updated_at=datetime(2024, 1, 1, 12, 30, 0, tzinfo=timezone.utc),
+    )
+
+
+@pytest.fixture
+def multiple_conversation_infos() -> list[AppConversationInfo]:
+    """Create multiple AppConversationInfo instances for testing."""
+    base_time = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+
+    return [
+        AppConversationInfo(
+            id=uuid4(),
+            created_by_user_id=None,
+            sandbox_id=f'sandbox_{i}',
+            selected_repository=f'https://github.com/test/repo{i}',
+            selected_branch='main',
+            git_provider=ProviderType.GITHUB,
+            title=f'Test Conversation {i}',
+            trigger=ConversationTrigger.GUI,
+            pr_number=[i * 100],
+            llm_model='gpt-4',
+            metrics=None,
+            created_at=base_time.replace(hour=12 + i),
+            updated_at=base_time.replace(hour=12 + i, minute=30),
+        )
+        for i in range(1, 6)  # Create 5 conversations
+    ]
 
 
 @pytest.fixture
@@ -44,8 +140,7 @@ def user2_context():
 def saas_service_user1(mock_db_session, user1_context):
     """Create a SaasSQLAppConversationInfoService instance for user1."""
     return SaasSQLAppConversationInfoService(
-        db_session=mock_db_session,
-        user_context=user1_context
+        db_session=mock_db_session, user_context=user1_context
     )
 
 
@@ -53,8 +148,7 @@ def saas_service_user1(mock_db_session, user1_context):
 def saas_service_user2(mock_db_session, user2_context):
     """Create a SaasSQLAppConversationInfoService instance for user2."""
     return SaasSQLAppConversationInfoService(
-        db_session=mock_db_session,
-        user_context=user2_context
+        db_session=mock_db_session, user_context=user2_context
     )
 
 
@@ -79,7 +173,7 @@ class TestSaasSQLAppConversationInfoService:
         """Test that different service instances have different user contexts."""
         user1_id = await saas_service_user1.user_context.get_user_id()
         user2_id = await saas_service_user2.user_context.get_user_id()
-        
+
         assert user1_id == '11111111-1111-1111-1111-111111111111'
         assert user2_id == '22222222-2222-2222-2222-222222222222'
         assert user1_id != user2_id
@@ -102,8 +196,10 @@ class TestSaasSQLAppConversationInfoService:
     ):
         """Test that _to_info_with_user_id properly sets user_id from SAAS metadata."""
         from storage.stored_conversation_metadata import StoredConversationMetadata
-        from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
-        
+        from storage.stored_conversation_metadata_saas import (
+            StoredConversationMetadataSaas,
+        )
+
         # Create mock metadata objects
         stored_metadata = MagicMock(spec=StoredConversationMetadata)
         stored_metadata.conversation_id = '12345678-1234-5678-1234-567812345678'
@@ -116,6 +212,7 @@ class TestSaasSQLAppConversationInfoService:
         stored_metadata.pr_number = []
         stored_metadata.llm_model = None
         from datetime import datetime, timezone
+
         stored_metadata.created_at = datetime.now(timezone.utc)
         stored_metadata.last_updated_at = datetime.now(timezone.utc)
         stored_metadata.accumulated_cost = 0.0
@@ -128,14 +225,80 @@ class TestSaasSQLAppConversationInfoService:
         stored_metadata.reasoning_tokens = 0
         stored_metadata.context_window = 0
         stored_metadata.per_turn_token = 0
-        
+
         saas_metadata = MagicMock(spec=StoredConversationMetadataSaas)
         saas_metadata.user_id = UUID('11111111-1111-1111-1111-111111111111')
-        
+
         # Test the _to_info_with_user_id method
-        result = saas_service_user1._to_info_with_user_id(stored_metadata, saas_metadata)
-        
+        result = saas_service_user1._to_info_with_user_id(
+            stored_metadata, saas_metadata
+        )
+
         # Verify that the user_id from SAAS metadata is used
         assert result.created_by_user_id == '11111111-1111-1111-1111-111111111111'
         assert result.title == 'Test Conversation'
         assert result.sandbox_id == 'test-sandbox'
+
+    @pytest.mark.asyncio
+    async def test_user_isolation(
+        self,
+        async_session: AsyncSession,
+        multiple_conversation_infos: list[AppConversationInfo],
+    ):
+        """Test that user isolation works correctly."""
+        # Create services for different users
+        user1_service = SaasSQLAppConversationInfoService(
+            db_session=async_session,
+            user_context=SpecifyUserContext(
+                user_id='11111111-1111-1111-1111-111111111111'
+            ),
+        )
+        user2_service = SaasSQLAppConversationInfoService(
+            db_session=async_session,
+            user_context=SpecifyUserContext(
+                user_id='22222222-2222-2222-2222-222222222222'
+            ),
+        )
+
+        # Create conversations for different users
+        user1_info = AppConversationInfo(
+            id=uuid4(),
+            created_by_user_id='11111111-1111-1111-1111-111111111111',
+            sandbox_id='sandbox_user1',
+            title='User 1 Conversation',
+        )
+
+        user2_info = AppConversationInfo(
+            id=uuid4(),
+            created_by_user_id='22222222-2222-2222-2222-222222222222',
+            sandbox_id='sandbox_user2',
+            title='User 2 Conversation',
+        )
+
+        # Save conversations
+        await user1_service.save_app_conversation_info(user1_info)
+        await user2_service.save_app_conversation_info(user2_info)
+
+        # User 1 should only see their conversation
+        user1_page = await user1_service.search_app_conversation_info()
+        assert len(user1_page.items) == 1
+        assert (
+            user1_page.items[0].created_by_user_id
+            == '11111111-1111-1111-1111-111111111111'
+        )
+
+        # User 2 should only see their conversation
+        user2_page = await user2_service.search_app_conversation_info()
+        assert len(user2_page.items) == 1
+        assert (
+            user2_page.items[0].created_by_user_id
+            == '22222222-2222-2222-2222-222222222222'
+        )
+
+        # User 1 should not be able to get user 2's conversation
+        user2_from_user1 = await user1_service.get_app_conversation_info(user2_info.id)
+        assert user2_from_user1 is None
+
+        # User 2 should not be able to get user 1's conversation
+        user1_from_user2 = await user2_service.get_app_conversation_info(user1_info.id)
+        assert user1_from_user2 is None
