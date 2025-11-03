@@ -12,14 +12,28 @@ from openhands.sdk import BaseConversation, Message
 from openhands_cli.runner import ConversationRunner
 
 
-def _run_conversation_in_process(conversation: BaseConversation, message: Optional[Message], result_queue: multiprocessing.Queue):
+def _run_conversation_in_process(conversation_id: str, message_data: Optional[dict], result_queue: multiprocessing.Queue):
     """Run the conversation in a separate process."""
     try:
+        from openhands_cli.setup import setup_conversation
+        from openhands.sdk import Message, TextContent
+        import uuid
+        
+        # Recreate conversation in this process
+        conv_id = uuid.UUID(conversation_id)
+        conversation = setup_conversation(conv_id)
+        
         # Create conversation runner
         runner = ConversationRunner(conversation)
         
-        # Process the message
-        runner.process_message(message)
+        if message_data:
+            # Recreate message from data
+            message = Message(
+                role=message_data['role'],
+                content=[TextContent(text=message_data['content_text'])]
+            )
+            # Process the message
+            runner.process_message(message)
         
         # Put success result in the queue
         result_queue.put(('success', None))
@@ -40,6 +54,7 @@ class SimpleProcessRunner:
             conversation: The conversation instance
         """
         self.conversation = conversation
+        self.conversation_id = str(conversation.conversation_id)
         self.current_process: Optional[multiprocessing.Process] = None
         self.result_queue: Optional[multiprocessing.Queue] = None
         
@@ -58,10 +73,24 @@ class SimpleProcessRunner:
         # Create queue for result
         self.result_queue = multiprocessing.Queue()
         
+        # Prepare message data for serialization
+        message_data = None
+        if message:
+            # Extract text content from the message
+            content_text = ""
+            for content in message.content:
+                if hasattr(content, 'text'):
+                    content_text += content.text
+            
+            message_data = {
+                'role': message.role,
+                'content_text': content_text
+            }
+        
         # Create and start process
         self.current_process = multiprocessing.Process(
             target=_run_conversation_in_process,
-            args=(self.conversation, message, self.result_queue)
+            args=(self.conversation_id, message_data, self.result_queue)
         )
         self.current_process.start()
         
