@@ -1,5 +1,6 @@
 import { ConversationTrigger } from "../open-hands.types";
 import { Provider } from "#/types/settings";
+import { V1SandboxStatus } from "../sandbox-service/sandbox-service.types";
 
 // V1 API Types for requests
 // Note: This represents the serialized API format, not the internal TextContent/ImageContent types
@@ -63,13 +64,6 @@ export interface V1AppConversationStartTaskPage {
   items: V1AppConversationStartTask[];
   next_page_id: string | null;
 }
-
-export type V1SandboxStatus =
-  | "MISSING"
-  | "STARTING"
-  | "RUNNING"
-  | "STOPPED"
-  | "PAUSED";
 
 export type V1AgentExecutionStatus =
   | "RUNNING"
