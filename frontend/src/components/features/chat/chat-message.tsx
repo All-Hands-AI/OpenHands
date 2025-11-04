@@ -2,7 +2,6 @@ import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import { remarkSanitizeMentions } from "#/utils/remark-sanitize-mentions";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
@@ -122,18 +121,7 @@ export function ChatMessage({
             a: anchor,
             p: paragraph,
           }}
-          remarkPlugins={[
-            remarkGfm,
-            remarkBreaks,
-            // configurable blocklist via Vite env; fallback to defaults
-            () =>
-              remarkSanitizeMentions({
-                blocklist:
-                  (
-                    import.meta as { env?: { VITE_MENTION_BLOCKLIST?: string } }
-                  ).env?.VITE_MENTION_BLOCKLIST?.split(",") ?? undefined,
-              }),
-          ]}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
         >
           {message}
         </Markdown>
