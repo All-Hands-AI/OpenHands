@@ -149,25 +149,33 @@ class UserStore:
                 status='active',
             )
             session.add(org_member)
+            session.flush()
 
             # Mark the old user_settings as migrated instead of deleting
             user_settings.migration_status = True
 
             # need to migrate conversation metadata
             session.execute(
-                text("""
-                INSERT INTO conversation_metadata_saas (conversation_id, user_id, org_id)
-                SELECT
-                    conversation_id,
-                    CASE
-                        WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-                        THEN user_id::uuid
-                        ELSE gen_random_uuid()
-                    END AS user_id,
-                    COALESCE(org_id, gen_random_uuid()) AS org_id
-                FROM conversation_metadata
-                WHERE user_id IS NOT NULL
-            """)
+                text(
+                    """
+                    INSERT INTO conversation_metadata_saas (conversation_id, user_id, org_id)
+                    SELECT
+                        conversation_id,
+                        new_id,
+                        new_id
+                    FROM (
+                        SELECT
+                            conversation_id,
+                            CASE
+                                WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+                                THEN user_id::uuid
+                                ELSE gen_random_uuid()
+                            END AS new_id
+                        FROM conversation_metadata
+                        WHERE user_id IS NOT NULL
+                    ) AS sub
+                    """
+                )
             )
 
             session.commit()
