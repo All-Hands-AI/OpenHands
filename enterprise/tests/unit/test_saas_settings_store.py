@@ -2,6 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
+from server.constants import LITE_LLM_TEAM_ID, PERSONAL_WORKSPACE_VERSION_TO_MODEL
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
@@ -191,7 +192,9 @@ async def test_update_settings_with_litellm_default(
     assert call_args['json']['teams'] == ['test_team']
     assert call_args['json']['auto_create_key'] is True
     assert call_args['json']['send_invite_email'] is False
-    assert call_args['json']['metadata']['version'] == CURRENT_USER_SETTINGS_VERSION
+    assert (
+        call_args['json']['metadata']['version'] == PERSONAL_WORKSPACE_VERSION_TO_MODEL
+    )
     assert 'model' in call_args['json']['metadata']
 
 
@@ -354,7 +357,9 @@ async def test_create_user_in_lite_llm(settings_store):
     assert call_args['json']['teams'] == [LITE_LLM_TEAM_ID]
     assert call_args['json']['auto_create_key'] is True
     assert call_args['json']['send_invite_email'] is False
-    assert call_args['json']['metadata']['version'] == CURRENT_USER_SETTINGS_VERSION
+    assert (
+        call_args['json']['metadata']['version'] == PERSONAL_WORKSPACE_VERSION_TO_MODEL
+    )
     assert 'model' in call_args['json']['metadata']
 
     # Test with None email
@@ -373,7 +378,9 @@ async def test_create_user_in_lite_llm(settings_store):
     assert call_args['json']['teams'] == [LITE_LLM_TEAM_ID]
     assert call_args['json']['auto_create_key'] is True
     assert call_args['json']['send_invite_email'] is False
-    assert call_args['json']['metadata']['version'] == CURRENT_USER_SETTINGS_VERSION
+    assert (
+        call_args['json']['metadata']['version'] == PERSONAL_WORKSPACE_VERSION_TO_MODEL
+    )
     assert 'model' in call_args['json']['metadata']
 
     # Verify response is returned correctly

@@ -117,20 +117,14 @@ class UserStore:
 
             await migrate_customer(session, keycloak_user_id, org)
 
-            org_kwargs = {
-                c.name: getattr(decrypted_user_settings, c.name)
-                for c in Org.__table__.columns
-                if c.name != 'id' and hasattr(decrypted_user_settings, c.name)
-            }
+            org_kwargs = OrgStore.get_kwargs_from_settings(decrypted_user_settings)
+            org_kwargs.pop('id', None)
             for key, value in org_kwargs.items():
                 if hasattr(org, key):
                     setattr(org, key, value)
 
-            user_kwargs = {
-                c.name: getattr(decrypted_user_settings, c.name)
-                for c in User.__table__.columns
-                if c.name != 'id' and hasattr(decrypted_user_settings, c.name)
-            }
+            user_kwargs = UserStore.get_kwargs_from_settings(decrypted_user_settings)
+            user_kwargs.pop('id', None)
             user = User(
                 id=uuid.UUID(keycloak_user_id),
                 current_org_id=org.id,
