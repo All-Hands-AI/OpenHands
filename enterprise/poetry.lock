@@ -5848,7 +5848,7 @@ subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-ai"
-version = "0.0.0-post.5485+f5ac8ecee"
+version = "0.0.0-post.5490+95b0c0bb7"
 description = "OpenHands: Code Less, Make More"
 optional = false
 python-versions = "^3.12,<3.14"
