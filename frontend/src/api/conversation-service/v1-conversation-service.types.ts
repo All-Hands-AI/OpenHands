@@ -98,3 +98,18 @@ export interface V1AppConversation {
   conversation_url: string | null;
   session_api_key: string | null;
 }
+
+export interface V1ExposedUrl {
+  name: string;
+  url: string;
+}
+
+export interface V1SandboxInfo {
+  id: string;
+  created_by_user_id: string | null;
+  sandbox_spec_id: string;
+  status: V1SandboxStatus;
+  session_api_key: string | null;
+  exposed_urls: V1ExposedUrl[] | null;
+  created_at: string;
+}

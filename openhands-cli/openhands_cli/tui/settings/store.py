@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp.mcp_config import MCPConfig
-from openhands_cli.llm_utils import get_llm_metadata
+from openhands_cli.utils import get_llm_metadata
 from openhands_cli.locations import (
     AGENT_SETTINGS_PATH,
     MCP_CONFIG_FILE,
@@ -45,9 +45,7 @@ class AgentStore:
                 system_message_suffix=f'You current working directory is: {WORK_DIR}',
             )
 
-            additional_mcp_config = self.load_mcp_configuration()
-            mcp_config: dict = agent.mcp_config.copy().get('mcpServers', {})
-            mcp_config.update(additional_mcp_config)
+            mcp_config: dict = self.load_mcp_configuration()
 
             # Update LLM metadata with current information
             agent_llm_metadata = get_llm_metadata(

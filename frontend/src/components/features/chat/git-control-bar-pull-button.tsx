@@ -8,10 +8,12 @@ import { I18nKey } from "#/i18n/declaration";
 
 interface GitControlBarPullButtonProps {
   onSuggestionsClick: (value: string) => void;
+  isConversationReady?: boolean;
 }
 
 export function GitControlBarPullButton({
   onSuggestionsClick,
+  isConversationReady = true,
 }: GitControlBarPullButtonProps) {
   const { t } = useTranslation();
 
@@ -20,7 +22,8 @@ export function GitControlBarPullButton({
 
   const providersAreSet = providers.length > 0;
   const hasRepository = conversation?.selected_repository;
-  const isButtonEnabled = providersAreSet && hasRepository;
+  const isButtonEnabled =
+    providersAreSet && hasRepository && isConversationReady;
 
   const handlePullClick = () => {
     posthog.capture("pull_button_clicked");
