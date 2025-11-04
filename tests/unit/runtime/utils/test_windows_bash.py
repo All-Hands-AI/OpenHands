@@ -169,8 +169,8 @@ def test_command_timeout(windows_bash_session):
     assert abs(duration - test_timeout_sec) < 0.5  # Allow some buffer
 
 
-def test_long_running_command(windows_bash_session):
-    action = CmdRunAction(command='python -u -m http.server 8081')
+def test_long_running_command(windows_bash_session, dynamic_port):
+    action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
     action.set_hard_timeout(1)
     result = windows_bash_session.execute(action)
 
@@ -195,7 +195,7 @@ def test_long_running_command(windows_bash_session):
     assert result.exit_code == 0
 
     # Verify the server is actually stopped by starting another one on the same port
-    action = CmdRunAction(command='python -u -m http.server 8081')
+    action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
     action.set_hard_timeout(1)  # Set a short timeout to check if it starts
     result = windows_bash_session.execute(action)
 
