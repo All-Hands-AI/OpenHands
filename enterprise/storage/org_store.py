@@ -2,7 +2,6 @@
 Store class for managing organizations.
 """
 
-import uuid
 from typing import Optional
 from uuid import UUID
 
@@ -45,7 +44,7 @@ class OrgStore:
             user = (
                 session.query(User)
                 .options(joinedload(User.org_members))
-                .filter(User.id == uuid.UUID(keycloak_user_id))
+                .filter(User.id == UUID(keycloak_user_id))
                 .first()
             )
             if not user:

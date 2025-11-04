@@ -27,7 +27,7 @@ class UserStore:
 
     @staticmethod
     async def create_user(
-        keycloak_user_id: str,
+        user_id: str,
         user_info: dict,
         role_id: Optional[int] = None,
     ) -> User | None:
@@ -35,15 +35,15 @@ class UserStore:
         with session_maker() as session:
             # create personal org
             org = Org(
-                id=uuid.UUID(keycloak_user_id),
-                name=f'user_{keycloak_user_id}_org',
+                id=uuid.UUID(user_id),
+                name=f'user_{user_id}_org',
                 contact_name=user_info['preferred_username'],
                 contact_email=user_info['email'],
             )
             session.add(org)
 
             settings = await UserStore.create_default_settings(
-                org_id=str(org.id), keycloak_user_id=keycloak_user_id
+                org_id=str(org.id), user_id=user_id
             )
 
             if not settings:
@@ -56,7 +56,7 @@ class UserStore:
 
             user_kwargs = UserStore.get_kwargs_from_settings(settings)
             user = User(
-                id=uuid.UUID(keycloak_user_id),
+                id=uuid.UUID(user_id),
                 current_org_id=org.id,
                 role_id=role_id,
                 **user_kwargs,
@@ -80,17 +80,17 @@ class UserStore:
 
     @staticmethod
     async def migrate_user(
-        keycloak_user_id: str,
+        user_id: str,
         user_settings: UserSettings,
         user_info: dict,
     ) -> User:
-        if not keycloak_user_id or not user_settings:
+        if not user_id or not user_settings:
             return None
 
         # Check if user is already migrated to prevent double migration
         if user_settings.migration_status is True:
-            logger.warning(f'User {keycloak_user_id} already migrated, skipping')
-            return UserStore.get_user_by_id(keycloak_user_id)
+            logger.warning(f'User {user_id} already migrated, skipping')
+            return UserStore.get_user_by_id(user_id)
         kwargs = decrypt_model(
             [
                 'llm_api_key',
@@ -104,18 +104,18 @@ class UserStore:
         with session_maker() as session:
             # create personal org
             org = Org(
-                id=uuid.UUID(keycloak_user_id),
-                name=f'user_{keycloak_user_id}_org',
+                id=uuid.UUID(user_id),
+                name=f'user_{user_id}_org',
                 contact_name=user_info['preferred_username'],
                 contact_email=user_info['email'],
             )
             session.add(org)
 
             await LiteLlmManager.migrate_entries(
-                str(org.id), keycloak_user_id, decrypted_user_settings
+                str(org.id), user_id, decrypted_user_settings
             )
 
-            await migrate_customer(session, keycloak_user_id, org)
+            await migrate_customer(session, user_id, org)
 
             org_kwargs = OrgStore.get_kwargs_from_settings(decrypted_user_settings)
             org_kwargs.pop('id', None)
@@ -126,7 +126,7 @@ class UserStore:
             user_kwargs = UserStore.get_kwargs_from_settings(decrypted_user_settings)
             user_kwargs.pop('id', None)
             user = User(
-                id=uuid.UUID(keycloak_user_id),
+                id=uuid.UUID(user_id),
                 current_org_id=org.id,
                 role_id=None,
                 **user_kwargs,
@@ -178,13 +178,13 @@ class UserStore:
             return user
 
     @staticmethod
-    def get_user_by_id(keycloak_user_id: str) -> Optional[User]:
+    def get_user_by_id(user_id: str) -> Optional[User]:
         """Get user by Keycloak user ID."""
         with session_maker() as session:
             return (
                 session.query(User)
                 .options(joinedload(User.org_members))
-                .filter(User.id == uuid.UUID(keycloak_user_id))
+                .filter(User.id == uuid.UUID(user_id))
                 .first()
             )
 
@@ -195,12 +195,10 @@ class UserStore:
             return session.query(User).all()
 
     @staticmethod
-    async def create_default_settings(
-        org_id: str, keycloak_user_id: str
-    ) -> Optional[Settings]:
+    async def create_default_settings(org_id: str, user_id: str) -> Optional[Settings]:
         logger.info(
             'UserStore:create_default_settings:start',
-            extra={'org_id': org_id, 'user_id': keycloak_user_id},
+            extra={'org_id': org_id, 'user_id': user_id},
         )
         # You must log in before you get default settings
         if not org_id:
@@ -208,9 +206,7 @@ class UserStore:
 
         settings = Settings(language='en', enable_proactive_conversation_starters=True)
 
-        settings = await LiteLlmManager.create_entries(
-            org_id, keycloak_user_id, settings
-        )
+        settings = await LiteLlmManager.create_entries(org_id, user_id, settings)
         if not settings:
             logger.info(
                 'UserStore:create_default_settings:litellm_create_failed',

@@ -228,6 +228,7 @@ class TestSaasSQLAppConversationInfoService:
 
         saas_metadata = MagicMock(spec=StoredConversationMetadataSaas)
         saas_metadata.user_id = UUID('a1111111-1111-1111-1111-111111111111')
+        saas_metadata.org_id = UUID('a1111111-1111-1111-1111-111111111111')
 
         # Test the _to_info_with_user_id method
         result = saas_service_user1._to_info_with_user_id(
