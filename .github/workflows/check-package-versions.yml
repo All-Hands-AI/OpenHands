@@ -1,0 +1,147 @@
+name: Check Package Versions
+
+# This workflow checks that specific packages in pyproject.toml are using
+# released versions instead of direct commit hashes via the 'rev' field.
+# It specifically checks: openhands-agent-server, openhands-sdk, openhands-tools
+#
+# The CI will:
+# - ❌ FAIL if any of these packages exist as ACTIVE dependencies using commit hashes
+# - ✅ PASS if packages use proper version strings (e.g., "1.0.0a5")
+# - ✅ PASS if packages are only present as commented-out dependencies
+# - ✅ PASS if packages use tags/branches (e.g., rev: "v1.0.0", rev: "main")
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  check-package-versions:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install toml
+
+    - name: Check package versions
+      run: |
+        python3 << 'EOF'
+        import toml
+        import sys
+        import re
+
+        # Load pyproject.toml
+        try:
+            with open('pyproject.toml', 'r') as f:
+                data = toml.load(f)
+        except FileNotFoundError:
+            print("ERROR: pyproject.toml not found in root directory")
+            sys.exit(1)
+        except Exception as e:
+            print(f"ERROR: Failed to parse pyproject.toml: {e}")
+            sys.exit(1)
+
+        # Also read the raw file to check for commented dependencies
+        try:
+            with open('pyproject.toml', 'r') as f:
+                raw_content = f.read()
+        except Exception as e:
+            print(f"ERROR: Failed to read pyproject.toml: {e}")
+            sys.exit(1)
+
+        # Packages to check
+        packages_to_check = [
+            'openhands-agent-server',
+            'openhands-sdk',
+            'openhands-tools'
+        ]
+
+        # Get dependencies section
+        dependencies = data.get('tool', {}).get('poetry', {}).get('dependencies', {})
+
+        if not dependencies:
+            print("ERROR: No dependencies found in pyproject.toml")
+            sys.exit(1)
+
+        print("Checking package versions for direct commit hash usage...")
+        print("=" * 60)
+
+        errors = []
+
+        for package in packages_to_check:
+            print(f"\nChecking package: {package}")
+
+            # Check if package exists as active dependency
+            if package in dependencies:
+                package_config = dependencies[package]
+                print(f"  📦 Found active dependency")
+
+                # Handle different dependency specification formats
+                if isinstance(package_config, str):
+                    # Simple version string (good)
+                    print(f"  ✅ Using version string: {package_config}")
+                elif isinstance(package_config, dict):
+                    # Dictionary format - check for 'rev' key
+                    if 'rev' in package_config:
+                        rev_value = package_config['rev']
+                        # Check if rev looks like a commit hash (40 hex characters)
+                        if re.match(r'^[a-f0-9]{40}$', rev_value):
+                            error_msg = f"  ❌ Package '{package}' is using direct commit hash: {rev_value}"
+                            print(error_msg)
+                            errors.append(error_msg)
+                        elif re.match(r'^[a-f0-9]{7,40}$', rev_value):
+                            # Shorter commit hash (7+ characters)
+                            error_msg = f"  ❌ Package '{package}' is using direct commit hash: {rev_value}"
+                            print(error_msg)
+                            errors.append(error_msg)
+                        else:
+                            # Could be a tag or branch name
+                            print(f"  ⚠️  Package '{package}' is using rev (not a commit hash): {rev_value}")
+                    elif 'version' in package_config:
+                        # Has version key (good)
+                        print(f"  ✅ Using version: {package_config['version']}")
+                    elif 'git' in package_config and 'rev' not in package_config:
+                        # Git dependency without rev (uses default branch)
+                        print(f"  ⚠️  Package '{package}' is using git dependency without pinned version")
+                    else:
+                        print(f"  ✅ Package '{package}' configuration looks good")
+                else:
+                    print(f"  ⚠️  Package '{package}' has unexpected configuration format")
+            else:
+                # Package not found in active dependencies, check if it's commented out
+                commented_pattern = rf'^\s*#{package}\s*='
+                if re.search(commented_pattern, raw_content, re.MULTILINE):
+                    print(f"  💬 Package '{package}' found only as commented dependency - OK")
+                else:
+                    print(f"  ⚠️  Package '{package}' not found in dependencies (neither active nor commented)")
+
+        print("\n" + "=" * 60)
+
+        if errors:
+            print(f"\n❌ FAILED: Found {len(errors)} package(s) using direct commit hashes:")
+            for error in errors:
+                print(error)
+            print("\nPackages should use released versions instead of direct commit hashes.")
+            print("Example of correct format:")
+            print('  openhands-agent-server = "1.0.0a5"')
+            print('  openhands-sdk = "1.0.0a5"')
+            print('  openhands-tools = "1.0.0a5"')
+            print("\nAlternatively, comment out the problematic dependencies:")
+            print('  #openhands-agent-server = { git = "...", rev = "commit-hash" }')
+            sys.exit(1)
+        else:
+            print("✅ SUCCESS: All checked packages are using proper version specifications!")
+            print("   (Active dependencies use proper versions, or packages are commented out)")
+        EOF
