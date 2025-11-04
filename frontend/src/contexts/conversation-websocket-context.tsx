@@ -28,7 +28,7 @@ import {
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
 import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
-import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
+import EventService from "#/api/event-service/event-service.api";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type V1_WebSocketConnectionState =
@@ -211,8 +211,7 @@ export function ConversationWebSocketProvider({
         // Fetch expected event count for history loading detection
         if (conversationId) {
           try {
-            const count =
-              await V1ConversationService.getEventCount(conversationId);
+            const count = await EventService.getEventCount(conversationId);
             setExpectedEventCount(count);
 
             // If no events expected, mark as loaded immediately
