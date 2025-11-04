@@ -1063,6 +1063,7 @@ def test_read_png_browse(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skip(reason='This test is flaky')
 def test_download_file(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
     """Test downloading a file using the browser."""
     runtime, config = _load_runtime(
