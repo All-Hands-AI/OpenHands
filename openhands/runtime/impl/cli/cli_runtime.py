@@ -696,9 +696,9 @@ class CLIRuntime(Runtime):
             Observation: The result of the MCP tool execution
         """
         # Check if we're on Windows - MCP is disabled on Windows
-        if sys.platform == 'win32':
-            self.log('info', 'MCP functionality is disabled on Windows')
-            return ErrorObservation('MCP functionality is not available on Windows')
+        # if sys.platform == 'win32':
+        #     self.log('info', 'MCP functionality is disabled on Windows')
+        #     return ErrorObservation('MCP functionality is not available on Windows')
 
         # Import here to avoid circular imports
 

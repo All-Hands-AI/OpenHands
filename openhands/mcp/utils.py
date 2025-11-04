@@ -249,14 +249,14 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     logger.debug(f'Matching client: {matching_client}')
 
-    await call_tool_mcp_direct(matching_client, action)
+    return await call_tool_mcp_direct(matching_client, action)
 
 
 async def call_tool_mcp_direct(mcp_client: MCPClient, action: MCPAction) -> Observation:
     """Call a tool on an MCP server and return the observation.
 
     Args:
-        mcp_clients: The list of MCP clients to execute the action on
+        mcp_client: The MCP client to execute the action on
         action: The MCP action to execute
 
     Returns:
