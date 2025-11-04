@@ -65,7 +65,7 @@ export interface V1AppConversationStartTaskPage {
   next_page_id: string | null;
 }
 
-export type V1AgentExecutionStatus =
+export type V1ConversationExecutionStatus =
   | "RUNNING"
   | "AWAITING_USER_INPUT"
   | "AWAITING_USER_CONFIRMATION"
@@ -88,7 +88,7 @@ export interface V1AppConversation {
   created_at: string;
   updated_at: string;
   sandbox_status: V1SandboxStatus;
-  agent_status: V1AgentExecutionStatus | null;
+  agent_status: V1ConversationExecutionStatus | null;
   conversation_url: string | null;
   session_api_key: string | null;
 }

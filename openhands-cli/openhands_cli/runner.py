@@ -1,7 +1,7 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import BaseConversation, Message
-from openhands.sdk.conversation.state import AgentExecutionStatus, ConversationState
+from openhands.sdk.conversation.state import ConversationExecutionStatus, ConversationState
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     ConfirmationPolicyBase,
@@ -51,7 +51,7 @@ class ConversationRunner:
 
     def _print_run_status(self) -> None:
         print_formatted_text('')
-        if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
+        if self.conversation.state.execution_status == ConversationExecutionStatus.PAUSED:
             print_formatted_text(
                 HTML(
                     '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
@@ -91,8 +91,8 @@ class ConversationRunner:
     def _run_with_confirmation(self) -> None:
         # If agent was paused, resume with confirmation request
         if (
-            self.conversation.state.agent_status
-            == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+            self.conversation.state.execution_status
+            == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
         ):
             user_confirmation = self._handle_confirmation_request()
             if user_confirmation == UserConfirmation.DEFER:
@@ -106,12 +106,12 @@ class ConversationRunner:
                     break
 
             # In confirmation mode, agent either finishes or waits for user confirmation
-            if self.conversation.state.agent_status == AgentExecutionStatus.FINISHED:
+            if self.conversation.state.execution_status == ConversationExecutionStatus.FINISHED:
                 break
 
             elif (
-                self.conversation.state.agent_status
-                == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                self.conversation.state.execution_status
+                == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
             ):
                 user_confirmation = self._handle_confirmation_request()
                 if user_confirmation == UserConfirmation.DEFER:
