@@ -2,7 +2,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
-from server.constants import LITE_LLM_TEAM_ID, PERSONAL_WORKSPACE_VERSION_TO_MODEL
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.settings import Settings
