@@ -1,0 +1,154 @@
+# OpenHands Autonomous System Configuration
+
+# System behavior mode
+system:
+  mode: daemon  # daemon | cron | event | embedded
+  log_level: INFO  # DEBUG | INFO | WARNING | ERROR
+
+# L1: Perception Layer
+perception:
+  # Which monitors to enable
+  monitors:
+    - git_events        # Monitor git commits, branches, tags
+    - github_events     # Monitor GitHub issues, PRs, comments
+    - file_changes      # Monitor file system changes
+    - health_checks     # Monitor tests, builds, dependencies
+
+  # Check intervals (seconds)
+  intervals:
+    git: 60           # Check git every 60 seconds
+    github: 300       # Check GitHub every 5 minutes (rate limits!)
+    files: 30         # Check files every 30 seconds
+    health: 600       # Check health every 10 minutes
+
+  # Git configuration
+  git:
+    branches_to_watch:  # Empty = watch all branches
+      - main
+      - develop
+
+  # GitHub configuration
+  github:
+    repo_owner: "YOUR_GITHUB_ORG"
+    repo_name: "YOUR_REPO_NAME"
+    bot_username: "openhands"
+
+# L2: Consciousness Core
+consciousness:
+  # Autonomy level: how much the system can do on its own
+  autonomy_level: medium  # low | medium | high
+
+  # Low: High confidence required, most decisions need approval
+  # Medium: Moderate confidence, high-risk needs approval
+  # High: Lower confidence acceptable, few need approval
+
+  # Whether to auto-approve decisions
+  # If false, system will log decisions but wait for approval
+  auto_approve: false
+
+  # Confidence thresholds for different autonomy levels
+  thresholds:
+    low:
+      min_confidence: 0.8
+      requires_approval_threshold: 0.6
+    medium:
+      min_confidence: 0.6
+      requires_approval_threshold: 0.8
+    high:
+      min_confidence: 0.4
+      requires_approval_threshold: 0.9
+
+# L3: Executor
+executor:
+  # Maximum concurrent tasks
+  max_concurrent_tasks: 3
+
+  # Run in sandboxed environment
+  sandbox: true
+
+  # Automatically commit changes
+  auto_commit: true
+
+  # Automatically create pull requests
+  # Recommended: false for first deployment
+  auto_pr: false
+
+  # Maximum retries for failed tasks
+  max_retries: 3
+
+  # OpenHands agent configuration
+  agent:
+    model: "gpt-4"  # or any supported model
+    max_iterations: 50
+    timeout: 3600  # 1 hour
+
+# L4: Memory & Learning
+memory:
+  # Database configuration
+  database: "sqlite:///memory/system.db"
+
+  # Vector database for semantic search (optional)
+  # vector_db: "chroma"  # Uncomment to enable
+
+  # How long to retain experiences
+  retention_days: 365
+
+  # Minimum experiences before generating microagent
+  min_experiences_for_pattern: 5
+
+  # Minimum success rate to generate microagent
+  min_success_rate_for_microagent: 0.7
+
+# L5: Lifecycle Management
+lifecycle:
+  # Health check interval (seconds)
+  health_check_interval: 300  # 5 minutes
+
+  # Resource limits
+  max_memory_mb: 2048       # 2 GB
+  max_cpu_percent: 80.0     # 80%
+
+  # Auto-restart on failure
+  auto_restart: true
+
+  # Self-healing enabled
+  self_healing: true
+
+# Notifications (optional)
+notifications:
+  enabled: false
+
+  # Slack integration
+  slack:
+    webhook_url: ""
+    notify_on:
+      - critical_decisions
+      - failures
+      - achievements
+
+  # Email integration
+  email:
+    smtp_server: ""
+    from_address: ""
+    to_addresses: []
+    notify_on:
+      - critical_decisions
+      - failures
+
+# Security
+security:
+  # Require approval for certain actions
+  require_approval_for:
+    - external_interactions  # GitHub comments, PR creation
+    - dependency_updates
+    - security_fixes  # Even security fixes (for audit)
+
+  # Restrict file access
+  restricted_paths:
+    - ".git/config"
+    - ".env"
+    - "credentials.json"
+
+  # Maximum autonomous PR size
+  max_auto_pr_files: 10
+  max_auto_pr_lines: 500
