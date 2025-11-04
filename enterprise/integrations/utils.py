@@ -555,3 +555,21 @@ def markdown_to_jira_markup(markdown_text: str) -> str:
         # Log the error but don't raise it - return original text as fallback
         print(f'Error converting markdown to Jira markup: {str(e)}')
         return markdown_text or ''
+
+def sanitize_openhands_mentions(text: str) -> str:
+    """Sanitize @OpenHands mentions by inserting zero-width joiner after @.
+
+    This prevents GitHub from making @OpenHands a clickable mention,
+    avoiding self-mention loops and unwanted notifications.
+
+    Args:
+        text: The text to sanitize
+
+    Returns:
+        Text with @OpenHands mentions sanitized (e.g., @OpenHands -> @\u200dOpenHands)
+    """
+    # Pattern to match @OpenHands, @openhands, @OpenHandsAI, etc.
+    # Matches @ followed by OpenHands (case-insensitive) and captures it
+    pattern = r'@([Oo]pen[Hh]ands)'
+    # Replace @OpenHands with @\u200dOpenHands (zero-width joiner after @)
+    return re.sub(pattern, r'@\u200d\1', text)

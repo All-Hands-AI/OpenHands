@@ -21,6 +21,7 @@ from integrations.utils import (
     CONVERSATION_URL,
     HOST_URL,
     OPENHANDS_RESOLVER_TEMPLATES_DIR,
+    sanitize_openhands_mentions
 )
 from jinja2 import Environment, FileSystemLoader
 from pydantic import SecretStr
@@ -33,7 +34,6 @@ from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.async_utils import call_sync_from_async
-
 
 class GithubManager(Manager):
     def __init__(
@@ -191,6 +191,8 @@ class GithubManager(Manager):
             return
 
         outgoing_message = message.message
+
+        outgoing_message = sanitize_openhands_mentions(outgoing_message)
 
         if isinstance(github_view, GithubInlinePRComment):
             with Github(installation_token) as github_client:
