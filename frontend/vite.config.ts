@@ -35,11 +35,9 @@ export default defineConfig(({ mode }) => {
       include: [
         // Pre-bundle ALL dependencies to prevent runtime optimization and page reloads
         // These are discovered during initial app load:
-        "react-redux",
         "posthog-js",
         "@tanstack/react-query",
         "react-hot-toast",
-        "@reduxjs/toolkit",
         "i18next",
         "i18next-http-backend",
         "i18next-browser-languagedetector",
@@ -62,7 +60,7 @@ export default defineConfig(({ mode }) => {
         "react-icons/lu",
         "react-icons/di",
         "react-icons/io5",
-        "react-icons/io",  // Added to prevent runtime optimization
+        "react-icons/io", // Added to prevent runtime optimization
         "@monaco-editor/react",
         "react-textarea-autosize",
         "react-markdown",

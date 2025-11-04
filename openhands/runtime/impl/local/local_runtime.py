@@ -42,6 +42,7 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -79,7 +80,7 @@ def get_user_info() -> tuple[int, str | None]:
 
 
 def check_dependencies(code_repo_path: str, check_browser: bool) -> None:
-    ERROR_MESSAGE = 'Please follow the instructions in https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md to install OpenHands.'
+    ERROR_MESSAGE = 'Please follow the instructions in https://github.com/OpenHands/OpenHands/blob/main/Development.md to install OpenHands.'
     if not os.path.exists(code_repo_path):
         raise ValueError(
             f'Code repo path {code_repo_path} does not exist. ' + ERROR_MESSAGE
@@ -158,7 +159,7 @@ class LocalRuntime(ActionExecutionClient):
 
         logger.warning(
             'Initializing LocalRuntime. WARNING: NO SANDBOX IS USED. '
-            'This is an experimental feature, please report issues to https://github.com/All-Hands-AI/OpenHands/issues. '
+            'This is an experimental feature, please report issues to https://github.com/OpenHands/OpenHands/issues. '
             '`run_as_openhands` will be ignored since the current user will be used to launch the server. '
             'We highly recommend using a sandbox (eg. DockerRuntime) unless you '
             'are running in a controlled environment.\n'
@@ -575,9 +576,8 @@ class LocalRuntime(ActionExecutionClient):
 
         # TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
         runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
-        hostname = os.getenv('HOSTNAME')
-        if runtime_url_pattern and hostname:
-            runtime_id = hostname.split('-')[1]
+        runtime_id = os.getenv('RUNTIME_ID')
+        if runtime_url_pattern and runtime_id:
             runtime_url = runtime_url_pattern.format(runtime_id=runtime_id)
             return runtime_url
 
@@ -586,12 +586,19 @@ class LocalRuntime(ActionExecutionClient):
 
     def _create_url(self, prefix: str, port: int) -> str:
         runtime_url = self.runtime_url
+        logger.debug(f'runtime_url is {runtime_url}')
         if 'localhost' in runtime_url:
             url = f'{self.runtime_url}:{self._vscode_port}'
         else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+            runtime_id = os.getenv('RUNTIME_ID')
+            parsed = urlparse(self.runtime_url)
+            scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
+            path_mode = path.startswith(f'/{runtime_id}') if runtime_id else False
+            if path_mode:
+                url = f'{scheme}://{netloc}/{runtime_id}/{prefix}'
+            else:
+                url = f'{scheme}://{prefix}-{netloc}'
+        logger.debug(f'_create_url url is {url}')
         return url
 
     @property
@@ -754,7 +761,7 @@ def _create_warm_server(
         )
 
         # Wait for the server to be ready
-        session = httpx.Client(timeout=30)
+        session = httpx.Client(timeout=30, verify=httpx_verify_option())
 
         # Use tenacity to retry the connection
         @tenacity.retry(

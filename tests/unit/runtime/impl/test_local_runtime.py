@@ -80,7 +80,7 @@ class TestLocalRuntime:
 
         env_vars = {
             'RUNTIME_URL_PATTERN': 'http://runtime-{runtime_id}.example.com',
-            'HOSTNAME': 'runtime-abc123-xyz',
+            'RUNTIME_ID': 'abc123',
         }
         with patch.dict(os.environ, env_vars, clear=True):
             # Call the actual runtime_url property

@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
+import OpenHandsLogo from "#/assets/branding/openhands-logo.svg?react";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { BrandButton } from "../settings/brand-button";
@@ -9,7 +9,7 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
-import { GetConfigResponse } from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
 import { Provider } from "#/types/settings";
 
 interface AuthModalProps {
@@ -98,7 +98,7 @@ export function AuthModal({
   return (
     <ModalBackdrop>
       <ModalBody className="border border-tertiary">
-        <AllHandsLogo width={68} height={46} />
+        <OpenHandsLogo width={68} height={46} />
         <div className="flex flex-col gap-2 w-full items-center text-center">
           <h1 className="text-2xl font-bold">
             {t(I18nKey.AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER)}
@@ -117,7 +117,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleGitHubAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<GitHubLogo width={20} height={20} />}
                 >
                   {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
@@ -129,7 +129,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleGitLabAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<GitLabLogo width={20} height={20} />}
                 >
                   {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
@@ -141,7 +141,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleBitbucketAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                   startContent={<BitbucketLogo width={20} height={20} />}
                 >
                   {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
@@ -153,7 +153,7 @@ export function AuthModal({
                   type="button"
                   variant="primary"
                   onClick={handleEnterpriseSsoAuth}
-                  className="w-full"
+                  className="w-full font-semibold"
                 >
                   {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
                 </BrandButton>

@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useUpdateConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (variables: { conversationId: string; newTitle: string }) =>
-      OpenHands.updateConversation(variables.conversationId, {
+      ConversationService.updateConversation(variables.conversationId, {
         title: variables.newTitle,
       }),
     onMutate: async (variables) => {
@@ -24,6 +24,13 @@ export const useUpdateConversation = () => {
               ? { ...conv, title: variables.newTitle }
               : conv,
           ),
+      );
+
+      // Also optimistically update the active conversation query
+      queryClient.setQueryData(
+        ["user", "conversation", variables.conversationId],
+        (old: { title: string } | undefined) =>
+          old ? { ...old, title: variables.newTitle } : old,
       );
 
       return { previousConversations };

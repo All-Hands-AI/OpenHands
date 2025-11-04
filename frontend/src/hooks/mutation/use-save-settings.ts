@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import posthog from "posthog-js";
 import { DEFAULT_SETTINGS } from "#/services/settings";
-import OpenHands from "#/api/open-hands";
-import { PostSettings, PostApiSettings } from "#/types/settings";
+import SettingsService from "#/settings-service/settings-service.api";
+import { PostSettings } from "#/types/settings";
+import { PostApiSettings } from "#/settings-service/settings.types";
 import { useSettings } from "../query/use-settings";
 
 const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
@@ -19,6 +20,8 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
         : settings.llm_api_key?.trim() || undefined,
     remote_runtime_resource_factor: settings.REMOTE_RUNTIME_RESOURCE_FACTOR,
     enable_default_condenser: settings.ENABLE_DEFAULT_CONDENSER,
+    condenser_max_size:
+      settings.CONDENSER_MAX_SIZE ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
     enable_sound_notifications: settings.ENABLE_SOUND_NOTIFICATIONS,
     user_consents_to_analytics: settings.user_consents_to_analytics,
     provider_tokens_set: settings.PROVIDER_TOKENS_SET,
@@ -34,7 +37,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
       settings.GIT_USER_EMAIL?.trim() || DEFAULT_SETTINGS.GIT_USER_EMAIL,
   };
 
-  await OpenHands.saveSettings(apiSettings);
+  await SettingsService.saveSettings(apiSettings);
 };
 
 export const useSaveSettings = () => {

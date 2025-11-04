@@ -46,6 +46,8 @@ class LLMConfig(BaseModel):
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Can apply to all reasoning models.
         seed: The seed to use for the LLM.
         safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
+        for_routing: Whether this LLM is used for routing. This is set to True for models used in conjunction with the main LLM in the model routing feature.
+        completion_kwargs: Custom kwargs to pass to litellm.completion.
     """
 
     model: str = Field(default='claude-sonnet-4-20250514')
@@ -91,6 +93,13 @@ class LLMConfig(BaseModel):
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
+    )
+    for_routing: bool = Field(default=False)
+    # The number of correction attempts for the LLM draft editor
+    correct_num: int = Field(default=5)
+    completion_kwargs: dict[str, Any] | None = Field(
+        default=None,
+        description='Custom kwargs to pass to litellm.completion',
     )
 
     model_config = ConfigDict(extra='forbid')
@@ -177,7 +186,7 @@ class LLMConfig(BaseModel):
 
         # Set an API version by default for Azure models
         # Required for newer models.
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
+        # Azure issue: https://github.com/OpenHands/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
             self.api_version = '2024-12-01-preview'
 

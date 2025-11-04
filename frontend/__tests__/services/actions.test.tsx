@@ -5,7 +5,6 @@ import { ActionMessage } from "#/types/message";
 // Mock the store and actions
 const mockDispatch = vi.fn();
 const mockAppendInput = vi.fn();
-const mockAppendJupyterInput = vi.fn();
 
 vi.mock("#/store", () => ({
   default: {
@@ -13,12 +12,20 @@ vi.mock("#/store", () => ({
   },
 }));
 
-vi.mock("#/state/command-slice", () => ({
-  appendInput: mockAppendInput,
+vi.mock("#/state/command-store", () => ({
+  useCommandStore: {
+    getState: () => ({
+      appendInput: mockAppendInput,
+    }),
+  },
 }));
 
-vi.mock("#/state/jupyter-slice", () => ({
-  appendJupyterInput: mockAppendJupyterInput,
+vi.mock("#/state/metrics-slice", () => ({
+  setMetrics: vi.fn(),
+}));
+
+vi.mock("#/state/security-analyzer-slice", () => ({
+  appendSecurityAnalyzerInput: vi.fn(),
 }));
 
 describe("handleActionMessage", () => {
@@ -45,11 +52,11 @@ describe("handleActionMessage", () => {
     handleActionMessage(runAction);
 
     // Check that appendInput was called with the command
-    expect(mockDispatch).toHaveBeenCalledWith(mockAppendInput("ls -la"));
-    expect(mockAppendJupyterInput).not.toHaveBeenCalled();
+    expect(mockAppendInput).toHaveBeenCalledWith("ls -la");
+    expect(mockDispatch).not.toHaveBeenCalled();
   });
 
-  it("should handle RUN_IPYTHON actions by adding input to Jupyter", async () => {
+  it("should handle RUN_IPYTHON actions as no-op (Jupyter removed)", async () => {
     const { handleActionMessage } = await import("#/services/actions");
 
     const ipythonAction: ActionMessage = {
@@ -59,15 +66,15 @@ describe("handleActionMessage", () => {
       args: {
         code: "print('Hello from Jupyter!')",
       },
-      message: "Running Python code interactively: print('Hello from Jupyter!')",
+      message:
+        "Running Python code interactively: print('Hello from Jupyter!')",
       timestamp: "2023-01-01T00:00:00Z",
     };
 
     // Handle the action
     handleActionMessage(ipythonAction);
 
-    // Check that appendJupyterInput was called with the code
-    expect(mockDispatch).toHaveBeenCalledWith(mockAppendJupyterInput("print('Hello from Jupyter!')"));
+    // Jupyter functionality has been removed, so nothing should be called
     expect(mockAppendInput).not.toHaveBeenCalled();
   });
 
@@ -89,7 +96,8 @@ describe("handleActionMessage", () => {
     // Handle the action
     handleActionMessage(hiddenAction);
 
-    // Check that nothing was dispatched
+    // Check that nothing was dispatched or called
     expect(mockDispatch).not.toHaveBeenCalled();
+    expect(mockAppendInput).not.toHaveBeenCalled();
   });
 });

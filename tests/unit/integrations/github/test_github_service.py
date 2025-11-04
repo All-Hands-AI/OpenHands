@@ -24,7 +24,7 @@ async def test_github_service_token_handling():
     assert service.token.get_secret_value() == 'test-token'
 
     # Test headers contain the token correctly
-    headers = await service._get_github_headers()
+    headers = await service._get_headers()
     assert headers['Authorization'] == 'Bearer test-token'
     assert headers['Accept'] == 'application/vnd.github.v3+json'
 
@@ -277,7 +277,7 @@ async def test_github_search_repositories_with_organizations():
         patch.object(service, 'get_user', return_value=mock_user),
         patch.object(
             service,
-            'get_user_organizations',
+            'get_organizations_from_installations',
             return_value=['All-Hands-AI', 'example-org'],
         ),
         patch.object(
@@ -285,7 +285,12 @@ async def test_github_search_repositories_with_organizations():
         ) as mock_request,
     ):
         repositories = await service.search_repositories(
-            query='openhands', per_page=10, sort='stars', order='desc', public=False
+            query='openhands',
+            per_page=10,
+            sort='stars',
+            order='desc',
+            public=False,
+            app_mode=AppMode.SAAS,
         )
 
         # Verify that separate requests were made for user and each organization
@@ -297,7 +302,7 @@ async def test_github_search_repositories_with_organizations():
         # First call should be for user repositories
         user_call = calls[0]
         user_params = user_call[0][1]  # Second argument is params
-        assert user_params['q'] == 'openhands user:testuser'
+        assert user_params['q'] == 'in:name openhands user:testuser'
 
         # Second call should be for first organization
         org1_call = calls[1]
@@ -340,3 +345,93 @@ async def test_github_get_user_organizations_error_handling():
 
         # Should return empty list on error
         assert orgs == []
+
+
+@pytest.mark.asyncio
+async def test_github_service_base_url_configuration():
+    """Test that BASE_URL is correctly configured based on base_domain."""
+    # Test default GitHub.com configuration
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+    assert service.BASE_URL == 'https://api.github.com'
+
+    # Test GitHub Enterprise Server configuration
+    service = GitHubService(
+        user_id=None, token=SecretStr('test-token'), base_domain='github.enterprise.com'
+    )
+    assert service.BASE_URL == 'https://github.enterprise.com/api/v3'
+
+    # Test that github.com base_domain doesn't change the URL
+    service = GitHubService(
+        user_id=None, token=SecretStr('test-token'), base_domain='github.com'
+    )
+    assert service.BASE_URL == 'https://api.github.com'
+
+
+@pytest.mark.asyncio
+async def test_github_service_graphql_url_enterprise_server():
+    """Test that GraphQL URL is correctly constructed for GitHub Enterprise Server."""
+    # Mock httpx.AsyncClient for testing GraphQL calls
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'data': {'viewer': {'login': 'test-user'}}}
+    mock_response.raise_for_status = Mock()
+
+    mock_client = AsyncMock()
+    mock_client.post.return_value = mock_response
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.__aexit__.return_value = None
+
+    with patch('httpx.AsyncClient', return_value=mock_client):
+        # Test GitHub Enterprise Server
+        service = GitHubService(
+            user_id=None,
+            token=SecretStr('test-token'),
+            base_domain='github.enterprise.com',
+        )
+
+        query = 'query { viewer { login } }'
+        variables = {}
+
+        await service.execute_graphql_query(query, variables)
+
+        # Verify the GraphQL request was made to the CORRECT URL
+        # For GitHub Enterprise Server, it should be /api/graphql, not /api/v3/graphql
+        mock_client.post.assert_called_once()
+        call_args = mock_client.post.call_args
+        actual_url = call_args[0][0]  # First positional argument is the URL
+
+        # After the fix, GraphQL URL should be correctly constructed for GitHub Enterprise Server
+        # The URL should be /api/graphql, not /api/v3/graphql
+        assert actual_url == 'https://github.enterprise.com/api/graphql'
+
+
+@pytest.mark.asyncio
+async def test_github_service_graphql_url_github_com():
+    """Test that GraphQL URL is correctly constructed for GitHub.com."""
+    # Mock httpx.AsyncClient for testing GraphQL calls
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'data': {'viewer': {'login': 'test-user'}}}
+    mock_response.raise_for_status = Mock()
+
+    mock_client = AsyncMock()
+    mock_client.post.return_value = mock_response
+    mock_client.__aenter__.return_value = mock_client
+    mock_client.__aexit__.return_value = None
+
+    with patch('httpx.AsyncClient', return_value=mock_client):
+        # Test GitHub.com (should work correctly)
+        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+        query = 'query { viewer { login } }'
+        variables = {}
+
+        await service.execute_graphql_query(query, variables)
+
+        # Verify the GraphQL request was made to the correct URL for GitHub.com
+        mock_client.post.assert_called_once()
+        call_args = mock_client.post.call_args
+        actual_url = call_args[0][0]  # First positional argument is the URL
+
+        # This should be correct for GitHub.com
+        assert actual_url == 'https://api.github.com/graphql'

@@ -4,6 +4,7 @@ import copy
 import json
 import os
 import random
+import shlex
 import shutil
 import string
 import tempfile
@@ -199,6 +200,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.config.security.security_analyzer, SecurityAnalyzer
             )
             self.security_analyzer = analyzer_cls()
+            self.security_analyzer.set_event_stream(self.event_stream)
             logger.debug(
                 f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
             )
@@ -323,9 +325,6 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
         """Refresh runtime provider tokens when agent attemps to run action with provider token"""
-        if not self.user_id:
-            return
-
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
@@ -333,9 +332,24 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
-        env_vars = await self.provider_handler.get_env_vars(
+        provider_handler = ProviderHandler(
+            provider_tokens=self.git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=self.user_id,
+            external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=self.sid,
+        )
+
+        logger.info(
+            f'Fetching latest provider tokens for runtime: {self.sid}, '
+            f'providers: {providers_called}'
+        )
+        env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
+        )
+        logger.info(
+            f'Successfully fetched {len(env_vars)} token(s) for runtime: {self.sid}'
         )
 
         if len(env_vars) == 0:
@@ -343,13 +357,14 @@ class Runtime(FileEditRuntimeMixin):
 
         try:
             if self.event_stream:
-                await self.provider_handler.set_event_stream_secrets(
+                await provider_handler.set_event_stream_secrets(
                     self.event_stream, env_vars=env_vars
                 )
-            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
+            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
-            logger.warning(
-                f'Failed export latest github token to runtime: {self.sid}, {e}'
+            logger.error(
+                f'Failed to export latest github token to runtime: {self.sid}, {e}',
+                exc_info=True,
             )
 
     async def _handle_action(self, event: Action) -> None:
@@ -433,8 +448,12 @@ class Runtime(FileEditRuntimeMixin):
         )
         openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
+        repo_path = self.workspace_root / dir_name
+        quoted_repo_path = shlex.quote(str(repo_path))
+        quoted_remote_repo_url = shlex.quote(remote_repo_url)
+
         # Clone repository command
-        clone_command = f'git clone {remote_repo_url} {dir_name}'
+        clone_command = f'git clone {quoted_remote_repo_url} {quoted_repo_path}'
 
         # Checkout to appropriate branch
         checkout_command = (
@@ -447,11 +466,35 @@ class Runtime(FileEditRuntimeMixin):
         await call_sync_from_async(self.run_action, clone_action)
 
         cd_checkout_action = CmdRunAction(
-            command=f'cd {dir_name} && {checkout_command}'
+            command=f'cd {quoted_repo_path} && {checkout_command}'
         )
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
+
+        if remote_repo_url:
+            set_remote_action = CmdRunAction(
+                command=(
+                    f'cd {quoted_repo_path} && '
+                    f'git remote set-url origin {quoted_remote_repo_url}'
+                )
+            )
+            obs = await call_sync_from_async(self.run_action, set_remote_action)
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                self.log(
+                    'info',
+                    f'Set git remote origin to authenticated URL for {selected_repository}',
+                )
+            else:
+                self.log(
+                    'warning',
+                    (
+                        'Failed to set git remote origin while ensuring fresh token '
+                        f'for {selected_repository}: '
+                        f'{obs.content if isinstance(obs, CmdOutputObservation) else "unknown error"}'
+                    ),
+                )
+
         return dir_name
 
     def maybe_run_setup_script(self):
@@ -733,6 +776,7 @@ fi
                     self.provider_handler.get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
+                    is_optional=True,
                 )
             except AuthenticationError as e:
                 self.log(
@@ -857,7 +901,7 @@ fi
             # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
                 'debug',
-                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
+                f'.openhands_instructions not present, trying to load from repository microagents_dir={microagents_dir}',
             )
             obs = self.read(
                 FileReadAction(path=str(repo_root / '.openhands_instructions'))
@@ -1141,6 +1185,27 @@ fi
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
+
+    def get_workspace_branch(self, primary_repo_path: str | None = None) -> str | None:
+        """
+        Get the current branch of the workspace.
+
+        Args:
+            primary_repo_path: Path to the primary repository within the workspace.
+                              If None, uses the workspace root.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        if primary_repo_path:
+            # Use the primary repository path
+            git_cwd = str(self.workspace_root / primary_repo_path)
+        else:
+            # Use the workspace root
+            git_cwd = str(self.workspace_root)
+
+        self.git_handler.set_cwd(git_cwd)
+        return self.git_handler.get_current_branch()
 
     @property
     def additional_agent_instructions(self) -> str:

@@ -37,7 +37,28 @@ from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
-class Session:
+class WebSession:
+    """Web server-bound session wrapper.
+
+    This was previously named `Session`. We keep `Session` as a compatibility alias
+    (see openhands.server.session.__init__) so downstream imports/tests continue to
+    work. The class manages a single web client connection and orchestrates the
+    AgentSession lifecycle for that conversation.
+
+    Attributes:
+        sid: Stable conversation id across transports.
+        sio: Socket.IO server used to emit events to the web client.
+        last_active_ts: Unix timestamp of last successful send.
+        is_alive: Whether the web connection is still alive.
+        agent_session: Core agent session coordinating runtime/LLM.
+        loop: The asyncio loop associated with the session.
+        config: Effective OpenHands configuration for this conversation.
+        llm_registry: Registry responsible for LLM access and retry hooks.
+        file_store: File storage interface for this conversation.
+        user_id: Optional multi-tenant user identifier.
+        logger: Logger with session context.
+    """
+
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
@@ -89,6 +110,12 @@ class Session:
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
+        self._publish_queue: asyncio.Queue = asyncio.Queue()
+        self._monitor_publish_queue_task: asyncio.Task = self.loop.create_task(
+            self._monitor_publish_queue()
+        )
+        self._wait_websocket_initial_complete: bool = True
+
     async def close(self) -> None:
         if self.sio:
             await self.sio.emit(
@@ -100,6 +127,7 @@ class Session:
             )
         self.is_alive = False
         await self.agent_session.close()
+        self._monitor_publish_queue_task.cancel()
 
     async def initialize_agent(
         self,
@@ -184,6 +212,8 @@ class Session:
 
         # TODO: override other LLM config & agent config groups (#2075)
         agent_config = self.config.get_agent_config(agent_cls)
+        # Pass runtime information to agent config for runtime-specific tool behavior
+        agent_config.runtime = self.config.runtime
         agent_name = agent_cls if agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
         if settings.enable_default_condenser:
@@ -196,12 +226,15 @@ class Session:
             # The order matters: with the browser output first, the summarizer
             # will only see the most recent browser output, which should keep
             # the summarization cost down.
+            max_events_for_condenser = settings.condenser_max_size or 120
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
                     ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm_config, keep_first=4, max_size=120
+                        llm_config=llm_config,
+                        keep_first=4,
+                        max_size=max_events_for_condenser,
                     ),
                 ]
             )
@@ -211,7 +244,7 @@ class Session:
                 f' browser_output_masking(attention_window=2), '
                 f' llm(model="{llm_config.model}", '
                 f' base_url="{llm_config.base_url}", '
-                f' keep_first=4, max_size=80)'
+                f' keep_first=4, max_size={max_events_for_condenser})'
             )
             agent_config.condenser = default_condenser_config
         agent = Agent.get_cls(agent_cls)(agent_config, self.llm_registry)
@@ -338,17 +371,56 @@ class Session:
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> None:
-        if asyncio.get_running_loop() != self.loop:
-            self.loop.create_task(self._send(data))
+        self._publish_queue.put_nowait(data)
+
+    async def _monitor_publish_queue(self):
+        try:
+            while True:
+                data: dict = await self._publish_queue.get()
+                await self._send(data)
+        except asyncio.CancelledError:
             return
-        await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:
             if not self.is_alive:
                 return False
+
+            _start_time = time.time()
+            _waiting_times = 1
+
             if self.sio:
+                # Get timeout from configuration, default to 30 seconds
+                client_wait_timeout = self.config.client_wait_timeout
+                self.logger.debug(
+                    f'Using client wait timeout: {client_wait_timeout}s for session {self.sid}'
+                )
+
+                # Wait once during initialization to avoid event push failures during websocket connection intervals
+                while self._wait_websocket_initial_complete and (
+                    time.time() - _start_time < client_wait_timeout
+                ):
+                    if bool(
+                        self.sio.manager.rooms.get('/', {}).get(
+                            ROOM_KEY.format(sid=self.sid)
+                        )
+                    ):
+                        break
+
+                    # Progressive backoff: start with 0.1s, increase to 1s after 10 attempts
+                    sleep_duration = 0.1 if _waiting_times <= 10 else 1.0
+
+                    # Log every 2 seconds to reduce spam
+                    if _waiting_times % (20 if sleep_duration == 0.1 else 2) == 0:
+                        self.logger.debug(
+                            f'There is no listening client in the current room,'
+                            f' waiting for the {_waiting_times}th attempt (timeout: {client_wait_timeout}s): {self.sid}'
+                        )
+                    _waiting_times += 1
+                    await asyncio.sleep(sleep_duration)
+                self._wait_websocket_initial_complete = False
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
+
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
@@ -390,3 +462,8 @@ class Session:
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, runtime_status, message), self.loop
         )
+
+
+# Backward-compatible alias for external imports that still reference
+# openhands.server.session.session import Session
+Session = WebSession

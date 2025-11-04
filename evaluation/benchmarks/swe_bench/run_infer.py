@@ -44,8 +44,11 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_agent_config_arg,
     get_evaluation_parser,
     get_llm_config_arg,
+    get_llms_for_routing_config,
+    get_model_routing_config_arg,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -214,7 +217,7 @@ def get_config(
     logger.info(
         f'Using instance container image: {base_container_image}. '
         f'Please make sure this image exists. '
-        f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
+        f'Submit an issue on https://github.com/OpenHands/OpenHands if you run into any issues.'
     )
 
     sandbox_config = get_default_sandbox_config_for_eval()
@@ -243,6 +246,11 @@ def get_config(
     # get 'draft_editor' config if exists
     config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
 
+    model_routing_config = get_model_routing_config_arg()
+    model_routing_config.llms_for_routing = (
+        get_llms_for_routing_config()
+    )  # Populate with LLMs for routing from config.toml file
+
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
@@ -250,8 +258,13 @@ def get_config(
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
+        model_routing=model_routing_config,
+        system_prompt_filename=metadata.agent_config.system_prompt_filename
+        if metadata.agent_config
+        else 'system_prompt.j2',
     )
     config.set_agent_config(agent_config)
+
     return config
 
 
@@ -788,7 +801,7 @@ if __name__ == '__main__':
 
     llm_config = None
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        llm_config = get_llm_config_arg(args.llm_config, args.config_file)
         llm_config.log_completions = True
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
@@ -799,7 +812,7 @@ if __name__ == '__main__':
     # Get condenser config from environment variable
     condenser_name = os.environ.get('EVAL_CONDENSER')
     if condenser_name:
-        condenser_config = get_condenser_config_arg(condenser_name)
+        condenser_config = get_condenser_config_arg(condenser_name, args.config_file)
         if condenser_config is None:
             raise ValueError(
                 f'Could not find Condenser config: EVAL_CONDENSER={condenser_name}'
@@ -811,20 +824,25 @@ if __name__ == '__main__':
             'No Condenser config provided via EVAL_CONDENSER, using NoOpCondenser.'
         )
 
+    agent_config = None
+    if args.agent_config:
+        agent_config = get_agent_config_arg(args.agent_config, args.config_file)
+
     details = {'mode': args.mode}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
-    dataset_descrption = (
+    dataset_description = (
         args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     )
     metadata = make_metadata(
         llm_config,
-        dataset_descrption,
+        dataset_description,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        agent_config=agent_config,
         condenser_config=condenser_config,
     )
 

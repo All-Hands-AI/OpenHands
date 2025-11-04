@@ -24,8 +24,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -166,7 +166,8 @@ def load_integration_tests() -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_evaluation_parser()
+    args, _ = parser.parse_known_args()
     integration_tests = load_integration_tests()
 
     llm_config = None
