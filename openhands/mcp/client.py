@@ -31,9 +31,9 @@ class MCPClient(BaseModel):
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
     server_timeout: Optional[float] = None  # Timeout from server config for tool calls
-    server_config: MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig = (
-        None
-    )
+    server_config: (
+        MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig | None
+    ) = None
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""

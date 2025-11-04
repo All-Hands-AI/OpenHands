@@ -26,7 +26,7 @@ class MCPCallHandler:
         sse_servers: list[MCPSSEServerConfig],
         shttp_servers: list[MCPSHTTPServerConfig],
         stdio_servers: list[MCPStdioServerConfig] | None = None,
-    ) -> MCPClient:
+    ) -> MCPClient | None:
         # Import here to avoid circular imports
         from openhands.mcp.utils import create_mcp_clients
 

@@ -472,7 +472,7 @@ class ActionExecutionClient(Runtime):
         # Import here to avoid circular imports
         from openhands.mcp.utils import call_tool_mcp_direct
 
-        mcp_client = self.mcp_call_handler.get_mcp_client(
+        mcp_client = await self.mcp_call_handler.get_mcp_client(
             action, updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers
         )
         # Call the tool and return the result
