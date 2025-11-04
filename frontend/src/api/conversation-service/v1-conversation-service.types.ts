@@ -1,5 +1,6 @@
 import { ConversationTrigger } from "../open-hands.types";
 import { Provider } from "#/types/settings";
+import { V1SandboxStatus } from "../sandbox-service/sandbox-service.types";
 
 // V1 API Types for requests
 // Note: This represents the serialized API format, not the internal TextContent/ImageContent types
@@ -64,13 +65,6 @@ export interface V1AppConversationStartTaskPage {
   next_page_id: string | null;
 }
 
-export type V1SandboxStatus =
-  | "MISSING"
-  | "STARTING"
-  | "RUNNING"
-  | "STOPPED"
-  | "PAUSED";
-
 export type V1AgentExecutionStatus =
   | "RUNNING"
   | "AWAITING_USER_INPUT"
@@ -97,19 +91,4 @@ export interface V1AppConversation {
   agent_status: V1AgentExecutionStatus | null;
   conversation_url: string | null;
   session_api_key: string | null;
-}
-
-export interface V1ExposedUrl {
-  name: string;
-  url: string;
-}
-
-export interface V1SandboxInfo {
-  id: string;
-  created_by_user_id: string | null;
-  sandbox_spec_id: string;
-  status: V1SandboxStatus;
-  session_api_key: string | null;
-  exposed_urls: V1ExposedUrl[] | null;
-  created_at: string;
 }

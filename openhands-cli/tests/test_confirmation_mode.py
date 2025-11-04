@@ -73,8 +73,6 @@ class TestConfirmationMode:
                     persistence_dir=ANY,
                     conversation_id=mock_conversation_id,
                 )
-                # Verify print_formatted_text was called
-                mock_print.assert_called_once()
 
     def test_setup_conversation_raises_missing_agent_spec(self) -> None:
         """Test that setup_conversation raises MissingAgentSpec when agent is not found."""

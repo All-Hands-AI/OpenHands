@@ -47,6 +47,7 @@ from openhands.app_server.utils.sql_utils import Base, UtcDateTime
 
 _logger = logging.getLogger(__name__)
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+ALLOW_CORS_ORIGINS_VARIABLE = 'OH_ALLOW_CORS_ORIGINS_0'
 polling_task: asyncio.Task | None = None
 POD_STATUS_MAPPING = {
     'ready': SandboxStatus.RUNNING,
@@ -128,22 +129,10 @@ class RemoteSandboxService(SandboxService):
                     f'Error getting runtime: {stored.id}', stack_info=True
                 )
 
+        status = self._get_sandbox_status_from_runtime(runtime)
+
+        # Get session_api_key and exposed urls
         if runtime:
-            # Translate status
-            status = None
-            pod_status = runtime['pod_status'].lower()
-            if pod_status:
-                status = POD_STATUS_MAPPING.get(pod_status, None)
-
-            # If we failed to get the status from the pod status, fall back to status
-            if status is None:
-                runtime_status = runtime.get('status')
-                if runtime_status:
-                    status = STATUS_MAPPING.get(runtime_status.lower(), None)
-
-            if status is None:
-                status = SandboxStatus.MISSING
-
             session_api_key = runtime['session_api_key']
             if status == SandboxStatus.RUNNING:
                 exposed_urls = []
@@ -165,7 +154,6 @@ class RemoteSandboxService(SandboxService):
                 exposed_urls = None
         else:
             session_api_key = None
-            status = SandboxStatus.MISSING
             exposed_urls = None
 
         sandbox_spec_id = stored.sandbox_spec_id
@@ -178,6 +166,32 @@ class RemoteSandboxService(SandboxService):
             exposed_urls=exposed_urls,
             created_at=stored.created_at,
         )
+
+    def _get_sandbox_status_from_runtime(
+        self, runtime: dict[str, Any] | None
+    ) -> SandboxStatus:
+        """Derive a SandboxStatus from the runtime info. The legacy logic for getting
+        the status of a runtime is inconsistent. It is divided between a "status" which
+        cannot be trusted (It sometimes returns  "running" for cases when the pod is
+        still starting) and a "pod_status" which is not returned for list
+        operations."""
+        if not runtime:
+            return SandboxStatus.MISSING
+
+        status = None
+        pod_status = runtime['pod_status'].lower()
+        if pod_status:
+            status = POD_STATUS_MAPPING.get(pod_status, None)
+
+        # If we failed to get the status from the pod status, fall back to status
+        if status is None:
+            runtime_status = runtime.get('status')
+            if runtime_status:
+                status = STATUS_MAPPING.get(runtime_status.lower(), None)
+
+        if status is None:
+            return SandboxStatus.MISSING
+        return status
 
     async def _secure_select(self):
         query = select(StoredRemoteSandbox)
@@ -213,6 +227,9 @@ class RemoteSandboxService(SandboxService):
             environment[WEBHOOK_CALLBACK_VARIABLE] = (
                 f'{self.web_url}/api/v1/webhooks/{sandbox_id}'
             )
+            # We specify CORS settings only if there is a public facing url - otherwise
+            # we are probably in local development and the only url in use is localhost
+            environment[ALLOW_CORS_ORIGINS_VARIABLE] = self.web_url
 
         return environment
 
@@ -614,6 +631,7 @@ class RemoteSandboxServiceInjector(SandboxServiceInjector):
         )
 
         # If no public facing web url is defined, poll for changes as callbacks will be unavailable.
+        # This is primarily used for local development rather than production
         config = get_global_config()
         web_url = config.web_url
         if web_url is None:
