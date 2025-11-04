@@ -1,7 +1,7 @@
 import asyncio
 import json
 import shutil
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
@@ -252,7 +252,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
     return await call_tool_mcp_direct(matching_client, action)
 
 
-async def call_tool_mcp_direct(mcp_client: MCPClient, action: MCPAction) -> Observation:
+async def call_tool_mcp_direct(mcp_client: Optional[MCPClient], action: MCPAction) -> Observation:
     """Call a tool on an MCP server and return the observation.
 
     Args:
