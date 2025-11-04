@@ -5,10 +5,6 @@ from typing import AsyncGenerator
 from uuid import UUID
 
 from fastapi import Request
-from sqlalchemy import func, select
-from storage.stored_conversation_metadata import StoredConversationMetadata
-from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
-
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
     AppConversationInfoServiceInjector,
@@ -22,6 +18,10 @@ from openhands.app_server.app_conversation.sql_app_conversation_info_service imp
     SQLAppConversationInfoService,
 )
 from openhands.app_server.services.injector import InjectorState
+from sqlalchemy import func, select
+
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 
 class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
@@ -280,14 +280,12 @@ class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
             )
             result = await self.db_session.execute(saas_query)
             existing_saas_metadata = result.scalar_one_or_none()
+            assert existing_saas_metadata is None or (
+                existing_saas_metadata.user_id == user_id_uuid
+                and existing_saas_metadata.org_id == user_id_uuid
+            )
 
-            if existing_saas_metadata:
-                # Update existing SAAS metadata
-                existing_saas_metadata.user_id = user_id_uuid
-                # Keep existing org_id or set to user_id if not specified
-                if not existing_saas_metadata.org_id:
-                    existing_saas_metadata.org_id = user_id_uuid
-            else:
+            if not existing_saas_metadata:
                 # Create new SAAS metadata
                 # Set org_id to user_id as specified in requirements
                 saas_metadata = StoredConversationMetadataSaas(
