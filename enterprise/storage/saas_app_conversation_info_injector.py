@@ -5,6 +5,10 @@ from typing import AsyncGenerator
 from uuid import UUID
 
 from fastapi import Request
+from sqlalchemy import func, select
+from storage.stored_conversation_metadata import StoredConversationMetadata
+from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
+
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
     AppConversationInfoServiceInjector,
@@ -18,10 +22,6 @@ from openhands.app_server.app_conversation.sql_app_conversation_info_service imp
     SQLAppConversationInfoService,
 )
 from openhands.app_server.services.injector import InjectorState
-from sqlalchemy import func, select
-
-from storage.stored_conversation_metadata import StoredConversationMetadata
-from storage.stored_conversation_metadata_saas import StoredConversationMetadataSaas
 
 
 class SaasSQLAppConversationInfoService(SQLAppConversationInfoService):
