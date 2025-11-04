@@ -88,7 +88,7 @@ export interface V1AppConversation {
   created_at: string;
   updated_at: string;
   sandbox_status: V1SandboxStatus;
-  agent_status: V1ConversationExecutionStatus | null;
+  execution_status: V1ConversationExecutionStatus | null;
   conversation_url: string | null;
   session_api_key: string | null;
 }

@@ -6,7 +6,7 @@ import { useUnifiedGetGitChanges } from "#/hooks/query/use-unified-get-git-chang
 import { I18nKey } from "#/i18n/declaration";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RandomTip } from "#/components/features/tips/random-tip";
-import { useAgentState } from "#/hooks/use-agent-state";
+import { useExecutionState } from "#/hooks/use-execution-state";
 
 // Error message patterns
 const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
@@ -33,7 +33,7 @@ function GitChanges() {
     null,
   );
 
-  const { curAgentState } = useAgentState();
+  const { curAgentState } = useExecutionState();
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const isNotGitRepoError =

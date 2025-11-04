@@ -9,7 +9,7 @@ import { useEventMessageStore } from "#/stores/event-message-store";
 import { useEventStore } from "#/stores/use-event-store";
 import { isV1Event, isActionEvent } from "#/types/v1/type-guards";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
-import { useAgentState } from "#/hooks/use-agent-state";
+import { useExecutionState } from "#/hooks/use-execution-state";
 import { useRespondToConfirmation } from "#/hooks/mutation/use-respond-to-confirmation";
 import { SecurityRisk } from "#/types/v1/core/base/common";
 
@@ -23,7 +23,7 @@ export function V1ConfirmationButtons() {
 
   const { t } = useTranslation();
   const { data: conversation } = useActiveConversation();
-  const { curAgentState } = useAgentState();
+  const { curAgentState } = useExecutionState();
   const { mutate: respondToConfirmation } = useRespondToConfirmation();
   const events = useEventStore((state) => state.events);
 

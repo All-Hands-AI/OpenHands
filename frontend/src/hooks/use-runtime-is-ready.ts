@@ -1,6 +1,6 @@
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useActiveConversation } from "./query/use-active-conversation";
-import { useAgentState } from "#/hooks/use-agent-state";
+import { useExecutionState } from "#/hooks/use-execution-state";
 
 /**
  * Hook to determine if the runtime is ready for operations
@@ -9,7 +9,7 @@ import { useAgentState } from "#/hooks/use-agent-state";
  */
 export const useRuntimeIsReady = (): boolean => {
   const { data: conversation } = useActiveConversation();
-  const { curAgentState } = useAgentState();
+  const { curAgentState } = useExecutionState();
 
   return (
     conversation?.status === "RUNNING" &&

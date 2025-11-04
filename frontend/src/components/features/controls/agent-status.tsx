@@ -11,7 +11,7 @@ import { cn } from "#/utils/utils";
 import { AgentLoading } from "./agent-loading";
 import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
-import { useAgentState } from "#/hooks/use-agent-state";
+import { useExecutionState } from "#/hooks/use-execution-state";
 import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
 
 export interface AgentStatusProps {
@@ -31,7 +31,7 @@ export function AgentStatus({
 }: AgentStatusProps) {
   const { t } = useTranslation();
   const { setShouldShownAgentLoading } = useConversationStore();
-  const { curAgentState } = useAgentState();
+  const { curAgentState } = useExecutionState();
   const { curStatusMessage } = useStatusStore();
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { data: conversation } = useActiveConversation();

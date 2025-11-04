@@ -5,7 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
-import { useAgentState } from "#/hooks/use-agent-state";
+import { useExecutionState } from "#/hooks/use-execution-state";
 import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 export interface ServerStatusProps {
@@ -25,7 +25,7 @@ export function ServerStatus({
 }: ServerStatusProps) {
   const [showContextMenu, setShowContextMenu] = useState(false);
 
-  const { curAgentState } = useAgentState();
+  const { curAgentState } = useExecutionState();
   const { t } = useTranslation();
   const { isTask, taskStatus, taskDetail } = useTaskPolling();
 
