@@ -56,7 +56,8 @@ export function AgentStatus({
 
   const shouldShownAgentStop = curAgentState === AgentState.RUNNING;
 
-  const shouldShownAgentResume = curAgentState === AgentState.STOPPED;
+  const shouldShownAgentResume =
+    curAgentState === AgentState.STOPPED || curAgentState === AgentState.PAUSED;
 
   // Update global state when agent loading condition changes
   useEffect(() => {
