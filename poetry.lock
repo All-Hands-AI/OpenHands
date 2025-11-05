@@ -7350,7 +7350,7 @@ wsproto = ">=1.2.0"
 
 [package.source]
 type = "git"
-url = "https://github.com/OpenHands/agent-sdk.git"
+url = "https://github.com/OpenHands/software-agent-sdk.git"
 reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 resolved_reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 subdirectory = "openhands-agent-server"
@@ -7381,7 +7381,7 @@ boto3 = ["boto3 (>=1.35.0)"]
 
 [package.source]
 type = "git"
-url = "https://github.com/OpenHands/agent-sdk.git"
+url = "https://github.com/OpenHands/software-agent-sdk.git"
 reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 resolved_reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 subdirectory = "openhands-sdk"
@@ -7408,7 +7408,7 @@ pydantic = ">=2.11.7"
 
 [package.source]
 type = "git"
-url = "https://github.com/OpenHands/agent-sdk.git"
+url = "https://github.com/OpenHands/software-agent-sdk.git"
 reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 resolved_reference = "d5995c31c55e488d4ab0372d292973bc6fad71f1"
 subdirectory = "openhands-tools"
@@ -16744,4 +16744,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "88a1b09a33e3180b2c7c460b8fac4d1c0c34ec9bbafb4cce58c9c5c32623f9d8"
+content-hash = "f55780dbb1931dcc442ef9d1f2198fa1c82e3b5881409953ac95de5501d5eeec"
