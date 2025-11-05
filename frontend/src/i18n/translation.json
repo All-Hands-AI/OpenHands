@@ -6912,20 +6912,20 @@
     "tr": "Bu alan zorunludur"
   },
   "PLANNER$EMPTY_MESSAGE": {
-    "en": "No plan created.",
-    "zh-CN": "计划未创建",
-    "zh-TW": "未建立任何計劃。",
-    "de": "Kein Plan erstellt.",
-    "ko-KR": "생성된 계획이 없습니다.",
-    "no": "Ingen plan opprettet.",
-    "it": "Nessun piano creato.",
-    "pt": "Nenhum plano criado.",
-    "es": "Ningún plan creado.",
-    "ar": "لم يتم إنشاء أي خطة.",
-    "fr": "Aucun plan créé.",
-    "tr": "Plan oluşturulmadı.",
-    "ja": "プランナーは空です",
-    "uk": "План не створено."
+    "en": "There is currently no plan for this repo",
+    "uk": "Наразі для цього репозиторію немає плану",
+    "ja": "現在このリポジトリには計画がありません",
+    "zh-CN": "当前此仓库没有计划",
+    "zh-TW": "目前此存儲庫沒有計劃",
+    "ko-KR": "이 저장소에 대한 계획이 현재 없습니다",
+    "no": "Det finnes foreløpig ingen plan for dette repoet",
+    "ar": "لا يوجد حالياً خطة لهذا المستودع",
+    "de": "Derzeit gibt es keinen Plan für dieses Repository",
+    "fr": "Il n'y a actuellement aucun plan pour ce dépôt",
+    "it": "Attualmente non c'è un piano per questo repository",
+    "pt": "Atualmente não há plano para este repositório",
+    "es": "Actualmente no hay un plan para este repositorio",
+    "tr": "Şu anda bu depo için bir plan yok"
   },
   "FEEDBACK$PUBLIC_LABEL": {
     "en": "Public",
@@ -13711,6 +13711,22 @@
     "de": "App",
     "uk": "Додаток"
   },
+  "COMMON$PLANNER": {
+    "en": "Planner",
+    "ja": "プランナー",
+    "zh-CN": "计划器",
+    "zh-TW": "規劃器",
+    "ko-KR": "플래너",
+    "no": "Planlegger",
+    "it": "Pianificatore",
+    "pt": "Planejador",
+    "es": "Planificador",
+    "ar": "المخطط",
+    "fr": "Planificateur",
+    "tr": "Planlayıcı",
+    "de": "Planer",
+    "uk": "Планувальник"
+  },
   "COMMON$APPLICATION_SETTINGS": {
     "en": "Application Settings",
     "ja": "アプリケーション設定",
@@ -14894,5 +14910,21 @@
     "tr": "Kullanıcı onayı bekleniyor",
     "de": "Warte auf Benutzerbestätigung",
     "uk": "Очікується підтвердження користувача"
+  },
+  "COMMON$CREATE_A_PLAN": {
+    "en": "Create a plan",
+    "ja": "プランを作成する",
+    "zh-CN": "创建计划",
+    "zh-TW": "建立計劃",
+    "ko-KR": "계획 만들기",
+    "no": "Lag en plan",
+    "it": "Crea un piano",
+    "pt": "Criar um plano",
+    "es": "Crear un plan",
+    "ar": "إنشاء خطة",
+    "fr": "Créer un plan",
+    "tr": "Bir plan oluştur",
+    "de": "Einen Plan erstellen",
+    "uk": "Створити план"
   }
 }
