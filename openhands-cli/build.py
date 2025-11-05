@@ -269,7 +269,6 @@ def main() -> int:
             llm=LLM(
                 model='dummy-model',
                 api_key='dummy-key',
-                metadata=get_llm_metadata(model_name='dummy-model', llm_type='openhands'),
             )
         )
         if not test_executable(dummy_agent):

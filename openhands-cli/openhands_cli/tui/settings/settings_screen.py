@@ -180,7 +180,6 @@ class SettingsScreen:
             api_key=api_key,
             base_url=base_url,
             usage_id='agent',
-            metadata=get_llm_metadata(model_name=model, llm_type='agent'),
         )
 
         agent = self.agent_store.load()

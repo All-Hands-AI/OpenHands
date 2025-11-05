@@ -47,33 +47,13 @@ class AgentStore:
 
             mcp_config: dict = self.load_mcp_configuration()
 
-            # Update LLM metadata with current information
-            agent_llm_metadata = get_llm_metadata(
-                model_name=agent.llm.model, llm_type='agent', session_id=session_id
-            )
-            updated_llm = agent.llm.model_copy(update={'metadata': agent_llm_metadata})
-
-            condenser_updates = {}
-            if agent.condenser and isinstance(agent.condenser, LLMSummarizingCondenser):
-                condenser_updates['llm'] = agent.condenser.llm.model_copy(
-                    update={
-                        'metadata': get_llm_metadata(
-                            model_name=agent.condenser.llm.model,
-                            llm_type='condenser',
-                            session_id=session_id,
-                        )
-                    }
-                )
-
+            # Update tools and context; LLM metadata no longer injected here
             agent = agent.model_copy(
                 update={
-                    'llm': updated_llm,
                     'tools': updated_tools,
                     'mcp_config': {'mcpServers': mcp_config} if mcp_config else {},
                     'agent_context': agent_context,
-                    'condenser': agent.condenser.model_copy(update=condenser_updates)
-                    if agent.condenser
-                    else None,
+                    'condenser': agent.condenser if agent.condenser else None,
                 }
             )
 
