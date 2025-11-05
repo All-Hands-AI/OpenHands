@@ -106,11 +106,11 @@ class ConversationRunner:
                     break
 
             # In confirmation mode, agent either finishes or waits for user confirmation
-            if self.conversation.state.execution_status == AgentExecutionStatus.FINISHED:
+            if self.conversation.state.agent_status == AgentExecutionStatus.FINISHED:
                 break
 
             elif (
-                self.conversation.state.execution_status
+                self.conversation.state.agent_status
                 == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
             ):
                 user_confirmation = self._handle_confirmation_request()
