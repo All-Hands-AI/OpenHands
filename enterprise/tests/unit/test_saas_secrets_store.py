@@ -1,6 +1,7 @@
 from types import MappingProxyType
 from typing import Any
 from unittest.mock import MagicMock, patch
+from uuid import UUID
 
 import pytest
 from pydantic import SecretStr
@@ -23,7 +24,7 @@ def mock_config():
 def mock_user():
     """Mock user with org_id."""
     user = MagicMock()
-    user.current_org_id = 'test-org-123'
+    user.current_org_id = UUID('a1111111-1111-1111-1111-111111111111')
     return user
 
 
@@ -38,7 +39,7 @@ class TestSaasSecretsStore:
     async def test_store_and_load(self, mock_get_user, secrets_store, mock_user):
         # Setup mock
         mock_get_user.return_value = mock_user
-        
+
         # Create a Secrets object with some test data
         user_secrets = Secrets(
             custom_secrets=MappingProxyType(
@@ -169,7 +170,9 @@ class TestSaasSecretsStore:
 
     @pytest.mark.asyncio
     @patch('storage.saas_secrets_store.UserStore.get_user_by_id')
-    async def test_update_existing_secrets(self, mock_get_user, secrets_store, mock_user):
+    async def test_update_existing_secrets(
+        self, mock_get_user, secrets_store, mock_user
+    ):
         # Setup mock
         mock_get_user.return_value = mock_user
         # Create and store initial secrets

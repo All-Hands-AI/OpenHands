@@ -57,7 +57,7 @@ def test_create_api_key(mock_get_user, api_key_store, mock_session, mock_user):
     mock_session.add.assert_called_once()
     mock_session.commit.assert_called_once()
     api_key_store.generate_api_key.assert_called_once()
-    
+
     # Verify the ApiKey was created with the correct org_id
     added_api_key = mock_session.add.call_args[0][0]
     assert added_api_key.org_id == mock_user.current_org_id
@@ -225,11 +225,11 @@ def test_retrieve_mcp_api_key(mock_get_user, api_key_store, mock_session, mock_u
     # Setup
     user_id = 'test-user-123'
     mock_get_user.return_value = mock_user
-    
+
     mock_mcp_key = MagicMock()
     mock_mcp_key.name = 'MCP_API_KEY'
     mock_mcp_key.key = 'mcp-test-key'
-    
+
     mock_other_key = MagicMock()
     mock_other_key.name = 'Other Key'
     mock_other_key.key = 'other-test-key'
@@ -249,12 +249,14 @@ def test_retrieve_mcp_api_key(mock_get_user, api_key_store, mock_session, mock_u
 
 
 @patch('storage.api_key_store.UserStore.get_user_by_id')
-def test_retrieve_mcp_api_key_not_found(mock_get_user, api_key_store, mock_session, mock_user):
+def test_retrieve_mcp_api_key_not_found(
+    mock_get_user, api_key_store, mock_session, mock_user
+):
     """Test retrieving MCP API key when none exists."""
     # Setup
     user_id = 'test-user-123'
     mock_get_user.return_value = mock_user
-    
+
     mock_other_key = MagicMock()
     mock_other_key.name = 'Other Key'
     mock_other_key.key = 'other-test-key'
