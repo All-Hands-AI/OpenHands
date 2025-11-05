@@ -55,8 +55,6 @@ export const useWebSocket = <T = string>(
     wsRef.current = ws;
     // Mark this WebSocket instance as allowed to reconnect
     allowedToReconnectRef.current.add(ws);
-    // Track if onError has already been called for this WebSocket instance
-    let errorHandlerCalled = false;
 
     ws.onopen = (event) => {
       setIsConnected(true);
@@ -85,8 +83,7 @@ export const useWebSocket = <T = string>(
           ),
         );
         // Only call onError handler if it hasn't been called already and if allowed to reconnect
-        if (canReconnect && !errorHandlerCalled) {
-          errorHandlerCalled = true;
+        if (canReconnect) {
           optionsRef.current?.onError?.(event);
         }
       }
@@ -117,11 +114,7 @@ export const useWebSocket = <T = string>(
 
     ws.onerror = (event) => {
       setIsConnected(false);
-      // Only call onError handler if it hasn't been called already
-      if (!errorHandlerCalled) {
-        errorHandlerCalled = true;
-        optionsRef.current?.onError?.(event);
-      }
+      optionsRef.current?.onError?.(event);
     };
   }, [url]);
 
