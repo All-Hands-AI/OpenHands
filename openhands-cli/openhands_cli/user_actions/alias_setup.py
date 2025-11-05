@@ -36,7 +36,7 @@ class AliasSetup:
                 'openhands': 'openhands',
                 'oh': 'openhands'
             },
-            'prerequisites': ['uv tool install --python 3.12 openhands-ai'],
+            'prerequisites': ['uv tool install --python 3.12 openhands'],
             'benefits': [
                 'Better Performance: Pre-installed tool environment',
                 'Version Control: Explicit update management with "uv tool upgrade openhands-ai"',
