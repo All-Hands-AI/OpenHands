@@ -147,6 +147,7 @@ class UserStore:
 
             # Mark the old user_settings as migrated instead of deleting
             user_settings.migration_status = True
+            session.merge(user_settings)
 
             # need to migrate conversation metadata
             session.execute(
@@ -170,6 +171,55 @@ class UserStore:
                     ) AS sub
                     """
                 )
+            )
+
+            # Update org_id for tables that had org_id added
+            user_uuid = uuid.UUID(user_id)
+
+            # Update stripe_customers
+            session.execute(
+                text(
+                    'UPDATE stripe_customers SET org_id = :org_id WHERE user_id = :user_id'
+                ),
+                {'org_id': user_uuid, 'user_id': user_uuid},
+            )
+
+            # Update slack_users
+            session.execute(
+                text(
+                    'UPDATE slack_users SET org_id = :org_id WHERE user_id = :user_id'
+                ),
+                {'org_id': user_uuid, 'user_id': user_uuid},
+            )
+
+            # Update slack_conversation
+            session.execute(
+                text(
+                    'UPDATE slack_conversation SET org_id = :org_id WHERE user_id = :user_id'
+                ),
+                {'org_id': user_uuid, 'user_id': user_uuid},
+            )
+
+            # Update api_keys
+            session.execute(
+                text('UPDATE api_keys SET org_id = :org_id WHERE user_id = :user_id'),
+                {'org_id': user_uuid, 'user_id': user_uuid},
+            )
+
+            # Update custom_secrets
+            session.execute(
+                text(
+                    'UPDATE custom_secrets SET org_id = :org_id WHERE user_id = :user_id'
+                ),
+                {'org_id': user_uuid, 'user_id': user_uuid},
+            )
+
+            # Update billing_sessions
+            session.execute(
+                text(
+                    'UPDATE billing_sessions SET org_id = :org_id WHERE user_id = :user_id'
+                ),
+                {'org_id': user_uuid, 'user_id': user_uuid},
             )
 
             session.commit()
