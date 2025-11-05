@@ -67,7 +67,7 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
-  const { setAgentStatus } = useV1ConversationStateStore();
+  const { setExecutionStatus } = useV1ConversationStateStore();
   const { appendInput, appendOutput } = useCommandStore();
 
   // History loading state
@@ -154,10 +154,10 @@ export function ConversationWebSocketProvider({
           // TODO: Tests
           if (isConversationStateUpdateEvent(event)) {
             if (isFullStateConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value.agent_status);
+              setExecutionStatus(event.value.execution_status);
             }
             if (isAgentStatusConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value);
+              setExecutionStatus(event.value);
             }
           }
 
@@ -184,7 +184,7 @@ export function ConversationWebSocketProvider({
       removeOptimisticUserMessage,
       queryClient,
       conversationId,
-      setAgentStatus,
+      setExecutionStatus,
       appendInput,
       appendOutput,
     ],

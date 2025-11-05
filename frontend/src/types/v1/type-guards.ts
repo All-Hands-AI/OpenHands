@@ -136,7 +136,7 @@ export const isFullStateConversationStateUpdateEvent = (
 export const isAgentStatusConversationStateUpdateEvent = (
   event: ConversationStateUpdateEvent,
 ): event is ConversationStateUpdateEventAgentStatus =>
-  event.key === "agent_status";
+  event.key === "execution_status";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS
