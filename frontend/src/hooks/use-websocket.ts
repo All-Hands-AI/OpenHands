@@ -82,7 +82,7 @@ export const useWebSocket = <T = string>(
             `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
           ),
         );
-        // Only call onError handler if it hasn't been called already and if allowed to reconnect
+        // Also call onError handler for error closures (only if allowed to reconnect)
         if (canReconnect) {
           optionsRef.current?.onError?.(event);
         }
