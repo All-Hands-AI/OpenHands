@@ -1,7 +1,9 @@
 """Event Callback router for OpenHands Server."""
 
 import asyncio
+import importlib
 import logging
+import pkgutil
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -38,6 +40,8 @@ from openhands.app_server.user.specifiy_user_context import (
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
+from openhands import tools  # type: ignore[attr-defined]
+
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
 sandbox_service_dependency = depends_sandbox_service()
@@ -185,3 +189,16 @@ async def _run_callbacks_in_bg_and_close(
         # We don't use asynio.gather here because callbacks must be run in sequence.
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
+
+
+def _import_all_tools():
+    """ We need to import all tools so that they are available for deserialization in webhooks."""
+    for _, name, is_pkg in pkgutil.walk_packages(tools.__path__, tools.__name__ + '.'):
+        if is_pkg:  # Check if it's a subpackage
+            try:
+                importlib.import_module(name)
+            except ImportError as e:
+                _logger.error(f"Warning: Could not import subpackage '{name}': {e}")
+
+
+_import_all_tools()
