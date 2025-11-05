@@ -51,7 +51,7 @@ class ConversationRunner:
 
     def _print_run_status(self) -> None:
         print_formatted_text('')
-        if self.conversation.state.execution_status == AgentExecutionStatus.PAUSED:
+        if self.conversation.state.agent_status == AgentExecutionStatus.PAUSED:
             print_formatted_text(
                 HTML(
                     '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
@@ -91,7 +91,7 @@ class ConversationRunner:
     def _run_with_confirmation(self) -> None:
         # If agent was paused, resume with confirmation request
         if (
-            self.conversation.state.execution_status
+            self.conversation.state.agent_status
             == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         ):
             user_confirmation = self._handle_confirmation_request()
