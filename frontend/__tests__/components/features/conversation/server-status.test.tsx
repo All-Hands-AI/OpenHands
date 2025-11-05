@@ -6,11 +6,11 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { ServerStatusContextMenu } from "#/components/features/controls/server-status-context-menu";
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
-import { useExecutionState } from "#/hooks/use-execution-state";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 // Mock the agent state hook
 vi.mock("#/hooks/use-agent-state", () => ({
-  useExecutionState: vi.fn(),
+  useAgentState: vi.fn(),
 }));
 
 // Mock the custom hooks
@@ -85,7 +85,7 @@ describe("ServerStatus", () => {
 
   // Helper function to mock agent state with specific state
   const mockAgentStore = (agentState: AgentState) => {
-    vi.mocked(useExecutionState).mockReturnValue({
+    vi.mocked(useAgentState).mockReturnValue({
       curAgentState: agentState,
     });
   };

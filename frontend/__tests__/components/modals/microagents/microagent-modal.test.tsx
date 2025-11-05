@@ -5,11 +5,11 @@ import { renderWithProviders } from "test-utils";
 import { MicroagentsModal } from "#/components/features/conversation-panel/microagents-modal";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { AgentState } from "#/types/agent-state";
-import { useExecutionState } from "#/hooks/use-execution-state";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 // Mock the agent state hook
 vi.mock("#/hooks/use-agent-state", () => ({
-  useExecutionState: vi.fn(),
+  useAgentState: vi.fn(),
 }));
 
 // Mock the conversation ID hook
@@ -51,7 +51,7 @@ describe("MicroagentsModal - Refresh Button", () => {
     });
 
     // Mock the agent state to return a ready state
-    vi.mocked(useExecutionState).mockReturnValue({
+    vi.mocked(useAgentState).mockReturnValue({
       curAgentState: AgentState.AWAITING_USER_INPUT,
     });
   });

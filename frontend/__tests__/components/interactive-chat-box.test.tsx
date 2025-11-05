@@ -5,12 +5,12 @@ import { MemoryRouter } from "react-router";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { renderWithProviders } from "../../test-utils";
 import { AgentState } from "#/types/agent-state";
-import { useExecutionState } from "#/hooks/use-execution-state";
+import { useAgentState } from "#/hooks/use-agent-state";
 import { useConversationStore } from "#/state/conversation-store";
 
 // Mock the agent state hook
 vi.mock("#/hooks/use-agent-state", () => ({
-  useExecutionState: vi.fn(),
+  useAgentState: vi.fn(),
 }));
 
 // Mock the conversation store
@@ -60,7 +60,7 @@ describe("InteractiveChatBox", () => {
 
   // Helper function to mock stores
   const mockStores = (agentState: AgentState = AgentState.INIT) => {
-    vi.mocked(useExecutionState).mockReturnValue({
+    vi.mocked(useAgentState).mockReturnValue({
       curAgentState: agentState,
     });
 

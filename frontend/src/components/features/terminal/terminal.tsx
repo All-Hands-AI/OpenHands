@@ -3,10 +3,10 @@ import "@xterm/xterm/css/xterm.css";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { cn } from "#/utils/utils";
 import { WaitingForRuntimeMessage } from "../chat/waiting-for-runtime-message";
-import { useExecutionState } from "#/hooks/use-execution-state";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 function Terminal() {
-  const { curAgentState } = useExecutionState();
+  const { curAgentState } = useAgentState();
 
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
