@@ -247,6 +247,63 @@ class TestSaasSQLAppConversationInfoService:
         multiple_conversation_infos: list[AppConversationInfo],
     ):
         """Test that user isolation works correctly."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+        from storage.user import User
+        
+        # Mock the database session execute method to return mock users
+        # This mock intercepts User queries and returns a mock user object
+        # with user_id and org_id the same as the user_id_uuid from the query
+        original_execute = async_session.execute
+        
+        async def mock_execute(query):
+            query_str = str(query)
+            
+            # Check if this is a User query
+            if '"user"' in query_str.lower() and '"user".id' in query_str.lower():
+                # Extract the UUID from the query parameters
+                # The query will have bound parameters, we need to get the UUID value
+                if hasattr(query, 'compile'):
+                    try:
+                        compiled = query.compile(compile_kwargs={"literal_binds": True})
+                        query_with_params = str(compiled)
+                        
+                        # Extract UUID from the query string
+                        import re
+                        # Try both formats: with dashes and without dashes
+                        uuid_pattern_with_dashes = r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}'
+                        uuid_pattern_without_dashes = r'[a-f0-9]{32}'
+                        
+                        uuid_match = re.search(uuid_pattern_with_dashes, query_with_params)
+                        if not uuid_match:
+                            uuid_match = re.search(uuid_pattern_without_dashes, query_with_params)
+                        
+                        if uuid_match:
+                            user_id_str = uuid_match.group(0)
+                            # If the UUID doesn't have dashes, add them
+                            if len(user_id_str) == 32 and '-' not in user_id_str:
+                                # Convert from 'a1111111111111111111111111111111' to 'a1111111-1111-1111-1111-111111111111'
+                                user_id_str = f"{user_id_str[:8]}-{user_id_str[8:12]}-{user_id_str[12:16]}-{user_id_str[16:20]}-{user_id_str[20:]}"
+                            user_id_uuid = UUID(user_id_str)
+                            
+                            # Create a mock user with user_id and org_id the same as user_id_uuid
+                            mock_user = MagicMock(spec=User)
+                            mock_user.id = user_id_uuid
+                            mock_user.current_org_id = user_id_uuid
+                            
+                            # Create a mock result
+                            mock_result = MagicMock()
+                            mock_result.scalar_one_or_none.return_value = mock_user
+                            return mock_result
+                    except Exception:
+                        # If there's any error in parsing, fall back to original execute
+                        pass
+            
+            # For all other queries, use the original execute method
+            return await original_execute(query)
+        
+        # Apply the mock
+        async_session.execute = mock_execute
+        
         # Create services for different users
         user1_service = SaasSQLAppConversationInfoService(
             db_session=async_session,
