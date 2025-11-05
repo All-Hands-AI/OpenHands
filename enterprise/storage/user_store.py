@@ -179,7 +179,7 @@ class UserStore:
             # Update stripe_customers
             session.execute(
                 text(
-                    'UPDATE stripe_customers SET org_id = :org_id WHERE user_id = :user_id'
+                    'UPDATE stripe_customers SET org_id = :org_id WHERE keycloak_user_id = :user_id'
                 ),
                 {'org_id': user_uuid, 'user_id': user_uuid},
             )
@@ -187,7 +187,7 @@ class UserStore:
             # Update slack_users
             session.execute(
                 text(
-                    'UPDATE slack_users SET org_id = :org_id WHERE user_id = :user_id'
+                    'UPDATE slack_users SET org_id = :org_id WHERE keycloak_user_id = :user_id'
                 ),
                 {'org_id': user_uuid, 'user_id': user_uuid},
             )
@@ -195,7 +195,7 @@ class UserStore:
             # Update slack_conversation
             session.execute(
                 text(
-                    'UPDATE slack_conversation SET org_id = :org_id WHERE user_id = :user_id'
+                    'UPDATE slack_conversation SET org_id = :org_id WHERE keycloak_user_id = :user_id'
                 ),
                 {'org_id': user_uuid, 'user_id': user_uuid},
             )
@@ -209,7 +209,7 @@ class UserStore:
             # Update custom_secrets
             session.execute(
                 text(
-                    'UPDATE custom_secrets SET org_id = :org_id WHERE user_id = :user_id'
+                    'UPDATE custom_secrets SET org_id = :org_id WHERE keycloak_user_id = :user_id'
                 ),
                 {'org_id': user_uuid, 'user_id': user_uuid},
             )
