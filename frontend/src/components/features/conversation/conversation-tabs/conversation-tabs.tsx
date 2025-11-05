@@ -92,6 +92,7 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("editor"),
       tooltipContent: t(I18nKey.COMMON$CHANGES),
       tooltipAriaLabel: t(I18nKey.COMMON$CHANGES),
+      label: t(I18nKey.COMMON$CHANGES),
     },
     {
       isActive: isTabActive("vscode"),
@@ -99,6 +100,7 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("vscode"),
       tooltipContent: <VSCodeTooltipContent />,
       tooltipAriaLabel: t(I18nKey.COMMON$CODE),
+      label: t(I18nKey.COMMON$CODE),
     },
     {
       isActive: isTabActive("terminal"),
@@ -106,6 +108,8 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("terminal"),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
+      label: t(I18nKey.COMMON$TERMINAL),
+      className: "pl-2",
     },
     {
       isActive: isTabActive("served"),
@@ -113,6 +117,7 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("served"),
       tooltipContent: t(I18nKey.COMMON$APP),
       tooltipAriaLabel: t(I18nKey.COMMON$APP),
+      label: t(I18nKey.COMMON$APP),
     },
     {
       isActive: isTabActive("browser"),
@@ -120,6 +125,7 @@ export function ConversationTabs() {
       onClick: () => onTabSelected("browser"),
       tooltipContent: t(I18nKey.COMMON$BROWSER),
       tooltipAriaLabel: t(I18nKey.COMMON$BROWSER),
+      label: t(I18nKey.COMMON$BROWSER),
     },
   ];
 
@@ -132,7 +138,15 @@ export function ConversationTabs() {
     >
       {tabs.map(
         (
-          { icon, onClick, isActive, tooltipContent, tooltipAriaLabel },
+          {
+            icon,
+            onClick,
+            isActive,
+            tooltipContent,
+            tooltipAriaLabel,
+            label,
+            className,
+          },
           index,
         ) => (
           <ChatActionTooltip
@@ -144,6 +158,8 @@ export function ConversationTabs() {
               icon={icon}
               onClick={onClick}
               isActive={isActive}
+              label={label}
+              className={className}
             />
           </ChatActionTooltip>
         ),
