@@ -51,12 +51,11 @@ def get_platform_command(linux_cmd, windows_cmd):
     return windows_cmd if is_windows() else linux_cmd
 
 
-@pytest.mark.skip(reason='This test is flaky')
-def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_server(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Use python -u for unbuffered output, potentially helping capture initial output on Windows
-        action = CmdRunAction(command='python -u -m http.server 8081')
+        action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
         action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -111,7 +110,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
-        action = CmdRunAction(command='python -u -m http.server 8081')
+        action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
         action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -123,9 +122,9 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    server_port = 8081
+    server_port = dynamic_port
     try:
         # Start the server, expect it to timeout (run in background manner)
         action = CmdRunAction(f'python3 -m http.server {server_port} &')

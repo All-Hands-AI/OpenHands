@@ -6,7 +6,6 @@ from openhands.sdk import Agent, BaseConversation, Conversation, Workspace, regi
 from openhands.tools.execute_bash import BashTool
 from openhands.tools.file_editor import FileEditorTool
 from openhands.tools.task_tracker import TaskTrackerTool
-from openhands_cli.listeners import LoadingContext
 from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
 from openhands.sdk.security.confirmation_policy import (
@@ -70,26 +69,29 @@ def setup_conversation(
         MissingAgentSpec: If agent specification is not found or invalid.
     """
 
-    with LoadingContext('Initializing OpenHands agent...'):
-        agent = load_agent_specs(str(conversation_id))
+    print_formatted_text(
+        HTML(f'<white>Initializing agent...</white>')
+    )
 
-        if not include_security_analyzer:
-            # Remove security analyzer from agent spec
-            agent = agent.model_copy(
-                update={"security_analyzer": None}
-            )
+    agent = load_agent_specs(str(conversation_id))
 
-        # Create conversation - agent context is now set in AgentStore.load()
-        conversation: BaseConversation = Conversation(
-            agent=agent,
-            workspace=Workspace(working_dir=WORK_DIR),
-            # Conversation will add /<conversation_id> to this path
-            persistence_dir=CONVERSATIONS_DIR,
-            conversation_id=conversation_id,
+    if not include_security_analyzer:
+        # Remove security analyzer from agent spec
+        agent = agent.model_copy(
+            update={"security_analyzer": None}
         )
 
-        if include_security_analyzer:
-            conversation.set_confirmation_policy(AlwaysConfirm())
+    # Create conversation - agent context is now set in AgentStore.load()
+    conversation: BaseConversation = Conversation(
+        agent=agent,
+        workspace=Workspace(working_dir=WORK_DIR),
+        # Conversation will add /<conversation_id> to this path
+        persistence_dir=CONVERSATIONS_DIR,
+        conversation_id=conversation_id,
+    )
+
+    if include_security_analyzer:
+        conversation.set_confirmation_policy(AlwaysConfirm())
 
     print_formatted_text(
         HTML(f'<green>✓ Agent initialized with model: {agent.llm.model}</green>')

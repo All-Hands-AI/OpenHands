@@ -180,9 +180,11 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
 
         # Return tasks in the same order as requested, with None for missing ones
         return [
-            AppConversationStartTask(**row2dict(tasks_by_id[task_id]))
-            if task_id in tasks_by_id
-            else None
+            (
+                AppConversationStartTask(**row2dict(tasks_by_id[task_id]))
+                if task_id in tasks_by_id
+                else None
+            )
             for task_id in task_ids
         ]
 
@@ -218,6 +220,29 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
         await self.session.merge(StoredAppConversationStartTask(**task.model_dump()))
         await self.session.commit()
         return task
+
+    async def delete_app_conversation_start_tasks(self, conversation_id: UUID) -> bool:
+        """Delete all start tasks associated with a conversation.
+
+        Args:
+            conversation_id: The ID of the conversation to delete tasks for.
+        """
+        from sqlalchemy import delete
+
+        # Build secure delete query with user filter if user_id is set
+        delete_query = delete(StoredAppConversationStartTask).where(
+            StoredAppConversationStartTask.app_conversation_id == conversation_id
+        )
+
+        if self.user_id:
+            delete_query = delete_query.where(
+                StoredAppConversationStartTask.created_by_user_id == self.user_id
+            )
+
+        result = await self.session.execute(delete_query)
+
+        # Return True if any rows were affected
+        return result.rowcount > 0
 
 
 class SQLAppConversationStartTaskServiceInjector(

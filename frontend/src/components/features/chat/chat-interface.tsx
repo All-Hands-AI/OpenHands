@@ -68,6 +68,7 @@ export function ChatInterface() {
   const conversationWebSocket = useConversationWebSocket();
   const { send } = useSendMessage();
   const storeEvents = useEventStore((state) => state.events);
+  const uiEvents = useEventStore((state) => state.uiEvents);
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
     useOptimisticUserMessageStore();
   const { t } = useTranslation();
@@ -96,24 +97,29 @@ export function ChatInterface() {
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
-  // Instantly scroll to bottom when history loading completes
-  const prevLoadingHistoryRef = React.useRef(
+  // Track when we should show V1 messages (after DOM has rendered)
+  const [showV1Messages, setShowV1Messages] = React.useState(false);
+  const prevV1LoadingRef = React.useRef(
     conversationWebSocket?.isLoadingHistory,
   );
+
+  // Wait for DOM to render before showing V1 messages
   React.useEffect(() => {
-    const wasLoading = prevLoadingHistoryRef.current;
+    const wasLoading = prevV1LoadingRef.current;
     const isLoading = conversationWebSocket?.isLoadingHistory;
 
-    // When history loading transitions from true to false, instantly scroll to bottom
-    if (wasLoading && !isLoading && scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "instant",
+    if (wasLoading && !isLoading) {
+      // Loading just finished - wait for next frame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        setShowV1Messages(true);
       });
+    } else if (isLoading) {
+      // Reset when loading starts
+      setShowV1Messages(false);
     }
 
-    prevLoadingHistoryRef.current = isLoading;
-  }, [conversationWebSocket?.isLoadingHistory, scrollRef]);
+    prevV1LoadingRef.current = isLoading;
+  }, [conversationWebSocket?.isLoadingHistory]);
 
   // Filter V0 events
   const v0Events = storeEvents
@@ -121,11 +127,13 @@ export function ChatInterface() {
     .filter(isActionOrObservation)
     .filter(shouldRenderEvent);
 
-  // Filter V1 events
-  const v1Events = storeEvents.filter(isV1Event).filter(shouldRenderV1Event);
+  // Filter V1 events - use uiEvents for rendering (actions replaced by observations)
+  const v1UiEvents = uiEvents.filter(isV1Event).filter(shouldRenderV1Event);
+  // Keep full v1 events for lookups (includes both actions and observations)
+  const v1FullEvents = storeEvents.filter(isV1Event);
 
   // Combined events count for tracking
-  const totalEvents = v0Events.length || v1Events.length;
+  const totalEvents = v0Events.length || v1UiEvents.length;
 
   // Check if there are any substantive agent actions (not just system messages)
   const hasSubstantiveAgentActions = React.useMemo(
@@ -223,7 +231,7 @@ export function ChatInterface() {
   };
 
   const v0UserEventsExist = hasUserEvent(v0Events);
-  const v1UserEventsExist = hasV1UserEvent(v1Events);
+  const v1UserEventsExist = hasV1UserEvent(v1FullEvents);
   const userEventsExist = v0UserEventsExist || v1UserEventsExist;
 
   return (
@@ -249,7 +257,7 @@ export function ChatInterface() {
             </div>
           )}
 
-          {conversationWebSocket?.isLoadingHistory &&
+          {(conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
             isV1Conversation &&
             !isTask && (
               <div className="flex justify-center">
@@ -266,8 +274,8 @@ export function ChatInterface() {
             />
           )}
 
-          {!conversationWebSocket?.isLoadingHistory && v1UserEventsExist && (
-            <V1Messages messages={v1Events} />
+          {showV1Messages && v1UserEventsExist && (
+            <V1Messages messages={v1UiEvents} allEvents={v1FullEvents} />
           )}
         </div>
 
