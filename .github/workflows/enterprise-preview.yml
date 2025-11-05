@@ -19,11 +19,31 @@ jobs:
     if: github.event.label.name == 'deploy'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
+      - name: Find Comment
+        uses: peter-evans/find-comment@v3
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: |
+            ⚠️ Enterprise preview
+
+      - name: Comment warning on PR
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            ⚠️ Enterprise preview: you can check the build for progress and errors here:
+
+            https://github.com/OpenHands/deploy/actions/workflows/deploy.yaml
+
       # This should match the version in ghcr-build.yml
       - name: Trigger remote job
         run: |
           curl --fail-with-body -sS -X POST \
-            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Authorization: Bearer ${{ secrets.OPENHANDS_AGENT_PAT }}" \
             -H "Accept: application/vnd.github+json" \
             -d "{\"ref\": \"main\", \"inputs\": {\"openhandsPrNumber\": \"${{ github.event.pull_request.number }}\", \"deployEnvironment\": \"feature\", \"enterpriseImageTag\": \"pr-${{ github.event.pull_request.number }}\" }}" \
             https://api.github.com/repos/OpenHands/deploy/actions/workflows/deploy.yaml/dispatches
