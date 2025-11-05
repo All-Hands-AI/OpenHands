@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from jwt import InvalidTokenError
 
+from openhands import tools  # type: ignore[attr-defined]
 from openhands.agent_server.models import ConversationInfo, Success
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -40,8 +41,6 @@ from openhands.app_server.user.specifiy_user_context import (
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
-from openhands import tools  # type: ignore[attr-defined]
-
 
 router = APIRouter(prefix='/webhooks', tags=['Webhooks'])
 sandbox_service_dependency = depends_sandbox_service()
@@ -192,7 +191,7 @@ async def _run_callbacks_in_bg_and_close(
 
 
 def _import_all_tools():
-    """ We need to import all tools so that they are available for deserialization in webhooks."""
+    """We need to import all tools so that they are available for deserialization in webhooks."""
     for _, name, is_pkg in pkgutil.walk_packages(tools.__path__, tools.__name__ + '.'):
         if is_pkg:  # Check if it's a subpackage
             try:
