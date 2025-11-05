@@ -9,7 +9,7 @@ from pydantic import ConfigDict, SecretStr, model_validator
 from openhands.sdk import Conversation, ConversationCallbackType, LocalConversation
 from openhands.sdk.agent.base import AgentBase
 from openhands.sdk.conversation import ConversationState
-from openhands.sdk.conversation.state import ConversationExecutionStatus
+from openhands.sdk.conversation.state import AgentExecutionStatus
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm, NeverConfirm
 from unittest.mock import MagicMock
@@ -45,7 +45,7 @@ class FakeAgent(AgentBase):
     ) -> None:
         self.step_count += 1
         if self.step_count == self.finish_on_step:
-            conversation.state.execution_status = ConversationExecutionStatus.FINISHED
+            conversation.state.agent_status = AgentExecutionStatus.FINISHED
 
 
 @pytest.fixture()
@@ -56,10 +56,10 @@ def agent() -> FakeAgent:
 
 class TestConversationRunner:
     @pytest.mark.parametrize(
-        'execution_status', [ConversationExecutionStatus.RUNNING, ConversationExecutionStatus.PAUSED]
+        'agent_status', [AgentExecutionStatus.RUNNING, AgentExecutionStatus.PAUSED]
     )
     def test_non_confirmation_mode_runs_once(
-        self, agent: FakeAgent, execution_status: ConversationExecutionStatus
+        self, agent: FakeAgent, agent_status: AgentExecutionStatus
     ) -> None:
         """
         1. Confirmation mode is not on
@@ -68,28 +68,28 @@ class TestConversationRunner:
 
         convo = Conversation(agent)
         convo.max_iteration_per_run = 1
-        convo.state.execution_status = execution_status
+        convo.state.agent_status = agent_status
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(NeverConfirm())
         cr.process_message(message=None)
 
         assert agent.step_count == 1
-        assert convo.state.execution_status != ConversationExecutionStatus.PAUSED
+        assert convo.state.agent_status != AgentExecutionStatus.PAUSED
 
     @pytest.mark.parametrize(
         'confirmation, final_status, expected_run_calls',
         [
             # Case 1: Agent waiting for confirmation; user DEFERS -> early return, no run()
-            (UserConfirmation.DEFER, ConversationExecutionStatus.WAITING_FOR_CONFIRMATION, 0),
+            (UserConfirmation.DEFER, AgentExecutionStatus.WAITING_FOR_CONFIRMATION, 0),
             # Case 2: Agent waiting for confirmation; user ACCEPTS -> run() once, break (finished=True)
-            (UserConfirmation.ACCEPT, ConversationExecutionStatus.FINISHED, 1),
+            (UserConfirmation.ACCEPT, AgentExecutionStatus.FINISHED, 1),
         ],
     )
     def test_confirmation_mode_waiting_and_user_decision_controls_run(
         self,
         agent: FakeAgent,
         confirmation: UserConfirmation,
-        final_status: ConversationExecutionStatus,
+        final_status: AgentExecutionStatus,
         expected_run_calls: int,
     ) -> None:
         """
@@ -100,14 +100,14 @@ class TestConversationRunner:
         5. If accepted, run call to agent should be made
 
         """
-        if final_status == ConversationExecutionStatus.FINISHED:
+        if final_status == AgentExecutionStatus.FINISHED:
             agent.finish_on_step = 1
 
         # Add a mock security analyzer to enable confirmation mode
         agent.security_analyzer = MagicMock()
 
         convo = Conversation(agent)
-        convo.state.execution_status = ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
+        convo.state.agent_status = AgentExecutionStatus.WAITING_FOR_CONFIRMATION
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
 
@@ -117,7 +117,7 @@ class TestConversationRunner:
             cr.process_message(message=None)
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
-        assert convo.state.execution_status == final_status
+        assert convo.state.agent_status == final_status
 
     def test_confirmation_mode_not_waiting__runs_once_when_finished_true(
         self, agent: FakeAgent
@@ -129,7 +129,7 @@ class TestConversationRunner:
         """
         agent.finish_on_step = 1
         convo = Conversation(agent)
-        convo.state.execution_status = ConversationExecutionStatus.PAUSED
+        convo.state.agent_status = AgentExecutionStatus.PAUSED
 
         cr = ConversationRunner(convo)
         cr.set_confirmation_policy(AlwaysConfirm())
