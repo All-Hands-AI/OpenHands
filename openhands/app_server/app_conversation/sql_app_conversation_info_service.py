@@ -399,7 +399,6 @@ class SQLAppConversationInfoService(AppConversationInfoService):
 
         # Execute the secure delete query
         result = await self.db_session.execute(delete_query)
-        await self.db_session.commit()
 
         return result.rowcount > 0
 
