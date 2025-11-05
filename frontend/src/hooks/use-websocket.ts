@@ -55,6 +55,8 @@ export const useWebSocket = <T = string>(
     wsRef.current = ws;
     // Mark this WebSocket instance as allowed to reconnect
     allowedToReconnectRef.current.add(ws);
+    // Track if onError has already been called for this WebSocket instance
+    let errorHandlerCalled = false;
 
     ws.onopen = (event) => {
       setIsConnected(true);
@@ -82,8 +84,9 @@ export const useWebSocket = <T = string>(
             `WebSocket closed with code ${event.code}: ${event.reason || "Connection closed unexpectedly"}`,
           ),
         );
-        // Also call onError handler for error closures (only if allowed to reconnect)
-        if (canReconnect) {
+        // Only call onError handler if it hasn't been called already and if allowed to reconnect
+        if (canReconnect && !errorHandlerCalled) {
+          errorHandlerCalled = true;
           optionsRef.current?.onError?.(event);
         }
       }
@@ -114,7 +117,11 @@ export const useWebSocket = <T = string>(
 
     ws.onerror = (event) => {
       setIsConnected(false);
-      optionsRef.current?.onError?.(event);
+      // Only call onError handler if it hasn't been called already
+      if (!errorHandlerCalled) {
+        errorHandlerCalled = true;
+        optionsRef.current?.onError?.(event);
+      }
     };
   }, [url]);
 
