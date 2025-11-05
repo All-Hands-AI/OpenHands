@@ -273,7 +273,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         user_id = await self.user_context.get_user_id()
         if user_id:
             query = select(StoredConversationMetadata).where(
-                StoredConversationMetadata.conversation_id == info.id
+                StoredConversationMetadata.conversation_id == str(info.id)
             )
             result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
