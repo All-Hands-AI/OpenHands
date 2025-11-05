@@ -5,6 +5,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  useRef,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useWebSocket, WebSocketHookOptions } from "#/hooks/use-websocket";
@@ -27,6 +28,7 @@ import {
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
 import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
+import EventService from "#/api/event-service/event-service.api";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type V1_WebSocketConnectionState =
@@ -38,6 +40,7 @@ export type V1_WebSocketConnectionState =
 interface ConversationWebSocketContextType {
   connectionState: V1_WebSocketConnectionState;
   sendMessage: (message: V1SendMessageRequest) => Promise<void>;
+  isLoadingHistory: boolean;
 }
 
 const ConversationWebSocketContext = createContext<
@@ -64,24 +67,63 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
-  const { setAgentStatus } = useV1ConversationStateStore();
+  const { setExecutionStatus } = useV1ConversationStateStore();
   const { appendInput, appendOutput } = useCommandStore();
 
-  // Build WebSocket URL from props
-  const wsUrl = useMemo(
-    () => buildWebSocketUrl(conversationId, conversationUrl),
-    [conversationId, conversationUrl],
+  // History loading state
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [expectedEventCount, setExpectedEventCount] = useState<number | null>(
+    null,
   );
+  const receivedEventCountRef = useRef(0);
 
-  // Reset hasConnected flag when conversation changes
+  // Build WebSocket URL from props
+  // Only build URL if we have both conversationId and conversationUrl
+  // This prevents connection attempts during task polling phase
+  const wsUrl = useMemo(() => {
+    // Don't attempt connection if we're missing required data
+    if (!conversationId || !conversationUrl) {
+      return null;
+    }
+    return buildWebSocketUrl(conversationId, conversationUrl);
+  }, [conversationId, conversationUrl]);
+
+  // Reset hasConnected flag and history loading state when conversation changes
   useEffect(() => {
     hasConnectedRef.current = false;
+    setIsLoadingHistory(true);
+    setExpectedEventCount(null);
+    receivedEventCountRef.current = 0;
   }, [conversationId]);
+
+  // Check if we've received all events when expectedEventCount becomes available
+  useEffect(() => {
+    if (
+      expectedEventCount !== null &&
+      receivedEventCountRef.current >= expectedEventCount &&
+      isLoadingHistory
+    ) {
+      setIsLoadingHistory(false);
+    }
+  }, [expectedEventCount, isLoadingHistory]);
 
   const handleMessage = useCallback(
     (messageEvent: MessageEvent) => {
       try {
         const event = JSON.parse(messageEvent.data);
+
+        // Track received events for history loading (count ALL events from WebSocket)
+        // Always count when loading, even if we don't have the expected count yet
+        if (isLoadingHistory) {
+          receivedEventCountRef.current += 1;
+
+          if (
+            expectedEventCount !== null &&
+            receivedEventCountRef.current >= expectedEventCount
+          ) {
+            setIsLoadingHistory(false);
+          }
+        }
 
         // Use type guard to validate v1 event structure
         if (isV1Event(event)) {
@@ -112,10 +154,10 @@ export function ConversationWebSocketProvider({
           // TODO: Tests
           if (isConversationStateUpdateEvent(event)) {
             if (isFullStateConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value.agent_status);
+              setExecutionStatus(event.value.execution_status);
             }
             if (isAgentStatusConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value);
+              setExecutionStatus(event.value);
             }
           }
 
@@ -136,11 +178,13 @@ export function ConversationWebSocketProvider({
     },
     [
       addEvent,
+      isLoadingHistory,
+      expectedEventCount,
       setErrorMessage,
       removeOptimisticUserMessage,
       queryClient,
       conversationId,
-      setAgentStatus,
+      setExecutionStatus,
       appendInput,
       appendOutput,
     ],
@@ -159,10 +203,26 @@ export function ConversationWebSocketProvider({
     return {
       queryParams,
       reconnect: { enabled: true },
-      onOpen: () => {
+      onOpen: async () => {
         setConnectionState("OPEN");
         hasConnectedRef.current = true; // Mark that we've successfully connected
         removeErrorMessage(); // Clear any previous error messages on successful connection
+
+        // Fetch expected event count for history loading detection
+        if (conversationId) {
+          try {
+            const count = await EventService.getEventCount(conversationId);
+            setExpectedEventCount(count);
+
+            // If no events expected, mark as loaded immediately
+            if (count === 0) {
+              setIsLoadingHistory(false);
+            }
+          } catch (error) {
+            // Fall back to marking as loaded to avoid infinite loading state
+            setIsLoadingHistory(false);
+          }
+        }
       },
       onClose: (event: CloseEvent) => {
         setConnectionState("CLOSED");
@@ -183,11 +243,18 @@ export function ConversationWebSocketProvider({
       },
       onMessage: handleMessage,
     };
-  }, [handleMessage, setErrorMessage, removeErrorMessage, sessionApiKey]);
+  }, [
+    handleMessage,
+    setErrorMessage,
+    removeErrorMessage,
+    sessionApiKey,
+    conversationId,
+  ]);
 
-  // Build a fallback URL to prevent hook from connecting if conversation data isn't ready
-  const websocketUrl = wsUrl || "ws://localhost/placeholder";
-  const { socket } = useWebSocket(websocketUrl, websocketOptions);
+  // Only attempt WebSocket connection when we have a valid URL
+  // This prevents connection attempts during task polling phase
+  const websocketUrl = wsUrl;
+  const { socket } = useWebSocket(websocketUrl || "", websocketOptions);
 
   // V1 send message function via WebSocket
   const sendMessage = useCallback(
@@ -212,7 +279,7 @@ export function ConversationWebSocketProvider({
   );
 
   useEffect(() => {
-    // Only process socket updates if we have a valid URL
+    // Only process socket updates if we have a valid URL and socket
     if (socket && wsUrl) {
       // Update state based on socket readyState
       const updateState = () => {
@@ -240,8 +307,8 @@ export function ConversationWebSocketProvider({
   }, [socket, wsUrl]);
 
   const contextValue = useMemo(
-    () => ({ connectionState, sendMessage }),
-    [connectionState, sendMessage],
+    () => ({ connectionState, sendMessage, isLoadingHistory }),
+    [connectionState, sendMessage, isLoadingHistory],
   );
 
   return (

@@ -594,3 +594,18 @@ export const hasOpenHandsSuffix = (
   }
   return repo.full_name.endsWith("/.openhands");
 };
+
+/**
+ * Build headers for V1 API requests that require session authentication
+ * @param sessionApiKey Session API key for authentication
+ * @returns Headers object with X-Session-API-Key if provided
+ */
+export const buildSessionHeaders = (
+  sessionApiKey?: string | null,
+): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (sessionApiKey) {
+    headers["X-Session-API-Key"] = sessionApiKey;
+  }
+  return headers;
+};

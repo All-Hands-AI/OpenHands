@@ -73,7 +73,8 @@ def service(async_session) -> SQLAppConversationInfoService:
 def service_with_user(async_session) -> SQLAppConversationInfoService:
     """Create a SQLAppConversationInfoService instance with a user_id for testing."""
     return SQLAppConversationInfoService(
-        db_session=async_session, user_id='test_user_123'
+        db_session=async_session,
+        user_context=SpecifyUserContext(user_id='test_user_123'),
     )
 
 
@@ -442,6 +443,23 @@ class TestSQLAppConversationInfoService:
 
         # Count without filters
         count = await service.count_app_conversation_info()
+        assert count == len(multiple_conversation_infos)
+
+    @pytest.mark.asyncio
+    async def test_count_conversation_info_with_user_id(
+        self,
+        service_with_user: SQLAppConversationInfoService,
+        multiple_conversation_infos: list[AppConversationInfo],
+    ):
+        """Test count without any filters."""
+        # Save all conversation infos
+        for info in multiple_conversation_infos:
+            await service_with_user.save_app_conversation_info(info)
+
+        # Count without filters
+        count = await service_with_user.count_app_conversation_info(
+            updated_at__gte=datetime(1900, 1, 1, tzinfo=timezone.utc)
+        )
         assert count == len(multiple_conversation_infos)
 
     @pytest.mark.asyncio

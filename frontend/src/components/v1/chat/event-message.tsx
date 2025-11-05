@@ -14,14 +14,13 @@ import {
   ErrorEventMessage,
   UserAssistantEventMessage,
   FinishEventMessage,
-  ObservationPairEventMessage,
   GenericEventMessageWrapper,
+  ThoughtEventMessage,
 } from "./event-message-components";
 
 interface EventMessageProps {
   event: OpenHandsEvent;
-  hasObservationPair: boolean;
-  isAwaitingUserConfirmation: boolean;
+  messages: OpenHandsEvent[];
   isLastMessage: boolean;
   microagentStatus?: MicroagentStatus | null;
   microagentConversationId?: string;
@@ -37,8 +36,7 @@ interface EventMessageProps {
 /* eslint-disable react/jsx-props-no-spreading */
 export function EventMessage({
   event,
-  hasObservationPair,
-  isAwaitingUserConfirmation,
+  messages,
   isLastMessage,
   microagentStatus,
   microagentConversationId,
@@ -46,9 +44,6 @@ export function EventMessage({
   actions,
   isInLast10Actions,
 }: EventMessageProps) {
-  const shouldShowConfirmationButtons =
-    isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
-
   const { data: config } = useConfig();
 
   // V1 events use string IDs, but useFeedbackExists expects number
@@ -74,19 +69,6 @@ export function EventMessage({
     return <ErrorEventMessage event={event} {...commonProps} />;
   }
 
-  // Observation pairs with actions
-  if (hasObservationPair && isActionEvent(event)) {
-    return (
-      <ObservationPairEventMessage
-        event={event}
-        microagentStatus={microagentStatus}
-        microagentConversationId={microagentConversationId}
-        microagentPRUrl={microagentPRUrl}
-        actions={actions}
-      />
-    );
-  }
-
   // Finish actions
   if (isActionEvent(event) && event.action.kind === "FinishAction") {
     return (
@@ -97,23 +79,53 @@ export function EventMessage({
     );
   }
 
+  // Action events - render thought + action (will be replaced by thought + observation)
+  if (isActionEvent(event)) {
+    return (
+      <>
+        <ThoughtEventMessage event={event} actions={actions} />
+        <GenericEventMessageWrapper
+          event={event}
+          isLastMessage={isLastMessage}
+        />
+      </>
+    );
+  }
+
+  // Observation events - find the corresponding action and render thought + observation
+  if (isObservationEvent(event)) {
+    // Find the action that this observation is responding to
+    const correspondingAction = messages.find(
+      (msg) => isActionEvent(msg) && msg.id === event.action_id,
+    );
+
+    return (
+      <>
+        {correspondingAction && isActionEvent(correspondingAction) && (
+          <ThoughtEventMessage event={correspondingAction} actions={actions} />
+        )}
+        <GenericEventMessageWrapper
+          event={event}
+          isLastMessage={isLastMessage}
+        />
+      </>
+    );
+  }
+
   // Message events (user and assistant messages)
   if (!isActionEvent(event) && !isObservationEvent(event)) {
     // This is a MessageEvent
     return (
       <UserAssistantEventMessage
         event={event as MessageEvent}
-        shouldShowConfirmationButtons={shouldShowConfirmationButtons}
         {...commonProps}
+        isLastMessage={isLastMessage}
       />
     );
   }
 
-  // Generic fallback for all other events (including observation events)
+  // Generic fallback for all other events
   return (
-    <GenericEventMessageWrapper
-      event={event}
-      shouldShowConfirmationButtons={shouldShowConfirmationButtons}
-    />
+    <GenericEventMessageWrapper event={event} isLastMessage={isLastMessage} />
   );
 }

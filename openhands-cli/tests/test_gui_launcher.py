@@ -182,7 +182,7 @@ class TestLaunchGuiServer:
             # Check pull command
             pull_call = mock_run.call_args_list[0]
             pull_cmd = pull_call[0][0]
-            assert pull_cmd[0:3] == ['docker', 'pull', 'docker.all-hands.dev/all-hands-ai/runtime:latest-nikolaik']
+            assert pull_cmd[0:3] == ['docker', 'pull', 'docker.openhands.dev/openhands/runtime:latest-nikolaik']
 
             # Check run command
             run_call = mock_run.call_args_list[1]

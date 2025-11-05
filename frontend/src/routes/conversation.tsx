@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useCommandStore } from "#/state/command-store";
-import { useJupyterStore } from "#/state/jupyter-store";
 import { useConversationStore } from "#/state/conversation-store";
 import { useAgentStore } from "#/stores/agent-store";
 import { AgentState } from "#/types/agent-state";
@@ -53,7 +52,6 @@ function AppContent() {
   const setCurrentAgentState = useAgentStore(
     (state) => state.setCurrentAgentState,
   );
-  const clearJupyter = useJupyterStore((state) => state.clearJupyter);
   const removeErrorMessage = useErrorMessageStore(
     (state) => state.removeErrorMessage,
   );
@@ -70,7 +68,6 @@ function AppContent() {
   // 1. Cleanup Effect - runs when navigating to a different conversation
   React.useEffect(() => {
     clearTerminal();
-    clearJupyter();
     resetConversationState();
     setCurrentAgentState(AgentState.LOADING);
     removeErrorMessage();
@@ -84,7 +81,6 @@ function AppContent() {
   }, [
     conversationId,
     clearTerminal,
-    clearJupyter,
     resetConversationState,
     setCurrentAgentState,
     removeErrorMessage,

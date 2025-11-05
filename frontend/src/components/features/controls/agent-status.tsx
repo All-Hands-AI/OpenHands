@@ -56,7 +56,8 @@ export function AgentStatus({
 
   const shouldShownAgentStop = curAgentState === AgentState.RUNNING;
 
-  const shouldShownAgentResume = curAgentState === AgentState.STOPPED;
+  const shouldShownAgentResume =
+    curAgentState === AgentState.STOPPED || curAgentState === AgentState.PAUSED;
 
   // Update global state when agent loading condition changes
   useEffect(() => {
@@ -74,19 +75,24 @@ export function AgentStatus({
       <div
         className={cn(
           "bg-[#525252] box-border content-stretch flex flex-row gap-[3px] items-center justify-center overflow-clip px-0.5 py-1 relative rounded-[100px] shrink-0 size-6 transition-all duration-200 active:scale-95",
-          (shouldShownAgentStop || shouldShownAgentResume) &&
+          !shouldShownAgentLoading &&
+            (shouldShownAgentStop || shouldShownAgentResume) &&
             "hover:bg-[#737373] cursor-pointer",
         )}
       >
         {shouldShownAgentLoading && <AgentLoading />}
-        {shouldShownAgentStop && <ChatStopButton handleStop={handleStop} />}
-        {shouldShownAgentResume && (
+        {!shouldShownAgentLoading && shouldShownAgentStop && (
+          <ChatStopButton handleStop={handleStop} />
+        )}
+        {!shouldShownAgentLoading && shouldShownAgentResume && (
           <ChatResumeAgentButton
             onAgentResumed={handleResumeAgent}
             disabled={disabled}
           />
         )}
-        {shouldShownAgentError && <CircleErrorIcon className="w-4 h-4" />}
+        {!shouldShownAgentLoading && shouldShownAgentError && (
+          <CircleErrorIcon className="w-4 h-4" />
+        )}
         {!shouldShownAgentLoading &&
           !shouldShownAgentStop &&
           !shouldShownAgentResume &&

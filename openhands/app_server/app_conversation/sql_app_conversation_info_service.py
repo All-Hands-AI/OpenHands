@@ -129,9 +129,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
             query = query.order_by(StoredConversationMetadata.created_at.desc())
         elif sort_order == AppConversationSortOrder.UPDATED_AT:
-            query = query.order_by(StoredConversationMetadata.updated_at)
+            query = query.order_by(StoredConversationMetadata.last_updated_at)
         elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
-            query = query.order_by(StoredConversationMetadata.updated_at.desc())
+            query = query.order_by(StoredConversationMetadata.last_updated_at.desc())
         elif sort_order == AppConversationSortOrder.TITLE:
             query = query.order_by(StoredConversationMetadata.title)
         elif sort_order == AppConversationSortOrder.TITLE_DESC:
@@ -180,9 +180,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = select(func.count(StoredConversationMetadata.conversation_id))
         user_id = await self.user_context.get_user_id()
         if user_id:
-            query = query.where(
-                StoredConversationMetadata.created_by_user_id == user_id
-            )
+            query = query.where(StoredConversationMetadata.user_id == user_id)
 
         query = self._apply_filters(
             query=query,
@@ -275,7 +273,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         user_id = await self.user_context.get_user_id()
         if user_id:
             query = select(StoredConversationMetadata).where(
-                StoredConversationMetadata.conversation_id == info.id
+                StoredConversationMetadata.conversation_id == str(info.id)
             )
             result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
@@ -358,9 +356,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
-            git_provider=ProviderType(stored.git_provider)
-            if stored.git_provider
-            else None,
+            git_provider=(
+                ProviderType(stored.git_provider) if stored.git_provider else None
+            ),
             title=stored.title,
             trigger=ConversationTrigger(stored.trigger) if stored.trigger else None,
             pr_number=stored.pr_number,
@@ -376,6 +374,33 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         if not value.tzinfo:
             value = value.replace(tzinfo=UTC)
         return value
+
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
+        """Delete a conversation info from the database.
+
+        Args:
+            conversation_id: The ID of the conversation to delete.
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
+        from sqlalchemy import delete
+
+        # Build secure delete query with user context filtering
+        delete_query = delete(StoredConversationMetadata).where(
+            StoredConversationMetadata.conversation_id == str(conversation_id)
+        )
+
+        # Apply user security filtering - only allow deletion of conversations owned by the current user
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            delete_query = delete_query.where(
+                StoredConversationMetadata.user_id == user_id
+            )
+
+        # Execute the secure delete query
+        result = await self.db_session.execute(delete_query)
+
+        return result.rowcount > 0
 
 
 class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):

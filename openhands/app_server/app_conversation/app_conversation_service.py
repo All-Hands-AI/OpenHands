@@ -12,8 +12,8 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartTask,
 )
 from openhands.app_server.services.injector import Injector
-from openhands.sdk import Workspace
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 
 class AppConversationService(ABC):
@@ -88,10 +88,27 @@ class AppConversationService(ABC):
 
     @abstractmethod
     async def run_setup_scripts(
-        self, task: AppConversationStartTask, workspace: Workspace
+        self,
+        task: AppConversationStartTask,
+        workspace: AsyncRemoteWorkspace,
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         """Run the setup scripts for the project and yield status updates"""
         yield task
+
+    @abstractmethod
+    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a V1 conversation and all its associated data.
+
+        Args:
+            conversation_id: The UUID of the conversation to delete.
+
+        This method should:
+        1. Delete the conversation from the database
+        2. Call the agent server to delete the conversation
+        3. Clean up any related data
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
 
 
 class AppConversationServiceInjector(

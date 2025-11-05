@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
-from pydantic import Field, SecretStr, TypeAdapter
+from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
     ConversationInfo,
@@ -39,6 +39,9 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
 from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
+from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
+    SQLAppConversationInfoService,
+)
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
@@ -51,13 +54,13 @@ from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.utils.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
+from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.tools.preset.default import get_default_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
@@ -181,9 +184,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
             # Run setup scripts
             workspace = AsyncRemoteWorkspace(
+                host=agent_server_url,
+                api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
-                server_url=agent_server_url,
-                session_api_key=sandbox.session_api_key,
             )
             async for updated_task in self.run_setup_scripts(task, workspace):
                 yield updated_task
@@ -219,7 +222,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             app_conversation_info = AppConversationInfo(
                 id=info.id,
                 # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
-                title=f'Conversation {info.id}',
+                title=f'Conversation {info.id.hex}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
@@ -334,7 +337,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
         if app_conversation_info is None:
             return None
         sandbox_status = sandbox.status if sandbox else SandboxStatus.MISSING
-        agent_status = conversation_info.agent_status if conversation_info else None
+        execution_status = (
+            conversation_info.execution_status if conversation_info else None
+        )
         conversation_url = None
         session_api_key = None
         if sandbox and sandbox.exposed_urls:
@@ -353,7 +358,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return AppConversation(
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
-            agent_status=agent_status,
+            execution_status=execution_status,
             conversation_url=conversation_url,
             session_api_key=session_api_key,
         )
@@ -443,7 +448,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     expires_in=self.access_token_hard_timeout,
                 )
                 secrets[GIT_TOKEN] = LookupSecret(
-                    url=self.web_url + '/ap/v1/webhooks/secrets',
+                    url=self.web_url + '/api/v1/webhooks/secrets',
                     headers={'X-Access-Token': access_token},
                 )
             else:
@@ -452,7 +457,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 # on the type, this may eventually expire.
                 static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
-                    secrets[GIT_TOKEN] = StaticSecret(value=SecretStr(static_token))
+                    secrets[GIT_TOKEN] = StaticSecret(value=static_token)
 
         workspace = LocalWorkspace(working_dir=working_dir)
 
@@ -528,6 +533,101 @@ class LiveStatusAppConversationService(GitAppConversationService):
         _logger.info(
             f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
         )
+
+    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a V1 conversation and all its associated data.
+
+        Args:
+            conversation_id: The UUID of the conversation to delete.
+        """
+        # Check if we have the required SQL implementation for transactional deletion
+        if not isinstance(
+            self.app_conversation_info_service, SQLAppConversationInfoService
+        ):
+            _logger.error(
+                f'Cannot delete V1 conversation {conversation_id}: SQL implementation required for transactional deletion',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            return False
+
+        try:
+            # First, fetch the conversation to get the full object needed for agent server deletion
+            app_conversation = await self.get_app_conversation(conversation_id)
+            if not app_conversation:
+                _logger.warning(
+                    f'V1 conversation {conversation_id} not found for deletion',
+                    extra={'conversation_id': str(conversation_id)},
+                )
+                return False
+
+            # Delete from agent server if sandbox is running
+            await self._delete_from_agent_server(app_conversation)
+
+            # Delete from database using the conversation info from app_conversation
+            # AppConversation extends AppConversationInfo, so we can use it directly
+            return await self._delete_from_database(app_conversation)
+
+        except Exception as e:
+            _logger.error(
+                f'Error deleting V1 conversation {conversation_id}: {e}',
+                extra={'conversation_id': str(conversation_id)},
+                exc_info=True,
+            )
+            return False
+
+    async def _delete_from_agent_server(
+        self, app_conversation: AppConversation
+    ) -> None:
+        """Delete conversation from agent server if sandbox is running."""
+        conversation_id = app_conversation.id
+        if not (
+            app_conversation.sandbox_status == SandboxStatus.RUNNING
+            and app_conversation.session_api_key
+        ):
+            return
+
+        try:
+            # Get sandbox info to find agent server URL
+            sandbox = await self.sandbox_service.get_sandbox(
+                app_conversation.sandbox_id
+            )
+            if sandbox and sandbox.exposed_urls:
+                agent_server_url = self._get_agent_server_url(sandbox)
+
+                # Call agent server delete API
+                response = await self.httpx_client.delete(
+                    f'{agent_server_url}/api/conversations/{conversation_id}',
+                    headers={'X-Session-API-Key': app_conversation.session_api_key},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except Exception as e:
+            _logger.warning(
+                f'Failed to delete conversation from agent server: {e}',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            # Continue with database cleanup even if agent server call fails
+
+    async def _delete_from_database(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
+        """Delete conversation from database.
+
+        Args:
+            app_conversation_info: The app conversation info to delete (already fetched).
+        """
+        # The session is already managed by the dependency injection system
+        # No need for explicit transaction management here
+        deleted_info = (
+            await self.app_conversation_info_service.delete_app_conversation_info(
+                app_conversation_info.id
+            )
+        )
+        deleted_tasks = await self.app_conversation_start_task_service.delete_app_conversation_start_tasks(
+            app_conversation_info.id
+        )
+
+        return deleted_info or deleted_tasks
 
 
 class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):

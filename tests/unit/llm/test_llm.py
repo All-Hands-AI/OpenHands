@@ -201,6 +201,28 @@ def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion):
     llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
 
 
+@patch('openhands.llm.llm.litellm_completion')
+def test_completion_kwargs_passed_to_litellm(mock_litellm_completion):
+    # Create a config with custom completion_kwargs
+    config_with_completion_kwargs = LLMConfig(
+        completion_kwargs={'custom_param': 'custom_value', 'another_param': 42}
+    )
+    llm = LLM(config_with_completion_kwargs, service_id='test-service')
+
+    # Define a side effect function to check completion_kwargs are passed
+    def side_effect(*args, **kwargs):
+        assert 'custom_param' in kwargs
+        assert kwargs['custom_param'] == 'custom_value'
+        assert 'another_param' in kwargs
+        assert kwargs['another_param'] == 42
+        return {'choices': [{'message': {'content': 'Mocked response'}}]}
+
+    mock_litellm_completion.side_effect = side_effect
+
+    # Call completion
+    llm.completion(messages=[{'role': 'system', 'content': 'Test message'}])
+
+
 def test_llm_init_with_metrics():
     config = LLMConfig(model='gpt-4o', api_key='test_key')
     metrics = Metrics()
