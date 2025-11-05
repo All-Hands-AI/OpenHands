@@ -91,6 +91,7 @@ from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
+from openhands.utils.environment import get_effective_llm_base_url
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = depends_app_conversation_service()
@@ -545,10 +546,15 @@ async def get_prompt(
         # placeholder for error handling
         raise ValueError('Settings not found')
 
+    settings_base_url = settings.llm_base_url
+    effective_base_url = get_effective_llm_base_url(
+        settings.llm_model,
+        settings_base_url,
+    )
     llm_config = LLMConfig(
         model=settings.llm_model or '',
         api_key=settings.llm_api_key,
-        base_url=settings.llm_base_url,
+        base_url=effective_base_url,
     )
 
     prompt_template = generate_prompt_template(stringified_events)
