@@ -93,7 +93,7 @@ def run_resume_command_test(commands, agent_status=None, expect_runner_created=T
 def test_resume_command_warnings(commands, expected_warning, expect_runner_created):
     """Test /resume command shows appropriate warnings."""
     # Set agent status to FINISHED for the "conversation exists but not paused" test
-    agent_status = AgentExecutionStatus.FINISHED if expect_runner_created else None
+    agent_status = ConversationExecutionStatus.FINISHED if expect_runner_created else None
 
     mock_runner_cls, runner, mock_print = run_resume_command_test(
         commands, agent_status=agent_status, expect_runner_created=expect_runner_created
