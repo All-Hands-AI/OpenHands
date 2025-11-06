@@ -42,6 +42,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
+from openhands.utils.posthog_tracker import track_agent_task_completed
 from openhands.events import (
     EventSource,
     EventStream,
@@ -708,6 +709,20 @@ class AgentController:
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
+
+        # Track agent task completion in PostHog
+        if new_state == AgentState.FINISHED:
+            try:
+                # Get app_mode from environment, default to 'oss'
+                app_mode = os.environ.get('APP_MODE', 'oss')
+                track_agent_task_completed(
+                    conversation_id=self.id,
+                    user_id=self.user_id,
+                    app_mode=app_mode,
+                )
+            except Exception as e:
+                # Don't let tracking errors interrupt the agent
+                self.log('warning', f'Failed to track agent completion: {e}')
 
         # Save state whenever agent state changes to ensure we don't lose state
         # in case of crashes or unexpected circumstances
