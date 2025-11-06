@@ -1143,11 +1143,17 @@ def test_gemini_model_keeps_none_reasoning_effort():
     assert config.reasoning_effort is None
 
 
-def test_non_gemini_model_gets_high_reasoning_effort():
-    """Test that non-Gemini models get reasoning_effort='high' by default."""
-    config = LLMConfig(model='gpt-4o', api_key='test_key')
-    # Non-Gemini models should get reasoning_effort='high'
+def test_non_gemini_model_explicit_reasoning_effort():
+    """Test that non-Gemini models get reasoning_effort ONLY if explicitly set."""
+    config = LLMConfig(model='gpt-4o', api_key='test_key', reasoning_effort='high')
     assert config.reasoning_effort == 'high'
+
+
+def test_non_gemini_model_default_reasoning_effort_none():
+    """Test that non-Gemini models do NOT get reasoning_effort by default after PR."""
+    config = LLMConfig(model='gpt-4o', api_key='test_key')
+    # Should be None by default after your change
+    assert config.reasoning_effort is None
 
 
 def test_explicit_reasoning_effort_preserved():

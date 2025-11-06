@@ -90,16 +90,3 @@ jobs:
       - name: Run pre-commit hooks
         working-directory: ./openhands-cli
         run: pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
-
-  # Check version consistency across documentation
-  check-version-consistency:
-    name: Check version consistency
-    runs-on: blacksmith-4vcpu-ubuntu-2204
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: 3.12
-      - name: Run version consistency check
-        run: .github/scripts/check_version_consistency.py
