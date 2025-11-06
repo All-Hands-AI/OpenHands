@@ -4,7 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.utils.posthog_tracker import track_agent_task_completed
+from openhands.utils.posthog_tracker import (
+    track_agent_task_completed,
+    track_user_signup_completed,
+)
 
 
 @pytest.fixture
@@ -111,4 +114,53 @@ def test_track_agent_task_completed_when_posthog_not_installed():
         conversation_id='test-conversation-no-ph',
         user_id='user-no-ph',
         app_mode='oss',
+    )
+
+
+def test_track_user_signup_completed(mock_posthog):
+    """Test tracking user signup completion."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+
+    track_user_signup_completed(
+        user_id='test-user-123',
+        signup_timestamp='2025-01-15T10:30:00Z',
+    )
+
+    mock_posthog.capture.assert_called_once_with(
+        distinct_id='test-user-123',
+        event='user_signup_completed',
+        properties={
+            'user_id': 'test-user-123',
+            'signup_timestamp': '2025-01-15T10:30:00Z',
+        },
+    )
+
+
+def test_track_user_signup_completed_handles_errors(mock_posthog):
+    """Test that user signup tracking errors are handled gracefully."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+    mock_posthog.capture.side_effect = Exception('PostHog API error')
+
+    # Should not raise an exception
+    track_user_signup_completed(
+        user_id='test-user-error',
+        signup_timestamp='2025-01-15T12:00:00Z',
+    )
+
+
+def test_track_user_signup_completed_when_posthog_not_installed():
+    """Test user signup tracking when posthog is not installed."""
+    import openhands.utils.posthog_tracker as tracker
+
+    # Simulate posthog not being installed
+    tracker.posthog = None
+
+    # Should not raise an exception
+    track_user_signup_completed(
+        user_id='test-user-no-ph',
+        signup_timestamp='2025-01-15T13:00:00Z',
     )

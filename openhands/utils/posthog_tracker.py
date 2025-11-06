@@ -74,3 +74,44 @@ def track_agent_task_completed(
                 'error': str(e),
             },
         )
+
+
+def track_user_signup_completed(
+    user_id: str,
+    signup_timestamp: str,
+) -> None:
+    """Track when a user completes signup by accepting TOS.
+
+    Args:
+        user_id: The ID of the user (Keycloak user ID)
+        signup_timestamp: ISO format timestamp of when TOS was accepted
+    """
+    _init_posthog()
+
+    if posthog is None:
+        return
+
+    try:
+        posthog.capture(
+            distinct_id=user_id,
+            event='user_signup_completed',
+            properties={
+                'user_id': user_id,
+                'signup_timestamp': signup_timestamp,
+            },
+        )
+        logger.debug(
+            'posthog_track',
+            extra={
+                'event': 'user_signup_completed',
+                'user_id': user_id,
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            f'Failed to track user_signup_completed to PostHog: {e}',
+            extra={
+                'user_id': user_id,
+                'error': str(e),
+            },
+        )
