@@ -6,6 +6,7 @@ Create Date: 2025-10-05 11:28:41.772294
 
 """
 
+from enum import Enum
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -18,11 +19,18 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+class EventCallbackStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    DISABLED = 'DISABLED'
+    COMPLETED = 'COMPLETED'
+    ERROR = 'ERROR'
+
+
 def upgrade() -> None:
     """Upgrade schema."""
     op.add_column(
         'event_callback',
-        sa.Column('status', sa.String, nullable=False, server_default='ACTIVE'),
+        sa.Column('status', sa.Enum(EventCallbackStatus), nullable=False, server_default='ACTIVE'),
     )
     op.add_column(
         'event_callback',

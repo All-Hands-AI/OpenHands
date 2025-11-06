@@ -6,6 +6,7 @@ Create Date: 2025-11-05 00:00:00.000000
 
 """
 
+from enum import Enum
 from typing import Sequence, Union
 
 import sqlalchemy as sa
@@ -18,11 +19,20 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
+class EventCallbackStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    DISABLED = 'DISABLED'
+    COMPLETED = 'COMPLETED'
+    ERROR = 'ERROR'
+
+
 def upgrade() -> None:
     """Upgrade schema."""
+    status = sa.Enum(EventCallbackStatus, name="eventcallbackstatus")
+    status.create(op.get_bind(), checkfirst=True)
     op.add_column(
         'event_callback',
-        sa.Column('status', sa.String, nullable=False, server_default='ACTIVE'),
+        sa.Column('status', status, nullable=False, server_default='ACTIVE'),
     )
     op.add_column(
         'event_callback',
@@ -58,3 +68,4 @@ def downgrade() -> None:
         ['event_id'],
         unique=False,
     )
+    op.execute('DROP TYPE eventcallbackstatus')
