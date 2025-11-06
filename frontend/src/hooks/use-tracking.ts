@@ -37,8 +37,29 @@ export const useTracking = () => {
     });
   };
 
+  const trackPushButtonClick = () => {
+    posthog.capture("push_button_clicked", {
+      ...commonProperties,
+    });
+  };
+
+  const trackPullButtonClick = () => {
+    posthog.capture("pull_button_clicked", {
+      ...commonProperties,
+    });
+  };
+
+  const trackCreatePrButtonClick = () => {
+    posthog.capture("create_pr_button_clicked", {
+      ...commonProperties,
+    });
+  };
+
   return {
     trackLoginButtonClick,
     trackConversationCreated,
+    trackPushButtonClick,
+    trackPullButtonClick,
+    trackCreatePrButtonClick,
   };
 };
