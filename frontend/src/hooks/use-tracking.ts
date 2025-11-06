@@ -26,10 +26,19 @@ export const useTracking = () => {
     });
   };
 
+  const trackConversationCreated = ({
+    hasRepository,
+  }: {
+    hasRepository: boolean;
+  }) => {
+    posthog.capture("conversation_created", {
+      has_repository: hasRepository,
+      ...commonProperties,
+    });
+  };
+
   return {
     trackLoginButtonClick,
-    // Future tracking functions can be added here
-    // trackFeatureUsed,
-    // trackSettingsChanged,
+    trackConversationCreated,
   };
 };
