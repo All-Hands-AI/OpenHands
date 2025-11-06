@@ -9,7 +9,6 @@ import pytest
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
-from openhands.app_server.event_callback import event_callback_service
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.sdk import Agent
 from openhands.sdk.llm import LLM
