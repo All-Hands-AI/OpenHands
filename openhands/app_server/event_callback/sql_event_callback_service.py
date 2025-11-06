@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime
 import logging
 from dataclasses import dataclass
+from datetime import datetime
 from typing import AsyncGenerator
 from uuid import UUID
 
@@ -48,7 +48,9 @@ class StoredEventCallback(Base):  # type: ignore
     __tablename__ = 'event_callback'
     id = Column(SQLUUID, primary_key=True)
     conversation_id = Column(SQLUUID, nullable=True)
-    status = Column(Enum(EventCallbackStatus), nullable=False, default=EventCallbackStatus.ACTIVE)
+    status = Column(
+        Enum(EventCallbackStatus), nullable=False, default=EventCallbackStatus.ACTIVE
+    )
     processor = Column(create_json_type_decorator(EventCallbackProcessor))
     event_kind = Column(String, nullable=True)
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)

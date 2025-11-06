@@ -45,8 +45,12 @@ from openhands.app_server.app_conversation.sql_app_conversation_info_service imp
 from openhands.app_server.config import get_event_callback_service
 from openhands.app_server.errors import SandboxError
 from openhands.app_server.event_callback.event_callback_models import EventCallback
-from openhands.app_server.event_callback.event_callback_service import EventCallbackService
-from openhands.app_server.event_callback.set_title_callback_processor import SetTitleCallbackProcessor
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
+from openhands.app_server.event_callback.set_title_callback_processor import (
+    SetTitleCallbackProcessor,
+)
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
@@ -247,15 +251,17 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 processors = [SetTitleCallbackProcessor()]
 
             # Save processors
-            await asyncio.gather(*[
-                self.event_callback_service.save_event_callback(
-                    EventCallback(
-                        conversation_id=info.id,
-                        processor=processor,
+            await asyncio.gather(
+                *[
+                    self.event_callback_service.save_event_callback(
+                        EventCallback(
+                            conversation_id=info.id,
+                            processor=processor,
+                        )
                     )
-                )
-                for processor in processors
-            ])
+                    for processor in processors
+                ]
+            )
 
             # Update the start task
             task.status = AppConversationStartTaskStatus.READY

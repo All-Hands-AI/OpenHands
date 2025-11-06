@@ -1,22 +1,27 @@
-
-
-
-
 import logging
 from uuid import UUID
 
-from openhands.sdk import Event, MessageEvent
-from openhands.app_server.app_conversation.app_conversation_models import AppConversationInfo
-from openhands.app_server.event_callback.event_callback_models import EventCallback, EventCallbackProcessor, EventCallbackStatus
-from openhands.app_server.event_callback.event_callback_result_models import EventCallbackResult, EventCallbackResultStatus
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
+)
+from openhands.app_server.event_callback.event_callback_models import (
+    EventCallback,
+    EventCallbackProcessor,
+    EventCallbackStatus,
+)
+from openhands.app_server.event_callback.event_callback_result_models import (
+    EventCallbackResult,
+    EventCallbackResultStatus,
+)
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.specifiy_user_context import ADMIN, USER_CONTEXT_ATTR
+from openhands.sdk import Event, MessageEvent
 
 _logger = logging.getLogger(__name__)
 
 
 class SetTitleCallbackProcessor(EventCallbackProcessor):
-    """ Callback processor which sets conversation titles. """
+    """Callback processor which sets conversation titles."""
 
     async def __call__(
         self,
@@ -41,26 +46,30 @@ class SetTitleCallbackProcessor(EventCallbackProcessor):
             get_event_callback_service(state) as event_callback_service,
             get_app_conversation_service(state) as app_conversation_service,
             get_app_conversation_info_service(state) as app_conversation_info_service,
-            get_httpx_client(state) as httpx_client
+            get_httpx_client(state) as httpx_client,
         ):
             # Generate a title for the conversation
-            app_conversation = await app_conversation_service.get_app_conversation(conversation_id)
+            app_conversation = await app_conversation_service.get_app_conversation(
+                conversation_id
+            )
             assert app_conversation is not None
             response = await httpx_client.post(
-                f"{app_conversation.conversation_url}/generate_title",
+                f'{app_conversation.conversation_url}/generate_title',
                 headers={
                     'X-Session-API-Key': app_conversation.session_api_key,
                 },
-                content='{}'
+                content='{}',
             )
             response.raise_for_status()
             title = response.json()['title']
 
             # Save the conversation info
-            info = AppConversationInfo(**{
-                name : getattr(app_conversation, name)
-                for name in AppConversationInfo.model_fields
-            })
+            info = AppConversationInfo(
+                **{
+                    name: getattr(app_conversation, name)
+                    for name in AppConversationInfo.model_fields
+                }
+            )
             info.title = title
             await app_conversation_info_service.save_app_conversation_info(info)
 
@@ -74,4 +83,3 @@ class SetTitleCallbackProcessor(EventCallbackProcessor):
             event_id=event.id,
             conversation_id=conversation_id,
         )
-
