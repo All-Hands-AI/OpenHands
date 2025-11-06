@@ -13,39 +13,13 @@ import VSCodeIcon from "#/icons/vscode.svg?react";
 import PillIcon from "#/icons/pill.svg?react";
 import PillFillIcon from "#/icons/pill-fill.svg?react";
 import { type ConversationTab } from "#/state/conversation-store";
+import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
+import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 
 interface ConversationTabsContextMenuProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const tabConfig = [
-  {
-    tab: "editor" as ConversationTab,
-    icon: GitChanges,
-    i18nKey: I18nKey.COMMON$CHANGES,
-  },
-  {
-    tab: "vscode" as ConversationTab,
-    icon: VSCodeIcon,
-    i18nKey: I18nKey.COMMON$CODE,
-  },
-  {
-    tab: "terminal" as ConversationTab,
-    icon: TerminalIcon,
-    i18nKey: I18nKey.COMMON$TERMINAL,
-  },
-  {
-    tab: "served" as ConversationTab,
-    icon: ServerIcon,
-    i18nKey: I18nKey.COMMON$APP,
-  },
-  {
-    tab: "browser" as ConversationTab,
-    icon: GlobeIcon,
-    i18nKey: I18nKey.COMMON$BROWSER,
-  },
-];
 
 export function ConversationTabsContextMenu({
   isOpen,
@@ -57,6 +31,44 @@ export function ConversationTabsContextMenu({
     "conversation-unpinned-tabs",
     [],
   );
+
+  const shouldUsePlanningAgent = USE_PLANNING_AGENT();
+
+  const tabConfig = [
+    {
+      tab: "editor" as ConversationTab,
+      icon: GitChanges,
+      i18nKey: I18nKey.COMMON$CHANGES,
+    },
+    {
+      tab: "vscode" as ConversationTab,
+      icon: VSCodeIcon,
+      i18nKey: I18nKey.COMMON$CODE,
+    },
+    {
+      tab: "terminal" as ConversationTab,
+      icon: TerminalIcon,
+      i18nKey: I18nKey.COMMON$TERMINAL,
+    },
+    {
+      tab: "served" as ConversationTab,
+      icon: ServerIcon,
+      i18nKey: I18nKey.COMMON$APP,
+    },
+    {
+      tab: "browser" as ConversationTab,
+      icon: GlobeIcon,
+      i18nKey: I18nKey.COMMON$BROWSER,
+    },
+  ];
+
+  if (shouldUsePlanningAgent) {
+    tabConfig.unshift({
+      tab: "planner" as ConversationTab,
+      icon: LessonPlanIcon,
+      i18nKey: I18nKey.COMMON$PLANNER,
+    });
+  }
 
   if (!isOpen) return null;
 
