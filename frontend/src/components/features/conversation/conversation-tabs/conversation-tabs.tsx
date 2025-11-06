@@ -6,6 +6,7 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ServerIcon from "#/icons/server.svg?react";
 import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
+import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 import { cn } from "#/utils/utils";
 import { ConversationTabNav } from "./conversation-tab-nav";
 import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
@@ -15,6 +16,7 @@ import {
   useConversationStore,
   type ConversationTab,
 } from "#/state/conversation-store";
+import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
 
 export function ConversationTabs() {
   const {
@@ -33,6 +35,8 @@ export function ConversationTabs() {
 
   const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
     useLocalStorage<boolean>("conversation-right-panel-shown", true);
+
+  const shouldUsePlanningAgent = USE_PLANNING_AGENT();
 
   const onTabChange = (value: ConversationTab | null) => {
     setSelectedTab(value);
@@ -128,6 +132,17 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$BROWSER),
     },
   ];
+
+  if (shouldUsePlanningAgent) {
+    tabs.unshift({
+      isActive: isTabActive("planner"),
+      icon: LessonPlanIcon,
+      onClick: () => onTabSelected("planner"),
+      tooltipContent: t(I18nKey.COMMON$PLANNER),
+      tooltipAriaLabel: t(I18nKey.COMMON$PLANNER),
+      label: t(I18nKey.COMMON$PLANNER),
+    });
+  }
 
   return (
     <div
