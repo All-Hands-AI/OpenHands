@@ -1,7 +1,7 @@
 """Integration tests for PostHog tracking in AgentController."""
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -106,9 +106,10 @@ async def test_agent_finish_triggers_posthog_tracking(
         headless_mode=True,
     )
 
-    with patch('openhands.utils.posthog_tracker.posthog') as mock_posthog, patch(
-        'os.environ.get'
-    ) as mock_env_get:
+    with (
+        patch('openhands.utils.posthog_tracker.posthog') as mock_posthog,
+        patch('os.environ.get') as mock_env_get,
+    ):
         # Setup mocks
         mock_posthog.capture = MagicMock()
         mock_env_get.return_value = 'saas'
@@ -150,9 +151,10 @@ async def test_agent_finish_without_user_id(mock_agent_with_stats, mock_event_st
         headless_mode=True,
     )
 
-    with patch('openhands.utils.posthog_tracker.posthog') as mock_posthog, patch(
-        'os.environ.get'
-    ) as mock_env_get:
+    with (
+        patch('openhands.utils.posthog_tracker.posthog') as mock_posthog,
+        patch('os.environ.get') as mock_env_get,
+    ):
         mock_posthog.capture = MagicMock()
         mock_env_get.return_value = 'oss'
 
