@@ -65,7 +65,9 @@ class Org(Base):  # type: ignore
 
         # Handle custom property-style fields
         if 'llm_api_key_for_byor' in kwargs:
-            self.default_llm_api_key_for_byor = kwargs.pop('llm_api_key_for_byor')
+            self.default_llm_api_key_for_byor = kwargs.pop(
+                'default_llm_api_key_for_byor'
+            )
         if 'search_api_key' in kwargs:
             self.search_api_key = kwargs.pop('search_api_key')
         if 'sandbox_api_key' in kwargs:

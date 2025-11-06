@@ -38,14 +38,11 @@ class SaasConversationStore(ConversationStore):
         self.user_id = user_id
         self.session_maker = session_maker
         user = UserStore.get_user_by_id(user_id)
-        if not user:
-            logger.error(f'No user found by ID {user_id}')
-            raise ValueError(f'No user found by ID {user_id}')
-        self.org_id = user.current_org_id
+        self.org_id = user.current_org_id if user else None
 
     def _select_by_id(self, session, conversation_id: str):
         # Join StoredConversationMetadata with ConversationMetadataSaas to filter by user/org
-        return (
+        query = (
             session.query(StoredConversationMetadata)
             .join(
                 StoredConversationMetadataSaas,
@@ -53,10 +50,14 @@ class SaasConversationStore(ConversationStore):
                 == StoredConversationMetadataSaas.conversation_id,
             )
             .filter(StoredConversationMetadataSaas.user_id == UUID(self.user_id))
-            .filter(StoredConversationMetadataSaas.org_id == self.org_id)
             .filter(StoredConversationMetadata.conversation_id == conversation_id)
             .filter(StoredConversationMetadata.conversation_version == 'V0')
         )
+
+        if self.org_id is not None:
+            query = query.filter(StoredConversationMetadataSaas.org_id == self.org_id)
+
+        return query
 
     def _to_external_model(self, conversation_metadata: StoredConversationMetadata):
         kwargs = {
@@ -124,9 +125,19 @@ class SaasConversationStore(ConversationStore):
                     )
                     session.add(saas_metadata)
                 else:
-                    # Update existing record
-                    saas_metadata.user_id = UUID(self.user_id)
-                    saas_metadata.org_id = self.org_id
+                    # Validate
+                    expected_user_id = UUID(self.user_id)
+                    expected_org_id = self.org_id
+
+                    if saas_metadata.user_id != expected_user_id:
+                        raise ValueError(
+                            f'Existing user_id ({saas_metadata.user_id}) does not match expected value ({expected_user_id}).'
+                        )
+
+                    if expected_org_id and saas_metadata.org_id != expected_org_id:
+                        raise ValueError(
+                            f'Existing org_id ({saas_metadata.org_id}) does not match expected value ({expected_org_id}).'
+                        )
 
                 session.commit()
 

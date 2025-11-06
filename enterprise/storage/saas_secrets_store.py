@@ -26,16 +26,16 @@ class SaasSecretsStore(SecretsStore):
         if not self.user_id:
             return None
         user = UserStore.get_user_by_id(self.user_id)
-        org_id = user.current_org_id
+        org_id = user.current_org_id if user else None
 
         with self.session_maker() as session:
             # Fetch all secrets for the given user ID
-            settings = (
-                session.query(StoredCustomSecrets)
-                .filter(StoredCustomSecrets.keycloak_user_id == self.user_id)
-                .filter(StoredCustomSecrets.org_id == org_id)
-                .all()
+            query = session.query(StoredCustomSecrets).filter(
+                StoredCustomSecrets.keycloak_user_id == self.user_id
             )
+            if org_id is not None:
+                query = query.filter(StoredCustomSecrets.org_id == org_id)
+            settings = query.all()
 
             if not settings:
                 return Secrets()

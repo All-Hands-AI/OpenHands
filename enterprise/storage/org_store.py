@@ -10,6 +10,7 @@ from sqlalchemy.orm import joinedload
 from storage.database import session_maker
 from storage.org import Org
 from storage.user import User
+from storage.user_settings import UserSettings
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.data_models.settings import Settings
@@ -95,14 +96,44 @@ class OrgStore:
 
     @staticmethod
     def get_kwargs_from_settings(settings: Settings):
-        kwargs = {
-            c.name: getattr(settings, normalized)
-            for c in Org.__table__.columns
-            if (
-                normalized := c.name.removeprefix('_default_')
-                .removeprefix('default_')
-                .lstrip('_')
+        kwargs = {}
+
+        for c in Org.__table__.columns:
+            # Normalize for lookup
+            normalized = (
+                c.name.removeprefix('_default_').removeprefix('default_').lstrip('_')
             )
-            and hasattr(settings, normalized)
-        }
+
+            if not hasattr(settings, normalized):
+                continue
+
+            # ---- FIX: Output key should drop *only* leading "_" but preserve "default" ----
+            key = c.name
+            if key.startswith('_'):
+                key = key[1:]  # remove only the very first leading underscore
+
+            kwargs[key] = getattr(settings, normalized)
+
+        return kwargs
+
+    @staticmethod
+    def get_kwargs_from_user_settings(user_settings: UserSettings):
+        kwargs = {}
+
+        for c in Org.__table__.columns:
+            # Normalize for lookup
+            normalized = (
+                c.name.removeprefix('_default_').removeprefix('default_').lstrip('_')
+            )
+
+            if not hasattr(user_settings, normalized):
+                continue
+
+            # ---- FIX: Output key should drop *only* leading "_" but preserve "default" ----
+            key = c.name
+            if key.startswith('_'):
+                key = key[1:]  # remove only the very first leading underscore
+
+            kwargs[key] = getattr(user_settings, normalized)
+
         return kwargs

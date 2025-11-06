@@ -14,6 +14,7 @@ from storage.encrypt_utils import decrypt_model
 from storage.lite_llm_manager import LiteLlmManager
 from storage.org import Org
 from storage.org_member import OrgMember
+from storage.org_member_store import OrgMemberStore
 from storage.org_store import OrgStore
 from storage.role_store import RoleStore
 from storage.user import User
@@ -65,12 +66,13 @@ class UserStore:
 
             role = RoleStore.get_role_by_name('admin')
 
+            org_member_kwargs = OrgMemberStore.get_kwargs_from_settings(settings)
             org_member = OrgMember(
                 org_id=org.id,
                 user_id=user.id,
                 role_id=role.id,  # admin of your own org.
-                llm_api_key=settings.llm_api_key,  # type: ignore[union-attr]
                 status='active',
+                **org_member_kwargs,
             )
             session.add(org_member)
             session.commit()
@@ -117,13 +119,15 @@ class UserStore:
 
             await migrate_customer(session, user_id, org)
 
-            org_kwargs = OrgStore.get_kwargs_from_settings(decrypted_user_settings)
+            org_kwargs = OrgStore.get_kwargs_from_user_settings(decrypted_user_settings)
             org_kwargs.pop('id', None)
             for key, value in org_kwargs.items():
                 if hasattr(org, key):
                     setattr(org, key, value)
 
-            user_kwargs = UserStore.get_kwargs_from_settings(decrypted_user_settings)
+            user_kwargs = UserStore.get_kwargs_from_user_settings(
+                decrypted_user_settings
+            )
             user_kwargs.pop('id', None)
             user = User(
                 id=uuid.UUID(user_id),
@@ -135,42 +139,35 @@ class UserStore:
 
             role = RoleStore.get_role_by_name('admin')
 
+            org_member_kwargs = OrgMemberStore.get_kwargs_from_user_settings(
+                decrypted_user_settings
+            )
             org_member = OrgMember(
                 org_id=org.id,
                 user_id=user.id,
                 role_id=role.id,  # admin of your own org.
-                llm_api_key=decrypted_user_settings.llm_api_key,  # type: ignore[union-attr]
                 status='active',
+                **org_member_kwargs,
             )
             session.add(org_member)
-            session.flush()
 
             # Mark the old user_settings as migrated instead of deleting
             user_settings.migration_status = True
             session.merge(user_settings)
+            session.flush()
 
             # need to migrate conversation metadata
             session.execute(
-                text(
-                    """
+                text("""
                     INSERT INTO conversation_metadata_saas (conversation_id, user_id, org_id)
                     SELECT
                         conversation_id,
-                        new_id,
-                        new_id
-                    FROM (
-                        SELECT
-                            conversation_id,
-                            CASE
-                                WHEN user_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
-                                THEN user_id::uuid
-                                ELSE gen_random_uuid()
-                            END AS new_id
-                        FROM conversation_metadata
-                        WHERE user_id IS NOT NULL
-                    ) AS sub
-                    """
-                )
+                        :user_id,
+                        :user_id
+                    FROM conversation_metadata
+                    WHERE user_id = :user_id
+                """),
+                {'user_id': user_id},
             )
 
             # Update org_id for tables that had org_id added
@@ -269,8 +266,17 @@ class UserStore:
     @staticmethod
     def get_kwargs_from_settings(settings: Settings):
         kwargs = {
-            c.name: getattr(settings, normalized)
+            normalized: getattr(settings, normalized)
             for c in User.__table__.columns
             if (normalized := c.name.lstrip('_')) and hasattr(settings, normalized)
+        }
+        return kwargs
+
+    @staticmethod
+    def get_kwargs_from_user_settings(user_settings: UserSettings):
+        kwargs = {
+            normalized: getattr(user_settings, normalized)
+            for c in User.__table__.columns
+            if (normalized := c.name.lstrip('_')) and hasattr(user_settings, normalized)
         }
         return kwargs

@@ -7,6 +7,9 @@ from uuid import UUID
 
 from storage.database import session_maker
 from storage.org_member import OrgMember
+from storage.user_settings import UserSettings
+
+from openhands.storage.data_models.settings import Settings
 
 
 class OrgMemberStore:
@@ -95,3 +98,21 @@ class OrgMemberStore:
             session.delete(org_member)
             session.commit()
             return True
+
+    @staticmethod
+    def get_kwargs_from_settings(settings: Settings):
+        kwargs = {
+            normalized: getattr(settings, normalized)
+            for c in OrgMember.__table__.columns
+            if (normalized := c.name.lstrip('_')) and hasattr(settings, normalized)
+        }
+        return kwargs
+
+    @staticmethod
+    def get_kwargs_from_user_settings(user_settings: UserSettings):
+        kwargs = {
+            normalized: getattr(user_settings, normalized)
+            for c in OrgMember.__table__.columns
+            if (normalized := c.name.lstrip('_')) and hasattr(user_settings, normalized)
+        }
+        return kwargs

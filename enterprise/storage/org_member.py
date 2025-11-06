@@ -38,6 +38,8 @@ class OrgMember(Base):  # type: ignore
         # Handle custom property-style fields
         if 'llm_api_key' in kwargs:
             self.llm_api_key = kwargs.pop('llm_api_key')
+        if 'llm_api_key_for_byor' in kwargs:
+            self.llm_api_key_for_byor = kwargs.pop('llm_api_key_for_byor')
 
         if kwargs:
             raise TypeError(f'Unexpected keyword arguments: {list(kwargs.keys())}')
