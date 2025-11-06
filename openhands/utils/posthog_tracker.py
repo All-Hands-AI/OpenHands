@@ -115,3 +115,104 @@ def track_user_signup_completed(
                 'error': str(e),
             },
         )
+
+
+def track_credit_limit_reached(
+    conversation_id: str,
+    user_id: str | None = None,
+    current_budget: float = 0.0,
+    max_budget: float = 0.0,
+) -> None:
+    """Track when a user reaches their credit limit during a conversation.
+
+    Args:
+        conversation_id: The ID of the conversation/session
+        user_id: The ID of the user (optional, may be None for unauthenticated users)
+        current_budget: The current budget spent
+        max_budget: The maximum budget allowed
+    """
+    _init_posthog()
+
+    if posthog is None:
+        return
+
+    distinct_id = user_id if user_id else f'conversation_{conversation_id}'
+
+    try:
+        posthog.capture(
+            distinct_id=distinct_id,
+            event='credit_limit_reached',
+            properties={
+                'conversation_id': conversation_id,
+                'user_id': user_id,
+                'current_budget': current_budget,
+                'max_budget': max_budget,
+            },
+        )
+        logger.debug(
+            'posthog_track',
+            extra={
+                'event': 'credit_limit_reached',
+                'conversation_id': conversation_id,
+                'user_id': user_id,
+                'current_budget': current_budget,
+                'max_budget': max_budget,
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            f'Failed to track credit_limit_reached to PostHog: {e}',
+            extra={
+                'conversation_id': conversation_id,
+                'error': str(e),
+            },
+        )
+
+
+def track_credits_purchased(
+    user_id: str,
+    amount_usd: float,
+    credits_added: float,
+    stripe_session_id: str,
+) -> None:
+    """Track when a user successfully purchases credits.
+
+    Args:
+        user_id: The ID of the user (Keycloak user ID)
+        amount_usd: The amount paid in USD (cents converted to dollars)
+        credits_added: The number of credits added to the user's account
+        stripe_session_id: The Stripe checkout session ID
+    """
+    _init_posthog()
+
+    if posthog is None:
+        return
+
+    try:
+        posthog.capture(
+            distinct_id=user_id,
+            event='credits_purchased',
+            properties={
+                'user_id': user_id,
+                'amount_usd': amount_usd,
+                'credits_added': credits_added,
+                'stripe_session_id': stripe_session_id,
+            },
+        )
+        logger.debug(
+            'posthog_track',
+            extra={
+                'event': 'credits_purchased',
+                'user_id': user_id,
+                'amount_usd': amount_usd,
+                'credits_added': credits_added,
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            f'Failed to track credits_purchased to PostHog: {e}',
+            extra={
+                'user_id': user_id,
+                'error': str(e),
+            },
+        )

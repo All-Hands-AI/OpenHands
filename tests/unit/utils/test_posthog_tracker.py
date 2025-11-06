@@ -6,6 +6,8 @@ import pytest
 
 from openhands.utils.posthog_tracker import (
     track_agent_task_completed,
+    track_credit_limit_reached,
+    track_credits_purchased,
     track_user_signup_completed,
 )
 
@@ -163,4 +165,143 @@ def test_track_user_signup_completed_when_posthog_not_installed():
     track_user_signup_completed(
         user_id='test-user-no-ph',
         signup_timestamp='2025-01-15T13:00:00Z',
+    )
+
+
+def test_track_credit_limit_reached_with_user_id(mock_posthog):
+    """Test tracking credit limit reached with user ID."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+
+    track_credit_limit_reached(
+        conversation_id='test-conversation-456',
+        user_id='user-789',
+        current_budget=10.50,
+        max_budget=10.00,
+    )
+
+    mock_posthog.capture.assert_called_once_with(
+        distinct_id='user-789',
+        event='credit_limit_reached',
+        properties={
+            'conversation_id': 'test-conversation-456',
+            'user_id': 'user-789',
+            'current_budget': 10.50,
+            'max_budget': 10.00,
+        },
+    )
+
+
+def test_track_credit_limit_reached_without_user_id(mock_posthog):
+    """Test tracking credit limit reached without user ID (anonymous)."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+
+    track_credit_limit_reached(
+        conversation_id='test-conversation-999',
+        user_id=None,
+        current_budget=5.25,
+        max_budget=5.00,
+    )
+
+    mock_posthog.capture.assert_called_once_with(
+        distinct_id='conversation_test-conversation-999',
+        event='credit_limit_reached',
+        properties={
+            'conversation_id': 'test-conversation-999',
+            'user_id': None,
+            'current_budget': 5.25,
+            'max_budget': 5.00,
+        },
+    )
+
+
+def test_track_credit_limit_reached_handles_errors(mock_posthog):
+    """Test that credit limit tracking errors are handled gracefully."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+    mock_posthog.capture.side_effect = Exception('PostHog API error')
+
+    # Should not raise an exception
+    track_credit_limit_reached(
+        conversation_id='test-conversation-error',
+        user_id='user-error',
+        current_budget=15.00,
+        max_budget=10.00,
+    )
+
+
+def test_track_credit_limit_reached_when_posthog_not_installed():
+    """Test credit limit tracking when posthog is not installed."""
+    import openhands.utils.posthog_tracker as tracker
+
+    # Simulate posthog not being installed
+    tracker.posthog = None
+
+    # Should not raise an exception
+    track_credit_limit_reached(
+        conversation_id='test-conversation-no-ph',
+        user_id='user-no-ph',
+        current_budget=8.00,
+        max_budget=5.00,
+    )
+
+
+def test_track_credits_purchased(mock_posthog):
+    """Test tracking credits purchased."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+
+    track_credits_purchased(
+        user_id='test-user-999',
+        amount_usd=50.00,
+        credits_added=50.00,
+        stripe_session_id='cs_test_abc123',
+    )
+
+    mock_posthog.capture.assert_called_once_with(
+        distinct_id='test-user-999',
+        event='credits_purchased',
+        properties={
+            'user_id': 'test-user-999',
+            'amount_usd': 50.00,
+            'credits_added': 50.00,
+            'stripe_session_id': 'cs_test_abc123',
+        },
+    )
+
+
+def test_track_credits_purchased_handles_errors(mock_posthog):
+    """Test that credits purchased tracking errors are handled gracefully."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+    mock_posthog.capture.side_effect = Exception('PostHog API error')
+
+    # Should not raise an exception
+    track_credits_purchased(
+        user_id='test-user-error',
+        amount_usd=100.00,
+        credits_added=100.00,
+        stripe_session_id='cs_test_error',
+    )
+
+
+def test_track_credits_purchased_when_posthog_not_installed():
+    """Test credits purchased tracking when posthog is not installed."""
+    import openhands.utils.posthog_tracker as tracker
+
+    # Simulate posthog not being installed
+    tracker.posthog = None
+
+    # Should not raise an exception
+    track_credits_purchased(
+        user_id='test-user-no-ph',
+        amount_usd=25.00,
+        credits_added=25.00,
+        stripe_session_id='cs_test_no_ph',
     )
