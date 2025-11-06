@@ -6,7 +6,8 @@ export type ConversationTab =
   | "browser"
   | "served"
   | "vscode"
-  | "terminal";
+  | "terminal"
+  | "planner";
 
 export interface IMessageToSend {
   text: string;
