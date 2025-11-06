@@ -11,9 +11,11 @@ from openhands_cli.locations import (
     PERSISTENCE_DIR,
     WORK_DIR,
 )
+from openhands_cli.utils import get_llm_metadata
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Agent, AgentContext, LocalFileStore
+from openhands.sdk.context.condenser import LLMSummarizingCondenser
 from openhands.tools.preset.default import get_default_tools
 
 
@@ -45,13 +47,36 @@ class AgentStore:
 
             mcp_config: dict = self.load_mcp_configuration()
 
-            # Update tools and context; LLM metadata no longer injected here
+            # Update LLM metadata with current information
+            agent_llm_metadata = get_llm_metadata(
+                model_name=agent.llm.model, llm_type='agent', session_id=session_id
+            )
+            updated_llm = agent.llm.model_copy(update={'extra_body': {'metadata': agent_llm_metadata}})
+
+            condenser_updates = {}
+            if agent.condenser and isinstance(agent.condenser, LLMSummarizingCondenser):
+                condenser_updates['llm'] = agent.condenser.llm.model_copy(
+                    update={
+                        'extra_body': {
+                            'metadata': get_llm_metadata(
+                                model_name=agent.condenser.llm.model,
+                                llm_type='condenser',
+                                session_id=session_id,
+                            )
+                        }
+                    }
+                )
+
+            # Update tools and context
             agent = agent.model_copy(
                 update={
+                    'llm': updated_llm,
                     'tools': updated_tools,
                     'mcp_config': {'mcpServers': mcp_config} if mcp_config else {},
                     'agent_context': agent_context,
-                    'condenser': agent.condenser if agent.condenser else None,
+                    'condenser': agent.condenser.model_copy(update=condenser_updates)
+                    if agent.condenser
+                    else None,
                 }
             )
 
