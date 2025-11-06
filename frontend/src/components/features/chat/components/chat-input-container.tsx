@@ -1,5 +1,4 @@
 import React from "react";
-import { ConversationStatus } from "#/types/conversation-status";
 import { DragOver } from "../drag-over";
 import { UploadedFiles } from "../uploaded-files";
 import { ChatInputRow } from "./chat-input-row";
@@ -13,7 +12,6 @@ interface ChatInputContainerProps {
   disabled: boolean;
   showButton: boolean;
   buttonClassName: string;
-  conversationStatus: ConversationStatus | null;
   chatInputRef: React.RefObject<HTMLDivElement | null>;
   handleFileIconClick: (isDisabled: boolean) => void;
   handleSubmit: () => void;
@@ -34,7 +32,6 @@ export function ChatInputContainer({
   disabled,
   showButton,
   buttonClassName,
-  conversationStatus,
   chatInputRef,
   handleFileIconClick,
   handleSubmit,
@@ -83,7 +80,6 @@ export function ChatInputContainer({
       />
 
       <ChatInputActions
-        conversationStatus={conversationStatus}
         disabled={disabled}
         handleResumeAgent={handleResumeAgent}
       />
