@@ -247,7 +247,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 processors = [SetTitleCallbackProcessor()]
 
             # Save processors
-            asyncio.gather(*[
+            await asyncio.gather(*[
                 self.event_callback_service.save_event_callback(
                     EventCallback(
                         conversation_id=info.id,

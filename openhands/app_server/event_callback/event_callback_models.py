@@ -43,7 +43,7 @@ class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
         conversation_id: UUID,
         callback: EventCallback,
         event: Event,
-    ) -> EventCallbackResult:
+    ) -> EventCallbackResult | None:
         """Process an event."""
 
 

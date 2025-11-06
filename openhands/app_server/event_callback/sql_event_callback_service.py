@@ -48,7 +48,7 @@ class StoredEventCallback(Base):  # type: ignore
     __tablename__ = 'event_callback'
     id = Column(SQLUUID, primary_key=True)
     conversation_id = Column(SQLUUID, nullable=True)
-    status = Column(Enum(EventCallbackResultStatus), nullable=False, default=EventCallbackStatus.ACTIVE)
+    status = Column(Enum(EventCallbackStatus), nullable=False, default=EventCallbackStatus.ACTIVE)
     processor = Column(create_json_type_decorator(EventCallbackProcessor))
     event_kind = Column(String, nullable=True)
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
@@ -60,7 +60,7 @@ class StoredEventCallbackResult(Base):  # type: ignore
     id = Column(SQLUUID, primary_key=True)
     status = Column(Enum(EventCallbackResultStatus), nullable=True)
     event_callback_id = Column(SQLUUID, index=True)
-    event_id = Column(SQLUUID, index=True)
+    event_id = Column(String, index=True)
     conversation_id = Column(SQLUUID, index=True)
     detail = Column(String, nullable=True)
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
@@ -176,7 +176,8 @@ class SQLEventCallbackService(EventCallbackService):
 
     async def save_event_callback(self, event_callback: EventCallback) -> EventCallback:
         event_callback.updated_at = datetime.now()
-        await self.db_session.merge(StoredEventCallback(**event_callback.model_dump()))
+        stored_callback = StoredEventCallback(**event_callback.model_dump())
+        await self.db_session.merge(stored_callback)
         return event_callback
 
     async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
@@ -213,7 +214,9 @@ class SQLEventCallbackService(EventCallbackService):
     ):
         try:
             result = await callback.processor(conversation_id, callback, event)
-            stored_result = StoredEventCallbackResult(**row2dict(result))
+            if result is None:
+                return
+            stored_result = StoredEventCallbackResult(**result.model_dump())
         except Exception as exc:
             _logger.exception(f'Exception in callback {callback.id}', stack_info=True)
             stored_result = StoredEventCallbackResult(

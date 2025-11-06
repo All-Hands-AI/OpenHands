@@ -5,7 +5,7 @@
 import logging
 from uuid import UUID
 
-from openhands.sdk import Event, Message
+from openhands.sdk import Event, MessageEvent
 from openhands.app_server.app_conversation.app_conversation_models import AppConversationInfo
 from openhands.app_server.event_callback.event_callback_models import EventCallback, EventCallbackProcessor, EventCallbackStatus
 from openhands.app_server.event_callback.event_callback_result_models import EventCallbackResult, EventCallbackResultStatus
@@ -23,9 +23,9 @@ class SetTitleCallbackProcessor(EventCallbackProcessor):
         conversation_id: UUID,
         callback: EventCallback,
         event: Event,
-    ) -> EventCallbackResult:
-        if not isinstance(event, Message):
-            pass
+    ) -> EventCallbackResult | None:
+        if not isinstance(event, MessageEvent):
+            return None
         from openhands.app_server.config import (
             get_app_conversation_info_service,
             get_app_conversation_service,
@@ -46,7 +46,13 @@ class SetTitleCallbackProcessor(EventCallbackProcessor):
             # Generate a title for the conversation
             app_conversation = await app_conversation_service.get_app_conversation(conversation_id)
             assert app_conversation is not None
-            response = await httpx_client.post(f"{app_conversation.conversation_url}/generate_title", content='{}')
+            response = await httpx_client.post(
+                f"{app_conversation.conversation_url}/generate_title",
+                headers={
+                    'X-Session-API-Key': app_conversation.session_api_key,
+                },
+                content='{}'
+            )
             response.raise_for_status()
             title = response.json()['title']
 
