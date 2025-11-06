@@ -9,6 +9,7 @@ import pytest
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
+from openhands.app_server.event_callback import event_callback_service
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.sdk import Agent
 from openhands.sdk.llm import LLM
@@ -169,6 +170,7 @@ class TestExperimentManagerIntegration:
         # The service requires a lot of deps, but for this test we won't exercise them.
         app_conversation_info_service = Mock()
         app_conversation_start_task_service = Mock()
+        event_callback_service = Mock()
         sandbox_service = Mock()
         sandbox_spec_service = Mock()
         jwt_service = Mock()
@@ -179,6 +181,7 @@ class TestExperimentManagerIntegration:
             user_context=user_context,
             app_conversation_info_service=app_conversation_info_service,
             app_conversation_start_task_service=app_conversation_start_task_service,
+            event_callback_service=event_callback_service,
             sandbox_service=sandbox_service,
             sandbox_spec_service=sandbox_spec_service,
             jwt_service=jwt_service,
