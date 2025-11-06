@@ -36,7 +36,7 @@ export function ConversationTabs() {
   const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
     useLocalStorage<boolean>("conversation-right-panel-shown", true);
 
-  const usePlanningAgent = USE_PLANNING_AGENT();
+  const shouldUsePlanningAgent = USE_PLANNING_AGENT();
 
   const onTabChange = (value: ConversationTab | null) => {
     setSelectedTab(value);
@@ -133,7 +133,7 @@ export function ConversationTabs() {
     },
   ];
 
-  if (usePlanningAgent) {
+  if (shouldUsePlanningAgent) {
     tabs.unshift({
       isActive: isTabActive("planner"),
       icon: LessonPlanIcon,
