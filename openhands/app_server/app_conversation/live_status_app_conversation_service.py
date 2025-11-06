@@ -222,7 +222,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             app_conversation_info = AppConversationInfo(
                 id=info.id,
                 # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
-                title=f'Conversation {info.id}',
+                title=f'Conversation {info.id.hex}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
@@ -337,7 +337,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
         if app_conversation_info is None:
             return None
         sandbox_status = sandbox.status if sandbox else SandboxStatus.MISSING
-        agent_status = conversation_info.agent_status if conversation_info else None
+        execution_status = (
+            conversation_info.execution_status if conversation_info else None
+        )
         conversation_url = None
         session_api_key = None
         if sandbox and sandbox.exposed_urls:
@@ -356,7 +358,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return AppConversation(
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
-            agent_status=agent_status,
+            execution_status=execution_status,
             conversation_url=conversation_url,
             session_api_key=session_api_key,
         )

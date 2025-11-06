@@ -960,7 +960,7 @@ async def test_delete_v1_conversation_success():
         AppConversation,
     )
     from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-    from openhands.sdk.conversation.state import AgentExecutionStatus
+    from openhands.sdk.conversation.state import ConversationExecutionStatus
 
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
@@ -979,7 +979,7 @@ async def test_delete_v1_conversation_success():
             sandbox_id='test-sandbox-id',
             title='Test V1 Conversation',
             sandbox_status=SandboxStatus.RUNNING,
-            agent_status=AgentExecutionStatus.RUNNING,
+            execution_status=ConversationExecutionStatus.RUNNING,
             session_api_key='test-api-key',
             selected_repository='test/repo',
             selected_branch='main',
@@ -1183,7 +1183,7 @@ async def test_delete_v1_conversation_with_agent_server():
         AppConversation,
     )
     from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-    from openhands.sdk.conversation.state import AgentExecutionStatus
+    from openhands.sdk.conversation.state import ConversationExecutionStatus
 
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
@@ -1202,7 +1202,7 @@ async def test_delete_v1_conversation_with_agent_server():
             sandbox_id='test-sandbox-id',
             title='Test V1 Conversation',
             sandbox_status=SandboxStatus.RUNNING,
-            agent_status=AgentExecutionStatus.RUNNING,
+            execution_status=ConversationExecutionStatus.RUNNING,
             session_api_key='test-api-key',
             selected_repository='test/repo',
             selected_branch='main',

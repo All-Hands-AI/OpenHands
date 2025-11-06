@@ -1,13 +1,16 @@
 """Event Callback router for OpenHands Server."""
 
 import asyncio
+import importlib
 import logging
+import pkgutil
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import APIKeyHeader
 from jwt import InvalidTokenError
 
+from openhands import tools  # type: ignore[attr-defined]
 from openhands.agent_server.models import ConversationInfo, Success
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
@@ -97,8 +100,7 @@ async def on_conversation_update(
 
     app_conversation_info = AppConversationInfo(
         id=conversation_info.id,
-        # TODO: As of writing, ConversationInfo from AgentServer does not have a title
-        title=existing.title or f'Conversation {conversation_info.id}',
+        title=existing.title or f'Conversation {conversation_info.id.hex}',
         sandbox_id=sandbox_info.id,
         created_by_user_id=sandbox_info.created_by_user_id,
         llm_model=conversation_info.agent.llm.model,
@@ -186,3 +188,16 @@ async def _run_callbacks_in_bg_and_close(
         # We don't use asynio.gather here because callbacks must be run in sequence.
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
+
+
+def _import_all_tools():
+    """We need to import all tools so that they are available for deserialization in webhooks."""
+    for _, name, is_pkg in pkgutil.walk_packages(tools.__path__, tools.__name__ + '.'):
+        if is_pkg:  # Check if it's a subpackage
+            try:
+                importlib.import_module(name)
+            except ImportError as e:
+                _logger.error(f"Warning: Could not import subpackage '{name}': {e}")
+
+
+_import_all_tools()
