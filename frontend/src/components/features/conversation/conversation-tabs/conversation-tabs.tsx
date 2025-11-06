@@ -96,7 +96,7 @@ export function ConversationTabs() {
 
   const tabs = [
     {
-      tabValue: "editor" as ConversationTab,
+      tabValue: "editor",
       isActive: isTabActive("editor"),
       icon: GitChanges,
       onClick: () => onTabSelected("editor"),
@@ -105,7 +105,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$CHANGES),
     },
     {
-      tabValue: "vscode" as ConversationTab,
+      tabValue: "vscode",
       isActive: isTabActive("vscode"),
       icon: VSCodeIcon,
       onClick: () => onTabSelected("vscode"),
@@ -114,7 +114,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$CODE),
     },
     {
-      tabValue: "terminal" as ConversationTab,
+      tabValue: "terminal",
       isActive: isTabActive("terminal"),
       icon: TerminalIcon,
       onClick: () => onTabSelected("terminal"),
@@ -124,7 +124,7 @@ export function ConversationTabs() {
       className: "pl-2",
     },
     {
-      tabValue: "served" as ConversationTab,
+      tabValue: "served",
       isActive: isTabActive("served"),
       icon: ServerIcon,
       onClick: () => onTabSelected("served"),
@@ -133,7 +133,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$APP),
     },
     {
-      tabValue: "browser" as ConversationTab,
+      tabValue: "browser",
       isActive: isTabActive("browser"),
       icon: GlobeIcon,
       onClick: () => onTabSelected("browser"),
@@ -191,7 +191,7 @@ export function ConversationTabs() {
             "p-1 rounded-md cursor-pointer",
             "text-[#9299AA] bg-[#0D0F11]",
           )}
-          aria-label="More options"
+          aria-label={t(I18nKey.COMMON$MORE_OPTIONS)}
         >
           <ThreeDotsVerticalIcon className={cn("w-5 h-5 text-inherit")} />
         </button>

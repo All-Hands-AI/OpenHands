@@ -14894,5 +14894,21 @@
     "tr": "Kullanıcı onayı bekleniyor",
     "de": "Warte auf Benutzerbestätigung",
     "uk": "Очікується підтвердження користувача"
+  },
+  "COMMON$MORE_OPTIONS": {
+    "en": "More options",
+    "ja": "その他のオプション",
+    "zh-CN": "更多选项",
+    "zh-TW": "更多選項",
+    "ko-KR": "추가 옵션",
+    "no": "Flere alternativer",
+    "it": "Altre opzioni",
+    "pt": "Mais opções",
+    "es": "Más opciones",
+    "ar": "خيارات إضافية",
+    "fr": "Plus d'options",
+    "tr": "Daha fazla seçenek",
+    "de": "Weitere Optionen",
+    "uk": "Більше опцій"
   }
 }
