@@ -1,6 +1,7 @@
 # pyright: reportIncompatibleMethodOverride=false
 from __future__ import annotations
 
+from enum import Enum
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -26,6 +27,13 @@ if TYPE_CHECKING:
     EventKind = str
 else:
     EventKind = Literal[tuple(c.__name__ for c in get_known_concrete_subclasses(Event))]
+
+
+class EventCallbackStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    DISABLED = 'DISABLED'
+    COMPLETED = 'COMPLETED'
+    ERROR = 'ERROR'
 
 
 class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
@@ -75,7 +83,9 @@ class CreateEventCallbackRequest(OpenHandsModel):
 
 class EventCallback(CreateEventCallbackRequest):
     id: OpenHandsUUID = Field(default_factory=uuid4)
+    status: EventCallbackStatus = Field(default=EventCallbackStatus.ACTIVE)
     created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class EventCallbackPage(OpenHandsModel):

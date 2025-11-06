@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime
 import logging
 from dataclasses import dataclass
 from typing import AsyncGenerator
@@ -19,6 +20,7 @@ from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackPage,
     EventCallbackProcessor,
+    EventCallbackStatus,
     EventKind,
 )
 from openhands.app_server.event_callback.event_callback_result_models import (
@@ -46,9 +48,11 @@ class StoredEventCallback(Base):  # type: ignore
     __tablename__ = 'event_callback'
     id = Column(SQLUUID, primary_key=True)
     conversation_id = Column(SQLUUID, nullable=True)
+    status = Column(Enum(EventCallbackResultStatus), nullable=False, default=EventCallbackStatus.ACTIVE)
     processor = Column(create_json_type_decorator(EventCallbackProcessor))
     event_kind = Column(String, nullable=True)
     created_at = Column(UtcDateTime, server_default=func.now(), index=True)
+    updated_at = Column(UtcDateTime, server_default=func.now(), index=True)
 
 
 class StoredEventCallbackResult(Base):  # type: ignore
@@ -170,9 +174,15 @@ class SQLEventCallbackService(EventCallbackService):
         callbacks = [EventCallback(**row2dict(cb)) for cb in stored_callbacks]
         return EventCallbackPage(items=callbacks, next_page_id=next_page_id)
 
+    async def save_event_callback(self, event_callback: EventCallback) -> EventCallback:
+        event_callback.updated_at = datetime.now()
+        await self.db_session.merge(StoredEventCallback(**event_callback.model_dump()))
+        return event_callback
+
     async def execute_callbacks(self, conversation_id: UUID, event: Event) -> None:
         query = (
             select(StoredEventCallback)
+            .where(StoredEventCallback.status == EventCallbackStatus.ACTIVE)
             .where(
                 or_(
                     StoredEventCallback.event_kind == event.kind,
