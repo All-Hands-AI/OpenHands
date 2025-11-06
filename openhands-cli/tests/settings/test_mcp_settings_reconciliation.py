@@ -42,10 +42,8 @@ def agent_store() -> AgentStore:
 # ---------------------- tests ----------------------
 
 @patch("openhands_cli.tui.settings.store.get_default_tools", return_value=[])
-@patch("openhands_cli.tui.settings.store.get_llm_metadata", return_value={})
 def test_load_overrides_persisted_mcp_with_mcp_json_file(
     mock_meta,
-    mock_tools,
     persistence_dir,
     agent_store
 ):
@@ -88,10 +86,8 @@ def test_load_overrides_persisted_mcp_with_mcp_json_file(
 
 
 @patch("openhands_cli.tui.settings.store.get_default_tools", return_value=[])
-@patch("openhands_cli.tui.settings.store.get_llm_metadata", return_value={})
 def test_load_when_mcp_file_missing_ignores_persisted_mcp(
     mock_meta,
-    mock_tools,
     persistence_dir,
     agent_store
 ):
