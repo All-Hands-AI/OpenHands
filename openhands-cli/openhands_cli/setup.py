@@ -2,10 +2,7 @@ import uuid
 
 from prompt_toolkit import HTML, print_formatted_text
 
-from openhands.sdk import Agent, BaseConversation, Conversation, Workspace, register_tool
-from openhands.tools.execute_bash import BashTool
-from openhands.tools.file_editor import FileEditorTool
-from openhands.tools.task_tracker import TaskTrackerTool
+from openhands.sdk import Agent, BaseConversation, Conversation, Workspace
 from openhands_cli.locations import CONVERSATIONS_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
 from openhands.sdk.security.confirmation_policy import (
@@ -14,9 +11,10 @@ from openhands.sdk.security.confirmation_policy import (
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 
 
-register_tool('BashTool', BashTool)
-register_tool('FileEditorTool', FileEditorTool)
-register_tool('TaskTrackerTool', TaskTrackerTool)
+# register tools
+from openhands.tools.terminal import TerminalTool
+from openhands.tools.file_editor import FileEditorTool
+from openhands.tools.task_tracker import TaskTrackerTool
 
 
 class MissingAgentSpec(Exception):

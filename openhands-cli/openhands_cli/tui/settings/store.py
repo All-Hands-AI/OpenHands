@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp.mcp_config import MCPConfig
-from openhands_cli.utils import get_llm_metadata
 from openhands_cli.locations import (
     AGENT_SETTINGS_PATH,
     MCP_CONFIG_FILE,
@@ -15,7 +14,6 @@ from openhands_cli.locations import (
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Agent, AgentContext, LocalFileStore
-from openhands.sdk.context.condenser import LLMSummarizingCondenser
 from openhands.tools.preset.default import get_default_tools
 
 
