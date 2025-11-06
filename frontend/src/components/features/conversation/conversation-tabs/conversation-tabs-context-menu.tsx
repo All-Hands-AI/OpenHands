@@ -81,7 +81,6 @@ export function ConversationTabsContextMenu({
       // Tab is pinned, unpin it (add to unpinned list)
       setUnpinnedTabs([...unpinnedTabs, tabString]);
     }
-    onClose();
   };
 
   const isTabPinned = (tab: string) => !unpinnedTabs.includes(tab as string);
