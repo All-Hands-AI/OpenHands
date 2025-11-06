@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { ContextMenu } from "#/ui/context-menu";
@@ -12,7 +11,6 @@ import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
 import PillIcon from "#/icons/pill.svg?react";
 import PillFillIcon from "#/icons/pill-fill.svg?react";
-import { type ConversationTab } from "#/state/conversation-store";
 import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
 import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 
@@ -36,27 +34,27 @@ export function ConversationTabsContextMenu({
 
   const tabConfig = [
     {
-      tab: "editor" as ConversationTab,
+      tab: "editor",
       icon: GitChanges,
       i18nKey: I18nKey.COMMON$CHANGES,
     },
     {
-      tab: "vscode" as ConversationTab,
+      tab: "vscode",
       icon: VSCodeIcon,
       i18nKey: I18nKey.COMMON$CODE,
     },
     {
-      tab: "terminal" as ConversationTab,
+      tab: "terminal",
       icon: TerminalIcon,
       i18nKey: I18nKey.COMMON$TERMINAL,
     },
     {
-      tab: "served" as ConversationTab,
+      tab: "served",
       icon: ServerIcon,
       i18nKey: I18nKey.COMMON$APP,
     },
     {
-      tab: "browser" as ConversationTab,
+      tab: "browser",
       icon: GlobeIcon,
       i18nKey: I18nKey.COMMON$BROWSER,
     },
@@ -64,7 +62,7 @@ export function ConversationTabsContextMenu({
 
   if (shouldUsePlanningAgent) {
     tabConfig.unshift({
-      tab: "planner" as ConversationTab,
+      tab: "planner",
       icon: LessonPlanIcon,
       i18nKey: I18nKey.COMMON$PLANNER,
     });
@@ -72,8 +70,8 @@ export function ConversationTabsContextMenu({
 
   if (!isOpen) return null;
 
-  const handleTabClick = (tab: ConversationTab) => {
-    const tabString = tab as string;
+  const handleTabClick = (tab: string) => {
+    const tabString = tab;
     if (unpinnedTabs.includes(tabString)) {
       // Tab is unpinned, pin it (remove from unpinned list)
       setUnpinnedTabs(
@@ -86,8 +84,7 @@ export function ConversationTabsContextMenu({
     onClose();
   };
 
-  const isTabPinned = (tab: ConversationTab) =>
-    !unpinnedTabs.includes(tab as string);
+  const isTabPinned = (tab: string) => !unpinnedTabs.includes(tab as string);
 
   return (
     <ContextMenu
