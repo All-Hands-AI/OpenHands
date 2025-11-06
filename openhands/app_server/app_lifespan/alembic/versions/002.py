@@ -30,7 +30,12 @@ def upgrade() -> None:
     """Upgrade schema."""
     op.add_column(
         'event_callback',
-        sa.Column('status', sa.Enum(EventCallbackStatus), nullable=False, server_default='ACTIVE'),
+        sa.Column(
+            'status',
+            sa.Enum(EventCallbackStatus),
+            nullable=False,
+            server_default='ACTIVE',
+        ),
     )
     op.add_column(
         'event_callback',
