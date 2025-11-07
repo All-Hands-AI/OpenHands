@@ -47,9 +47,7 @@ export function AgentStatus({
   );
 
   const isTaskLoading =
-    taskStatus &&
-    taskStatus !== "ERROR" &&
-    taskStatus !== "READY";
+    taskStatus && taskStatus !== "ERROR" && taskStatus !== "READY";
 
   const shouldShownAgentLoading =
     isPausing ||
@@ -71,7 +69,8 @@ export function AgentStatus({
 
   // Update global state when agent loading condition changes
   useEffect(() => {
-    setShouldShownAgentLoading(shouldShownAgentLoading);
+    if (shouldShownAgentLoading)
+      setShouldShownAgentLoading(shouldShownAgentLoading);
   }, [shouldShownAgentLoading, setShouldShownAgentLoading]);
 
   return (
