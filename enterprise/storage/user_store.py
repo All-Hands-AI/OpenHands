@@ -255,7 +255,9 @@ class UserStore:
         from openhands.storage.data_models.settings import Settings
 
     @staticmethod
-    async def create_default_settings(org_id: str, user_id: str) -> Optional[Settings]:
+    async def create_default_settings(
+        org_id: str, user_id: str
+    ) -> Optional['Settings']:
         logger.info(
             'UserStore:create_default_settings:start',
             extra={'org_id': org_id, 'user_id': user_id},
@@ -281,7 +283,7 @@ class UserStore:
         return settings
 
     @staticmethod
-    def get_kwargs_from_settings(settings: Settings):
+    def get_kwargs_from_settings(settings: 'Settings'):
         kwargs = {
             normalized: getattr(settings, normalized)
             for c in User.__table__.columns
