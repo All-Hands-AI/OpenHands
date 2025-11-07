@@ -28,8 +28,8 @@ interface ConversationState {
   submittedMessage: string | null;
   shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
   hasRightPanelToggled: boolean;
-  conversationMode: ConversationMode;
   planContent: string | null;
+  conversationMode: ConversationMode;
 }
 
 interface ConversationActions {
@@ -79,7 +79,6 @@ export const useConversationStore = create<ConversationStore>()(
       submittedMessage: null,
       shouldHideSuggestions: false,
       hasRightPanelToggled: true,
-      conversationMode: "code",
       planContent: `
 # Improve Developer Onboarding and Examples
 
@@ -165,6 +164,7 @@ The model took too long to respond
 - Try a faster model (Gemini Flash, GPT-4 Turbo Mini)
 - Simplify the task
 - Check model server logs`,
+      conversationMode: "code",
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>

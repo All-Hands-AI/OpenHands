@@ -20,6 +20,7 @@ import {
 
 function PlannerTab() {
   const { t } = useTranslation();
+
   const { planContent, setConversationMode } = useConversationStore();
 
   if (planContent) {
