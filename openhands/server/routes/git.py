@@ -102,6 +102,18 @@ async def get_user_repositories(
     raise AuthenticationError('Git provider token required. (such as GitHub).')
 
 
+@app.get('/keycloak-id')
+async def get_keycloak_user_id(
+    user_id: str | None = Depends(get_user_id),
+) -> JSONResponse:
+    """Get the Keycloak user ID for the current user (SaaS only).
+
+    Returns:
+        JSON with keycloak_user_id field, or null if not in SaaS mode
+    """
+    return JSONResponse(content={'keycloak_user_id': user_id})
+
+
 @app.get('/info', response_model=User)
 async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
