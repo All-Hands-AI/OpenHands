@@ -9,6 +9,8 @@ export type ConversationTab =
   | "terminal"
   | "planner";
 
+export type ConversationMode = "code" | "plan";
+
 export interface IMessageToSend {
   text: string;
   timestamp: number;
@@ -27,6 +29,7 @@ interface ConversationState {
   shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
   hasRightPanelToggled: boolean;
   planContent: string | null;
+  conversationMode: ConversationMode;
 }
 
 interface ConversationActions {
@@ -50,6 +53,7 @@ interface ConversationActions {
   setSubmittedMessage: (message: string | null) => void;
   resetConversationState: () => void;
   setHasRightPanelToggled: (hasRightPanelToggled: boolean) => void;
+  setConversationMode: (conversationMode: ConversationMode) => void;
 }
 
 type ConversationStore = ConversationState & ConversationActions;
@@ -160,6 +164,7 @@ The model took too long to respond
 - Try a faster model (Gemini Flash, GPT-4 Turbo Mini)
 - Simplify the task
 - Check model server logs`,
+      conversationMode: "code",
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -295,6 +300,9 @@ The model took too long to respond
 
       setHasRightPanelToggled: (hasRightPanelToggled) =>
         set({ hasRightPanelToggled }, false, "setHasRightPanelToggled"),
+
+      setConversationMode: (conversationMode) =>
+        set({ conversationMode }, false, "setConversationMode"),
     }),
     {
       name: "conversation-store",
