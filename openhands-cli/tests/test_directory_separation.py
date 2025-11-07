@@ -65,6 +65,6 @@ class TestToolFix:
             )  # BashTool, FileEditorTool, TaskTrackerTool
 
             tool_names = [tool.name for tool in loaded_agent.tools]
-            assert 'BashTool' in tool_names
-            assert 'FileEditorTool' in tool_names
-            assert 'TaskTrackerTool' in tool_names
+            assert 'terminal' in tool_names
+            assert 'file_editor' in tool_names
+            assert 'task_tracker' in tool_names
