@@ -474,7 +474,9 @@ async def delete_conversation(
 ) -> bool:
     # Try V1 conversation first
     v1_result = await _try_delete_v1_conversation(
-        conversation_id, app_conversation_service, sandbox_service,
+        conversation_id,
+        app_conversation_service,
+        sandbox_service,
     )
     if v1_result is not None:
         return v1_result
