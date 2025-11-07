@@ -19,7 +19,7 @@ Further references:
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Run Inference on GPQA Benchmark
 

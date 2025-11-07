@@ -6,7 +6,7 @@ We support evaluation of the [Eurus subset focus on math and code reasoning](htt
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Start the evaluation
 

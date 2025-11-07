@@ -18,13 +18,13 @@ This folder contains the evaluation harness that we built on top of the original
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../../README.md#development-environment) and [configure LLM config](../../README.md#configure-openhands-and-your-llm).
+1. Environment setup: [install python environment](../../../Development.md#1-requirements) and [configure LLM config](../../../Development.md#3-configuring-the-language-model).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
 3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Run Inference (Rollout) on SWE-Bench Instances: Generate Patch from Problem Statement
 

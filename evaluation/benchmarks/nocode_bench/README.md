@@ -2,7 +2,7 @@
 
 ## LLM Setup
 
-Please follow [here](../../README.md#setup).
+Please follow [here](../../../Development.md).
 
 
 ## Docker image download

@@ -12,7 +12,7 @@ For more details on the ML-Bench task and dataset, please refer to the paper: [M
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../../Development.md) to setup your local development environment and LLM.
 
 ## Run Inference on ML-Bench
 
@@ -115,4 +115,4 @@ If you encounter any issues or have suggestions for improvements, please open an
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](../../../LICENSE).
