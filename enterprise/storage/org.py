@@ -26,6 +26,7 @@ class Org(Base):  # type: ignore
     security_analyzer = Column(String, nullable=True)
     confirmation_mode = Column(Boolean, nullable=True, default=False)
     default_llm_model = Column(String, nullable=True)
+    # encrypted column, don't set directly, set without the underscore
     _default_llm_api_key_for_byor = Column(String, nullable=True)
     default_llm_base_url = Column(String, nullable=True)
     remote_runtime_resource_factor = Column(Integer, nullable=True)
@@ -38,7 +39,9 @@ class Org(Base):  # type: ignore
     sandbox_runtime_container_image = Column(String, nullable=True)
     org_version = Column(Integer, nullable=False, default=0)
     mcp_config = Column(JSON, nullable=True)
+    # encrypted column, don't set directly, set without the underscore
     _search_api_key = Column(String, nullable=True)
+    # encrypted column, don't set directly, set without the underscore
     _sandbox_api_key = Column(String, nullable=True)
     max_budget_per_task = Column(Float, nullable=True)
     enable_solvability_analysis = Column(Boolean, nullable=True, default=False)
@@ -64,7 +67,7 @@ class Org(Base):  # type: ignore
                 setattr(self, key, kwargs.pop(key))
 
         # Handle custom property-style fields
-        if 'llm_api_key_for_byor' in kwargs:
+        if 'default_llm_api_key_for_byor' in kwargs:
             self.default_llm_api_key_for_byor = kwargs.pop(
                 'default_llm_api_key_for_byor'
             )

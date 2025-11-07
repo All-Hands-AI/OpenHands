@@ -39,7 +39,7 @@ async def store_byor_key_in_db(user_id: str, key: str) -> None:
                 extra={'user_id': user_id},
             )
             return
-        OrgStore.update_org(org.id, {'llm_api_key_for_byor': key})
+        OrgStore.update_org(org.id, {'default_llm_api_key_for_byor': key})
 
     await call_sync_from_async(_update_user_settings)
 
@@ -49,7 +49,7 @@ async def generate_byor_key(user_id: str) -> str | None:
 
     try:
         key = await LiteLlmManager.generate_key(
-            user_id, None, f'BYOR Key - user {user_id}', {'type': 'byor'}
+            user_id, user_id, f'BYOR Key - user {user_id}', {'type': 'byor'}
         )
 
         if key:

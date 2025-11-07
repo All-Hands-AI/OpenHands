@@ -84,8 +84,8 @@ class OrgStore:
             if not org:
                 return None
 
-            if 'org_id' in kwargs:
-                kwargs.pop('org_id')
+            if 'id' in kwargs:
+                kwargs.pop('id')
             for key, value in kwargs.items():
                 if hasattr(org, key):
                     setattr(org, key, value)
