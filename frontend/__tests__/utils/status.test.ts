@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getStatusCode, getIndicatorColor, IndicatorColor } from "../status";
+import { getStatusCode, getIndicatorColor, IndicatorColor } from "#/utils/status";
 import { AgentState } from "#/types/agent-state";
 import { I18nKey } from "#/i18n/declaration";
 
@@ -86,6 +86,36 @@ describe("getStatusCode", () => {
 
     // Should return runtime status since no agent state
     expect(result).toBe("STATUS$STARTING_RUNTIME");
+  });
+
+  it("should prioritize task ERROR status over websocket CONNECTING state", () => {
+    // Test case: Task has errored but websocket is still trying to connect
+    const result = getStatusCode(
+      { id: "", message: "", type: "info", status_update: true }, // statusMessage
+      "CONNECTING", // webSocketStatus (stuck connecting)
+      null, // conversationStatus
+      null, // runtimeStatus
+      AgentState.LOADING, // agentState
+      "ERROR", // taskStatus (ERROR)
+    );
+
+    // Should return error message, not "Connecting..."
+    expect(result).toBe(I18nKey.AGENT_STATUS$ERROR_OCCURRED);
+  });
+
+  it("should show Connecting when task is working and websocket is connecting", () => {
+    // Test case: Task is in progress and websocket is connecting normally
+    const result = getStatusCode(
+      { id: "", message: "", type: "info", status_update: true }, // statusMessage
+      "CONNECTING", // webSocketStatus
+      null, // conversationStatus
+      null, // runtimeStatus
+      AgentState.LOADING, // agentState
+      "WORKING", // taskStatus (in progress)
+    );
+
+    // Should show connecting message since task hasn't errored
+    expect(result).toBe(I18nKey.CHAT_INTERFACE$CONNECTING);
   });
 });
 

@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import posthog from "posthog-js";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
 import { SuggestedTask } from "#/utils/types";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
 import { USE_V1_CONVERSATION_API } from "#/utils/feature-flags";
+import { useTracking } from "#/hooks/use-tracking";
 
 interface CreateConversationVariables {
   query?: string;
@@ -31,6 +31,7 @@ interface CreateConversationResponse extends Partial<Conversation> {
 
 export const useCreateConversation = () => {
   const queryClient = useQueryClient();
+  const { trackConversationCreated } = useTracking();
 
   return useMutation({
     mutationKey: ["create-conversation"],
@@ -86,12 +87,11 @@ export const useCreateConversation = () => {
         is_v1: false,
       };
     },
-    onSuccess: async (_, { query, repository }) => {
-      posthog.capture("initial_query_submitted", {
-        entry_point: "task_form",
-        query_character_length: query?.length,
-        has_repository: !!repository,
+    onSuccess: async (_, { repository }) => {
+      trackConversationCreated({
+        hasRepository: !!repository,
       });
+
       queryClient.removeQueries({
         queryKey: ["user", "conversations"],
       });
