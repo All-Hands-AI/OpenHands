@@ -491,6 +491,7 @@ async def _try_delete_v1_conversation(
     sandbox_service: SandboxService,
 ) -> bool | None:
     """Try to delete a V1 conversation. Returns None if not a V1 conversation."""
+    result = None
     try:
         conversation_uuid = uuid.UUID(conversation_id)
         # Check if it's a V1 conversation by trying to get it
@@ -504,8 +505,6 @@ async def _try_delete_v1_conversation(
                 app_conversation.id
             )
             await sandbox_service.delete_sandbox(app_conversation.sandbox_id)
-
-            return result
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
         pass
@@ -513,7 +512,7 @@ async def _try_delete_v1_conversation(
         # Some other error, continue with V0 logic
         pass
 
-    return None
+    return result
 
 
 async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> bool:
