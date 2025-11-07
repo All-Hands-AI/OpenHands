@@ -44,6 +44,7 @@ export function AgentStatus({
     conversation?.status || null,
     conversation?.runtime_status || null,
     curAgentState,
+    taskStatus,
   );
 
   const isTaskLoading =
