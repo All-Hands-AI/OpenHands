@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import TerminalIcon from "#/icons/terminal.svg?react";
@@ -6,6 +6,8 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ServerIcon from "#/icons/server.svg?react";
 import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
+import ThreeDotsVerticalIcon from "#/icons/three-dots-vertical.svg?react";
+import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
 import { cn } from "#/utils/utils";
 import { ConversationTabNav } from "./conversation-tab-nav";
 import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
@@ -15,6 +17,8 @@ import {
   useConversationStore,
   type ConversationTab,
 } from "#/state/conversation-store";
+import { ConversationTabsContextMenu } from "./conversation-tabs-context-menu";
+import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
 
 export function ConversationTabs() {
   const {
@@ -23,6 +27,8 @@ export function ConversationTabs() {
     setHasRightPanelToggled,
     setSelectedTab,
   } = useConversationStore();
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Persist selectedTab and isRightPanelShown in localStorage
   const [persistedSelectedTab, setPersistedSelectedTab] =
@@ -33,6 +39,13 @@ export function ConversationTabs() {
 
   const [persistedIsRightPanelShown, setPersistedIsRightPanelShown] =
     useLocalStorage<boolean>("conversation-right-panel-shown", true);
+
+  const [persistedUnpinnedTabs] = useLocalStorage<string[]>(
+    "conversation-unpinned-tabs",
+    [],
+  );
+
+  const shouldUsePlanningAgent = USE_PLANNING_AGENT();
 
   const onTabChange = (value: ConversationTab | null) => {
     setSelectedTab(value);
@@ -87,6 +100,7 @@ export function ConversationTabs() {
 
   const tabs = [
     {
+      tabValue: "editor",
       isActive: isTabActive("editor"),
       icon: GitChanges,
       onClick: () => onTabSelected("editor"),
@@ -95,6 +109,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$CHANGES),
     },
     {
+      tabValue: "vscode",
       isActive: isTabActive("vscode"),
       icon: VSCodeIcon,
       onClick: () => onTabSelected("vscode"),
@@ -103,6 +118,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$CODE),
     },
     {
+      tabValue: "terminal",
       isActive: isTabActive("terminal"),
       icon: TerminalIcon,
       onClick: () => onTabSelected("terminal"),
@@ -112,6 +128,7 @@ export function ConversationTabs() {
       className: "pl-2",
     },
     {
+      tabValue: "served",
       isActive: isTabActive("served"),
       icon: ServerIcon,
       onClick: () => onTabSelected("served"),
@@ -120,6 +137,7 @@ export function ConversationTabs() {
       label: t(I18nKey.COMMON$APP),
     },
     {
+      tabValue: "browser",
       isActive: isTabActive("browser"),
       icon: GlobeIcon,
       onClick: () => onTabSelected("browser"),
@@ -129,6 +147,23 @@ export function ConversationTabs() {
     },
   ];
 
+  if (shouldUsePlanningAgent) {
+    tabs.unshift({
+      tabValue: "planner",
+      isActive: isTabActive("planner"),
+      icon: LessonPlanIcon,
+      onClick: () => onTabSelected("planner"),
+      tooltipContent: t(I18nKey.COMMON$PLANNER),
+      tooltipAriaLabel: t(I18nKey.COMMON$PLANNER),
+      label: t(I18nKey.COMMON$PLANNER),
+    });
+  }
+
+  // Filter out unpinned tabs
+  const visibleTabs = tabs.filter(
+    (tab) => !persistedUnpinnedTabs.includes(tab.tabValue),
+  );
+
   return (
     <div
       className={cn(
@@ -136,7 +171,7 @@ export function ConversationTabs() {
         "flex flex-row justify-start lg:justify-end items-center gap-4.5",
       )}
     >
-      {tabs.map(
+      {visibleTabs.map(
         (
           {
             icon,
@@ -164,6 +199,23 @@ export function ConversationTabs() {
           </ChatActionTooltip>
         ),
       )}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className={cn(
+            "p-1 pl-0 rounded-md cursor-pointer",
+            "text-[#9299AA] bg-[#0D0F11]",
+          )}
+          aria-label={t(I18nKey.COMMON$MORE_OPTIONS)}
+        >
+          <ThreeDotsVerticalIcon className={cn("w-5 h-5 text-inherit")} />
+        </button>
+        <ConversationTabsContextMenu
+          isOpen={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+        />
+      </div>
     </div>
   );
 }

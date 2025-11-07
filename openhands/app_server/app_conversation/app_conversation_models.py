@@ -88,7 +88,7 @@ class AppConversationStartRequest(BaseModel):
 
     sandbox_id: str | None = Field(default=None)
     initial_message: SendMessageRequest | None = None
-    processors: list[EventCallbackProcessor] = Field(default_factory=list)
+    processors: list[EventCallbackProcessor] | None = Field(default=None)
     llm_model: str | None = None
 
     # Git parameters
