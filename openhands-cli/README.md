@@ -104,6 +104,11 @@ If you encounter errors like `RuntimeError: Prompt not visible after init`, this
    sudo yum install ncurses-term
    ```
 
+### Running in CI or automation
+
+- Interactive prompts are still required for human-driven sessions. In automated pipelines, set `OPENHANDS_CLI_SKIP_TTY_CHECK=1` (or ensure your CI exports `CI=true`) to bypass the TTY guard intentionally.
+- The CLI will print a notice when the guard is skipped. Only use this override for trusted automation where interactive prompts are not expected.
+
 ### Other common issues
 
 #### "uvx: command not found"

@@ -34,12 +34,37 @@ from openhands_cli.user_actions import UserConfirmation, exit_session_confirmati
 from openhands_cli.user_actions.utils import get_session_prompter
 
 
+def _should_skip_terminal_check() -> tuple[bool, str | None]:
+    """Determine if the terminal compatibility check should be bypassed."""
+
+    skip_env = os.environ.get('OPENHANDS_CLI_SKIP_TTY_CHECK')
+    if skip_env and skip_env.lower() not in ('0', 'false', 'no'):
+        return True, 'OPENHANDS_CLI_SKIP_TTY_CHECK'
+
+    if os.environ.get('CI', '').lower() in ('1', 'true', 'yes'):
+        return True, 'CI'
+
+    return False, None
+
+
 def check_terminal_compatibility() -> bool:
     """Check if the terminal supports interactive prompts.
     
     Returns:
         bool: True if terminal is compatible, False otherwise.
     """
+    skip_check, reason = _should_skip_terminal_check()
+    if skip_check:
+        message = (
+            '<grey>Skipping terminal compatibility check '
+            f'(detected {reason} environment variable).</grey>'
+        )
+        try:
+            print_formatted_text(HTML(message))
+        except Exception:
+            print(message)
+        return True
+    
     # Check if stdin/stdout are TTY
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         return False

@@ -90,3 +90,19 @@ class TestTerminalDetection:
              patch.dict(os.environ, {'TERM': 'tmux-256color'}):
             assert check_terminal_compatibility() is True
 
+    def test_skip_env_var_bypasses_check(self):
+        """Test that the skip env var bypasses compatibility checks."""
+        with patch('sys.stdin.isatty', return_value=False), \
+             patch('sys.stdout.isatty', return_value=False), \
+             patch.dict(os.environ, {'OPENHANDS_CLI_SKIP_TTY_CHECK': '1'}, clear=False):
+            assert check_terminal_compatibility() is True
+
+    def test_ci_env_bypasses_check(self):
+        """Test that CI environments bypass compatibility checks."""
+        with patch('sys.stdin.isatty', return_value=False), \
+             patch('sys.stdout.isatty', return_value=False), \
+             patch.dict(os.environ, {'CI': 'true'}, clear=False):
+            assert check_terminal_compatibility() is True
+
+
+
