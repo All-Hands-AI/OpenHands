@@ -52,7 +52,8 @@ export function AgentStatus({
 
   const shouldShownAgentError =
     curAgentState === AgentState.ERROR ||
-    curAgentState === AgentState.RATE_LIMITED;
+    curAgentState === AgentState.RATE_LIMITED ||
+    webSocketStatus === "DISCONNECTED";
 
   const shouldShownAgentStop = curAgentState === AgentState.RUNNING;
 
