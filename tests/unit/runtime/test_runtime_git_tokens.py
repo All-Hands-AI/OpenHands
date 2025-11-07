@@ -88,7 +88,9 @@ class MockRuntime(Runtime):
                 # Extract provider from previous clone command
                 if len(self.run_action_calls) > 0:
                     clone_cmd = (
-                        self.run_action_calls[0].command if self.run_action_calls else ''
+                        self.run_action_calls[0].command
+                        if self.run_action_calls
+                        else ''
                     )
                 if 'github.com' in clone_cmd:
                     mock_url = 'https://old_github_token@github.com/owner/repo.git'
@@ -548,9 +550,7 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_existing_repo_refreshes_remote(
-    temp_dir, monkeypatch
-):
+async def test_clone_or_init_repo_existing_repo_refreshes_remote(temp_dir, monkeypatch):
     """Existing checkout should only refresh remote with latest token."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
@@ -627,9 +627,7 @@ async def test_clone_or_init_repo_existing_repo_adds_remote_when_missing(
 
 
 @pytest.mark.asyncio
-async def test_clone_or_init_repo_existing_path_not_git_reclones(
-    temp_dir, monkeypatch
-):
+async def test_clone_or_init_repo_existing_path_not_git_reclones(temp_dir, monkeypatch):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
