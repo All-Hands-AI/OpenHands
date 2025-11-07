@@ -51,13 +51,13 @@ class AgentStore:
             agent_llm_metadata = get_llm_metadata(
                 model_name=agent.llm.model, llm_type='agent', session_id=session_id
             )
-            updated_llm = agent.llm.model_copy(update={'extra_body': {'metadata': agent_llm_metadata}})
+            updated_llm = agent.llm.model_copy(update={'litellm_extra_body': {'metadata': agent_llm_metadata}})
 
             condenser_updates = {}
             if agent.condenser and isinstance(agent.condenser, LLMSummarizingCondenser):
                 condenser_updates['llm'] = agent.condenser.llm.model_copy(
                     update={
-                        'extra_body': {
+                        'litellm_extra_body': {
                             'metadata': get_llm_metadata(
                                 model_name=agent.condenser.llm.model,
                                 llm_type='condenser',

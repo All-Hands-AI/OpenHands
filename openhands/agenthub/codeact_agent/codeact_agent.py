@@ -211,7 +211,7 @@ class CodeActAgent(Agent):
             'messages': messages,
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
-        params['extra_body'] = {
+        params['litellm_extra_body'] = {
             'metadata': state.to_llm_metadata(
                 model_name=self.llm.config.model, agent_name=self.name
             )

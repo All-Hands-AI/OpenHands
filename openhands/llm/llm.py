@@ -315,9 +315,9 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
-            # if we're not using litellm proxy, remove the extra_body
+            # if we're not using litellm proxy, remove the litellm_extra_body
             if 'litellm_proxy' not in self.config.model:
-                kwargs.pop('extra_body', None)
+                kwargs.pop('litellm_extra_body', None)
 
             # Record start time for latency measurement
             start_time = time.time()

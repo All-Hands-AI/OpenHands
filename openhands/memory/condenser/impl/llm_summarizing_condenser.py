@@ -141,7 +141,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
-            extra_body={'metadata': self.llm_metadata},
+            litellm_extra_body={'metadata': self.llm_metadata},
         )
         summary = response.choices[0].message.content
 
