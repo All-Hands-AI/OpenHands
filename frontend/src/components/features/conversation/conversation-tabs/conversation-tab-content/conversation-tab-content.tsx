@@ -8,15 +8,18 @@ import { TabContentArea } from "./tab-content-area";
 import { ConversationTabTitle } from "../conversation-tab-title";
 import Terminal from "#/components/features/terminal/terminal";
 import { useConversationStore } from "#/state/conversation-store";
+import { useConversationId } from "#/hooks/use-conversation-id";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
+const PlannerTab = lazy(() => import("#/routes/planner-tab"));
 
 export function ConversationTabContent() {
   const { selectedTab, shouldShownAgentLoading } = useConversationStore();
+  const { conversationId } = useConversationId();
 
   const { t } = useTranslation();
 
@@ -26,6 +29,7 @@ export function ConversationTabContent() {
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
   const isTerminalActive = selectedTab === "terminal";
+  const isPlannerActive = selectedTab === "planner";
 
   // Define tab configurations
   const tabs = [
@@ -41,6 +45,11 @@ export function ConversationTabContent() {
       key: "terminal",
       component: Terminal,
       isActive: isTerminalActive,
+    },
+    {
+      key: "planner",
+      component: PlannerTab,
+      isActive: isPlannerActive,
     },
   ];
 
@@ -60,6 +69,9 @@ export function ConversationTabContent() {
     if (isTerminalActive) {
       return t(I18nKey.COMMON$TERMINAL);
     }
+    if (isPlannerActive) {
+      return t(I18nKey.COMMON$PLANNER);
+    }
     return "";
   }, [
     isEditorActive,
@@ -67,6 +79,7 @@ export function ConversationTabContent() {
     isServedActive,
     isVSCodeActive,
     isTerminalActive,
+    isPlannerActive,
   ]);
 
   if (shouldShownAgentLoading) {
@@ -78,7 +91,11 @@ export function ConversationTabContent() {
       <ConversationTabTitle title={conversationTabTitle} />
       <TabContentArea>
         {tabs.map(({ key, component: Component, isActive }) => (
-          <TabWrapper key={key} isActive={isActive}>
+          <TabWrapper
+            // Force Terminal tab remount to reset XTerm buffer/state when conversationId changes
+            key={key === "terminal" ? `${key}-${conversationId}` : key}
+            isActive={isActive}
+          >
             <Component />
           </TabWrapper>
         ))}

@@ -1,11 +1,11 @@
 import os
 
-from openhands.sdk import LLM, BaseConversation, LocalFileStore
+from openhands.sdk import LLM, BaseConversation, LLMSummarizingCondenser, LocalFileStore
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 
-from openhands_cli.utils import get_llm_metadata, get_default_cli_agent
+from openhands_cli.utils import get_default_cli_agent, get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 from openhands_cli.pt_style import COLOR_GREY
 from openhands_cli.tui.settings.store import AgentStore
@@ -33,9 +33,6 @@ class SettingsScreen:
         agent_spec = self.agent_store.load()
         if not agent_spec:
             return
-        assert self.conversation is not None, (
-            'Conversation must be set to display settings.'
-        )
 
         llm = agent_spec.llm
         advanced_llm_settings = True if llm.base_url else False
@@ -62,12 +59,20 @@ class SettingsScreen:
         labels_and_values.extend(
             [
                 ('   API Key', '********' if llm.api_key else 'Not Set'),
+            ]
+        )
+
+        if self.conversation:
+                labels_and_values.extend([
                 (
                     '   Confirmation Mode',
                     'Enabled'
                     if self.conversation.is_confirmation_mode_active
                     else 'Disabled',
-                ),
+                )
+                ])
+
+        labels_and_values.extend([
                 (
                     '   Memory Condensation',
                     'Enabled' if agent_spec.condenser else 'Disabled',
@@ -153,7 +158,7 @@ class SettingsScreen:
             api_key = prompt_api_key(
                 step_counter,
                 custom_model.split('/')[0] if len(custom_model.split('/')) > 1 else '',
-                self.conversation.agent.llm.api_key if self.conversation else None,
+                self.conversation.state.agent.llm.api_key if self.conversation else None,
                 escapable=escapable,
             )
             memory_condensation = choose_memory_condensation(step_counter)
@@ -175,14 +180,21 @@ class SettingsScreen:
             api_key=api_key,
             base_url=base_url,
             usage_id='agent',
-            metadata=get_llm_metadata(model_name=model, llm_type='agent'),
+            litellm_extra_body={"metadata": get_llm_metadata(model_name=model, llm_type='agent')},
         )
 
         agent = self.agent_store.load()
         if not agent:
             agent = get_default_cli_agent(llm=llm)
 
+        # Must update all LLMs
         agent = agent.model_copy(update={'llm': llm})
+        condenser = LLMSummarizingCondenser(
+            llm=llm.model_copy(
+                update={"usage_id": "condenser"}
+            )
+        )
+        agent = agent.model_copy(update={'condenser': condenser})
         self.agent_store.save(agent)
 
     def _save_advanced_settings(

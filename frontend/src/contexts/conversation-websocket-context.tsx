@@ -28,7 +28,7 @@ import {
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
 import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
-import V1ConversationService from "#/api/conversation-service/v1-conversation-service.api";
+import EventService from "#/api/event-service/event-service.api";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type V1_WebSocketConnectionState =
@@ -67,7 +67,7 @@ export function ConversationWebSocketProvider({
   const { addEvent } = useEventStore();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
-  const { setAgentStatus } = useV1ConversationStateStore();
+  const { setExecutionStatus } = useV1ConversationStateStore();
   const { appendInput, appendOutput } = useCommandStore();
 
   // History loading state
@@ -154,10 +154,10 @@ export function ConversationWebSocketProvider({
           // TODO: Tests
           if (isConversationStateUpdateEvent(event)) {
             if (isFullStateConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value.agent_status);
+              setExecutionStatus(event.value.execution_status);
             }
             if (isAgentStatusConversationStateUpdateEvent(event)) {
-              setAgentStatus(event.value);
+              setExecutionStatus(event.value);
             }
           }
 
@@ -184,7 +184,7 @@ export function ConversationWebSocketProvider({
       removeOptimisticUserMessage,
       queryClient,
       conversationId,
-      setAgentStatus,
+      setExecutionStatus,
       appendInput,
       appendOutput,
     ],
@@ -211,8 +211,7 @@ export function ConversationWebSocketProvider({
         // Fetch expected event count for history loading detection
         if (conversationId) {
           try {
-            const count =
-              await V1ConversationService.getEventCount(conversationId);
+            const count = await EventService.getEventCount(conversationId);
             setExpectedEventCount(count);
 
             // If no events expected, mark as loaded immediately

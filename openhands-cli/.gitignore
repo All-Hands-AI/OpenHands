@@ -50,3 +50,7 @@ coverage.xml
 *.manifest
 # Note: We keep our custom spec file in version control
 # *.spec
+
+# Generated artifacts
+build
+

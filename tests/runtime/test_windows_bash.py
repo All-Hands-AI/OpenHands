@@ -1,6 +1,5 @@
 import os
 import sys
-import tempfile
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -30,18 +29,11 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.fixture
-def temp_work_dir():
-    """Create a temporary directory for testing."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield temp_dir
-
-
-@pytest.fixture
-def windows_bash_session(temp_work_dir):
+def windows_bash_session(temp_dir):
     """Create a WindowsPowershellSession instance for testing."""
     # Instantiate the class. Initialization happens in __init__.
     session = WindowsPowershellSession(
-        work_dir=temp_work_dir,
+        work_dir=temp_dir,
         username=None,
     )
     assert session._initialized  # Should be true after __init__
@@ -169,8 +161,8 @@ def test_command_timeout(windows_bash_session):
     assert abs(duration - test_timeout_sec) < 0.5  # Allow some buffer
 
 
-def test_long_running_command(windows_bash_session):
-    action = CmdRunAction(command='python -u -m http.server 8081')
+def test_long_running_command(windows_bash_session, dynamic_port):
+    action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
     action.set_hard_timeout(1)
     result = windows_bash_session.execute(action)
 
@@ -195,7 +187,7 @@ def test_long_running_command(windows_bash_session):
     assert result.exit_code == 0
 
     # Verify the server is actually stopped by starting another one on the same port
-    action = CmdRunAction(command='python -u -m http.server 8081')
+    action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
     action.set_hard_timeout(1)  # Set a short timeout to check if it starts
     result = windows_bash_session.execute(action)
 
@@ -247,10 +239,10 @@ def test_multiple_commands_rejected_and_individual_execution(windows_bash_sessio
         results.append(obs.content.strip())  # Strip trailing newlines for comparison
 
 
-def test_working_directory(windows_bash_session, temp_work_dir):
+def test_working_directory(windows_bash_session, temp_dir):
     """Test working directory handling."""
     initial_cwd = windows_bash_session._cwd
-    abs_temp_work_dir = os.path.abspath(temp_work_dir)
+    abs_temp_work_dir = os.path.abspath(temp_dir)
     assert initial_cwd == abs_temp_work_dir
 
     # Create a subdirectory
@@ -414,7 +406,7 @@ def test_runspace_state_after_error(windows_bash_session):
     assert valid_result.exit_code == 0
 
 
-def test_stateful_file_operations(windows_bash_session, temp_work_dir):
+def test_stateful_file_operations(windows_bash_session, temp_dir):
     """Test file operations to verify runspace state persistence.
 
     This test verifies that:
@@ -422,7 +414,7 @@ def test_stateful_file_operations(windows_bash_session, temp_work_dir):
     2. File operations work correctly relative to the current directory
     3. The runspace maintains state for path-dependent operations
     """
-    abs_temp_work_dir = os.path.abspath(temp_work_dir)
+    abs_temp_work_dir = os.path.abspath(temp_dir)
 
     # 1. Create a subdirectory
     sub_dir_name = 'file_test_dir'
@@ -582,10 +574,10 @@ def test_interactive_input(windows_bash_session):
     assert result.exit_code == 1
 
 
-def test_windows_path_handling(windows_bash_session, temp_work_dir):
+def test_windows_path_handling(windows_bash_session, temp_dir):
     """Test that os.chdir works with both forward slashes and escaped backslashes on Windows."""
     # Create a test directory
-    test_dir = Path(temp_work_dir) / 'test_dir'
+    test_dir = Path(temp_dir) / 'test_dir'
     test_dir.mkdir()
 
     # Test both path formats

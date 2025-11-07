@@ -19,3 +19,4 @@ export const ENABLE_TRAJECTORY_REPLAY = () =>
   loadFeatureFlag("TRAJECTORY_REPLAY");
 export const USE_V1_CONVERSATION_API = () =>
   loadFeatureFlag("USE_V1_CONVERSATION_API");
+export const USE_PLANNING_AGENT = () => loadFeatureFlag("USE_PLANNING_AGENT");

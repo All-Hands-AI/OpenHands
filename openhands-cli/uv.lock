@@ -1475,7 +1475,7 @@ wheels = [
 
 [[package]]
 name = "lmnr"
-version = "0.7.21"
+version = "0.7.20"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
@@ -1495,9 +1495,9 @@ dependencies = [
     { name = "tenacity" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9b/00/030cc891cde0b768af6ac76fa303ac824d2c8a608c5dd5326587165f0b78/lmnr-0.7.21.tar.gz", hash = "sha256:7e6653bff214201bc81fa2a51ba1d5bc9a45cf56ac4fa864bc80a9ff03e27a03", size = 198922, upload-time = "2025-11-06T19:25:01.038Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d4/c0/996403cc2f6967881a42af4b27ff8931956d57ab3ed2d8bf11e5b37aed40/lmnr-0.7.20.tar.gz", hash = "sha256:1f484cd618db2d71af65f90a0b8b36d20d80dc91a5138b811575c8677bf7c4fd", size = 194075, upload-time = "2025-11-04T16:53:34.49Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/d4/9bd80d763aaf3ccec1ffb08bfa1f76e616a02856a7ee7cbbac3ee180f5bb/lmnr-0.7.21-py3-none-any.whl", hash = "sha256:5db260c5ed2145aca460563acc810a71a48d9c08663ecb23a318613d221705c7", size = 253726, upload-time = "2025-11-06T19:24:59.312Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/df/4665a3931b2fbc5f5b66e4906ffab106f3f65ab7e78732ecdaf3ba4a3076/lmnr-0.7.20-py3-none-any.whl", hash = "sha256:5f9fa7444e6f96c25e097f66484ff29e632bdd1de0e9346948bf5595f4a8af38", size = 247465, upload-time = "2025-11-04T16:53:32.713Z" },
 ]
 
 [[package]]
@@ -1902,7 +1902,7 @@ wheels = [
 
 [[package]]
 name = "openhands"
-version = "1.0.3"
+version = "1.0.5"
 source = { editable = "." }
 dependencies = [
     { name = "openhands-sdk" },
@@ -1929,8 +1929,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", specifier = "==1" },
-    { name = "openhands-tools", specifier = "==1" },
+    { name = "openhands-sdk", specifier = "==1.0.0" },
+    { name = "openhands-tools", specifier = "==1.0.0" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]
