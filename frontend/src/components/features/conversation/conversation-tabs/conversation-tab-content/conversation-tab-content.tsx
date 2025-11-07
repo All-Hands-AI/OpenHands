@@ -82,8 +82,6 @@ export function ConversationTabContent() {
     isPlannerActive,
   ]);
 
-  console.log("shouldShownAgentLoading", shouldShownAgentLoading);
-
   if (shouldShownAgentLoading) {
     return <ConversationLoading />;
   }
