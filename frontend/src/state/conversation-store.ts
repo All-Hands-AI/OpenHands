@@ -9,6 +9,8 @@ export type ConversationTab =
   | "terminal"
   | "planner";
 
+export type ConversationMode = "code" | "plan";
+
 export interface IMessageToSend {
   text: string;
   timestamp: number;
@@ -26,6 +28,7 @@ interface ConversationState {
   submittedMessage: string | null;
   shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
   hasRightPanelToggled: boolean;
+  conversationMode: ConversationMode;
 }
 
 interface ConversationActions {
@@ -49,6 +52,7 @@ interface ConversationActions {
   setSubmittedMessage: (message: string | null) => void;
   resetConversationState: () => void;
   setHasRightPanelToggled: (hasRightPanelToggled: boolean) => void;
+  setConversationMode: (conversationMode: ConversationMode) => void;
 }
 
 type ConversationStore = ConversationState & ConversationActions;
@@ -74,6 +78,7 @@ export const useConversationStore = create<ConversationStore>()(
       submittedMessage: null,
       shouldHideSuggestions: false,
       hasRightPanelToggled: true,
+      conversationMode: "code",
 
       // Actions
       setIsRightPanelShown: (isRightPanelShown) =>
@@ -209,6 +214,9 @@ export const useConversationStore = create<ConversationStore>()(
 
       setHasRightPanelToggled: (hasRightPanelToggled) =>
         set({ hasRightPanelToggled }, false, "setHasRightPanelToggled"),
+
+      setConversationMode: (conversationMode) =>
+        set({ conversationMode }, false, "setConversationMode"),
     }),
     {
       name: "conversation-store",
