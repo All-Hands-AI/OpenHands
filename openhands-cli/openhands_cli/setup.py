@@ -13,7 +13,7 @@ from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
 )
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
-
+from openhands_cli.tui.visualizer import CLIVisualizer
 
 register_tool('BashTool', BashTool)
 register_tool('FileEditorTool', FileEditorTool)
@@ -76,6 +76,7 @@ def setup_conversation(
             # Conversation will add /<conversation_id> to this path
             persistence_dir=CONVERSATIONS_DIR,
             conversation_id=conversation_id,
+            visualize=CLIVisualizer
         )
 
         if include_security_analyzer:
