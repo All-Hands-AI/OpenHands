@@ -1,0 +1,134 @@
+{
+  "summary": {
+    "total_instances": 3,
+    "successful": 3,
+    "failed": 0,
+    "average_file_level_jaccard": 0.8333333333333334,
+    "average_function_level_jaccard": 0.6666666666666666,
+    "average_line_level_overlap": 0.6191250808976579,
+    "file_level_distribution": {
+      "0.0-0.2": 0,
+      "0.2-0.4": 0,
+      "0.4-0.6": 1,
+      "0.6-0.8": 0,
+      "0.8-1.0": 2
+    },
+    "function_level_distribution": {
+      "0.0-0.2": 0,
+      "0.2-0.4": 0,
+      "0.4-0.6": 2,
+      "0.6-0.8": 0,
+      "0.8-1.0": 1
+    },
+    "line_level_distribution": {
+      "0.0-0.2": 0,
+      "0.2-0.4": 1,
+      "0.4-0.6": 0,
+      "0.6-0.8": 1,
+      "0.8-1.0": 1
+    }
+  },
+  "results": [
+    {
+      "instance_id": "django__django-12774",
+      "success": true,
+      "file_level_jaccard": 1.0,
+      "function_level_jaccard": 1.0,
+      "line_level_overlap": 0.8823529411764706,
+      "generated_locations": [
+        "PatchLocation(file=django/db/models/query.py, QuerySet.in_bulk)"
+      ],
+      "golden_locations": [
+        "PatchLocation(file=django/db/models/query.py, QuerySet.in_bulk)"
+      ],
+      "generated_files": [
+        "django/db/models/query.py"
+      ],
+      "golden_files": [
+        "django/db/models/query.py"
+      ],
+      "error": null,
+      "generated_non_test_files": [
+        "django/db/models/query.py"
+      ],
+      "generated_test_files": [],
+      "num_generated_locations": 1,
+      "num_golden_locations": 1,
+      "num_function_level_intersection": 1
+    },
+    {
+      "instance_id": "django__django-16631",
+      "success": true,
+      "file_level_jaccard": 0.5,
+      "function_level_jaccard": 0.5,
+      "line_level_overlap": 0.711864406779661,
+      "generated_locations": [
+        "PatchLocation(file=django/contrib/auth/__init__.py, update_session_auth_hash)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, get_user)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=5-11, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, get_permission_codename)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=228-230, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=208-214, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=215-221, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=207-213, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=214-220, global)"
+      ],
+      "golden_locations": [
+        "PatchLocation(file=django/contrib/auth/base_user.py, lines=5-11, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, update_session_auth_hash)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, get_user)",
+        "PatchLocation(file=django/contrib/auth/base_user.py, AbstractBaseUser.get_email_field_name)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, get_permission_codename)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=208-214, global)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=215-221, global)",
+        "PatchLocation(file=django/contrib/auth/base_user.py, AbstractBaseUser.get_session_auth_hash)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=207-213, global)",
+        "PatchLocation(file=django/contrib/auth/base_user.py, AbstractBaseUser.unknown)",
+        "PatchLocation(file=django/contrib/auth/__init__.py, lines=214-220, global)"
+      ],
+      "generated_files": [
+        "django/contrib/auth/__init__.py"
+      ],
+      "golden_files": [
+        "django/contrib/auth/__init__.py",
+        "django/contrib/auth/base_user.py"
+      ],
+      "error": null,
+      "generated_non_test_files": [
+        "django/contrib/auth/__init__.py"
+      ],
+      "generated_test_files": [],
+      "num_generated_locations": 9,
+      "num_golden_locations": 11,
+      "num_function_level_intersection": 4
+    },
+    {
+      "instance_id": "django__django-13568",
+      "success": true,
+      "file_level_jaccard": 1.0,
+      "function_level_jaccard": 0.5,
+      "line_level_overlap": 0.2631578947368421,
+      "generated_locations": [
+        "PatchLocation(file=django/contrib/auth/checks.py, lines=4-10, global)",
+        "PatchLocation(file=django/contrib/auth/checks.py, check_user_model)"
+      ],
+      "golden_locations": [
+        "PatchLocation(file=django/contrib/auth/checks.py, check_user_model)"
+      ],
+      "generated_files": [
+        "django/contrib/auth/checks.py"
+      ],
+      "golden_files": [
+        "django/contrib/auth/checks.py"
+      ],
+      "error": null,
+      "generated_non_test_files": [
+        "django/contrib/auth/checks.py"
+      ],
+      "generated_test_files": [],
+      "num_generated_locations": 2,
+      "num_golden_locations": 1,
+      "num_function_level_intersection": 1
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+[core]
+workspace_base="/workspaces/testbed/geopandas"
+file_store = "local"           # Storage type: local, memory, s3, google_cloud
+file_store_path = "/workspaces/OpenHands/.openhands"  # Base path for storage
+# Name of the default agent
+#default_agent = "RepoAnalysisAgent"
+
+[llm]
+model="azure/gpt-4o"
+api_key="194c2e2102f4aa951440be25c2cc777a"
+base_url="http://10.190.174.89:9999"

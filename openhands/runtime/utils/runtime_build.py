@@ -216,10 +216,47 @@ def build_runtime_image_in_folder(
     lock_image_name = f'{runtime_image_repo}:{lock_tag}'
     build_from = BuildFromImageType.SCRATCH
 
-    # If the exact image already exists, we do not need to build it
+    # First check if the exact image already exists locally
     if runtime_builder.image_exists(hash_image_name, False):
-        logger.debug(f'Reusing Image [{hash_image_name}]')
+        logger.debug(f'Reusing local image [{hash_image_name}]')
         return hash_image_name
+
+    # If not found locally, try to pull from remote registry
+    logger.info(
+        f'Image [{hash_image_name}] not found locally, checking remote registry...'
+    )
+    try:
+        if runtime_builder.image_exists(hash_image_name, pull_from_repo=True):
+            logger.info(
+                f'✅ Successfully pulled prebuilt image from registry: [{hash_image_name}]'
+            )
+            return hash_image_name
+        else:
+            logger.info(
+                f'Image [{hash_image_name}] not found in remote registry, will build locally.'
+            )
+    except Exception as e:
+        error_str = str(e).lower()
+        # Check if this is a "not found" error (image doesn't exist in registry)
+        if any(
+            keyword in error_str
+            for keyword in [
+                'not found',
+                '404',
+                'no such',
+                'does not exist',
+                'manifest unknown',
+            ]
+        ):
+            logger.info(
+                f'Image [{hash_image_name}] does not exist in remote registry, will build locally.'
+            )
+        else:
+            # Other errors (auth, network, etc.) should be reported but not fatal
+            logger.warning(
+                f'Failed to check/pull image from remote registry (non-fatal): {e}\n'
+                f'Will proceed to build locally.'
+            )
 
     # We look for an existing image that shares the same lock_tag. If such an image exists, we
     # can use it as the base image for the build and just copy source files. This makes the build

@@ -124,7 +124,7 @@ function run_eval() {
   ) &
   CLEANUP_PID=$!
 
-  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/swe_bench/run_infer_prebuild.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \

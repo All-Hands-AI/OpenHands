@@ -102,7 +102,7 @@ if [ -z "$INSTANCE_ID" ]; then
         --split "$SPLIT" \
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 3600 \
-        --cache_level instance \
+        --cache_level env \
         --max_workers $N_PROCESS \
         --run_id $RUN_ID \
         $MODAL_FLAG
@@ -150,7 +150,7 @@ else
         --predictions_path $SWEBENCH_FORMAT_JSONL \
         --timeout 3600 \
         --instance_ids $INSTANCE_ID \
-        --cache_level instance \
+        --cache_level env \
         --max_workers $N_PROCESS \
         --run_id $RUN_ID \
         $MODAL_FLAG

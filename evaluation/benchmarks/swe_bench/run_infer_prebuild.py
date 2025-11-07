@@ -861,13 +861,6 @@ if __name__ == '__main__':
     if not ITERATIVE_EVAL_MODE:
         # load the dataset
         instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
-        # debug
-        instances = prepare_dataset(
-            swe_bench_tests,
-            output_file,
-            eval_n_limit=1,
-            eval_ids=['django__django-15930'],
-        )
         if len(instances) > 0 and not isinstance(
             instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
         ):

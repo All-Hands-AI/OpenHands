@@ -83,6 +83,13 @@ for run_idx in $(seq 1 $N_RUNS); do
         echo "### Cleaning up remote runtime... ###"
         ./evaluation/utils/scripts/cleanup_remote_runtime.sh
 
+        # Also cleanup local docker containers if running locally
+        if [ "$RUNTIME" = "docker" ]; then
+            echo "### Cleaning up local docker containers... ###"
+            docker ps -q --filter "name=openhands-runtime-" | xargs -r docker stop
+            docker ps -aq --filter "name=openhands-runtime-" | xargs -r docker rm
+        fi
+
         if [ $INFER_STATUS -eq 0 ]; then
             echo "### Inference completed successfully. ###"
             break
@@ -119,6 +126,13 @@ for run_idx in $(seq 1 $N_RUNS); do
         fi
 
         ./evaluation/utils/scripts/cleanup_remote_runtime.sh
+
+        # Also cleanup local docker containers if running locally
+        if [ "$RUNTIME" = "docker" ]; then
+            echo "### Cleaning up local docker containers... ###"
+            docker ps -q --filter "name=openhands-runtime-" | xargs -r docker stop
+            docker ps -aq --filter "name=openhands-runtime-" | xargs -r docker rm
+        fi
     done
 
     # update the output with evaluation results
