@@ -45,6 +45,7 @@ class TestConfirmationMode:
                 patch('openhands_cli.setup.print_formatted_text') as mock_print,
                 patch('openhands_cli.setup.HTML'),
                 patch('openhands_cli.setup.uuid') as mock_uuid,
+                patch('openhands_cli.setup.CLIVisualizer') as mock_visualizer,
             ):
                 # Mock dependencies
                 mock_conversation_id = MagicMock()
@@ -72,9 +73,8 @@ class TestConfirmationMode:
                     workspace=ANY,
                     persistence_dir=ANY,
                     conversation_id=mock_conversation_id,
+                    visualizer=mock_visualizer
                 )
-                # Verify print_formatted_text was called
-                mock_print.assert_called_once()
 
     def test_setup_conversation_raises_missing_agent_spec(self) -> None:
         """Test that setup_conversation raises MissingAgentSpec when agent is not found."""

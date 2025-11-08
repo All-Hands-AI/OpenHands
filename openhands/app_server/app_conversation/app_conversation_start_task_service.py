@@ -56,6 +56,16 @@ class AppConversationStartTaskService(ABC):
         Return the stored task
         """
 
+    @abstractmethod
+    async def delete_app_conversation_start_tasks(self, conversation_id: UUID) -> bool:
+        """Delete all start tasks associated with a conversation.
+
+        Args:
+            conversation_id: The ID of the conversation to delete tasks for.
+
+        Returns True if any tasks were deleted successfully, False otherwise.
+        """
+
 
 class AppConversationStartTaskServiceInjector(
     DiscriminatedUnionMixin, Injector[AppConversationStartTaskService], ABC

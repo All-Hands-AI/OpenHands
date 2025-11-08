@@ -39,7 +39,18 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
 from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
+from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
+    SQLAppConversationInfoService,
+)
+from openhands.app_server.config import get_event_callback_service
 from openhands.app_server.errors import SandboxError
+from openhands.app_server.event_callback.event_callback_models import EventCallback
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
+from openhands.app_server.event_callback.set_title_callback_processor import (
+    SetTitleCallbackProcessor,
+)
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
@@ -72,6 +83,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
     user_context: UserContext
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
+    event_callback_service: EventCallbackService
     sandbox_service: SandboxService
     sandbox_spec_service: SandboxSpecService
     jwt_service: JwtService
@@ -218,8 +230,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             user_id = await self.user_context.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
-                # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
-                title=f'Conversation {info.id}',
+                title=f'Conversation {info.id.hex}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
                 llm_model=start_conversation_request.agent.llm.model,
@@ -232,6 +243,24 @@ class LiveStatusAppConversationService(GitAppConversationService):
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
+            )
+
+            # Setup default processors
+            processors = request.processors
+            if processors is None:
+                processors = [SetTitleCallbackProcessor()]
+
+            # Save processors
+            await asyncio.gather(
+                *[
+                    self.event_callback_service.save_event_callback(
+                        EventCallback(
+                            conversation_id=info.id,
+                            processor=processor,
+                        )
+                    )
+                    for processor in processors
+                ]
             )
 
             # Update the start task
@@ -334,7 +363,9 @@ class LiveStatusAppConversationService(GitAppConversationService):
         if app_conversation_info is None:
             return None
         sandbox_status = sandbox.status if sandbox else SandboxStatus.MISSING
-        agent_status = conversation_info.agent_status if conversation_info else None
+        execution_status = (
+            conversation_info.execution_status if conversation_info else None
+        )
         conversation_url = None
         session_api_key = None
         if sandbox and sandbox.exposed_urls:
@@ -353,7 +384,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return AppConversation(
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
-            agent_status=agent_status,
+            execution_status=execution_status,
             conversation_url=conversation_url,
             session_api_key=session_api_key,
         )
@@ -529,6 +560,101 @@ class LiveStatusAppConversationService(GitAppConversationService):
             f'Successfully updated agent-server conversation {conversation_id} title to "{new_title}"'
         )
 
+    async def delete_app_conversation(self, conversation_id: UUID) -> bool:
+        """Delete a V1 conversation and all its associated data.
+
+        Args:
+            conversation_id: The UUID of the conversation to delete.
+        """
+        # Check if we have the required SQL implementation for transactional deletion
+        if not isinstance(
+            self.app_conversation_info_service, SQLAppConversationInfoService
+        ):
+            _logger.error(
+                f'Cannot delete V1 conversation {conversation_id}: SQL implementation required for transactional deletion',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            return False
+
+        try:
+            # First, fetch the conversation to get the full object needed for agent server deletion
+            app_conversation = await self.get_app_conversation(conversation_id)
+            if not app_conversation:
+                _logger.warning(
+                    f'V1 conversation {conversation_id} not found for deletion',
+                    extra={'conversation_id': str(conversation_id)},
+                )
+                return False
+
+            # Delete from agent server if sandbox is running
+            await self._delete_from_agent_server(app_conversation)
+
+            # Delete from database using the conversation info from app_conversation
+            # AppConversation extends AppConversationInfo, so we can use it directly
+            return await self._delete_from_database(app_conversation)
+
+        except Exception as e:
+            _logger.error(
+                f'Error deleting V1 conversation {conversation_id}: {e}',
+                extra={'conversation_id': str(conversation_id)},
+                exc_info=True,
+            )
+            return False
+
+    async def _delete_from_agent_server(
+        self, app_conversation: AppConversation
+    ) -> None:
+        """Delete conversation from agent server if sandbox is running."""
+        conversation_id = app_conversation.id
+        if not (
+            app_conversation.sandbox_status == SandboxStatus.RUNNING
+            and app_conversation.session_api_key
+        ):
+            return
+
+        try:
+            # Get sandbox info to find agent server URL
+            sandbox = await self.sandbox_service.get_sandbox(
+                app_conversation.sandbox_id
+            )
+            if sandbox and sandbox.exposed_urls:
+                agent_server_url = self._get_agent_server_url(sandbox)
+
+                # Call agent server delete API
+                response = await self.httpx_client.delete(
+                    f'{agent_server_url}/api/conversations/{conversation_id}',
+                    headers={'X-Session-API-Key': app_conversation.session_api_key},
+                    timeout=30.0,
+                )
+                response.raise_for_status()
+        except Exception as e:
+            _logger.warning(
+                f'Failed to delete conversation from agent server: {e}',
+                extra={'conversation_id': str(conversation_id)},
+            )
+            # Continue with database cleanup even if agent server call fails
+
+    async def _delete_from_database(
+        self, app_conversation_info: AppConversationInfo
+    ) -> bool:
+        """Delete conversation from database.
+
+        Args:
+            app_conversation_info: The app conversation info to delete (already fetched).
+        """
+        # The session is already managed by the dependency injection system
+        # No need for explicit transaction management here
+        deleted_info = (
+            await self.app_conversation_info_service.delete_app_conversation_info(
+                app_conversation_info.id
+            )
+        )
+        deleted_tasks = await self.app_conversation_start_task_service.delete_app_conversation_start_tasks(
+            app_conversation_info.id
+        )
+
+        return deleted_info or deleted_tasks
+
 
 class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
     sandbox_startup_timeout: int = Field(
@@ -573,6 +699,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
             get_app_conversation_start_task_service(
                 state, request
             ) as app_conversation_start_task_service,
+            get_event_callback_service(state, request) as event_callback_service,
             get_jwt_service(state, request) as jwt_service,
             get_httpx_client(state, request) as httpx_client,
         ):
@@ -596,6 +723,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 sandbox_spec_service=sandbox_spec_service,
                 app_conversation_info_service=app_conversation_info_service,
                 app_conversation_start_task_service=app_conversation_start_task_service,
+                event_callback_service=event_callback_service,
                 jwt_service=jwt_service,
                 sandbox_startup_timeout=self.sandbox_startup_timeout,
                 sandbox_startup_poll_frequency=self.sandbox_startup_poll_frequency,
