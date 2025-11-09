@@ -127,7 +127,10 @@ export function useConversationNameContextMenu({
   ) => {
     event.preventDefault();
     event.stopPropagation();
-    posthog.capture("download_via_vscode_button_clicked");
+    // Only capture if user hasn't opted out
+    if (!posthog.has_opted_out_capturing()) {
+      posthog.capture("download_via_vscode_button_clicked");
+    }
 
     // Fetch the VS Code URL from the API
     if (conversationId) {

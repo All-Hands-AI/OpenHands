@@ -21,7 +21,8 @@ export const useGitUser = () => {
   });
 
   React.useEffect(() => {
-    if (user.data) {
+    // Only identify user if they haven't opted out
+    if (user.data && !posthog.has_opted_out_capturing()) {
       posthog.identify(user.data.login, {
         company: user.data.company,
         name: user.data.name,
@@ -30,7 +31,7 @@ export const useGitUser = () => {
         mode: config?.APP_MODE || "oss",
       });
     }
-  }, [user.data]);
+  }, [user.data, config?.APP_MODE]);
 
   return user;
 };

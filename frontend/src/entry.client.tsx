@@ -36,7 +36,20 @@ function PosthogInit() {
       posthog.init(posthogClientKey, {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
+        opt_out_capturing_by_default: true, // Opt out by default until user consent is determined
+        autocapture: false, // Disable automatic event capture
+        capture_pageview: false, // Disable automatic pageview capture
+        capture_pageleave: false, // Disable automatic pageleave capture
+        loaded: (posthog) => {
+          // Ensure we're opted out immediately after PostHog loads
+          if (!posthog.has_opted_in_capturing()) {
+            posthog.opt_out_capturing();
+          }
+        },
       });
+      // Immediately opt out to prevent any tracking until consent is determined
+      // This is a safety measure in case loaded callback hasn't fired yet
+      posthog.opt_out_capturing();
     }
   }, [posthogClientKey]);
 

@@ -48,10 +48,11 @@ export const useSaveSettings = () => {
     mutationFn: async (settings: Partial<PostSettings>) => {
       const newSettings = { ...currentSettings, ...settings };
 
-      // Track MCP configuration changes
+      // Track MCP configuration changes (only if user has consented)
       if (
         settings.MCP_CONFIG &&
-        currentSettings?.MCP_CONFIG !== settings.MCP_CONFIG
+        currentSettings?.MCP_CONFIG !== settings.MCP_CONFIG &&
+        !posthog.has_opted_out_capturing()
       ) {
         const hasMcpConfig = !!settings.MCP_CONFIG;
         const sseServersCount = settings.MCP_CONFIG?.sse_servers?.length || 0;

@@ -166,20 +166,24 @@ export function ChatInterface() {
     // Create mutable copies of the arrays
     const images = [...originalImages];
     const files = [...originalFiles];
-    if (totalEvents === 0) {
-      posthog.capture("initial_query_submitted", {
-        entry_point: getEntryPoint(
-          selectedRepository !== null,
-          replayJson !== null,
-        ),
-        query_character_length: content.length,
-        replay_json_size: replayJson?.length,
-      });
-    } else {
-      posthog.capture("user_message_sent", {
-        session_message_count: totalEvents,
-        current_message_length: content.length,
-      });
+
+    // Only capture events if user has consented and not opted out
+    if (!posthog.has_opted_out_capturing()) {
+      if (totalEvents === 0) {
+        posthog.capture("initial_query_submitted", {
+          entry_point: getEntryPoint(
+            selectedRepository !== null,
+            replayJson !== null,
+          ),
+          query_character_length: content.length,
+          replay_json_size: replayJson?.length,
+        });
+      } else {
+        posthog.capture("user_message_sent", {
+          session_message_count: totalEvents,
+          current_message_length: content.length,
+        });
+      }
     }
 
     // Validate file sizes before any processing

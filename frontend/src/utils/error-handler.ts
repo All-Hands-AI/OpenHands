@@ -10,6 +10,10 @@ interface ErrorDetails {
 }
 
 export function trackError({ message, source, metadata = {} }: ErrorDetails) {
+  // Only track errors if user hasn't opted out
+  if (posthog.has_opted_out_capturing()) {
+    return;
+  }
   const error = new Error(message);
   posthog.captureException(error, {
     error_source: source || "unknown",

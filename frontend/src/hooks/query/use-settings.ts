@@ -61,11 +61,36 @@ export const useSettings = () => {
     },
   });
 
+  // Apply user consent setting to PostHog when settings are loaded
   React.useEffect(() => {
-    if (query.isFetched && query.data?.LLM_API_KEY_SET) {
+    if (query.isFetched) {
+      if (query.error?.status === 404) {
+        // Apply default consent (false) when settings are not found
+        if (!posthog.has_opted_out_capturing()) {
+          posthog.opt_out_capturing();
+        }
+      } else if (query.data) {
+        const hasConsented = query.data.USER_CONSENTS_TO_ANALYTICS === true;
+        if (hasConsented && !posthog.has_opted_in_capturing()) {
+          posthog.opt_in_capturing();
+        } else if (!hasConsented && !posthog.has_opted_out_capturing()) {
+          posthog.opt_out_capturing();
+        }
+      }
+    }
+  }, [query.isFetched, query.data?.USER_CONSENTS_TO_ANALYTICS, query.error?.status]);
+
+  React.useEffect(() => {
+    // Only capture user_activated if user has consented
+    if (
+      query.isFetched &&
+      query.data?.LLM_API_KEY_SET &&
+      query.data?.USER_CONSENTS_TO_ANALYTICS === true &&
+      !posthog.has_opted_out_capturing()
+    ) {
       posthog.capture("user_activated");
     }
-  }, [query.data?.LLM_API_KEY_SET, query.isFetched]);
+  }, [query.data?.LLM_API_KEY_SET, query.data?.USER_CONSENTS_TO_ANALYTICS, query.isFetched]);
 
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because
