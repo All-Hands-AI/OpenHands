@@ -48,8 +48,8 @@ class AliasSetup:
             'name': 'uvx (Legacy)',
             'description': 'Temporary environment approach (current default)',
             'aliases': {
-                'openhands': 'uvx --python 3.12 --from openhands-ai openhands',
-                'oh': 'uvx --python 3.12 --from openhands-ai openhands'
+                'openhands': 'uvx --python 3.12 openhands',
+                'oh': 'uvx --python 3.12 openhands'
             },
             'prerequisites': [],
             'benefits': [
