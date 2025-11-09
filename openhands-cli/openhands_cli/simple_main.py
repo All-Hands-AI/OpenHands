@@ -42,7 +42,7 @@ def main() -> None:
             from openhands_cli.agent_chat import run_cli_entry
 
             # Start agent chat
-            run_cli_entry(resume_conversation_id=args.resume)
+            run_cli_entry(resume_conversation_id=args.resume, user_skills=args.user_skills)
     except KeyboardInterrupt:
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
     except EOFError:
