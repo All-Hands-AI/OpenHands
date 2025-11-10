@@ -3,13 +3,25 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import LlmSettingsScreen from "#/routes/llm-settings";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 import {
   MOCK_DEFAULT_USER_SETTINGS,
   resetTestHandlersMockSettings,
 } from "#/mocks/handlers";
 import * as AdvancedSettingsUtlls from "#/utils/has-advanced-settings-set";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
+
+// Mock react-router hooks
+const mockUseSearchParams = vi.fn();
+vi.mock("react-router", () => ({
+  useSearchParams: () => mockUseSearchParams(),
+}));
+
+// Mock useIsAuthed hook
+const mockUseIsAuthed = vi.fn();
+vi.mock("#/hooks/query/use-is-authed", () => ({
+  useIsAuthed: () => mockUseIsAuthed(),
+}));
 
 const renderLlmSettingsScreen = () =>
   render(<LlmSettingsScreen />, {
@@ -23,6 +35,17 @@ const renderLlmSettingsScreen = () =>
 beforeEach(() => {
   vi.resetAllMocks();
   resetTestHandlersMockSettings();
+
+  // Default mock for useSearchParams - returns empty params
+  mockUseSearchParams.mockReturnValue([
+    {
+      get: () => null,
+    },
+    vi.fn(),
+  ]);
+
+  // Default mock for useIsAuthed - returns authenticated by default
+  mockUseIsAuthed.mockReturnValue({ data: true, isLoading: false });
 });
 
 describe("Content", () => {
@@ -47,7 +70,7 @@ describe("Content", () => {
       const apiKey = screen.getByTestId("llm-api-key-input");
 
       await waitFor(() => {
-        expect(provider).toHaveValue("Anthropic");
+        expect(provider).toHaveValue("OpenHands");
         expect(model).toHaveValue("claude-sonnet-4-20250514");
 
         expect(apiKey).toHaveValue("");
@@ -56,7 +79,7 @@ describe("Content", () => {
     });
 
     it("should render the existing settings values", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_model: "openai/gpt-4o",
@@ -82,6 +105,41 @@ describe("Content", () => {
   });
 
   describe("Advanced form", () => {
+    it("should conditionally show security analyzer based on confirmation mode", async () => {
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      // Enable advanced mode first
+      const advancedSwitch = screen.getByTestId("advanced-settings-switch");
+      await userEvent.click(advancedSwitch);
+
+      const confirmation = screen.getByTestId(
+        "enable-confirmation-mode-switch",
+      );
+
+      // Initially confirmation mode is false, so security analyzer should not be visible
+      expect(confirmation).not.toBeChecked();
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+
+      // Enable confirmation mode
+      await userEvent.click(confirmation);
+      expect(confirmation).toBeChecked();
+
+      // Security analyzer should now be visible
+      screen.getByTestId("security-analyzer-input");
+
+      // Disable confirmation mode again
+      await userEvent.click(confirmation);
+      expect(confirmation).not.toBeChecked();
+
+      // Security analyzer should be hidden again
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+    });
+
     it("should render the advanced form if the switch is toggled", async () => {
       renderLlmSettingsScreen();
       await screen.findByTestId("llm-settings-screen");
@@ -107,7 +165,6 @@ describe("Content", () => {
       within(advancedForm).getByTestId("llm-api-key-input");
       within(advancedForm).getByTestId("llm-api-key-help-anchor-advanced");
       within(advancedForm).getByTestId("agent-input");
-      within(advancedForm).getByTestId("enable-confirmation-mode-switch");
       within(advancedForm).getByTestId("enable-memory-condenser-switch");
 
       await userEvent.click(advancedSwitch);
@@ -130,25 +187,14 @@ describe("Content", () => {
       const baseUrl = screen.getByTestId("base-url-input");
       const apiKey = screen.getByTestId("llm-api-key-input");
       const agent = screen.getByTestId("agent-input");
-      const confirmation = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
+      expect(model).toHaveValue("openhands/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
       expect(agent).toHaveValue("CodeActAgent");
-      expect(confirmation).not.toBeChecked();
       expect(condensor).toBeChecked();
-
-      // check that security analyzer is present
-      expect(
-        screen.queryByTestId("security-analyzer-input"),
-      ).not.toBeInTheDocument();
-      await userEvent.click(confirmation);
-      screen.getByTestId("security-analyzer-input");
     });
 
     it("should render the advanced form if existings settings are advanced", async () => {
@@ -168,7 +214,7 @@ describe("Content", () => {
     });
 
     it("should render existing advanced settings correctly", async () => {
-      const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+      const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
       getSettingsSpy.mockResolvedValue({
         ...MOCK_DEFAULT_USER_SETTINGS,
         llm_model: "openai/gpt-4o",
@@ -177,7 +223,7 @@ describe("Content", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
-        security_analyzer: "mock-invariant",
+        security_analyzer: "none",
       });
 
       renderLlmSettingsScreen();
@@ -203,7 +249,7 @@ describe("Content", () => {
         expect(agent).toHaveValue("CoActAgent");
         expect(confirmation).toBeChecked();
         expect(condensor).not.toBeChecked();
-        expect(securityAnalyzer).toHaveValue("mock-invariant");
+        expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
       });
     });
   });
@@ -213,7 +259,7 @@ describe("Content", () => {
 
 describe("Form submission", () => {
   it("should submit the basic form with the correct values", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -249,7 +295,7 @@ describe("Form submission", () => {
   });
 
   it("should submit the advanced form with the correct values", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -293,7 +339,9 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = screen.getByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -306,13 +354,13 @@ describe("Form submission", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
-        security_analyzer: "mock-invariant",
+        security_analyzer: null,
       }),
     );
   });
 
   it("should disable the button if there are no changes in the basic form", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -355,7 +403,7 @@ describe("Form submission", () => {
   });
 
   it("should disable the button if there are no changes in the advanced form", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -375,8 +423,14 @@ describe("Form submission", () => {
     const baseUrl = await screen.findByTestId("base-url-input");
     const apiKey = await screen.findByTestId("llm-api-key-input");
     const agent = await screen.findByTestId("agent-input");
-    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
-    const condensor = await screen.findByTestId("enable-memory-condenser-switch");
+    const condensor = await screen.findByTestId(
+      "enable-memory-condenser-switch",
+    );
+
+    // Confirmation mode switch is now in basic settings, always visible
+    const confirmation = await screen.findByTestId(
+      "enable-confirmation-mode-switch",
+    );
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -449,16 +503,27 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
 
     // select security analyzer
-    const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
+    const securityAnalyzer = await screen.findByTestId(
+      "security-analyzer-input",
+    );
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    const securityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_NONE",
+    );
     await userEvent.click(securityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("mock-invariant");
+    expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
 
     expect(submitButton).not.toBeDisabled();
 
-    await userEvent.clear(securityAnalyzer);
-    expect(securityAnalyzer).toHaveValue("");
+    // revert back to original value
+    await userEvent.click(securityAnalyzer);
+    const originalSecurityAnalyzerOption = screen.getByText(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
+    await userEvent.click(originalSecurityAnalyzerOption);
+    expect(securityAnalyzer).toHaveValue(
+      "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT",
+    );
     expect(submitButton).toBeDisabled();
   });
 
@@ -490,7 +555,7 @@ describe("Form submission", () => {
 
   // flaky test
   it.skip("should disable the button when submitting changes", async () => {
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
@@ -517,7 +582,7 @@ describe("Form submission", () => {
   });
 
   it("should clear advanced settings when saving basic settings", async () => {
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
       llm_model: "openai/gpt-4o",
@@ -525,19 +590,24 @@ describe("Form submission", () => {
       llm_api_key_set: true,
       confirmation_mode: true,
     });
-    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
     renderLlmSettingsScreen();
 
     await screen.findByTestId("llm-settings-screen");
+    // Component automatically shows advanced view when advanced settings exist
+    // Switch to basic view to test clearing advanced settings
     const advancedSwitch = screen.getByTestId("advanced-settings-switch");
     await userEvent.click(advancedSwitch);
+
+    // Now we should be in basic view
+    await screen.findByTestId("llm-settings-form-basic");
 
     const provider = screen.getByTestId("llm-provider-input");
     const model = screen.getByTestId("llm-model-input");
 
     // select provider
     await userEvent.click(provider);
-    const providerOption = screen.getByText("Anthropic");
+    const providerOption = screen.getByText("OpenHands");
     await userEvent.click(providerOption);
 
     // select model
@@ -550,9 +620,9 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-sonnet-4-20250514",
+        llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
-        confirmation_mode: false,
+        confirmation_mode: false, // Confirmation mode is now an advanced setting, should be cleared when saving basic settings
       }),
     );
   });
@@ -561,7 +631,7 @@ describe("Form submission", () => {
 describe("Status toasts", () => {
   describe("Basic form", () => {
     it("should call displaySuccessToast when the settings are saved", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displaySuccessToastSpy = vi.spyOn(
         ToastHandlers,
@@ -582,7 +652,7 @@ describe("Status toasts", () => {
     });
 
     it("should call displayErrorToast when the settings fail to save", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
@@ -604,7 +674,7 @@ describe("Status toasts", () => {
 
   describe("Advanced form", () => {
     it("should call displaySuccessToast when the settings are saved", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displaySuccessToastSpy = vi.spyOn(
         ToastHandlers,
@@ -630,7 +700,7 @@ describe("Status toasts", () => {
     });
 
     it("should call displayErrorToast when the settings fail to save", async () => {
-      const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+      const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
       const displayErrorToastSpy = vi.spyOn(ToastHandlers, "displayErrorToast");
 
@@ -653,62 +723,5 @@ describe("Status toasts", () => {
       expect(saveSettingsSpy).toHaveBeenCalled();
       expect(displayErrorToastSpy).toHaveBeenCalled();
     });
-  });
-});
-
-describe("SaaS mode", () => {
-  it("should not render the runtime settings input in oss mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return mode
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-    });
-
-    renderLlmSettingsScreen();
-    await screen.findByTestId("llm-settings-screen");
-
-    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-    await userEvent.click(advancedSwitch);
-    await screen.findByTestId("llm-settings-form-advanced");
-
-    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
-    expect(runtimeSettingsInput).not.toBeInTheDocument();
-  });
-
-  it("should render the runtime settings input in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return mode
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-    });
-
-    renderLlmSettingsScreen();
-    await screen.findByTestId("llm-settings-screen");
-
-    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-    await userEvent.click(advancedSwitch);
-    await screen.findByTestId("llm-settings-form-advanced");
-
-    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
-    expect(runtimeSettingsInput).toBeInTheDocument();
-  });
-
-  it("should always render the runtime settings input as disabled", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return mode
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-    });
-
-    renderLlmSettingsScreen();
-    await screen.findByTestId("llm-settings-screen");
-
-    const advancedSwitch = screen.getByTestId("advanced-settings-switch");
-    await userEvent.click(advancedSwitch);
-    await screen.findByTestId("llm-settings-form-advanced");
-
-    const runtimeSettingsInput = screen.queryByTestId("runtime-settings-input");
-    expect(runtimeSettingsInput).toBeInTheDocument();
-    expect(runtimeSettingsInput).toBeDisabled();
   });
 });

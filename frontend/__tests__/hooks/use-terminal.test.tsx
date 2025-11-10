@@ -1,8 +1,6 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { afterEach } from "node:test";
+import { beforeAll, describe, expect, it, vi, afterEach } from "vitest";
 import { useTerminal } from "#/hooks/use-terminal";
-import { Command } from "#/state/command-slice";
-import { AgentState } from "#/types/agent-state";
+import { Command, useCommandStore } from "#/state/command-store";
 import { renderWithProviders } from "../../test-utils";
 
 // Mock the WsClient context
@@ -15,25 +13,34 @@ vi.mock("#/context/ws-client-provider", () => ({
   }),
 }));
 
-interface TestTerminalComponentProps {
-  commands: Command[];
-}
+// Mock useActiveConversation
+vi.mock("#/hooks/query/use-active-conversation", () => ({
+  useActiveConversation: () => ({
+    data: {
+      id: "test-conversation-id",
+      conversation_version: "V0",
+    },
+    isFetched: true,
+  }),
+}));
 
-function TestTerminalComponent({
-  commands,
-}: TestTerminalComponentProps) {
-  const ref = useTerminal({ commands });
+// Mock useConversationWebSocket (returns null for V0 conversations)
+vi.mock("#/contexts/conversation-websocket-context", () => ({
+  useConversationWebSocket: () => null,
+}));
+
+function TestTerminalComponent() {
+  const ref = useTerminal();
   return <div ref={ref} />;
 }
 
 describe("useTerminal", () => {
+  // Terminal is read-only - no longer tests user input functionality
   const mockTerminal = vi.hoisted(() => ({
     loadAddon: vi.fn(),
     open: vi.fn(),
     write: vi.fn(),
     writeln: vi.fn(),
-    onKey: vi.fn(),
-    attachCustomKeyEventHandler: vi.fn(),
     dispose: vi.fn(),
   }));
 
@@ -54,15 +61,12 @@ describe("useTerminal", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    // Reset command store between tests
+    useCommandStore.setState({ commands: [] });
   });
 
   it("should render", () => {
-    renderWithProviders(<TestTerminalComponent commands={[]} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-        cmd: { commands: [] },
-      },
-    });
+    renderWithProviders(<TestTerminalComponent />);
   });
 
   it("should render the commands in the terminal", () => {
@@ -71,41 +75,12 @@ describe("useTerminal", () => {
       { content: "hello", type: "output" },
     ];
 
-    renderWithProviders(<TestTerminalComponent commands={commands} />, {
-      preloadedState: {
-        agent: { curAgentState: AgentState.RUNNING },
-        cmd: { commands },
-      },
-    });
+    // Set commands in store before rendering to ensure they're picked up during initialization
+    useCommandStore.setState({ commands });
+
+    renderWithProviders(<TestTerminalComponent />);
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "hello");
-  });
-
-  // This test is no longer relevant as secrets filtering has been removed
-  it.skip("should hide secrets in the terminal", () => {
-    const secret = "super_secret_github_token";
-    const anotherSecret = "super_secret_another_token";
-    const commands: Command[] = [
-      {
-        content: `export GITHUB_TOKEN=${secret},${anotherSecret},${secret}`,
-        type: "input",
-      },
-      { content: secret, type: "output" },
-    ];
-
-    renderWithProviders(
-      <TestTerminalComponent
-        commands={commands}
-      />,
-      {
-        preloadedState: {
-          agent: { curAgentState: AgentState.RUNNING },
-          cmd: { commands },
-        },
-      },
-    );
-
-    // This test is no longer relevant as secrets filtering has been removed
   });
 });

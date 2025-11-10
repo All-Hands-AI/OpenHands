@@ -37,3 +37,36 @@ export const DOCUMENTATION_URL = {
       "https://docs.all-hands.dev/usage/prompting/microagents-org",
   },
 };
+
+export const PRODUCT_URL = {
+  PRODUCTION: "https://app.all-hands.dev",
+};
+
+export const SETTINGS_FORM = {
+  LABEL_CLASSNAME: "text-[11px] font-medium leading-4 tracking-[0.11px]",
+};
+
+export const GIT_PROVIDER_OPTIONS = [
+  {
+    label: "GitHub",
+    value: "github",
+  },
+  {
+    label: "GitLab",
+    value: "gitlab",
+  },
+  {
+    label: "Bitbucket",
+    value: "bitbucket",
+  },
+];
+
+export const CONTEXT_MENU_ICON_TEXT_CLASSNAME = "h-[30px]";
+
+// Chat input constants
+export const CHAT_INPUT = {
+  HEIGHT_THRESHOLD: 100, // Height in pixels when suggestions should be hidden
+};
+
+// UI tolerance constants
+export const EPS = 1.5; // px tolerance for "near min" height comparisons

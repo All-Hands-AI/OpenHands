@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useSearchConversations = (
   selectedRepository?: string,
   conversationTrigger?: string,
-  limit: number = 20,
+  limit: number = 100,
   cacheDisabled: boolean = false,
 ) =>
   useQuery({
@@ -16,7 +16,7 @@ export const useSearchConversations = (
       limit,
     ],
     queryFn: () =>
-      OpenHands.searchConversations(
+      ConversationService.searchConversations(
         selectedRepository,
         conversationTrigger,
         limit,

@@ -1,7 +1,10 @@
-import sys
-
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    RISK_LEVELS,
+    SECURITY_RISK_DESC,
+)
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
@@ -11,6 +14,7 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, use `&&` or `;` to chain them together.
 * Persistent session: Commands execute in a persistent shell session where environment variables, virtual environments, and working directory persist between commands.
 * Soft timeout: Commands have a soft timeout of 10 seconds, once that's reached, you have the option to continue or interrupt the command (see section below for details)
+* Shell options: Do NOT use `set -e`, `set -eu`, or `set -euo pipefail` in shell scripts or commands in this environment. The runtime may not support them and can cause unusable shell sessions. If you want to run multi-line bash commands, write the commands to a file and then run it, instead.
 
 ### Long-running Commands
 * For commands that may run indefinitely, run them in the background and redirect output to a file, e.g. `python3 app.py > server.log 2>&1 &`.
@@ -33,12 +37,6 @@ _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, you can set the "timeout" argument to specify a hard timeout in seconds.
 * Interact with running process: If a bash command returns exit code `-1`, this means the process is not yet finished. By setting `is_input` to `true`, the assistant can interact with the running process and send empty `command` to retrieve any additional logs, or send additional text (set `command` to the text) to STDIN of the running process, or send command like `C-c` (Ctrl+C), `C-d` (Ctrl+D), `C-z` (Ctrl+Z) to interrupt the process.
 * One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."""
-
-
-def refine_prompt(prompt: str):
-    if sys.platform == 'win32':
-        return prompt.replace('bash', 'powershell')
-    return prompt
 
 
 def create_cmd_run_tool(
@@ -72,8 +70,13 @@ def create_cmd_run_tool(
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
                     },
+                    'security_risk': {
+                        'type': 'string',
+                        'description': SECURITY_RISK_DESC,
+                        'enum': RISK_LEVELS,
+                    },
                 },
-                'required': ['command'],
+                'required': ['command', 'security_risk'],
             },
         ),
     )

@@ -9,7 +9,7 @@ import time
 import traceback
 from contextlib import contextmanager
 from inspect import signature
-from typing import Any, Awaitable, Callable, TextIO
+from typing import Any, Awaitable, Callable, Optional, TextIO
 
 import pandas as pd
 from pydantic import BaseModel
@@ -53,6 +53,7 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
     condenser_config: CondenserConfig | None = None
+    instruction_template_name: str | None = None
 
 
 class EvalOutput(BaseModel):
@@ -205,6 +206,7 @@ def make_metadata(
         condenser_config=condenser_config
         if condenser_config
         else NoOpCondenserConfig(),
+        instruction_template_name=os.environ.get('INSTRUCTION_TEMPLATE_NAME'),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
@@ -220,6 +222,7 @@ def prepare_dataset(
     eval_n_limit: int,
     eval_ids: list[str] | None = None,
     skip_num: int | None = None,
+    filter_func: Optional[Callable[[pd.DataFrame], pd.DataFrame]] = None,
 ):
     assert 'instance_id' in dataset.columns, (
         "Expected 'instance_id' column in the dataset. You should define your own unique identifier for each instance and use it as the 'instance_id' column."
@@ -263,19 +266,26 @@ def prepare_dataset(
             f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
         )
 
-    def make_serializable(instance: pd.Series) -> dict:
+    if filter_func is not None:
+        dataset = filter_func(dataset)
+        logger.info(
+            f'Applied filter after sampling: {len(dataset)} instances remaining'
+        )
+
+    def make_serializable(instance_dict: dict) -> dict:
         import numpy as np
 
-        instance_dict = instance.to_dict()
         for k, v in instance_dict.items():
             if isinstance(v, np.ndarray):
                 instance_dict[k] = v.tolist()
             elif isinstance(v, pd.Timestamp):
                 instance_dict[k] = str(v)
+            elif isinstance(v, dict):
+                instance_dict[k] = make_serializable(v)
         return instance_dict
 
     new_dataset = [
-        make_serializable(instance)
+        make_serializable(instance.to_dict())
         for _, instance in dataset.iterrows()
         if str(instance[id_column]) not in finished_ids
     ]
@@ -621,8 +631,7 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
-    """
-    The AgentController class overrides last error for certain exceptions
+    """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here
     This is because we do a comparisino against the stringified error
     """
@@ -666,8 +675,23 @@ def is_fatal_runtime_error(error: str | None) -> bool:
 
 
 def get_metrics(state: State) -> dict[str, Any]:
-    """Extract metrics from the state."""
-    metrics = state.metrics.get() if state.metrics else {}
+    """Extract metrics for evaluations.
+
+    Prefer ConversationStats (source of truth) and fall back to state.metrics for
+    backward compatibility.
+    """
+    metrics: dict[str, Any]
+    try:
+        if getattr(state, 'conversation_stats', None):
+            combined = state.conversation_stats.get_combined_metrics()
+            metrics = combined.get()
+        elif getattr(state, 'metrics', None):
+            metrics = state.metrics.get()
+        else:
+            metrics = {}
+    except Exception:
+        metrics = state.metrics.get() if getattr(state, 'metrics', None) else {}
+
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
 
@@ -686,3 +710,79 @@ def get_default_sandbox_config_for_eval() -> SandboxConfig:
         remote_runtime_enable_retries=True,
         remote_runtime_class='sysbox',
     )
+
+
+def get_openhands_config_for_eval(
+    metadata: EvalMetadata | None = None,
+    sandbox_config: SandboxConfig | None = None,
+    runtime: str | None = None,
+    max_iterations: int | None = None,
+    default_agent: str | None = None,
+    enable_browser: bool = False,
+    workspace_base: str | None = None,
+    workspace_mount_path: str | None = None,
+):
+    """Create an OpenHandsConfig with common patterns used across evaluation scripts.
+
+    This function provides a standardized way to create OpenHands configurations
+    for evaluation runs, with sensible defaults that match the patterns used in
+    most run_infer.py scripts. Individual evaluation scripts can override specific
+    attributes as needed.
+
+    Args:
+        metadata: EvalMetadata containing agent class, max iterations, etc.
+        sandbox_config: Custom sandbox config. If None, uses get_default_sandbox_config_for_eval()
+        runtime: Runtime type. If None, uses environment RUNTIME or 'docker'
+        max_iterations: Max iterations for the agent. If None, uses metadata.max_iterations
+        default_agent: Agent class name. If None, uses metadata.agent_class
+        enable_browser: Whether to enable browser functionality
+        workspace_base: Workspace base path. Defaults to None
+        workspace_mount_path: Workspace mount path. Defaults to None
+
+    Returns:
+        OpenHandsConfig: Configured for evaluation with eval-specific overrides applied
+    """
+    # Defer import to avoid circular imports at module load time
+    from openhands.core.config.openhands_config import (
+        OpenHandsConfig as _OHConfig,  # type: ignore
+    )
+
+    # Use provided sandbox config or get default
+    if sandbox_config is None:
+        sandbox_config = get_default_sandbox_config_for_eval()
+
+    # Extract values from metadata if provided
+    if metadata is not None:
+        if max_iterations is None:
+            max_iterations = metadata.max_iterations
+        if default_agent is None:
+            default_agent = metadata.agent_class
+
+    # Use environment runtime or default
+    if runtime is None:
+        runtime = os.environ.get('RUNTIME', 'docker')
+
+    # Provide sensible defaults if still None
+    if default_agent is None:
+        default_agent = 'CodeActAgent'
+    if max_iterations is None:
+        max_iterations = 50
+
+    # Always use repo-local .eval_sessions directory (absolute path)
+    eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
+
+    # Create the base config with evaluation-specific overrides
+    config = _OHConfig(
+        default_agent=default_agent,
+        run_as_openhands=False,
+        runtime=runtime,
+        max_iterations=max_iterations,
+        enable_browser=enable_browser,
+        sandbox=sandbox_config,
+        workspace_base=workspace_base,
+        workspace_mount_path=workspace_mount_path,
+        file_store='local',
+        file_store_path=eval_store,
+    )
+
+    return config

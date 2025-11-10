@@ -30,6 +30,7 @@ class OpenHandsConfig(BaseModel):
             The default configuration is stored under the 'agent' key.
         default_agent: Name of the default agent to use.
         sandbox: Sandbox configuration settings.
+        security: Security configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
@@ -57,6 +58,8 @@ class OpenHandsConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         mcp_host: Host for OpenHands' default MCP server
         mcp: MCP configuration settings.
+        git_user_name: Git user name for commits made by the agent.
+        git_user_email: Git user email for commits made by the agent.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -70,6 +73,7 @@ class OpenHandsConfig(BaseModel):
     file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
+    file_store_web_hook_batch: bool = Field(default=False)
     enable_browser: bool = Field(default=True)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
@@ -85,8 +89,8 @@ class OpenHandsConfig(BaseModel):
     )
 
     # Deprecated parameters - will be removed in a future version
-    workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
+    workspace_mount_path: str | None = Field(default=None)
+    workspace_mount_rewrite: str | None = Field(default=None)
     # End of deprecated parameters
 
     cache_dir: str = Field(default='/tmp/cache')
@@ -108,10 +112,21 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
+    client_wait_timeout: int = Field(
+        default=30,
+        description='Timeout in seconds for waiting for websocket client connection during initialization',
+    )
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    git_user_name: str = Field(
+        default='openhands', description='Git user name for commits made by the agent'
+    )
+    git_user_email: str = Field(
+        default='openhands@all-hands.dev',
+        description='Git user email for commits made by the agent',
+    )
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -147,12 +162,15 @@ class OpenHandsConfig(BaseModel):
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
-        agent_config: AgentConfig = self.get_agent_config(name)
+    def get_llm_config_from_agent_config(self, agent_config: AgentConfig):
         llm_config_name = (
             agent_config.llm_config if agent_config.llm_config is not None else 'llm'
         )
         return self.get_llm_config(llm_config_name)
+
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        return self.get_llm_config_from_agent_config(agent_config)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents

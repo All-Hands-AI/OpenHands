@@ -5,7 +5,8 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
+from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -68,9 +69,16 @@ class LLMSummarizingCondenser(RollingCondenser):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
-        prompt = """You are maintaining a context-aware state summary for an interactive agent. You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists. Track:
+        prompt = """You are maintaining a context-aware state summary for an interactive agent.
+You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists.
+If the events being summarized contain ANY task-tracking, you MUST include a TASK_TRACKING section to maintain continuity.
+When referencing tasks make sure to preserve exact task IDs and statuses.
+
+Track:
 
 USER_CONTEXT: (Preserve essential user requirements, goals, and clarifications in concise form)
+
+TASK_TRACKING: {Active tasks, their IDs and statuses - PRESERVE TASK IDs}
 
 COMPLETED: (Tasks completed so far, with brief results)
 PENDING: (Tasks that still need to be done)
@@ -150,20 +158,21 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
         )
 
     def should_condense(self, view: View) -> bool:
-        return len(view) > self.max_size
+        return len(view) > self.max_size or view.unhandled_condensation_request
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig
+        cls, config: LLMSummarizingCondenserConfig, llm_registry: LLMRegistry
     ) -> LLMSummarizingCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
+        llm = llm_registry.get_llm('condenser', llm_config)
 
         return LLMSummarizingCondenser(
-            llm=LLM(config=llm_config),
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

@@ -6,9 +6,7 @@ from openhands.storage.data_models.settings import Settings
 
 
 class ConversationInitData(Settings):
-    """
-    Session initialization data for the web environment - a deep copy of the global config is made and then overridden with this data.
-    """
+    """Session initialization data for the web environment - a deep copy of the global config is made and then overridden with this data."""
 
     git_provider_tokens: PROVIDER_TOKEN_TYPE | None = Field(default=None, frozen=True)
     custom_secrets: CUSTOM_SECRETS_TYPE | None = Field(default=None, frozen=True)

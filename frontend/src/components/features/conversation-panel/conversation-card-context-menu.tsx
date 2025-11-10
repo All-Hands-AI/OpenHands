@@ -10,11 +10,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
+import { Divider } from "#/ui/divider";
 import { I18nKey } from "#/i18n/declaration";
 import { ContextMenuIconText } from "../context-menu/context-menu-icon-text";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface ConversationCardContextMenuProps {
   onClose: () => void;
@@ -41,6 +42,11 @@ export function ConversationCardContextMenu({
 }: ConversationCardContextMenuProps) {
   const { t } = useTranslation();
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
+  const { data: conversation } = useActiveConversation();
+
+  // TODO: Hide microagent menu items for V1 conversations
+  // This is a temporary measure and may be re-enabled in the future
+  const isV1Conversation = conversation?.conversation_version === "V1";
 
   const hasEdit = Boolean(onEdit);
   const hasDownload = Boolean(onDownloadViaVSCode);
@@ -68,7 +74,7 @@ export function ConversationCardContextMenu({
       )}
 
       {hasEdit && (hasDownload || hasTools || hasInfo || hasControl) && (
-        <ContextMenuSeparator />
+        <Divider />
       )}
 
       {onDownloadViaVSCode && (
@@ -83,9 +89,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasDownload && (hasTools || hasInfo || hasControl) && (
-        <ContextMenuSeparator />
-      )}
+      {hasDownload && (hasTools || hasInfo || hasControl) && <Divider />}
 
       {onShowAgentTools && (
         <ContextMenuListItem
@@ -99,7 +103,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {onShowMicroagents && (
+      {onShowMicroagents && !isV1Conversation && (
         <ContextMenuListItem
           testId="show-microagents-button"
           onClick={onShowMicroagents}
@@ -111,7 +115,7 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasTools && (hasInfo || hasControl) && <ContextMenuSeparator />}
+      {hasTools && (hasInfo || hasControl) && <Divider />}
 
       {onDisplayCost && (
         <ContextMenuListItem
@@ -125,11 +129,11 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasInfo && hasControl && <ContextMenuSeparator />}
+      {hasInfo && hasControl && <Divider />}
 
       {onStop && (
         <ContextMenuListItem testId="stop-button" onClick={onStop}>
-          <ContextMenuIconText icon={Power} text={t(I18nKey.BUTTON$STOP)} />
+          <ContextMenuIconText icon={Power} text={t(I18nKey.BUTTON$PAUSE)} />
         </ContextMenuListItem>
       )}
 

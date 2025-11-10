@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
     EvalOutput,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -28,8 +29,8 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -179,7 +180,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     instruction = message_action.content
@@ -201,7 +202,7 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,

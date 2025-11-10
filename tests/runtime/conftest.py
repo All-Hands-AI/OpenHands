@@ -10,12 +10,14 @@ from pytest import TempPathFactory
 from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
+from openhands.runtime.utils.port_lock import find_available_port_with_lock
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -201,8 +203,8 @@ def base_container_image(request):
 
 
 def _load_runtime(
-    temp_dir,
-    runtime_cls,
+    temp_dir: str | None,
+    runtime_cls: str,
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
@@ -231,7 +233,7 @@ def _load_runtime(
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
     elif temp_dir is not None:
-        test_mount_path = temp_dir
+        test_mount_path = str(temp_dir)
     else:
         test_mount_path = None
     config.workspace_base = test_mount_path
@@ -260,16 +262,21 @@ def _load_runtime(
         config.mcp = override_mcp_config
 
     file_store = file_store = get_file_store(
-        config.file_store,
-        config.file_store_path,
-        config.file_store_web_hook_url,
-        config.file_store_web_hook_headers,
+        file_store_type=config.file_store,
+        file_store_path=config.file_store_path,
+        file_store_web_hook_url=config.file_store_web_hook_url,
+        file_store_web_hook_headers=config.file_store_web_hook_headers,
+        file_store_web_hook_batch=config.file_store_web_hook_batch,
     )
     event_stream = EventStream(sid, file_store)
+
+    # Create a LLMRegistry instance for the runtime
+    llm_registry = LLMRegistry(config=OpenHandsConfig())
 
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        llm_registry=llm_registry,
         sid=sid,
         plugins=plugins,
     )
@@ -288,9 +295,49 @@ def _load_runtime(
     return runtime, runtime.config
 
 
+# Port range for test HTTP servers (separate from runtime ports to avoid conflicts)
+TEST_HTTP_SERVER_PORT_RANGE = (18000, 18999)
+
+
+@pytest.fixture
+def dynamic_port(request):
+    """Allocate a dynamic port with locking to prevent race conditions in parallel tests.
+
+    This fixture uses the existing port locking system to ensure that parallel test
+    workers don't try to use the same port for HTTP servers.
+
+    Returns:
+        int: An available port number that is locked for this test
+    """
+    result = find_available_port_with_lock(
+        min_port=TEST_HTTP_SERVER_PORT_RANGE[0],
+        max_port=TEST_HTTP_SERVER_PORT_RANGE[1],
+        max_attempts=20,
+        bind_address='0.0.0.0',
+        lock_timeout=2.0,
+    )
+
+    if result is None:
+        pytest.fail(
+            f'Could not allocate a dynamic port in range {TEST_HTTP_SERVER_PORT_RANGE}'
+        )
+
+    port, port_lock = result
+    logger.info(f'Allocated dynamic port {port} for test {request.node.name}')
+
+    def cleanup():
+        if port_lock:
+            port_lock.release()
+            logger.info(f'Released dynamic port {port} for test {request.node.name}')
+
+    request.addfinalizer(cleanup)
+    return port
+
+
 # Export necessary function
 __all__ = [
     '_load_runtime',
     '_get_host_folder',
     '_remove_folder',
+    'dynamic_port',
 ]

@@ -1,5 +1,4 @@
-"""
-A tiny, isolated server that provides only the /view endpoint from the action execution server.
+"""A tiny, isolated server that provides only the /view endpoint from the action execution server.
 This server has no authentication and only listens to localhost traffic.
 """
 
@@ -83,7 +82,6 @@ def start_file_viewer_server(port: int) -> tuple[str, threading.Thread]:
     Returns:
         Tuple[str, threading.Thread]: The server URL and the thread object.
     """
-
     # Save the server URL to a file
     server_url = f'http://localhost:{port}'
     port_path = '/tmp/oh-server-url'

@@ -1,11 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
-import { FileService } from "#/api/file-service/file-service.api";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 
 export const useUploadFiles = () =>
   useMutation({
     mutationKey: ["upload-files"],
     mutationFn: (variables: { conversationId: string; files: File[] }) =>
-      FileService.uploadFiles(variables.conversationId!, variables.files),
+      ConversationService.uploadFiles(
+        variables.conversationId!,
+        variables.files,
+      ),
     onSuccess: async () => {},
     meta: {
       disableToast: true,

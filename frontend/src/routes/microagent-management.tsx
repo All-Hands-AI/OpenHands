@@ -1,27 +1,15 @@
-import { redirect } from "react-router";
-import { Route } from "./+types/settings";
 import { queryClient } from "#/query-client-config";
-import { GetConfigResponse } from "#/api/open-hands.types";
-import OpenHands from "#/api/open-hands";
+import { GetConfigResponse } from "#/api/option-service/option.types";
+import OptionService from "#/api/option-service/option-service.api";
 import { MicroagentManagementContent } from "#/components/features/microagent-management/microagent-management-content";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
-import { EventHandler } from "#/wrapper/event-handler";
+import { V0EventHandler } from "#/wrapper/v0-event-handler";
 
-export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
-  const url = new URL(request.url);
-  const { pathname } = url;
-
+export const clientLoader = async () => {
   let config = queryClient.getQueryData<GetConfigResponse>(["config"]);
   if (!config) {
-    config = await OpenHands.getConfig();
+    config = await OptionService.getConfig();
     queryClient.setQueryData<GetConfigResponse>(["config"], config);
-  }
-
-  const shouldHideMicroagentManagement =
-    config?.FEATURE_FLAGS.HIDE_MICROAGENT_MANAGEMENT;
-
-  if (shouldHideMicroagentManagement && pathname === "/microagent-management") {
-    return redirect("/");
   }
 
   return null;
@@ -30,9 +18,9 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function MicroagentManagement() {
   return (
     <ConversationSubscriptionsProvider>
-      <EventHandler>
+      <V0EventHandler>
         <MicroagentManagementContent />
-      </EventHandler>
+      </V0EventHandler>
     </ConversationSubscriptionsProvider>
   );
 }

@@ -4,7 +4,11 @@ import pprint
 
 import tqdm
 
-from openhands.core.config import get_llm_config_arg, get_parser, load_openhands_config
+from openhands.core.config import (
+    get_evaluation_parser,
+    get_llm_config_arg,
+    load_openhands_config,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
 
@@ -111,7 +115,7 @@ def classify_error(llm: LLM, failed_case: dict) -> str:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--json_file_path',
         type=str,
@@ -120,7 +124,7 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
-    # Check https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/swe_bench/README.md#configure-openhands-and-your-llm
+    # Check https://github.com/OpenHands/OpenHands/blob/main/evaluation/swe_bench/README.md#configure-openhands-and-your-llm
     # for details of how to set `llm_config`
     if args.llm_config:
         specified_llm_config = get_llm_config_arg(args.llm_config)

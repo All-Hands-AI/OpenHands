@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 
 from fastmcp import Client
@@ -21,9 +22,7 @@ from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
-    """
-    A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
-    """
+    """A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -31,6 +30,7 @@ class MCPClient(BaseModel):
     description: str = 'MCP client tools for server interaction'
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
+    server_timeout: Optional[float] = None  # Timeout from server config for tool calls
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""
@@ -62,7 +62,7 @@ class MCPClient(BaseModel):
         conversation_id: str | None = None,
         timeout: float = 30.0,
     ):
-        """Connect to MCP server using SHTTP or SSE transport"""
+        """Connect to MCP server using SHTTP or SSE transport."""
         server_url = server.url
         api_key = server.api_key
 
@@ -125,7 +125,7 @@ class MCPClient(BaseModel):
             raise
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
-        """Connect to MCP server using stdio transport"""
+        """Connect to MCP server using stdio transport."""
         try:
             transport = StdioTransport(
                 command=server.command, args=server.args or [], env=server.env
@@ -147,7 +147,20 @@ class MCPClient(BaseModel):
             raise
 
     async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
-        """Call a tool on the MCP server."""
+        """Call a tool on the MCP server with timeout from server configuration.
+
+        Args:
+            tool_name: Name of the tool to call
+            args: Arguments to pass to the tool
+
+        Returns:
+            CallToolResult from the MCP server
+
+        Raises:
+            asyncio.TimeoutError: If the tool call times out
+            ValueError: If the tool is not found
+            RuntimeError: If the client session is not available
+        """
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
         # The MCPClientTool is primarily for metadata; use the session to call the actual tool.
@@ -155,4 +168,11 @@ class MCPClient(BaseModel):
             raise RuntimeError('Client session is not available.')
 
         async with self.client:
-            return await self.client.call_tool_mcp(name=tool_name, arguments=args)
+            # Use server timeout if configured
+            if self.server_timeout is not None:
+                return await asyncio.wait_for(
+                    self.client.call_tool_mcp(name=tool_name, arguments=args),
+                    timeout=self.server_timeout,
+                )
+            else:
+                return await self.client.call_tool_mcp(name=tool_name, arguments=args)

@@ -9,8 +9,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import (
     LLM,
     LLM_RETRY_EXCEPTIONS,
-    REASONING_EFFORT_SUPPORTED_MODELS,
 )
+from openhands.llm.model_features import get_features
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -62,8 +62,11 @@ class AsyncLLM(LLM):
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
 
-            # Set reasoning effort for models that support it
-            if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
+            # Set reasoning effort for models that support it, only if explicitly provided
+            if (
+                get_features(self.config.model).supports_reasoning_effort
+                and self.config.reasoning_effort is not None
+            ):
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # ensure we work with a list of messages

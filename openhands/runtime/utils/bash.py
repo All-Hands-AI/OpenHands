@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import traceback
 import uuid
 from enum import Enum
 from typing import Any
@@ -20,6 +19,16 @@ from openhands.events.observation.commands import (
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+SU_TO_USER = os.getenv('SU_TO_USER', 'true').lower() in (
+    '1',
+    'true',
+    't',
+    'yes',
+    'y',
+    'on',
+)
+
 
 def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
@@ -36,8 +45,8 @@ def split_bash_commands(commands: str) -> list[str]:
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         # If parsing fails, return the original commands
         return [commands]
@@ -79,8 +88,7 @@ def split_bash_commands(commands: str) -> list[str]:
 
 
 def escape_bash_special_chars(command: str) -> str:
-    r"""
-    Escapes characters that have different interpretations in bash vs python.
+    r"""Escapes characters that have different interpretations in bash vs python.
     Specifically handles escape sequences like \;, \|, \&, etc.
     """
     if command.strip() == '':
@@ -156,8 +164,8 @@ def escape_bash_special_chars(command: str) -> str:
         logger.debug(
             f'Failed to parse bash commands for special characters escape\n'
             f'[input]: {command}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         return command
 
@@ -194,7 +202,9 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
-        if self.username in ['root', 'openhands']:
+        if SU_TO_USER and self.username in list(
+            filter(None, [RUNTIME_USERNAME, 'root', 'openhands'])
+        ):
             # This starts a non-login (new) shell for the given user
             _shell_command = f'su {self.username} -'
 
@@ -207,7 +217,9 @@ class BashSession:
         # else:
         window_command = _shell_command
 
-        logger.debug(f'Initializing bash session with command: {window_command}')
+        logger.debug(
+            f'Initializing bash session in {self.work_dir} with command: {window_command}'
+        )
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
@@ -219,7 +231,7 @@ class BashSession:
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
-        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
+        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), global_=True)
         self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.active_window
@@ -313,7 +325,11 @@ class BashSession:
         return command_output.rstrip()
 
     def _handle_completed_command(
-        self, command: str, pane_content: str, ps1_matches: list[re.Match]
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        hidden: bool,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -328,6 +344,9 @@ class BashSession:
 
         # Update the current working directory if it has changed
         if metadata.working_dir != self._cwd and metadata.working_dir:
+            logger.debug(
+                f'directory_changed: {self._cwd}; {metadata.working_dir}; {command}'
+            )
             self._cwd = metadata.working_dir
 
         logger.debug(f'COMMAND OUTPUT: {pane_content}')
@@ -360,6 +379,7 @@ class BashSession:
             content=command_output,
             command=command,
             metadata=metadata,
+            hidden=hidden,
         )
 
     def _handle_nochange_timeout_command(
@@ -446,6 +466,7 @@ class BashSession:
             ps1_matches: List of regex matches for PS1 prompts
             get_content_before_last_match: when there's only one PS1 match, whether to get
                 the content before the last PS1 prompt (True) or after the last PS1 prompt (False)
+
         Returns:
             Combined string of all outputs between matches
         """
@@ -549,11 +570,9 @@ class BashSession:
             metadata = CmdOutputMetadata()  # No metadata available
             metadata.suffix = (
                 f'\n[Your command "{command}" is NOT executed. '
-                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+                'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
                 'By setting `is_input` to `true`, you can interact with the current process: '
-                "You may wait longer to see additional output of the previous command by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE}]'
             )
             logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
@@ -566,6 +585,7 @@ class BashSession:
                 command=command,
                 content=command_output,
                 metadata=metadata,
+                hidden=getattr(action, 'hidden', False),
             )
 
         # Send actual command/inputs to the pane
@@ -594,8 +614,12 @@ class BashSession:
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
-            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
-            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
+            cur_pane_lines = cur_pane_output.split('\n')
+            if len(cur_pane_lines) <= 20:
+                logger.debug('PANE_CONTENT: {cur_pane_output}')
+            else:
+                logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_lines[:10]}')
+                logger.debug(f'END OF PANE CONTENT: {cur_pane_lines[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             current_ps1_count = len(ps1_matches)
 
@@ -616,6 +640,7 @@ class BashSession:
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
+                    hidden=getattr(action, 'hidden', False),
                 )
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.

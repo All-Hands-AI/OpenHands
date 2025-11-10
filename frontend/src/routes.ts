@@ -21,14 +21,7 @@ export default [
       route("team", "routes/manage-team.tsx"),
       route("org", "routes/manage-org.tsx"),
     ]),
-    route("conversations/:conversationId", "routes/conversation.tsx", [
-      index("routes/changes-tab.tsx"),
-      route("browser", "routes/browser-tab.tsx"),
-      route("jupyter", "routes/jupyter-tab.tsx"),
-      route("served", "routes/served-tab.tsx"),
-      route("terminal", "routes/terminal-tab.tsx"),
-      route("vscode", "routes/vscode-tab.tsx"),
-    ]),
+    route("conversations/:conversationId", "routes/conversation.tsx"),
     route("microagent-management", "routes/microagent-management.tsx"),
   ]),
 ] satisfies RouteConfig;

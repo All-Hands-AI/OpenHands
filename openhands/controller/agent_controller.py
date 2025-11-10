@@ -4,8 +4,10 @@ import asyncio
 import copy
 import os
 import time
-import traceback
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from openhands.security.analyzer import SecurityAnalyzer
 
 from litellm.exceptions import (  # noqa
     APIConnectionError,
@@ -49,15 +51,20 @@ from openhands.events import (
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
     ChangeAgentStateAction,
     CmdRunAction,
+    FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
     NullAction,
     SystemMessageAction,
+    LoopRecoveryAction,
 )
 from openhands.events.action.agent import (
     CondensationAction,
@@ -71,19 +78,24 @@ from openhands.events.observation import (
     ErrorObservation,
     NullObservation,
     Observation,
+    LoopDetectionObservation,
 )
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
     "Please click on resume button if you'd like to continue, or start a new task."
 )
-ERROR_ACTION_NOT_EXECUTED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED'
-ERROR_ACTION_NOT_EXECUTED = 'The action has not been executed. This may have occurred because the user pressed the stop button, or because the runtime system crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
+ERROR_ACTION_NOT_EXECUTED_STOPPED_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_STOPPED'
+ERROR_ACTION_NOT_EXECUTED_ERROR_ID = 'AGENT_ERROR$ERROR_ACTION_NOT_EXECUTED_ERROR'
+ERROR_ACTION_NOT_EXECUTED_STOPPED = (
+    'Stop button pressed. The action has not been executed.'
+)
+ERROR_ACTION_NOT_EXECUTED_ERROR = 'The action has not been executed due to a runtime error. The runtime system may have crashed and restarted due to resource constraints. Any previously established system state, dependencies, or environment variables may have been lost.'
 
 
 class AgentController:
@@ -105,6 +117,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
+        conversation_stats: ConversationStats,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -118,6 +131,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        security_analyzer: 'SecurityAnalyzer | None' = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -138,13 +152,13 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-
         self.id = sid or event_stream.sid
         self.user_id = user_id
         self.file_store = file_store
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
+        self.conversation_stats = conversation_stats
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -160,6 +174,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
+            conversation_stats=conversation_stats,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -179,8 +194,53 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        self.confirmation_mode = confirmation_mode
+
+        # security analyzer for direct access
+        self.security_analyzer = security_analyzer
+
         # Add the system message to the event stream
         self._add_system_message()
+
+    async def _handle_security_analyzer(self, action: Action) -> None:
+        """Handle security risk analysis for an action.
+
+        If a security analyzer is configured, use it to analyze the action.
+        If no security analyzer is configured, set the risk to HIGH (fail-safe approach).
+
+        Args:
+            action: The action to analyze for security risks.
+        """
+        if self.security_analyzer:
+            try:
+                if (
+                    hasattr(action, 'security_risk')
+                    and action.security_risk is not None
+                ):
+                    logger.debug(
+                        f'Original security risk for {action}: {action.security_risk})'
+                    )
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = await self.security_analyzer.security_risk(
+                        action
+                    )
+                    logger.debug(
+                        f'[Security Analyzer: {self.security_analyzer.__class__}] Override security risk for action {action}: {action.security_risk}'
+                    )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to analyze security risk for action {action}: {e}'
+                )
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = ActionSecurityRisk.UNKNOWN
+        else:
+            # When no security analyzer is configured, treat all actions as UNKNOWN risk
+            # This is a fail-safe approach that ensures confirmation is required
+            logger.debug(
+                f'No security analyzer configured, setting UNKNOWN risk for action: {action}'
+            )
+            if hasattr(action, 'security_risk'):
+                action.security_risk = ActionSecurityRisk.UNKNOWN
 
     def _add_system_message(self):
         for event in self.event_stream.search_events(start_id=self.state.start_id):
@@ -226,19 +286,28 @@ class AgentController:
             )
         self._closed = True
 
-    def log(self, level: str, message: str, extra: dict | None = None) -> None:
+    def log(
+        self,
+        level: str,
+        message: str,
+        extra: dict | None = None,
+        exc_info: bool = False,
+    ) -> None:
         """Logs a message to the agent controller's logger.
 
         Args:
             level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
             extra (dict | None, optional): Additional fields to log. Includes session_id by default.
+            exc_info (bool, optional): Whether to include exception info. Defaults to False.
         """
         message = f'[Agent Controller {self.id}] {message}'
         if extra is None:
             extra = {}
         extra_merged = {'session_id': self.id, **extra}
-        getattr(logger, level)(message, extra=extra_merged, stacklevel=2)
+        getattr(logger, level)(
+            message, extra=extra_merged, exc_info=exc_info, stacklevel=2
+        )
 
     async def _react_to_exception(
         self,
@@ -305,8 +374,8 @@ class AgentController:
         except Exception as e:
             self.log(
                 'error',
-                f'Error while running the agent (session ID: {self.id}): {e}. '
-                f'Traceback: {traceback.format_exc()}',
+                f'Error while running the agent (session ID: {self.id}): {e}',
+                exc_info=True,
             )
             reported = RuntimeError(
                 f'There was an unexpected error while running the agent: {e.__class__.__name__}. You can refresh the page or ask the agent to try again.'
@@ -456,6 +525,8 @@ class AgentController:
         elif isinstance(action, AgentRejectAction):
             self.state.outputs = action.outputs
             await self.set_agent_state_to(AgentState.REJECTED)
+        elif isinstance(action, LoopRecoveryAction):
+            await self._handle_loop_recovery_action(action)
 
     async def _handle_observation(self, observation: Observation) -> None:
         """Handles observation from the event stream.
@@ -473,11 +544,6 @@ class AgentController:
         self.log(
             log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
         )
-
-        # TODO: these metrics come from the draft editor, and they get accumulated into controller's state metrics and the agent's llm metrics
-        # In the future, we should have a more principled way to sharing metrics across all LLM instances for a given conversation
-        if observation.llm_metrics is not None:
-            self.state_tracker.merge_metrics(observation.llm_metrics)
 
         # this happens for runnable actions and microagent actions
         if self._pending_action and self._pending_action.id == observation.cause:
@@ -533,6 +599,25 @@ class AgentController:
             if action.wait_for_response:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
+    async def _handle_loop_recovery_action(self, action: LoopRecoveryAction) -> None:
+        # Check if this is a loop recovery option
+        if self._stuck_detector.stuck_analysis:
+            option = action.option
+
+            # Handle the loop recovery option
+            if option == 1:
+                # Option 1: Restart from before loop
+                await self._perform_loop_recovery(self._stuck_detector.stuck_analysis)
+            elif option == 2:
+                # Option 2: Restart with last user message
+                await self._restart_with_last_user_message(
+                    self._stuck_detector.stuck_analysis
+                )
+            elif option == 3:
+                # Option 3: Stop agent completely
+                await self.set_agent_state_to(AgentState.STOPPED)
+            return
+
     def _reset(self) -> None:
         """Resets the agent controller."""
         # Runnable actions need an Observation
@@ -552,9 +637,17 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
+                # Use different messages and IDs based on whether the agent was stopped by user or due to error
+                if self.state.agent_state == AgentState.STOPPED:
+                    error_content = ERROR_ACTION_NOT_EXECUTED_STOPPED
+                    error_id = ERROR_ACTION_NOT_EXECUTED_STOPPED_ID
+                else:  # AgentState.ERROR
+                    error_content = ERROR_ACTION_NOT_EXECUTED_ERROR
+                    error_id = ERROR_ACTION_NOT_EXECUTED_ERROR_ID
+
                 obs = ErrorObservation(
-                    content=ERROR_ACTION_NOT_EXECUTED,
-                    error_id=ERROR_ACTION_NOT_EXECUTED_ID,
+                    content=error_content,
+                    error_id=error_id,
                 )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
@@ -580,14 +673,17 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
+        # Store old state for control limits check
+        old_state = self.state.agent_state
+
+        # Update agent state BEFORE calling _reset() so _reset() sees the correct state
+        self.state.agent_state = new_state
+
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self._reset()
 
         # User is allowing to check control limits and expand them if applicable
-        if (
-            self.state.agent_state == AgentState.ERROR
-            and new_state == AgentState.RUNNING
-        ):
+        if old_state == AgentState.ERROR and new_state == AgentState.RUNNING:
             self.state_tracker.maybe_increase_control_flags_limits(self.headless_mode)
 
         if self._pending_action is not None and (
@@ -602,8 +698,6 @@ class AgentController:
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
-
-        self.state.agent_state = new_state
 
         # Create observation with reason field if it's an error state
         reason = ''
@@ -645,14 +739,10 @@ class AgentController:
         """
         agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
-        llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         # Make sure metrics are shared between parent and child for global accumulation
-        llm = LLM(
-            config=llm_config,
-            retry_listener=self.agent.llm.retry_listener,
-            metrics=self.state.metrics,
+        delegate_agent = agent_cls(
+            config=agent_config, llm_registry=self.agent.llm_registry
         )
-        delegate_agent = agent_cls(llm=llm, config=agent_config)
 
         # Take a snapshot of the current metrics before starting the delegate
         state = State(
@@ -671,7 +761,7 @@ class AgentController:
         )
         self.log(
             'debug',
-            f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
+            f'start delegate, creating agent {delegate_agent.name}',
         )
 
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
@@ -681,6 +771,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
+            conversation_stats=self.conversation_stats,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -688,6 +779,7 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+            security_analyzer=self.security_analyzer,
         )
 
     def end_delegate(self) -> None:
@@ -783,13 +875,8 @@ class AgentController:
             extra={'msg_type': 'STEP'},
         )
 
-        # Ensure budget control flag is synchronized with the latest metrics.
-        # In the future, we should centralized the use of one LLM object per conversation.
-        # This will help us unify the cost for auto generating titles, running the condensor, etc.
-        # Before many microservices will touh the same llm cost field, we should sync with the budget flag for the controller
-        # and check that we haven't exceeded budget BEFORE executing an agent step.
+        # Synchronize spend across all llm services with the budget flag
         self.state_tracker.sync_budget_flag_with_metrics()
-
         if self._is_stuck():
             await self._react_to_exception(
                 AgentStuckInLoopError('Agent got stuck in a loop')
@@ -839,8 +926,10 @@ class AgentController:
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
                     or 'input length and `max_tokens` exceed context limit' in error_str
-                    or 'please reduce the length of either one'
-                    in error_str  # For OpenRouter context window errors
+                    or 'please reduce the length of' in error_str
+                    or 'the request exceeds the available context size' in error_str
+                    or 'context length exceeded' in error_str
+                    # For OpenRouter context window errors
                     or (
                         'sambanovaexception' in error_str
                         and 'maximum context length' in error_str
@@ -860,11 +949,45 @@ class AgentController:
 
         if action.runnable:
             if self.state.confirmation_mode and (
-                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+                type(action) is CmdRunAction
+                or type(action) is IPythonRunCellAction
+                or type(action) is BrowseInteractiveAction
+                or type(action) is FileEditAction
+                or type(action) is FileReadAction
             ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                # Handle security risk analysis using the dedicated method
+                await self._handle_security_analyzer(action)
+
+                # Check if the action has a security_risk attribute set by the LLM or security analyzer
+                security_risk = getattr(
+                    action, 'security_risk', ActionSecurityRisk.UNKNOWN
                 )
+
+                is_high_security_risk = security_risk == ActionSecurityRisk.HIGH
+                is_ask_for_every_action = (
+                    security_risk == ActionSecurityRisk.UNKNOWN
+                    and not self.security_analyzer
+                )
+
+                # If security_risk is HIGH, requires confirmation
+                # UNLESS it is CLI which will handle action risks it itself
+                if self.agent.config.cli_mode:
+                    # TODO(refactor): this is not ideal to have CLI been an exception
+                    # We should refactor agent controller to consider this in the future
+                    # See issue: https://github.com/OpenHands/OpenHands/issues/10464
+                    action.confirmation_state = (  # type: ignore[union-attr]
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
+                # Only HIGH security risk actions require confirmation
+                elif (
+                    is_high_security_risk or is_ask_for_every_action
+                ) and self.confirmation_mode:
+                    logger.debug(
+                        f'[non-CLI mode] Detected HIGH security risk in action: {action}. Ask for confirmation'
+                    )
+                    action.confirmation_state = (  # type: ignore[union-attr]
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
@@ -949,14 +1072,15 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
+        conversation_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
     ):
         self.state_tracker.set_initial_state(
             self.id,
-            self.agent,
             state,
+            conversation_stats,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,
@@ -983,6 +1107,45 @@ class AgentController:
 
         return self._stuck_detector.is_stuck(self.headless_mode)
 
+    def attempt_loop_recovery(self) -> bool:
+        """Attempts loop recovery when agent is stuck in a loop.
+        Only supports CLI for now.
+
+        Returns:
+            bool: True if recovery was successful and agent should continue,
+                  False if recovery failed or was not attempted.
+        """
+        # Check if we're in a loop
+        if not self._stuck_detector.stuck_analysis:
+            return False
+
+        """Handle loop recovery in CLI mode by pausing the agent and presenting recovery options."""
+        recovery_point = self._stuck_detector.stuck_analysis.loop_start_idx
+
+        # Present loop detection message
+        self.event_stream.add_event(
+            LoopDetectionObservation(
+                content=f"""⚠️  Agent detected in a loop!
+Loop type: {self._stuck_detector.stuck_analysis.loop_type}
+Loop detected at iteration {self.state.iteration_flag.current_value}
+\nRecovery options:
+/resume 1. Restart from before loop (preserves {recovery_point} events)
+/resume 2. Restart with last user message (reuses your most recent instruction)
+/exit. Quit directly
+\nThe agent has been paused. Type '/resume 1', '/resume 2', or '/exit' to choose an option.
+"""
+            ),
+            source=EventSource.ENVIRONMENT,
+        )
+
+        # Pause the agent using the same mechanism as Ctrl+P
+        # This ensures consistent behavior and avoids event loop conflicts
+        self.event_stream.add_event(
+            ChangeAgentStateAction(AgentState.PAUSED),
+            EventSource.ENVIRONMENT,  # Use ENVIRONMENT source to distinguish from user pause
+        )
+        return True
+
     def _prepare_metrics_for_frontend(self, action: Action) -> None:
         """Create a minimal metrics object for frontend display and log it.
 
@@ -997,37 +1160,20 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        agent_metrics = self.state.metrics
+        metrics = self.conversation_stats.get_combined_metrics()
 
-        # Get metrics from condenser LLM if it exists
-        condenser_metrics: Metrics | None = None
-        if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
-            condenser_metrics = self.agent.condenser.llm.metrics
-
-        # Create a new minimal metrics object with just what the frontend needs
-        metrics = Metrics(model_name=agent_metrics.model_name)
-
-        # Set accumulated cost (sum of agent and condenser costs)
-        metrics.accumulated_cost = agent_metrics.accumulated_cost
-        if condenser_metrics:
-            metrics.accumulated_cost += condenser_metrics.accumulated_cost
+        # Create a clean copy with only the fields we want to keep
+        clean_metrics = Metrics()
+        clean_metrics.accumulated_cost = metrics.accumulated_cost
+        clean_metrics._accumulated_token_usage = copy.deepcopy(
+            metrics.accumulated_token_usage
+        )
 
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
-            metrics.max_budget_per_task = self.state.budget_flag.max_value
+            clean_metrics.max_budget_per_task = self.state.budget_flag.max_value
 
-        # Set accumulated token usage (sum of agent and condenser token usage)
-        # Use a deep copy to ensure we don't modify the original object
-        metrics._accumulated_token_usage = (
-            agent_metrics.accumulated_token_usage.model_copy(deep=True)
-        )
-        if condenser_metrics:
-            metrics._accumulated_token_usage = (
-                metrics._accumulated_token_usage
-                + condenser_metrics.accumulated_token_usage
-            )
-
-        action.llm_metrics = metrics
+        action.llm_metrics = clean_metrics
 
         # Log the metrics information for debugging
         # Get the latest usage directly from the agent's metrics
@@ -1123,6 +1269,93 @@ class AgentController:
             None,
         )
         return self._cached_first_user_message
+
+    async def _perform_loop_recovery(
+        self, stuck_analysis: StuckDetector.StuckAnalysis
+    ) -> None:
+        """Perform loop recovery by truncating memory and restarting from before the loop."""
+        recovery_point = stuck_analysis.loop_start_idx
+
+        # Truncate memory to the recovery point
+        await self._truncate_memory_to_point(recovery_point)
+
+        # Set agent state to AWAITING_USER_INPUT to allow user to provide new instructions
+        await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+
+        self.event_stream.add_event(
+            LoopDetectionObservation(
+                content="""✅ Loop recovery completed. Agent has been reset to before the loop.
+You can now provide new instructions to continue.
+"""
+            ),
+            source=EventSource.ENVIRONMENT,
+        )
+
+    async def _truncate_memory_to_point(self, recovery_point: int) -> None:
+        """Truncate memory to the specified recovery point."""
+        # Get all events from state history
+        all_events = self.state.history
+
+        if recovery_point >= len(all_events):
+            return
+
+        # Keep only events up to the recovery point
+        events_to_keep = all_events[:recovery_point]
+
+        # Update state history
+        self.state.history = events_to_keep
+
+        # Update end_id to reflect the truncation
+        if events_to_keep:
+            self.state.end_id = events_to_keep[-1].id
+        else:
+            self.state.end_id = -1
+
+        # Clear any cached messages
+        self._cached_first_user_message = None
+
+    async def _restart_with_last_user_message(
+        self, stuck_analysis: StuckDetector.StuckAnalysis
+    ) -> None:
+        """Restart the agent using the last user message as the new instruction."""
+
+        # Find the last user message in the history
+        last_user_message = None
+        for event in reversed(self.state.history):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                last_user_message = event
+                break
+
+        if last_user_message:
+            # Truncate memory to just before the loop started
+            recovery_point = stuck_analysis.loop_start_idx
+            await self._truncate_memory_to_point(recovery_point)
+
+            # Set agent state to RUNNING and re-use the last user message
+            await self.set_agent_state_to(AgentState.RUNNING)
+
+            # Re-use the last user message as the new instruction
+            self.event_stream.add_event(
+                LoopDetectionObservation(
+                    content=f"""\n✅ Restarting with your last instruction: {last_user_message.content}
+Agent is now continuing with the same task...
+"""
+                ),
+                source=EventSource.ENVIRONMENT,
+            )
+
+            # Create a new action with the last user message
+            new_action = MessageAction(
+                content=last_user_message.content, wait_for_response=False
+            )
+            new_action._source = EventSource.USER  # type: ignore [attr-defined]
+
+            # Process the action to restart the agent
+            await self._handle_action(new_action)
+        else:
+            # If no user message found, fall back to regular recovery
+            print('\n⚠️  No previous user message found. Using standard recovery.')
+            await self._perform_loop_recovery(stuck_analysis)
 
     def save_state(self):
         self.state_tracker.save_state()

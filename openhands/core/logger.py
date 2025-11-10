@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 from datetime import datetime
+from logging.handlers import TimedRotatingFileHandler
 from types import TracebackType
 from typing import Any, Literal, Mapping, MutableMapping, TextIO
 
@@ -42,7 +43,11 @@ else:
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
-LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
+LOG_TO_FILE = os.getenv('LOG_TO_FILE', str(LOG_LEVEL == 'DEBUG')).lower() in [
+    'true',
+    '1',
+    'yes',
+]
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
@@ -212,7 +217,7 @@ class RollingLogger:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
-        self._write('\033[F' * (self.max_lines))
+        self._write('\033[F' * amount)
         self._flush()
 
     def replace_current_line(self, line: str = '') -> None:
@@ -290,13 +295,21 @@ def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
 
 
 def get_file_handler(
-    log_dir: str, log_level: int = logging.INFO
-) -> logging.FileHandler:
+    log_dir: str,
+    log_level: int = logging.INFO,
+    when: str = 'd',
+    backup_count: int = 7,
+    utc: bool = False,
+) -> TimedRotatingFileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d')
-    file_name = f'openhands_{timestamp}.log'
-    file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
+    file_name = 'openhands.log'
+    file_handler = TimedRotatingFileHandler(
+        os.path.join(log_dir, file_name),
+        when=when,
+        backupCount=backup_count,
+        utc=utc,
+    )
     file_handler.setLevel(log_level)
     if LOG_JSON:
         file_handler.setFormatter(json_formatter())
@@ -318,10 +331,7 @@ def json_log_handler(
     level: int = logging.INFO,
     _out: TextIO = sys.stdout,
 ) -> logging.Handler:
-    """
-    Configure logger instance for structured logging as json lines.
-    """
-
+    """Configure logger instance for structured logging as json lines."""
     handler = logging.StreamHandler(_out)
     handler.setLevel(level)
     handler.setFormatter(json_formatter())
@@ -335,7 +345,7 @@ logging.basicConfig(level=logging.ERROR)
 def log_uncaught_exceptions(
     ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
 ) -> Any:
-    """Logs uncaught exceptions along with the traceback.
+    """Logs uncaught exceptions in structured form when JSON logging is enabled.
 
     Args:
         ex_cls: The type of the exception.
@@ -345,9 +355,9 @@ def log_uncaught_exceptions(
     Returns:
         None
     """
-    if tb:  # Add check since tb can be None
-        logging.error(''.join(traceback.format_tb(tb)))
-    logging.error('{0}: {1}'.format(ex_cls, ex))
+    # Route uncaught exceptions through our logger with proper exc_info
+    # Avoid manual formatting which creates multi-line plain-text log entries
+    openhands_logger.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
 
 
 sys.excepthook = log_uncaught_exceptions
@@ -362,11 +372,14 @@ if DEBUG:
     openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
-    LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
 if LOG_JSON:
     openhands_logger.addHandler(json_log_handler(current_log_level))
+    # Configure concurrent.futures logger to use JSON formatting as well
+    cf_logger = logging.getLogger('concurrent.futures')
+    cf_logger.setLevel(current_log_level)
+    cf_logger.addHandler(json_log_handler(current_log_level))
 else:
     openhands_logger.addHandler(get_console_handler(current_log_level))
 
@@ -398,6 +411,7 @@ LOQUACIOUS_LOGGERS = [
     'socketio',
     'socketio.client',
     'socketio.server',
+    'aiosqlite',
 ]
 
 for logger_name in LOQUACIOUS_LOGGERS:
@@ -493,8 +507,7 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]
     ) -> tuple[str, MutableMapping[str, Any]]:
-        """
-        If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
+        """If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
         Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.
         """
         if 'extra' in kwargs and isinstance(kwargs['extra'], dict):
@@ -502,3 +515,91 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
         else:
             kwargs['extra'] = self.extra
         return msg, kwargs
+
+
+def get_uvicorn_json_log_config() -> dict:
+    """Returns a uvicorn log config dict for JSON structured logging.
+
+    This configuration ensures Uvicorn's error and access logs are emitted
+    as single-line JSON when LOG_JSON=1, avoiding multi-line plain-text
+    tracebacks in log aggregators like Datadog.
+
+    Returns:
+        A dict suitable for passing to uvicorn.run(..., log_config=...).
+    """
+    return {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            # Uvicorn mutates 'default' and 'access' to set use_colors;
+            # keep them present using Uvicorn formatters
+            'default': {
+                '()': 'uvicorn.logging.DefaultFormatter',
+                'fmt': '%(levelprefix)s %(message)s',
+                'use_colors': None,
+            },
+            'access': {
+                '()': 'uvicorn.logging.AccessFormatter',
+                'fmt': '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
+                'use_colors': None,
+            },
+            # Actual JSON formatters used by handlers below
+            'json': {
+                '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(exc_info)s',
+            },
+            'json_access': {
+                '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(client_addr)s %(request_line)s %(status_code)s',
+            },
+        },
+        'handlers': {
+            'default': {
+                'class': 'logging.StreamHandler',
+                'level': 'INFO',
+                'formatter': 'json',
+                'stream': 'ext://sys.stdout',
+            },
+            'access': {
+                'class': 'logging.StreamHandler',
+                'level': 'INFO',
+                'formatter': 'json_access',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        'loggers': {
+            'uvicorn': {
+                'handlers': ['default'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'uvicorn.error': {
+                'handlers': ['default'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'uvicorn.access': {
+                'handlers': ['access'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            # Suppress LiteLLM loggers to prevent them from leaking through root logger
+            # This is necessary because logging.config.dictConfig() resets the .disabled flag
+            'LiteLLM': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Router': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Proxy': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+        },
+        'root': {'level': 'INFO', 'handlers': ['default']},
+    }

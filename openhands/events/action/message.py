@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Any
 
-import openhands
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.version import get_version
 
 
 @dataclass
@@ -13,7 +13,7 @@ class MessageAction(Action):
     image_urls: list[str] | None = None
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
@@ -42,14 +42,13 @@ class MessageAction(Action):
 
 @dataclass
 class SystemMessageAction(Action):
-    """
-    Action that represents a system message for an agent, including the system prompt
+    """Action that represents a system message for an agent, including the system prompt
     and available tools. This should be the first message in the event stream.
     """
 
     content: str
     tools: list[Any] | None = None
-    openhands_version: str | None = openhands.__version__
+    openhands_version: str | None = get_version()
     agent_class: str | None = None
     action: ActionType = ActionType.SYSTEM
 

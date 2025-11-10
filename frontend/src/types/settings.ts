@@ -2,6 +2,7 @@ export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
   bitbucket: "bitbucket",
+  enterprise_sso: "enterprise_sso",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;
@@ -23,9 +24,16 @@ export type MCPStdioServer = {
   env?: Record<string, string>;
 };
 
+export type MCPSHTTPServer = {
+  url: string;
+  api_key?: string;
+  timeout?: number;
+};
+
 export type MCPConfig = {
   sse_servers: (string | MCPSSEServer)[];
   stdio_servers: MCPStdioServer[];
+  shttp_servers: (string | MCPSHTTPServer)[];
 };
 
 export type Settings = {
@@ -36,12 +44,15 @@ export type Settings = {
   LLM_API_KEY_SET: boolean;
   SEARCH_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
-  SECURITY_ANALYZER: string;
+  SECURITY_ANALYZER: string | null;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
+  // Maximum number of events before the condenser runs
+  CONDENSER_MAX_SIZE: number | null;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
+  ENABLE_SOLVABILITY_ANALYSIS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   SEARCH_API_KEY?: string;
   IS_NEW_USER?: boolean;
@@ -49,43 +60,13 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
-};
-
-export type ApiSettings = {
-  llm_model: string;
-  llm_base_url: string;
-  agent: string;
-  language: string;
-  llm_api_key: string | null;
-  llm_api_key_set: boolean;
-  search_api_key_set: boolean;
-  confirmation_mode: boolean;
-  security_analyzer: string;
-  remote_runtime_resource_factor: number | null;
-  enable_default_condenser: boolean;
-  enable_sound_notifications: boolean;
-  enable_proactive_conversation_starters: boolean;
-  user_consents_to_analytics: boolean | null;
-  search_api_key?: string;
-  provider_tokens_set: Partial<Record<Provider, string | null>>;
-  max_budget_per_task: number | null;
-  mcp_config?: {
-    sse_servers: (string | MCPSSEServer)[];
-    stdio_servers: MCPStdioServer[];
-  };
-  email?: string;
-  email_verified?: boolean;
+  GIT_USER_NAME?: string;
+  GIT_USER_EMAIL?: string;
 };
 
 export type PostSettings = Settings & {
   user_consents_to_analytics: boolean | null;
   llm_api_key?: string | null;
-  search_api_key?: string;
-  mcp_config?: MCPConfig;
-};
-
-export type PostApiSettings = ApiSettings & {
-  user_consents_to_analytics: boolean | null;
   search_api_key?: string;
   mcp_config?: MCPConfig;
 };

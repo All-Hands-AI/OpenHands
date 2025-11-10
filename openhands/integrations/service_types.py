@@ -4,7 +4,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
 
-from httpx import AsyncClient, HTTPError, HTTPStatusError
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
@@ -14,10 +13,15 @@ from openhands.microagent.types import MicroagentContentResponse, MicroagentResp
 from openhands.server.types import AppMode
 
 
+class TokenResponse(BaseModel):
+    token: str
+
+
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
     BITBUCKET = 'bitbucket'
+    ENTERPRISE_SSO = 'enterprise_sso'
 
 
 class TaskType(str, Enum):
@@ -125,6 +129,14 @@ class Branch(BaseModel):
     last_push_date: str | None = None  # ISO 8601 format date string
 
 
+class PaginatedBranchesResponse(BaseModel):
+    branches: list[Branch]
+    has_next_page: bool
+    current_page: int
+    per_page: int
+    total_count: int | None = None  # Some APIs don't provide total count
+
+
 class Repository(BaseModel):
     id: str
     full_name: str
@@ -137,6 +149,15 @@ class Repository(BaseModel):
         None  # Whether the repository is owned by a user or organization
     )
     main_branch: str | None = None  # The main/default branch of the repository
+
+
+class Comment(BaseModel):
+    id: str
+    body: str
+    author: str
+    created_at: datetime
+    updated_at: datetime
+    system: bool = False  # Whether this is a system-generated comment
 
 
 class AuthenticationError(ValueError):
@@ -219,40 +240,6 @@ class BaseGitService(ABC):
     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
         """Extract file path from directory item."""
         ...
-
-    async def execute_request(
-        self,
-        client: AsyncClient,
-        url: str,
-        headers: dict,
-        params: dict | None,
-        method: RequestMethod = RequestMethod.GET,
-    ):
-        if method == RequestMethod.POST:
-            return await client.post(url, headers=headers, json=params)
-        return await client.get(url, headers=headers, params=params)
-
-    def handle_http_status_error(
-        self, e: HTTPStatusError
-    ) -> (
-        AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
-    ):
-        if e.response.status_code == 401:
-            return AuthenticationError(f'Invalid {self.provider} token')
-        elif e.response.status_code == 404:
-            return ResourceNotFoundError(
-                f'Resource not found on {self.provider} API: {e}'
-            )
-        elif e.response.status_code == 429:
-            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
-            return RateLimitError('GitHub API rate limit exceeded')
-
-        logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException(f'Unknown error: {e}')
-
-    def handle_http_error(self, e: HTTPError) -> UnknownException:
-        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
     def _determine_microagents_path(self, repository_name: str) -> str:
         """Determine the microagents directory path based on repository name."""
@@ -432,6 +419,20 @@ class BaseGitService(ABC):
 
         return microagents
 
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
+
+class InstallationsService(Protocol):
+    async def get_installations(self) -> list[str]:
+        """Get installations for the service; repos live underneath these installations"""
+        ...
+
 
 class GitService(Protocol):
     """Protocol defining the interface for Git service providers"""
@@ -462,12 +463,27 @@ class GitService(Protocol):
         per_page: int,
         sort: str,
         order: str,
+        public: bool,
+        app_mode: AppMode,
     ) -> list[Repository]:
-        """Search for repositories"""
+        """Search for public repositories"""
         ...
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         """Get repositories for the authenticated user"""
+        ...
+
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
+    ) -> list[Repository]:
+        """Get a page of repositories for the authenticated user"""
         ...
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
@@ -482,6 +498,16 @@ class GitService(Protocol):
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
 
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search for branches within a repository"""
+
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository"""
         ...
@@ -493,5 +519,29 @@ class GitService(Protocol):
 
         Returns:
             MicroagentContentResponse with parsed content and triggers
+        """
+        ...
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request/merge request
+
+        Args:
+            repository: Repository name in format specific to the provider
+            pr_number: The pull request/merge request number
+
+        Returns:
+            Raw API response from the git provider
+        """
+        ...
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
         """
         ...

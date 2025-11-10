@@ -1,11 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import GitService from "#/api/git-service/git-service.api";
+import { Provider } from "#/types/settings";
 
-export function useSearchRepositories(query: string) {
+export function useSearchRepositories(
+  query: string,
+  selectedProvider?: Provider | null,
+  disabled?: boolean,
+  pageSize: number = 100,
+) {
   return useQuery({
-    queryKey: ["repositories", query],
-    queryFn: () => OpenHands.searchGitRepositories(query, 3),
-    enabled: !!query,
+    queryKey: ["repositories", "search", query, selectedProvider, pageSize],
+    queryFn: () =>
+      GitService.searchGitRepositories(
+        query,
+        pageSize,
+        selectedProvider || undefined,
+      ),
+    enabled: !!query && !!selectedProvider && !disabled,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });

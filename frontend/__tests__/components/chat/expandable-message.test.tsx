@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
-import OpenHands from "#/api/open-hands";
+import OptionService from "#/api/option-service/option-service.api";
 
 vi.mock("react-i18next", async () => {
   const actual = await vi.importActual("react-i18next");
@@ -113,13 +113,16 @@ describe("ExpandableMessage", () => {
   });
 
   it("should render the out of credits message when the user is out of credits", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - We only care about the APP_MODE and FEATURE_FLAGS fields
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const RouterStub = createRoutesStub([

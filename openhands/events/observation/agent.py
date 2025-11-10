@@ -46,8 +46,7 @@ class AgentThinkObservation(Observation):
 
 @dataclass
 class MicroagentKnowledge:
-    """
-    Represents knowledge from a triggered microagent.
+    """Represents knowledge from a triggered microagent.
 
     Attributes:
         name: The name of the microagent that was triggered
@@ -70,6 +69,7 @@ class RecallObservation(Observation):
     # workspace context
     repo_name: str = ''
     repo_directory: str = ''
+    repo_branch: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''

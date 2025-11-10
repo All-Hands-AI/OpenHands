@@ -12,6 +12,10 @@ class ConversationTrigger(Enum):
     REMOTE_API_KEY = 'openhands_api'
     SLACK = 'slack'
     MICROAGENT_MANAGEMENT = 'microagent_management'
+    JIRA = 'jira'
+    JIRA_DC = 'jira_dc'
+    LINEAR = 'linear'
+    BITBUCKET = 'bitbucket'
 
 
 @dataclass
@@ -32,3 +36,6 @@ class ConversationMetadata:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    # V1 compatibility
+    sandbox_id: str | None = None
+    conversation_version: str | None = None

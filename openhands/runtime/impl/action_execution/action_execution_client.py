@@ -43,6 +43,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -68,6 +69,7 @@ class ActionExecutionClient(Runtime):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -85,6 +87,7 @@ class ActionExecutionClient(Runtime):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -126,11 +129,15 @@ class ActionExecutionClient(Runtime):
         return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
+        request_url = f'{self.action_execution_server_url}/alive'
+        self.log('debug', f'Sending request to: {request_url}')
         response = self._send_action_server_request(
             'GET',
-            f'{self.action_execution_server_url}/alive',
+            request_url,
             timeout=5,
         )
+        self.log('debug', f'Response status code: {response.status_code}')
+        self.log('debug', f'Response text: {response.text}')
         assert response.is_closed
 
     def list_files(self, path: str | None = None) -> list[str]:
@@ -138,7 +145,6 @@ class ActionExecutionClient(Runtime):
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-
         try:
             data = {}
             if path is not None:
@@ -323,6 +329,8 @@ class ActionExecutionClient(Runtime):
                 )
                 assert response.is_closed
                 output = response.json()
+                if getattr(action, 'hidden', False):
+                    output.get('extras')['hidden'] = True
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except httpx.TimeoutException:
