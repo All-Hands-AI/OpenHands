@@ -6,7 +6,7 @@ import pytest
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from openhands_cli.user_actions import UserConfirmation
 
 
@@ -51,7 +51,7 @@ def run_resume_command_test(commands, agent_status=None, expect_runner_created=T
         conv = MagicMock()
         conv.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
         if agent_status:
-            conv.state.agent_status = agent_status
+            conv.state.execution_status = agent_status
         mock_setup_conversation.return_value = conv
 
         # Mock runner
@@ -93,7 +93,7 @@ def run_resume_command_test(commands, agent_status=None, expect_runner_created=T
 def test_resume_command_warnings(commands, expected_warning, expect_runner_created):
     """Test /resume command shows appropriate warnings."""
     # Set agent status to FINISHED for the "conversation exists but not paused" test
-    agent_status = AgentExecutionStatus.FINISHED if expect_runner_created else None
+    agent_status = ConversationExecutionStatus.FINISHED if expect_runner_created else None
 
     mock_runner_cls, runner, mock_print = run_resume_command_test(
         commands, agent_status=agent_status, expect_runner_created=expect_runner_created
@@ -117,8 +117,8 @@ def test_resume_command_warnings(commands, expected_warning, expect_runner_creat
 @pytest.mark.parametrize(
     "agent_status",
     [
-        AgentExecutionStatus.PAUSED,
-        AgentExecutionStatus.WAITING_FOR_CONFIRMATION,
+        ConversationExecutionStatus.PAUSED,
+        ConversationExecutionStatus.WAITING_FOR_CONFIRMATION,
     ],
 )
 def test_resume_command_successful_resume(agent_status):

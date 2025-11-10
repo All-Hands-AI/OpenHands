@@ -53,7 +53,7 @@ a = Analysis(
         'mcp.client',
         'mcp.server',
         'mcp.shared',
-        'openhands.tools.execute_bash',
+        'openhands.tools.terminal',
         'openhands.tools.str_replace_editor',
         'openhands.tools.task_tracker',
     ],

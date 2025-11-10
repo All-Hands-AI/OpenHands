@@ -12,7 +12,7 @@ from openhands.sdk import (
     Message,
     TextContent,
 )
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
@@ -184,9 +184,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
                 conversation = runner.conversation
                 if not (
-                    conversation.state.agent_status == AgentExecutionStatus.PAUSED
-                    or conversation.state.agent_status
-                    == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                    conversation.state.execution_status == ConversationExecutionStatus.PAUSED
+                    or conversation.state.execution_status
+                    == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
                 ):
                     print_formatted_text(
                         HTML('<red>No paused conversation to resume...</red>')
