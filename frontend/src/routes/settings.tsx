@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Outlet, redirect, useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-
 import { useConfig } from "#/hooks/query/use-config";
 import { Route } from "./+types/settings";
 import OptionService from "#/api/option-service/option-service.api";
