@@ -5,12 +5,12 @@ import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { selectOrganization } from "test-utils";
 import { organizationService } from "#/api/organization-service/organization-service.api";
-import OpenHands from "#/api/open-hands";
 import ManageTeam from "#/routes/manage-team";
 import SettingsScreen, {
   clientLoader as settingsClientLoader,
 } from "#/routes/settings";
 import { ORGS_AND_MEMBERS } from "#/mocks/org-handlers";
+import OptionService from "#/api/option-service/option-service.api";
 
 function ManageTeamWithPortalRoot() {
   return (
@@ -23,6 +23,7 @@ function ManageTeamWithPortalRoot() {
 
 const RouteStub = createRoutesStub([
   {
+    // @ts-expect-error - ignoreing error for test stub
     loader: settingsClientLoader,
     Component: SettingsScreen,
     path: "/settings",
@@ -44,7 +45,7 @@ let queryClient: QueryClient;
 
 describe("Manage Team Route", () => {
   beforeEach(() => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return APP_MODE for these tests
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -72,7 +73,7 @@ describe("Manage Team Route", () => {
   });
 
   it("should navigate away from the page if not saas", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return APP_MODE for these tests
     getConfigSpy.mockResolvedValue({
       APP_MODE: "oss",

@@ -2,11 +2,11 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
 import { UserContextMenu } from "#/components/features/user/user-context-menu";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import { GetComponentPropTypes } from "#/utils/get-component-prop-types";
 import { INITIAL_MOCK_ORGS } from "#/mocks/org-handlers";
+import AuthService from "#/api/auth-service/auth-service.api";
 
 type UserContextMenuProps = GetComponentPropTypes<typeof UserContextMenu>;
 
@@ -87,7 +87,7 @@ describe("UserContextMenu", () => {
   });
 
   it("should call the logout handler when Logout is clicked", async () => {
-    const logoutSpy = vi.spyOn(OpenHands, "logout");
+    const logoutSpy = vi.spyOn(AuthService, "logout");
     renderUserContextMenu({ type: "user", onClose: vi.fn });
 
     const logoutButton = screen.getByText("Logout");

@@ -45,28 +45,6 @@ export function SettingsNavigation({
         />
       )}
 
-      <div className="px-3 py-2">
-        <SettingsDropdownInput
-          testId="org-select"
-          name="organization"
-          placeholder="Please select an organization"
-          selectedKey={orgId || ""}
-          items={
-            organizations?.map((org) => ({
-              key: org.id,
-              label: org.name,
-            })) || []
-          }
-          onSelectionChange={(org) => {
-            if (org) {
-              setOrgId(org.toString());
-            } else {
-              setOrgId(null);
-            }
-          }}
-        />
-      </div>
-
       {/* Navigation sidebar */}
       <nav
         data-testid="settings-navbar"
@@ -79,6 +57,28 @@ export function SettingsNavigation({
           "md:relative md:translate-x-0 md:w-64 md:p-0 md:bg-transparent",
         )}
       >
+        <div className="px-3 py-2">
+          <SettingsDropdownInput
+            testId="org-select"
+            name="organization"
+            placeholder="Please select an organization"
+            selectedKey={orgId || ""}
+            items={
+              organizations?.map((org) => ({
+                key: org.id,
+                label: org.name,
+              })) || []
+            }
+            onSelectionChange={(org) => {
+              if (org) {
+                setOrgId(org.toString());
+              } else {
+                setOrgId(null);
+              }
+            }}
+          />
+        </div>
+
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 ml-1 sm:ml-4.5">
             <SettingsIcon width={16} height={16} />

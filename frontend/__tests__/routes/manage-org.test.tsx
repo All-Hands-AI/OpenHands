@@ -4,11 +4,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
 import { selectOrganization } from "test-utils";
-import OpenHands from "#/api/open-hands";
 import ManageOrg from "#/routes/manage-org";
 import { organizationService } from "#/api/organization-service/organization-service.api";
 import SettingsScreen, { clientLoader } from "#/routes/settings";
 import { resetOrgMockData } from "#/mocks/org-handlers";
+import OptionService from "#/api/option-service/option-service.api";
+import BillingService from "#/api/billing-service/billing-service.api";
 
 function ManageOrgWithPortalRoot() {
   return (
@@ -58,7 +59,7 @@ vi.mock("react-router", async () => ({
 
 describe("Manage Org Route", () => {
   beforeEach(() => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     // @ts-expect-error - only return APP_MODE for these tests
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
@@ -98,7 +99,7 @@ describe("Manage Org Route", () => {
 
   it("should be able to add credits", async () => {
     const createCheckoutSessionSpy = vi.spyOn(
-      OpenHands,
+      BillingService,
       "createCheckoutSession",
     );
 
@@ -131,7 +132,7 @@ describe("Manage Org Route", () => {
 
   it("should close the modal when clicking cancel", async () => {
     const createCheckoutSessionSpy = vi.spyOn(
-      OpenHands,
+      BillingService,
       "createCheckoutSession",
     );
     renderManageOrg();
@@ -178,7 +179,7 @@ describe("Manage Org Route", () => {
         organizationService,
         "updateOrganization",
       );
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
 
       // @ts-expect-error - only return the properties we need for this test
       getConfigSpy.mockResolvedValue({
@@ -238,7 +239,7 @@ describe("Manage Org Route", () => {
     });
 
     it("should NOT allow roles other than superadmins to delete an organization", async () => {
-      const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+      const getConfigSpy = vi.spyOn(OptionService, "getConfig");
       // @ts-expect-error - only return the properties we need for this test
       getConfigSpy.mockResolvedValue({
         APP_MODE: "saas", // required to enable getMe
