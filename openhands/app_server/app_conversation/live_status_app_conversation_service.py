@@ -42,7 +42,15 @@ from openhands.app_server.app_conversation.git_app_conversation_service import (
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
 )
+from openhands.app_server.config import get_event_callback_service
 from openhands.app_server.errors import SandboxError
+from openhands.app_server.event_callback.event_callback_models import EventCallback
+from openhands.app_server.event_callback.event_callback_service import (
+    EventCallbackService,
+)
+from openhands.app_server.event_callback.set_title_callback_processor import (
+    SetTitleCallbackProcessor,
+)
 from openhands.app_server.sandbox.docker_sandbox_service import DockerSandboxService
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
@@ -75,6 +83,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
     user_context: UserContext
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
+    event_callback_service: EventCallbackService
     sandbox_service: SandboxService
     sandbox_spec_service: SandboxSpecService
     jwt_service: JwtService
@@ -221,7 +230,6 @@ class LiveStatusAppConversationService(GitAppConversationService):
             user_id = await self.user_context.get_user_id()
             app_conversation_info = AppConversationInfo(
                 id=info.id,
-                # TODO: As of writing, StartConversationRequest from AgentServer does not have a title
                 title=f'Conversation {info.id.hex}',
                 sandbox_id=sandbox.id,
                 created_by_user_id=user_id,
@@ -235,6 +243,24 @@ class LiveStatusAppConversationService(GitAppConversationService):
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
+            )
+
+            # Setup default processors
+            processors = request.processors
+            if processors is None:
+                processors = [SetTitleCallbackProcessor()]
+
+            # Save processors
+            await asyncio.gather(
+                *[
+                    self.event_callback_service.save_event_callback(
+                        EventCallback(
+                            conversation_id=info.id,
+                            processor=processor,
+                        )
+                    )
+                    for processor in processors
+                ]
             )
 
             # Update the start task
@@ -673,6 +699,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
             get_app_conversation_start_task_service(
                 state, request
             ) as app_conversation_start_task_service,
+            get_event_callback_service(state, request) as event_callback_service,
             get_jwt_service(state, request) as jwt_service,
             get_httpx_client(state, request) as httpx_client,
         ):
@@ -696,6 +723,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 sandbox_spec_service=sandbox_spec_service,
                 app_conversation_info_service=app_conversation_info_service,
                 app_conversation_start_task_service=app_conversation_start_task_service,
+                event_callback_service=event_callback_service,
                 jwt_service=jwt_service,
                 sandbox_startup_timeout=self.sandbox_startup_timeout,
                 sandbox_startup_poll_frequency=self.sandbox_startup_poll_frequency,
