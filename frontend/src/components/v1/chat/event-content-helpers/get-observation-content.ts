@@ -49,6 +49,10 @@ const getExecuteBashObservationContent = (
 
   let { output } = observation;
 
+  if (!output) {
+    output = "";
+  }
+
   if (output.length > MAX_CONTENT_LENGTH) {
     output = `${output.slice(0, MAX_CONTENT_LENGTH)}...`;
   }

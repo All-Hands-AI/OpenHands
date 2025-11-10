@@ -200,4 +200,4 @@ def _import_all_tools():
                 _logger.error(f"Warning: Could not import subpackage '{name}': {e}")
 
 
-# _import_all_tools()
+_import_all_tools()
