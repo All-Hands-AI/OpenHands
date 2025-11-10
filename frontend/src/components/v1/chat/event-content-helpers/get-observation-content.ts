@@ -19,6 +19,10 @@ const getFileEditorObservationContent = (
 ): string => {
   const { observation } = event;
 
+  if (observation.error) {
+    return `**Error:**\n${observation.error}`;
+  }
+
   const successMessage = getObservationResult(event) === "success";
 
   // For view commands or successful edits with content changes, format as code block

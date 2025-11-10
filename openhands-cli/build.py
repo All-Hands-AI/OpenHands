@@ -15,20 +15,10 @@ import sys
 import time
 from pathlib import Path
 
-from openhands_cli.llm_utils import get_llm_metadata
-from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR, WORK_DIR
+from openhands_cli.utils import get_default_cli_agent, get_llm_metadata
+from openhands_cli.locations import AGENT_SETTINGS_PATH, PERSISTENCE_DIR
 
 from openhands.sdk import LLM
-from openhands.tools.preset.default import get_default_agent
-
-dummy_agent = get_default_agent(
-    llm=LLM(
-        model='dummy-model',
-        api_key='dummy-key',
-        metadata=get_llm_metadata(model_name='dummy-model', llm_type='openhands'),
-    ),
-    cli_mode=True,
-)
 
 # =================================================
 # SECTION: Build Binary
@@ -127,7 +117,7 @@ def _is_welcome(line: str) -> bool:
     return any(marker in s for marker in WELCOME_MARKERS)
 
 
-def test_executable() -> bool:
+def test_executable(dummy_agent) -> bool:
     """Test the built executable, measuring boot time and total test time."""
     print('🧪 Testing the built executable...')
 
@@ -275,7 +265,14 @@ def main() -> int:
 
     # Test the executable
     if not args.no_test:
-        if not test_executable():
+        dummy_agent = get_default_cli_agent(
+            llm=LLM(
+                model='dummy-model',
+                api_key='dummy-key',
+                litellm_extra_body={"metadata": get_llm_metadata(model_name='dummy-model', llm_type='openhands')},
+            )
+        )
+        if not test_executable(dummy_agent):
             print('❌ Executable test failed, build process failed')
             return 1
 
@@ -286,4 +283,10 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except Exception as e:
+        print(e)
+        print('❌ Executable test failed')
+        sys.exit(1)
+
