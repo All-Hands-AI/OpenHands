@@ -116,7 +116,7 @@ pybase62 = "^1.0.0"
 #openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "be9725b459c0afabc18cfba89acf11dc756b42f0" }
 #openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "be9725b459c0afabc18cfba89acf11dc756b42f0" }
 #openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "be9725b459c0afabc18cfba89acf11dc756b42f0" }
-openhands-sdk = "1.0.0a6"
+openhands-sdk = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "ht/support-kimi-k2-thinking", subdirectory = "openhands-sdk"}
 openhands-agent-server = "1.0.0a6"
 openhands-tools = "1.0.0a6"
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
