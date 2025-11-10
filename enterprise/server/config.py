@@ -66,7 +66,6 @@ class SaaSServerConfig(ServerConfig):
     github_client_id: str = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
-    stripe_publishable_key: str = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
     auth_url: str | None = os.environ.get('AUTH_URL')
     settings_store_class: str = 'storage.saas_settings_store.SaasSettingsStore'
     secret_store_class: str = 'storage.saas_secrets_store.SaasSecretsStore'
@@ -169,7 +168,6 @@ class SaaSServerConfig(ServerConfig):
             'APP_SLUG': self.app_slug,
             'GITHUB_CLIENT_ID': self.github_client_id,
             'POSTHOG_CLIENT_KEY': self.posthog_client_key,
-            'STRIPE_PUBLISHABLE_KEY': self.stripe_publishable_key,
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
