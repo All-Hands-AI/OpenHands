@@ -5,12 +5,12 @@ import time
 
 import docker
 
-from openhands import __version__ as oh_version
 from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
 from openhands.utils.term_color import TermColor, colorize
+from openhands.version import get_version
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
@@ -37,7 +37,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
     @staticmethod
     def check_buildx(is_podman: bool = False) -> bool:
-        """Check if Docker Buildx is available"""
+        """Check if Docker Buildx is available."""
         try:
             result = subprocess.run(
                 ['docker' if not is_podman else 'podman', 'buildx', 'version'],
@@ -131,7 +131,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             'buildx',
             'build',
             '--progress=plain',
-            f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
+            f'--build-arg=OPENHANDS_RUNTIME_VERSION={get_version()}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
             '--load',
@@ -176,29 +176,32 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 bufsize=1,
             )
 
+            output_lines = []
             if process.stdout:
                 for line in iter(process.stdout.readline, ''):
                     line = line.strip()
                     if line:
+                        output_lines.append(line)  # Store all output lines
                         self._output_logs(line)
 
             return_code = process.wait()
 
             if return_code != 0:
+                # Use the collected output for error reporting
+                output_str = '\n'.join(output_lines)
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=process.stdout.read() if process.stdout else None,
-                    stderr=process.stderr.read() if process.stderr else None,
+                    output=output_str,  # Use the collected output
+                    stderr=None,
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
-            logger.error(f'Command output:\n{e.output}')
-            if self.rolling_logger.is_enabled():
-                logger.error(
-                    'Docker build output:\n' + self.rolling_logger.all_lines
-                )  # Show the error
+            logger.error(f'Image build failed with exit code {e.returncode}')
+            if e.output:
+                logger.error(f'Command output:\n{e.output}')
+            elif self.rolling_logger.is_enabled() and self.rolling_logger.all_lines:
+                logger.error(f'Docker build output:\n{self.rolling_logger.all_lines}')
             raise
 
         except subprocess.TimeoutExpired:

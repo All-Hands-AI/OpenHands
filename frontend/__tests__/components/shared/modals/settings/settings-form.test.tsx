@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
 import { createRoutesStub } from "react-router";
 import { screen } from "@testing-library/react";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 import { SettingsForm } from "#/components/shared/modals/settings/settings-form";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 
 describe("SettingsForm", () => {
   const onCloseMock = vi.fn();
-  const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+  const saveSettingsSpy = vi.spyOn(SettingsService, "saveSettings");
 
   const RouteStub = createRoutesStub([
     {

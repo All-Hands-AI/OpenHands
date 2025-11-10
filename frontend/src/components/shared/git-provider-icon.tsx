@@ -3,14 +3,18 @@ import { Provider } from "#/types/settings";
 
 interface GitProviderIconProps {
   gitProvider: Provider;
+  className?: string;
 }
 
-export function GitProviderIcon({ gitProvider }: GitProviderIconProps) {
+export function GitProviderIcon({
+  gitProvider,
+  className,
+}: GitProviderIconProps) {
   return (
     <>
-      {gitProvider === "github" && <FaGithub size={14} />}
-      {gitProvider === "gitlab" && <FaGitlab />}
-      {gitProvider === "bitbucket" && <FaBitbucket />}
+      {gitProvider === "github" && <FaGithub size={14} className={className} />}
+      {gitProvider === "gitlab" && <FaGitlab className={className} />}
+      {gitProvider === "bitbucket" && <FaBitbucket className={className} />}
     </>
   );
 }

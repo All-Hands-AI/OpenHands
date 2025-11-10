@@ -10,10 +10,10 @@ import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
 import { Settings } from "#/types/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { SettingsInput } from "#/components/features/settings/settings-input";
-import { HelpLink } from "#/components/features/settings/help-link";
+import { HelpLink } from "#/ui/help-link";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { SETTINGS_FORM } from "#/utils/constants";
 
 interface SettingsFormProps {
   settings: Settings;
@@ -76,10 +76,12 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
         className="flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-[17px]">
           <ModelSelector
             models={organizeModelsAndProviders(models)}
             currentModel={settings.LLM_MODEL}
+            wrapperClassName="!flex-col !gap-[17px]"
+            labelClassName={SETTINGS_FORM.LABEL_CLASSNAME}
           />
 
           <SettingsInput
@@ -89,7 +91,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             type="password"
             className="w-full"
             placeholder={isLLMKeySet ? "<hidden>" : ""}
-            startContent={isLLMKeySet && <KeyStatusIcon isSet={isLLMKeySet} />}
+            labelClassName={SETTINGS_FORM.LABEL_CLASSNAME}
           />
 
           <HelpLink
@@ -97,6 +99,8 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
             linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
             href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
+            size="settings"
+            linkColor="white"
           />
         </div>
 
@@ -105,7 +109,7 @@ export function SettingsForm({ settings, models, onClose }: SettingsFormProps) {
             testId="save-settings-button"
             type="submit"
             variant="primary"
-            className="w-full"
+            className="w-full font-semibold"
           >
             {t(I18nKey.BUTTON$SAVE)}
           </BrandButton>

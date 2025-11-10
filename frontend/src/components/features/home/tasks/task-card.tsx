@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { SuggestedTask } from "./task.types";
+import { SuggestedTask } from "#/utils/types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { cn } from "#/utils/utils";
 import { TaskIssueNumber } from "./task-issue-number";
-import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
+import { cn } from "#/utils/utils";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -21,8 +21,8 @@ interface TaskCardProps {
 }
 
 export function TaskCard({ task }: TaskCardProps) {
-  const { setOptimisticUserMessage } = useOptimisticUserMessage();
-  const { mutate: createConversation, isPending } = useCreateConversation();
+  const { setOptimisticUserMessage } = useOptimisticUserMessageStore();
+  const { mutate: createConversation } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -62,27 +62,31 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center pr-6 last:border-b-0">
-      <TaskIssueNumber issueNumber={task.issue_number} href={href} />
+    <button
+      type="button"
+      data-testid="task-launch-button"
+      className={cn(
+        "w-full p-[14px] text-left flex items-center justify-between cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg",
+        isCreatingConversation && "cursor-not-allowed",
+      )}
+      disabled={isCreatingConversation}
+      onClick={handleLaunchConversation}
+    >
+      <div className="flex items-center gap-3 min-w-0 w-full">
+        <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
-      <div className="w-full pl-8">
-        <p className="font-semibold">{getTaskTypeMap(t)[task.task_type]}</p>
-        <p>{task.title}</p>
+        <div className="flex flex-col gap-1 min-w-0 flex-1">
+          <span className="text-xs text-white leading-6 font-normal truncate">
+            {getTaskTypeMap(t)[task.task_type]}
+          </span>
+          <span
+            className="text-xs text-[#A3A3A3] leading-4 font-normal max-w-70 truncate"
+            title={task.title}
+          >
+            {task.title}
+          </span>
+        </div>
       </div>
-
-      <button
-        type="button"
-        data-testid="task-launch-button"
-        className={cn(
-          "underline underline-offset-2 disabled:opacity-80",
-          isPending && "no-underline font-bold",
-        )}
-        disabled={isCreatingConversation}
-        onClick={handleLaunchConversation}
-      >
-        {!isPending && t("HOME$LAUNCH")}
-        {isPending && t("HOME$LOADING")}
-      </button>
-    </li>
+    </button>
   );
 }

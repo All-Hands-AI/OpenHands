@@ -7,8 +7,7 @@ import traceback
 
 
 def insert_line_in_string(input_string, new_str, insert_line):
-    """
-    Inserts a new line into a string at the specified line number.
+    """Inserts a new line into a string at the specified line number.
 
     :param input_string: The original string.
     :param new_str: The string to insert.
@@ -29,8 +28,7 @@ def insert_line_in_string(input_string, new_str, insert_line):
 
 
 def print_string_diff(original, modified):
-    """
-    Prints the differences between two strings line by line.
+    """Prints the differences between two strings line by line.
 
     :param original: The original string.
     :param modified: The modified string.

@@ -1,14 +1,9 @@
 import { useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { Conversation } from "#/api/open-hands.types";
-import {
-  setSelectedMicroagentItem,
-  setSelectedRepository,
-} from "#/state/microagent-management-slice";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { cn } from "#/utils/utils";
 import { GitRepository } from "#/types/git";
 
@@ -25,11 +20,11 @@ export function MicroagentManagementMicroagentCard({
 }: MicroagentManagementMicroagentCardProps) {
   const { t } = useTranslation();
 
-  const { selectedMicroagentItem } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
-
-  const dispatch = useDispatch();
+  const {
+    selectedMicroagentItem,
+    setSelectedMicroagentItem,
+    setSelectedRepository,
+  } = useMicroagentManagementStore();
 
   const {
     status: conversationStatus,
@@ -59,8 +54,10 @@ export function MicroagentManagementMicroagentCard({
     if (runtimeStatus === "STATUS$ERROR") {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (conversationStatus === "RUNNING" && runtimeStatus === "STATUS$READY") {
-      return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
+    if (conversationStatus === "RUNNING") {
+      return runtimeStatus === "STATUS$READY"
+        ? t(I18nKey.MICROAGENT$STATUS_OPENING_PR)
+        : t(I18nKey.COMMON$STARTING);
     }
     return "";
   }, [conversationStatus, runtimeStatus, t, hasPr]);
@@ -81,20 +78,18 @@ export function MicroagentManagementMicroagentCard({
   }, [microagent, conversation, selectedMicroagentItem]);
 
   const onMicroagentCardClicked = () => {
-    dispatch(
-      setSelectedMicroagentItem(
-        microagent
-          ? {
-              microagent,
-              conversation: null,
-            }
-          : {
-              microagent: null,
-              conversation,
-            },
-      ),
+    setSelectedMicroagentItem(
+      microagent
+        ? {
+            microagent,
+            conversation: undefined,
+          }
+        : {
+            microagent: undefined,
+            conversation,
+          },
     );
-    dispatch(setSelectedRepository(repository));
+    setSelectedRepository(repository);
   };
 
   return (

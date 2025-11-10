@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import re
 import shlex
@@ -74,7 +76,7 @@ class MCPStdioServerConfig(BaseModel):
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
 
-    @field_validator('name')
+    @field_validator('name', mode='before')
     @classmethod
     def validate_server_name(cls, v: str) -> str:
         """Validate server name for stdio MCP servers."""
@@ -91,7 +93,7 @@ class MCPStdioServerConfig(BaseModel):
 
         return v
 
-    @field_validator('command')
+    @field_validator('command', mode='before')
     @classmethod
     def validate_command(cls, v: str) -> str:
         """Validate command for stdio MCP servers."""
@@ -114,6 +116,7 @@ class MCPStdioServerConfig(BaseModel):
         """Parse arguments from string or return list as-is.
 
         Supports shell-like argument parsing using shlex.split().
+
         Examples:
         - "-y mcp-remote https://example.com"
         - '--config "path with spaces" --debug'
@@ -186,14 +189,34 @@ class MCPStdioServerConfig(BaseModel):
 
 
 class MCPSHTTPServerConfig(BaseModel):
+    """Configuration for a MCP server that uses SHTTP.
+
+    Attributes:
+        url: The server URL
+        api_key: Optional API key for authentication
+        timeout: Timeout in seconds for tool calls (default: 60s)
+    """
+
     url: str
     api_key: str | None = None
+    timeout: int | None = 60
 
-    @field_validator('url')
+    @field_validator('url', mode='before')
     @classmethod
     def validate_url(cls, v: str) -> str:
         """Validate URL format for MCP servers."""
         return _validate_mcp_url(v)
+
+    @field_validator('timeout')
+    @classmethod
+    def validate_timeout(cls, v: int | None) -> int | None:
+        """Validate timeout value for MCP tool calls."""
+        if v is not None:
+            if v <= 0:
+                raise ValueError('Timeout must be positive')
+            if v > 3600:  # 1 hour max
+                raise ValueError('Timeout cannot exceed 3600 seconds')
+        return v
 
 
 class MCPConfig(BaseModel):
@@ -202,12 +225,12 @@ class MCPConfig(BaseModel):
     Attributes:
         sse_servers: List of MCP SSE server configs
         stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.
+        shttp_servers: List of MCP HTTP server configs.
     """
 
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
-
     model_config = ConfigDict(extra='forbid')
 
     @staticmethod
@@ -252,8 +275,7 @@ class MCPConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'MCPConfig']:
-        """
-        Create a mapping of MCPConfig instances from a toml dictionary representing the [mcp] section.
+        """Create a mapping of MCPConfig instances from a toml dictionary representing the [mcp] section.
 
         The configuration is built from all keys in data.
 
@@ -302,11 +324,18 @@ class MCPConfig(BaseModel):
             raise ValueError(f'Invalid MCP configuration: {e}')
         return mcp_mapping
 
+    def merge(self, other: MCPConfig):
+        return MCPConfig(
+            sse_servers=self.sse_servers + other.sse_servers,
+            stdio_servers=self.stdio_servers + other.stdio_servers,
+            shttp_servers=self.shttp_servers + other.shttp_servers,
+        )
+
 
 class OpenHandsMCPConfig:
     @staticmethod
     def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
-        """Add search engine to the MCP config"""
+        """Add search engine to the MCP config."""
         if (
             app_config.search_api_key
             and app_config.search_api_key.get_secret_value().startswith('tvly-')
@@ -327,12 +356,12 @@ class OpenHandsMCPConfig:
     def create_default_mcp_server_config(
         host: str, config: 'OpenHandsConfig', user_id: str | None = None
     ) -> tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]:
-        """
-        Create a default MCP server configuration.
+        """Create a default MCP server configuration.
 
         Args:
             host: Host string
             config: OpenHandsConfig
+            user_id: Optional user ID for the MCP server
         Returns:
             tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
@@ -342,6 +371,7 @@ class OpenHandsMCPConfig:
             stdio_servers.append(search_engine_stdio_server)
 
         shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+
         return shttp_servers, stdio_servers
 
 

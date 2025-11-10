@@ -1,7 +1,6 @@
-import React from "react";
-import { FaListUl } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
+import ListIcon from "#/icons/list.svg?react";
 import { TooltipButton } from "./tooltip-button";
 import { cn } from "#/utils/utils";
 
@@ -26,11 +25,12 @@ export function ConversationPanelButton({
       onClick={onClick}
       disabled={disabled}
     >
-      <FaListUl
-        size={22}
+      <ListIcon
+        width={24}
+        height={24}
         className={cn(
           "cursor-pointer",
-          isOpen ? "text-white" : "text-[#9099AC]",
+          isOpen ? "text-white" : "text-[#B1B9D3]",
           disabled && "opacity-50",
         )}
       />

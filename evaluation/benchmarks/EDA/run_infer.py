@@ -9,7 +9,8 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -18,8 +19,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -60,18 +61,15 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-    sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    # Create config with EDA-specific container image
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
+
+    # Override the container image for EDA
+    config.sandbox.base_container_image = 'python:3.12-bookworm'
+
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
@@ -146,7 +144,7 @@ def process_instance(
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -172,7 +170,7 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--answerer_model', '-a', default='gpt-3.5-turbo', help='answerer model'
     )

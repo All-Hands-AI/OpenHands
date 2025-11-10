@@ -1,7 +1,4 @@
-import {
-  SuggestedTask,
-  SuggestedTaskGroup,
-} from "#/components/features/home/tasks/task.types";
+import { SuggestedTask, SuggestedTaskGroup } from "#/utils/types";
 
 /**
  * Groups suggested tasks by their repository.

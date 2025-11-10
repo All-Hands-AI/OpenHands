@@ -19,6 +19,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.security_utils import RISK_LEVELS
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -26,6 +27,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
+    ActionSecurityRisk,
     AgentDelegateAction,
     AgentFinishAction,
     AgentThinkAction,
@@ -35,11 +37,13 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -50,6 +54,20 @@ def combine_thought(action: Action, thought: str) -> Action:
     elif thought:
         action.thought = thought
     return action
+
+
+def set_security_risk(action: Action, arguments: dict) -> None:
+    """Set the security risk level for the action."""
+
+    # Set security_risk attribute if provided
+    if 'security_risk' in arguments:
+        if arguments['security_risk'] in RISK_LEVELS:
+            if hasattr(action, 'security_risk'):
+                action.security_risk = getattr(
+                    ActionSecurityRisk, arguments['security_risk']
+                )
+        else:
+            logger.warning(f'Invalid security_risk value: {arguments["security_risk"]}')
 
 
 def response_to_actions(
@@ -101,6 +119,7 @@ def response_to_actions(
                         raise FunctionCallValidationError(
                             f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
+                set_security_risk(action, arguments)
 
             # ================================================
             # IPythonTool (Jupyter)
@@ -111,6 +130,11 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
+                set_security_risk(action, arguments)
+
+            # ================================================
+            # AgentDelegateAction (Delegation to another agent)
+            # ================================================
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -176,7 +200,7 @@ def response_to_actions(
                         other_kwargs.pop('view_range')
 
                     # Filter out unexpected arguments
-                    valid_kwargs = {}
+                    valid_kwargs_for_editor = {}
                     # Get valid parameters from the str_replace_editor tool definition
                     str_replace_editor_tool = create_str_replace_editor_tool()
                     valid_params = set(
@@ -184,9 +208,12 @@ def response_to_actions(
                             'properties'
                         ].keys()
                     )
+
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            valid_kwargs[key] = value
+                            # security_risk is valid but should NOT be part of editor kwargs
+                            if key != 'security_risk':
+                                valid_kwargs_for_editor[key] = value
                         else:
                             raise FunctionCallValidationError(
                                 f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
@@ -196,8 +223,10 @@ def response_to_actions(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **valid_kwargs,
+                        **valid_kwargs_for_editor,
                     )
+
+                set_security_risk(action, arguments)
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -219,6 +248,52 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+                set_security_risk(action, arguments)
+
+            # ================================================
+            # TaskTrackingAction
+            # ================================================
+            elif tool_call.function.name == TASK_TRACKER_TOOL_NAME:
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if arguments['command'] == 'plan' and 'task_list' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "task_list" for "plan" command in tool call {tool_call.function.name}'
+                    )
+
+                raw_task_list = arguments.get('task_list', [])
+                if not isinstance(raw_task_list, list):
+                    raise FunctionCallValidationError(
+                        f'Invalid format for "task_list". Expected a list but got {type(raw_task_list)}.'
+                    )
+
+                # Normalize task_list to ensure it's always a list of dictionaries
+                normalized_task_list = []
+                for i, task in enumerate(raw_task_list):
+                    if isinstance(task, dict):
+                        # Task is already in correct format, ensure required fields exist
+                        normalized_task = {
+                            'id': task.get('id', f'task-{i + 1}'),
+                            'title': task.get('title', 'Untitled task'),
+                            'status': task.get('status', 'todo'),
+                            'notes': task.get('notes', ''),
+                        }
+                    else:
+                        # Unexpected format, raise validation error
+                        logger.warning(
+                            f'Unexpected task format in task_list: {type(task)} - {task}'
+                        )
+                        raise FunctionCallValidationError(
+                            f'Unexpected task format in task_list: {type(task)}. Each task shoud be a dictionary.'
+                        )
+                    normalized_task_list.append(normalized_task)
+
+                action = TaskTrackingAction(
+                    command=arguments['command'],
+                    task_list=normalized_task_list,
+                )
 
             # ================================================
             # MCPAction (MCP)

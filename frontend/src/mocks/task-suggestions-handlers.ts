@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { SuggestedTask } from "#/utils/types";
 
 const TASKS_1: SuggestedTask[] = [
   {

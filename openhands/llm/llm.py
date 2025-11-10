@@ -20,6 +20,7 @@ from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -35,13 +36,13 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
-from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
 
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
     litellm.Timeout,
@@ -60,6 +61,7 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
+        service_id: str,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
@@ -72,11 +74,12 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
+        self.cost_metric_supported: bool = True
+        self.config: LLMConfig = copy.deepcopy(config)
+        self.service_id = service_id
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
-        self.cost_metric_supported: bool = True
-        self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
         self._function_calling_active: bool = False
@@ -152,12 +155,13 @@ class LLM(RetryMixin, DebugMixin):
                 # don't send reasoning_effort to specific Claude Sonnet/Haiku 4.5 variants
                 kwargs.pop('reasoning_effort', None)
             else:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+                if self.config.reasoning_effort is not None:
+                    kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
             kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        # Azure issue: https://github.com/OpenHands/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
             kwargs.pop('max_completion_tokens')
@@ -192,6 +196,10 @@ class LLM(RetryMixin, DebugMixin):
             'temperature' in kwargs and 'top_p' in kwargs
         ):
             kwargs.pop('top_p', None)
+
+        # Add completion_kwargs if present
+        if self.config.completion_kwargs is not None:
+            kwargs.update(self.config.completion_kwargs)
 
         self._completion = partial(
             litellm_completion,
@@ -376,8 +384,7 @@ class LLM(RetryMixin, DebugMixin):
                 assert self.config.log_completions_folder is not None
                 log_file = os.path.join(
                     self.config.log_completions_folder,
-                    # use the metric model name (for draft editor)
-                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    f'{self.config.model.replace("/", "__")}-{time.time()}.json',
                 )
 
                 # set up the dict to be logged
@@ -677,6 +684,7 @@ class LLM(RetryMixin, DebugMixin):
 
         Args:
             messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
+
         Returns:
             int: The number of tokens.
         """
@@ -827,8 +835,6 @@ class LLM(RetryMixin, DebugMixin):
                     'openrouter/anthropic/claude-haiku-4-5-20251001',
                 )
             ):
-                message.force_string_serializer = True
-            if 'openrouter/anthropic/claude-sonnet-4-5-20250929' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

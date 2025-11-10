@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
 import { MicroagentStatus } from "#/types/microagent-status";
 import { SuccessIndicator } from "../success-indicator";
+import { Typography } from "#/ui/typography";
 
 interface MicroagentStatusIndicatorProps {
   status: MicroagentStatus;
@@ -19,6 +20,8 @@ export function MicroagentStatusIndicator({
 
   const getStatusText = () => {
     switch (status) {
+      case MicroagentStatus.WAITING:
+        return t("MICROAGENT$STATUS_WAITING");
       case MicroagentStatus.CREATING:
         return t("MICROAGENT$STATUS_CREATING");
       case MicroagentStatus.COMPLETED:
@@ -35,6 +38,8 @@ export function MicroagentStatusIndicator({
 
   const getStatusIcon = () => {
     switch (status) {
+      case MicroagentStatus.WAITING:
+        return <Spinner size="sm" />;
       case MicroagentStatus.CREATING:
         return <Spinner size="sm" />;
       case MicroagentStatus.COMPLETED:
@@ -77,7 +82,9 @@ export function MicroagentStatusIndicator({
       );
     }
 
-    return <span className="underline">{statusText}</span>;
+    return (
+      <Typography.Text className="underline">{statusText}</Typography.Text>
+    );
   };
 
   return (

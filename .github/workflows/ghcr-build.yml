@@ -10,14 +10,14 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: true
-        default: ''
+        default: ""
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -37,7 +37,6 @@ jobs:
         shell: bash
         id: define-base-images
         run: |
-          # Only build nikolaik on PRs, otherwise build both nikolaik and ubuntu.
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             json=$(jq -n -c '[
                 { image: "nikolaik/python-nodejs:python3.12-nodejs22", tag: "nikolaik" },
@@ -87,7 +86,7 @@ jobs:
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
-    name: Build Image
+    name: Build Runtime Image
     runs-on: blacksmith-8vcpu-ubuntu-2204
     if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
     permissions:
@@ -120,12 +119,12 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: poetry run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -136,6 +135,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork != true
         shell: bash
         run: |
+
           ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
 
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
@@ -166,11 +166,97 @@ jobs:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
 
+  ghcr_build_enterprise:
+    name: Push Enterprise Image
+    runs-on: blacksmith-8vcpu-ubuntu-2204
+    permissions:
+      contents: read
+      packages: write
+    needs: [define-matrix, ghcr_build_app]
+    # Do not build enterprise in forks
+    if: github.event.pull_request.head.repo.fork != true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Set up Docker Buildx for better performance
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/openhands/enterprise-server
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
+      - name: Determine app image tag
+        shell: bash
+        run: |
+          # Duplicated with build.sh
+          sanitized_ref_name=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+          OPENHANDS_BUILD_VERSION=$sanitized_ref_name
+          sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
+          echo "OPENHANDS_DOCKER_TAG=${sanitized_ref_name}" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        uses: useblacksmith/build-push-action@v1
+        with:
+          context: .
+          file: enterprise/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OPENHANDS_VERSION=${{ env.OPENHANDS_DOCKER_TAG }}
+          platforms: linux/amd64
+          # Add build provenance
+          provenance: true
+          # Add build attestations for better security
+          sbom: true
+
+  enterprise-preview:
+    name: Enterprise preview
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy')
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    needs: [ghcr_build_enterprise]
+    steps:
+      # This should match the version in enterprise-preview.yml
+      - name: Trigger remote job
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -d "{\"ref\": \"main\", \"inputs\": {\"openhandsPrNumber\": \"${{ github.event.pull_request.number }}\", \"deployEnvironment\": \"feature\", \"enterpriseImageTag\": \"pr-${{ github.event.pull_request.number }}\" }}" \
+            https://api.github.com/repos/OpenHands/deploy/actions/workflows/deploy.yaml/dispatches
+
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
     needs: [ghcr_build_runtime, define-matrix]
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -202,7 +288,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
@@ -212,7 +298,7 @@ jobs:
           # We install pytest-xdist in order to run tests across CPUs
           poetry run pip install pytest-xdist
 
-          # Install to be able to retry on failures for flaky tests
+          # Install to be able to retry on failures for flakey tests
           poetry run pip install pytest-rerunfailures
 
           image_name=ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
@@ -225,14 +311,14 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          poetry run pytest -n 5 -raRs --reruns 2 --reruns-delay 3 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
   # Run unit tests with the Docker runtime Docker images as openhands user
   test_runtime_oh:
     name: RT Unit Tests (openhands)
-    runs-on: blacksmith-8vcpu-ubuntu-2204
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [ghcr_build_runtime, define-matrix]
     strategy:
       matrix:
@@ -264,7 +350,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
@@ -284,7 +370,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 7 -raRs --reruns 2 --reruns-delay 5 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
+          poetry run pytest -n 5 -raRs --reruns 2 --reruns-delay 3 -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py --durations=10
         env:
           DEBUG: "1"
 
@@ -332,29 +418,5 @@ jobs:
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
         shell: bash
         run: |
-          echo "updating PR description"
-          DOCKER_RUN_COMMAND="docker run -it --rm \
-            -p 3000:3000 \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            --add-host host.docker.internal:host-gateway \
-            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
-            --name openhands-app-$SHORT_SHA \
-            docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
-
-          PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
-
-          if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
-            UPDATED_PR_BODY=$(echo "${PR_BODY}" | sed -E "s|docker run -it --rm.*|$DOCKER_RUN_COMMAND|")
-          else
-            UPDATED_PR_BODY="${PR_BODY}
-
-          ---
-
-          To run this PR locally, use the following command:
-          \`\`\`
-          $DOCKER_RUN_COMMAND
-          \`\`\`"
-          fi
-
-          echo "updated body: $UPDATED_PR_BODY"
-          gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"
+          echo "Updating PR description with Docker and uvx commands"
+          bash ${GITHUB_WORKSPACE}/.github/scripts/update_pr_description.sh

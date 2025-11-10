@@ -100,6 +100,17 @@ export function ConfigureModal({
     }
   }, [isOpen, existingWorkspace, isWorkspaceEditable]);
 
+  // Helper function to get platform-specific placeholder
+  const getWorkspacePlaceholder = () => {
+    if (platform === "jira") {
+      return I18nKey.PROJECT_MANAGEMENT$JIRA_WORKSPACE_NAME_PLACEHOLDER;
+    }
+    if (platform === "jira-dc") {
+      return I18nKey.PROJECT_MANAGEMENT$JIRA_DC_WORKSPACE_NAME_PLACEHOLDER;
+    }
+    return I18nKey.PROJECT_MANAGEMENT$LINEAR_WORKSPACE_NAME_PLACEHOLDER;
+  };
+
   // Validation states
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [webhookSecretError, setWebhookSecretError] = useState<string | null>(
@@ -268,8 +279,11 @@ export function ConfigureModal({
         <BaseModalDescription>
           {showConfigurationFields ? (
             <Trans
-              i18nKey={I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_DESCRIPTION}
+              i18nKey={
+                I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_DESCRIPTION_STAGE_2
+              }
               components={{
+                b: <b />,
                 a: (
                   <a
                     href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
@@ -280,41 +294,41 @@ export function ConfigureModal({
                     Check the document for more information
                   </a>
                 ),
-                b: <b />,
               }}
             />
           ) : (
-            <p className="mt-4">
-              <Trans
-                i18nKey={
-                  I18nKey.PROJECT_MANAGEMENT$IMPORTANT_WORKSPACE_INTEGRATION
-                }
-                components={{
-                  b: <b />,
-                  a: (
-                    <a
-                      href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 underline"
-                    >
-                      Check the document for more information
-                    </a>
-                  ),
-                }}
-              />
-            </p>
+            <Trans
+              i18nKey={
+                I18nKey.PROJECT_MANAGEMENT$CONFIGURE_MODAL_DESCRIPTION_STAGE_1
+              }
+              components={{
+                b: <b />,
+                a: (
+                  <a
+                    href="https://docs.all-hands.dev/usage/cloud/openhands-cloud"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline"
+                  >
+                    Check the document for more information
+                  </a>
+                ),
+              }}
+            />
           )}
+          <p className="mt-4">
+            {t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_HINT, {
+              platform: platformName,
+            })}
+          </p>
         </BaseModalDescription>
-        <div className="w-full flex flex-col gap-4 mt-4">
+        <div className="w-full flex flex-col gap-4 mt-1">
           <div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
                 <SettingsInput
                   label={t(I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_LABEL)}
-                  placeholder={t(
-                    I18nKey.PROJECT_MANAGEMENT$WORKSPACE_NAME_PLACEHOLDER,
-                  )}
+                  placeholder={t(getWorkspacePlaceholder())}
                   value={workspace}
                   onChange={handleWorkspaceChange}
                   className="w-full"
@@ -418,7 +432,7 @@ export function ConfigureModal({
             >
               {(() => {
                 if (existingWorkspace && showConfigurationFields) {
-                  return t(I18nKey.PROJECT_MANAGEMENT$EDIT_BUTTON_LABEL);
+                  return t(I18nKey.PROJECT_MANAGEMENT$UPDATE_BUTTON_LABEL);
                 }
                 return t(I18nKey.PROJECT_MANAGEMENT$CONNECT_BUTTON_LABEL);
               })()}

@@ -8,8 +8,9 @@ import {
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/root-layout";
 import i18n from "#/i18n";
+import OptionService from "#/api/option-service/option-service.api";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
-import OpenHands from "#/api/open-hands";
+import SettingsService from "#/settings-service/settings-service.api";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
 
 describe("frontend/routes/_oh", () => {
@@ -62,8 +63,8 @@ describe("frontend/routes/_oh", () => {
   // FIXME: This test fails when it shouldn't be, please investigate
   it.skip("should render and capture the user's consent if oss mode", async () => {
     const user = userEvent.setup();
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const handleCaptureConsentSpy = vi.spyOn(
       CaptureConsent,
       "handleCaptureConsent",
@@ -106,7 +107,7 @@ describe("frontend/routes/_oh", () => {
   });
 
   it("should not render the user consent form if saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
     getConfigSpy.mockResolvedValue({
       APP_MODE: "saas",
       GITHUB_CLIENT_ID: "test-id",
@@ -184,8 +185,8 @@ describe("frontend/routes/_oh", () => {
   });
 
   it("should render a you're in toast if it is a new user and in saas mode", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const getConfigSpy = vi.spyOn(OptionService, "getConfig");
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
     const displaySuccessToastSpy = vi.spyOn(
       ToastHandlers,
       "displaySuccessToast",

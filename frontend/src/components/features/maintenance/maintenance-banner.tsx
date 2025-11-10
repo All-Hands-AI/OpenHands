@@ -1,5 +1,10 @@
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
+import { useMemo } from "react";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { FaTriangleExclamation } from "react-icons/fa6";
+import CloseIcon from "#/icons/close.svg?react";
+import { cn } from "#/utils/utils";
 
 interface MaintenanceBannerProps {
   startTime: string;
@@ -7,6 +12,13 @@ interface MaintenanceBannerProps {
 
 export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
   const { t } = useTranslation();
+  const [dismissedAt, setDismissedAt] = useLocalStorage<string | null>(
+    "maintenance_banner_dismissed_at",
+    null,
+  );
+
+  const { pathname } = useLocation();
+
   // Convert EST timestamp to user's local timezone
   const formatMaintenanceTime = (estTimeString: string): string => {
     try {
@@ -52,8 +64,27 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
 
   const localTime = formatMaintenanceTime(startTime);
 
+  const isBannerVisible = useMemo(() => {
+    const isValid = !Number.isNaN(new Date(startTime).getTime());
+    if (!isValid) {
+      return false;
+    }
+    return dismissedAt !== localTime;
+  }, [dismissedAt, startTime]);
+
+  if (!isBannerVisible) {
+    return null;
+  }
+
   return (
-    <div className="bg-primary text-[#0D0F11] p-4 rounded">
+    <div
+      data-testid="maintenance-banner"
+      className={cn(
+        "bg-primary text-[#0D0F11] p-4 rounded",
+        "flex flex-row items-center justify-between m-1",
+        pathname === "/" && "mt-3 mr-3",
+      )}
+    >
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <FaTriangleExclamation className="text-white align-middle" />
@@ -64,6 +95,17 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
           </p>
         </div>
       </div>
+
+      <button
+        type="button"
+        data-testid="dismiss-button"
+        onClick={() => setDismissedAt(localTime)}
+        className={cn(
+          "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
+        )}
+      >
+        <CloseIcon />
+      </button>
     </div>
   );
 }

@@ -1,5 +1,10 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    RISK_LEVELS,
+    SECURITY_RISK_DESC,
+)
+
 _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
 * The variable defined in the IPython environment will not be available outside the IPython environment (e.g., in terminal).
@@ -17,8 +22,13 @@ IPythonTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The Python code to execute. Supports magic commands like %pip.',
                 },
+                'security_risk': {
+                    'type': 'string',
+                    'description': SECURITY_RISK_DESC,
+                    'enum': RISK_LEVELS,
+                },
             },
-            'required': ['code'],
+            'required': ['code', 'security_risk'],
         },
     ),
 )

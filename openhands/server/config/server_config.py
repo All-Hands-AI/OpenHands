@@ -13,7 +13,6 @@ class ServerConfig(ServerConfigInterface):
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
     # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
-    hide_microagent_management = True
     settings_store_class: str = (
         'openhands.storage.settings.file_settings_store.FileSettingsStore'
     )
@@ -31,6 +30,7 @@ class ServerConfig(ServerConfigInterface):
     user_auth_class: str = (
         'openhands.server.user_auth.default_user_auth.DefaultUserAuth'
     )
+    enable_v1: bool = os.getenv('ENABLE_V1') != '0'
 
     def verify_config(self):
         if self.config_cls:
@@ -44,7 +44,6 @@ class ServerConfig(ServerConfigInterface):
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
-                'HIDE_MICROAGENT_MANAGEMENT': self.hide_microagent_management,
             },
         }
 

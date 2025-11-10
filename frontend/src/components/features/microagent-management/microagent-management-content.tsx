@@ -1,14 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
 import { MicroagentManagementUpsertMicroagentModal } from "./microagent-management-upsert-microagent-modal";
-import { RootState } from "#/store";
-import {
-  setAddMicroagentModalVisible,
-  setUpdateMicroagentModalVisible,
-  setLearnThisRepoModalVisible,
-} from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
 import {
   LearnThisRepoFormData,
@@ -25,6 +20,13 @@ import { GitRepository } from "#/types/git";
 import { queryClient } from "#/query-client-config";
 import { Provider } from "#/types/settings";
 import { MicroagentManagementLearnThisRepoModal } from "./microagent-management-learn-this-repo-modal";
+import {
+  displaySuccessToast,
+  displayErrorToast,
+} from "#/utils/custom-toast-handlers";
+import { getFirstPRUrl } from "#/utils/parse-pr-url";
+import { I18nKey } from "#/i18n/declaration";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 // Handle error events
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
@@ -58,16 +60,10 @@ const getConversationInstructions = (
   gitProvider: Provider,
 ) => `Create a microagent for the repository ${repositoryName} by following the steps below:
 
-- Step 1: Create a markdown file inside the .openhands/microagents folder with the name of the microagent (The microagent must be created in the .openhands/microagents folder and should be able to perform the described task when triggered).
-
-- This is the instructions about what the microagent should do: ${formData.query}
-
-${
+- Step 1: Create a markdown file inside the .openhands/microagents folder with the name of the microagent (The microagent must be created in the .openhands/microagents folder and should be able to perform the described task when triggered). This is the instructions about what the microagent should do: ${formData.query}. ${
   formData.triggers && formData.triggers.length > 0
-    ? `
-- This is the triggers of the microagent: ${formData.triggers.join(", ")}
-`
-    : "- Please be noted that the microagent doesn't have any triggers."
+    ? `This is the triggers of the microagent: ${formData.triggers.join(", ")}`
+    : "Please be noted that the microagent doesn't have any triggers."
 }
 
 - Step 2: Create a new branch for the repository ${repositoryName}, must avoid duplicated branches.
@@ -84,16 +80,10 @@ const getUpdateConversationInstructions = (
 ) => `Update the microagent for the repository ${repositoryName} by following the steps below:
 
 
-- Step 1: Update the microagent. This is the path of the microagent: ${formData.microagentPath} (The updated microagent must be in the .openhands/microagents folder and should be able to perform the described task when triggered).
-
-- This is the updated instructions about what the microagent should do: ${formData.query}
-
-${
+- Step 1: Update the microagent. This is the path of the microagent: ${formData.microagentPath} (The updated microagent must be in the .openhands/microagents folder and should be able to perform the described task when triggered). This is the updated instructions about what the microagent should do: ${formData.query}. ${
   formData.triggers && formData.triggers.length > 0
-    ? `
-- This is the triggers of the microagent: ${formData.triggers.join(", ")}
-`
-    : "- Please be noted that the microagent doesn't have any triggers."
+    ? `This is the triggers of the microagent: ${formData.triggers.join(", ")}`
+    : "Please be noted that the microagent doesn't have any triggers."
 }
 
 - Step 2: Create a new branch for the repository ${repositoryName}, must avoid duplicated branches.
@@ -110,9 +100,14 @@ export function MicroagentManagementContent() {
     updateMicroagentModalVisible,
     selectedRepository,
     learnThisRepoModalVisible,
-  } = useSelector((state: RootState) => state.microagentManagement);
+    setAddMicroagentModalVisible,
+    setUpdateMicroagentModalVisible,
+    setLearnThisRepoModalVisible,
+  } = useMicroagentManagementStore();
 
-  const dispatch = useDispatch();
+  const { providers } = useUserProviders();
+
+  const { t } = useTranslation();
 
   const { createConversationAndSubscribe, isPending } =
     useCreateConversationAndSubscribeMultiple();
@@ -130,9 +125,9 @@ export function MicroagentManagementContent() {
 
   const hideUpsertMicroagentModal = (isUpdate: boolean = false) => {
     if (isUpdate) {
-      dispatch(setUpdateMicroagentModalVisible(false));
+      setUpdateMicroagentModalVisible(false);
     } else {
-      dispatch(setAddMicroagentModalVisible(false));
+      setAddMicroagentModalVisible(false);
     }
   };
 
@@ -158,6 +153,33 @@ export function MicroagentManagementContent() {
         selectedRepository && typeof selectedRepository === "object"
           ? (selectedRepository as GitRepository).full_name
           : "";
+
+      // Check if agent is running and ready to work
+      if (
+        isOpenHandsEvent(socketEvent) &&
+        isAgentStateChangeObservation(socketEvent) &&
+        socketEvent.extras.agent_state === AgentState.RUNNING
+      ) {
+        displaySuccessToast(
+          t(I18nKey.MICROAGENT_MANAGEMENT$OPENING_PR_TO_CREATE_MICROAGENT),
+        );
+      }
+
+      // Check if agent has finished and we have a PR
+      if (isOpenHandsEvent(socketEvent) && isFinishAction(socketEvent)) {
+        const prUrl = getFirstPRUrl(socketEvent.args.final_thought || "");
+        if (!prUrl) {
+          // Agent finished but no PR found
+          displaySuccessToast(t(I18nKey.MICROAGENT_MANAGEMENT$PR_NOT_CREATED));
+        }
+      }
+
+      // Handle error events
+      if (isErrorEvent(socketEvent) || isAgentStatusError(socketEvent)) {
+        displayErrorToast(
+          t(I18nKey.MICROAGENT_MANAGEMENT$ERROR_CREATING_MICROAGENT),
+        );
+      }
 
       if (shouldInvalidateConversationsList(socketEvent)) {
         invalidateConversationsList(repositoryName);
@@ -213,7 +235,6 @@ export function MicroagentManagementContent() {
       conversationInstructions,
       repository: {
         name: repositoryName,
-        branch: formData.selectedBranch,
         gitProvider,
       },
       createMicroagent,
@@ -238,7 +259,7 @@ export function MicroagentManagementContent() {
   };
 
   const hideLearnThisRepoModal = () => {
-    dispatch(setLearnThisRepoModalVisible(false));
+    setLearnThisRepoModalVisible(false);
   };
 
   const handleLearnThisRepoConfirm = (formData: LearnThisRepoFormData) => {
@@ -250,15 +271,21 @@ export function MicroagentManagementContent() {
     const repositoryName = repository.full_name;
     const gitProvider = repository.git_provider;
 
+    const createMicroagent = {
+      repo: repositoryName,
+      git_provider: gitProvider,
+      title: formData.query,
+    };
+
     // Launch a new conversation to help the user understand the repo
     createConversationAndSubscribe({
       query: formData.query,
       conversationInstructions: formData.query,
       repository: {
         name: repositoryName,
-        branch: formData.selectedBranch,
         gitProvider,
       },
+      createMicroagent,
       onSuccessCallback: () => {
         hideLearnThisRepoModal();
       },
@@ -289,11 +316,18 @@ export function MicroagentManagementContent() {
     </>
   );
 
+  const providersAreSet = providers.length > 0;
+
   if (width < 1024) {
     return (
       <div className="w-full h-full flex flex-col gap-6">
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
-          <MicroagentManagementSidebar isSmallerScreen />
+          {providersAreSet && (
+            <MicroagentManagementSidebar
+              isSmallerScreen
+              providers={providers}
+            />
+          )}
         </div>
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
           <MicroagentManagementMain />
@@ -305,7 +339,7 @@ export function MicroagentManagementContent() {
 
   return (
     <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
-      <MicroagentManagementSidebar />
+      {providersAreSet && <MicroagentManagementSidebar providers={providers} />}
       <div className="flex-1">
         <MicroagentManagementMain />
       </div>

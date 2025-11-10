@@ -1,13 +1,12 @@
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import React from "react";
 import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
+import { useUnifiedGetGitChanges } from "#/hooks/query/use-unified-get-git-changes";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { RandomTip } from "#/components/features/tips/random-tip";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 // Error message patterns
 const GIT_REPO_ERROR_PATTERN = /not a git repository/i;
@@ -28,13 +27,13 @@ function GitChanges() {
     isError,
     error,
     isLoading: loadingGitChanges,
-  } = useGetGitChanges();
+  } = useUnifiedGetGitChanges();
 
   const [statusMessage, setStatusMessage] = React.useState<string[] | null>(
     null,
   );
 
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curAgentState } = useAgentState();
   const runtimeIsActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const isNotGitRepoError =
@@ -67,7 +66,7 @@ function GitChanges() {
   ]);
 
   return (
-    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
+    <main className="h-full overflow-y-scroll p-4 md:pr-1.5 gap-3 flex flex-col items-center custom-scrollbar-always">
       {!isSuccess || !gitChanges.length ? (
         <div className="relative flex h-full w-full items-center">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
@@ -89,13 +88,15 @@ function GitChanges() {
           </div>
         </div>
       ) : (
-        gitChanges.map((change) => (
-          <FileDiffViewer
-            key={change.path}
-            path={change.path}
-            type={change.status}
-          />
-        ))
+        gitChanges
+          .slice(0, 100)
+          .map((change) => (
+            <FileDiffViewer
+              key={change.path}
+              path={change.path}
+              type={change.status}
+            />
+          ))
       )}
     </main>
   );

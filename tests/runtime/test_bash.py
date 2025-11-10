@@ -51,11 +51,11 @@ def get_platform_command(linux_cmd, windows_cmd):
     return windows_cmd if is_windows() else linux_cmd
 
 
-def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_server(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Use python -u for unbuffered output, potentially helping capture initial output on Windows
-        action = CmdRunAction(command='python -u -m http.server 8081')
+        action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
         action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -94,7 +94,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         # Verify the server is actually stopped by trying to start another one
         # on the same port (regardless of OS)
         action = CmdRunAction(command='ls')
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(3)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
@@ -110,7 +110,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
             assert config.workspace_mount_path_in_sandbox in obs.metadata.working_dir
 
         # run it again!
-        action = CmdRunAction(command='python -u -m http.server 8081')
+        action = CmdRunAction(command=f'python -u -m http.server {dynamic_port}')
         action.set_hard_timeout(1)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -122,9 +122,9 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_background_server(temp_dir, runtime_cls, run_as_openhands, dynamic_port):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    server_port = 8081
+    server_port = dynamic_port
     try:
         # Start the server, expect it to timeout (run in background manner)
         action = CmdRunAction(f'python3 -m http.server {server_port} &')
@@ -271,7 +271,7 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
     is_windows(), reason='Test uses Linux-specific bash loops and sed commands'
 )
 def test_multiline_command_loop(temp_dir, runtime_cls):
-    # https://github.com/All-Hands-AI/OpenHands/issues/3143
+    # https://github.com/OpenHands/OpenHands/issues/3143
     init_cmd = """mkdir -p _modules && \
 for month in {01..04}; do
     for day in {01..05}; do
@@ -345,7 +345,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify all expected outputs are present
         if is_windows():
-            assert '.git_config' in results[0]  # Get-ChildItem
+            # Get-ChildItem should execute successfully (no specific content check needed)
+            pass  # results[0] contains directory listing output
         else:
             assert 'total 0' in results[0]  # ls -l
         assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
@@ -518,7 +519,7 @@ def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
             assert obs.exit_code == 0
             assert config.workspace_mount_path_in_sandbox in obs.content
-            assert '.git_config' in obs.content
+            # Git config is now handled by runtime base class, not as a file
         else:
             # Original Linux version using &&
             obs = _run_cmd_action(runtime, 'pwd && ls -l')
@@ -694,7 +695,10 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_overwrite_existing_file(temp_dir, runtime_cls):
+def test_overwrite_existing_file(tmp_path_factory, runtime_cls):
+    temp_dir = tmp_path_factory.mktemp('mount')
+    host_temp_dir = tmp_path_factory.mktemp('host')
+
     runtime, config = _load_runtime(temp_dir, runtime_cls)
     try:
         sandbox_dir = config.workspace_mount_path_in_sandbox
@@ -723,8 +727,8 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             assert 'Hello, World!' not in obs.content
 
             # Create host file and copy to overwrite
-            _create_test_file(temp_dir)
-            runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
+            _create_test_file(str(host_temp_dir))
+            runtime.copy_to(str(host_temp_dir / 'test_file.txt'), sandbox_dir)
 
             # Verify file content is overwritten
             obs = _run_cmd_action(runtime, f'Get-Content {sandbox_file}')
@@ -748,8 +752,8 @@ def test_overwrite_existing_file(temp_dir, runtime_cls):
             assert obs.content.strip() == ''  # Empty file
             assert 'Hello, World!' not in obs.content
 
-            _create_test_file(temp_dir)
-            runtime.copy_to(os.path.join(temp_dir, 'test_file.txt'), sandbox_dir)
+            _create_test_file(str(host_temp_dir))
+            runtime.copy_to(str(host_temp_dir / 'test_file.txt'), sandbox_dir)
 
             obs = _run_cmd_action(runtime, f'cat {sandbox_file}')
             assert obs.exit_code == 0
@@ -1449,7 +1453,7 @@ def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
     try:
         # create a git repo - same for both platforms
         action = CmdRunAction(
-            'git init && git remote add origin https://github.com/All-Hands-AI/OpenHands'
+            'git init && git remote add origin https://github.com/OpenHands/OpenHands'
         )
         obs = runtime.run_action(action)
         # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -1459,7 +1463,7 @@ def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(CmdRunAction('git remote -v'))
         # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.metadata.exit_code == 0
-        assert 'https://github.com/All-Hands-AI/OpenHands' in obs.content
+        assert 'https://github.com/OpenHands/OpenHands' in obs.content
         assert 'git remote -v' not in obs.content
     finally:
         _close_test_runtime(runtime)

@@ -201,3 +201,42 @@ class CondensationRequestAction(Action):
     @property
     def message(self) -> str:
         return 'Requesting a condensation of the conversation history.'
+
+
+@dataclass
+class TaskTrackingAction(Action):
+    """An action where the agent writes or updates a task list for task management.
+    Attributes:
+        task_list (list): The list of task items with their status and metadata.
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.TASK_TRACKING.
+    """
+
+    command: str = 'view'
+    task_list: list[dict[str, Any]] = field(default_factory=list)
+    thought: str = ''
+    action: str = ActionType.TASK_TRACKING
+
+    @property
+    def message(self) -> str:
+        num_tasks = len(self.task_list)
+        if num_tasks == 0:
+            return 'Clearing the task list.'
+        elif num_tasks == 1:
+            return 'Managing 1 task item.'
+        else:
+            return f'Managing {num_tasks} task items.'
+
+
+@dataclass
+class LoopRecoveryAction(Action):
+    """An action that shows three ways to handle dead loop.
+    The class should be invisible to LLM.
+    Attributes:
+        option (int): 1 allow user to prompt again
+                      2 automatically use latest user prompt
+                      3 stop agent
+    """
+
+    option: int = 1
+    action: str = ActionType.LOOP_RECOVERY

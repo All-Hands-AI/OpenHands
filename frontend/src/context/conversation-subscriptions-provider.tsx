@@ -31,8 +31,9 @@ interface ConversationSubscriptionsContextType {
   subscribeToConversation: (options: {
     conversationId: string;
     sessionApiKey: string | null;
-    providersSet: ("github" | "gitlab" | "bitbucket")[];
+    providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
     baseUrl: string;
+    socketPath?: string;
     onEvent?: (event: unknown, conversationId: string) => void;
   }) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
@@ -95,10 +96,10 @@ export function ConversationSubscriptionsProvider({
     [],
   );
 
-  const unsubscribeFromConversation = useCallback(
-    (conversationId: string) => {
-      // Get a local reference to the socket data to avoid race conditions
-      const socketData = conversationSockets[conversationId];
+  const unsubscribeFromConversation = useCallback((conversationId: string) => {
+    // Use functional update to access current socket data and perform cleanup
+    setConversationSockets((prev) => {
+      const socketData = prev[conversationId];
 
       if (socketData) {
         const { socket } = socketData;
@@ -112,35 +113,41 @@ export function ConversationSubscriptionsProvider({
           socket.disconnect();
         }
 
-        // Update state to remove the socket
-        setConversationSockets((prev) => {
-          const newSockets = { ...prev };
-          delete newSockets[conversationId];
-          return newSockets;
-        });
-
-        // Remove from active IDs
-        setActiveConversationIds((prev) =>
-          prev.filter((id) => id !== conversationId),
-        );
-
         // Clean up event handler reference
         delete eventHandlersRef.current[conversationId];
+
+        // Remove the socket from state
+        const newSockets = { ...prev };
+        delete newSockets[conversationId];
+        return newSockets;
       }
-    },
-    [conversationSockets],
-  );
+
+      return prev; // No change if socket not found
+    });
+
+    // Remove from active IDs
+    setActiveConversationIds((prev) =>
+      prev.filter((id) => id !== conversationId),
+    );
+  }, []);
 
   const subscribeToConversation = useCallback(
     (options: {
       conversationId: string;
       sessionApiKey: string | null;
-      providersSet: ("github" | "gitlab" | "bitbucket")[];
+      providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
       baseUrl: string;
+      socketPath?: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
-      const { conversationId, sessionApiKey, providersSet, baseUrl, onEvent } =
-        options;
+      const {
+        conversationId,
+        sessionApiKey,
+        providersSet,
+        baseUrl,
+        socketPath,
+        onEvent,
+      } = options;
 
       // If already subscribed, don't create a new subscription
       if (conversationSockets[conversationId]) {
@@ -173,9 +180,7 @@ export function ConversationSubscriptionsProvider({
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
             conversationId,
-            isErrorEvent(event)
-              ? event.message
-              : "Unknown error, please try again",
+            isErrorEvent(event) ? event.message : "MICROAGENT$UNKNOWN_ERROR",
           );
         } else if (isStatusUpdate(event)) {
           if (event.type === "info" && event.id === "STATUS$STARTING_RUNTIME") {
@@ -199,6 +204,7 @@ export function ConversationSubscriptionsProvider({
         // Create socket connection
         const socket = io(baseUrl, {
           transports: ["websocket"],
+          path: socketPath ?? "/socket.io",
           query: {
             conversation_id: conversationId,
             session_api_key: sessionApiKey,
@@ -226,6 +232,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} CONNECTION ERROR:`,
             error,
@@ -233,6 +240,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("disconnect", (reason) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
             reason,
@@ -267,7 +275,7 @@ export function ConversationSubscriptionsProvider({
         setActiveConversationIds((prev) =>
           prev.includes(conversationId) ? prev : [...prev, conversationId],
         );
-      } catch (error) {
+      } catch {
         // Clean up the event handler if there was an error
         delete eventHandlersRef.current[conversationId];
       }

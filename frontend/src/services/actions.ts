@@ -1,8 +1,6 @@
 import { trackError } from "#/utils/error-handler";
-import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
-import { setCurStatusMessage } from "#/state/status-slice";
-import { setMetrics } from "#/state/metrics-slice";
-import store from "#/store";
+import useMetricsStore from "#/stores/metrics-store";
+import { useStatusStore } from "#/state/status-store";
 import ActionType from "#/types/action-type";
 import {
   ActionMessage,
@@ -10,9 +8,12 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { appendInput } from "#/state/command-slice";
-import { appendJupyterInput } from "#/state/jupyter-slice";
+import { useCommandStore } from "#/state/command-store";
 import { queryClient } from "#/query-client-config";
+import {
+  ActionSecurityRisk,
+  useSecurityAnalyzerStore,
+} from "#/stores/security-analyzer-store";
 
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
@@ -26,19 +27,30 @@ export function handleActionMessage(message: ActionMessage) {
       max_budget_per_task: message.llm_metrics?.max_budget_per_task ?? null,
       usage: message.llm_metrics?.accumulated_token_usage ?? null,
     };
-    store.dispatch(setMetrics(metrics));
+    useMetricsStore.getState().setMetrics(metrics);
   }
 
   if (message.action === ActionType.RUN) {
-    store.dispatch(appendInput(message.args.command));
-  }
-
-  if (message.action === ActionType.RUN_IPYTHON) {
-    store.dispatch(appendJupyterInput(message.args.code));
+    useCommandStore.getState().appendInput(message.args.command);
   }
 
   if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendSecurityAnalyzerInput(message));
+    useSecurityAnalyzerStore.getState().appendSecurityAnalyzerInput({
+      id: message.id,
+      args: {
+        command: message.args.command,
+        code: message.args.code,
+        content: message.args.content,
+        security_risk: message.args
+          .security_risk as unknown as ActionSecurityRisk,
+        confirmation_state: message.args.confirmation_state as
+          | "awaiting_confirmation"
+          | "confirmed"
+          | "rejected"
+          | undefined,
+      },
+      message: message.message,
+    });
   }
 }
 
@@ -52,11 +64,9 @@ export function handleStatusMessage(message: StatusMessage) {
       queryKey: ["user", "conversation", conversationId],
     });
   } else if (message.type === "info") {
-    store.dispatch(
-      setCurStatusMessage({
-        ...message,
-      }),
-    );
+    useStatusStore.getState().setCurStatusMessage({
+      ...message,
+    });
   } else if (message.type === "error") {
     trackError({
       message: message.message,

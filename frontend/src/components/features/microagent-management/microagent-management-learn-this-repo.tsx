@@ -1,10 +1,6 @@
-import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  setLearnThisRepoModalVisible,
-  setSelectedRepository,
-} from "#/state/microagent-management-slice";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 import { GitRepository } from "#/types/git";
 
 interface MicroagentManagementLearnThisRepoProps {
@@ -14,12 +10,13 @@ interface MicroagentManagementLearnThisRepoProps {
 export function MicroagentManagementLearnThisRepo({
   repository,
 }: MicroagentManagementLearnThisRepoProps) {
-  const dispatch = useDispatch();
+  const { setLearnThisRepoModalVisible, setSelectedRepository } =
+    useMicroagentManagementStore();
   const { t } = useTranslation();
 
   const handleClick = () => {
-    dispatch(setLearnThisRepoModalVisible(true));
-    dispatch(setSelectedRepository(repository));
+    setLearnThisRepoModalVisible(true);
+    setSelectedRepository(repository);
   };
 
   return (

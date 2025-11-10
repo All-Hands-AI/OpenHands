@@ -123,7 +123,7 @@ function GitSettingsScreen() {
       className="flex flex-col h-full justify-between"
     >
       {!isLoading && (
-        <div className="p-9 flex flex-col">
+        <div className="flex flex-col">
           {shouldRenderExternalConfigureButtons && !isLoading && (
             <>
               <div className="pb-1 flex flex-col">
@@ -154,53 +154,55 @@ function GitSettingsScreen() {
             </div>
           )}
 
-          {!isSaas && (
-            <GitHubTokenInput
-              name="github-token-input"
-              isGitHubTokenSet={isGitHubTokenSet}
-              onChange={(value) => {
-                setGithubTokenInputHasValue(!!value);
-              }}
-              onGitHubHostChange={(value) => {
-                setGithubHostInputHasValue(!!value);
-              }}
-              githubHostSet={existingGithubHost}
-            />
-          )}
+          <div className="flex flex-col gap-4">
+            {!isSaas && (
+              <GitHubTokenInput
+                name="github-token-input"
+                isGitHubTokenSet={isGitHubTokenSet}
+                onChange={(value) => {
+                  setGithubTokenInputHasValue(!!value);
+                }}
+                onGitHubHostChange={(value) => {
+                  setGithubHostInputHasValue(!!value);
+                }}
+                githubHostSet={existingGithubHost}
+              />
+            )}
 
-          {!isSaas && (
-            <GitLabTokenInput
-              name="gitlab-token-input"
-              isGitLabTokenSet={isGitLabTokenSet}
-              onChange={(value) => {
-                setGitlabTokenInputHasValue(!!value);
-              }}
-              onGitLabHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
-              }}
-              gitlabHostSet={existingGitlabHost}
-            />
-          )}
+            {!isSaas && (
+              <GitLabTokenInput
+                name="gitlab-token-input"
+                isGitLabTokenSet={isGitLabTokenSet}
+                onChange={(value) => {
+                  setGitlabTokenInputHasValue(!!value);
+                }}
+                onGitLabHostChange={(value) => {
+                  setGitlabHostInputHasValue(!!value);
+                }}
+                gitlabHostSet={existingGitlabHost}
+              />
+            )}
 
-          {!isSaas && (
-            <BitbucketTokenInput
-              name="bitbucket-token-input"
-              isBitbucketTokenSet={isBitbucketTokenSet}
-              onChange={(value) => {
-                setBitbucketTokenInputHasValue(!!value);
-              }}
-              onBitbucketHostChange={(value) => {
-                setBitbucketHostInputHasValue(!!value);
-              }}
-              bitbucketHostSet={existingBitbucketHost}
-            />
-          )}
+            {!isSaas && (
+              <BitbucketTokenInput
+                name="bitbucket-token-input"
+                isBitbucketTokenSet={isBitbucketTokenSet}
+                onChange={(value) => {
+                  setBitbucketTokenInputHasValue(!!value);
+                }}
+                onBitbucketHostChange={(value) => {
+                  setBitbucketHostInputHasValue(!!value);
+                }}
+                bitbucketHostSet={existingBitbucketHost}
+              />
+            )}
+          </div>
         </div>
       )}
 
       {isLoading && <GitSettingInputsSkeleton />}
 
-      <div className="flex gap-6 p-6 justify-end border-t border-t-tertiary">
+      <div className="flex gap-6 p-6 justify-end">
         {!shouldRenderExternalConfigureButtons && (
           <>
             <BrandButton

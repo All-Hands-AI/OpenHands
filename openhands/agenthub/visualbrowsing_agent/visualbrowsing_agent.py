@@ -16,7 +16,7 @@ from openhands.events.action import (
 from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.plugins import (
     PluginRequirement,
 )
@@ -127,17 +127,13 @@ class VisualBrowsingAgent(Agent):
     sandbox_plugins: list[PluginRequirement] = []
     response_parser = BrowsingResponseParser()
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the VisualBrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = [
@@ -305,10 +301,8 @@ You are an agent trying to solve a web task based on the content of the page and
         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
         messages.append(Message(role='user', content=human_prompt))
 
-        flat_messages = self.llm.format_messages_for_llm(messages)
-
         response = self.llm.completion(
-            messages=flat_messages,
+            messages=messages,
             temperature=0.0,
             stop=[')```', ')\n```'],
         )

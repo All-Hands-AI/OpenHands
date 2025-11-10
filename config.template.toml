@@ -189,7 +189,7 @@ model = "gpt-4o"
 # Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
 # ATTENTION: Based on evaluation, enabling native function calling may lead to worse results
 # in some scenarios. Use with caution and consider testing with your specific use case.
-# https://github.com/All-Hands-AI/OpenHands/pull/4711
+# https://github.com/OpenHands/OpenHands/pull/4711
 #native_tool_calling = None
 
 
@@ -218,6 +218,14 @@ correct_num = 5
 [llm.gpt4o-mini]
 api_key = ""
 model = "gpt-4o"
+
+# Example routing LLM configuration for multimodal model routing
+# Uncomment and configure to enable model routing with a secondary model
+#[llm.secondary_model]
+#model = "kimi-k2"
+#api_key = ""
+#for_routing = true
+#max_input_tokens = 128000
 
 
 #################################### Agent ###################################
@@ -363,10 +371,11 @@ classpath = "my_package.my_module.MyCustomAgent"
 #confirmation_mode = false
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-#security_analyzer = ""
+# Available options: 'llm' (default), 'invariant'
+#security_analyzer = "llm"
 
 # Whether to enable security analyzer
-#enable_security_analyzer = false
+#enable_security_analyzer = true
 
 #################################### Condenser #################################
 # Condensers control how conversation history is managed and compressed when
@@ -479,3 +488,55 @@ type = "noop"
 
 # Run the runtime sandbox container in privileged mode for use with docker-in-docker
 #privileged = false
+
+#################################### MCP #####################################
+# Configuration for Model Context Protocol (MCP) servers
+# MCP allows OpenHands to communicate with external tool servers
+##############################################################################
+[mcp]
+# SSE servers - Server-Sent Events transport (legacy)
+#sse_servers = [
+#    # Basic SSE server with just a URL
+#    "http://localhost:8080/mcp/sse",
+#
+#    # SSE server with authentication
+#    {url = "https://api.example.com/mcp/sse", api_key = "your-api-key"}
+#]
+
+# SHTTP servers - Streamable HTTP transport (recommended)
+#shttp_servers = [
+#    # Basic SHTTP server with default 60s timeout
+#    "https://api.example.com/mcp/shttp",
+#
+#    # SHTTP server with custom timeout for long-running tools
+#    {
+#        url = "https://api.example.com/mcp/shttp",
+#        api_key = "your-api-key",
+#        timeout = 180  # 3 minutes for processing-heavy tools (1-3600 seconds)
+#    }
+#]
+
+# Stdio servers - Direct process communication (development only)
+#stdio_servers = [
+#    # Basic stdio server
+#    {name = "filesystem", command = "npx", args = ["@modelcontextprotocol/server-filesystem", "/"]},
+#
+#    # Stdio server with environment variables
+#    {
+#        name = "fetch",
+#        command = "uvx",
+#        args = ["mcp-server-fetch"],
+#        env = {DEBUG = "true"}
+#    }
+#]
+
+#################################### Model Routing ############################
+# Configuration for experimental model routing feature
+# Enables intelligent switching between different LLM models for specific purposes
+##############################################################################
+[model_routing]
+# Router to use for model selection
+# Available options:
+# - "noop_router" (default): No routing, always uses primary LLM
+# - "multimodal_router": A router that switches between primary and secondary models, depending on whether the input is multimodal or not
+#router_name = "noop_router"

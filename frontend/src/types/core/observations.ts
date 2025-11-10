@@ -127,6 +127,7 @@ export interface RecallObservation extends OpenHandsObservationEvent<"recall"> {
     runtime_hosts?: Record<string, number>;
     custom_secrets_descriptions?: Record<string, string>;
     additional_agent_instructions?: string;
+    conversation_instructions?: string;
     date?: string;
     microagent_knowledge?: MicroagentKnowledge[];
   };
@@ -146,6 +147,20 @@ export interface UserRejectedObservation
   extras: Record<string, unknown>;
 }
 
+export interface TaskTrackingObservation
+  extends OpenHandsObservationEvent<"task_tracking"> {
+  source: "agent";
+  extras: {
+    command: string;
+    task_list: Array<{
+      id: string;
+      title: string;
+      status: "todo" | "in_progress" | "done";
+      notes?: string;
+    }>;
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -160,4 +175,5 @@ export type OpenHandsObservation =
   | ErrorObservation
   | RecallObservation
   | MCPObservation
-  | UserRejectedObservation;
+  | UserRejectedObservation
+  | TaskTrackingObservation;

@@ -1,5 +1,5 @@
 import { OpenHandsActionEvent } from "./base";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/stores/security-analyzer-store";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
@@ -162,6 +162,21 @@ export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
   };
 }
 
+export interface TaskTrackingAction
+  extends OpenHandsActionEvent<"task_tracking"> {
+  source: "agent";
+  args: {
+    command: string;
+    task_list: Array<{
+      id: string;
+      title: string;
+      status: "todo" | "in_progress" | "done";
+      notes?: string;
+    }>;
+    thought: string;
+  };
+}
+
 export type OpenHandsAction =
   | UserMessageAction
   | AssistantMessageAction
@@ -178,4 +193,5 @@ export type OpenHandsAction =
   | FileWriteAction
   | RejectAction
   | RecallAction
-  | MCPAction;
+  | MCPAction
+  | TaskTrackingAction;

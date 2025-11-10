@@ -13,7 +13,8 @@ vi.mock("react-router", async () => {
 
 vi.mock("#/context/conversation-context", () => ({
   useConversation: () => ({ conversationId: "test-conversation-id" }),
-  ConversationProvider: ({ children }: { children: React.ReactNode }) => children,
+  ConversationProvider: ({ children }: { children: React.ReactNode }) =>
+    children,
 }));
 
 vi.mock("react-i18next", async () => {
@@ -29,21 +30,18 @@ vi.mock("react-i18next", async () => {
   };
 });
 
-// Mock redux
-const mockDispatch = vi.fn();
+// Mock Zustand browser store
 let mockBrowserState = {
   url: "https://example.com",
   screenshotSrc: "",
+  setUrl: vi.fn(),
+  setScreenshotSrc: vi.fn(),
+  reset: vi.fn(),
 };
 
-vi.mock("react-redux", async () => {
-  const actual = await vi.importActual("react-redux");
-  return {
-    ...actual,
-    useDispatch: () => mockDispatch,
-    useSelector: () => mockBrowserState,
-  };
-});
+vi.mock("#/stores/browser-store", () => ({
+  useBrowserStore: () => mockBrowserState,
+}));
 
 // Import the component after all mocks are set up
 import { BrowserPanel } from "#/components/features/browser/browser";
@@ -55,6 +53,9 @@ describe("Browser", () => {
     mockBrowserState = {
       url: "https://example.com",
       screenshotSrc: "",
+      setUrl: vi.fn(),
+      setScreenshotSrc: vi.fn(),
+      reset: vi.fn(),
     };
   });
 
@@ -63,6 +64,9 @@ describe("Browser", () => {
     mockBrowserState = {
       url: "https://example.com",
       screenshotSrc: "",
+      setUrl: vi.fn(),
+      setScreenshotSrc: vi.fn(),
+      reset: vi.fn(),
     };
 
     render(<BrowserPanel />);
@@ -75,7 +79,11 @@ describe("Browser", () => {
     // Set the mock state for this test
     mockBrowserState = {
       url: "https://example.com",
-      screenshotSrc: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+      screenshotSrc:
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+      setUrl: vi.fn(),
+      setScreenshotSrc: vi.fn(),
+      reset: vi.fn(),
     };
 
     render(<BrowserPanel />);

@@ -24,9 +24,7 @@ class ActionType(Enum):
 
 @dataclass
 class Selector:
-    """
-    Represents either a direct anchor ID or a descriptive selector
-    """
+    """Represents either a direct anchor ID or a descriptive selector"""
 
     value: str
     is_anchor: bool = False
@@ -149,8 +147,7 @@ def find_matching_anchor(content: str, selector: str) -> str | None:
 
 
 def resolve_action(action: BrowserAction, content: str) -> BrowserAction:
-    """
-    Resolve any descriptive selectors in the action to anchor IDs based on the content.
+    """Resolve any descriptive selectors in the action to anchor IDs based on the content.
     Returns a new action with resolved selectors.
     """
     if isinstance(action, (InputAction, ClickAction)):
@@ -174,8 +171,7 @@ def pre_login(
     save_screenshots=True,
     screenshots_dir='screenshots',
 ):
-    """
-    Logs in to all the websites that are needed for the evaluation.
+    """Logs in to all the websites that are needed for the evaluation.
     Once logged in, the sessions would be cached in the browser, so OpenHands
     agent doesn't need to log in to these websites again.
     """

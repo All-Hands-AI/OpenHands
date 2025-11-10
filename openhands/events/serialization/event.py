@@ -119,12 +119,17 @@ def event_to_dict(event: 'Event') -> dict:
         if key == 'llm_metrics' and 'llm_metrics' in d:
             d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
+
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
+
     # Remove task_completed from serialization when it's None (backward compatibility)
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
     if 'action' in d:
+        # Handle security_risk for actions - include it in args
+        if 'security_risk' in props:
+            props['security_risk'] = props['security_risk'].value
         d['args'] = props
         if event.timeout is not None:
             d['timeout'] = event.timeout

@@ -1,12 +1,12 @@
 import asyncio
 import json
 import os
+import signal
+import sys
 from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -37,6 +37,7 @@ from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 class FakeUserResponseFunc(Protocol):
@@ -53,7 +54,6 @@ async def run_controller(
     initial_user_action: Action,
     sid: str | None = None,
     runtime: Runtime | None = None,
-    agent: Agent | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
@@ -70,7 +70,6 @@ async def run_controller(
         sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
-        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
@@ -98,8 +97,13 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
-    if agent is None:
-        agent = create_agent(config)
+    llm_registry, conversation_stats, config = create_registry_and_conversation_stats(
+        config,
+        sid,
+        None,
+    )
+
+    agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -108,6 +112,7 @@ async def run_controller(
         repo_tokens = get_provider_tokens()
         runtime = create_runtime(
             config,
+            llm_registry,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
@@ -135,7 +140,7 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
-            working_dir=config.workspace_mount_path_in_sandbox,
+            working_dir=str(runtime.workspace_root),
         )
 
     # Add MCP tools to the agent
@@ -159,7 +164,7 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
+        agent, runtime, config, conversation_stats, replay_events=replay_events
     )
 
     assert isinstance(initial_user_action, Action), (
@@ -169,6 +174,27 @@ async def run_controller(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
+
+    # Set up asyncio-safe signal handler for graceful shutdown
+    sigint_count = 0
+    shutdown_event = asyncio.Event()
+
+    def signal_handler():
+        """Handle SIGINT signals for graceful shutdown."""
+        nonlocal sigint_count
+        sigint_count += 1
+
+        if sigint_count == 1:
+            logger.info('Received SIGINT (Ctrl+C). Initiating graceful shutdown...')
+            logger.info('Press Ctrl+C again to force immediate exit.')
+            shutdown_event.set()
+        else:
+            logger.info('Received second SIGINT. Forcing immediate exit...')
+            sys.exit(1)
+
+    # Register the asyncio signal handler (safer for async contexts)
+    loop = asyncio.get_running_loop()
+    loop.add_signal_handler(signal.SIGINT, signal_handler)
 
     # start event is a MessageAction with the task, either resumed or new
     if initial_state is not None and initial_state.last_error:
@@ -209,7 +235,52 @@ async def run_controller(
     ]
 
     try:
-        await run_agent_until_done(controller, runtime, memory, end_states)
+        # Create a task for the main agent loop
+        agent_task = asyncio.create_task(
+            run_agent_until_done(controller, runtime, memory, end_states)
+        )
+
+        # Wait for either the agent to complete or shutdown signal
+        done, pending = await asyncio.wait(
+            [agent_task, asyncio.create_task(shutdown_event.wait())],
+            return_when=asyncio.FIRST_COMPLETED,
+        )
+
+        # Cancel any pending tasks
+        for task in pending:
+            task.cancel()
+
+        # Wait for all cancelled tasks to complete in parallel
+        await asyncio.gather(*pending, return_exceptions=True)
+
+        # Check if shutdown was requested
+        if shutdown_event.is_set():
+            logger.info('Graceful shutdown requested.')
+
+            # Perform graceful cleanup sequence
+            try:
+                # 1. Stop the agent controller first to prevent new LLM calls
+                logger.debug('Stopping agent controller...')
+                await controller.close()
+
+                # 2. Stop the EventStream to prevent new events from being processed
+                logger.debug('Stopping EventStream...')
+                event_stream.close()
+
+                # 3. Give time for in-flight operations to complete before closing runtime
+                logger.debug('Waiting for in-flight operations to complete...')
+                await asyncio.sleep(0.3)
+
+                # 4. Close the runtime to avoid bash session interruption errors
+                logger.debug('Closing runtime...')
+                runtime.close()
+
+                # 5. Give a brief moment for final cleanup to complete
+                await asyncio.sleep(0.1)
+
+            except Exception as e:
+                logger.warning(f'Error during graceful cleanup: {e}')
+
     except Exception as e:
         logger.error(f'Exception in main loop: {e}')
 
@@ -234,7 +305,7 @@ async def run_controller(
             file_path = config.save_trajectory_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = controller.get_trajectory(config.save_screenshots_in_trajectory)
-        with open(file_path, 'w') as f:  # noqa: ASYNC101
+        with open(file_path, 'w') as f:
             json.dump(histories, f, indent=4)
 
     return state
@@ -257,8 +328,7 @@ def auto_continue_response(
 
 
 def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
-    """
-    Load trajectory from given path, serialize it to a list of events, and return
+    """Load trajectory from given path, serialize it to a list of events, and return
     two things:
     1) A list of events except the first action
     2) First action (user message, a.k.a. initial task)

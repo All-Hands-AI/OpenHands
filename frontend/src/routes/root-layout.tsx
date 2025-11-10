@@ -24,9 +24,11 @@ import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
+import { useReoTracking } from "#/hooks/use-reo-tracking";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { cn, isMobileDevice } from "#/utils/utils";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -81,6 +83,7 @@ export default function MainApp() {
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
+    authUrl: config.data?.AUTH_URL,
   });
 
   // When on TOS page, we don't use the GitHub auth URL
@@ -93,6 +96,9 @@ export default function MainApp() {
 
   // Handle authentication callback and set login method after successful authentication
   useAuthCallback();
+
+  // Initialize Reo.dev tracking in SaaS mode
+  useReoTracking();
 
   React.useEffect(() => {
     // Don't change language when on TOS page
@@ -198,20 +204,26 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
+      className={cn(
+        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base",
+        pathname === "/" ? "p-0" : "p-0 md:p-3 md:pl-0",
+        isMobileDevice() && "overflow-hidden",
+      )}
     >
       <Sidebar />
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
+      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
         {config.data?.MAINTENANCE && (
           <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
         )}
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+        <div
+          id="root-outlet"
+          className="flex-1 relative overflow-auto custom-scrollbar"
+        >
+          <EmailVerificationGuard>
+            <Outlet />
+          </EmailVerificationGuard>
+        </div>
       </div>
 
       {renderAuthModal && (
@@ -219,6 +231,7 @@ export default function MainApp() {
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
           providersConfigured={config.data?.PROVIDERS_CONFIGURED}
+          authUrl={config.data?.AUTH_URL}
         />
       )}
       {renderReAuthModal && <ReauthModal />}

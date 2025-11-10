@@ -10,6 +10,11 @@ interface ConversationCreatedToastProps {
   onClose: () => void;
 }
 
+interface ConversationStartingToastProps {
+  conversationId: string;
+  onClose: () => void;
+}
+
 function ConversationCreatedToast({
   conversationId,
   onClose,
@@ -20,6 +25,33 @@ function ConversationCreatedToast({
       <Spinner size="sm" />
       <div>
         {t("MICROAGENT$ADDING_CONTEXT")}
+        <br />
+        <a
+          href={`/conversations/${conversationId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline"
+        >
+          {t("MICROAGENT$VIEW_CONVERSATION")}
+        </a>
+      </div>
+      <button type="button" onClick={onClose}>
+        <CloseIcon />
+      </button>
+    </div>
+  );
+}
+
+function ConversationStartingToast({
+  conversationId,
+  onClose,
+}: ConversationStartingToastProps) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-start gap-2">
+      <Spinner size="sm" />
+      <div>
+        {t("MICROAGENT$CONVERSATION_STARTING")}
         <br />
         <a
           href={`/conversations/${conversationId}`}
@@ -78,10 +110,18 @@ function ConversationErroredToast({
   errorMessage,
   onClose,
 }: ConversationErroredToastProps) {
+  const { t } = useTranslation();
+
+  // Check if the error message is a translation key
+  const displayMessage =
+    errorMessage === "MICROAGENT$UNKNOWN_ERROR"
+      ? t(errorMessage)
+      : errorMessage;
+
   return (
     <div className="flex items-start gap-2">
       <SuccessIndicator status="error" />
-      <div>{errorMessage}</div>
+      <div>{displayMessage}</div>
       <button type="button" onClick={onClose}>
         <CloseIcon />
       </button>
@@ -134,5 +174,20 @@ export const renderConversationErroredToast = (
       ...TOAST_OPTIONS,
       id: `status-${conversationId}`,
       duration: 5000,
+    },
+  );
+
+export const renderConversationStartingToast = (conversationId: string) =>
+  toast(
+    (toastInstance) => (
+      <ConversationStartingToast
+        conversationId={conversationId}
+        onClose={() => toast.dismiss(toastInstance.id)}
+      />
+    ),
+    {
+      ...TOAST_OPTIONS,
+      id: `starting-${conversationId}`,
+      duration: 10000, // Show for 10 seconds or until dismissed
     },
   );

@@ -1,6 +1,5 @@
 import json
 import re
-import traceback
 from dataclasses import dataclass, field
 from typing import Any, Self
 
@@ -65,8 +64,8 @@ class CmdOutputMetadata(BaseModel):
                 matches.append(match)
             except json.JSONDecodeError:
                 logger.warning(
-                    f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.'
-                    + traceback.format_exc()
+                    f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.',
+                    exc_info=True,
                 )
                 continue  # Skip if not valid JSON
         return matches
@@ -115,9 +114,12 @@ class CmdOutputObservation(Observation):
         **kwargs: Any,
     ) -> None:
         # Truncate content before passing it to parent
-        truncated_content = self._maybe_truncate(content)
+        # Hidden commands don't go through LLM/event stream, so no need to truncate
+        truncate = not hidden
+        if truncate:
+            content = self._maybe_truncate(content)
 
-        super().__init__(truncated_content)
+        super().__init__(content)
 
         self.command = command
         self.observation = observation
@@ -146,7 +148,6 @@ class CmdOutputObservation(Observation):
         Returns:
             Original content if not too large, or truncated content otherwise
         """
-
         if len(content) <= max_size:
             return content
 

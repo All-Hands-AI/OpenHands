@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
@@ -32,8 +33,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -50,8 +51,8 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 # TODO: 适应所有的语言
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', '')
-LANGUAGE = os.environ.get('LANGUAGE', 'python')
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'mswebench')
+LANGUAGE = os.environ.get('LANGUAGE', 'java')
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
@@ -304,31 +305,19 @@ def get_instance_docker_image(instance: pd.Series):
         instance_id = instance.get('instance_id', '')
         tag_suffix = instance_id.split('-')[-1] if instance_id else ''
         container_tag = f'pr-{tag_suffix}'
-        # pdb.set_trace()
-        return f'mswebench/{container_name}:{container_tag}'
-        # return "kong/insomnia:pr-8284"
-        # return "'sweb.eval.x86_64.local_insomnia"
-        # return "local_insomnia_why"
-        # return "local/kong-insomnia:pr-8117"
+        return f'{DOCKER_IMAGE_PREFIX}/{container_name}:{container_tag}'
 
 
 def get_config(
     instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-    SWE_BENCH_CONTAINER_IMAGE = 'ghcr.io/opendevin/eval-swe-bench:full-v1.2.1'
-    if USE_INSTANCE_IMAGE:
-        # We use a different instance image for the each instance of swe-bench eval
-        # base_container_image = get_instance_docker_image(instance['instance_id'])
-        base_container_image = get_instance_docker_image(instance)
-        logger.info(
-            f'Using instance container image: {base_container_image}. '
-            f'Please make sure this image exists. '
-            f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
-        )
-    else:
-        base_container_image = SWE_BENCH_CONTAINER_IMAGE
-        logger.info(f'Using swe-bench container image: {base_container_image}')
+    base_container_image = get_instance_docker_image(instance)
+    logger.info(
+        f'Using instance container image: {base_container_image}. '
+        f'Please make sure this image exists. '
+        f'Submit an issue on https://github.com/OpenHands/OpenHands if you run into any issues.'
+    )
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
@@ -341,16 +330,11 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
@@ -763,20 +747,23 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
                 logger.info(f'Retained {subset.shape[0]} tasks after filtering')
                 return subset
-    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    skip_ids = [id for id in os.environ.get('SKIP_IDS', '').split(',') if id]
     if len(skip_ids) > 0:
+        logger.info(f'Dataset size before filtering: {dataset.shape[0]} tasks')
         logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
-        return dataset[~dataset[filter_column].isin(skip_ids)]
+        logger.info(f'SKIP_IDS:\n{skip_ids}')
+        filtered_dataset = dataset[~dataset[filter_column].isin(skip_ids)]
+        logger.info(f'Dataset size after filtering: {filtered_dataset.shape[0]} tasks')
+        return filtered_dataset
     return dataset
 
 
 if __name__ == '__main__':
     # pdb.set_trace()
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
-        default='princeton-nlp/SWE-bench',
         help='data set to evaluate on, either full-test or lite-test',
     )
     parser.add_argument(
@@ -785,18 +772,38 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
+    parser.add_argument(
+        '--filter_dataset_after_sampling',
+        action='store_true',
+        help='if provided, filter dataset after sampling instead of before',
+    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     # dataset = load_dataset(args.dataset, split=args.split)
     # dataset = load_dataset(args.dataset)
+    logger.info(f'Loading dataset {args.dataset} with split {args.split} ')
     dataset = load_dataset('json', data_files=args.dataset)
     dataset = dataset[args.split]
-    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-    logger.info(
-        f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
-    )
+    swe_bench_tests = dataset.to_pandas()
+
+    # Determine filter strategy based on flag
+    filter_func = None
+    if args.filter_dataset_after_sampling:
+        # Pass filter as callback to apply after sampling
+        def filter_func(df):
+            return filter_dataset(df, 'instance_id')
+
+        logger.info(
+            f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks (filtering will occur after sampling)'
+        )
+    else:
+        # Apply filter before sampling
+        swe_bench_tests = filter_dataset(swe_bench_tests, 'instance_id')
+        logger.info(
+            f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
+        )
 
     llm_config = None
     if args.llm_config:
@@ -826,7 +833,9 @@ if __name__ == '__main__':
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     print(f'### OUTPUT FILE: {output_file} ###')
-    instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
+    instances = prepare_dataset(
+        swe_bench_tests, output_file, args.eval_n_limit, filter_func=filter_func
+    )
 
     if len(instances) > 0 and not isinstance(
         instances['FAIL_TO_PASS'][instances['FAIL_TO_PASS'].index[0]], str
@@ -843,7 +852,7 @@ if __name__ == '__main__':
         args.eval_num_workers,
         process_instance,
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
-        max_retries=5,
+        max_retries=3,
     )
     # Check if any instances reached maximum retries
     check_maximum_retries_exceeded(metadata.eval_output_dir)

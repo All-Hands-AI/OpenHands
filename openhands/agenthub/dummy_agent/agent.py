@@ -22,7 +22,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 
 """
 FIXME: There are a few problems this surfaced
@@ -42,8 +42,12 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
-        super().__init__(llm, config)
+    def __init__(
+        self,
+        config: AgentConfig,
+        llm_registry: LLMRegistry,
+    ):
+        super().__init__(config, llm_registry)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),

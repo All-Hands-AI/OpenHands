@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.events.action.agent import CondensationAction
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -54,11 +55,13 @@ class AmortizedForgettingCondenser(RollingCondenser):
         return Condensation(action=event)
 
     def should_condense(self, view: View) -> bool:
-        return len(view) > self.max_size
+        return len(view) > self.max_size or view.unhandled_condensation_request
 
     @classmethod
     def from_config(
-        cls, config: AmortizedForgettingCondenserConfig
+        cls,
+        config: AmortizedForgettingCondenserConfig,
+        llm_registry: LLMRegistry,
     ) -> AmortizedForgettingCondenser:
         return AmortizedForgettingCondenser(**config.model_dump(exclude={'type'}))
 

@@ -1,5 +1,5 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM node:24.3.0-bookworm-slim AS frontend-builder
+FROM node:24.8-trixie-slim AS frontend-builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm ci
 COPY frontend ./
 RUN npm run build
 
-FROM python:3.12.10-slim AS base
+FROM python:3.13.7-slim-trixie AS base
 FROM base AS backend-builder
 
 WORKDIR /app
@@ -21,7 +21,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
 RUN apt-get update -y \
-    && apt-get install -y curl make git build-essential \
+    && apt-get install -y curl make git build-essential jq gettext \
     && python3 -m pip install poetry --break-system-packages
 
 COPY pyproject.toml poetry.lock ./
@@ -58,34 +58,34 @@ RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
 # Default is 60000, but we've seen up to 200000
 RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
-RUN groupadd app
-RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && \
-    usermod -aG app openhands && \
+RUN groupadd --gid $OPENHANDS_USER_ID openhands
+RUN useradd -l -m -u $OPENHANDS_USER_ID --gid $OPENHANDS_USER_ID -s /bin/bash openhands && \
+    usermod -aG openhands openhands && \
     usermod -aG sudo openhands && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN chown -R openhands:app /app && chmod -R 770 /app
-RUN sudo chown -R openhands:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
+RUN chown -R openhands:openhands /app && chmod -R 770 /app
+RUN sudo chown -R openhands:openhands $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
 USER openhands
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --chown=openhands:openhands --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-COPY --chown=openhands:app --chmod=770 ./microagents ./microagents
-COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
-COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:app pyproject.toml poetry.lock README.md MANIFEST.in LICENSE ./
+COPY --chown=openhands:openhands --chmod=770 ./microagents ./microagents
+COPY --chown=openhands:openhands --chmod=770 ./openhands ./openhands
+COPY --chown=openhands:openhands --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
+COPY --chown=openhands:openhands pyproject.toml poetry.lock README.md MANIFEST.in LICENSE ./
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
 RUN python openhands/core/download.py # No-op to download assets
 # Add this line to set group ownership of all files/directories not already in "app" group
-# openhands:openhands -> openhands:app
-RUN find /app \! -group app -exec chgrp app {} +
+# openhands:openhands -> openhands:openhands
+RUN find /app \! -group openhands -exec chgrp openhands {} +
 
-COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
-COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY --chown=openhands:openhands --chmod=770 --from=frontend-builder /app/build ./frontend/build
+COPY --chown=openhands:openhands --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
 

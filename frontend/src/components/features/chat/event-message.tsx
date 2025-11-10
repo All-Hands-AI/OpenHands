@@ -1,36 +1,29 @@
 import React from "react";
-import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
   isUserMessage,
   isErrorObservation,
   isAssistantMessage,
   isOpenHandsAction,
-  isOpenHandsObservation,
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
+  isTaskTrackingObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
-import { ImageCarousel } from "../images/image-carousel";
-import { ChatMessage } from "./chat-message";
-import { ErrorMessage } from "./error-message";
-import { MCPObservationContent } from "./mcp-observation-content";
-import { getObservationResult } from "./event-content-helpers/get-observation-result";
-import { getEventContent } from "./event-content-helpers/get-event-content";
-import { GenericEventMessage } from "./generic-event-message";
 import { MicroagentStatus } from "#/types/microagent-status";
-import { MicroagentStatusIndicator } from "./microagent/microagent-status-indicator";
-import { FileList } from "../files/file-list";
-import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
-import { LikertScale } from "../feedback/likert-scale";
-
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
-
-const hasThoughtProperty = (
-  obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj && !!obj.thought;
+import {
+  ErrorEventMessage,
+  UserAssistantEventMessage,
+  FinishEventMessage,
+  RejectEventMessage,
+  McpEventMessage,
+  TaskTrackingEventMessage,
+  ObservationPairEventMessage,
+  GenericEventMessageWrapper,
+} from "./event-message-components";
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -43,10 +36,12 @@ interface EventMessageProps {
   actions?: Array<{
     icon: React.ReactNode;
     onClick: () => void;
+    tooltip?: string;
   }>;
   isInLast10Actions: boolean;
 }
 
+/* eslint-disable react/jsx-props-no-spreading */
 export function EventMessage({
   event,
   hasObservationPair,
@@ -68,164 +63,83 @@ export function EventMessage({
     isLoading: isCheckingFeedback,
   } = useFeedbackExists(event.id);
 
-  const renderLikertScale = () => {
-    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
-      return null;
-    }
-
-    // For error observations, show if in last 10 actions
-    // For other events, show only if it's the last message
-    const shouldShow = isErrorObservation(event)
-      ? isInLast10Actions
-      : isLastMessage;
-
-    if (!shouldShow) {
-      return null;
-    }
-
-    return (
-      <LikertScale
-        eventId={event.id}
-        initiallySubmitted={feedbackData.exists}
-        initialRating={feedbackData.rating}
-        initialReason={feedbackData.reason}
-      />
-    );
+  // Common props for components that need them
+  const commonProps = {
+    microagentStatus,
+    microagentConversationId,
+    microagentPRUrl,
+    actions,
+    isLastMessage,
+    isInLast10Actions,
+    config,
+    isCheckingFeedback,
+    feedbackData,
   };
 
+  // Error observations
   if (isErrorObservation(event)) {
-    return (
-      <div>
-        <ErrorMessage
-          errorId={event.extras.error_id}
-          defaultMessage={event.message}
-        />
-        {microagentStatus && actions && (
-          <MicroagentStatusIndicator
-            status={microagentStatus}
-            conversationId={microagentConversationId}
-            prUrl={microagentPRUrl}
-          />
-        )}
-        {renderLikertScale()}
-      </div>
-    );
+    return <ErrorEventMessage event={event} {...commonProps} />;
   }
 
+  // Observation pairs with OpenHands actions
   if (hasObservationPair && isOpenHandsAction(event)) {
-    if (hasThoughtProperty(event.args)) {
-      return (
-        <div>
-          <ChatMessage
-            type="agent"
-            message={event.args.thought}
-            actions={actions}
-          />
-          {microagentStatus && actions && (
-            <MicroagentStatusIndicator
-              status={microagentStatus}
-              conversationId={microagentConversationId}
-              prUrl={microagentPRUrl}
-            />
-          )}
-        </div>
-      );
-    }
-    return microagentStatus && actions ? (
-      <MicroagentStatusIndicator
-        status={microagentStatus}
-        conversationId={microagentConversationId}
-        prUrl={microagentPRUrl}
+    return (
+      <ObservationPairEventMessage
+        event={event}
+        microagentStatus={microagentStatus}
+        microagentConversationId={microagentConversationId}
+        microagentPRUrl={microagentPRUrl}
+        actions={actions}
       />
-    ) : null;
+    );
   }
 
+  // Finish actions
   if (isFinishAction(event)) {
-    return (
-      <>
-        <ChatMessage
-          type="agent"
-          message={getEventContent(event).details}
-          actions={actions}
-        />
-        {microagentStatus && actions && (
-          <MicroagentStatusIndicator
-            status={microagentStatus}
-            conversationId={microagentConversationId}
-            prUrl={microagentPRUrl}
-          />
-        )}
-        {renderLikertScale()}
-      </>
-    );
+    return <FinishEventMessage event={event} {...commonProps} />;
   }
 
+  // User and assistant messages
   if (isUserMessage(event) || isAssistantMessage(event)) {
-    const message = parseMessageFromEvent(event);
-
     return (
-      <>
-        <ChatMessage type={event.source} message={message} actions={actions}>
-          {event.args.image_urls && event.args.image_urls.length > 0 && (
-            <ImageCarousel size="small" images={event.args.image_urls} />
-          )}
-          {event.args.file_urls && event.args.file_urls.length > 0 && (
-            <FileList files={event.args.file_urls} />
-          )}
-          {shouldShowConfirmationButtons && <ConfirmationButtons />}
-        </ChatMessage>
-        {microagentStatus && actions && (
-          <MicroagentStatusIndicator
-            status={microagentStatus}
-            conversationId={microagentConversationId}
-            prUrl={microagentPRUrl}
-          />
-        )}
-        {isAssistantMessage(event) &&
-          event.action === "message" &&
-          renderLikertScale()}
-      </>
+      <UserAssistantEventMessage
+        event={event}
+        shouldShowConfirmationButtons={shouldShowConfirmationButtons}
+        {...commonProps}
+      />
     );
   }
 
+  // Reject observations
   if (isRejectObservation(event)) {
-    return (
-      <div>
-        <ChatMessage type="agent" message={event.content} />
-      </div>
-    );
+    return <RejectEventMessage event={event} />;
   }
 
+  // MCP observations
   if (isMcpObservation(event)) {
     return (
-      <div>
-        <GenericEventMessage
-          title={getEventContent(event).title}
-          details={<MCPObservationContent event={event} />}
-          success={getObservationResult(event)}
-        />
-        {shouldShowConfirmationButtons && <ConfirmationButtons />}
-      </div>
+      <McpEventMessage
+        event={event}
+        shouldShowConfirmationButtons={shouldShowConfirmationButtons}
+      />
     );
   }
 
-  return (
-    <div>
-      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={event.args.thought} />
-      )}
-
-      <GenericEventMessage
-        title={getEventContent(event).title}
-        details={getEventContent(event).details}
-        success={
-          isOpenHandsObservation(event)
-            ? getObservationResult(event)
-            : undefined
-        }
+  // Task tracking observations
+  if (isTaskTrackingObservation(event)) {
+    return (
+      <TaskTrackingEventMessage
+        event={event}
+        shouldShowConfirmationButtons={shouldShowConfirmationButtons}
       />
+    );
+  }
 
-      {shouldShowConfirmationButtons && <ConfirmationButtons />}
-    </div>
+  // Generic fallback
+  return (
+    <GenericEventMessageWrapper
+      event={event}
+      shouldShowConfirmationButtons={shouldShowConfirmationButtons}
+    />
   );
 }

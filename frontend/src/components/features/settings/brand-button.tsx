@@ -3,7 +3,7 @@ import { cn } from "#/utils/utils";
 interface BrandButtonProps {
   testId?: string;
   name?: string;
-  variant: "primary" | "secondary" | "danger";
+  variant: "primary" | "secondary" | "danger" | "ghost-danger";
   type: React.ButtonHTMLAttributes<HTMLButtonElement>["type"];
   isDisabled?: boolean;
   className?: string;
@@ -36,6 +36,8 @@ export function BrandButton({
         variant === "primary" && "bg-primary text-[#0D0F11]",
         variant === "secondary" && "border border-primary text-primary",
         variant === "danger" && "bg-red-600 text-white hover:bg-red-700",
+        variant === "ghost-danger" &&
+          "bg-transparent text-red-600 underline hover:text-red-700 hover:no-underline font-medium",
         startContent && "flex items-center justify-center gap-2",
         className,
       )}

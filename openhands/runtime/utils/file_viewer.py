@@ -1,6 +1,4 @@
-"""
-Utility module for generating file viewer HTML content.
-"""
+"""Utility module for generating file viewer HTML content."""
 
 import base64
 import mimetypes
@@ -8,8 +6,7 @@ import os
 
 
 def generate_file_viewer_html(file_path: str) -> str:
-    """
-    Generate HTML content for viewing different file types.
+    """Generate HTML content for viewing different file types.
 
     Args:
         file_path: The absolute path to the file

@@ -1,10 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import BillingService from "#/api/billing-service/billing-service.api";
 
 export const useCreateStripeCheckoutSession = () =>
   useMutation({
     mutationFn: async (variables: { amount: number }) => {
-      const redirectUrl = await OpenHands.createCheckoutSession(
+      const redirectUrl = await BillingService.createCheckoutSession(
         variables.amount,
       );
       window.location.href = redirectUrl;

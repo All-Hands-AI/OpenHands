@@ -93,8 +93,7 @@ def build_vscode_extension():
 
 
 def build(setup_kwargs):
-    """
-    This function is called by Poetry during the build process.
+    """This function is called by Poetry during the build process.
     `setup_kwargs` is a dictionary that will be passed to `setuptools.setup()`.
     """
     print('--- Running custom Poetry build script (build_vscode.py) ---')

@@ -1,7 +1,7 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
-from openhands.events.action.action import Action
+from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -10,7 +10,9 @@ from openhands.events.action.agent import (
     ChangeAgentStateAction,
     CondensationAction,
     CondensationRequestAction,
+    LoopRecoveryAction,
     RecallAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import (
@@ -46,13 +48,15 @@ actions = (
     CondensationAction,
     CondensationRequestAction,
     MCPAction,
+    TaskTrackingAction,
+    LoopRecoveryAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
 
 
 def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
-    # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
+    # keep_prompt has been deprecated in https://github.com/OpenHands/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
 
@@ -121,6 +125,15 @@ def action_from_dict(action: dict) -> Action:
     # images_urls has been renamed to image_urls
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
+
+    # Handle security_risk deserialization
+    if 'security_risk' in args and args['security_risk'] is not None:
+        try:
+            # Convert numeric value (int) back to enum
+            args['security_risk'] = ActionSecurityRisk(args['security_risk'])
+        except (ValueError, TypeError):
+            # If conversion fails, remove the invalid value
+            args.pop('security_risk')
 
     # handle deprecated args
     args = handle_action_deprecated_args(args)

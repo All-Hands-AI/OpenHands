@@ -10,7 +10,7 @@ export function Suggestions({
   onSuggestionClick,
 }: SuggestionsProps) {
   return (
-    <ul data-testid="suggestions" className="flex flex-col gap-4 w-full">
+    <div data-testid="suggestions" className="grid grid-cols-2 gap-5 max-w-fit">
       {suggestions.map((suggestion, index) => (
         <SuggestionItem
           key={index}
@@ -18,6 +18,6 @@ export function Suggestions({
           onClick={onSuggestionClick}
         />
       ))}
-    </ul>
+    </div>
   );
 }

@@ -21,19 +21,20 @@ from openhands.integrations.provider import (
     ProviderToken,
     ProviderType,
 )
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.security import SecurityAnalyzer, options
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 def create_runtime(
     config: OpenHandsConfig,
+    llm_registry: LLMRegistry | None = None,
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -61,12 +62,6 @@ def create_runtime(
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(session_id, file_store)
 
-    # set up the security analyzer
-    if config.security.security_analyzer:
-        options.SecurityAnalyzers.get(
-            config.security.security_analyzer, SecurityAnalyzer
-        )(event_stream)
-
     # agent class
     if agent:
         agent_cls = type(agent)
@@ -82,6 +77,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
+        llm_registry=llm_registry or LLMRegistry(config),
         git_provider_tokens=git_provider_tokens,
     )
 
@@ -94,8 +90,7 @@ def create_runtime(
 
 
 def get_provider_tokens():
-    """
-    Retrieve provider tokens from environment variables and return them as a dictionary.
+    """Retrieve provider tokens from environment variables and return them as a dictionary.
 
     Returns:
         A dictionary mapping ProviderType to ProviderToken if tokens are found, otherwise None.
@@ -114,9 +109,9 @@ def get_provider_tokens():
         bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
         provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
 
-    # Wrap provider tokens in UserSecrets if any tokens were found
+    # Wrap provider tokens in Secrets if any tokens were found
     secret_store = (
-        UserSecrets(provider_tokens=provider_tokens) if provider_tokens else None  # type: ignore[arg-type]
+        Secrets(provider_tokens=provider_tokens) if provider_tokens else None  # type: ignore[arg-type]
     )
     return secret_store.provider_tokens if secret_store else None
 
@@ -126,8 +121,7 @@ def initialize_repository_for_runtime(
     immutable_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     selected_repository: str | None = None,
 ) -> str | None:
-    """
-    Initialize the repository for the runtime by cloning or initializing it,
+    """Initialize the repository for the runtime by cloning or initializing it,
     running setup scripts, and setting up git hooks if present.
 
     Args:
@@ -205,16 +199,13 @@ def create_memory(
     return memory
 
 
-def create_agent(config: OpenHandsConfig) -> Agent:
+def create_agent(config: OpenHandsConfig, llm_registry: LLMRegistry) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
-    llm_config = config.get_llm_config_from_agent(config.default_agent)
-
-    agent = agent_cls(
-        llm=LLM(config=llm_config),
-        config=agent_config,
-    )
-
+    # Pass the runtime information from the main config to the agent config
+    agent_config.runtime = config.runtime
+    config.get_llm_config_from_agent(config.default_agent)
+    agent = agent_cls(config=agent_config, llm_registry=llm_registry)
     return agent
 
 
@@ -222,6 +213,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
+    conversation_stats: ConversationStats,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -239,6 +231,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
+        conversation_stats=conversation_stats,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
@@ -247,6 +240,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        security_analyzer=runtime.security_analyzer,
     )
     return (controller, initial_state)
 

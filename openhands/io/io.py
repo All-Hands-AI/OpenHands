@@ -24,10 +24,7 @@ def read_task_from_file(file_path: str) -> str:
 
 
 def read_task(args: argparse.Namespace, cli_multiline_input: bool) -> str:
-    """
-    Read the task from the CLI args, file, or stdin.
-    """
-
+    """Read the task from the CLI args, file, or stdin."""
     # Determine the task
     task_str = ''
     if args.file:

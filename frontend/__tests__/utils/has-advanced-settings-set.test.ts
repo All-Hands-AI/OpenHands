@@ -29,23 +29,5 @@ describe("hasAdvancedSettingsSet", () => {
         }),
       ).toBe(true);
     });
-
-    test("CONFIRMATION_MODE is true", () => {
-      expect(
-        hasAdvancedSettingsSet({
-          ...DEFAULT_SETTINGS,
-          CONFIRMATION_MODE: true,
-        }),
-      ).toBe(true);
-    });
-
-    test("SECURITY_ANALYZER is set", () => {
-      expect(
-        hasAdvancedSettingsSet({
-          ...DEFAULT_SETTINGS,
-          SECURITY_ANALYZER: "test",
-        }),
-      ).toBe(true);
-    });
   });
 });

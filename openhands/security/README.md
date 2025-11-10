@@ -53,6 +53,20 @@ provides).
 
 ## Implemented Security Analyzers
 
+### LLM Risk Analyzer (Default)
+
+The LLM Risk Analyzer is the default security analyzer that leverages LLM-provided risk assessments. It respects the `security_risk` attribute that can be set by the LLM when generating actions, allowing for intelligent risk assessment based on the context and content of each action.
+
+Features:
+
+* Uses LLM-provided risk assessments (LOW, MEDIUM, HIGH)
+* Automatically requires confirmation for HIGH-risk actions
+* Respects confirmation mode settings for MEDIUM and LOW-risk actions
+* Lightweight and efficient - no external dependencies
+* Integrates seamlessly with the agent's decision-making process
+
+The LLM Risk Analyzer checks if actions have a `security_risk` attribute set by the LLM and maps it to the appropriate `ActionSecurityRisk` level. If no risk assessment is provided, it defaults to UNKNOWN.
+
 ### Invariant
 
 It uses the [Invariant Analyzer](https://github.com/invariantlabs-ai/invariant) to analyze traces and detect potential issues with OpenHands's workflow. It uses confirmation mode to ask for user confirmation on potentially risky actions.
@@ -85,3 +99,31 @@ Browsing Agent Safety:
 * If the guardrail evaluates either of the 2 conditions to be true, it emits a change_agent_state action and transforms the AgentState to ERROR. This stops the agent from proceeding further.
 
 * To enable this feature: In the InvariantAnalyzer object, set the check_browsing_alignment attribute to True and initialize the guardrail_llm attribute with an LLM object.
+
+### Gray Swan
+
+The Gray Swan Security Analyzer integrates with [Gray Swan AI's Cygnal API](https://docs.grayswan.ai/monitor-requests/monitor) to provide advanced AI safety monitoring for OpenHands agents.
+
+#### Getting Started
+To get started with the Gray Swan security analyzer (powered by Cygnal):
+
+1. Navigate to [the Gray Swan platform](https://platform.grayswan.ai) and create an account if you don't already have one
+2. Create a Gray Swan API key.
+3. If you just want to use Cygnal's default protections, you can move to the next section.
+4. If you want **even more** custom protection, you can create your own policy [here](https://platform.grayswan.ai/policies). Policies are composed of rules, which require a short title, e.g. "Git Operations", and then the rule itself, e.g. "The agent should never push code directly to the main branch".
+
+#### OpenHands Configuration:
+
+To use the GraySwan analyzer, set the following environment variables:
+
+* `GRAYSWAN_API_KEY`: Your GraySwan API key (required)
+* `GRAYSWAN_POLICY_ID`: Your GraySwan policy ID (optional)
+
+Then configure OpenHands to use the GraySwan analyzer:
+
+```toml
+[security]
+security_analyzer = "grayswan"
+```
+
+or select "grayswan" from the dropdown in settings!

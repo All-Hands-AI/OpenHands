@@ -1,15 +1,20 @@
 import { Tab, Tabs } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { MicroagentManagementRepositories } from "./microagent-management-repositories";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
+import { useMicroagentManagementStore } from "#/state/microagent-management-store";
 
-export function MicroagentManagementSidebarTabs() {
+interface MicroagentManagementSidebarTabsProps {
+  isSearchLoading?: boolean;
+}
+
+export function MicroagentManagementSidebarTabs({
+  isSearchLoading = false,
+}: MicroagentManagementSidebarTabsProps) {
   const { t } = useTranslation();
 
   const { repositories, personalRepositories, organizationRepositories } =
-    useSelector((state: RootState) => state.microagentManagement);
+    useMicroagentManagementStore();
 
   return (
     <div className="flex w-full flex-col">
@@ -29,18 +34,21 @@ export function MicroagentManagementSidebarTabs() {
           <MicroagentManagementRepositories
             repositories={personalRepositories}
             tabType="personal"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
         <Tab key="repositories" title={t(I18nKey.COMMON$REPOSITORIES)}>
           <MicroagentManagementRepositories
             repositories={repositories}
             tabType="repositories"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
         <Tab key="organizations" title={t(I18nKey.COMMON$ORGANIZATIONS)}>
           <MicroagentManagementRepositories
             repositories={organizationRepositories}
             tabType="organizations"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
       </Tabs>

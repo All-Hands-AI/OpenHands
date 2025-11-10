@@ -1,1 +1,0 @@
-Please rewrite the entire CLI in node.js

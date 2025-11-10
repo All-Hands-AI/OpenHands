@@ -1,16 +1,18 @@
 import { delay, http, HttpResponse } from "msw";
-import {
-  GetConfigResponse,
-  Conversation,
-  ResultSet,
-} from "#/api/open-hands.types";
+import { GetConfigResponse } from "#/api/option-service/option.types";
+import { Conversation, ResultSet } from "#/api/open-hands.types";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
-import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
+import { Provider } from "#/types/settings";
+import {
+  ApiSettings,
+  PostApiSettings,
+} from "#/settings-service/settings.types";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
-import { GitRepository, GitUser } from "#/types/git";
+import { GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 import { SECRETS_HANDLERS } from "./secrets-handlers";
+import { GIT_REPOSITORY_HANDLERS } from "./git-repository-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -24,11 +26,13 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
+  provider_tokens_set: {},
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  condenser_max_size: DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
+  enable_solvability_analysis: DEFAULT_SETTINGS.ENABLE_SOLVABILITY_ANALYSIS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
   max_budget_per_task: DEFAULT_SETTINGS.MAX_BUDGET_PER_TASK,
 };
@@ -112,8 +116,10 @@ const openHandsHandlers = [
       "anthropic/claude-3.5",
       "anthropic/claude-sonnet-4-20250514",
       "anthropic/claude-sonnet-4-5-20250929",
+      "anthropic/claude-haiku-4-5-20251001",
       "openhands/claude-sonnet-4-20250514",
       "openhands/claude-sonnet-4-5-20250929",
+      "openhands/claude-haiku-4-5-20251001",
       "sambanova/Meta-Llama-3.1-8B-Instruct",
     ]),
   ),
@@ -123,7 +129,7 @@ const openHandsHandlers = [
   ),
 
   http.get("/api/options/security-analyzers", async () =>
-    HttpResponse.json(["mock-invariant"]),
+    HttpResponse.json(["llm", "none"]),
   ),
 
   http.post("http://localhost:3001/api/submit-feedback", async () => {
@@ -141,25 +147,8 @@ export const handlers = [
   ...FILE_SERVICE_HANDLERS,
   ...TASK_SUGGESTIONS_HANDLERS,
   ...SECRETS_HANDLERS,
+  ...GIT_REPOSITORY_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () => {
-    const data: GitRepository[] = [
-      {
-        id: "1",
-        full_name: "octocat/hello-world",
-        git_provider: "github",
-        is_public: true,
-      },
-      {
-        id: "2",
-        full_name: "octocat/earth",
-        git_provider: "github",
-        is_public: true,
-      },
-    ];
-
-    return HttpResponse.json(data);
-  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: "1",
@@ -185,7 +174,6 @@ export const handlers = [
       APP_MODE: mockSaas ? "saas" : "oss",
       GITHUB_CLIENT_ID: "fake-github-client-id",
       POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
-      STRIPE_PUBLISHABLE_KEY: "",
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
@@ -208,9 +196,6 @@ export const handlers = [
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
-    if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = {};
-
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
@@ -218,18 +203,14 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-      }
-
-      const fullSettings = {
+      const current = MOCK_USER_PREFERENCES.settings || {
         ...MOCK_DEFAULT_USER_SETTINGS,
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
       };
-
-      MOCK_USER_PREFERENCES.settings = fullSettings;
+      // Persist new values over current/mock defaults
+      MOCK_USER_PREFERENCES.settings = {
+        ...current,
+        ...(body as Partial<ApiSettings>),
+      };
       return HttpResponse.json(null, { status: 200 });
     }
 

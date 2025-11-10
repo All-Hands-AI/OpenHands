@@ -19,7 +19,7 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
-CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+CONTAINER_NAME_PREFIX = "openhands-runtime-"
 
 
 class RunloopRuntime(ActionExecutionClient):
@@ -32,7 +32,7 @@ class RunloopRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
-        sid: str = 'default',
+        sid: str = "default",
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -42,10 +42,12 @@ class RunloopRuntime(ActionExecutionClient):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         # Read Runloop API key from environment variable
-        runloop_api_key = os.getenv('RUNLOOP_API_KEY')
+        runloop_api_key = os.getenv("RUNLOOP_API_KEY")
         if not runloop_api_key:
-            raise ValueError('RUNLOOP_API_KEY environment variable is required for Runloop runtime')
-            
+            raise ValueError(
+                "RUNLOOP_API_KEY environment variable is required for Runloop runtime"
+            )
+
         self.devbox: DevboxView | None = None
         self.config = config
         self.runloop_api_client = Runloop(
@@ -77,15 +79,15 @@ class RunloopRuntime(ActionExecutionClient):
     )
     def _wait_for_devbox(self, devbox: DevboxView) -> DevboxView:
         """Pull devbox status until it is running"""
-        if devbox == 'running':
+        if devbox == "running":
             return devbox
 
         devbox = self.runloop_api_client.devboxes.retrieve(id=devbox.id)
-        if devbox.status != 'running':
-            raise ConnectionRefusedError('Devbox is not running')
+        if devbox.status != "running":
+            raise ConnectionRefusedError("Devbox is not running")
 
         # Devbox is connected and running
-        logging.debug(f'devbox.id={devbox.id} is running')
+        logging.debug(f"devbox.id={devbox.id} is running")
         return devbox
 
     def _create_new_devbox(self) -> DevboxView:
@@ -101,26 +103,26 @@ class RunloopRuntime(ActionExecutionClient):
         # (ie browser) to be installed as root
         # Convert start_command list to a single command string with additional setup
         start_command_str = (
-            'export MAMBA_ROOT_PREFIX=/openhands/micromamba && '
-            'cd /openhands/code && '
-            '/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && '
-            + ' '.join(start_command)
+            "export MAMBA_ROOT_PREFIX=/openhands/micromamba && "
+            "cd /openhands/code && "
+            "/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && "
+            + " ".join(start_command)
         )
         entrypoint = f"sudo bash -c '{start_command_str}'"
 
         devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
             name=self.sid,
-            environment_variables={'DEBUG': 'true'} if self.config.debug else {},
-            prebuilt='openhands',
+            environment_variables={"DEBUG": "true"} if self.config.debug else {},
+            prebuilt="openhands",
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port, self._vscode_port],
-                resource_size_request='LARGE',
+                resource_size_request="LARGE",
                 launch_commands=[
-                    f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'
+                    f"mkdir -p {self.config.workspace_mount_path_in_sandbox}"
                 ],
             ),
-            metadata={'container-name': self.container_name},
+            metadata={"container-name": self.container_name},
         )
         return self._wait_for_devbox(devbox)
 
@@ -129,7 +131,7 @@ class RunloopRuntime(ActionExecutionClient):
 
         if self.attach_to_existing:
             active_devboxes = self.runloop_api_client.devboxes.list(
-                status='running'
+                status="running"
             ).devboxes
             self.devbox = next(
                 (devbox for devbox in active_devboxes if devbox.name == self.sid), None
@@ -145,11 +147,11 @@ class RunloopRuntime(ActionExecutionClient):
         )
 
         self.api_url = tunnel.url
-        logger.info(f'Container started. Server url: {self.api_url}')
+        logger.info(f"Container started. Server url: {self.api_url}")
 
         # End Runloop connect
         # NOTE: Copied from DockerRuntime
-        logger.info('Waiting for client to become ready...')
+        logger.info("Waiting for client to become ready...")
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         self._wait_until_alive()
 
@@ -157,7 +159,7 @@ class RunloopRuntime(ActionExecutionClient):
             self.setup_initial_env()
 
         logger.info(
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+            f"Container initialized with plugins: {[plugin.name for plugin in self.plugins]}"
         )
         self.set_runtime_status(RuntimeStatus.READY)
 
@@ -192,12 +194,12 @@ class RunloopRuntime(ActionExecutionClient):
                 id=self.devbox.id,
                 port=self._vscode_port,
             ).url
-            + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            + f"/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}"
         )
 
         self.log(
-            'debug',
-            f'VSCode URL: {self._vscode_url}',
+            "debug",
+            f"VSCode URL: {self._vscode_url}",
         )
 
         return self._vscode_url

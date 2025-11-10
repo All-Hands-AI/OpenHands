@@ -1,6 +1,4 @@
-"""
-Calculate the cdc score for line and block
-"""
+"""Calculate the cdc score for line and block"""
 
 import json
 import math
@@ -19,8 +17,7 @@ def is_code_valid(code):
 
 
 def is_correct_parameter_count(function_name, correct_code, test_code):
-    """
-    判断参数数量是否一致
+    """判断参数数量是否一致
     :param function_name:
     :param correct_code:
     :param test_code:
@@ -51,8 +48,7 @@ def is_correct_parameter_count(function_name, correct_code, test_code):
 
 
 def check_keyword_parameters(function_name, correct_code, test_code):
-    """
-    判断关键词参数赋值是否正确使用
+    """判断关键词参数赋值是否正确使用
     :param function_name:
     :param correct_code:
     :param test_code:
@@ -90,8 +86,7 @@ def check_keyword_parameters(function_name, correct_code, test_code):
 
 
 def with_correct(answer_code: str, model_output: str) -> bool:
-    """
-    当answer是with结构时，判断模型生成的是不是with结构
+    """当answer是with结构时，判断模型生成的是不是with结构
     :param answer_code:
     :param model_output:
     :return:

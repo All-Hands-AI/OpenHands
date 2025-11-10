@@ -1,19 +1,17 @@
 import { act, screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
-import { Command, appendInput, appendOutput } from "#/state/command-slice";
+import { Command, useCommandStore } from "#/state/command-store";
 import Terminal from "#/components/features/terminal/terminal";
 
-const renderTerminal = (commands: Command[] = []) =>
-  renderWithProviders(<Terminal />, {
-    preloadedState: {
-      cmd: {
-        commands,
-      },
-    },
-  });
+const renderTerminal = (commands: Command[] = []) => {
+  // Set initial commands in Zustand store
+  useCommandStore.setState({ commands });
+  return renderWithProviders(<Terminal />);
+};
 
 describe.skip("Terminal", () => {
+  // Terminal is now read-only - no user input functionality
   global.ResizeObserver = vi.fn().mockImplementation(() => ({
     observe: vi.fn(),
     disconnect: vi.fn(),
@@ -24,8 +22,6 @@ describe.skip("Terminal", () => {
     write: vi.fn(),
     writeln: vi.fn(),
     dispose: vi.fn(),
-    onKey: vi.fn(),
-    attachCustomKeyEventHandler: vi.fn(),
     loadAddon: vi.fn(),
   };
 
@@ -58,25 +54,25 @@ describe.skip("Terminal", () => {
   });
 
   it("should write commands to the terminal", () => {
-    const { store } = renderTerminal();
+    renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
-      store.dispatch(appendOutput("Hello"));
+      useCommandStore.getState().appendInput("echo Hello");
+      useCommandStore.getState().appendOutput("Hello");
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo Hello");
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo World"));
+      useCommandStore.getState().appendInput("echo World");
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo World");
   });
 
   it("should load and write commands to the terminal", () => {
-    const { store } = renderTerminal([
+    renderTerminal([
       { type: "input", content: "echo Hello" },
       { type: "output", content: "Hello" },
     ]);
@@ -85,17 +81,17 @@ describe.skip("Terminal", () => {
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(2, "Hello");
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      useCommandStore.getState().appendInput("echo Hello");
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(3, "echo Hello");
   });
 
   it("should end the line with a dollar sign after writing a command", () => {
-    const { store } = renderTerminal();
+    renderTerminal();
 
     act(() => {
-      store.dispatch(appendInput("echo Hello"));
+      useCommandStore.getState().appendInput("echo Hello");
     });
 
     expect(mockTerminal.writeln).toHaveBeenCalledWith("echo Hello");

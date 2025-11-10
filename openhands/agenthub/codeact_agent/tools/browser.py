@@ -1,6 +1,10 @@
 from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    RISK_LEVELS,
+    SECURITY_RISK_DESC,
+)
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
 # from browsergym/core/action/highlevel.py
@@ -154,9 +158,14 @@ BrowserTool = ChatCompletionToolParam(
                         'The Python code that interacts with the browser.\n'
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
-                }
+                },
+                'security_risk': {
+                    'type': 'string',
+                    'description': SECURITY_RISK_DESC,
+                    'enum': RISK_LEVELS,
+                },
             },
-            'required': ['code'],
+            'required': ['code', 'security_risk'],
         },
     ),
 )

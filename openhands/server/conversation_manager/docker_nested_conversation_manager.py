@@ -15,15 +15,18 @@ from docker.models.containers import Container
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.constants import ROOM_KEY
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
@@ -31,7 +34,7 @@ from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.session import WebSession as Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -39,7 +42,9 @@ from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 from openhands.utils.import_utils import get_impl
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 @dataclass
@@ -58,6 +63,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def __aenter__(self):
         runtime_cls = get_runtime_cls(self.config.runtime)
         runtime_cls.setup(self.config)
+        return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         runtime_cls = get_runtime_cls(self.config.runtime)
@@ -134,9 +140,11 @@ class DockerNestedConversationManager(ConversationManager):
                 user_id=user_id,
                 session_api_key=session_api_key,
             ),
-            status=ConversationStatus.STARTING
-            if sid in self._starting_conversation_ids
-            else ConversationStatus.RUNNING,
+            status=(
+                ConversationStatus.STARTING
+                if sid in self._starting_conversation_ids
+                else ConversationStatus.RUNNING
+            ),
         )
 
     async def _start_agent_loop(
@@ -193,9 +201,10 @@ class DockerNestedConversationManager(ConversationManager):
             await call_sync_from_async(runtime.wait_until_alive)
             await call_sync_from_async(runtime.setup_initial_env)
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
-                }
+                },
             ) as client:
                 # setup the settings...
                 settings_json = settings.model_dump(context={'expose_secrets': True})
@@ -245,7 +254,11 @@ class DockerNestedConversationManager(ConversationManager):
                         response.raise_for_status()
 
                 init_conversation: dict[str, Any] = {
-                    'initial_user_msg': initial_user_msg,
+                    'initial_user_msg': (
+                        initial_user_msg.content
+                        if initial_user_msg and initial_user_msg.content
+                        else None
+                    ),
                     'image_urls': [],
                     'replay_json': replay_json,
                     'conversation_id': sid,
@@ -273,11 +286,22 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
+    async def request_llm_completion(
+        self,
+        sid: str,
+        service_id: str,
+        llm_config: LLMConfig,
+        messages: list[dict[str, str]],
+    ) -> str:
+        # Not supported - clients should connect directly to the nested server!
+        raise ValueError('unsupported_operation')
+
     async def send_event_to_conversation(self, sid, data):
         async with httpx.AsyncClient(
+            verify=httpx_verify_option(),
             headers={
                 'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
-            }
+            },
         ) as client:
             nested_url = self._get_nested_url(sid)
             response = await client.post(
@@ -298,9 +322,10 @@ class DockerNestedConversationManager(ConversationManager):
         try:
             nested_url = self.get_nested_url_for_container(container)
             async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
                 headers={
                     'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
-                }
+                },
             ) as client:
                 # Stop conversation
                 response = await client.post(
@@ -322,6 +347,46 @@ class DockerNestedConversationManager(ConversationManager):
             )
         container.stop()
 
+    async def _get_runtime_status_from_nested_runtime(
+        self, conversation_id: str, nested_url: str
+    ) -> RuntimeStatus | None:
+        """Get runtime status from the nested runtime via API call.
+
+        Args:
+            conversation_id: The conversation ID to query
+            nested_url: The base URL of the nested runtime
+
+        Returns:
+            The runtime status if available, None otherwise
+        """
+        try:
+            async with httpx.AsyncClient(
+                verify=httpx_verify_option(),
+                headers={
+                    'X-Session-API-Key': self._get_session_api_key_for_conversation(
+                        conversation_id
+                    )
+                },
+            ) as client:
+                # Query the nested runtime for conversation info
+                response = await client.get(nested_url)
+                if response.status_code == 200:
+                    conversation_data = response.json()
+                    runtime_status_str = conversation_data.get('runtime_status')
+                    if runtime_status_str:
+                        # Convert string back to RuntimeStatus enum
+                        return RuntimeStatus(runtime_status_str)
+                else:
+                    logger.debug(
+                        f'Failed to get conversation info for {conversation_id}: {response.status_code}'
+                    )
+        except ValueError:
+            logger.debug(f'Invalid runtime status value: {runtime_status_str}')
+        except Exception as e:
+            logger.debug(f'Could not get runtime status for {conversation_id}: {e}')
+
+        return None
+
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> list[AgentLoopInfo]:
@@ -342,6 +407,12 @@ class DockerNestedConversationManager(ConversationManager):
                     self.config.sandbox.local_runtime_url,
                     os.getenv('NESTED_RUNTIME_BROWSER_HOST', ''),
                 )
+
+            # Get runtime status from nested runtime
+            runtime_status = await self._get_runtime_status_from_nested_runtime(
+                conversation_id, nested_url
+            )
+
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
@@ -353,9 +424,12 @@ class DockerNestedConversationManager(ConversationManager):
                     sid=conversation_id,
                     user_id=user_id,
                 ),
-                status=ConversationStatus.STARTING
-                if conversation_id in self._starting_conversation_ids
-                else ConversationStatus.RUNNING,
+                status=(
+                    ConversationStatus.STARTING
+                    if conversation_id in self._starting_conversation_ids
+                    else ConversationStatus.RUNNING
+                ),
+                runtime_status=runtime_status,
             )
             results.append(agent_loop_info)
         return results
@@ -468,24 +542,30 @@ class DockerNestedConversationManager(ConversationManager):
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
+
+        config: OpenHandsConfig = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
+
+        llm_registry, conversation_stats, config = (
+            create_registry_and_conversation_stats(config, sid, user_id, settings)
+        )
+
         session = Session(
             sid=sid,
+            llm_registry=llm_registry,
+            conversation_stats=conversation_stats,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )
-        agent_cls = settings.agent or self.config.default_agent
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        llm = LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=session._notify_on_llm_retry,
-        )
-        llm = session._create_llm(agent_cls)
-        agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        llm_registry.retry_listner = session._notify_on_llm_retry
+        agent_cls = settings.agent or config.default_agent
+        agent_config = config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(agent_config, llm_registry)
 
-        config = self.config.model_copy(deep=True)
+        config = config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars
         env_vars['CONVERSATION_MANAGER_CLASS'] = (
             'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
@@ -493,7 +573,8 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SERVE_FRONTEND'] = '0'
         env_vars['RUNTIME'] = 'local'
         # TODO: In the long term we may come up with a more secure strategy for user management within the nested runtime.
-        env_vars['USER'] = 'root'
+        env_vars['USER'] = 'openhands' if config.run_as_openhands else 'root'
+        env_vars['SANDBOX_USER_ID'] = str(config.sandbox.user_id)
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
@@ -535,6 +616,7 @@ class DockerNestedConversationManager(ConversationManager):
             headless_mode=False,
             attach_to_existing=False,
             main_module='openhands.server',
+            llm_registry=llm_registry,
         )
 
         # Hack - disable setting initial env.

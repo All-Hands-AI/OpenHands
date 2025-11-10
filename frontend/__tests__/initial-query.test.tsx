@@ -1,20 +1,24 @@
-import { describe, it, expect } from "vitest";
-import store from "../src/store";
-import {
-  setInitialPrompt,
-  clearInitialPrompt,
-} from "../src/state/initial-query-slice";
+import { describe, it, expect, beforeEach } from "vitest";
+import { useInitialQueryStore } from "../src/stores/initial-query-store";
 
 describe("Initial Query Behavior", () => {
-  it("should clear initial query when clearInitialPrompt is dispatched", () => {
+  beforeEach(() => {
+    // Reset the store before each test
+    useInitialQueryStore.getState().reset();
+  });
+
+  it("should clear initial query when clearInitialPrompt is called", () => {
+    const { setInitialPrompt, clearInitialPrompt, initialPrompt } =
+      useInitialQueryStore.getState();
+
     // Set up initial query in the store
-    store.dispatch(setInitialPrompt("test query"));
-    expect(store.getState().initialQuery.initialPrompt).toBe("test query");
+    setInitialPrompt("test query");
+    expect(useInitialQueryStore.getState().initialPrompt).toBe("test query");
 
     // Clear the initial query
-    store.dispatch(clearInitialPrompt());
+    clearInitialPrompt();
 
     // Verify initial query is cleared
-    expect(store.getState().initialQuery.initialPrompt).toBeNull();
+    expect(useInitialQueryStore.getState().initialPrompt).toBeNull();
   });
 });

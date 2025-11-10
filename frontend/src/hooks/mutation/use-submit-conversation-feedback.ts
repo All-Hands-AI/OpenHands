@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import {
   BatchFeedbackData,
@@ -18,7 +18,7 @@ export const useSubmitConversationFeedback = () => {
 
   return useMutation({
     mutationFn: ({ rating, eventId, reason }: SubmitConversationFeedbackArgs) =>
-      OpenHands.submitConversationFeedback(
+      ConversationService.submitConversationFeedback(
         conversationId,
         rating,
         eventId,

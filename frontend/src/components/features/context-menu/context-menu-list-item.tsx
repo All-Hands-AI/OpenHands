@@ -4,6 +4,7 @@ interface ContextMenuListItemProps {
   testId?: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   isDisabled?: boolean;
+  className?: string;
 }
 
 export function ContextMenuListItem({
@@ -11,6 +12,7 @@ export function ContextMenuListItem({
   testId,
   onClick,
   isDisabled,
+  className,
 }: React.PropsWithChildren<ContextMenuListItemProps>) {
   return (
     <button
@@ -21,6 +23,7 @@ export function ContextMenuListItem({
       className={cn(
         "text-sm px-4 h-10 w-full text-start hover:bg-white/10 cursor-pointer",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent text-nowrap",
+        className,
       )}
     >
       {children}

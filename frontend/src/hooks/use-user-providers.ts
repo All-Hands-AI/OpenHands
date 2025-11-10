@@ -3,7 +3,7 @@ import { convertRawProvidersToList } from "#/utils/convert-raw-providers-to-list
 import { useSettings } from "./query/use-settings";
 
 export const useUserProviders = () => {
-  const { data: settings } = useSettings();
+  const { data: settings, isLoading: isLoadingSettings } = useSettings();
 
   const providers = React.useMemo(
     () => convertRawProvidersToList(settings?.PROVIDER_TOKENS_SET),
@@ -12,5 +12,6 @@ export const useUserProviders = () => {
 
   return {
     providers,
+    isLoadingSettings,
   };
 };

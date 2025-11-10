@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
-import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
+import { useUnifiedVSCodeUrl } from "#/hooks/query/use-unified-vscode-url";
 import { VSCODE_IN_NEW_TAB } from "#/utils/feature-flags";
+import { WaitingForRuntimeMessage } from "#/components/features/chat/waiting-for-runtime-message";
+import { useAgentState } from "#/hooks/use-agent-state";
 
 function VSCodeTab() {
   const { t } = useTranslation();
-  const { data, isLoading, error } = useVSCodeUrl();
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { data, isLoading, error } = useUnifiedVSCodeUrl();
+  const { curAgentState } = useAgentState();
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const [isCrossProtocol, setIsCrossProtocol] = useState(false);
@@ -40,17 +40,13 @@ function VSCodeTab() {
   };
 
   if (isRuntimeInactive) {
-    return (
-      <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-      </div>
-    );
+    return <WaitingForRuntimeMessage />;
   }
 
   if (isLoading) {
     return (
       <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-        {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
+        {t(I18nKey.VSCODE$LOADING)}
       </div>
     );
   }

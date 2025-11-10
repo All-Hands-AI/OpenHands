@@ -7,20 +7,18 @@ from pydantic import (
     SecretStr,
     SerializationInfo,
     field_serializer,
+    field_validator,
     model_validator,
 )
-from pydantic.json import pydantic_encoder
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.utils import load_openhands_config
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 
 
 class Settings(BaseModel):
-    """
-    Persisted settings for OpenHands sessions
-    """
+    """Persisted settings for OpenHands sessions"""
 
     language: str | None = None
     agent: str | None = None
@@ -32,10 +30,11 @@ class Settings(BaseModel):
     llm_base_url: str | None = None
     remote_runtime_resource_factor: int | None = None
     # Planned to be removed from settings
-    secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
+    secrets_store: Secrets = Field(default_factory=Secrets, frozen=True)
     enable_default_condenser: bool = True
     enable_sound_notifications: bool = False
     enable_proactive_conversation_starters: bool = True
+    enable_solvability_analysis: bool = True
     user_consents_to_analytics: bool | None = None
     sandbox_base_container_image: str | None = None
     sandbox_runtime_container_image: str | None = None
@@ -43,8 +42,12 @@ class Settings(BaseModel):
     search_api_key: SecretStr | None = None
     sandbox_api_key: SecretStr | None = None
     max_budget_per_task: float | None = None
+    # Maximum number of events in the conversation view before condensation runs
+    condenser_max_size: int | None = None
     email: str | None = None
     email_verified: bool | None = None
+    git_user_name: str | None = None
+    git_user_email: str | None = None
 
     model_config = ConfigDict(
         validate_assignment=True,
@@ -59,16 +62,21 @@ class Settings(BaseModel):
         if api_key is None:
             return None
 
+        # Get the secret value to check if it's empty
+        secret_value = api_key.get_secret_value()
+        if not secret_value or not secret_value.strip():
+            return None
+
         context = info.context
         if context and context.get('expose_secrets', False):
-            return api_key.get_secret_value()
+            return secret_value
 
-        return pydantic_encoder(api_key)
+        return str(api_key)
 
     @model_validator(mode='before')
     @classmethod
     def convert_provider_tokens(cls, data: dict | object) -> dict | object:
-        """Convert provider tokens from JSON format to UserSecrets format."""
+        """Convert provider tokens from JSON format to Secrets format."""
         if not isinstance(data, dict):
             return data
 
@@ -79,10 +87,10 @@ class Settings(BaseModel):
         custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
 
-        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})  # type: ignore[arg-type]
+        secret_store = Secrets(provider_tokens={}, custom_secrets={})  # type: ignore[arg-type]
 
         if isinstance(tokens, dict):
-            converted_store = UserSecrets(provider_tokens=tokens)  # type: ignore[arg-type]
+            converted_store = Secrets(provider_tokens=tokens)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'provider_tokens': converted_store.provider_tokens}
             )
@@ -90,7 +98,7 @@ class Settings(BaseModel):
             secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
-            converted_store = UserSecrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
+            converted_store = Secrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': converted_store.custom_secrets}
             )
@@ -101,10 +109,18 @@ class Settings(BaseModel):
         data['secret_store'] = secret_store
         return data
 
-    @field_serializer('secrets_store')
-    def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
-        """Custom serializer for secrets store."""
+    @field_validator('condenser_max_size')
+    @classmethod
+    def validate_condenser_max_size(cls, v: int | None) -> int | None:
+        if v is None:
+            return v
+        if v < 20:
+            raise ValueError('condenser_max_size must be at least 20')
+        return v
 
+    @field_serializer('secrets_store')
+    def secrets_store_serializer(self, secrets: Secrets, info: SerializationInfo):
+        """Custom serializer for secrets store."""
         """Force invalidate secret store"""
         return {'provider_tokens': {}}
 
