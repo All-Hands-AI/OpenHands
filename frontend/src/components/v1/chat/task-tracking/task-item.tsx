@@ -1,20 +1,12 @@
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
+import { TaskItem as TaskItemType } from "#/types/v1/core/base/common";
 import CircleIcon from "#/icons/u-circle.svg?react";
-import { I18nKey } from "#/i18n/declaration";
 
 interface TaskItemProps {
-  task: {
-    id: string;
-    title: string;
-    status: "todo" | "in_progress" | "done";
-    notes?: string;
-  };
+  task: TaskItemType;
 }
 
 export function TaskItem({ task }: TaskItemProps) {
-  const { t } = useTranslation();
-
   const icon = useMemo(() => {
     switch (task.status) {
       // TODO: Add icons for each status
@@ -33,9 +25,11 @@ export function TaskItem({ task }: TaskItemProps) {
         <div className="shrink-0 size-[16px]">{icon}</div>
         <div className="flex flex-col items-start justify-center leading-[20px] pb-[7px] text-nowrap whitespace-pre">
           <p className="text-[12px] text-white font-normal">{task.title}</p>
-          <p className="text-[10px] text-neutral-400 font-normal">
-            {t(I18nKey.COMMON$ID)}: {task.id}
-          </p>
+          {task.notes && (
+            <p className="text-[10px] text-neutral-400 font-normal">
+              {task.notes}
+            </p>
+          )}
         </div>
       </div>
     </div>
