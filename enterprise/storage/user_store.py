@@ -12,6 +12,7 @@ from storage.database import session_maker
 from storage.encrypt_utils import decrypt_model
 from storage.org import Org
 from storage.org_member import OrgMember
+from storage.org_store import OrgStore
 from storage.role_store import RoleStore
 from storage.user import User
 from storage.user_settings import UserSettings
@@ -45,8 +46,6 @@ class UserStore:
 
             if not settings:
                 return None
-
-            from storage.org_store import OrgStore
 
             org_kwargs = OrgStore.get_kwargs_from_settings(settings)
             for key, value in org_kwargs.items():
@@ -123,8 +122,6 @@ class UserStore:
             from integrations.stripe_service import migrate_customer
 
             await migrate_customer(session, user_id, org)
-
-            from storage.org_store import OrgStore
 
             org_kwargs = OrgStore.get_kwargs_from_user_settings(decrypted_user_settings)
             org_kwargs.pop('id', None)
