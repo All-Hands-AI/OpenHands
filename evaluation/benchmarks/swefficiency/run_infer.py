@@ -40,7 +40,7 @@ from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     get_llm_config_arg,
-    get_parser,
+    get_evaluation_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -741,7 +741,7 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=0)
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
