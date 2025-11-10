@@ -70,8 +70,7 @@ export function AgentStatus({
 
   // Update global state when agent loading condition changes
   useEffect(() => {
-    if (shouldShownAgentLoading)
-      setShouldShownAgentLoading(shouldShownAgentLoading);
+    setShouldShownAgentLoading(!!shouldShownAgentLoading);
   }, [shouldShownAgentLoading, setShouldShownAgentLoading]);
 
   return (

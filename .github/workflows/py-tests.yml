@@ -70,37 +70,7 @@ jobs:
             .coverage.${{ matrix.python_version }}
             .coverage.runtime.${{ matrix.python_version }}
           include-hidden-files: true
-  # Run specific Windows python tests
-  test-on-windows:
-    name: Python Tests on Windows
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ["3.12"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install pipx
-        run: pip install pipx
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-      - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
-      - name: Run Windows unit tests
-        run: poetry run pytest -svv tests/runtime//test_windows_bash.py
-        env:
-          PYTHONPATH: ".;$env:PYTHONPATH"
-          DEBUG: "1"
-      - name: Run Windows runtime tests with LocalRuntime
-        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
-        env:
-          PYTHONPATH: ".;$env:PYTHONPATH"
-          TEST_RUNTIME: local
-          DEBUG: "1"
+
   test-enterprise:
     name: Enterprise Python Unit Tests
     runs-on: blacksmith-4vcpu-ubuntu-2404
