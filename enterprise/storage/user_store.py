@@ -12,6 +12,7 @@ from storage.database import session_maker
 from storage.encrypt_utils import decrypt_model
 from storage.org import Org
 from storage.org_member import OrgMember
+from storage.org_member_store import OrgMemberStore
 from storage.org_store import OrgStore
 from storage.role_store import RoleStore
 from storage.user import User
@@ -62,8 +63,6 @@ class UserStore:
             session.add(user)
 
             role = RoleStore.get_role_by_name('admin')
-
-            from storage.org_member_store import OrgMemberStore
 
             org_member_kwargs = OrgMemberStore.get_kwargs_from_settings(settings)
             org_member = OrgMember(
@@ -142,8 +141,6 @@ class UserStore:
             session.add(user)
 
             role = RoleStore.get_role_by_name('admin')
-
-            from storage.org_member_store import OrgMemberStore
 
             org_member_kwargs = OrgMemberStore.get_kwargs_from_user_settings(
                 decrypted_user_settings
