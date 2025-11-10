@@ -19,67 +19,47 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Check for commit-hash revs in pyproject.toml
+      - name: Check for any 'rev' fields in pyproject.toml
         run: |
           python - <<'PY'
-          import sys, re, tomllib, pathlib
+          import sys, tomllib, pathlib
 
           path = pathlib.Path("pyproject.toml")
-
           if not path.exists():
-              print("ERROR: pyproject.toml not found")
+              print("❌ ERROR: pyproject.toml not found")
               sys.exit(1)
 
           try:
               data = tomllib.loads(path.read_text(encoding="utf-8"))
           except Exception as e:
-              print(f"ERROR: Failed to parse pyproject.toml: {e}")
+              print(f"❌ ERROR: Failed to parse pyproject.toml: {e}")
               sys.exit(1)
 
-          deps = (
-              data.get("tool", {})
-                  .get("poetry", {})
-                  .get("dependencies", {})
-          )
+          poetry = data.get("tool", {}).get("poetry", {})
+          sections = {
+              "dependencies": poetry.get("dependencies", {}),
+          }
 
-          if not isinstance(deps, dict) or not deps:
-              print("ERROR: No dependencies found under tool.poetry.dependencies")
-              sys.exit(1)
-
-          print("🔍 Checking all dependencies for commit-hash revs...\n")
-          commit_hash = re.compile(r"^[0-9a-f]{7,40}$", re.IGNORECASE)
           errors = []
 
-          for name, cfg in deps.items():
-              if isinstance(cfg, str):
-                  print(f"  • {name}: version '{cfg}' (OK)")
+          print("🔍 Checking for any dependencies with 'rev' fields...\n")
+          for section_name, deps in sections.items():
+              if not isinstance(deps, dict):
                   continue
 
-              if isinstance(cfg, dict):
-                  rev = cfg.get("rev")
-                  if rev:
-                      if commit_hash.match(str(rev)):
-                          msg = f"  ✖ {name}: rev='{rev}' looks like a commit hash (NOT ALLOWED)"
-                          print(msg)
-                          errors.append(msg)
-                      else:
-                          print(f"  • {name}: rev='{rev}' (tag/branch OK)")
-                  elif "version" in cfg:
-                      print(f"  • {name}: version '{cfg['version']}' (OK)")
-                  elif "git" in cfg:
-                      print(f"  • {name}: git dependency without rev (WARN, allowed)")
+              for pkg_name, cfg in deps.items():
+                  if isinstance(cfg, dict) and "rev" in cfg:
+                      msg = f"  ✖ {pkg_name} in [{section_name}] uses rev='{cfg['rev']}' (NOT ALLOWED)"
+                      print(msg)
+                      errors.append(msg)
                   else:
-                      print(f"  • {name}: unusual config {cfg!r} (OK)")
-                  continue
-
-              print(f"  • {name}: unexpected format {type(cfg).__name__} (OK)")
+                      print(f"  • {pkg_name}: OK")
 
           if errors:
-              print("\n❌ FAILED: Found dependencies pinned to commit hashes:\n" + "\n".join(errors))
-              print("\nUse released versions or tag/branch names instead, e.g.:")
+              print("\n❌ FAILED: Found dependencies using 'rev' fields:\n" + "\n".join(errors))
+              print("\nPlease use versioned releases instead, e.g.:")
               print('  my-package = "1.0.0"')
-              print('  my-package = { git = "...", rev = "v1.0.0" }')
               sys.exit(1)
 
-          print("\n✅ SUCCESS: No forbidden commit-hash revs found.")
+          print("\n✅ SUCCESS: No 'rev' fields found. All dependencies are using proper versioned releases.")
           PY
