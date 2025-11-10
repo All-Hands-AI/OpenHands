@@ -32,10 +32,11 @@ export const useGitUser = () => {
       });
 
       // If we have both GitHub username and Keycloak ID, alias them
-      // PostHog alias syntax: alias(alias_id, original_id)
-      // We're aliasing the Keycloak ID (old) to the GitHub username (new/primary)
+      // PostHog alias syntax: alias(alias_id, distinct_id)
+      // IMPORTANT: The distinct_id (github username) was already used in identify()
+      // So we alias FROM github_username TO keycloak_id (github_username becomes the alias)
       if (user.data.keycloak_user_id && config?.APP_MODE === "saas") {
-        posthog.alias(user.data.keycloak_user_id, user.data.login);
+        posthog.alias(user.data.login, user.data.keycloak_user_id);
       }
     }
   }, [user.data, config?.APP_MODE]);
