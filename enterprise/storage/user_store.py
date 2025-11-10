@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import joinedload
 from storage.database import session_maker
 from storage.encrypt_utils import decrypt_model
+from storage.lite_llm_manager import LiteLlmManager
 from storage.org import Org
 from storage.org_member import OrgMember
 from storage.org_member_store import OrgMemberStore
@@ -110,8 +111,6 @@ class UserStore:
                 contact_email=user_info['email'],
             )
             session.add(org)
-
-            from storage.lite_llm_manager import LiteLlmManager
 
             await LiteLlmManager.migrate_entries(
                 str(org.id), user_id, decrypted_user_settings
@@ -255,8 +254,6 @@ class UserStore:
             return None
 
         settings = Settings(language='en', enable_proactive_conversation_starters=True)
-
-        from storage.lite_llm_manager import LiteLlmManager
 
         settings = await LiteLlmManager.create_entries(org_id, user_id, settings)
         if not settings:
