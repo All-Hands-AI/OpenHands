@@ -1,7 +1,6 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import { useQueryClient } from "@tanstack/react-query";
-import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError, trackError } from "#/utils/error-handler";
 import { useRate } from "#/hooks/use-rate";
@@ -136,6 +135,7 @@ export function WsClientProvider({
   const { addEvent, clearEvents } = useEventStore();
   const queryClient = useQueryClient();
   const sioRef = React.useRef<Socket | null>(null);
+  const pendingEventsRef = React.useRef<Record<string, unknown>[]>([]);
   const [webSocketStatus, setWebSocketStatus] =
     React.useState<V0_WebSocketStatus>("DISCONNECTED");
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
@@ -145,17 +145,36 @@ export function WsClientProvider({
   const { data: conversation, refetch: refetchConversation } =
     useActiveConversation();
 
-  function send(event: Record<string, unknown>) {
-    if (!sioRef.current) {
-      EventLogger.error("WebSocket is not connected.");
+  function flushPendingEvents(socket: Socket | null = sioRef.current) {
+    if (!socket || pendingEventsRef.current.length === 0) {
       return;
     }
-    sioRef.current.emit("oh_user_action", event);
+
+    pendingEventsRef.current.forEach((queuedEvent) => {
+      socket.emit("oh_user_action", queuedEvent);
+    });
+    pendingEventsRef.current = [];
+  }
+
+  function send(event: Record<string, unknown>) {
+    const socket = sioRef.current;
+
+    if (!socket) {
+      pendingEventsRef.current.push(event);
+      return;
+    }
+
+    if (pendingEventsRef.current.length > 0) {
+      flushPendingEvents(socket);
+    }
+
+    socket.emit("oh_user_action", event);
   }
 
   function handleConnect() {
     setWebSocketStatus("CONNECTED");
     removeErrorMessage();
+    flushPendingEvents();
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -284,6 +303,7 @@ export function WsClientProvider({
 
     clearEvents();
     setWebSocketStatus("CONNECTING");
+    pendingEventsRef.current = [];
   }, [conversationId]);
 
   React.useEffect(() => {
@@ -293,6 +313,12 @@ export function WsClientProvider({
 
     // Clear error messages when conversation is intentionally stopped
     if (conversation && conversation.status === "STOPPED") {
+      const existingSocket = sioRef.current;
+      if (existingSocket) {
+        existingSocket.disconnect();
+      }
+      sioRef.current = null;
+      pendingEventsRef.current = [];
       removeErrorMessage();
       setWebSocketStatus("DISCONNECTED");
       return () => undefined; // conversation intentionally stopped
@@ -312,6 +338,10 @@ export function WsClientProvider({
       !conversation.runtime_status ||
       conversation.runtime_status === "STATUS$STOPPED"
     ) {
+      if (sioRef.current) {
+        sioRef.current.disconnect();
+      }
+      sioRef.current = null;
       return () => undefined; // conversation not ready for WebSocket connection
     }
 
@@ -360,6 +390,7 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
+    flushPendingEvents(sio);
 
     return () => {
       sio.off("connect", handleConnect);
