@@ -15039,6 +15039,38 @@
     "de": "Erstellen",
     "uk": "Зібрати"
   },
+  "COMMON$ASK": {
+    "en": "Ask",
+    "ja": "質問する",
+    "zh-CN": "提问",
+    "zh-TW": "詢問",
+    "ko-KR": "질문",
+    "no": "Spør",
+    "it": "Chiedi",
+    "pt": "Perguntar",
+    "es": "Preguntar",
+    "ar": "اسأل",
+    "fr": "Demander",
+    "tr": "Sor",
+    "de": "Fragen",
+    "uk": "Запитати"
+  },
+  "COMMON$PLAN": {
+    "en": "Plan",
+    "ja": "計画",
+    "zh-CN": "计划",
+    "zh-TW": "計劃",
+    "ko-KR": "계획",
+    "no": "Plan",
+    "it": "Piano",
+    "pt": "Plano",
+    "es": "Plan",
+    "ar": "خطة",
+    "fr": "Planifier",
+    "tr": "Plan",
+    "de": "Plan",
+    "uk": "План"
+  },
   "COMMON$LET_S_WORK_ON_A_PLAN": {
     "en": "Let’s work on a plan",
     "ja": "プランに取り組みましょう",

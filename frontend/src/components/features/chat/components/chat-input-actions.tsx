@@ -8,6 +8,7 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { AgentState } from "#/types/agent-state";
 import { useV1PauseConversation } from "#/hooks/mutation/use-v1-pause-conversation";
 import { useV1ResumeConversation } from "#/hooks/mutation/use-v1-resume-conversation";
+import { ChangeAgentButton } from "../change-agent-button";
 
 interface ChatInputActionsProps {
   disabled: boolean;
@@ -56,7 +57,10 @@ export function ChatInputActions({
   return (
     <div className="w-full flex items-center justify-between">
       <div className="flex items-center gap-1">
-        <Tools />
+        <div className="flex items-center gap-4">
+          <Tools />
+          <ChangeAgentButton />
+        </div>
       </div>
       <AgentStatus
         className="ml-2 md:ml-3"
