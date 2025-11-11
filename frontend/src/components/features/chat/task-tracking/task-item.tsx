@@ -1,9 +1,7 @@
 import { useMemo } from "react";
-import { useTranslation } from "react-i18next";
 import CircleIcon from "#/icons/u-circle.svg?react";
 import CheckCircleIcon from "#/icons/u-check-circle.svg?react";
 import LoadingIcon from "#/icons/loading.svg?react";
-import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 
 interface TaskItemProps {
@@ -16,8 +14,6 @@ interface TaskItemProps {
 }
 
 export function TaskItem({ task }: TaskItemProps) {
-  const { t } = useTranslation();
-
   const icon = useMemo(() => {
     switch (task.status) {
       case "todo":
@@ -46,9 +42,7 @@ export function TaskItem({ task }: TaskItemProps) {
           >
             {task.title}
           </p>
-          <p className="text-[10px] text-neutral-400 font-normal">
-            {t(I18nKey.COMMON$ID)}: {task.id}
-          </p>
+          <p className="text-[10px] text-[#A3A3A3] font-normal">{task.notes}</p>
         </div>
       </div>
     </div>

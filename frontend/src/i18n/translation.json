@@ -14991,22 +14991,6 @@
     "de": "Einen Plan erstellen",
     "uk": "Створити план"
   },
-  "COMMON$ID": {
-    "en": "ID",
-    "ja": "ID",
-    "zh-CN": "ID",
-    "zh-TW": "ID",
-    "ko-KR": "ID",
-    "no": "ID",
-    "it": "ID",
-    "pt": "ID",
-    "es": "ID",
-    "ar": "ID",
-    "fr": "ID",
-    "tr": "ID",
-    "de": "ID",
-    "uk": "ID"
-  },
   "COMMON$TASKS": {
     "en": "Tasks",
     "ja": "タスク",
