@@ -1,14 +1,25 @@
 import json
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 from fastapi import status
 from fastapi.responses import JSONResponse
 
+from openhands.app_server.app_conversation.app_conversation_info_service import (
+    AppConversationInfoService,
+)
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationInfo,
+)
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
 from openhands.microagent.types import MicroagentMetadata, MicroagentType
-from openhands.server.routes.conversation import get_microagents
+from openhands.server.routes.conversation import (
+    AddMessageRequest,
+    add_message,
+    get_microagents,
+)
 from openhands.server.routes.manage_conversations import (
     UpdateConversationRequest,
     update_conversation,
@@ -619,3 +630,498 @@ async def test_update_conversation_no_user_id_no_metadata_user_id():
         # Verify success (should work when both are None)
         assert result is True
         mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_success():
+    """Test successful V1 conversation update."""
+    # Mock data
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+    original_title = 'Original V1 Title'
+    new_title = 'Updated V1 Title'
+
+    # Create mock V1 conversation info
+    mock_app_conversation_info = AppConversationInfo(
+        id=conversation_uuid,
+        created_by_user_id=user_id,
+        sandbox_id='test_sandbox_123',
+        title=original_title,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock app conversation info service
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+    mock_app_conversation_info_service.save_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+
+    # Create mock conversation store (won't be used for V1)
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+        app_conversation_info_service=mock_app_conversation_info_service,
+    )
+
+    # Verify the result
+    assert result is True
+
+    # Verify V1 service was called
+    mock_app_conversation_info_service.get_app_conversation_info.assert_called_once_with(
+        conversation_uuid
+    )
+    mock_app_conversation_info_service.save_app_conversation_info.assert_called_once()
+
+    # Verify the conversation store was NOT called (V1 doesn't use it)
+    mock_conversation_store.get_metadata.assert_not_called()
+
+    # Verify the saved info has updated title
+    saved_info = (
+        mock_app_conversation_info_service.save_app_conversation_info.call_args[0][0]
+    )
+    assert saved_info.title == new_title.strip()
+    assert saved_info.updated_at is not None
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_not_found():
+    """Test V1 conversation update when conversation doesn't exist."""
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+
+    # Create mock app conversation info service that returns None
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=None
+    )
+
+    # Create mock conversation store that also raises FileNotFoundError
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(side_effect=FileNotFoundError())
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+        app_conversation_info_service=mock_app_conversation_info_service,
+    )
+
+    # Verify the result is a 404 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_404_NOT_FOUND
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert content['message'] == 'Conversation not found'
+    assert content['msg_id'] == 'CONVERSATION$NOT_FOUND'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_permission_denied():
+    """Test V1 conversation update when user doesn't own the conversation."""
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+    owner_id = 'different_user_789'
+
+    # Create mock V1 conversation info owned by different user
+    mock_app_conversation_info = AppConversationInfo(
+        id=conversation_uuid,
+        created_by_user_id=owner_id,
+        sandbox_id='test_sandbox_123',
+        title='Original Title',
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock app conversation info service
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+
+    # Create mock conversation store (won't be used)
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+        app_conversation_info_service=mock_app_conversation_info_service,
+    )
+
+    # Verify the result is a 403 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_403_FORBIDDEN
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert (
+        content['message']
+        == 'Permission denied: You can only update your own conversations'
+    )
+    assert content['msg_id'] == 'AUTHORIZATION$PERMISSION_DENIED'
+
+    # Verify save was NOT called
+    mock_app_conversation_info_service.save_app_conversation_info.assert_not_called()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_save_assertion_error():
+    """Test V1 conversation update when save raises AssertionError (permission check)."""
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+
+    # Create mock V1 conversation info
+    mock_app_conversation_info = AppConversationInfo(
+        id=conversation_uuid,
+        created_by_user_id=user_id,
+        sandbox_id='test_sandbox_123',
+        title='Original Title',
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock app conversation info service
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+    # Simulate AssertionError on save (permission check in service)
+    mock_app_conversation_info_service.save_app_conversation_info = AsyncMock(
+        side_effect=AssertionError('User does not own conversation')
+    )
+
+    # Create mock conversation store (won't be used)
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title='New Title')
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+        app_conversation_info_service=mock_app_conversation_info_service,
+    )
+
+    # Verify the result is a 403 error response
+    assert isinstance(result, JSONResponse)
+    assert result.status_code == status.HTTP_403_FORBIDDEN
+
+    # Parse the JSON content
+    content = json.loads(result.body)
+    assert content['status'] == 'error'
+    assert (
+        content['message']
+        == 'Permission denied: You can only update your own conversations'
+    )
+    assert content['msg_id'] == 'AUTHORIZATION$PERMISSION_DENIED'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_title_whitespace_trimming():
+    """Test that V1 conversation title is properly trimmed of whitespace."""
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+    title_with_whitespace = '  Trimmed V1 Title  '
+    expected_title = 'Trimmed V1 Title'
+
+    # Create mock V1 conversation info
+    mock_app_conversation_info = AppConversationInfo(
+        id=conversation_uuid,
+        created_by_user_id=user_id,
+        sandbox_id='test_sandbox_123',
+        title='Original Title',
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock app conversation info service
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+    mock_app_conversation_info_service.save_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+
+    # Create mock conversation store (won't be used)
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+
+    # Create update request with whitespace
+    update_request = UpdateConversationRequest(title=title_with_whitespace)
+
+    # Call the function
+    result = await update_conversation(
+        conversation_id=conversation_id,
+        data=update_request,
+        user_id=user_id,
+        conversation_store=mock_conversation_store,
+        app_conversation_info_service=mock_app_conversation_info_service,
+    )
+
+    # Verify the result
+    assert result is True
+
+    # Verify the saved info has trimmed title
+    saved_info = (
+        mock_app_conversation_info_service.save_app_conversation_info.call_args[0][0]
+    )
+    assert saved_info.title == expected_title
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_invalid_uuid_falls_back_to_v0():
+    """Test that invalid UUID conversation_id falls back to V0 logic."""
+    conversation_id = 'not_a_valid_uuid_123'
+    user_id = 'test_user_456'
+    new_title = 'Updated Title'
+
+    # Create mock V0 metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store for V0
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Create mock app conversation info service (won't be called)
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+            app_conversation_info_service=mock_app_conversation_info_service,
+        )
+
+        # Verify the result is successful
+        assert result is True
+
+        # Verify V0 store was used, not V1 service
+        mock_conversation_store.get_metadata.assert_called_once_with(conversation_id)
+        mock_conversation_store.save_metadata.assert_called_once()
+        mock_app_conversation_info_service.get_app_conversation_info.assert_not_called()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_v1_conversation_no_socket_emission():
+    """Test that V1 conversation update does NOT emit socket.io events."""
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+    user_id = 'test_user_456'
+    new_title = 'Updated V1 Title'
+
+    # Create mock V1 conversation info
+    mock_app_conversation_info = AppConversationInfo(
+        id=conversation_uuid,
+        created_by_user_id=user_id,
+        sandbox_id='test_sandbox_123',
+        title='Original Title',
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock app conversation info service
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+    mock_app_conversation_info_service.save_app_conversation_info = AsyncMock(
+        return_value=mock_app_conversation_info
+    )
+
+    # Create mock conversation store (won't be used)
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+
+    # Create update request
+    update_request = UpdateConversationRequest(title=new_title)
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with patch(
+        'openhands.server.routes.manage_conversations.conversation_manager'
+    ) as mock_manager:
+        mock_manager.sio = mock_sio
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            conversation_store=mock_conversation_store,
+            app_conversation_info_service=mock_app_conversation_info_service,
+        )
+
+        # Verify the result is successful
+        assert result is True
+
+        # Verify socket.io was NOT called for V1 conversation
+        mock_sio.emit.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_add_message_success():
+    """Test successful message addition to conversation."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request
+    message_request = AddMessageRequest(message='Hello, this is a test message!')
+
+    # Mock the conversation manager
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock()
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 200
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is True
+
+        # Verify that send_event_to_conversation was called
+        mock_manager.send_event_to_conversation.assert_called_once()
+        call_args = mock_manager.send_event_to_conversation.call_args
+        assert call_args[0][0] == 'test_conversation_123'  # conversation ID
+
+        # Verify the message data structure
+        message_data = call_args[0][1]
+        assert message_data['action'] == 'message'
+        assert message_data['args']['content'] == 'Hello, this is a test message!'
+
+
+@pytest.mark.asyncio
+async def test_add_message_conversation_manager_error():
+    """Test add_message when conversation manager raises an exception."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request
+    message_request = AddMessageRequest(message='Test message')
+
+    # Mock the conversation manager to raise an exception
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock(
+            side_effect=Exception('Conversation manager error')
+        )
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 500
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is False
+        assert 'Conversation manager error' in content['error']
+
+
+@pytest.mark.asyncio
+async def test_add_message_empty_message():
+    """Test add_message with an empty message."""
+    # Create a mock ServerConversation
+    mock_conversation = MagicMock(spec=ServerConversation)
+    mock_conversation.sid = 'test_conversation_123'
+
+    # Create message request with empty message
+    message_request = AddMessageRequest(message='')
+
+    # Mock the conversation manager
+    with patch(
+        'openhands.server.routes.conversation.conversation_manager'
+    ) as mock_manager:
+        mock_manager.send_event_to_conversation = AsyncMock()
+
+        # Call the function directly
+        response = await add_message(
+            data=message_request, conversation=mock_conversation
+        )
+
+        # Verify the response
+        assert isinstance(response, JSONResponse)
+        assert response.status_code == 200
+
+        # Parse the JSON content
+        content = json.loads(response.body)
+        assert content['success'] is True
+
+        # Verify that send_event_to_conversation was called with empty content
+        mock_manager.send_event_to_conversation.assert_called_once()
+        call_args = mock_manager.send_event_to_conversation.call_args
+        message_data = call_args[0][1]
+        assert message_data['args']['content'] == ''

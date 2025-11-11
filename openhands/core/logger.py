@@ -217,7 +217,7 @@ class RollingLogger:
         r"""'\033[F' moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
-        self._write('\033[F' * (self.max_lines))
+        self._write('\033[F' * amount)
         self._flush()
 
     def replace_current_line(self, line: str = '') -> None:
@@ -345,7 +345,7 @@ logging.basicConfig(level=logging.ERROR)
 def log_uncaught_exceptions(
     ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
 ) -> Any:
-    """Logs uncaught exceptions along with the traceback.
+    """Logs uncaught exceptions in structured form when JSON logging is enabled.
 
     Args:
         ex_cls: The type of the exception.
@@ -355,9 +355,9 @@ def log_uncaught_exceptions(
     Returns:
         None
     """
-    if tb:  # Add check since tb can be None
-        logging.error(''.join(traceback.format_tb(tb)))
-    logging.error('{0}: {1}'.format(ex_cls, ex))
+    # Route uncaught exceptions through our logger with proper exc_info
+    # Avoid manual formatting which creates multi-line plain-text log entries
+    openhands_logger.error('Uncaught exception', exc_info=(ex_cls, ex, tb))
 
 
 sys.excepthook = log_uncaught_exceptions
@@ -376,6 +376,10 @@ if current_log_level == logging.DEBUG:
 
 if LOG_JSON:
     openhands_logger.addHandler(json_log_handler(current_log_level))
+    # Configure concurrent.futures logger to use JSON formatting as well
+    cf_logger = logging.getLogger('concurrent.futures')
+    cf_logger.setLevel(current_log_level)
+    cf_logger.addHandler(json_log_handler(current_log_level))
 else:
     openhands_logger.addHandler(get_console_handler(current_log_level))
 
@@ -407,6 +411,7 @@ LOQUACIOUS_LOGGERS = [
     'socketio',
     'socketio.client',
     'socketio.server',
+    'aiosqlite',
 ]
 
 for logger_name in LOQUACIOUS_LOGGERS:
@@ -510,3 +515,91 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
         else:
             kwargs['extra'] = self.extra
         return msg, kwargs
+
+
+def get_uvicorn_json_log_config() -> dict:
+    """Returns a uvicorn log config dict for JSON structured logging.
+
+    This configuration ensures Uvicorn's error and access logs are emitted
+    as single-line JSON when LOG_JSON=1, avoiding multi-line plain-text
+    tracebacks in log aggregators like Datadog.
+
+    Returns:
+        A dict suitable for passing to uvicorn.run(..., log_config=...).
+    """
+    return {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            # Uvicorn mutates 'default' and 'access' to set use_colors;
+            # keep them present using Uvicorn formatters
+            'default': {
+                '()': 'uvicorn.logging.DefaultFormatter',
+                'fmt': '%(levelprefix)s %(message)s',
+                'use_colors': None,
+            },
+            'access': {
+                '()': 'uvicorn.logging.AccessFormatter',
+                'fmt': '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
+                'use_colors': None,
+            },
+            # Actual JSON formatters used by handlers below
+            'json': {
+                '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(exc_info)s',
+            },
+            'json_access': {
+                '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+                'fmt': '%(message)s %(levelname)s %(name)s %(asctime)s %(client_addr)s %(request_line)s %(status_code)s',
+            },
+        },
+        'handlers': {
+            'default': {
+                'class': 'logging.StreamHandler',
+                'level': 'INFO',
+                'formatter': 'json',
+                'stream': 'ext://sys.stdout',
+            },
+            'access': {
+                'class': 'logging.StreamHandler',
+                'level': 'INFO',
+                'formatter': 'json_access',
+                'stream': 'ext://sys.stdout',
+            },
+        },
+        'loggers': {
+            'uvicorn': {
+                'handlers': ['default'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'uvicorn.error': {
+                'handlers': ['default'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'uvicorn.access': {
+                'handlers': ['access'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            # Suppress LiteLLM loggers to prevent them from leaking through root logger
+            # This is necessary because logging.config.dictConfig() resets the .disabled flag
+            'LiteLLM': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Router': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+            'LiteLLM Proxy': {
+                'handlers': [],
+                'level': 'CRITICAL',
+                'propagate': False,
+            },
+        },
+        'root': {'level': 'INFO', 'handlers': ['default']},
+    }

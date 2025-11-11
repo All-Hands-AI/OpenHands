@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.57.0",
+  "version": "0.61.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -98,7 +98,7 @@
     "@playwright/test": "^1.55.1",
     "@react-router/dev": "^7.9.3",
     "@tailwindcss/typography": "^0.5.19",
-    "@tanstack/eslint-plugin-query": "^5.90.1",
+    "@tanstack/eslint-plugin-query": "^5.91.0",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",

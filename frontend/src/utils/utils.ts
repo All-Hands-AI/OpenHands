@@ -3,10 +3,42 @@ import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
 import { SuggestedTaskGroup } from "#/utils/types";
 import { ConversationStatus } from "#/types/conversation-status";
+import { GitRepository } from "#/types/git";
+import { sanitizeQuery } from "#/utils/sanitize-query";
+import { PRODUCT_URL } from "#/utils/constants";
+import { AgentState } from "#/types/agent-state";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Get the numeric height value from an element's style property
+ * @param el The HTML element to get the height from
+ * @param fallback The fallback value to return if style height is invalid
+ * @returns The numeric height value in pixels, or the fallback value
+ *
+ * @example
+ * getStyleHeightPx(element, 20) // Returns 20 if element.style.height is "auto" or invalid
+ * getStyleHeightPx(element, 20) // Returns 100 if element.style.height is "100px"
+ */
+export const getStyleHeightPx = (el: HTMLElement, fallback: number): number => {
+  const elementHeight = parseFloat(el.style.height || "");
+  return Number.isFinite(elementHeight) ? elementHeight : fallback;
+};
+
+/**
+ * Set the height style property of an element to a specific pixel value
+ * @param el The HTML element to set the height for
+ * @param height The height value in pixels to set
+ *
+ * @example
+ * setStyleHeightPx(element, 100) // Sets element.style.height to "100px"
+ * setStyleHeightPx(textarea, 200) // Sets textarea.style.height to "200px"
+ */
+export const setStyleHeightPx = (el: HTMLElement, height: number): void => {
+  el.style.setProperty("height", `${height}px`);
+};
 
 /**
  * Detect if the user is on a mobile device
@@ -18,6 +50,13 @@ export const isMobileDevice = (): boolean =>
   ) ||
   "ontouchstart" in window ||
   navigator.maxTouchPoints > 0;
+
+/**
+ * Checks if the current domain is the production domain
+ * @returns True if the current domain matches the production URL
+ */
+export const isProductionDomain = (): boolean =>
+  window.location.origin === PRODUCT_URL.PRODUCTION;
 
 interface EventActionHistory {
   args?: {
@@ -508,4 +547,129 @@ export const getStatusClassName = (status: string) => {
     return "bg-yellow-800 text-yellow-200";
   }
   return "bg-gray-700 text-gray-300";
+};
+
+/**
+ * Helper function to apply client-side filtering based on search query
+ * @param repo The Git repository to check
+ * @param searchQuery The search query string
+ * @returns True if the repository should be included based on the search query
+ */
+export const shouldIncludeRepository = (
+  repo: GitRepository,
+  searchQuery: string,
+): boolean => {
+  if (!searchQuery.trim()) {
+    return true;
+  }
+
+  const sanitizedQuery = sanitizeQuery(searchQuery);
+  const sanitizedRepoName = sanitizeQuery(repo.full_name);
+  return sanitizedRepoName.includes(sanitizedQuery);
+};
+
+/**
+ * Get the OpenHands query string based on the provider
+ * @param provider The git provider
+ * @returns The query string for searching OpenHands repositories
+ */
+export const getOpenHandsQuery = (provider: Provider | null): string => {
+  if (provider === "gitlab") {
+    return "openhands-config";
+  }
+  return ".openhands";
+};
+
+/**
+ * Check if a repository has the OpenHands suffix based on the provider
+ * @param repo The Git repository to check
+ * @param provider The git provider
+ * @returns True if the repository has the OpenHands suffix
+ */
+export const hasOpenHandsSuffix = (
+  repo: GitRepository,
+  provider: Provider | null,
+): boolean => {
+  if (provider === "gitlab") {
+    return repo.full_name.endsWith("/openhands-config");
+  }
+  return repo.full_name.endsWith("/.openhands");
+};
+
+/**
+ * Build headers for V1 API requests that require session authentication
+ * @param sessionApiKey Session API key for authentication
+ * @returns Headers object with X-Session-API-Key if provided
+ */
+export const buildSessionHeaders = (
+  sessionApiKey?: string | null,
+): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (sessionApiKey) {
+    headers["X-Session-API-Key"] = sessionApiKey;
+  }
+  return headers;
+};
+
+/**
+ * Get the appropriate color based on agent status
+ * @param options Configuration object for status color calculation
+ * @param options.isPausing Whether the agent is currently pausing
+ * @param options.isTask Whether we're polling a task
+ * @param options.taskStatus The task status string (e.g., "ERROR", "READY")
+ * @param options.isStartingStatus Whether the agent is in a starting state (LOADING or INIT)
+ * @param options.isStopStatus Whether the conversation status is STOPPED
+ * @param options.curAgentState The current agent state
+ * @returns The hex color code for the status
+ *
+ * @example
+ * getStatusColor({
+ *   isPausing: false,
+ *   isTask: false,
+ *   taskStatus: undefined,
+ *   isStartingStatus: false,
+ *   isStopStatus: false,
+ *   curAgentState: AgentState.RUNNING
+ * }) // Returns "#BCFF8C"
+ */
+export const getStatusColor = (options: {
+  isPausing: boolean;
+  isTask: boolean;
+  taskStatus?: string | null;
+  isStartingStatus: boolean;
+  isStopStatus: boolean;
+  curAgentState: AgentState;
+}): string => {
+  const {
+    isPausing,
+    isTask,
+    taskStatus,
+    isStartingStatus,
+    isStopStatus,
+    curAgentState,
+  } = options;
+
+  // Show pausing status
+  if (isPausing) {
+    return "#FFD600";
+  }
+
+  // Show task status if we're polling a task
+  if (isTask && taskStatus) {
+    if (taskStatus === "ERROR") {
+      return "#FF684E";
+    }
+    return "#FFD600";
+  }
+
+  if (isStartingStatus) {
+    return "#FFD600";
+  }
+  if (isStopStatus) {
+    return "#ffffff";
+  }
+  if (curAgentState === AgentState.ERROR) {
+    return "#FF684E";
+  }
+  return "#BCFF8C";
 };

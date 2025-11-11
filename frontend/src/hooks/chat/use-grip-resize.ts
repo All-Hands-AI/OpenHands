@@ -58,6 +58,7 @@ export const useGripResize = (
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   } = useAutoResize(chatInputRef as React.RefObject<HTMLElement | null>, {
     minHeight: 20,
     maxHeight: 400,
@@ -76,5 +77,6 @@ export const useGripResize = (
     handleGripMouseDown,
     handleGripTouchStart,
     increaseHeightForEmptyContent,
+    resetManualResize,
   };
 };

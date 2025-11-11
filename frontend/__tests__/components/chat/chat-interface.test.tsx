@@ -21,8 +21,9 @@ import { useErrorMessageStore } from "#/stores/error-message-store";
 import { useOptimisticUserMessageStore } from "#/stores/optimistic-user-message-store";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { useUnifiedUploadFiles } from "#/hooks/mutation/use-unified-upload-files";
 import { OpenHandsAction } from "#/types/core/actions";
+import { useEventStore } from "#/stores/use-event-store";
 
 // Mock the hooks
 vi.mock("#/context/ws-client-provider");
@@ -30,7 +31,7 @@ vi.mock("#/stores/error-message-store");
 vi.mock("#/stores/optimistic-user-message-store");
 vi.mock("#/hooks/query/use-config");
 vi.mock("#/hooks/mutation/use-get-trajectory");
-vi.mock("#/hooks/mutation/use-upload-files");
+vi.mock("#/hooks/mutation/use-unified-upload-files");
 
 // Mock React Router hooks at the top level
 vi.mock("react-router", async () => {
@@ -127,7 +128,7 @@ describe("ChatInterface - Chat Suggestions", () => {
       mutateAsync: vi.fn(),
       isLoading: false,
     });
-    (useUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useUnifiedUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       mutateAsync: vi
         .fn()
         .mockResolvedValue({ skipped_files: [], uploaded_files: [] }),
@@ -176,7 +177,7 @@ describe("ChatInterface - Chat Suggestions", () => {
   });
 
   test("should hide chat suggestions when there is a user message", () => {
-    const userEvent: OpenHandsAction = {
+    const mockUserEvent: OpenHandsAction = {
       id: 1,
       source: "user",
       action: "message",
@@ -189,10 +190,11 @@ describe("ChatInterface - Chat Suggestions", () => {
       timestamp: "2025-07-01T00:00:00Z",
     };
 
-    (useWsClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      send: vi.fn(),
-      isLoadingMessages: false,
-      parsedEvents: [userEvent],
+    useEventStore.setState({
+      events: [mockUserEvent],
+      uiEvents: [],
+      addEvent: vi.fn(),
+      clearEvents: vi.fn(),
     });
 
     renderWithQueryClient(<ChatInterface />, queryClient);
@@ -265,7 +267,7 @@ describe("ChatInterface - Empty state", () => {
       mutateAsync: vi.fn(),
       isLoading: false,
     });
-    (useUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+    (useUnifiedUploadFiles as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       mutateAsync: vi
         .fn()
         .mockResolvedValue({ skipped_files: [], uploaded_files: [] }),

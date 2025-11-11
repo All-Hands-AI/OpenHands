@@ -11,13 +11,11 @@ interface NavigationItem {
 interface SettingsLayoutProps {
   children: React.ReactNode;
   navigationItems: NavigationItem[];
-  isSaas: boolean;
 }
 
 export function SettingsLayout({
   children,
   navigationItems,
-  isSaas,
 }: SettingsLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -44,11 +42,12 @@ export function SettingsLayout({
           isMobileMenuOpen={isMobileMenuOpen}
           onCloseMobileMenu={closeMobileMenu}
           navigationItems={navigationItems}
-          isSaas={isSaas}
         />
 
         {/* Main content */}
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto custom-scrollbar-always">
+          {children}
+        </main>
       </div>
     </div>
   );

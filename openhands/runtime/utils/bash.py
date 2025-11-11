@@ -1,7 +1,6 @@
 import os
 import re
 import time
-import traceback
 import uuid
 from enum import Enum
 from typing import Any
@@ -20,6 +19,16 @@ from openhands.events.observation.commands import (
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
 
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+SU_TO_USER = os.getenv('SU_TO_USER', 'true').lower() in (
+    '1',
+    'true',
+    't',
+    'yes',
+    'y',
+    'on',
+)
+
 
 def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
@@ -36,8 +45,8 @@ def split_bash_commands(commands: str) -> list[str]:
         logger.debug(
             f'Failed to parse bash commands\n'
             f'[input]: {commands}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         # If parsing fails, return the original commands
         return [commands]
@@ -155,8 +164,8 @@ def escape_bash_special_chars(command: str) -> str:
         logger.debug(
             f'Failed to parse bash commands for special characters escape\n'
             f'[input]: {command}\n'
-            f'[warning]: {traceback.format_exc()}\n'
-            f'The original command will be returned as is.'
+            f'The original command will be returned as is.',
+            exc_info=True,
         )
         return command
 
@@ -193,7 +202,9 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
-        if self.username in ['root', 'openhands']:
+        if SU_TO_USER and self.username in list(
+            filter(None, [RUNTIME_USERNAME, 'root', 'openhands'])
+        ):
             # This starts a non-login (new) shell for the given user
             _shell_command = f'su {self.username} -'
 
@@ -220,7 +231,7 @@ class BashSession:
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
-        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
+        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), global_=True)
         self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.active_window

@@ -12,7 +12,7 @@ def init_user_and_working_directory(
     It performs the following steps effectively:
     * Creates the Working Directory:
         - Uses mkdir -p to create the directory.
-        - Sets ownership to username:root.
+        - Sets ownership to username:group (respects SANDBOX_GROUP_ID if set).
         - Adjusts permissions to be readable and writable by group and others.
     * User Verification and Creation:
         - Checks if the user exists using id -u.
@@ -113,7 +113,9 @@ def init_user_and_working_directory(
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str = output.stdout.decode()
 
-    command = f'chown -R {username}:root {initial_cwd}'
+    # Get group ID from environment variable, default to 'root' for backward compatibility
+    group_id = os.getenv('SANDBOX_GROUP_ID', 'root')
+    command = f'chown -R {username}:{group_id} {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
 

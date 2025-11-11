@@ -6,7 +6,7 @@ export function useSearchRepositories(
   query: string,
   selectedProvider?: Provider | null,
   disabled?: boolean,
-  pageSize: number = 3,
+  pageSize: number = 100,
 ) {
   return useQuery({
     queryKey: ["repositories", "search", query, selectedProvider, pageSize],

@@ -13,7 +13,8 @@ from server.auth.auth_error import (
     ExpiredError,
     NoCredentialsError,
 )
-from server.auth.token_manager import TokenManager, get_config
+from server.auth.token_manager import TokenManager
+from server.config import get_config
 from server.logger import logger
 from server.rate_limit import RateLimiter, create_redis_rate_limiter
 from storage.api_key_store import ApiKeyStore
@@ -30,7 +31,7 @@ from openhands.integrations.provider import (
 )
 from openhands.server.settings import Settings
 from openhands.server.user_auth.user_auth import AuthType, UserAuth
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.storage.settings.settings_store import SettingsStore
 
 token_manager = TokenManager()
@@ -51,7 +52,7 @@ class SaasUserAuth(UserAuth):
     settings_store: SaasSettingsStore | None = None
     secrets_store: SaasSecretsStore | None = None
     _settings: Settings | None = None
-    _user_secrets: UserSecrets | None = None
+    _secrets: Secrets | None = None
     accepted_tos: bool | None = None
     auth_type: AuthType = AuthType.COOKIE
 
@@ -118,13 +119,13 @@ class SaasUserAuth(UserAuth):
         self.secrets_store = secrets_store
         return secrets_store
 
-    async def get_user_secrets(self):
-        user_secrets = self._user_secrets
+    async def get_secrets(self):
+        user_secrets = self._secrets
         if user_secrets:
             return user_secrets
         secrets_store = await self.get_secrets_store()
         user_secrets = await secrets_store.load()
-        self._user_secrets = user_secrets
+        self._secrets = user_secrets
         return user_secrets
 
     async def get_access_token(self) -> SecretStr | None:
@@ -147,7 +148,7 @@ class SaasUserAuth(UserAuth):
         if not access_token:
             raise AuthError()
 
-        user_secrets = await self.get_user_secrets()
+        user_secrets = await self.get_secrets()
 
         try:
             # TODO: I think we can do this in a single request if we refactor
@@ -222,6 +223,16 @@ class SaasUserAuth(UserAuth):
                 # Will raise if rate limit is reached.
                 await rate_limiter.hit('auth_uid', user_id)
         return instance
+
+    @classmethod
+    async def get_for_user(cls, user_id: str) -> UserAuth:
+        offline_token = await token_manager.load_offline_token(user_id)
+        assert offline_token is not None
+        return SaasUserAuth(
+            user_id=user_id,
+            refresh_token=SecretStr(offline_token),
+            auth_type=AuthType.BEARER,
+        )
 
 
 def get_api_key_from_header(request: Request):

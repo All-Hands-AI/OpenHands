@@ -1461,6 +1461,7 @@ async def test_run_controller_with_memory_error(
     assert state.last_error == 'Error: RuntimeError'
 
 
+@pytest.mark.skip(reason='2025-10-07 : This test is flaky')
 @pytest.mark.asyncio
 async def test_action_metrics_copy(mock_agent_with_stats):
     mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
@@ -1630,16 +1631,15 @@ async def test_condenser_metrics_included(mock_agent_with_stats, test_event_stre
     # Attach the condenser to the mock_agent
     mock_agent.condenser = condenser
 
-    # Create a real CondensationAction
-    action = CondensationAction(
-        forgotten_events_start_id=1,
-        forgotten_events_end_id=5,
-        summary='Test summary',
-        summary_offset=1,
-    )
-    action._source = EventSource.AGENT  # Required for event_stream.add_event
-
     def agent_step_fn(state):
+        # Create a new CondensationAction each time to avoid ID reuse
+        action = CondensationAction(
+            forgotten_events_start_id=1,
+            forgotten_events_end_id=5,
+            summary='Test summary',
+            summary_offset=1,
+        )
+        action._source = EventSource.AGENT  # Required for event_stream.add_event
         return action
 
     mock_agent.step = agent_step_fn

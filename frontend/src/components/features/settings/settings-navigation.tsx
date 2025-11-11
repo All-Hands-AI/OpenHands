@@ -5,7 +5,6 @@ import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
 import SettingsIcon from "#/icons/settings-gear.svg?react";
 import CloseIcon from "#/icons/close.svg?react";
-import { ProPill } from "./pro-pill";
 
 interface NavigationItem {
   to: string;
@@ -17,14 +16,12 @@ interface SettingsNavigationProps {
   isMobileMenuOpen: boolean;
   onCloseMobileMenu: () => void;
   navigationItems: NavigationItem[];
-  isSaas: boolean;
 }
 
 export function SettingsNavigation({
   isMobileMenuOpen,
   onCloseMobileMenu,
   navigationItems,
-  isSaas,
 }: SettingsNavigationProps) {
   const { t } = useTranslation();
 
@@ -59,7 +56,7 @@ export function SettingsNavigation({
           <button
             type="button"
             onClick={onCloseMobileMenu}
-            className="md:hidden p-0.5 hover:bg-[#454545] rounded-md transition-colors"
+            className="md:hidden p-0.5 hover:bg-[#454545] rounded-md transition-colors cursor-pointer"
             aria-label="Close navigation menu"
           >
             <CloseIcon width={32} height={32} />
@@ -85,7 +82,6 @@ export function SettingsNavigation({
                 <Typography.Text className="text-[#A3A3A3] whitespace-nowrap">
                   {t(text as I18nKey)}
                 </Typography.Text>
-                {isSaas && to === "/settings" && <ProPill />}
               </div>
             </NavLink>
           ))}
