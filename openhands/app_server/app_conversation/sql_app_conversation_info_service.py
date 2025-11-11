@@ -88,6 +88,7 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
+    parent_conversation_id = Column(String, nullable=True, index=True)
 
 
 @dataclass
@@ -307,6 +308,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             llm_model=info.llm_model,
             conversation_version='V1',
             sandbox_id=info.sandbox_id,
+            parent_conversation_id=(
+                str(info.parent_conversation_id)
+                if info.parent_conversation_id
+                else None
+            ),
         )
 
         await self.db_session.merge(stored)
@@ -364,6 +370,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             pr_number=stored.pr_number,
             llm_model=stored.llm_model,
             metrics=metrics,
+            parent_conversation_id=(
+                UUID(stored.parent_conversation_id)
+                if stored.parent_conversation_id
+                else None
+            ),
             created_at=created_at,
             updated_at=updated_at,
         )
