@@ -76,6 +76,7 @@ def setup_conversation(
     agent = load_agent_specs(str(conversation_id))
 
 
+
     # Create conversation - agent context is now set in AgentStore.load()
     conversation: BaseConversation = Conversation(
         agent=agent,
@@ -86,9 +87,9 @@ def setup_conversation(
         visualizer=CLIVisualizer
     )
 
+    # Security analyzer is set though conversation API now
     if not include_security_analyzer:
         conversation.set_security_analyzer(None)
-
     else:
         conversation.set_security_analyzer(LLMSecurityAnalyzer())
         conversation.set_confirmation_policy(AlwaysConfirm())
