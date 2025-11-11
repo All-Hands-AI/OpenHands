@@ -5,7 +5,6 @@ Store class for managing users.
 import uuid
 from typing import Optional
 
-from integrations.stripe_service import migrate_customer
 from server.logger import logger
 from sqlalchemy import text
 from sqlalchemy.orm import joinedload
@@ -116,6 +115,9 @@ class UserStore:
             await LiteLlmManager.migrate_entries(
                 str(org.id), user_id, decrypted_user_settings
             )
+
+            # avoids circular reference. This migrate method is temprorary until all users are migrated.
+            from integrations.stripe_service import migrate_customer
 
             await migrate_customer(session, user_id, org)
 
