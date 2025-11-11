@@ -163,7 +163,10 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     await waitFor(() =>
-      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(true),
+      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        true,
+      ),
     );
   });
 
@@ -188,7 +191,10 @@ describe("Form submission", () => {
     await userEvent.click(submit);
 
     await waitFor(() =>
-      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(false),
+      expect(handleCaptureConsentsSpy).toHaveBeenCalledWith(
+        expect.anything(),
+        false,
+      ),
     );
   });
 
