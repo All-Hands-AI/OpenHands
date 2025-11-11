@@ -74,7 +74,6 @@ prepareApp().then(() =>
             <HydratedRouter />
           </PostHogWrapper>
         </QueryClientProvider>
-        <div id="modal-portal-exit" />
       </StrictMode>,
     );
   }),
