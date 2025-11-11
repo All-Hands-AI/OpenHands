@@ -56,6 +56,7 @@ def get_llm_extra_body(
         metadata['session_id'] = session_id
     if user_id is not None:
         metadata['trace_user_id'] = user_id
+    metadata = {"metadata": metadata}
     return metadata
 
 
