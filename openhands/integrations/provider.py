@@ -14,8 +14,6 @@ from pydantic import (
 )
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.action import Action
-from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
@@ -428,12 +426,13 @@ class ProviderHandler:
         return self.expose_env_vars(env_vars)
 
     @classmethod
-    def check_cmd_action_for_provider_token_ref(
-        cls, event: Action
-    ) -> list[ProviderType]:
+    def check_cmd_action_for_provider_token_ref(cls, event) -> list[ProviderType]:
         """Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
         Returns a list of providers which are called by the agent
         """
+        # Local import to avoid circular reference
+        from openhands.events.action.commands import CmdRunAction
+
         if not isinstance(event, CmdRunAction):
             return []
 
