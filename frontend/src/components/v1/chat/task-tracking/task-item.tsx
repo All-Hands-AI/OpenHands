@@ -1,15 +1,20 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { TaskItem as TaskItemType } from "#/types/v1/core/base/common";
 import CircleIcon from "#/icons/u-circle.svg?react";
 import CheckCircleIcon from "#/icons/u-check-circle.svg?react";
 import LoadingIcon from "#/icons/loading.svg?react";
 import { cn } from "#/utils/utils";
+import { Typography } from "#/ui/typography";
+import { I18nKey } from "#/i18n/declaration";
 
 interface TaskItemProps {
   task: TaskItemType;
 }
 
 export function TaskItem({ task }: TaskItemProps) {
+  const { t } = useTranslation();
+
   const icon = useMemo(() => {
     switch (task.status) {
       case "todo":
@@ -30,19 +35,17 @@ export function TaskItem({ task }: TaskItemProps) {
       <div className="flex gap-[14px] items-center">
         <div className="shrink-0 size-[16px]">{icon}</div>
         <div className="flex flex-col items-start justify-center leading-[20px] text-nowrap whitespace-pre">
-          <p
+          <Typography.Text
             className={cn(
               "text-[12px] text-white font-normal",
               isDoneStatus && "text-[#A3A3A3]",
             )}
           >
             {task.title}
-          </p>
-          {task.notes && (
-            <p className="text-[10px] text-[#A3A3A3] font-normal">
-              {task.notes}
-            </p>
-          )}
+          </Typography.Text>
+          <Typography.Text className="text-[10px] text-[#A3A3A3] font-normal">
+            {t(I18nKey.TASK_TRACKING_OBSERVATION$TASK_NOTES)}: {task.notes}
+          </Typography.Text>
         </div>
       </div>
     </div>
