@@ -101,6 +101,6 @@ ignore_missing_imports = true
 
 # UNCOMMENT TO USE EXACT COMMIT FROM AGENT-SDK
 
-# [tool.uv.sources]
-# openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "aaa0066ee078688e015fcad590393fe6771c10a1" }
-# openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "aaa0066ee078688e015fcad590393fe6771c10a1" }
+[tool.uv.sources]
+openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "7b695dc519084e75c482b34473e714845d6cef92" }
+openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "7b695dc519084e75c482b34473e714845d6cef92" }

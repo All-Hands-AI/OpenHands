@@ -67,10 +67,4 @@ def get_default_cli_agent(
         cli_mode=True
     )
 
-    agent = agent.model_copy(
-        update={
-            'security_analyzer': LLMSecurityAnalyzer()
-        }
-    )
-    
     return agent
