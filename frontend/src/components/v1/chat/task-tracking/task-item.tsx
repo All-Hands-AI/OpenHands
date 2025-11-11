@@ -20,7 +20,9 @@ export function TaskItem({ task }: TaskItemProps) {
       case "todo":
         return <CircleIcon className="w-4 h-4 text-[#ffffff]" />;
       case "in_progress":
-        return <LoadingIcon className="w-4 h-4 text-[#ffffff]" />;
+        return (
+          <LoadingIcon className="w-4 h-4 text-[#ffffff]" strokeWidth={0.5} />
+        );
       case "done":
         return <CheckCircleIcon className="w-4 h-4 text-[#A3A3A3]" />;
       default:
@@ -31,22 +33,23 @@ export function TaskItem({ task }: TaskItemProps) {
   const isDoneStatus = task.status === "done";
 
   return (
-    <div className="flex items-center px-4 py-2 w-full" data-name="item">
-      <div className="flex gap-[14px] items-center">
-        <div className="shrink-0 size-[16px]">{icon}</div>
-        <div className="flex flex-col items-start justify-center leading-[20px] text-nowrap whitespace-pre">
-          <Typography.Text
-            className={cn(
-              "text-[12px] text-white font-normal",
-              isDoneStatus && "text-[#A3A3A3]",
-            )}
-          >
-            {task.title}
-          </Typography.Text>
-          <Typography.Text className="text-[10px] text-[#A3A3A3] font-normal">
-            {t(I18nKey.TASK_TRACKING_OBSERVATION$TASK_NOTES)}: {task.notes}
-          </Typography.Text>
-        </div>
+    <div
+      className="flex gap-[14px] items-center px-4 py-2 w-full"
+      data-name="item"
+    >
+      <div className="shrink-0">{icon}</div>
+      <div className="flex flex-col items-start justify-center leading-[20px] text-nowrap whitespace-pre font-normal">
+        <Typography.Text
+          className={cn(
+            "text-[12px] text-white",
+            isDoneStatus && "text-[#A3A3A3]",
+          )}
+        >
+          {task.title}
+        </Typography.Text>
+        <Typography.Text className="text-[10px] text-[#A3A3A3]">
+          {t(I18nKey.TASK_TRACKING_OBSERVATION$TASK_NOTES)}: {task.notes}
+        </Typography.Text>
       </div>
     </div>
   );
