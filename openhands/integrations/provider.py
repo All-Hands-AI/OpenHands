@@ -14,6 +14,7 @@ from pydantic import (
 )
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
@@ -337,14 +338,9 @@ class ProviderHandler:
                 unique_repos.append(repo)
         return unique_repos
 
-    from typing import TYPE_CHECKING
-
-    if TYPE_CHECKING:
-        from openhands.events.stream import EventStream
-
     async def set_event_stream_secrets(
         self,
-        event_stream: 'EventStream',
+        event_stream: EventStream,
         env_vars: dict[ProviderType, SecretStr] | None = None,
     ) -> None:
         """This ensures that the latest provider tokens are masked from the event stream
@@ -354,8 +350,6 @@ class ProviderHandler:
             event_stream: Agent session's event stream
             env_vars: Dict of providers and their tokens that require updating
         """
-        from openhands.events.stream import EventStream  # noqa: F401
-
         if env_vars:
             exposed_env_vars = self.expose_env_vars(env_vars)
         else:
