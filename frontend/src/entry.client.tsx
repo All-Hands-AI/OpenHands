@@ -34,11 +34,7 @@ function PostHogWrapper({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  if (isLoading) {
-    return children;
-  }
-
-  if (!posthogClientKey) {
+  if (isLoading || !posthogClientKey) {
     return children;
   }
 
