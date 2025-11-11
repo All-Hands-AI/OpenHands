@@ -140,6 +140,7 @@ const getTaskTrackerObservationContent = (
   if (
     "content" in observation &&
     observation.content &&
+    typeof observation.content === "string" &&
     observation.content.trim()
   ) {
     content += `\n\n**Result:** ${observation.content.trim()}`;
