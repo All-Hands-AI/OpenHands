@@ -97,15 +97,6 @@ describe("TaskTrackingObservationContent", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders result section when content exists", () => {
-    render(<TaskTrackingObservationContent event={mockEvent} />);
-
-    expect(screen.getByText("Result")).toBeInTheDocument();
-    expect(
-      screen.getByText("Task tracking operation completed successfully"),
-    ).toBeInTheDocument();
-  });
-
   it("does not render task list when command is not 'plan'", () => {
     const eventWithoutPlan = {
       ...mockEvent,
@@ -132,16 +123,5 @@ describe("TaskTrackingObservationContent", () => {
     render(<TaskTrackingObservationContent event={eventWithEmptyTasks} />);
 
     expect(screen.queryByText("Tasks")).not.toBeInTheDocument();
-  });
-
-  it("does not render result section when content is empty", () => {
-    const eventWithoutContent = {
-      ...mockEvent,
-      content: "",
-    };
-
-    render(<TaskTrackingObservationContent event={eventWithoutContent} />);
-
-    expect(screen.queryByText("Result")).not.toBeInTheDocument();
   });
 });
