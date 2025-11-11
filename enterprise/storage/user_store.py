@@ -16,8 +16,6 @@ from storage.role_store import RoleStore
 from storage.user import User
 from storage.user_settings import UserSettings
 
-from openhands.storage.data_models.settings import Settings
-
 
 class UserStore:
     """Store for managing users."""
@@ -250,6 +248,12 @@ class UserStore:
         with session_maker() as session:
             return session.query(User).all()
 
+    # Prevent circular imports
+    from typing import TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from openhands.storage.data_models.settings import Settings
+
     @staticmethod
     async def create_default_settings(org_id: str, user_id: str) -> Optional[Settings]:
         logger.info(
@@ -259,6 +263,8 @@ class UserStore:
         # You must log in before you get default settings
         if not org_id:
             return None
+
+        from openhands.storage.data_models.settings import Settings
 
         settings = Settings(language='en', enable_proactive_conversation_starters=True)
 
