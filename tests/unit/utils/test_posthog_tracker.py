@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.utils.posthog_tracker import (
+    alias_user_identities,
     track_agent_task_completed,
     track_credit_limit_reached,
     track_credits_purchased,
@@ -304,4 +305,52 @@ def test_track_credits_purchased_when_posthog_not_installed():
         amount_usd=25.00,
         credits_added=25.00,
         stripe_session_id='cs_test_no_ph',
+    )
+
+
+def test_alias_user_identities(mock_posthog):
+    """Test aliasing user identities.
+
+    Verifies that posthog.alias(previous_id, distinct_id) is called correctly
+    where github_login is the previous_id and keycloak_user_id is the distinct_id.
+    """
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+    mock_posthog.alias = MagicMock()
+
+    alias_user_identities(
+        keycloak_user_id='keycloak-123',
+        github_login='github-user',
+    )
+
+    # Verify: posthog.alias(previous_id='github-user', distinct_id='keycloak-123')
+    mock_posthog.alias.assert_called_once_with('github-user', 'keycloak-123')
+
+
+def test_alias_user_identities_handles_errors(mock_posthog):
+    """Test that aliasing errors are handled gracefully."""
+    import openhands.utils.posthog_tracker as tracker
+
+    tracker.posthog = mock_posthog
+    mock_posthog.alias = MagicMock(side_effect=Exception('PostHog API error'))
+
+    # Should not raise an exception
+    alias_user_identities(
+        keycloak_user_id='keycloak-error',
+        github_login='github-error',
+    )
+
+
+def test_alias_user_identities_when_posthog_not_installed():
+    """Test aliasing when posthog is not installed."""
+    import openhands.utils.posthog_tracker as tracker
+
+    # Simulate posthog not being installed
+    tracker.posthog = None
+
+    # Should not raise an exception
+    alias_user_identities(
+        keycloak_user_id='keycloak-no-ph',
+        github_login='github-no-ph',
     )

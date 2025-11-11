@@ -216,3 +216,55 @@ def track_credits_purchased(
                 'error': str(e),
             },
         )
+
+
+def alias_user_identities(
+    keycloak_user_id: str,
+    github_login: str,
+) -> None:
+    """Alias a user's Keycloak ID with their GitHub login for unified tracking.
+
+    This allows PostHog to link events tracked from the frontend (using GitHub login)
+    with events tracked from the backend (using Keycloak user ID).
+
+    PostHog Python alias syntax: alias(previous_id, distinct_id)
+    - previous_id: The old/previous distinct ID that will be merged
+    - distinct_id: The new/canonical distinct ID to merge into
+
+    For our use case:
+    - GitHub login is the previous_id (first used in frontend, before backend auth)
+    - Keycloak user ID is the distinct_id (canonical backend ID)
+    - Result: All events with GitHub login will be merged into Keycloak user ID
+
+    Args:
+        keycloak_user_id: The Keycloak user ID (canonical distinct_id)
+        github_login: The GitHub username (previous_id to merge)
+
+    Reference:
+        https://github.com/PostHog/posthog-python/blob/master/posthog/client.py
+    """
+    _init_posthog()
+
+    if posthog is None:
+        return
+
+    try:
+        # Merge GitHub login into Keycloak user ID
+        # posthog.alias(previous_id, distinct_id) - official Python SDK signature
+        posthog.alias(github_login, keycloak_user_id)
+        logger.debug(
+            'posthog_alias',
+            extra={
+                'previous_id': github_login,
+                'distinct_id': keycloak_user_id,
+            },
+        )
+    except Exception as e:
+        logger.warning(
+            f'Failed to alias user identities in PostHog: {e}',
+            extra={
+                'keycloak_user_id': keycloak_user_id,
+                'github_login': github_login,
+                'error': str(e),
+            },
+        )
