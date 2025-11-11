@@ -12,16 +12,10 @@ export function TaskListSection({ taskList }: TaskListSectionProps) {
   const { t } = useTranslation();
 
   return (
-    <div
-      className="bg-[#25272d] border border-[#525252] rounded-[12px] w-full"
-      data-name="Plan"
-    >
+    <div className="bg-[#25272d] border border-[#525252] rounded-[12px] w-full">
       <div className="flex flex-col overflow-clip rounded-[inherit]">
         {/* Header Tabs */}
-        <div
-          className="border-b border-[#525252] flex h-[41px] items-center px-2 shrink-0"
-          data-name="Tabs"
-        >
+        <div className="border-b border-[#525252] flex h-[41px] items-center px-2 shrink-0">
           <div className="flex gap-1 flex-1 items-center">
             <div className="shrink-0 size-[18px]">
               <LessonPlanIcon className="w-full h-full text-[#9299aa]" />
