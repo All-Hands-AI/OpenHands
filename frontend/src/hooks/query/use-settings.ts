@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import SettingsService from "#/settings-service/settings-service.api";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
@@ -42,6 +42,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
 };
 
 export const useSettings = () => {
+  const posthog = usePostHog();
   const isOnTosPage = useIsOnTosPage();
   const { data: userIsAuthenticated } = useIsAuthed();
 
