@@ -72,6 +72,7 @@ export function handleStatusMessage(message: StatusMessage) {
       message: message.message,
       source: "chat",
       metadata: { msgId: message.id },
+      posthog: undefined, // Service file - can't use hooks
     });
   }
 }

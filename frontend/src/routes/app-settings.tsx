@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { usePostHog } from "posthog-js/react";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
 import { AvailableLanguages } from "#/i18n";
@@ -20,6 +21,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
 function AppSettingsScreen() {
+  const posthog = usePostHog();
   const { t } = useTranslation();
 
   const { mutate: saveSettings, isPending } = useSaveSettings();
@@ -93,7 +95,7 @@ function AppSettingsScreen() {
       },
       {
         onSuccess: () => {
-          handleCaptureConsent(enableAnalytics);
+          handleCaptureConsent(posthog, enableAnalytics);
           displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         },
         onError: (error) => {

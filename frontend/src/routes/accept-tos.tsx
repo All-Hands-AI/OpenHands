@@ -2,6 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router";
 import { useMutation } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHandsLogo from "#/assets/branding/openhands-logo.svg?react";
 import { TOSCheckbox } from "#/components/features/waitlist/tos-checkbox";
@@ -11,6 +12,7 @@ import { openHands } from "#/api/open-hands-axios";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 export default function AcceptTOS() {
+  const posthog = usePostHog();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -23,7 +25,7 @@ export default function AcceptTOS() {
   const { mutate: acceptTOS, isPending: isSubmitting } = useMutation({
     mutationFn: async () => {
       // Set consent for analytics
-      handleCaptureConsent(true);
+      handleCaptureConsent(posthog, true);
 
       // Call the API to record TOS acceptance in the database
       return openHands.post("/api/accept_tos", {
