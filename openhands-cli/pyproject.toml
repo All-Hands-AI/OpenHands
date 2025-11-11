@@ -18,8 +18,8 @@ classifiers = [
 # Using Git URLs for dependencies so installs from PyPI pull from GitHub
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk==1.1.0",
-  "openhands-tools==1.1.0",
+  "openhands-sdk==1.1",
+  "openhands-tools==1.1",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
