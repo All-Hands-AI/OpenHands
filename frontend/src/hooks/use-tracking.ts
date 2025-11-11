@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { useConfig } from "./query/use-config";
 import { useSettings } from "./query/use-settings";
 import { Provider } from "#/types/settings";
@@ -8,6 +8,7 @@ import { Provider } from "#/types/settings";
  * from available hooks (config, settings, etc.)
  */
 export const useTracking = () => {
+  const posthog = usePostHog();
   const { data: config } = useConfig();
   const { data: settings } = useSettings();
 

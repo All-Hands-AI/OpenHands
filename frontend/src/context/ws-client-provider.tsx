@@ -1,6 +1,7 @@
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePostHog } from "posthog-js/react";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { showChatError, trackError } from "#/utils/error-handler";
@@ -100,7 +101,10 @@ interface ErrorArgData {
   msg_id: string;
 }
 
-export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
+export function updateStatusWhenErrorMessagePresent(
+  data: ErrorArg | unknown,
+  posthog?: ReturnType<typeof usePostHog>,
+) {
   const isObject = (val: unknown): val is object =>
     !!val && typeof val === "object";
   const isString = (val: unknown): val is string => typeof val === "string";
@@ -123,6 +127,7 @@ export function updateStatusWhenErrorMessagePresent(data: ErrorArg | unknown) {
       source: "websocket",
       metadata,
       msgId,
+      posthog,
     });
   }
 }
@@ -131,6 +136,7 @@ export function WsClientProvider({
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const posthog = usePostHog();
   const { setErrorMessage, removeErrorMessage } = useErrorMessageStore();
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { addEvent, clearEvents } = useEventStore();
@@ -178,6 +184,7 @@ export function WsClientProvider({
           message: errorMessage,
           source: "chat",
           metadata: { msgId: event.id },
+          posthog,
         });
         setErrorMessage(errorMessage);
 
@@ -193,6 +200,7 @@ export function WsClientProvider({
           message: event.message,
           source: "chat",
           metadata: { msgId: event.id },
+          posthog,
         });
       } else {
         removeErrorMessage();
@@ -260,14 +268,14 @@ export function WsClientProvider({
     sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
 
-    updateStatusWhenErrorMessagePresent(data);
+    updateStatusWhenErrorMessagePresent(data, posthog);
     setErrorMessage(hasValidMessageProperty(data) ? data.message : "");
   }
 
   function handleError(data: unknown) {
     // set status
     setWebSocketStatus("DISCONNECTED");
-    updateStatusWhenErrorMessagePresent(data);
+    updateStatusWhenErrorMessagePresent(data, posthog);
 
     setErrorMessage(
       hasValidMessageProperty(data)
