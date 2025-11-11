@@ -127,7 +127,8 @@ function AppSettingsScreen() {
   };
 
   const checkIfAnalyticsSwitchHasChanged = (checked: boolean) => {
-    const currentAnalytics = !!settings?.USER_CONSENTS_TO_ANALYTICS;
+    // Treat null as true since analytics is opt-in by default
+    const currentAnalytics = settings?.USER_CONSENTS_TO_ANALYTICS ?? true;
     setAnalyticsSwitchHasChanged(checked !== currentAnalytics);
   };
 
@@ -199,7 +200,7 @@ function AppSettingsScreen() {
           <SettingsSwitch
             testId="enable-analytics-switch"
             name="enable-analytics-switch"
-            defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
+            defaultIsToggled={settings.USER_CONSENTS_TO_ANALYTICS ?? true}
             onToggle={checkIfAnalyticsSwitchHasChanged}
           >
             {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}

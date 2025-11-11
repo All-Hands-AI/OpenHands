@@ -46,6 +46,21 @@ describe("Content", () => {
     });
   });
 
+  it("should render analytics toggle as enabled when server returns null (opt-in by default)", async () => {
+    const getSettingsSpy = vi.spyOn(SettingsService, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      user_consents_to_analytics: null,
+    });
+
+    renderAppSettingsScreen();
+
+    await waitFor(() => {
+      const analytics = screen.getByTestId("enable-analytics-switch");
+      expect(analytics).toBeChecked();
+    });
+  });
+
   it("should render the language options", async () => {
     renderAppSettingsScreen();
 

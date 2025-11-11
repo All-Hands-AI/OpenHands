@@ -62,12 +62,6 @@ export const useSettings = () => {
     },
   });
 
-  React.useEffect(() => {
-    if (query.isFetched && query.data?.LLM_API_KEY_SET) {
-      posthog.capture("user_activated");
-    }
-  }, [query.data?.LLM_API_KEY_SET, query.isFetched]);
-
   // We want to return the defaults if the settings aren't found so the user can still see the
   // options to make their initial save. We don't set the defaults in `initialData` above because
   // that would prepopulate the data to the cache and mess with expectations. Read more:
