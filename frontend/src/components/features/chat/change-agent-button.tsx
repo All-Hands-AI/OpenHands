@@ -40,30 +40,18 @@ export function ChangeAgentButton() {
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    // Prevent opening menu when agent is running
-    if (isAgentRunning) {
-      return;
-    }
     setContextMenuOpen(!contextMenuOpen);
   };
 
   const handleCodeClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    // Prevent mode change when agent is running
-    if (isAgentRunning) {
-      return;
-    }
     setConversationMode("code");
   };
 
   const handlePlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    // Prevent mode change when agent is running
-    if (isAgentRunning) {
-      return;
-    }
     setConversationMode("plan");
   };
 

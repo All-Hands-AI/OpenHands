@@ -1902,7 +1902,7 @@ wheels = [
 
 [[package]]
 name = "openhands"
-version = "1.0.5"
+version = "1.0.6"
 source = { editable = "." }
 dependencies = [
     { name = "openhands-sdk" },
@@ -1929,8 +1929,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "openhands-sdk", specifier = "==1.0.0" },
-    { name = "openhands-tools", specifier = "==1.0.0" },
+    { name = "openhands-sdk", specifier = "==1" },
+    { name = "openhands-tools", specifier = "==1" },
     { name = "prompt-toolkit", specifier = ">=3" },
     { name = "typer", specifier = ">=0.17.4" },
 ]

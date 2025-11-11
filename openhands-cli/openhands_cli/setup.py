@@ -1,5 +1,6 @@
 import uuid
 
+from openhands.sdk.conversation import visualizer
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Agent, BaseConversation, Conversation, Workspace
@@ -9,7 +10,7 @@ from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
 )
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
-
+from openhands_cli.tui.visualizer import CLIVisualizer
 
 # register tools
 from openhands.tools.terminal import TerminalTool
@@ -86,6 +87,7 @@ def setup_conversation(
         # Conversation will add /<conversation_id> to this path
         persistence_dir=CONVERSATIONS_DIR,
         conversation_id=conversation_id,
+        visualizer=CLIVisualizer
     )
 
     if include_security_analyzer:

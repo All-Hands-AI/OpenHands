@@ -15022,5 +15022,21 @@
     "tr": "Plan",
     "de": "Plan",
     "uk": "План"
+  },
+  "COMMON$LET_S_WORK_ON_A_PLAN": {
+    "en": "Let’s work on a plan",
+    "ja": "プランに取り組みましょう",
+    "zh-CN": "让我们制定一个计划吧",
+    "zh-TW": "讓我們來制定計劃吧",
+    "ko-KR": "계획을 세워봅시다",
+    "no": "La oss lage en plan",
+    "it": "Lavoriamo su un piano",
+    "pt": "Vamos trabalhar em um plano",
+    "es": "Trabajemos en un plan",
+    "ar": "لنضع خطة معًا",
+    "fr": "Travaillons sur un plan",
+    "tr": "Bir plan üzerinde çalışalım",
+    "de": "Lassen Sie uns an einem Plan arbeiten",
+    "uk": "Давайте розробимо план"
   }
 }
