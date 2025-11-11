@@ -160,6 +160,7 @@ export function WsClientProvider({
     const socket = sioRef.current;
 
     if (!socket) {
+      EventLogger.error("WebSocket is not connected, queuing message...");
       pendingEventsRef.current.push(event);
       return;
     }
