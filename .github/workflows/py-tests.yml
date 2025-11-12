@@ -16,9 +16,58 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  determine-changes:
+    name: Determine changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      cli: ${{ steps.filter.outputs.cli }}
+      app: ${{ steps.filter.outputs.app }}
+      enterprise: ${{ steps.filter.outputs.enterprise }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            cli:
+              - 'openhands-cli/**'
+              - '.github/workflows/py-tests.yml'
+              - 'dev_config/**'
+            app:
+              - 'openhands/**'
+              - 'evaluation/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - 'microagents/**'
+              - 'containers/**'
+              - 'docker-compose.yml'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+              - '.github/workflows/py-tests.yml'
+            enterprise:
+              - 'enterprise/**'
+              - '.github/workflows/py-tests.yml'
+            shared:
+              - 'dev_config/**'
+              - 'scripts/**'
+              - '.github/workflows/**'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+
   # Run python tests on Linux
   test-on-linux:
     name: Python Tests on Linux
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.app == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
       INSTALL_DOCKER: "0" # Set to '0' to skip Docker installation
@@ -73,6 +122,12 @@ jobs:
 
   test-enterprise:
     name: Enterprise Python Unit Tests
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.enterprise == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -104,6 +159,12 @@ jobs:
   # Run CLI unit tests
   test-cli-python:
     name: CLI Unit Tests
+    needs: determine-changes
+    if: >
+      needs.determine-changes.outputs.cli == 'true' ||
+      needs.determine-changes.outputs.shared == 'true' ||
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
@@ -148,7 +209,13 @@ jobs:
 
   coverage-comment:
     name: Coverage Comment
-    if: github.event_name == 'pull_request'
+    if: >
+      github.event_name == 'pull_request' &&
+      (
+        needs.test-on-linux.result != 'skipped' ||
+        needs.test-enterprise.result != 'skipped' ||
+        needs.test-cli-python.result != 'skipped'
+      )
     runs-on: ubuntu-latest
     needs: [test-on-linux, test-enterprise, test-cli-python]
 

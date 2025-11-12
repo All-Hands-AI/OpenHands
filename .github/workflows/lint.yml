@@ -16,9 +16,54 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  determine-changes:
+    name: Determine changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      enterprise: ${{ steps.filter.outputs.enterprise }}
+      cli: ${{ steps.filter.outputs.cli }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/lint.yml'
+            backend:
+              - 'openhands/**'
+              - 'evaluation/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - '.github/workflows/lint.yml'
+            enterprise:
+              - 'enterprise/**'
+              - '.github/workflows/lint.yml'
+            cli:
+              - 'openhands-cli/**'
+              - '.github/workflows/lint.yml'
+              - 'dev_config/**'
+            shared:
+              - 'dev_config/**'
+              - '.github/workflows/**'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+
   # Run lint on the frontend code
   lint-frontend:
     name: Lint frontend
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.frontend == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +85,12 @@ jobs:
   # Run lint on the python code
   lint-python:
     name: Lint python
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.backend == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
@@ -57,6 +108,12 @@ jobs:
 
   lint-enterprise-python:
     name: Lint enterprise python
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.enterprise == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +132,12 @@ jobs:
 
   lint-cli-python:
     name: Lint CLI python
+    needs: determine-changes
+    if: >
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'schedule' ||
+      needs.determine-changes.outputs.cli == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - uses: actions/checkout@v4

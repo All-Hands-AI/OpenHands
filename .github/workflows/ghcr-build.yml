@@ -28,7 +28,49 @@ env:
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
+  determine-changes:
+    name: Determine changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      runtime: ${{ steps.filter.outputs.runtime }}
+      shared: ${{ steps.filter.outputs.shared }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            app:
+              - 'openhands/**'
+              - 'frontend/**'
+              - 'enterprise/**'
+              - 'evaluation/**'
+              - 'tests/**'
+              - 'scripts/**'
+              - '.github/workflows/ghcr-build.yml'
+            runtime:
+              - 'containers/**'
+              - 'docker-compose.yml'
+              - 'kind/**'
+              - '.github/workflows/ghcr-build.yml'
+            shared:
+              - '.github/workflows/**'
+              - 'dev_config/**'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+
   define-matrix:
+    needs: determine-changes
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/main' ||
+      startsWith(github.ref, 'refs/tags/') ||
+      needs.determine-changes.outputs.app == 'true' ||
+      needs.determine-changes.outputs.runtime == 'true' ||
+      needs.determine-changes.outputs.shared == 'true'
     runs-on: blacksmith
     outputs:
       base_image: ${{ steps.define-base-images.outputs.base_image }}
@@ -53,8 +95,17 @@ jobs:
   # Builds the OpenHands Docker images
   ghcr_build_app:
     name: Build App Image
+    needs: [determine-changes, define-matrix]
     runs-on: blacksmith-4vcpu-ubuntu-2204
-    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
+    if: >
+      !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v')) &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/tags/') ||
+        needs.determine-changes.outputs.app == 'true' ||
+        needs.determine-changes.outputs.shared == 'true'
+      )
     permissions:
       contents: read
       packages: write
@@ -88,11 +139,19 @@ jobs:
   ghcr_build_runtime:
     name: Build Runtime Image
     runs-on: blacksmith-8vcpu-ubuntu-2204
-    if: "!(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v'))"
+    needs: [determine-changes, define-matrix]
+    if: >
+      !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/ext-v')) &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/tags/') ||
+        needs.determine-changes.outputs.runtime == 'true' ||
+        needs.determine-changes.outputs.shared == 'true'
+      )
     permissions:
       contents: read
       packages: write
-    needs: define-matrix
     strategy:
       matrix:
         base_image: ${{ fromJson(needs.define-matrix.outputs.base_image) }}
@@ -168,13 +227,21 @@ jobs:
 
   ghcr_build_enterprise:
     name: Push Enterprise Image
+    needs: [determine-changes, define-matrix, ghcr_build_app]
     runs-on: blacksmith-8vcpu-ubuntu-2204
     permissions:
       contents: read
       packages: write
-    needs: [define-matrix, ghcr_build_app]
     # Do not build enterprise in forks
-    if: github.event.pull_request.head.repo.fork != true
+    if: >
+      github.event.pull_request.head.repo.fork != true &&
+      (
+        github.event_name == 'workflow_dispatch' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/tags/') ||
+        needs.determine-changes.outputs.app == 'true' ||
+        needs.determine-changes.outputs.shared == 'true'
+      )
     steps:
       - name: Checkout
         uses: actions/checkout@v4

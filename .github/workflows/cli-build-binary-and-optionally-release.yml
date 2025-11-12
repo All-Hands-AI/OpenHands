@@ -6,11 +6,21 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "openhands-cli/**"
+      - ".github/workflows/cli-build-binary-and-optionally-release.yml"
+      - "dev_config/**"
     tags:
       - "*-cli"
   pull_request:
     paths:
       - "openhands-cli/**"
+  workflow_dispatch:
+    inputs:
+      fast:
+        description: "Skip PyInstaller packaging (fast validation run)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write       # needed to create releases or upload assets
@@ -34,7 +44,15 @@ jobs:
           - os: macos-15
             platform: macos
             artifact_name: openhands-cli-macos
+    if: >
+      !(
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.fast == 'true' &&
+        matrix.platform != 'linux'
+      )
     runs-on: ${{ matrix.os }}
+    env:
+      FAST: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' }}
 
     steps:
       - name: Checkout repository
@@ -57,7 +75,14 @@ jobs:
         run: |
           uv sync
 
+      - name: Fast validation run
+        if: env.FAST == 'true'
+        working-directory: openhands-cli
+        run: |
+          uv run pytest -q
+
       - name: Build binary executable
+        if: env.FAST != 'true'
         working-directory: openhands-cli
         run: |
           ./build.sh --install-pyinstaller | tee output.log
@@ -72,6 +97,7 @@ jobs:
           echo "✅ Build & test finished without ❌ markers"
 
       - name: Verify binary files exist
+        if: env.FAST != 'true'
         run: |
           if ! ls openhands-cli/dist/openhands* 1> /dev/null 2>&1; then
             echo "❌ No binaries found to upload!"
@@ -80,6 +106,7 @@ jobs:
           echo "✅ Found binaries to upload."
 
       - name: Upload binary artifact
+        if: env.FAST != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
