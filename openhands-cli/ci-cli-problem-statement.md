@@ -174,11 +174,15 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
 - Use the token from .env (e.g., GITHUB_TOKEN) and query upstream repo protections. Prefer checking upstream (OpenHands/OpenHands), since forks typically have no protections.
 - Replace OWNER/REPO accordingly. Example with curl:
   - Branch protection for main:
+    ```bash
     curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
       https://api.github.com/repos/OWNER/REPO/branches/main/protection | jq '.'
+    ```
   - Repository rulesets:
+    ```bash
     curl -sS -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" \
       https://api.github.com/repos/OWNER/REPO/rulesets | jq '.'
+    ```
 - What to capture into this doc:
   - Required status contexts or granular checks for main
   - Any file/path/branch-specific targeting in rulesets that could affect path-filter strategies
@@ -228,7 +232,7 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
   - Clearer visibility into the challenges of integrating with agent-sdk (surfacing client pain points).
   - Easier tracking and triage of CLI-specific issues independent of the broader project.
 
-## Proposed plan (WIP)
+## Plan (WIP)
 1. Baseline governance  
    - Pull branch protection and ruleset data (per instructions above) to understand which checks are enforced today.  
    - Capture current CLI release path (manual steps, tags in use, time-to-release) to measure improvements.

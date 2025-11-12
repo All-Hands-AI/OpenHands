@@ -211,6 +211,7 @@ jobs:
 
   coverage-comment:
     name: Coverage Comment
+    # Avoid posting coverage when all test jobs were skipped
     if: >
       github.event_name == 'pull_request' &&
       (

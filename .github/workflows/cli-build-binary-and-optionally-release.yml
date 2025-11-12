@@ -45,6 +45,7 @@ jobs:
             platform: macos
             artifact_name: openhands-cli-macos
     runs-on: ${{ matrix.os }}
+    # When fast=true, macOS matrix entries skip steps so only the Linux job runs a pytest smoke.
 
     steps:
       - name: Checkout repository
