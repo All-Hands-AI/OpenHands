@@ -530,7 +530,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         initial_message: SendMessageRequest | None,
         git_provider: ProviderType | None,
         working_dir: str,
-        agent_type: AgentType,
+        agent_type: AgentType = AgentType.DEFAULT,
         llm_model: str | None = None,
     ) -> StartConversationRequest:
         user = await self.user_context.get_user_info()
