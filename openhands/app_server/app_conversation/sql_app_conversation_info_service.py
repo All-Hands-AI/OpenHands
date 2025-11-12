@@ -184,7 +184,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         updated_at__lt: datetime | None = None,
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
-        query = select(func.count(StoredConversationMetadata.conversation_id))
+        query = await self._secure_select()
 
         query = self._apply_filters(
             query=query,

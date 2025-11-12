@@ -40,7 +40,6 @@ def upgrade() -> None:
     )
 
     # 1. Create default roles
-    print('Creating default roles...')
     op.execute(
         sa.text("""
         INSERT INTO role (name, rank) VALUES ('admin', 1), ('user', 1000)
