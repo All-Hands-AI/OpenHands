@@ -1,0 +1,8 @@
+#wallet_page {
+  text-align: center;
+  padding: 30px;
+}
+
+#wallet_page a {
+  text-decoration: underline;
+}
