@@ -11,6 +11,7 @@ interface MaintenanceBannerProps {
 }
 
 export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
+  return null;
   const { t } = useTranslation();
   const [dismissedAt, setDismissedAt] = useLocalStorage<string | null>(
     "maintenance_banner_dismissed_at",
