@@ -39,4 +39,3 @@ def downgrade() -> None:
         table_name='conversation_metadata',
     )
     op.drop_column('conversation_metadata', 'parent_conversation_id')
-
