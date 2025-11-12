@@ -51,6 +51,10 @@ jobs:
               - '.github/workflows/py-tests.yml'
             enterprise:
               - 'enterprise/**'
+              - 'openhands/**'
+              - 'evaluation/**'
+              - 'tests/**'
+              - 'scripts/**'
               - '.github/workflows/py-tests.yml'
             shared:
               - 'dev_config/**'

@@ -44,6 +44,10 @@ jobs:
               - '.github/workflows/lint.yml'
             enterprise:
               - 'enterprise/**'
+              - 'openhands/**'
+              - 'evaluation/**'
+              - 'tests/**'
+              - 'scripts/**'
               - '.github/workflows/lint.yml'
             cli:
               - 'openhands-cli/**'
