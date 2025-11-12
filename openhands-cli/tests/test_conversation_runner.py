@@ -108,15 +108,15 @@ class TestConversationRunner:
         3. If not paused, we should still ask for confirmation on actions
         4. If deferred no run call to agent should be made
         5. If accepted, run call to agent should be made
-
         """
         if final_status == ConversationExecutionStatus.FINISHED:
             agent.finish_on_step = 1
 
-        # Add a mock security analyzer to enable confirmation mode
-        agent.security_analyzer = MagicMock()
-
         convo = Conversation(agent)
+        
+        # Set security analyzer using the new API to enable confirmation mode
+        convo.set_security_analyzer(MagicMock())
+        
         convo.state.execution_status = (
             ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
         )
@@ -127,6 +127,7 @@ class TestConversationRunner:
             cr, '_handle_confirmation_request', return_value=confirmation
         ) as mock_confirmation_request:
             cr.process_message(message=None)
+        
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
         assert convo.state.execution_status == final_status

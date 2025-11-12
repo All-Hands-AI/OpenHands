@@ -49,6 +49,10 @@ const getExecuteBashObservationContent = (
 
   let { output } = observation;
 
+  if (!output) {
+    output = "";
+  }
+
   if (output.length > MAX_CONTENT_LENGTH) {
     output = `${output.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
@@ -136,6 +140,7 @@ const getTaskTrackerObservationContent = (
   if (
     "content" in observation &&
     observation.content &&
+    typeof observation.content === "string" &&
     observation.content.trim()
   ) {
     content += `\n\n**Result:** ${observation.content.trim()}`;
