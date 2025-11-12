@@ -2,7 +2,6 @@
 
 import os
 from typing import Any
-from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
 from openhands.tools.preset import get_default_agent
 from openhands.sdk import LLM
 
@@ -67,10 +66,4 @@ def get_default_cli_agent(
         cli_mode=True
     )
 
-    agent = agent.model_copy(
-        update={
-            'security_analyzer': LLMSecurityAnalyzer()
-        }
-    )
-    
     return agent

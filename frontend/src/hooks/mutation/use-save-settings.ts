@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import SettingsService from "#/settings-service/settings-service.api";
 import { PostSettings } from "#/types/settings";
@@ -41,6 +41,7 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
 };
 
 export const useSaveSettings = () => {
+  const posthog = usePostHog();
   const queryClient = useQueryClient();
   const { data: currentSettings } = useSettings();
 
