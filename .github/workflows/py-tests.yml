@@ -40,7 +40,6 @@ jobs:
               - 'dev_config/**'
             app:
               - 'openhands/**'
-              - 'evaluation/**'
               - 'tests/**'
               - 'scripts/**'
               - 'microagents/**'
@@ -52,7 +51,6 @@ jobs:
             enterprise:
               - 'enterprise/**'
               - 'openhands/**'
-              - 'evaluation/**'
               - 'tests/**'
               - 'scripts/**'
               - '.github/workflows/py-tests.yml'
