@@ -2,6 +2,13 @@
 
 Context: openhands-cli is a self-contained CLI that lives as a subdirectory inside the odie-cli repository. The current CI and release setup is optimized for the broader project, which creates friction for the CLI’s lifecycle.
 
+---
+
+## Executive summary
+- **Monorepo friction:** CLI maintainers wait on App/Enterprise pipelines for every release. Noise across Release Notes and GitHub Releases obscures CLI-specific changes.
+- **Tooling mismatch:** Shared Husky/Poetry hooks fail on CLI-only commits. Local DX diverges from CI expectations.
+- **Workflow scope:** Heavy workflows lack path guards, so CLI PRs trigger app/runtime jobs. Recent updates added filters and a CLI fast-path smoke, but more cleanup remains (release notes, tagging, hooks).
+
 
 ## Repository overview (basics we know)
 - Repository: odie-cli (monorepo-style)
@@ -20,43 +27,17 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
 - Ensure local DX parity: CLI maintainers should run the same checks locally via uv without needing poetry.
 
 ## Workflow inventory (current findings)
-- .github/workflows/cli-build-binary-and-optionally-release.yml
-  - Purpose: CLI binary build (uv/pyinstaller) and optional GitHub Release
-  - Triggers: push on main; tags matching "*-cli"; PRs touching `openhands-cli/**`
-  - Notes: Builds on ubuntu-22.04 and macOS; uploads artifacts; assembles release assets and creates release on tag; still fires on every push to `main` even when no CLI files changed because the push trigger lacks `paths:` guards
-- .github/workflows/pypi-release.yml
-  - Purpose: Publish to PyPI (App server via Poetry; CLI via uv)
-  - Triggers: push on any tag; workflow_dispatch with reason: app server | cli
-  - Notes: Job "release-cli" runs only for CLI: tags containing "-cli" or manual reason=cli; uv build + uv publish under `openhands-cli/`
-- .github/workflows/py-tests.yml
-  - Purpose: Run Python tests across projects
-  - Triggers: push on main; all pull_request events (no path filtering)
-  - Jobs: test-on-linux (Poetry, App), test-on-windows (Poetry, App), test-enterprise, test-cli-python (uv, CLI)
-  - Observation: Heavy and always-on; likely a major contributor to long waits on CLI-only PRs
-- .github/workflows/lint.yml
-  - Purpose: Lint frontend and Python across projects
-  - Triggers: push on main; all pull_request events (no path filtering)
-  - Jobs: lint-frontend (npm/i18n/tsc), lint-python (pre-commit root), lint-enterprise-python, lint-cli-python (pre-commit in `openhands-cli/`)
-  - Observation: Always-on; should be path-filtered so CLI-only PRs run only lint-cli-python
-- .github/workflows/ghcr-build.yml (name: Docker)
-  - Purpose: Build and push App and runtime Docker images
-  - Triggers: push on main; tags; all pull_request events
-  - Observation: Heavy; should be skipped when only `openhands-cli/**` changes
-- .github/workflows/e2e-tests.yml
-  - Purpose: End-to-end tests with Playwright
-  - Triggers: PRs labeled `end-to-end`; workflow_dispatch
-  - Observation: Heavy but opt-in; not a blocker for CLI-only unless labeled
-- Other workflows (mostly scoped):
-  - fe-unit-tests.yml (always on main; PR path filter `frontend/**`)
-  - enterprise-check-migrations.yml (paths enterprise/migrations/**)
-  - enterprise-preview.yml (label deploy; remote trigger)
-  - ui-build.yml, npm-publish-ui.yml (paths openhands-ui/**)
-  - mdx-lint.yml (paths docs/**/*.mdx)
-  - vscode-extension-build.yml (paths under VSCode integration and tag ext-v*)
-  - dispatch-to-docs.yml (docs/** on main)
-  - lint-fix.yml (PR label `lint-fix`; auto-commits)
-  - check-package-versions.yml (ensures Poetry lock alignment)
-  - clean-up.yml, stale.yml (maintenance)
+- **CLI specific**
+  - `cli-build-binary-and-optionally-release.yml`: builds macOS/Linux binaries, drafts releases, now path-scoped (`openhands-cli/**`) and supports a `fast=true` smoke via `workflow_dispatch`.
+  - `pypi-release.yml`: publishes App (`release`) on non-CLI tags and CLI (`release-cli`) on tags containing `-cli` or manual dispatch (`reason=cli`).
+- **Shared / heavy**
+  - `py-tests.yml`: app/enterprise/CLI test matrices (Linux, Windows, enterprise). Recently guarded by `dorny/paths-filter`; CLI jobs remain default-on, others skip when off-path.
+  - `lint.yml`: frontend + python linting (root, enterprise, CLI). Path filters now ensure only relevant jobs run for scoped PRs.
+  - `ghcr-build.yml`: app/runtime Docker builds. Guards added; only runs when app/runtime/shared paths change or on main/tags.
+- **Opt-in / scoped**
+  - `e2e-tests.yml`: Playwright, label-gated (`end-to-end`).
+  - `fe-unit-tests.yml`: frontend-only (already path-scoped).
+  - `enterprise-*`, `ui-*`, `mdx-lint.yml`, `vscode-extension-build.yml`, `dispatch-to-docs.yml`, `lint-fix.yml`, `check-package-versions.yml`, `clean-up.yml`, `stale.yml`: scoped by path, labels, or maintenance triggers.
 
 
 ## Additional repository context
@@ -77,13 +58,23 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
   - Manual steps observed from README/workflows: maintainers bump version in `pyproject.toml`, create a tag with `-cli`, push to origin, then wait for shared workflows (`lint`, `py-tests`, `ghcr-build`, etc.) to succeed before the CLI-specific release jobs complete. Total elapsed time reportedly exceeds two hours because App workflows must finish first.
 - Tag discovery: upstream tags now fetched locally, showing the canonical CLI sequence `1.0.0-cli` through `1.0.7-cli`. Align any new automation with this suffix-based convention.
 
-## Workflow scoping gaps (current)
-- `py-tests.yml`: triggers on all pushes/PRs with no path guards. The workflow spins up four heavy jobs (App Linux, App Windows, Enterprise, CLI) and merges coverage before commenting. Action: introduce a `dorny/paths-filter` or similar gate so App/Enterprise jobs skip when changes are limited to `openhands-cli/**`, while retaining the CLI test job.
-- `lint.yml`: also unguarded. Even CLI-only diffs run frontend lint (npm install + TypeScript build) and Poetry-based Python lint. Action: add path filters so only `lint-cli-python` executes for CLI changes; consider moving shared config into a matrix keyed by path filters.
-- `ghcr-build.yml`: always runs on pushes, tags, and PRs. Building/pushing both app and runtime images is unnecessary for CLI-only edits. Action: add `paths-ignore: ['openhands-cli/**']` (or positive includes for app/runtime directories) and ensure branch protections don’t require these checks for CLI paths.
-- `cli-build-binary-and-optionally-release.yml`: valuable but still fires on any push to `main` even if the diff is outside `openhands-cli/`. Action: add `paths:` to the push trigger so the binary job only runs when CLI code changes or CLI tags land.
-- `check-package-versions.yml` and other lightweight workflows (e.g., docs, mdx) are low-cost but still execute. Optional: add `paths-ignore: ['openhands-cli/**']` if we want zero noise on CLI PRs.
-- Update (Nov 2025): Path filters now guard `lint.yml`, `py-tests.yml`, and `ghcr-build.yml`, skipping non-CLI jobs when only `openhands-cli/**` (or shared config) changes. These workflows still run on `main`, tags, or manual dispatch to protect app releases.
+## Current workflow status
+### Completed improvements
+- Guarded `lint.yml`, `py-tests.yml`, and `ghcr-build.yml` with `dorny/paths-filter`, so CLI-only diffs run just CLI lint/tests/builds while App/Enterprise/Docker jobs report `skipped`.
+- Tightened `cli-build-binary-and-optionally-release.yml` push triggers to `openhands-cli/**` and added a `fast=true` smoke mode (`uv run pytest -q` on Linux only).
+- Verified CLI tag convention (`1.0.x-cli`) and documented it alongside release workflow behaviour.
+- Verification runs:
+  - [CLI-only change](https://github.com/enyst/playground/actions/runs/19294526865) — only CLI jobs executed.
+  - [Frontend change](https://github.com/enyst/playground/actions/runs/19294624281) — frontend lint/tests triggered, Python/Docker skipped.
+  - [Enterprise change](https://github.com/enyst/playground/actions/runs/19294686285) — enterprise lint/tests triggered, other suites skipped.
+  - [App validation](https://github.com/enyst/playground/pull/118) — confirmed App paths still execute full pipelines.
+  - [CLI fast-path smoke](https://github.com/enyst/playground/actions/runs/19293012005) — macOS matrix skips while Linux entry runs pytest.
+
+### Outstanding workflow actions
+- `check-package-versions.yml`: decide whether to skip CLI-only diffs to reduce noise.
+- `py-tests.yml`: Windows job remains required for App scopes; consider making it opt-in or removing to match upstream.
+- Document fast-path usage in contributor guides (README/AGENTS) so smoke testing is obvious.
+- Keep filter lists current as shared directories evolve (e.g., new `scripts/` or generated config folders).
 
 ## Tagging and release-note observations
 - Expected tag format: verified after fetching upstream—CLI releases use bare semantic versions suffixed with `-cli` (e.g., `1.0.7-cli`). Any automation should rely on `*-cli` filters and avoid introducing additional prefixes.
@@ -101,26 +92,18 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
 
 ## Problem summary
 
-1) Release visibility and notes
-- Mixed release streams: CLI executables are uploaded to the same Releases page as the OH App, so it’s hard to identify the latest CLI release at a glance.
-- Auto-generated release notes are not project-scoped and include commits from all projects in the repo. CLI-specific changes get buried. (Monorepo-aware tools like release-please can help scope notes per project.)
-
-2) CI coupling and latency
-- Releasing the CLI requires waiting for all OH App CI workflows to complete. These workflows are numerous and sometimes flaky, which delays CLI releases and wastes maintainer time.
-
-3) Tooling and local developer experience
-- Test coverage, linting, and related checks are wired with workarounds to simulate per-project jobs within a single repo. This is brittle.
-
-
-- As a result, running lint/format/test locally for only the CLI is cumbersome and error-prone.
-
-4) Versioning and tagging
-- Multiple tag conventions coexist (e.g., `X.Y.Z` vs `X.Y.Z-cli`), which complicates automation, discovery of the “latest” CLI version, and tooling that infers version numbers.
-
-
-5) Change risk visibility and failure attribution
-- It’s hard to know, ahead of a release, whether pending changes will break the CLI because signals (commits, CI jobs, release notes) are mixed across projects.
-- When breakage occurs, root cause is difficult to pinpoint: shared pipelines and cross-project history obscure which change introduced the regression.
+- **Release visibility and notes**
+  - CLI executables land on the same Releases page as the App, making it hard to identify the latest CLI build.
+  - Auto-generated notes blend commits across projects; CLI-specific context gets buried without manual curation.
+- **CI coupling and latency**
+  - CLI releases wait for every App/Enterprise job, leading to multi-hour lead times and exposure to unrelated flakes.
+- **Tooling and local DX**
+  - Shared Husky/Poetry hooks fail on CLI-only commits; CLI contributors need uv-based equivalents.
+  - Running lint/test/format for just the CLI is harder than it should be because configs live at the repo root.
+- **Versioning and tagging**
+  - Multiple tag conventions (`X.Y.Z`, `X.Y.Z-cli`) complicate automation and “latest release” discovery.
+- **Change risk visibility**
+  - Mixed commit history and omnibus release notes make it difficult to reason about CLI-specific risk ahead of releases.
 
 ## Discussion points and potential directions
 - There are workarounds and tools that could mitigate these problems and are worth discussing:
@@ -208,49 +191,37 @@ Context: openhands-cli is a self-contained CLI that lives as a subdirectory insi
 
 
 ## Task brief for implementers (starting points)
-- Discover and reuse first:
-  - Inventory existing CLI-related workflows under `.github/workflows/` (names containing `cli` or jobs referencing `openhands-cli/`). Prefer adapting these over creating new ones.
-  - Map triggers, `paths`/`paths-ignore`, tag filters, and required checks for both App and CLI.
-- Tagging and release notes:
-  - Propose/confirm a CLI tag pattern (e.g., `cli-vX.Y.Z`). Ensure App workflows ignore these tags.
-  - Evaluate monorepo-aware release tooling (e.g., release-please) configured per directory for `openhands-cli/` to scope release notes and versioning.
-- Path and condition filters:
-  - Add `paths:`/`paths-ignore:` to App workflows so they do not run for changes limited to `openhands-cli/**`.
-  - For complex cases, use a `paths-filter` job (e.g., `dorny/paths-filter`) and guard downstream jobs with `if:`.
-  - Consider label-based escapes (e.g., `cli-only`) as a manual override.
-- Hooks and local DX:
-  - Implement the Husky/pre-commit path guard so CLI-only commits don’t require poetry and optionally run `uv`-based checks.
-  - Provide simple local commands (`uv run ruff check .`, `uv run pytest -q`, `uv run python build.py`) and document them in `openhands-cli/`.
-- Validation plan:
-  - Create a PR that changes only files under `openhands-cli/**`. Verify App workflows are skipped and the CLI pipeline runs to completion in the target time budget.
-  - Push a test tag matching the CLI pattern to validate that only the CLI release pipeline runs and that artifacts and release notes are scoped to CLI.
-  - Confirm branch protection/rulesets still apply appropriately to App changes.
-- Rollback plan:
-  - Keep changes incremental. If App regressions occur, revert path filters or use tags-ignore to quickly restore previous behavior while iterating.
-
-- Splitting the CLI into its own repository could also provide benefits:
-  - Clearer visibility into the challenges of integrating with agent-sdk (surfacing client pain points).
-  - Easier tracking and triage of CLI-specific issues independent of the broader project.
+- **Workflow hygiene**
+  - ✅ Inventory performed above; keep the table current as automation evolves.
+  - Add path guards to remaining low-cost workflows (`check-package-versions`, docs) or explicitly document why they must run.
+- **Release process**
+  - Standardize CLI tag enforcement (suffix `-cli` or introduce prefix) and ensure App workflows ignore the pattern.
+  - Introduce per-directory release notes (release-please manifests or custom script) so GitHub Releases stay scoped.
+- **Local developer experience**
+  - Implement Husky guard to skip Poetry when staged paths are under `openhands-cli/`; optionally run `uv` lint/tests when available.
+  - Publish a CLI-specific pre-commit config for opt-in checks mirroring CI (`uv run ruff check .`, `uv run pytest`, etc.).
+- **Validation**
+  - Schedule periodic smoke PRs (CLI-only, Frontend, Enterprise, App) to confirm filters continue to behave; record durations for regressions.
+  - Dry-run a CLI release tag to validate GitHub Release + PyPI flows after changes to tagging or automation.
+- **Architecture follow-ups**
+  - Evaluate benefits of splitting CLI into its own repo once CI noise is minimized (improved release cadence, independent issue triage).
 
 ## Plan (WIP)
-1. Baseline governance  
-   - Pull branch protection and ruleset data (per instructions above) to understand which checks are enforced today.  
-   - Capture current CLI release path (manual steps, tags in use, time-to-release) to measure improvements.
-2. Workflow scoping  
-   - Add `paths`/`paths-ignore` guards to heavy App workflows (`py-tests`, `lint`, `ghcr-build`, etc.) so CLI-only diffs trigger just `lint-cli-python`, `test-cli-python`, and `cli-build-binary`.  
-   - Use a shared `paths-filter` helper if needed to avoid duplication and enable opt-in overrides via labels.
-3. Release stream cleanup  
-   - Standardize CLI tag format (`cli-vX.Y.Z` or `vX.Y.Z-cli`) and update `cli-build`/`pypi-release` triggers accordingly.  
-   - Introduce scoped release notes (evaluate release-please monorepo config or custom script) that surface only `openhands-cli/**` changes.  
-   - Ensure CLI artifacts publish independently of App pipelines (draft release on tag is already in place; confirm publishing UX).
-4. Local DX and hooks  
-   - Implement Husky path guard + optional uv quick checks so CLI commits no longer require Poetry.  
-   - Document the canonical local command set in `openhands-cli/README.md` / `AGENTS.md` (format, lint, test, build).  
-   - Evaluate adding a CLI-specific pre-commit config (uv-based) for contributors who want opt-in hooks.
-5. Validation + rollout  
-   - Create a CLI-only PR to confirm path filters and Husky guard behave as intended; record workflow runtimes.  
-   - Dry-run a CLI release tag to ensure only CLI workflows execute and release notes/artifacts look correct.  
-   - Communicate the new process to maintainers and update branch protection rules if required checks change.
+1. **Governance & visibility**
+   - Pull branch protection / required check data with maintainer credentials and document it.
+   - Automate CLI release notes so GitHub Releases highlight only `openhands-cli/**` commits.
+2. **Workflow hardening**
+   - Finish scoping low-cost workflows and reconfirm Docker behaviour on CLI tags.
+   - Decide the fate of the Windows job (optional dispatch or removal) to reduce queue contention.
+3. **Release stream cleanup**
+   - Enforce consistent CLI tag naming (lint in CI or tooling support).
+   - Add automation to copy CLI-specific notes into the GitHub Release draft generated by the binary workflow.
+4. **Local DX**
+   - Ship the Husky guard + optional `uv` quick checks; advertise in README/AGENTS.
+   - Offer a CLI-specific pre-commit configuration for contributors wanting automatic lint/test.
+5. **Validation & rollout**
+   - Maintain a schedule of smoke PRs (CLI/Frontend/Enterprise/App) after major changes; track runtimes for regressions.
+   - Socialize new processes with maintainers and adjust branch protection rules if check names change.
 
 ## Impact (why this matters)
 - Slower, harder releases for the CLI (blocked by unrelated CI and flakiness).
