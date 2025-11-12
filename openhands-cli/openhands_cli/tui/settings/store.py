@@ -38,6 +38,16 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
+
+            # Temporary to remove security analyzer from agent specs
+            # Security analyzer is set via conversation API now
+            # Doing this so that deprecation warning is thrown only the first time running CLI
+            if agent.security_analyzer:
+                agent = agent.model_copy(
+                    update={"security_analyzer": None}
+                )
+                self.save(agent)
+
             # Update tools with most recent working directory
             updated_tools = get_default_tools(enable_browser=False)
 

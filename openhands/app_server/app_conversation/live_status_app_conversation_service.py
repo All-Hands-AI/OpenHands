@@ -227,11 +227,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             yield task
 
             # Start conversation...
+            body_json = start_conversation_request.model_dump(
+                mode='json', context={'expose_secrets': True}
+            )
             response = await self.httpx_client.post(
                 f'{agent_server_url}/api/conversations',
-                json=start_conversation_request.model_dump(
-                    mode='json', context={'expose_secrets': True}, exclude_none=True
-                ),
+                json=body_json,
                 headers={'X-Session-API-Key': sandbox.session_api_key},
                 timeout=self.sandbox_startup_timeout,
             )
