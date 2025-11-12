@@ -24,7 +24,9 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.config import (
     depends_app_conversation_info_service,
     depends_app_conversation_service,
+    depends_sandbox_service,
 )
+from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -96,6 +98,7 @@ from openhands.utils.environment import get_effective_llm_base_url
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 app_conversation_service_dependency = depends_app_conversation_service()
 app_conversation_info_service_dependency = depends_app_conversation_info_service()
+sandbox_service_dependency = depends_sandbox_service()
 
 
 def _filter_conversations_by_age(
@@ -467,10 +470,13 @@ async def delete_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
+    sandbox_service: SandboxService = sandbox_service_dependency,
 ) -> bool:
     # Try V1 conversation first
     v1_result = await _try_delete_v1_conversation(
-        conversation_id, app_conversation_service
+        conversation_id,
+        app_conversation_service,
+        sandbox_service,
     )
     if v1_result is not None:
         return v1_result
@@ -480,9 +486,12 @@ async def delete_conversation(
 
 
 async def _try_delete_v1_conversation(
-    conversation_id: str, app_conversation_service: AppConversationService
+    conversation_id: str,
+    app_conversation_service: AppConversationService,
+    sandbox_service: SandboxService,
 ) -> bool | None:
     """Try to delete a V1 conversation. Returns None if not a V1 conversation."""
+    result = None
     try:
         conversation_uuid = uuid.UUID(conversation_id)
         # Check if it's a V1 conversation by trying to get it
@@ -492,9 +501,10 @@ async def _try_delete_v1_conversation(
         if app_conversation:
             # This is a V1 conversation, delete it using the app conversation service
             # Pass the conversation ID for secure deletion
-            return await app_conversation_service.delete_app_conversation(
+            result = await app_conversation_service.delete_app_conversation(
                 app_conversation.id
             )
+            await sandbox_service.delete_sandbox(app_conversation.sandbox_id)
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
         pass
@@ -502,7 +512,7 @@ async def _try_delete_v1_conversation(
         # Some other error, continue with V0 logic
         pass
 
-    return None
+    return result
 
 
 async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> bool:

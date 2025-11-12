@@ -5,13 +5,13 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp.mcp_config import MCPConfig
-from openhands_cli.utils import get_llm_metadata
 from openhands_cli.locations import (
     AGENT_SETTINGS_PATH,
     MCP_CONFIG_FILE,
     PERSISTENCE_DIR,
     WORK_DIR,
 )
+from openhands_cli.utils import get_llm_metadata
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Agent, AgentContext, LocalFileStore
@@ -38,6 +38,16 @@ class AgentStore:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
+
+            # Temporary to remove security analyzer from agent specs
+            # Security analyzer is set via conversation API now
+            # Doing this so that deprecation warning is thrown only the first time running CLI
+            if agent.security_analyzer:
+                agent = agent.model_copy(
+                    update={"security_analyzer": None}
+                )
+                self.save(agent)
+
             # Update tools with most recent working directory
             updated_tools = get_default_tools(enable_browser=False)
 
@@ -51,20 +61,23 @@ class AgentStore:
             agent_llm_metadata = get_llm_metadata(
                 model_name=agent.llm.model, llm_type='agent', session_id=session_id
             )
-            updated_llm = agent.llm.model_copy(update={'metadata': agent_llm_metadata})
+            updated_llm = agent.llm.model_copy(update={'litellm_extra_body': {'metadata': agent_llm_metadata}})
 
             condenser_updates = {}
             if agent.condenser and isinstance(agent.condenser, LLMSummarizingCondenser):
                 condenser_updates['llm'] = agent.condenser.llm.model_copy(
                     update={
-                        'metadata': get_llm_metadata(
-                            model_name=agent.condenser.llm.model,
-                            llm_type='condenser',
-                            session_id=session_id,
-                        )
+                        'litellm_extra_body': {
+                            'metadata': get_llm_metadata(
+                                model_name=agent.condenser.llm.model,
+                                llm_type='condenser',
+                                session_id=session_id,
+                            )
+                        }
                     }
                 )
 
+            # Update tools and context
             agent = agent.model_copy(
                 update={
                     'llm': updated_llm,

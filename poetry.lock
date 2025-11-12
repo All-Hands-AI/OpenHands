@@ -7332,14 +7332,14 @@ llama = ["llama-index (>=0.12.29,<0.13.0)", "llama-index-core (>=0.12.29,<0.13.0
 
 [[package]]
 name = "openhands-agent-server"
-version = "1.0.0a6"
+version = "1.1.0"
 description = "OpenHands Agent Server - REST/WebSocket interface for OpenHands AI Agent"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_agent_server-1.0.0a6-py3-none-any.whl", hash = "sha256:72b0da038ede018c55c64f0ac99bc5d991af173627efc63de87d54b3cd69134c"},
-    {file = "openhands_agent_server-1.0.0a6.tar.gz", hash = "sha256:8c6fbceb07990e3caf7f8797082d1bb614b9f7339bd00576c24fd34a956a03b4"},
+    {file = "openhands_agent_server-1.1.0-py3-none-any.whl", hash = "sha256:59a856883df23488c0723e47655ef21649a321fcd4709a25a4690866eff6ac88"},
+    {file = "openhands_agent_server-1.1.0.tar.gz", hash = "sha256:e39bebd39afd45cfcfd765005e7c4e5409e46678bd7612ae20bae79f7057b935"},
 ]
 
 [package.dependencies]
@@ -7355,12 +7355,15 @@ wsproto = ">=1.2.0"
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0"
+version = "1.1.0"
 description = "OpenHands SDK - Core functionality for building AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
+files = [
+    {file = "openhands_sdk-1.1.0-py3-none-any.whl", hash = "sha256:4a984ce1687a48cf99a67fdf3d37b116f8b2840743d4807810b5024af6a1d57e"},
+    {file = "openhands_sdk-1.1.0.tar.gz", hash = "sha256:855e0d8f3657205e4119e50520c17e65b3358b1a923f7a051a82512a54bf426c"},
+]
 develop = false
 
 [package.dependencies]
@@ -7386,14 +7389,14 @@ subdirectory = "openhands-sdk"
 
 [[package]]
 name = "openhands-tools"
-version = "1.0.0a6"
+version = "1.1.0"
 description = "OpenHands Tools - Runtime tools for AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_tools-1.0.0a6-py3-none-any.whl", hash = "sha256:55b75016f7e3930e4365393a026726eeffae027363d03862a17a8cebc1aed670"},
-    {file = "openhands_tools-1.0.0a6.tar.gz", hash = "sha256:4d5382f3e1cab9d23c1ef7ea8e36e821083886d6d4b019100cbf897e3b0cd3be"},
+    {file = "openhands_tools-1.1.0-py3-none-any.whl", hash = "sha256:767d6746f05edade49263aa24450a037485a3dc23379f56917ef19aad22033f9"},
+    {file = "openhands_tools-1.1.0.tar.gz", hash = "sha256:c2fadaa4f4e16e9a3df5781ea847565dcae7171584f09ef7c0e1d97c8dfc83f6"},
 ]
 
 [package.dependencies]
@@ -16737,4 +16740,4 @@ third-party-runtimes = ["daytona", "e2b-code-interpreter", "modal", "runloop-api
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "e69092234836a1e803adc93846bfb83621dbb904981046075e7c4feff22ef945"
+content-hash = "0fe5bab6aeb5ebce4588b30cfcf491af4cc9d9b9cd5160e67c8a055d9db276fc"

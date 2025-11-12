@@ -13,6 +13,7 @@ import { useConversationStore } from "#/state/conversation-store";
 import CircleErrorIcon from "#/icons/circle-error.svg?react";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
+import { useTaskPolling } from "#/hooks/query/use-task-polling";
 
 export interface AgentStatusProps {
   className?: string;
@@ -35,6 +36,7 @@ export function AgentStatus({
   const { curStatusMessage } = useStatusStore();
   const webSocketStatus = useUnifiedWebSocketStatus();
   const { data: conversation } = useActiveConversation();
+  const { taskStatus } = useTaskPolling();
 
   const statusCode = getStatusCode(
     curStatusMessage,
@@ -42,17 +44,24 @@ export function AgentStatus({
     conversation?.status || null,
     conversation?.runtime_status || null,
     curAgentState,
+    taskStatus,
   );
+
+  const isTaskLoading =
+    taskStatus && taskStatus !== "ERROR" && taskStatus !== "READY";
 
   const shouldShownAgentLoading =
     isPausing ||
     curAgentState === AgentState.INIT ||
     curAgentState === AgentState.LOADING ||
-    webSocketStatus === "CONNECTING";
+    (webSocketStatus === "CONNECTING" && taskStatus !== "ERROR") ||
+    isTaskLoading;
 
   const shouldShownAgentError =
     curAgentState === AgentState.ERROR ||
-    curAgentState === AgentState.RATE_LIMITED;
+    curAgentState === AgentState.RATE_LIMITED ||
+    webSocketStatus === "DISCONNECTED" ||
+    taskStatus === "ERROR";
 
   const shouldShownAgentStop = curAgentState === AgentState.RUNNING;
 
@@ -61,7 +70,7 @@ export function AgentStatus({
 
   // Update global state when agent loading condition changes
   useEffect(() => {
-    setShouldShownAgentLoading(shouldShownAgentLoading);
+    setShouldShownAgentLoading(!!shouldShownAgentLoading);
   }, [shouldShownAgentLoading, setShouldShownAgentLoading]);
 
   return (
