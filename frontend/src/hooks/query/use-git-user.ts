@@ -23,8 +23,6 @@ export const useGitUser = () => {
 
   React.useEffect(() => {
     if (user.data) {
-      // Identify user with GitHub username
-      // Note: In SaaS mode, the backend handles aliasing GitHub login to Keycloak user ID
       posthog.identify(user.data.login, {
         company: user.data.company,
         name: user.data.name,
@@ -33,7 +31,7 @@ export const useGitUser = () => {
         mode: config?.APP_MODE || "oss",
       });
     }
-  }, [user.data, config?.APP_MODE]);
+  }, [user.data]);
 
   return user;
 };

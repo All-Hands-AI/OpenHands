@@ -120,7 +120,6 @@ class User(BaseModel):
     company: str | None = None
     name: str | None = None
     email: str | None = None
-    keycloak_user_id: str | None = None  # For PostHog aliasing in SaaS mode
 
 
 class Branch(BaseModel):

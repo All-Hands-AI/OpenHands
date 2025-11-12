@@ -13,7 +13,6 @@ interface GitUser {
   company: string | null;
   name: string | null;
   email: string | null;
-  keycloak_user_id?: string | null; // For PostHog aliasing in SaaS mode
 }
 
 interface Branch {

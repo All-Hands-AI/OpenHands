@@ -117,8 +117,6 @@ async def get_user(
 
         try:
             user: User = await client.get_user()
-            # Add Keycloak user ID for PostHog aliasing (SaaS mode only)
-            user.keycloak_user_id = user_id
 
             # Alias GitHub login with Keycloak user ID in PostHog (SaaS mode only)
             if user_id and user.login and server_config.app_mode == AppMode.SAAS:
