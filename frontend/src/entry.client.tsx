@@ -6,7 +6,7 @@
  */
 
 import { HydratedRouter } from "react-router/dom";
-import React, { startTransition, StrictMode } from "react";
+import React, { startTransition, StrictMode, Suspense } from "react";
 import { hydrateRoot } from "react-dom/client";
 import posthog from "posthog-js";
 import "./i18n";
@@ -63,10 +63,15 @@ prepareApp().then(() =>
       <StrictMode>
         <QueryClientProvider client={queryClient}>
           <HydratedRouter />
-          <PosthogInit />
         </QueryClientProvider>
         <div id="modal-portal-exit" />
+        <Suspense />
       </StrictMode>,
+      {
+        onCaughtError: (error, errorInfo) => { },
+        onRecoverableError: (error, errorInfo) => { },
+        onUncaughtError(error, errorInfo) { },
+      },
     );
   }),
 );
