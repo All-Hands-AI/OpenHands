@@ -2,9 +2,10 @@
 from __future__ import annotations
 from pathlib import Path
 from typing import Any
-from openhands.sdk import LocalFileStore, Agent
 from openhands.sdk import LocalFileStore, Agent, AgentContext
-from openhands.sdk.preset.default import get_default_tools
+from openhands.sdk.context.condenser import LLMSummarizingCondenser
+from openhands.tools.preset.default import get_default_tools
+from openhands_cli.llm_utils import get_llm_metadata
 from openhands_cli.locations import AGENT_SETTINGS_PATH, MCP_CONFIG_FILE, PERSISTENCE_DIR, WORK_DIR
 from prompt_toolkit import HTML, print_formatted_text
 from fastmcp.mcp_config import MCPConfig
@@ -23,15 +24,13 @@ class AgentStore:
         except Exception as e:
             return {}
 
-    def load(self) -> Agent | None:
+    def load(self, session_id: str | None = None) -> Agent | None:
         try:
             str_spec = self.file_store.read(AGENT_SETTINGS_PATH)
             agent = Agent.model_validate_json(str_spec)
 
             # Update tools with most recent working directory
             updated_tools = get_default_tools(
-                working_dir=WORK_DIR,
-                persistence_dir=PERSISTENCE_DIR,
                 enable_browser=False
             )
 
@@ -44,10 +43,30 @@ class AgentStore:
             mcp_config: dict = agent.mcp_config.copy().get('mcpServers', {})
             mcp_config.update(additional_mcp_config)
 
+            # Update LLM metadata with current information
+            agent_llm_metadata = get_llm_metadata(
+                model_name=agent.llm.model,
+                llm_type="agent",
+                session_id=session_id
+            )
+            updated_llm = agent.llm.model_copy(update={"metadata": agent_llm_metadata})
+
+            condenser_updates = {}
+            if agent.condenser and isinstance(agent.condenser, LLMSummarizingCondenser):
+                condenser_updates["llm"] = agent.condenser.llm.model_copy(update={"metadata": get_llm_metadata(
+                    model_name=agent.condenser.llm.model,
+                    llm_type="condenser",
+                    session_id=session_id
+                )})
+
             agent = agent.model_copy(update={
+                "llm": updated_llm,
                 "tools": updated_tools,
                 "mcp_config": {'mcpServers': mcp_config} if mcp_config else {},
-                "agent_context": agent_context
+                "agent_context": agent_context,
+                "condenser": agent.condenser.model_copy(
+                    update=condenser_updates
+                ) if agent.condenser else None
             })
 
             return agent

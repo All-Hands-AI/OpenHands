@@ -5,8 +5,7 @@ from openhands.sdk.security.confirmation_policy import (
     ConfirmRisky,
     ConfirmationPolicyBase
 )
-from openhands.sdk.conversation.state import AgentExecutionStatus
-from openhands.sdk.event.utils import get_unmatched_actions
+from openhands.sdk.conversation.state import AgentExecutionStatus, ConversationState
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands_cli.listeners.pause_listener import PauseListener, pause_listener
@@ -117,7 +116,7 @@ class ConversationRunner:
             UserConfirmation indicating the user's choice
         """
 
-        pending_actions = get_unmatched_actions(self.conversation.state.events)
+        pending_actions = ConversationState.get_unmatched_actions(self.conversation.state.events)
         if not pending_actions:
             return UserConfirmation.ACCEPT
 

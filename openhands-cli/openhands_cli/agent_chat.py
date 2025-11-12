@@ -5,6 +5,7 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 """
 
 import sys
+
 from openhands.sdk import (
     Message,
     TextContent,
@@ -38,9 +39,19 @@ def _restore_tty() -> None:
     except Exception:
         pass
 
+def _print_exit_hint(conversation_id: str) -> None:
+    """Print a resume hint with the current conversation ID."""
+    print_formatted_text(HTML(f"<grey>Conversation ID:</grey> <yellow>{conversation_id}</yellow>"))
+    print_formatted_text(
+        HTML(
+            f"<grey>Hint:</grey> run <gold>openhands-cli --resume {conversation_id}</gold> "
+            "to resume this conversation."
+        )
+    )
 
-def run_cli_entry() -> None:
+def run_cli_entry(resume_conversation_id: str | None = None) -> None:
     """Run the agent chat session using the agent SDK.
+
 
     Raises:
         AgentSetupError: If agent setup fails
@@ -53,11 +64,11 @@ def run_cli_entry() -> None:
 
     while not conversation:
         try:
-            conversation = setup_conversation()
+            conversation = setup_conversation(resume_conversation_id)
         except MissingAgentSpec:
             settings_screen.handle_basic_settings(escapable=False)
 
-    display_welcome(conversation.id)
+    display_welcome(conversation.id, bool(resume_conversation_id))
 
     # Create conversation runner to handle state machine logic
     runner = ConversationRunner(conversation)
@@ -88,6 +99,7 @@ def run_cli_entry() -> None:
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                    _print_exit_hint(conversation.id)
                     break
 
             elif command == "/settings":
@@ -209,6 +221,7 @@ def run_cli_entry() -> None:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML("\n<yellow>Goodbye! 👋</yellow>"))
+                _print_exit_hint(conversation.id)
                 break
 
 

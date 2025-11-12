@@ -89,7 +89,7 @@ class CommandCompleter(Completer):
                     )
 
 
-def display_banner(conversation_id: str) -> None:
+def display_banner(conversation_id: str, resume: bool = False) -> None:
     print_formatted_text(
         HTML(r"""<gold>
      ___                    _   _                 _
@@ -105,7 +105,10 @@ def display_banner(conversation_id: str) -> None:
     print_formatted_text(HTML(f"<grey>OpenHands CLI v{__version__}</grey>"))
 
     print_formatted_text("")
-    print_formatted_text(HTML(f"<grey>Initialized conversation {conversation_id}</grey>"))
+    if not resume:
+        print_formatted_text(HTML(f"<grey>Initialized conversation {conversation_id}</grey>"))
+    else:
+        print_formatted_text(HTML(f"<grey>Resumed conversation {conversation_id}</grey>"))
     print_formatted_text("")
 
 
@@ -127,10 +130,10 @@ def display_help() -> None:
     print_formatted_text("")
 
 
-def display_welcome(conversation_id: UUID) -> None:
+def display_welcome(conversation_id: UUID, resume: bool = False) -> None:
     """Display welcome message."""
     clear()
-    display_banner(str(conversation_id)[0:8])
+    display_banner(str(conversation_id), resume)
     print_formatted_text(HTML("<gold>Let's start building!</gold>"))
     print_formatted_text(
         HTML(
