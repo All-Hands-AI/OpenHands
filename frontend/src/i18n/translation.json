@@ -14991,6 +14991,22 @@
     "de": "Einen Plan erstellen",
     "uk": "Створити план"
   },
+  "COMMON$TASKS": {
+    "en": "Tasks",
+    "ja": "タスク",
+    "zh-CN": "任务",
+    "zh-TW": "任務",
+    "ko-KR": "작업",
+    "no": "Oppgaver",
+    "it": "Attività",
+    "pt": "Tarefas",
+    "es": "Tareas",
+    "ar": "مهام",
+    "fr": "Tâches",
+    "tr": "Görevler",
+    "de": "Aufgaben",
+    "uk": "Завдання"
+  },
   "COMMON$PLAN_MD": {
     "en": "Plan.md",
     "ja": "Plan.md",
