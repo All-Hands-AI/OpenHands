@@ -44,45 +44,41 @@ jobs:
           - os: macos-15
             platform: macos
             artifact_name: openhands-cli-macos
-    if: >
-      !(
-        github.event_name == 'workflow_dispatch' &&
-        github.event.inputs.fast == 'true' &&
-        matrix.platform != 'linux'
-      )
     runs-on: ${{ matrix.os }}
-    env:
-      FAST: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' }}
 
     steps:
       - name: Checkout repository
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' && matrix.platform != 'linux') }}
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Python
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' && matrix.platform != 'linux') }}
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
 
       - name: Install uv
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' && matrix.platform != 'linux') }}
         uses: astral-sh/setup-uv@v3
         with:
           version: "latest"
 
       - name: Install dependencies
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' && matrix.platform != 'linux') }}
         working-directory: openhands-cli
         run: |
           uv sync
 
       - name: Fast validation run
-        if: env.FAST == 'true'
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true' && matrix.platform == 'linux' }}
         working-directory: openhands-cli
         run: |
           uv run pytest -q
 
       - name: Build binary executable
-        if: env.FAST != 'true'
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true') }}
         working-directory: openhands-cli
         run: |
           ./build.sh --install-pyinstaller | tee output.log
@@ -97,7 +93,7 @@ jobs:
           echo "✅ Build & test finished without ❌ markers"
 
       - name: Verify binary files exist
-        if: env.FAST != 'true'
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true') }}
         run: |
           if ! ls openhands-cli/dist/openhands* 1> /dev/null 2>&1; then
             echo "❌ No binaries found to upload!"
@@ -106,7 +102,7 @@ jobs:
           echo "✅ Found binaries to upload."
 
       - name: Upload binary artifact
-        if: env.FAST != 'true'
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.fast == 'true') }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
