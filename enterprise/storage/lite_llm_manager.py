@@ -542,7 +542,7 @@ class LiteLlmManager:
     @staticmethod
     async def _get_key_info(
         client: httpx.AsyncClient,
-        org_id: int,
+        org_id: str,
         keycloak_user_id: str,
     ) -> dict | None:
         from storage.user_store import UserStore

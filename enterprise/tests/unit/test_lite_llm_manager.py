@@ -489,13 +489,13 @@ class TestLiteLlmManager:
                     # Mock user with org member
                     mock_user = MagicMock()
                     mock_org_member = MagicMock()
-                    mock_org_member.org_id = 1
+                    mock_org_member.org_id = 'test-ord-id'
                     mock_org_member.llm_api_key = 'test-api-key'
                     mock_user.org_members = [mock_org_member]
                     mock_user_store.get_user_by_id.return_value = mock_user
 
                     result = await LiteLlmManager._get_key_info(
-                        mock_http_client, 1, 'test-user-id'
+                        mock_http_client, 'test-ord-id', 'test-user-id'
                     )
 
                     assert result is not None
@@ -511,7 +511,7 @@ class TestLiteLlmManager:
                     mock_user_store.get_user_by_id.return_value = None
 
                     result = await LiteLlmManager._get_key_info(
-                        mock_http_client, 1, 'test-user-id'
+                        mock_http_client, 'test-ord-id', 'test-user-id'
                     )
 
                     assert result == {}
@@ -626,7 +626,9 @@ class TestLiteLlmManager:
                 result4 = await LiteLlmManager._get_user_team_info(
                     mock_client, 'user_id', 'team_id'
                 )
-                result5 = await LiteLlmManager._get_key_info(mock_client, 1, 'user_id')
+                result5 = await LiteLlmManager._get_key_info(
+                    mock_client, 'test-ord-id', 'user_id'
+                )
 
                 # Methods that return None when config is missing
                 assert result1 is None
