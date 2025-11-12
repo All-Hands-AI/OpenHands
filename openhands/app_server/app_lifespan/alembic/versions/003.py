@@ -22,7 +22,12 @@ def upgrade() -> None:
     """Upgrade schema."""
     # Drop columns that are not in the StoredConversationMetadata dataclass
     op.drop_column('conversation_metadata', 'github_user_id')
-    op.drop_column('conversation_metadata', 'user_id')
+    op.alter_column(
+        'conversation_metadata',
+        'user_id',
+        existing_type=sa.String(),
+        nullable=True,
+    )
 
 
 def downgrade() -> None:
@@ -31,6 +36,9 @@ def downgrade() -> None:
     op.add_column(
         'conversation_metadata', sa.Column('github_user_id', sa.String(), nullable=True)
     )
-    op.add_column(
-        'conversation_metadata', sa.Column('user_id', sa.String(), nullable=False)
+    op.alter_column(
+        'conversation_metadata',
+        'user_id',
+        existing_type=sa.String(),
+        nullable=False,
     )
