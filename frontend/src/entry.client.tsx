@@ -6,42 +6,11 @@
  */
 
 import { HydratedRouter } from "react-router/dom";
-import React, { startTransition, StrictMode, Suspense } from "react";
+import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
-import posthog from "posthog-js";
 import "./i18n";
 import { QueryClientProvider } from "@tanstack/react-query";
-import OptionService from "./api/option-service/option-service.api";
-import { displayErrorToast } from "./utils/custom-toast-handlers";
 import { queryClient } from "./query-client-config";
-
-function PosthogInit() {
-  const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
-    null,
-  );
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const config = await OptionService.getConfig();
-        setPosthogClientKey(config.POSTHOG_CLIENT_KEY);
-      } catch {
-        displayErrorToast("Error fetching PostHog client key");
-      }
-    })();
-  }, []);
-
-  React.useEffect(() => {
-    if (posthogClientKey) {
-      posthog.init(posthogClientKey, {
-        api_host: "https://us.i.posthog.com",
-        person_profiles: "identified_only",
-      });
-    }
-  }, [posthogClientKey]);
-
-  return null;
-}
 
 async function prepareApp() {
   if (
@@ -65,12 +34,11 @@ prepareApp().then(() =>
           <HydratedRouter />
         </QueryClientProvider>
         <div id="modal-portal-exit" />
-        <Suspense />
       </StrictMode>,
       {
-        onCaughtError: (error, errorInfo) => { },
-        onRecoverableError: (error, errorInfo) => { },
-        onUncaughtError(error, errorInfo) { },
+        onCaughtError: () => {},
+        onRecoverableError: () => {},
+        onUncaughtError: () => {},
       },
     );
   }),
