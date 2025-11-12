@@ -312,7 +312,7 @@ def test_alias_user_identities(mock_posthog):
     """Test aliasing user identities.
 
     Verifies that posthog.alias(previous_id, distinct_id) is called correctly
-    where github_login is the previous_id and keycloak_user_id is the distinct_id.
+    where git_login is the previous_id and keycloak_user_id is the distinct_id.
     """
     import openhands.utils.posthog_tracker as tracker
 
@@ -321,11 +321,11 @@ def test_alias_user_identities(mock_posthog):
 
     alias_user_identities(
         keycloak_user_id='keycloak-123',
-        github_login='github-user',
+        git_login='git-user',
     )
 
-    # Verify: posthog.alias(previous_id='github-user', distinct_id='keycloak-123')
-    mock_posthog.alias.assert_called_once_with('github-user', 'keycloak-123')
+    # Verify: posthog.alias(previous_id='git-user', distinct_id='keycloak-123')
+    mock_posthog.alias.assert_called_once_with('git-user', 'keycloak-123')
 
 
 def test_alias_user_identities_handles_errors(mock_posthog):
@@ -338,7 +338,7 @@ def test_alias_user_identities_handles_errors(mock_posthog):
     # Should not raise an exception
     alias_user_identities(
         keycloak_user_id='keycloak-error',
-        github_login='github-error',
+        git_login='git-error',
     )
 
 
@@ -352,5 +352,5 @@ def test_alias_user_identities_when_posthog_not_installed():
     # Should not raise an exception
     alias_user_identities(
         keycloak_user_id='keycloak-no-ph',
-        github_login='github-no-ph',
+        git_login='git-no-ph',
     )

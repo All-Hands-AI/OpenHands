@@ -118,11 +118,11 @@ async def get_user(
         try:
             user: User = await client.get_user()
 
-            # Alias GitHub login with Keycloak user ID in PostHog (SaaS mode only)
+            # Alias git provider login with Keycloak user ID in PostHog (SaaS mode only)
             if user_id and user.login and server_config.app_mode == AppMode.SAAS:
                 alias_user_identities(
                     keycloak_user_id=user_id,
-                    github_login=user.login,
+                    git_login=user.login,
                 )
 
             return user

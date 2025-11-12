@@ -220,11 +220,11 @@ def track_credits_purchased(
 
 def alias_user_identities(
     keycloak_user_id: str,
-    github_login: str,
+    git_login: str,
 ) -> None:
-    """Alias a user's Keycloak ID with their GitHub login for unified tracking.
+    """Alias a user's Keycloak ID with their git provider login for unified tracking.
 
-    This allows PostHog to link events tracked from the frontend (using GitHub login)
+    This allows PostHog to link events tracked from the frontend (using git provider login)
     with events tracked from the backend (using Keycloak user ID).
 
     PostHog Python alias syntax: alias(previous_id, distinct_id)
@@ -232,13 +232,13 @@ def alias_user_identities(
     - distinct_id: The new/canonical distinct ID to merge into
 
     For our use case:
-    - GitHub login is the previous_id (first used in frontend, before backend auth)
+    - Git provider login is the previous_id (first used in frontend, before backend auth)
     - Keycloak user ID is the distinct_id (canonical backend ID)
-    - Result: All events with GitHub login will be merged into Keycloak user ID
+    - Result: All events with git login will be merged into Keycloak user ID
 
     Args:
         keycloak_user_id: The Keycloak user ID (canonical distinct_id)
-        github_login: The GitHub username (previous_id to merge)
+        git_login: The git provider username (GitHub/GitLab/Bitbucket) to merge
 
     Reference:
         https://github.com/PostHog/posthog-python/blob/master/posthog/client.py
@@ -249,13 +249,13 @@ def alias_user_identities(
         return
 
     try:
-        # Merge GitHub login into Keycloak user ID
+        # Merge git provider login into Keycloak user ID
         # posthog.alias(previous_id, distinct_id) - official Python SDK signature
-        posthog.alias(github_login, keycloak_user_id)
+        posthog.alias(git_login, keycloak_user_id)
         logger.debug(
             'posthog_alias',
             extra={
-                'previous_id': github_login,
+                'previous_id': git_login,
                 'distinct_id': keycloak_user_id,
             },
         )
@@ -264,7 +264,7 @@ def alias_user_identities(
             f'Failed to alias user identities in PostHog: {e}',
             extra={
                 'keycloak_user_id': keycloak_user_id,
-                'github_login': github_login,
+                'git_login': git_login,
                 'error': str(e),
             },
         )
