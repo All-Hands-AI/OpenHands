@@ -192,9 +192,9 @@ class LLM(RetryMixin, DebugMixin):
         # Prefer temperature (drop top_p) if both are specified.
         _model_lower = self.config.model.lower()
         # Apply to Opus 4.1 and Sonnet 4 models to avoid API errors
-        if (('claude-opus-4-1' in _model_lower) or ('claude-sonnet-4' in _model_lower)) and (
-            'temperature' in kwargs and 'top_p' in kwargs
-        ):
+        if (
+            ('claude-opus-4-1' in _model_lower) or ('claude-sonnet-4' in _model_lower)
+        ) and ('temperature' in kwargs and 'top_p' in kwargs):
             kwargs.pop('top_p', None)
 
         # Add completion_kwargs if present
