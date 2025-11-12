@@ -1,16 +1,12 @@
 import { useTranslation } from "react-i18next";
 import { TaskItem } from "./task-item";
 import LessonPlanIcon from "#/icons/lesson-plan.svg?react";
+import { TaskItem as TaskItemType } from "#/types/v1/core/base/common";
 import { I18nKey } from "#/i18n/declaration";
 import { Typography } from "#/ui/typography";
 
 interface TaskListSectionProps {
-  taskList: Array<{
-    id: string;
-    title: string;
-    status: "todo" | "in_progress" | "done";
-    notes?: string;
-  }>;
+  taskList: TaskItemType[];
 }
 
 export function TaskListSection({ taskList }: TaskListSectionProps) {
@@ -28,8 +24,8 @@ export function TaskListSection({ taskList }: TaskListSectionProps) {
 
       {/* Task Items */}
       <div>
-        {taskList.map((task) => (
-          <TaskItem key={task.id} task={task} />
+        {taskList.map((task, index) => (
+          <TaskItem key={`task-${index}`} task={task} />
         ))}
       </div>
     </div>
