@@ -158,19 +158,29 @@ class SaasConversationStore(ConversationStore):
     async def delete_metadata(self, conversation_id: str) -> None:
         def _delete_metadata():
             with self.session_maker() as session:
-                # Delete the main conversation metadata
-                session.query(StoredConversationMetadata).filter(
-                    StoredConversationMetadata.conversation_id == conversation_id,
-                ).delete()
+                saas_record = (
+                    session.query(StoredConversationMetadataSaas)
+                    .filter(
+                        StoredConversationMetadataSaas.conversation_id
+                        == conversation_id,
+                        StoredConversationMetadataSaas.user_id == UUID(self.user_id),
+                        StoredConversationMetadataSaas.org_id == self.org_id,
+                    )
+                    .first()
+                )
 
-                # Delete the SaaS metadata record
-                session.query(StoredConversationMetadataSaas).filter(
-                    StoredConversationMetadataSaas.conversation_id == conversation_id,
-                    StoredConversationMetadataSaas.user_id == UUID(self.user_id),
-                    StoredConversationMetadataSaas.org_id == self.org_id,
-                ).delete()
+                if saas_record:
+                    # Delete both records, but only if the SaaS one exists
+                    session.query(StoredConversationMetadata).filter(
+                        StoredConversationMetadata.conversation_id == conversation_id,
+                    ).delete()
 
-                session.commit()
+                    session.delete(saas_record)
+
+                    session.commit()
+                else:
+                    # No SaaS record found → skip deleting main metadata
+                    session.rollback()
 
         await call_sync_from_async(_delete_metadata)
 

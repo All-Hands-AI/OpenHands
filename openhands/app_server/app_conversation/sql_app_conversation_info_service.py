@@ -378,13 +378,6 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             StoredConversationMetadata.conversation_id == str(conversation_id)
         )
 
-        # Apply user security filtering - only allow deletion of conversations owned by the current user
-        user_id = await self.user_context.get_user_id()
-        if user_id:
-            delete_query = delete_query.where(
-                StoredConversationMetadata.user_id == user_id
-            )
-
         # Execute the secure delete query
         result = await self.db_session.execute(delete_query)
 
