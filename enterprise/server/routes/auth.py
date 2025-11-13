@@ -374,13 +374,14 @@ async def accept_tos(request: Request):
             )
         user.accepted_tos = datetime.now(timezone.utc)
         session.commit()
+        signup_timestamp = user.accepted_tos.isoformat()
 
     logger.info(f'User {user_id} accepted TOS')
 
     # Track user signup completion in PostHog
     track_user_signup_completed(
         user_id=user_id,
-        signup_timestamp=user_settings.accepted_tos.isoformat(),
+        signup_timestamp=signup_timestamp,
     )
 
     response = JSONResponse(
