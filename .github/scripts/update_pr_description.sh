@@ -49,11 +49,6 @@ GUI with Docker:
 \`\`\`
 ${DOCKER_RUN_COMMAND}
 \`\`\`
-
-CLI with uvx:
-\`\`\`
-${UVX_RUN_COMMAND}
-\`\`\`
 EOF
 )
 fi
