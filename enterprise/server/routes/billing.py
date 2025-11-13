@@ -18,6 +18,7 @@ from storage.lite_llm_manager import LiteLlmManager
 from storage.user_store import UserStore
 
 from openhands.server.user_auth import get_user_id
+from openhands.utils.posthog_tracker import track_credits_purchased
 
 stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')
@@ -245,6 +246,20 @@ async def success_callback(session_id: str, request: Request):
             },
         )
         session.commit()
+
+            # Track credits purchased in PostHog
+            try:
+                track_credits_purchased(
+                    user_id=billing_session.user_id,
+                    amount_usd=amount_subtotal / 100,  # Convert cents to dollars
+                    credits_added=add_credits,
+                    stripe_session_id=session_id,
+                )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to track credits purchase: {e}',
+                    extra={'user_id': billing_session.user_id, 'error': str(e)},
+                )
 
     return RedirectResponse(
         f'{request.base_url}settings/billing?checkout=success', status_code=302

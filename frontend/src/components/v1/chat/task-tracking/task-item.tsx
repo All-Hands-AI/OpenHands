@@ -1,19 +1,15 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { TaskItem as TaskItemType } from "#/types/v1/core/base/common";
 import CircleIcon from "#/icons/u-circle.svg?react";
 import CheckCircleIcon from "#/icons/u-check-circle.svg?react";
 import LoadingIcon from "#/icons/loading.svg?react";
-import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { Typography } from "#/ui/typography";
+import { I18nKey } from "#/i18n/declaration";
 
 interface TaskItemProps {
-  task: {
-    id: string;
-    title: string;
-    status: "todo" | "in_progress" | "done";
-    notes?: string;
-  };
+  task: TaskItemType;
 }
 
 export function TaskItem({ task }: TaskItemProps) {
@@ -24,7 +20,9 @@ export function TaskItem({ task }: TaskItemProps) {
       case "todo":
         return <CircleIcon className="w-4 h-4 text-[#ffffff]" />;
       case "in_progress":
-        return <LoadingIcon className="w-4 h-4 text-[#ffffff]" />;
+        return (
+          <LoadingIcon className="w-4 h-4 text-[#ffffff]" strokeWidth={0.5} />
+        );
       case "done":
         return <CheckCircleIcon className="w-4 h-4 text-[#A3A3A3]" />;
       default:
@@ -48,9 +46,6 @@ export function TaskItem({ task }: TaskItemProps) {
           )}
         >
           {task.title}
-        </Typography.Text>
-        <Typography.Text className="text-[10px] text-[#A3A3A3] font-normal">
-          {t(I18nKey.TASK_TRACKING_OBSERVATION$TASK_ID)}: {task.id}
         </Typography.Text>
         <Typography.Text className="text-[10px] text-[#A3A3A3]">
           {t(I18nKey.TASK_TRACKING_OBSERVATION$TASK_NOTES)}: {task.notes}
