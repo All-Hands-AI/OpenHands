@@ -911,13 +911,13 @@ async def test_delete_conversation():
 
             # Create a mock app conversation service
             mock_app_conversation_service = MagicMock()
-            
+
             # Create a mock app conversation info service
             mock_app_conversation_info_service = MagicMock()
             mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
                 return_value=None
             )
-            
+
             # Create a mock sandbox service
             mock_sandbox_service = MagicMock()
 
@@ -1028,10 +1028,14 @@ async def test_delete_v1_conversation_success():
                 assert result is True
 
                 # Verify that get_app_conversation_info was called
-                mock_info_service.get_app_conversation_info.assert_called_once_with(conversation_uuid)
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
 
                 # Verify that delete_app_conversation was called with the conversation ID
-                mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+                mock_service.delete_app_conversation.assert_called_once_with(
+                    conversation_uuid
+                )
 
 
 @pytest.mark.asyncio
@@ -1064,7 +1068,9 @@ async def test_delete_v1_conversation_not_found():
                 mock_sandbox_service_dep.return_value = mock_sandbox_service
 
                 # Mock the conversation doesn't exist
-                mock_info_service.get_app_conversation_info = AsyncMock(return_value=None)
+                mock_info_service.get_app_conversation_info = AsyncMock(
+                    return_value=None
+                )
                 mock_service.delete_app_conversation = AsyncMock(return_value=False)
 
                 # Call delete_conversation with V1 conversation ID
@@ -1080,7 +1086,9 @@ async def test_delete_v1_conversation_not_found():
                 assert result is False
 
                 # Verify that get_app_conversation_info was called
-                mock_info_service.get_app_conversation_info.assert_called_once_with(conversation_uuid)
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
 
                 # Verify that delete_app_conversation was NOT called
                 mock_service.delete_app_conversation.assert_not_called()
@@ -1158,8 +1166,12 @@ async def test_delete_v1_conversation_invalid_uuid():
                             assert result is True
 
                             # Verify V0 logic was used
-                            mock_store.delete_metadata.assert_called_once_with(conversation_id)
-                            mock_runtime_cls.delete.assert_called_once_with(conversation_id)
+                            mock_store.delete_metadata.assert_called_once_with(
+                                conversation_id
+                            )
+                            mock_runtime_cls.delete.assert_called_once_with(
+                                conversation_id
+                            )
 
 
 @pytest.mark.asyncio
@@ -1205,8 +1217,12 @@ async def test_delete_v1_conversation_service_error():
                         return_value=ConversationMetadata(
                             conversation_id=conversation_id,
                             title='Test V0 Conversation',
-                            created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
-                            last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+                            created_at=datetime.fromisoformat(
+                                '2025-01-01T00:00:00+00:00'
+                            ),
+                            last_updated_at=datetime.fromisoformat(
+                                '2025-01-01T00:01:00+00:00'
+                            ),
                             selected_repository='test/repo',
                             user_id='test_user',
                         )
@@ -1218,7 +1234,9 @@ async def test_delete_v1_conversation_service_error():
                     with patch(
                         'openhands.server.routes.manage_conversations.conversation_manager'
                     ) as mock_manager:
-                        mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+                        mock_manager.is_agent_loop_running = AsyncMock(
+                            return_value=False
+                        )
                         mock_manager.get_connections = AsyncMock(return_value={})
 
                         # Mock runtime
@@ -1242,8 +1260,12 @@ async def test_delete_v1_conversation_service_error():
                             assert result is True
 
                             # Verify V0 logic was used
-                            mock_store.delete_metadata.assert_called_once_with(conversation_id)
-                            mock_runtime_cls.delete.assert_called_once_with(conversation_id)
+                            mock_store.delete_metadata.assert_called_once_with(
+                                conversation_id
+                            )
+                            mock_runtime_cls.delete.assert_called_once_with(
+                                conversation_id
+                            )
 
 
 @pytest.mark.asyncio
@@ -1315,10 +1337,14 @@ async def test_delete_v1_conversation_with_agent_server():
                 assert result is True
 
                 # Verify that get_app_conversation_info was called
-                mock_info_service.get_app_conversation_info.assert_called_once_with(conversation_uuid)
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
 
                 # Verify that delete_app_conversation was called with the conversation ID
-                mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+                mock_service.delete_app_conversation.assert_called_once_with(
+                    conversation_uuid
+                )
 
 
 @pytest.mark.asyncio
