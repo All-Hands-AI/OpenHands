@@ -37,6 +37,37 @@ export function ChangeAgentButton() {
     }
   }, [isAgentRunning, contextMenuOpen]);
 
+  // Handle Shift + Tab keyboard shortcut to cycle through modes
+  useEffect(() => {
+    if (!shouldUsePlanningAgent || isAgentRunning) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Shift + Tab combination
+      if (event.shiftKey && event.key === "Tab") {
+        // Prevent default tab navigation behavior
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Cycle between modes: code -> plan -> code
+        const nextMode = conversationMode === "code" ? "plan" : "code";
+        setConversationMode(nextMode);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    shouldUsePlanningAgent,
+    isAgentRunning,
+    conversationMode,
+    setConversationMode,
+  ]);
+
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
