@@ -81,6 +81,8 @@ export default function MainApp() {
     isError: isAuthError,
   } = useIsAuthed();
 
+  const isWalletAuth = useAuthWallet().connected;
+
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
@@ -118,6 +120,14 @@ export default function MainApp() {
       setConsentFormIsOpen(consentFormModalIsOpen);
     }
   }, [settings, isOnTosPage]);
+
+  React.useEffect(() => {
+    if (!isWalletAuth && pathname !== "/auth") {
+      navigate("/auth");
+    } else if (isWalletAuth && pathname === "/auth") {
+      navigate("/");
+    }
+  }, [isWalletAuth, pathname]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
