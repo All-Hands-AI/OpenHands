@@ -521,7 +521,9 @@ async def _try_delete_v1_conversation(
             )
             # Delete the sandbox in the background
             asyncio.create_task(
-                _delete_sandbox_and_close_connection(sandbox_service, app_conversation_info.sandbox_id, db_session)
+                _delete_sandbox_and_close_connection(
+                    sandbox_service, app_conversation_info.sandbox_id, db_session
+                )
             )
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
@@ -533,7 +535,9 @@ async def _try_delete_v1_conversation(
     return result
 
 
-async def _delete_sandbox_and_close_connection(sandbox_service: SandboxService, sandbox_id: str, db_session: AsyncSession):
+async def _delete_sandbox_and_close_connection(
+    sandbox_service: SandboxService, sandbox_id: str, db_session: AsyncSession
+):
     try:
         await sandbox_service.delete_sandbox(sandbox_id)
         await db_session.commit()
