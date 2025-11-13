@@ -2,6 +2,7 @@ import "./wallet.css";
 import { useReducer } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuthWallet } from "#/hooks/use-auth";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
 
 function Icon() {
   return (
@@ -32,7 +33,11 @@ export function WalletButton() {
         className="pontem_wallet connect"
         type="button"
         onClick={async () => {
-          await auth.connect();
+          try {
+            await auth.connect();
+          } catch (error: unknown) {
+            displayErrorToast((error as Error).message);
+          }
           if (auth.connected && pathname === "/auth") navigate("/");
           else forceUpdate();
         }}
@@ -48,7 +53,11 @@ export function WalletButton() {
       className="pontem_wallet disconnect"
       type="button"
       onClick={async () => {
-        await auth.disconnect();
+        try {
+          await auth.disconnect();
+        } catch (error: unknown) {
+          displayErrorToast((error as Error).message);
+        }
         if (!auth.connected && pathname !== "/auth") navigate("/auth");
         else forceUpdate();
       }}
