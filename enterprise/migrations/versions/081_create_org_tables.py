@@ -27,7 +27,12 @@ def upgrade() -> None:
     # Add migration_status column to user_settings table
     op.add_column(
         'user_settings',
-        sa.Column('migration_status', sa.Boolean, nullable=True, default=False),
+        sa.Column(
+            'migration_status',
+            sa.Boolean,
+            nullable=True,
+            server_default=sa.text('false'),
+        ),
     )
 
     # Create role table
@@ -64,28 +69,43 @@ def upgrade() -> None:
         sa.Column('agent', sa.String, nullable=True),
         sa.Column('default_max_iterations', sa.Integer, nullable=True),
         sa.Column('security_analyzer', sa.String, nullable=True),
-        sa.Column('confirmation_mode', sa.Boolean, nullable=True, default=False),
+        sa.Column(
+            'confirmation_mode',
+            sa.Boolean,
+            nullable=True,
+            server_default=sa.text('false'),
+        ),
         sa.Column('default_llm_model', sa.String, nullable=True),
         sa.Column('_default_llm_api_key_for_byor', sa.String, nullable=True),
         sa.Column('default_llm_base_url', sa.String, nullable=True),
         sa.Column('remote_runtime_resource_factor', sa.Integer, nullable=True),
-        sa.Column('enable_default_condenser', sa.Boolean, nullable=False, default=True),
+        sa.Column(
+            'enable_default_condenser',
+            sa.Boolean,
+            nullable=False,
+            server_default=sa.text('true'),
+        ),
         sa.Column('billing_margin', sa.Float, nullable=True),
         sa.Column(
             'enable_proactive_conversation_starters',
             sa.Boolean,
             nullable=False,
-            default=True,
+            server_default=sa.text('true'),
         ),
         sa.Column('sandbox_base_container_image', sa.String, nullable=True),
         sa.Column('sandbox_runtime_container_image', sa.String, nullable=True),
-        sa.Column('org_version', sa.Integer, nullable=False, default=0),
+        sa.Column(
+            'org_version', sa.Integer, nullable=False, server_default=sa.text('0')
+        ),
         sa.Column('mcp_config', sa.JSON, nullable=True),
         sa.Column('_search_api_key', sa.String, nullable=True),
         sa.Column('_sandbox_api_key', sa.String, nullable=True),
         sa.Column('max_budget_per_task', sa.Float, nullable=True),
         sa.Column(
-            'enable_solvability_analysis', sa.Boolean, nullable=True, default=False
+            'enable_solvability_analysis',
+            sa.Boolean,
+            nullable=True,
+            server_default=sa.text('false'),
         ),
         sa.UniqueConstraint('name', name='org_name_unique'),
     )
@@ -103,7 +123,10 @@ def upgrade() -> None:
         sa.Column('role_id', sa.Integer, nullable=True),
         sa.Column('accepted_tos', sa.DateTime, nullable=True),
         sa.Column(
-            'enable_sound_notifications', sa.Boolean, nullable=True, default=False
+            'enable_sound_notifications',
+            sa.Boolean,
+            nullable=True,
+            server_default=sa.text('false'),
         ),
         sa.Column('language', sa.String, nullable=True),
         sa.Column('user_consents_to_analytics', sa.Boolean, nullable=True),
