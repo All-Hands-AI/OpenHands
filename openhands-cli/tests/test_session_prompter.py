@@ -1,13 +1,13 @@
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional, Type
+from typing import Optional
 
 import pytest
+from openhands_cli.user_actions.utils import get_session_prompter
 from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.input.defaults import create_pipe_input
 from prompt_toolkit.output.defaults import DummyOutput
 
-from openhands_cli.user_actions.utils import get_session_prompter
 from tests.utils import _send_keys
 
 
@@ -15,7 +15,7 @@ def _run_prompt_and_type(
     prompt_text: str,
     keys: str,
     *,
-    expect_exception: Optional[Type[BaseException]] = None,
+    expect_exception: Optional[type[BaseException]] = None,
     timeout: float = 2.0,
     settle: float = 0.05,
 ) -> str | None:
@@ -45,47 +45,51 @@ def _run_prompt_and_type(
 
 
 @pytest.mark.parametrize(
-    "desc,keys,expected",
+    'desc,keys,expected',
     [
-        ("basic single line", "hello world\r", "hello world"),
-        ("empty input", "\r", ""),
-        ("single multiline via backslash-enter", "line 1\\\rline 2\r", "line 1\nline 2"),
+        ('basic single line', 'hello world\r', 'hello world'),
+        ('empty input', '\r', ''),
         (
-            "multiple multiline segments",
-            "first line\\\rsecond line\\\rthird line\r",
-            "first line\nsecond line\nthird line",
+            'single multiline via backslash-enter',
+            'line 1\\\rline 2\r',
+            'line 1\nline 2',
         ),
         (
-            "backslash-only newline then text",
-            "\\\rafter newline\r",
-            "\nafter newline",
+            'multiple multiline segments',
+            'first line\\\rsecond line\\\rthird line\r',
+            'first line\nsecond line\nthird line',
         ),
         (
-            "mixed content (code-like)",
+            'backslash-only newline then text',
+            '\\\rafter newline\r',
+            '\nafter newline',
+        ),
+        (
+            'mixed content (code-like)',
             "def function():\\\r    return 'hello'\\\r    # end of function\r",
             "def function():\n    return 'hello'\n    # end of function",
         ),
         (
-            "whitespace preservation (including blank line)",
-            "  indented line\\\r\\\r    more indented\r",
-            "  indented line\n\n    more indented",
+            'whitespace preservation (including blank line)',
+            '  indented line\\\r\\\r    more indented\r',
+            '  indented line\n\n    more indented',
         ),
         (
-            "special characters",
-            "echo 'hello world'\\\rgrep -n \"pattern\" file.txt\r",
-            "echo 'hello world'\ngrep -n \"pattern\" file.txt",
+            'special characters',
+            'echo \'hello world\'\\\rgrep -n "pattern" file.txt\r',
+            'echo \'hello world\'\ngrep -n "pattern" file.txt',
         ),
     ],
 )
 def test_get_session_prompter_scenarios(desc, keys, expected):
     """Covers most behaviors via parametrization to reduce duplication."""
-    result = _run_prompt_and_type("<gold>> </gold>", keys)
+    result = _run_prompt_and_type('<gold>> </gold>', keys)
     assert result == expected
 
 
 def test_get_session_prompter_keyboard_interrupt():
     """Focused test for Ctrl+C behavior."""
-    _run_prompt_and_type("<gold>> </gold>", "\x03", expect_exception=KeyboardInterrupt)
+    _run_prompt_and_type('<gold>> </gold>', '\x03', expect_exception=KeyboardInterrupt)
 
 
 def test_get_session_prompter_default_parameters():
@@ -99,4 +103,4 @@ def test_get_session_prompter_default_parameters():
     # Prompt continuation should be callable and return the expected string
     cont = session.prompt_continuation
     assert callable(cont)
-    assert cont(80, 1, False) == "..."
+    assert cont(80, 1, False) == '...'

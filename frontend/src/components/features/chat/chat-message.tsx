@@ -58,7 +58,7 @@ export function ChatMessage({
         "rounded-xl relative w-fit max-w-full last:mb-4",
         "flex flex-col gap-2",
         type === "user" && " p-4 bg-tertiary self-end",
-        type === "agent" && "mt-6 max-w-full bg-transparent",
+        type === "agent" && "mt-6 w-full max-w-full bg-transparent",
       )}
     >
       <div

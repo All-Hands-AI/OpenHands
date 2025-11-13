@@ -5,19 +5,17 @@ import { renderWithProviders } from "test-utils";
 import { MicroagentsModal } from "#/components/features/conversation-panel/microagents-modal";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { AgentState } from "#/types/agent-state";
+import { useAgentState } from "#/hooks/use-agent-state";
 
-vi.mock("react-redux", async () => {
-  const actual = await vi.importActual("react-redux");
-  return {
-    ...actual,
-    useDispatch: () => vi.fn(),
-    useSelector: () => ({
-      agent: {
-        curAgentState: AgentState.AWAITING_USER_INPUT,
-      },
-    }),
-  };
-});
+// Mock the agent state hook
+vi.mock("#/hooks/use-agent-state", () => ({
+  useAgentState: vi.fn(),
+}));
+
+// Mock the conversation ID hook
+vi.mock("#/hooks/use-conversation-id", () => ({
+  useConversationId: () => ({ conversationId: "test-conversation-id" }),
+}));
 
 describe("MicroagentsModal - Refresh Button", () => {
   const mockOnClose = vi.fn();
@@ -47,9 +45,14 @@ describe("MicroagentsModal - Refresh Button", () => {
     // Reset all mocks before each test
     vi.clearAllMocks();
 
-    // Setup default mock for getUserConversations
+    // Setup default mock for getMicroagents
     vi.spyOn(ConversationService, "getMicroagents").mockResolvedValue({
       microagents: mockMicroagents,
+    });
+
+    // Mock the agent state to return a ready state
+    vi.mocked(useAgentState).mockReturnValue({
+      curAgentState: AgentState.AWAITING_USER_INPUT,
     });
   });
 
@@ -58,10 +61,11 @@ describe("MicroagentsModal - Refresh Button", () => {
   });
 
   describe("Refresh Button Rendering", () => {
-    it("should render the refresh button with correct text and test ID", () => {
+    it("should render the refresh button with correct text and test ID", async () => {
       renderWithProviders(<MicroagentsModal {...defaultProps} />);
 
-      const refreshButton = screen.getByTestId("refresh-microagents");
+      // Wait for the component to load and render the refresh button
+      const refreshButton = await screen.findByTestId("refresh-microagents");
       expect(refreshButton).toBeInTheDocument();
       expect(refreshButton).toHaveTextContent("BUTTON$REFRESH");
     });
@@ -75,7 +79,8 @@ describe("MicroagentsModal - Refresh Button", () => {
 
       const refreshSpy = vi.spyOn(ConversationService, "getMicroagents");
 
-      const refreshButton = screen.getByTestId("refresh-microagents");
+      // Wait for the component to load and render the refresh button
+      const refreshButton = await screen.findByTestId("refresh-microagents");
       await user.click(refreshButton);
 
       expect(refreshSpy).toHaveBeenCalledTimes(1);

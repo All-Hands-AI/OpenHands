@@ -1,14 +1,17 @@
-import atexit, os, sys, time
+import atexit
+import os
+import sys
+import time
 from collections import defaultdict
 
-ENABLE = os.getenv("IMPORT_PROFILING", "0") not in ("", "0", "false", "False")
-OUT = "dist/import_profiler.csv"
-THRESHOLD_MS = float(os.getenv("IMPORT_PROFILING_THRESHOLD_MS", "0"))
+ENABLE = os.getenv('IMPORT_PROFILING', '0') not in ('', '0', 'false', 'False')
+OUT = 'dist/import_profiler.csv'
+THRESHOLD_MS = float(os.getenv('IMPORT_PROFILING_THRESHOLD_MS', '0'))
 
 if ENABLE:
-    timings = defaultdict(float)   # module -> total seconds (first load only)
-    counts = defaultdict(int)      # module -> number of first-loads (should be 1)
-    max_dur = defaultdict(float)   # module -> max single load seconds
+    timings = defaultdict(float)  # module -> total seconds (first load only)
+    counts = defaultdict(int)  # module -> number of first-loads (should be 1)
+    max_dur = defaultdict(float)  # module -> max single load seconds
 
     try:
         import importlib._bootstrap as _bootstrap  # type: ignore[attr-defined]
@@ -37,27 +40,29 @@ if ENABLE:
 
     @atexit.register
     def _dump_import_profile():
-        def ms(s): return f"{s*1000:.3f}"
+        def ms(s):
+            return f'{s * 1000:.3f}'
+
         items = [
             (name, counts[name], timings[name], max_dur[name])
             for name in timings
-            if timings[name]*1000 >= THRESHOLD_MS
+            if timings[name] * 1000 >= THRESHOLD_MS
         ]
         items.sort(key=lambda x: x[2], reverse=True)
         try:
-            with open(OUT, "w", encoding="utf-8") as f:
-                f.write("module,count,total_ms,max_ms\n")
+            with open(OUT, 'w', encoding='utf-8') as f:
+                f.write('module,count,total_ms,max_ms\n')
                 for name, cnt, tot_s, max_s in items:
-                    f.write(f"{name},{cnt},{ms(tot_s)},{ms(max_s)}\n")
+                    f.write(f'{name},{cnt},{ms(tot_s)},{ms(max_s)}\n')
             # brief summary
             if items:
                 w = max(len(n) for n, *_ in items[:25])
-                sys.stderr.write("\n=== Import Time Profile (first-load only) ===\n")
-                sys.stderr.write(f"{'module'.ljust(w)}  count  total_ms   max_ms\n")
+                sys.stderr.write('\n=== Import Time Profile (first-load only) ===\n')
+                sys.stderr.write(f'{"module".ljust(w)}  count  total_ms   max_ms\n')
                 for name, cnt, tot_s, max_s in items[:25]:
                     sys.stderr.write(
-                        f"{name.ljust(w)}  {str(cnt).rjust(5)}  {ms(tot_s).rjust(8)}  {ms(max_s).rjust(7)}\n"
+                        f'{name.ljust(w)}  {str(cnt).rjust(5)}  {ms(tot_s).rjust(8)}  {ms(max_s).rjust(7)}\n'
                     )
-            sys.stderr.write(f"\nImport profile written to: {OUT}\n")
+            sys.stderr.write(f'\nImport profile written to: {OUT}\n')
         except Exception as e:
-            sys.stderr.write(f"[import-profiler] failed to write profile: {e}\n")
+            sys.stderr.write(f'[import-profiler] failed to write profile: {e}\n')

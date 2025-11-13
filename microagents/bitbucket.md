@@ -5,6 +5,7 @@ version: 1.0.0
 agent: CodeActAgent
 triggers:
 - bitbucket
+- git
 ---
 
 You have access to an environment variable, `BITBUCKET_TOKEN`, which allows you to interact with

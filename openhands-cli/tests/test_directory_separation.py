@@ -1,11 +1,12 @@
 """Tests to demonstrate the fix for WORK_DIR and PERSISTENCE_DIR separation."""
 
 import os
-from unittest.mock import patch, MagicMock
-from openhands.sdk import Agent, LLM, ToolSpec
-from openhands_cli.locations import WORK_DIR, PERSISTENCE_DIR
+from unittest.mock import MagicMock, patch
+
+from openhands_cli.locations import PERSISTENCE_DIR, WORK_DIR
 from openhands_cli.tui.settings.store import AgentStore
-from openhands.tools.preset.default import get_default_tools
+
+from openhands.sdk import LLM, Agent, Tool
 
 
 class TestDirectorySeparation:
@@ -17,7 +18,7 @@ class TestDirectorySeparation:
         assert WORK_DIR == os.getcwd()
 
         # PERSISTENCE_DIR should be ~/.openhands
-        expected_config_dir = os.path.expanduser("~/.openhands")
+        expected_config_dir = os.path.expanduser('~/.openhands')
         assert PERSISTENCE_DIR == expected_config_dir
 
         # They should be different
@@ -29,24 +30,25 @@ class TestDirectorySeparation:
         assert agent_store.file_store.root == PERSISTENCE_DIR
 
 
-class TestToolSpecFix:
+class TestToolFix:
     """Test that tool specs are replaced with default tools using current directory."""
 
     def test_tools_replaced_with_default_tools_on_load(self):
         """Test that entire tools list is replaced with default tools when loading agent."""
         # Create a mock agent with different tools and working directories
-        original_working_dir = "/some/other/path"
         mock_agent = Agent(
-            llm=LLM(model="test/model", api_key="test-key", service_id="test-service"),
+            llm=LLM(model='test/model', api_key='test-key', usage_id='test-service'),
             tools=[
-                ToolSpec(name="BashTool"),
-                ToolSpec(name="FileEditorTool"),
-                ToolSpec(name="TaskTrackerTool"),
-            ]
+                Tool(name='BashTool'),
+                Tool(name='FileEditorTool'),
+                Tool(name='TaskTrackerTool'),
+            ],
         )
 
         # Mock the file store to return our test agent
-        with patch("openhands_cli.tui.settings.store.LocalFileStore") as mock_file_store:
+        with patch(
+            'openhands_cli.tui.settings.store.LocalFileStore'
+        ) as mock_file_store:
             mock_store_instance = MagicMock()
             mock_file_store.return_value = mock_store_instance
             mock_store_instance.read.return_value = mock_agent.model_dump_json()
@@ -58,9 +60,11 @@ class TestToolSpecFix:
             assert loaded_agent is not None
 
             # Verify that tools are replaced with default tools
-            assert len(loaded_agent.tools) == 3  # BashTool, FileEditorTool, TaskTrackerTool
+            assert (
+                len(loaded_agent.tools) == 3
+            )  # BashTool, FileEditorTool, TaskTrackerTool
 
             tool_names = [tool.name for tool in loaded_agent.tools]
-            assert "BashTool" in tool_names
-            assert "FileEditorTool" in tool_names
-            assert "TaskTrackerTool" in tool_names
+            assert 'terminal' in tool_names
+            assert 'file_editor' in tool_names
+            assert 'task_tracker' in tool_names

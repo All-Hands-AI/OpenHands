@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { UpgradeBanner } from "#/components/features/settings";
 
@@ -18,7 +17,7 @@ export function UpgradeBannerWithBackdrop({
       <UpgradeBanner
         message={t("SETTINGS$UPGRADE_BANNER_MESSAGE")}
         onUpgradeClick={onUpgradeClick}
-        className="sticky top-0 z-30"
+        className="sticky top-0 z-30 mb-6"
         isDisabled={isDisabled}
       />
       <div

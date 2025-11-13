@@ -1,9 +1,8 @@
 """Tests for TUI functionality."""
 
+from openhands_cli.tui.tui import COMMANDS, CommandCompleter
 from prompt_toolkit.completion import CompleteEvent
 from prompt_toolkit.document import Document
-
-from openhands_cli.tui.tui import COMMANDS, CommandCompleter
 
 
 class TestCommandCompleter:
@@ -78,6 +77,7 @@ def test_commands_dict() -> None:
         '/exit',
         '/help',
         '/clear',
+        '/new',
         '/status',
         '/confirm',
         '/resume',

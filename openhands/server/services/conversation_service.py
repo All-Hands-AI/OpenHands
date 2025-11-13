@@ -27,7 +27,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
@@ -38,7 +38,7 @@ async def initialize_conversation(
     selected_branch: str | None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     git_provider: ProviderType | None = None,
-) -> ConversationMetadata | None:
+) -> ConversationMetadata:
     if conversation_id is None:
         conversation_id = uuid.uuid4().hex
 
@@ -66,13 +66,8 @@ async def initialize_conversation(
         await conversation_store.save_metadata(conversation_metadata)
         return conversation_metadata
 
-    try:
-        conversation_metadata = await conversation_store.get_metadata(conversation_id)
-        return conversation_metadata
-    except Exception:
-        pass
-
-    return None
+    conversation_metadata = await conversation_store.get_metadata(conversation_id)
+    return conversation_metadata
 
 
 async def start_conversation(
@@ -107,10 +102,15 @@ async def start_conversation(
         # but that would run a tiny inference.
         model_name = settings.llm_model or ''
         is_bedrock_model = model_name.startswith('bedrock/')
+        is_lemonade_model = model_name.startswith('lemonade/')
 
-        if not is_bedrock_model and (
-            not settings.llm_api_key
-            or settings.llm_api_key.get_secret_value().isspace()
+        if (
+            not is_bedrock_model
+            and not is_lemonade_model
+            and (
+                not settings.llm_api_key
+                or settings.llm_api_key.get_secret_value().isspace()
+            )
         ):
             logger.warning(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
@@ -185,9 +185,6 @@ async def create_new_conversation(
         git_provider,
     )
 
-    if not conversation_metadata:
-        raise Exception('Failed to initialize conversation')
-
     return await start_conversation(
         user_id,
         git_provider_tokens,
@@ -215,7 +212,10 @@ def create_provider_tokens_object(
 
 
 async def setup_init_conversation_settings(
-    user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
+    user_id: str | None,
+    conversation_id: str,
+    providers_set: list[ProviderType],
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
 ) -> ConversationInitData:
     """Set up conversation initialization data with provider tokens.
 
@@ -223,6 +223,7 @@ async def setup_init_conversation_settings(
         user_id: The user ID
         conversation_id: The conversation ID
         providers_set: List of provider types to set up tokens for
+        provider_tokens: Optional provider tokens to use (for SAAS mode resume)
 
     Returns:
         ConversationInitData with provider tokens configured
@@ -231,7 +232,7 @@ async def setup_init_conversation_settings(
     settings = await settings_store.load()
 
     secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-    user_secrets: UserSecrets | None = await secrets_store.load()
+    user_secrets: Secrets | None = await secrets_store.load()
 
     if not settings:
         from socketio.exceptions import ConnectionRefusedError
@@ -243,11 +244,30 @@ async def setup_init_conversation_settings(
     session_init_args: dict = {}
     session_init_args = {**settings.__dict__, **session_init_args}
 
-    git_provider_tokens = create_provider_tokens_object(providers_set)
-    logger.info(f'Git provider scaffold: {git_provider_tokens}')
+    # Use provided tokens if available (for SAAS resume), otherwise create scaffold
+    if provider_tokens:
+        logger.info(
+            f'Using provided provider_tokens: {list(provider_tokens.keys())}',
+            extra={'session_id': conversation_id},
+        )
+        git_provider_tokens = provider_tokens
+    else:
+        logger.info(
+            f'No provider_tokens provided, creating scaffold for: {providers_set}',
+            extra={'session_id': conversation_id},
+        )
+        git_provider_tokens = create_provider_tokens_object(providers_set)
+        logger.info(
+            f'Git provider scaffold: {git_provider_tokens}',
+            extra={'session_id': conversation_id},
+        )
 
-    if server_config.app_mode != AppMode.SAAS and user_secrets:
-        git_provider_tokens = user_secrets.provider_tokens
+        if server_config.app_mode != AppMode.SAAS and user_secrets:
+            logger.info(
+                f'Non-SaaS mode: Overriding with user_secrets provider tokens: {list(user_secrets.provider_tokens.keys())}',
+                extra={'session_id': conversation_id},
+            )
+            git_provider_tokens = user_secrets.provider_tokens
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
     if user_secrets:

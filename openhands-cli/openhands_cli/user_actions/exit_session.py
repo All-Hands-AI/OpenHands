@@ -7,8 +7,8 @@ def exit_session_confirmation() -> UserConfirmation:
     Ask user to confirm exiting session.
     """
 
-    question = "Terminate session?"
-    options = ["Yes, proceed", "No, dismiss"]
+    question = 'Terminate session?'
+    options = ['Yes, proceed', 'No, dismiss']
     index = cli_confirm(question, options)  # Blocking UI, not escapable
 
     options_mapping = {

@@ -8,15 +8,15 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import MagicMock, patch
 
 import pytest
-from prompt_toolkit.input.defaults import create_pipe_input
-from prompt_toolkit.output.defaults import DummyOutput
-
 from openhands_cli.user_actions import (
     exit_session,
     exit_session_confirmation,
     utils,
 )
 from openhands_cli.user_actions.types import UserConfirmation
+from prompt_toolkit.input.defaults import create_pipe_input
+from prompt_toolkit.output.defaults import DummyOutput
+
 from tests.utils import _send_keys
 
 QUESTION = 'Terminate session?'

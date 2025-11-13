@@ -26,6 +26,7 @@ from server.auth.constants import (
     KEYCLOAK_SERVER_URL_EXT,
 )
 from server.auth.keycloak_manager import get_keycloak_admin, get_keycloak_openid
+from server.config import get_config
 from server.logger import logger
 from sqlalchemy import String as SQLString
 from sqlalchemy import type_coerce
@@ -35,18 +36,8 @@ from storage.github_app_installation import GithubAppInstallation
 from storage.offline_token_store import OfflineTokenStore
 from tenacity import RetryCallState, retry, retry_if_exception_type, stop_after_attempt
 
-from openhands.core.config import load_openhands_config
 from openhands.integrations.service_types import ProviderType
-
-# Create a function to get config to avoid circular imports
-_config = None
-
-
-def get_config():
-    global _config
-    if _config is None:
-        _config = load_openhands_config()
-    return _config
+from openhands.utils.http_session import httpx_verify_option
 
 
 def _before_sleep_callback(retry_state: RetryCallState) -> None:
@@ -201,7 +192,7 @@ class TokenManager:
         access_token: str,
         idp: ProviderType,
     ) -> dict[str, str | int]:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             base_url = KEYCLOAK_SERVER_URL_EXT if self.external else KEYCLOAK_SERVER_URL
             url = f'{base_url}/realms/{KEYCLOAK_REALM_NAME}/broker/{idp.value}/token'
             headers = {
@@ -303,11 +294,12 @@ class TokenManager:
         refresh_token_expires_at: int,
     ) -> dict[str, str | int] | None:
         current_time = int(time.time())
-        # expire access_token ten minutes before actual expiration
+        # expire access_token four hours before actual expiration
+        # This ensures tokens are refreshed on resume to have at least 4 hours validity
         access_expired = (
             False
             if access_token_expires_at == 0
-            else access_token_expires_at < current_time + 600
+            else access_token_expires_at < current_time + 14400
         )
         refresh_expired = (
             False
@@ -359,7 +351,7 @@ class TokenManager:
             'refresh_token': refresh_token,
             'grant_type': 'refresh_token',
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=payload)
             response.raise_for_status()
             logger.info('Successfully refreshed GitHub token')
@@ -385,7 +377,7 @@ class TokenManager:
             'refresh_token': refresh_token,
             'grant_type': 'refresh_token',
         }
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=payload)
             response.raise_for_status()
             logger.info('Successfully refreshed GitLab token')
@@ -413,7 +405,7 @@ class TokenManager:
             'refresh_token': refresh_token,
         }
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             response = await client.post(url, data=data, headers=headers)
             response.raise_for_status()
             logger.info('Successfully refreshed Bitbucket token')

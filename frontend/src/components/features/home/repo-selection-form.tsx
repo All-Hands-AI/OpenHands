@@ -13,6 +13,7 @@ import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import { GitProviderDropdown } from "./git-provider-dropdown";
 import { GitBranchDropdown } from "./git-branch-dropdown";
 import { GitRepoDropdown } from "./git-repo-dropdown";
+import { useHomeStore } from "#/stores/home-store";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -34,6 +35,7 @@ export function RepositorySelectionForm({
     React.useState<Provider | null>(null);
 
   const { providers } = useUserProviders();
+  const { addRecentRepository } = useHomeStore();
   const {
     mutate: createConversation,
     isPending,
@@ -129,7 +131,7 @@ export function RepositorySelectionForm({
         onBranchSelect={handleBranchSelection}
         defaultBranch={defaultBranch}
         placeholder="Select branch..."
-        className="max-w-[500px]"
+        className="max-w-full"
         disabled={!selectedRepository || isLoadingSettings}
       />
     );
@@ -168,7 +170,12 @@ export function RepositorySelectionForm({
           (providers.length > 1 && !selectedProvider) ||
           isLoadingSettings
         }
-        onClick={() =>
+        onClick={() => {
+          // Persist the repository to recent repositories when launching
+          if (selectedRepository) {
+            addRecentRepository(selectedRepository);
+          }
+
           createConversation(
             {
               repository: {
@@ -181,8 +188,8 @@ export function RepositorySelectionForm({
               onSuccess: (data) =>
                 navigate(`/conversations/${data.conversation_id}`),
             },
-          )
-        }
+          );
+        }}
         className="w-full font-semibold"
       >
         {!isCreatingConversation && "Launch"}

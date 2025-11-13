@@ -4,7 +4,6 @@ import { cn } from "#/utils/utils";
 interface DropdownItemProps<T> {
   item: T;
   index: number;
-  isHighlighted: boolean;
   isSelected: boolean;
   getItemProps: <Options>(options: any & Options) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
   getDisplayText: (item: T) => string;
@@ -17,7 +16,6 @@ interface DropdownItemProps<T> {
 export function DropdownItem<T>({
   item,
   index,
-  isHighlighted,
   isSelected,
   getItemProps,
   getDisplayText,
@@ -35,7 +33,6 @@ export function DropdownItem<T>({
         : "px-2 py-2 cursor-pointer text-sm rounded-md mx-0 my-0.5",
       "text-white focus:outline-none font-normal",
       {
-        "bg-[#5C5D62]": isHighlighted && !isSelected,
         "bg-[#C9B974] text-black": isSelected,
         "hover:bg-[#5C5D62]": !isSelected,
         "hover:bg-[#C9B974] hover:text-black": isSelected,

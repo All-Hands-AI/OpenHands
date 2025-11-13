@@ -1,19 +1,20 @@
 import { useTranslation } from "react-i18next";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { useParams, useNavigate } from "react-router";
-import { useWsClient } from "#/context/ws-client-provider";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import useMetricsStore from "#/stores/metrics-store";
-import { isSystemMessage } from "#/types/core/guards";
+import { isSystemMessage, isActionOrObservation } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useDeleteConversation } from "./mutation/use-delete-conversation";
-import { useStopConversation } from "./mutation/use-stop-conversation";
+import { useUnifiedPauseConversationSandbox } from "./mutation/use-unified-stop-conversation";
 import { useGetTrajectory } from "./mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { I18nKey } from "#/i18n/declaration";
+import { useEventStore } from "#/stores/use-event-store";
+import { isV0Event } from "#/types/v1/type-guards";
 
 interface UseConversationNameContextMenuProps {
   conversationId?: string;
@@ -28,12 +29,13 @@ export function useConversationNameContextMenu({
   showOptions = false,
   onContextMenuToggle,
 }: UseConversationNameContextMenuProps) {
+  const posthog = usePostHog();
   const { t } = useTranslation();
   const { conversationId: currentConversationId } = useParams();
   const navigate = useNavigate();
-  const { parsedEvents } = useWsClient();
+  const events = useEventStore((state) => state.events);
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: stopConversation } = useStopConversation();
+  const { mutate: stopConversation } = useUnifiedPauseConversationSandbox();
   const { mutate: getTrajectory } = useGetTrajectory();
   const metrics = useMetricsStore();
 
@@ -46,7 +48,10 @@ export function useConversationNameContextMenu({
   const [confirmStopModalVisible, setConfirmStopModalVisible] =
     React.useState(false);
 
-  const systemMessage = parsedEvents.find(isSystemMessage);
+  const systemMessage = events
+    .filter(isV0Event)
+    .filter(isActionOrObservation)
+    .find(isSystemMessage);
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -136,7 +141,7 @@ export function useConversationNameContextMenu({
           }
         }
         // VS Code URL not available
-      } catch (error) {
+      } catch {
         // Failed to fetch VS Code URL
       }
     }

@@ -62,10 +62,7 @@ function SecretsSettingsScreen() {
   };
 
   return (
-    <div
-      data-testid="secrets-settings-screen"
-      className="px-11 py-9 flex flex-col gap-5"
-    >
+    <div data-testid="secrets-settings-screen" className="flex flex-col gap-5">
       {isLoadingSecrets && view === "list" && (
         <ul>
           <SecretListItemSkeleton />

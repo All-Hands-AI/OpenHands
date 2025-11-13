@@ -129,11 +129,15 @@ class ActionExecutionClient(Runtime):
         return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
+        request_url = f'{self.action_execution_server_url}/alive'
+        self.log('debug', f'Sending request to: {request_url}')
         response = self._send_action_server_request(
             'GET',
-            f'{self.action_execution_server_url}/alive',
+            request_url,
             timeout=5,
         )
+        self.log('debug', f'Response status code: {response.status_code}')
+        self.log('debug', f'Response text: {response.text}')
         assert response.is_closed
 
     def list_files(self, path: str | None = None) -> list[str]:

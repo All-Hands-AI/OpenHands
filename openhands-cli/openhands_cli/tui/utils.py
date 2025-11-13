@@ -8,7 +8,7 @@ class StepCounter:
     def next_step(self, prompt: str) -> str:
         """Get the next step prompt with automatic numbering."""
         self.current_step += 1
-        return f"(Step {self.current_step}/{self.total_steps}) {prompt}"
+        return f'(Step {self.current_step}/{self.total_steps}) {prompt}'
 
     def existing_step(self, prompt: str) -> str:
-        return f"(Step {self.current_step}/{self.total_steps}) {prompt}"
+        return f'(Step {self.current_step}/{self.total_steps}) {prompt}'

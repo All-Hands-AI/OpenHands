@@ -126,7 +126,7 @@ function MCPSettingsScreen() {
 
   if (isLoading) {
     return (
-      <div className="px-11 py-9 flex flex-col gap-5">
+      <div className="flex flex-col gap-5">
         <div className="animate-pulse">
           <div className="h-6 bg-gray-300 rounded w-1/4 mb-4" />
           <div className="h-4 bg-gray-300 rounded w-1/2 mb-8" />
@@ -137,7 +137,7 @@ function MCPSettingsScreen() {
   }
 
   return (
-    <div className="px-11 py-9 flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
       {view === "list" && (
         <>
           <BrandButton

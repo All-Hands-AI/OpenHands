@@ -5,7 +5,6 @@ import { ActionMessage } from "#/types/message";
 // Mock the store and actions
 const mockDispatch = vi.fn();
 const mockAppendInput = vi.fn();
-const mockAppendJupyterInput = vi.fn();
 
 vi.mock("#/store", () => ({
   default: {
@@ -21,8 +20,12 @@ vi.mock("#/state/command-store", () => ({
   },
 }));
 
-vi.mock("#/state/jupyter-slice", () => ({
-  appendJupyterInput: mockAppendJupyterInput,
+vi.mock("#/state/metrics-slice", () => ({
+  setMetrics: vi.fn(),
+}));
+
+vi.mock("#/state/security-analyzer-slice", () => ({
+  appendSecurityAnalyzerInput: vi.fn(),
 }));
 
 vi.mock("#/state/metrics-slice", () => ({
@@ -59,10 +62,9 @@ describe("handleActionMessage", () => {
     // Check that appendInput was called with the command
     expect(mockAppendInput).toHaveBeenCalledWith("ls -la");
     expect(mockDispatch).not.toHaveBeenCalled();
-    expect(mockAppendJupyterInput).not.toHaveBeenCalled();
   });
 
-  it("should handle RUN_IPYTHON actions by adding input to Jupyter", async () => {
+  it("should handle RUN_IPYTHON actions as no-op (Jupyter removed)", async () => {
     const { handleActionMessage } = await import("#/services/actions");
 
     const ipythonAction: ActionMessage = {
@@ -80,10 +82,7 @@ describe("handleActionMessage", () => {
     // Handle the action
     handleActionMessage(ipythonAction);
 
-    // Check that appendJupyterInput was called with the code
-    expect(mockDispatch).toHaveBeenCalledWith(
-      mockAppendJupyterInput("print('Hello from Jupyter!')"),
-    );
+    // Jupyter functionality has been removed, so nothing should be called
     expect(mockAppendInput).not.toHaveBeenCalled();
   });
 
@@ -108,6 +107,5 @@ describe("handleActionMessage", () => {
     // Check that nothing was dispatched or called
     expect(mockDispatch).not.toHaveBeenCalled();
     expect(mockAppendInput).not.toHaveBeenCalled();
-    expect(mockAppendJupyterInput).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,8 @@
-# OpenHands CLI
+# OpenHands V1 CLI
 
-A lightweight CLI/TUI to interact with the OpenHands agent (powered by agent-sdk). Build and run locally or as a single executable.
+A **lightweight, modern CLI** to interact with the OpenHands agent (powered by [OpenHands software-agent-sdk](https://github.com/OpenHands/software-agent-sdk)). 
+
+---
 
 ## Quickstart
 
@@ -13,23 +15,12 @@ A lightweight CLI/TUI to interact with the OpenHands agent (powered by agent-sdk
 
 ### Run the CLI locally
 ```bash
-# Install dependencies (incl. dev tools)
-make install-dev
-
-# Optional: install pre-commit hooks
-make install-pre-commit-hooks
+make install
 
 # Start the CLI
 make run
 # or
-uv run openhands-cli
-```
-
-Tip: Set your model key (one of) so the agent can talk to an LLM:
-```bash
-export OPENAI_API_KEY=...
-# or
-export LITELLM_API_KEY=...
+uv run openhands
 ```
 
 ### Build a standalone executable
@@ -38,8 +29,6 @@ export LITELLM_API_KEY=...
 ./build.sh --install-pyinstaller
 
 # The binary will be in dist/
-./dist/openhands-cli            # macOS/Linux
-# dist/openhands-cli.exe        # Windows
+./dist/openhands            # macOS/Linux
+# dist/openhands.exe        # Windows
 ```
-
-For advanced development (adding deps, updating the spec file, debugging builds), see Development.md.

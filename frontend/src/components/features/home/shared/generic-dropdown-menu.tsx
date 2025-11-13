@@ -29,8 +29,10 @@ export interface GenericDropdownMenuProps<T> {
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
+  stickyTopItem?: React.ReactNode;
   stickyFooterItem?: React.ReactNode;
   testId?: string;
+  numberOfRecentItems?: number;
 }
 
 export function GenericDropdownMenu<T>({
@@ -45,13 +47,15 @@ export function GenericDropdownMenu<T>({
   menuRef,
   renderItem,
   renderEmptyState,
+  stickyTopItem,
   stickyFooterItem,
   testId,
+  numberOfRecentItems = 0,
 }: GenericDropdownMenuProps<T>) {
   if (!isOpen) return null;
 
   const hasItems = filteredItems.length > 0;
-  const showEmptyState = !hasItems && !stickyFooterItem;
+  const showEmptyState = !hasItems && !stickyTopItem && !stickyFooterItem;
 
   return (
     <div className="relative">
@@ -59,7 +63,7 @@ export function GenericDropdownMenu<T>({
         className={cn(
           "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
           "focus:outline-none mt-1 z-[9999]",
-          stickyFooterItem ? "max-h-60" : "max-h-60",
+          stickyTopItem || stickyFooterItem ? "max-h-60" : "max-h-60",
         )}
       >
         <ul
@@ -67,24 +71,37 @@ export function GenericDropdownMenu<T>({
           {...getMenuProps({
             ref: menuRef,
             className: cn(
-              "w-full overflow-auto p-1",
-              stickyFooterItem ? "max-h-[calc(15rem-3rem)]" : "max-h-60", // Reserve space for sticky footer
+              "w-full overflow-auto p-1 custom-scrollbar-always",
+              stickyTopItem || stickyFooterItem
+                ? "max-h-[calc(15rem-3rem)]"
+                : "max-h-60", // Reserve space for sticky items
             ),
             onScroll,
             "data-testid": testId,
           })}
         >
-          {showEmptyState
-            ? renderEmptyState(inputValue)
-            : filteredItems.map((item, index) =>
-                renderItem(
-                  item,
-                  index,
-                  highlightedIndex,
-                  selectedItem,
-                  getItemProps,
-                ),
-              )}
+          {showEmptyState ? (
+            renderEmptyState(inputValue)
+          ) : (
+            <>
+              {stickyTopItem}
+              {filteredItems.map((item, index) => (
+                <>
+                  {renderItem(
+                    item,
+                    index,
+                    highlightedIndex,
+                    selectedItem,
+                    getItemProps,
+                  )}
+                  {numberOfRecentItems > 0 &&
+                    index === numberOfRecentItems - 1 && (
+                      <div className="border-b border-[#727987] bg-[#454545] pb-1 mb-1 h-[1px]" />
+                    )}
+                </>
+              ))}
+            </>
+          )}
         </ul>
         {stickyFooterItem && (
           <div className="border-t border-[#727987] bg-[#454545] p-1 rounded-b-lg">
