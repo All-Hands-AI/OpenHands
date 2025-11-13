@@ -89,6 +89,32 @@ class HTTPClient(ABC):
         elif e.response.status_code == 429:
             logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
             return RateLimitError(f'{self.provider} API rate limit exceeded')
+        elif e.response.status_code == 403:
+            # GitHub uses 403 for both rate limiting and other forbidden errors
+            # Check if it's a rate limit by examining the response
+            try:
+                # Try to get JSON response body
+                if hasattr(e.response, 'json'):
+                    if callable(e.response.json):
+                        error_data = e.response.json()
+                    else:
+                        # If json is not callable, try calling it anyway (Mock objects)
+                        try:
+                            error_data = e.response.json()
+                        except TypeError:
+                            # json is a property, not a method
+                            error_data = e.response.json
+                    
+                    error_message = error_data.get('message', '') if isinstance(error_data, dict) else ''
+                    if 'rate limit' in error_message.lower() or 'API rate limit' in error_message:
+                        logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
+                        return RateLimitError(f'{self.provider} API rate limit exceeded')
+            except Exception as json_error:
+                logger.debug(f'Failed to parse 403 error response as JSON: {json_error}')
+                pass  # If we can't parse the response, treat as unknown error
+            
+            logger.warning(f'Forbidden error on {self.provider} API: {e}')
+            return UnknownException(f'Forbidden error: {e}')
 
         logger.warning(f'Status error on {self.provider} API: {e}')
         return UnknownException(f'Unknown error: {e}')
