@@ -499,8 +499,10 @@ async def _try_delete_v1_conversation(
     try:
         conversation_uuid = uuid.UUID(conversation_id)
         # Check if it's a V1 conversation by trying to get it
-        app_conversation_info = await app_conversation_info_service.get_app_conversation_info(
-            conversation_uuid
+        app_conversation_info = (
+            await app_conversation_info_service.get_app_conversation_info(
+                conversation_uuid
+            )
         )
         if app_conversation_info:
             # This is a V1 conversation, delete it using the app conversation service
@@ -509,7 +511,9 @@ async def _try_delete_v1_conversation(
                 app_conversation_info.id
             )
             # Delete the sandbox in the background
-            asyncio.create_task(sandbox_service.delete_sandbox(app_conversation_info.sandbox_id))
+            asyncio.create_task(
+                sandbox_service.delete_sandbox(app_conversation_info.sandbox_id)
+            )
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
         pass
