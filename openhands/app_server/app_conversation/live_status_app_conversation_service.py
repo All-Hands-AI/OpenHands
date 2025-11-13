@@ -173,9 +173,15 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         # Validate and inherit from parent conversation if provided
         if request.parent_conversation_id:
-            parent_info = await self._validate_and_get_parent_conversation(
-                request.parent_conversation_id
+            parent_info = (
+                await self.app_conversation_info_service.get_app_conversation_info(
+                    request.parent_conversation_id
+                )
             )
+            if parent_info is None:
+                raise ValueError(
+                    f'Parent conversation not found: {request.parent_conversation_id}'
+                )
             self._inherit_configuration_from_parent(request, parent_info)
 
         task = AppConversationStartTask(
@@ -465,29 +471,6 @@ class LiveStatusAppConversationService(GitAppConversationService):
             if exposed_url.name == AGENT_SERVER
         )
         return agent_server_url
-
-    async def _validate_and_get_parent_conversation(
-        self, parent_conversation_id: UUID
-    ) -> AppConversationInfo:
-        """Validate and retrieve parent conversation info.
-
-        Args:
-            parent_conversation_id: The ID of the parent conversation to validate
-
-        Returns:
-            The parent conversation info if valid
-
-        Raises:
-            ValueError: If parent conversation not found
-        """
-        parent_info = (
-            await self.app_conversation_info_service.get_app_conversation_info(
-                parent_conversation_id
-            )
-        )
-        if parent_info is None:
-            raise ValueError(f'Parent conversation not found: {parent_conversation_id}')
-        return parent_info
 
     def _inherit_configuration_from_parent(
         self, request: AppConversationStartRequest, parent_info: AppConversationInfo
