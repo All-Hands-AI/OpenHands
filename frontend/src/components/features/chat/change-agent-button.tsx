@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
@@ -11,10 +11,12 @@ import { cn } from "#/utils/utils";
 import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export function ChangeAgentButton() {
-  const { t } = useTranslation();
-  const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
 
   const conversationMode = useConversationStore(
     (state) => state.conversationMode,
@@ -28,7 +30,13 @@ export function ChangeAgentButton() {
 
   const { curAgentState } = useAgentState();
 
+  const { t } = useTranslation();
+
   const isAgentRunning = curAgentState === AgentState.RUNNING;
+
+  const { data: conversation } = useActiveConversation();
+  const { mutate: createConversation, isPending: isCreatingConversation } =
+    useCreateConversation();
 
   // Close context menu when agent starts running
   useEffect(() => {
@@ -52,7 +60,29 @@ export function ChangeAgentButton() {
   const handlePlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
+
+    // Set conversation mode to "plan" immediately
     setConversationMode("plan");
+
+    // Check if current conversation mode is "plan" and sub_conversation_ids is not empty
+    if (
+      conversation?.sub_conversation_ids &&
+      conversation.sub_conversation_ids.length > 0
+    ) {
+      // Do nothing if both conditions are true
+      return;
+    }
+
+    // Display toast message informing users that the planning agent is being initialized
+    displaySuccessToast(t(I18nKey.PLANNING_AGENTT$PLANNING_AGENT_INITIALIZING));
+
+    // Create a new sub-conversation if we have a current conversation ID
+    if (conversation?.conversation_id) {
+      createConversation({
+        parentConversationId: conversation.conversation_id,
+        agentType: "plan",
+      });
+    }
   };
 
   const isExecutionAgent = conversationMode === "code";
@@ -71,6 +101,8 @@ export function ChangeAgentButton() {
     return <LessonPlanIcon width={18} height={18} color="#ffffff" />;
   }, [isExecutionAgent]);
 
+  const isButtonDisabled = isAgentRunning || isCreatingConversation;
+
   if (!shouldUsePlanningAgent) {
     return null;
   }
@@ -80,11 +112,11 @@ export function ChangeAgentButton() {
       <button
         type="button"
         onClick={handleButtonClick}
-        disabled={isAgentRunning}
+        disabled={isButtonDisabled}
         className={cn(
           "flex items-center border border-[#4B505F] rounded-[100px] transition-opacity",
           !isExecutionAgent && "border-[#597FF4] bg-[#4A67BD]",
-          isAgentRunning
+          isButtonDisabled
             ? "opacity-50 cursor-not-allowed"
             : "cursor-pointer hover:opacity-80",
         )}
