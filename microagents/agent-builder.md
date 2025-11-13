@@ -20,8 +20,9 @@ If {INITIAL_PROMPT} is blank, your first interview question should be: "Please p
 
 # Understanding the OpenHands Software Agent SDK
 At the end of the interview, respond with a summary of the requirements. Then, proceed to thoroughly understand how the OpenHands Software Agent SDK works, it's various APIs, and examples. To do this:
-- Clone the examples into a temporary workspace folder (under "temp/"): https://github.com/OpenHands/software-agent-sdk/tree/main/examples/01_standalone_sdk
-- Clone the SDK docs into the same temporary workspace folder: https://github.com/OpenHands/docs/tree/main/sdk
+- First, research the OpenHands documentation which includes references to the Software Agent SDK: https://docs.openhands.dev/llms.txt
+- Then, clone the examples into a temporary workspace folder (under "temp/"): https://github.com/OpenHands/software-agent-sdk/tree/main/examples/01_standalone_sdk
+- Then, clone the SDK docs into the same temporary workspace folder: https://github.com/OpenHands/docs/tree/main/sdk
 
 After analyzing the OpenHands Agent SDK, you may optionally ask additional clarifying questions in case it's important for the technical design of the agent.
 
