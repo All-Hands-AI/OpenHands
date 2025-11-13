@@ -4,6 +4,7 @@ import { AccountSettingsContextMenu } from "../context-menu/account-settings-con
 import { useShouldShowUserFeatures } from "#/hooks/use-should-show-user-features";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -19,6 +20,8 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
 
   // Use the shared hook to determine if user actions should be shown
   const shouldShowUserActions = useShouldShowUserFeatures();
+
+  if (!useAuthWallet().connected) return null;
 
   const toggleAccountMenu = () => {
     // Always toggle the menu, even if user is undefined

@@ -7,6 +7,7 @@ import { SettingsForm } from "./settings-form";
 import { Settings } from "#/types/settings";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { HelpLink } from "#/ui/help-link";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 interface SettingsModalProps {
   settings?: Settings;
@@ -16,6 +17,8 @@ interface SettingsModalProps {
 export function SettingsModal({ onClose, settings }: SettingsModalProps) {
   const aiConfigOptions = useAIConfigOptions();
   const { t } = useTranslation();
+
+  if (!useAuthWallet().connected) return null;
 
   return (
     <ModalBackdrop>

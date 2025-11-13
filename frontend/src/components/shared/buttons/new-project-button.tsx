@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 import PlusIcon from "#/icons/u-plus.svg?react";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 interface NewProjectButtonProps {
   disabled?: boolean;
@@ -12,6 +13,8 @@ export function NewProjectButton({ disabled = false }: NewProjectButtonProps) {
   const { pathname } = useLocation();
 
   const { t } = useTranslation();
+
+  if (!useAuthWallet().connected) return null;
 
   const startNewProject = t(I18nKey.CONVERSATION$START_NEW);
 
