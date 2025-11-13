@@ -112,8 +112,14 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         page_id: str | None = None,
         limit: int = 100,
     ) -> AppConversationInfoPage:
-        """Search for sandboxed conversations without permission checks."""
+        """Search for sandboxed conversations without permission checks.
+
+        Excludes sub-conversations (conversations with a non-null parent_conversation_id).
+        """
         query = await self._secure_select()
+
+        # Exclude sub-conversations (only include top-level conversations)
+        query = query.where(StoredConversationMetadata.parent_conversation_id.is_(None))
 
         query = self._apply_filters(
             query=query,
