@@ -1,9 +1,9 @@
 """
-Unit tests for GitHub rate limit error handling.
+Unit tests for GitHub rate limit and forbidden error handling.
 
 Tests cover:
 1. Rate limit error detection (403 with rate limit message)
-2. Permission denied error handling (403 without rate limit)
+2. Permission denied error handling (403 without rate limit message)
 """
 
 from unittest.mock import AsyncMock, Mock, patch
@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from openhands.integrations.github.service.repos import GithubReposService
-from openhands.integrations.protocols.http_client import RateLimitError, UnknownException
+from openhands.integrations.service_types import ForbiddenError, RateLimitError
 from openhands.server.shared import AppMode
 
 
@@ -61,7 +61,7 @@ class TestRateLimitHandling:
     @pytest.mark.asyncio
     async def test_forbidden_error_non_rate_limit(self, repos_service):
         """
-        Test that 403 without rate limit message is raised as UnknownException.
+        Test that 403 without rate limit message is raised as ForbiddenError.
 
         Not all 403 errors are rate limits - could be permission denied, etc.
         """
@@ -74,9 +74,9 @@ class TestRateLimitHandling:
         }
 
         with patch.object(
-            repos_service, '_make_request', side_effect=UnknownException(mock_response)
+            repos_service, '_make_request', side_effect=ForbiddenError(mock_response)
         ):
-            with pytest.raises(UnknownException) as exc_info:
+            with pytest.raises(ForbiddenError) as exc_info:
                 await repos_service.search_repositories(
                     query='test',
                     per_page=100,
@@ -86,6 +86,6 @@ class TestRateLimitHandling:
                     app_mode=AppMode.SAAS,
                 )
 
-            # Verify it's UnknownException, not RateLimitError
-            assert isinstance(exc_info.value, UnknownException)
+            # Verify it's ForbiddenError, not RateLimitError
+            assert isinstance(exc_info.value, ForbiddenError)
             assert not isinstance(exc_info.value, RateLimitError)

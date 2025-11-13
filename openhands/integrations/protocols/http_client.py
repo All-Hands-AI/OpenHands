@@ -9,6 +9,7 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     AuthenticationError,
+    ForbiddenError,
     RateLimitError,
     RequestMethod,
     ResourceNotFoundError,
@@ -111,10 +112,11 @@ class HTTPClient(ABC):
                         return RateLimitError(f'{self.provider} API rate limit exceeded')
             except Exception as json_error:
                 logger.debug(f'Failed to parse 403 error response as JSON: {json_error}')
-                pass  # If we can't parse the response, treat as unknown error
+                pass  # If we can't parse the response, treat as forbidden error
             
+            # Not a rate limit, so it's a permission/access issue
             logger.warning(f'Forbidden error on {self.provider} API: {e}')
-            return UnknownException(f'Forbidden error: {e}')
+            return ForbiddenError(f'Access forbidden: {e}')
 
         logger.warning(f'Status error on {self.provider} API: {e}')
         return UnknownException(f'Unknown error: {e}')
