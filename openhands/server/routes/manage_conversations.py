@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import itertools
 import json
@@ -470,12 +471,14 @@ async def delete_conversation(
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
+    app_conversation_info_service: AppConversationInfoService = app_conversation_info_service_dependency,
     sandbox_service: SandboxService = sandbox_service_dependency,
 ) -> bool:
     # Try V1 conversation first
     v1_result = await _try_delete_v1_conversation(
         conversation_id,
         app_conversation_service,
+        app_conversation_info_service,
         sandbox_service,
     )
     if v1_result is not None:
@@ -488,6 +491,7 @@ async def delete_conversation(
 async def _try_delete_v1_conversation(
     conversation_id: str,
     app_conversation_service: AppConversationService,
+    app_conversation_info_service: AppConversationInfoService,
     sandbox_service: SandboxService,
 ) -> bool | None:
     """Try to delete a V1 conversation. Returns None if not a V1 conversation."""
@@ -495,16 +499,17 @@ async def _try_delete_v1_conversation(
     try:
         conversation_uuid = uuid.UUID(conversation_id)
         # Check if it's a V1 conversation by trying to get it
-        app_conversation = await app_conversation_service.get_app_conversation(
+        app_conversation_info = await app_conversation_info_service.get_app_conversation_info(
             conversation_uuid
         )
-        if app_conversation:
+        if app_conversation_info:
             # This is a V1 conversation, delete it using the app conversation service
             # Pass the conversation ID for secure deletion
             result = await app_conversation_service.delete_app_conversation(
-                app_conversation.id
+                app_conversation_info.id
             )
-            await sandbox_service.delete_sandbox(app_conversation.sandbox_id)
+            # Delete the sandbox in the background
+            asyncio.create_task(sandbox_service.delete_sandbox(app_conversation_info.sandbox_id))
     except (ValueError, TypeError):
         # Not a valid UUID, continue with V0 logic
         pass
