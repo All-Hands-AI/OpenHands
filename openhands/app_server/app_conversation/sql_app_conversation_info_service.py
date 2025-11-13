@@ -286,7 +286,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             last_updated_at=info.updated_at,
             created_at=info.created_at,
             trigger=info.trigger.value if info.trigger else None,
-            pr_number=info.pr_number,
+            pr_number=info.pr_number or [],
             # Cost and token metrics
             accumulated_cost=metrics.accumulated_cost,
             prompt_tokens=usage.prompt_tokens,

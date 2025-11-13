@@ -83,7 +83,8 @@ def get_cookie_domain(request: Request) -> str | None:
     # for now just use the full hostname except for staging stacks.
     return (
         None
-        if request.url.hostname.endswith('staging.all-hands.dev')
+        if not request.url.hostname
+        or request.url.hostname.endswith('staging.all-hands.dev')
         else request.url.hostname
     )
 

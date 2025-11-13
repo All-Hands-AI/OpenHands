@@ -212,7 +212,7 @@ class LiteLlmManager:
                 extra={
                     'status_code': response.status_code,
                     'text': response.text,
-                    'team_id': [team_id],
+                    'team_id': team_id,
                     'max_budget': max_budget,
                 },
             )
@@ -521,9 +521,9 @@ class LiteLlmManager:
                 extra={
                     'status_code': response.status_code,
                     'text': response.text,
-                    'user_id': [keycloak_user_id],
-                    'team_id': [team_id],
-                    'key_alias': [key_alias],
+                    'user_id': keycloak_user_id,
+                    'team_id': team_id,
+                    'key_alias': key_alias,
                 },
             )
         response.raise_for_status()
@@ -533,8 +533,8 @@ class LiteLlmManager:
             'LiteLlmManager:_lite_llm_generate_user_team_key:key_created',
             extra={
                 'user_id': keycloak_user_id,
-                'team_id': [team_id],
-                'key_alias': [key_alias],
+                'team_id': team_id,
+                'key_alias': key_alias,
             },
         )
         return key
