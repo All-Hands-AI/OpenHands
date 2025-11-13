@@ -32,6 +32,7 @@ from sqlalchemy import (
     Integer,
     Select,
     String,
+    func,
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -183,7 +184,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         updated_at__lt: datetime | None = None,
     ) -> int:
         """Count sandboxed conversations matching the given filters."""
-        query = await self._secure_select()
+        query = select(func.count(StoredConversationMetadata.conversation_id)).where(
+            StoredConversationMetadata.conversation_version == 'V1'
+        )
 
         query = self._apply_filters(
             query=query,
