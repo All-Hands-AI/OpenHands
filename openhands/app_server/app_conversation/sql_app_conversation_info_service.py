@@ -32,7 +32,6 @@ from sqlalchemy import (
     Integer,
     Select,
     String,
-    func,
     select,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
