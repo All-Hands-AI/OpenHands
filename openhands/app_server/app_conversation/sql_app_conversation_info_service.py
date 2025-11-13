@@ -283,8 +283,13 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
+            sub_conversation_ids = await self._get_sub_conversation_ids(
+                UUID(conversation_id)
+            )
             if info:
-                results.append(self._to_info(info))
+                results.append(
+                    self._to_info(info, sub_conversation_ids=sub_conversation_ids)
+                )
             else:
                 results.append(None)
 
