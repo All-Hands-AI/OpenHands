@@ -1158,6 +1158,7 @@ async def test_delete_v1_conversation_invalid_uuid():
 
                             # Call delete_conversation
                             result = await delete_conversation(
+                                request=MagicMock(),
                                 conversation_id=conversation_id,
                                 user_id='test_user',
                                 app_conversation_service=mock_service,
@@ -1252,6 +1253,7 @@ async def test_delete_v1_conversation_service_error():
 
                             # Call delete_conversation
                             result = await delete_conversation(
+                                request=MagicMock(),
                                 conversation_id=conversation_id,
                                 user_id='test_user',
                                 app_conversation_service=mock_service,
@@ -1329,6 +1331,7 @@ async def test_delete_v1_conversation_with_agent_server():
 
                 # Call delete_conversation with V1 conversation ID
                 result = await delete_conversation(
+                    request=MagicMock(),
                     conversation_id=conversation_id,
                     user_id='test_user',
                     app_conversation_service=mock_service,
