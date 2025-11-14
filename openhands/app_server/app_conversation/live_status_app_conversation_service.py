@@ -105,6 +105,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 20,
+        include_sub_conversations: bool = False,
     ) -> AppConversationPage:
         """Search for sandboxed conversations."""
         page = await self.app_conversation_info_service.search_app_conversation_info(
@@ -116,6 +117,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             sort_order=sort_order,
             page_id=page_id,
             limit=limit,
+            include_sub_conversations=include_sub_conversations,
         )
         conversations: list[AppConversation] = await self._build_app_conversations(
             page.items
