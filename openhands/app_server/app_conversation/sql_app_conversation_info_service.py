@@ -306,7 +306,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             )
             result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == user_id
+            assert existing is None or existing.user_id == user_id
 
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
