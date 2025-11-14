@@ -238,6 +238,26 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             query = query.where(*conditions)
         return query
 
+    async def _get_sub_conversation_ids(
+        self, parent_conversation_id: UUID
+    ) -> list[UUID]:
+        """Get all sub-conversation IDs for a given parent conversation.
+
+        Args:
+            parent_conversation_id: The ID of the parent conversation
+
+        Returns:
+            List of sub-conversation IDs
+        """
+        query = await self._secure_select()
+        query = query.where(
+            StoredConversationMetadata.parent_conversation_id
+            == str(parent_conversation_id)
+        )
+        result_set = await self.db_session.execute(query)
+        rows = result_set.scalars().all()
+        return [UUID(row.conversation_id) for row in rows]
+
     async def get_app_conversation_info(
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
@@ -248,7 +268,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         result_set = await self.db_session.execute(query)
         result = result_set.scalar_one_or_none()
         if result:
-            return self._to_info(result)
+            # Fetch sub-conversation IDs
+            sub_conversation_ids = await self._get_sub_conversation_ids(conversation_id)
+            return self._to_info(result, sub_conversation_ids=sub_conversation_ids)
         return None
 
     async def batch_get_app_conversation_info(
@@ -267,8 +289,13 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
+            sub_conversation_ids = await self._get_sub_conversation_ids(
+                UUID(conversation_id)
+            )
             if info:
-                results.append(self._to_info(info))
+                results.append(
+                    self._to_info(info, sub_conversation_ids=sub_conversation_ids)
+                )
             else:
                 results.append(None)
 
@@ -284,7 +311,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             )
             result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == user_id
+            assert existing is None or existing.user_id == user_id
 
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
@@ -336,7 +363,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             )
         return query
 
-    def _to_info(self, stored: StoredConversationMetadata) -> AppConversationInfo:
+    def _to_info(
+        self,
+        stored: StoredConversationMetadata,
+        sub_conversation_ids: list[UUID] | None = None,
+    ) -> AppConversationInfo:
         # V1 conversations should always have a sandbox_id
         sandbox_id = stored.sandbox_id
         assert sandbox_id is not None
@@ -381,6 +412,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
                 if stored.parent_conversation_id
                 else None
             ),
+            sub_conversation_ids=sub_conversation_ids or [],
             created_at=created_at,
             updated_at=updated_at,
         )

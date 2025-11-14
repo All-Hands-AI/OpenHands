@@ -42,6 +42,7 @@ class AppConversationInfo(BaseModel):
     metrics: MetricsSnapshot | None = None
 
     parent_conversation_id: OpenHandsUUID | None = None
+    sub_conversation_ids: list[OpenHandsUUID] = Field(default_factory=list)
 
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
