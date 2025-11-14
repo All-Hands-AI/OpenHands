@@ -938,6 +938,7 @@ async def test_delete_conversation():
 
                     # Call delete_conversation
                     result = await delete_conversation(
+                        request=MagicMock(),
                         conversation_id='some_conversation_id',
                         user_id='12345',
                         app_conversation_service=mock_app_conversation_service,
@@ -1017,6 +1018,7 @@ async def test_delete_v1_conversation_success():
 
                 # Call delete_conversation with V1 conversation ID
                 result = await delete_conversation(
+                    request=MagicMock(),
                     conversation_id=conversation_id,
                     user_id='test_user',
                     app_conversation_service=mock_service,
@@ -1075,6 +1077,7 @@ async def test_delete_v1_conversation_not_found():
 
                 # Call delete_conversation with V1 conversation ID
                 result = await delete_conversation(
+                    request=MagicMock(),
                     conversation_id=conversation_id,
                     user_id='test_user',
                     app_conversation_service=mock_service,
