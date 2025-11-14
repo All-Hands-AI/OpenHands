@@ -215,6 +215,10 @@ async def search_app_conversation_start_tasks(
         UUID | None,
         Query(title='Filter by conversation ID equal to this value'),
     ] = None,
+    created_at__gte: Annotated[
+        datetime | None,
+        Query(title='Filter by created_at greater than or equal to this datetime'),
+    ] = None,
     sort_order: Annotated[
         AppConversationStartTaskSortOrder,
         Query(title='Sort order for the results'),
@@ -241,6 +245,7 @@ async def search_app_conversation_start_tasks(
     return (
         await app_conversation_start_task_service.search_app_conversation_start_tasks(
             conversation_id__eq=conversation_id__eq,
+            created_at__gte=created_at__gte,
             sort_order=sort_order,
             page_id=page_id,
             limit=limit,
@@ -254,6 +259,10 @@ async def count_app_conversation_start_tasks(
         UUID | None,
         Query(title='Filter by conversation ID equal to this value'),
     ] = None,
+    created_at__gte: Annotated[
+        datetime | None,
+        Query(title='Filter by created_at greater than or equal to this datetime'),
+    ] = None,
     app_conversation_start_task_service: AppConversationStartTaskService = (
         app_conversation_start_task_service_dependency
     ),
@@ -261,6 +270,7 @@ async def count_app_conversation_start_tasks(
     """Count conversation start tasks matching the given filters."""
     return await app_conversation_start_task_service.count_app_conversation_start_tasks(
         conversation_id__eq=conversation_id__eq,
+        created_at__gte=created_at__gte,
     )
 
 
