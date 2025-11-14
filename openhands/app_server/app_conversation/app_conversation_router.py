@@ -99,6 +99,12 @@ async def search_app_conversations(
             lte=100,
         ),
     ] = 100,
+    include_sub_conversations: Annotated[
+        bool,
+        Query(
+            title='If True, include sub-conversations in the results. If False (default), exclude all sub-conversations.'
+        ),
+    ] = False,
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
@@ -114,6 +120,7 @@ async def search_app_conversations(
         updated_at__lt=updated_at__lt,
         page_id=page_id,
         limit=limit,
+        include_sub_conversations=include_sub_conversations,
     )
 
 
@@ -193,7 +200,8 @@ async def stream_app_conversation_start(
     user_context: UserContext = user_context_dependency,
 ) -> list[AppConversationStartTask]:
     """Start an app conversation start task and stream updates from it.
-    Leaves the connection open until either the conversation starts or there was an error"""
+    Leaves the connection open until either the conversation starts or there was an error
+    """
     response = StreamingResponse(
         _stream_app_conversation_start(request, user_context),
         media_type='application/json',

@@ -5,9 +5,10 @@ import os
 import re
 import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
 import base62
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
@@ -304,6 +305,12 @@ async def search_conversations(
     limit: int = 20,
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
+    include_sub_conversations: Annotated[
+        bool,
+        Query(
+            title='If True, include sub-conversations in the results. If False (default), exclude all sub-conversations.'
+        ),
+    ] = False,
     conversation_store: ConversationStore = Depends(get_conversation_store),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
 ) -> ConversationInfoResultSet:
@@ -338,6 +345,7 @@ async def search_conversations(
         limit=limit,
         # Apply age filter at the service level if possible
         created_at__gte=age_filter_date,
+        include_sub_conversations=include_sub_conversations,
     )
 
     # Convert V1 conversations to ConversationInfo format
@@ -1157,6 +1165,7 @@ async def _fetch_v1_conversations_safe(
         app_conversation_service: App conversation service for V1
         v1_page_id: Page ID for V1 pagination
         limit: Maximum number of results
+        include_sub_conversations: If True, include sub-conversations in results
 
     Returns:
         Tuple of (v1_conversations, v1_next_page_id)
