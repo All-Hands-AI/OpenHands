@@ -45,6 +45,40 @@ export function ChangeAgentButton() {
     }
   }, [isAgentRunning, contextMenuOpen]);
 
+  const handlePlanClick = (
+    event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Set conversation mode to "plan" immediately
+    setConversationMode("plan");
+
+    // Check if current conversation mode is "plan" and sub_conversation_ids is not empty
+    if (
+      (conversation?.sub_conversation_ids &&
+        conversation.sub_conversation_ids.length > 0) ||
+      !conversation?.conversation_id
+    ) {
+      // Do nothing if both conditions are true
+      return;
+    }
+
+    // Create a new sub-conversation if we have a current conversation ID
+    createConversation(
+      {
+        parentConversationId: conversation.conversation_id,
+        agentType: "plan",
+      },
+      {
+        onSuccess: () =>
+          displaySuccessToast(
+            t(I18nKey.PLANNING_AGENTT$PLANNING_AGENT_INITIALIZED),
+          ),
+      },
+    );
+  };
+
   // Handle Shift + Tab keyboard shortcut to cycle through modes
   useEffect(() => {
     if (!shouldUsePlanningAgent || isAgentRunning) {
@@ -60,7 +94,11 @@ export function ChangeAgentButton() {
 
         // Cycle between modes: code -> plan -> code
         const nextMode = conversationMode === "code" ? "plan" : "code";
-        setConversationMode(nextMode);
+        if (nextMode === "plan") {
+          handlePlanClick(event);
+        } else {
+          setConversationMode(nextMode);
+        }
       }
     };
 
@@ -86,34 +124,6 @@ export function ChangeAgentButton() {
     event.preventDefault();
     event.stopPropagation();
     setConversationMode("code");
-  };
-
-  const handlePlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    // Set conversation mode to "plan" immediately
-    setConversationMode("plan");
-
-    // Check if current conversation mode is "plan" and sub_conversation_ids is not empty
-    if (
-      conversation?.sub_conversation_ids &&
-      conversation.sub_conversation_ids.length > 0
-    ) {
-      // Do nothing if both conditions are true
-      return;
-    }
-
-    // Display toast message informing users that the planning agent is being initialized
-    displaySuccessToast(t(I18nKey.PLANNING_AGENTT$PLANNING_AGENT_INITIALIZING));
-
-    // Create a new sub-conversation if we have a current conversation ID
-    if (conversation?.conversation_id) {
-      createConversation({
-        parentConversationId: conversation.conversation_id,
-        agentType: "plan",
-      });
-    }
   };
 
   const isExecutionAgent = conversationMode === "code";
