@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 import base62
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, BackgroundTasks, Depends, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
@@ -467,13 +467,15 @@ async def get_conversation(
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
+    background_tasks: BackgroundTasks,
     conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     app_conversation_service: AppConversationService = app_conversation_service_dependency,
     sandbox_service: SandboxService = sandbox_service_dependency,
 ) -> bool:
-    # Try V1 conversation first
-    v1_result = await _try_delete_v1_conversation(
+    # Try V1 conversation first - do validation synchronously
+    v1_result = await _check_and_schedule_v1_deletion(
+        background_tasks,
         conversation_id,
         app_conversation_service,
         sandbox_service,
@@ -481,38 +483,98 @@ async def delete_conversation(
     if v1_result is not None:
         return v1_result
 
-    # V0 conversation logic
-    return await _delete_v0_conversation(conversation_id, user_id)
+    # V0 conversation logic - do validation synchronously, schedule cleanup in background
+    return await _check_and_schedule_v0_deletion(background_tasks, conversation_id, user_id)
 
 
-async def _try_delete_v1_conversation(
+async def _check_and_schedule_v1_deletion(
+    background_tasks: BackgroundTasks,
     conversation_id: str,
     app_conversation_service: AppConversationService,
     sandbox_service: SandboxService,
 ) -> bool | None:
-    """Try to delete a V1 conversation. Returns None if not a V1 conversation."""
-    result = None
+    """Check if V1 conversation exists and schedule deletion if found."""
     try:
-        conversation_uuid = uuid.UUID(conversation_id)
-        # Check if it's a V1 conversation by trying to get it
-        app_conversation = await app_conversation_service.get_app_conversation(
-            conversation_uuid
-        )
-        if app_conversation:
-            # This is a V1 conversation, delete it using the app conversation service
-            # Pass the conversation ID for secure deletion
-            result = await app_conversation_service.delete_app_conversation(
-                app_conversation.id
-            )
-            await sandbox_service.delete_sandbox(app_conversation.sandbox_id)
-    except (ValueError, TypeError):
-        # Not a valid UUID, continue with V0 logic
-        pass
-    except Exception:
-        # Some other error, continue with V0 logic
-        pass
+        conversation_uuid = UUID(conversation_id)
+    except ValueError:
+        return None  # Not a valid UUID, fall back to V0 logic
 
-    return result
+    try:
+        # Check if conversation exists
+        app_conversation = await app_conversation_service.get_app_conversation(conversation_uuid)
+        if app_conversation is None:
+            return False  # V1 conversation not found
+
+        # Schedule the actual deletion work in background
+        background_tasks.add_task(
+            _perform_v1_deletion,
+            conversation_uuid,
+            app_conversation_service,
+            sandbox_service,
+            app_conversation.sandbox_id,
+        )
+        return True
+    except Exception:
+        # Service error, fall back to V0 logic
+        return None
+
+
+async def _check_and_schedule_v0_deletion(
+    background_tasks: BackgroundTasks,
+    conversation_id: str,
+    user_id: str | None,
+) -> bool:
+    """Check if V0 conversation exists and schedule deletion if found."""
+    # Check if conversation exists in V0 store
+    conversation_store = ConversationStoreImpl.get_instance()
+    try:
+        metadata = await conversation_store.get_metadata(conversation_id)
+        if metadata is None:
+            return False  # V0 conversation not found
+    except Exception:
+        return False  # Error getting metadata, assume not found
+
+    # Schedule the actual deletion work in background
+    background_tasks.add_task(
+        _perform_v0_deletion,
+        conversation_id,
+        user_id,
+    )
+    return True
+
+
+async def _perform_v1_deletion(
+    conversation_uuid: UUID,
+    app_conversation_service: AppConversationService,
+    sandbox_service: SandboxService,
+    sandbox_id: str,
+) -> None:
+    """Perform V1 conversation deletion work in the background."""
+    try:
+        # Delete the app conversation
+        await app_conversation_service.delete_app_conversation(conversation_uuid)
+        
+        # Delete the sandbox
+        if sandbox_id:
+            await sandbox_service.delete_sandbox(sandbox_id)
+    except Exception as e:
+        # Log the error but don't raise it since this is running in background
+        print(f"Error deleting V1 conversation {conversation_uuid}: {e}")
+
+
+async def _perform_v0_deletion(
+    conversation_id: str,
+    user_id: str | None,
+) -> None:
+    """Perform V0 conversation deletion work in the background."""
+    try:
+        await _delete_v0_conversation(conversation_id, user_id)
+    except Exception as e:
+        # Log the error but don't raise it since this is running in background
+        print(f"Error deleting V0 conversation {conversation_id}: {e}")
+
+
+
 
 
 async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> bool:

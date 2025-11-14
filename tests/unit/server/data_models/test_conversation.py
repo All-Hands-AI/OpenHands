@@ -930,15 +930,29 @@ async def test_delete_conversation():
                     mock_runtime_cls.delete = AsyncMock()
                     mock_get_runtime_cls.return_value = mock_runtime_cls
 
+                    # Create a mock BackgroundTasks
+                    from fastapi import BackgroundTasks
+                    background_tasks = BackgroundTasks()
+                    
+                    # Create a mock sandbox service
+                    mock_sandbox_service = MagicMock()
+                    
                     # Call delete_conversation
                     result = await delete_conversation(
+                        background_tasks=background_tasks,
                         conversation_id='some_conversation_id',
                         user_id='12345',
                         app_conversation_service=mock_app_conversation_service,
+                        sandbox_service=mock_sandbox_service,
                     )
 
                     # Verify the result
                     assert result is True
+
+                    # Execute the background task that was scheduled
+                    assert len(background_tasks.tasks) == 1
+                    task_func, task_args, task_kwargs = background_tasks.tasks[0]
+                    await task_func(*task_args, **task_kwargs)
 
                     # Verify that delete_metadata was called
                     mock_store.delete_metadata.assert_called_once_with(
@@ -993,21 +1007,43 @@ async def test_delete_v1_conversation_success():
         )
         mock_service.delete_app_conversation = AsyncMock(return_value=True)
 
-        # Call delete_conversation with V1 conversation ID
-        result = await delete_conversation(
-            conversation_id=conversation_id,
-            user_id='test_user',
-            app_conversation_service=mock_service,
-        )
+        # Mock sandbox service
+        with patch(
+            'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+        ) as mock_sandbox_dep:
+            mock_sandbox_service = MagicMock()
+            mock_sandbox_service.delete_sandbox = AsyncMock()
+            mock_sandbox_dep.return_value = mock_sandbox_service
 
-        # Verify the result
-        assert result is True
+            # Create a mock BackgroundTasks
+            from fastapi import BackgroundTasks
+            background_tasks = BackgroundTasks()
 
-        # Verify that get_app_conversation was called
-        mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+            # Call delete_conversation with V1 conversation ID
+            result = await delete_conversation(
+                background_tasks=background_tasks,
+                conversation_id=conversation_id,
+                user_id='test_user',
+                app_conversation_service=mock_service,
+                sandbox_service=mock_sandbox_service,
+            )
 
-        # Verify that delete_app_conversation was called with the conversation ID
-        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+            # Verify the result (should return True immediately since conversation exists)
+            assert result is True
+
+            # Verify that get_app_conversation was called during the synchronous check
+            mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+
+            # Execute the background task that was scheduled
+            assert len(background_tasks.tasks) == 1
+            task_func, task_args, task_kwargs = background_tasks.tasks[0]
+            await task_func(*task_args, **task_kwargs)
+
+            # Verify that delete_app_conversation was called in the background task
+            mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+
+            # Verify that delete_sandbox was called in the background task
+            mock_sandbox_service.delete_sandbox.assert_called_once_with('test-sandbox-id')
 
 
 @pytest.mark.asyncio
@@ -1029,21 +1065,37 @@ async def test_delete_v1_conversation_not_found():
         mock_service.get_app_conversation = AsyncMock(return_value=None)
         mock_service.delete_app_conversation = AsyncMock(return_value=False)
 
-        # Call delete_conversation with V1 conversation ID
-        result = await delete_conversation(
-            conversation_id=conversation_id,
-            user_id='test_user',
-            app_conversation_service=mock_service,
-        )
+        # Mock sandbox service
+        with patch(
+            'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+        ) as mock_sandbox_dep:
+            mock_sandbox_service = MagicMock()
+            mock_sandbox_dep.return_value = mock_sandbox_service
 
-        # Verify the result
-        assert result is False
+            # Create a mock BackgroundTasks
+            from fastapi import BackgroundTasks
+            background_tasks = BackgroundTasks()
 
-        # Verify that get_app_conversation was called
-        mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+            # Call delete_conversation with V1 conversation ID
+            result = await delete_conversation(
+                background_tasks=background_tasks,
+                conversation_id=conversation_id,
+                user_id='test_user',
+                app_conversation_service=mock_service,
+                sandbox_service=mock_sandbox_service,
+            )
 
-        # Verify that delete_app_conversation was NOT called
-        mock_service.delete_app_conversation.assert_not_called()
+            # Verify the result (should be False since conversation doesn't exist)
+            assert result is False
+
+            # Verify that get_app_conversation was called during the synchronous check
+            mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+
+            # Verify that delete_app_conversation was NOT called
+            mock_service.delete_app_conversation.assert_not_called()
+
+            # Verify that no background tasks were scheduled
+            assert len(background_tasks.tasks) == 0
 
 
 @pytest.mark.asyncio
@@ -1091,19 +1143,37 @@ async def test_delete_v1_conversation_invalid_uuid():
                     mock_runtime_cls.delete = AsyncMock()
                     mock_get_runtime_cls.return_value = mock_runtime_cls
 
-                    # Call delete_conversation
-                    result = await delete_conversation(
-                        conversation_id=conversation_id,
-                        user_id='test_user',
-                        app_conversation_service=mock_service,
-                    )
+                    # Mock sandbox service
+                    with patch(
+                        'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+                    ) as mock_sandbox_dep:
+                        mock_sandbox_service = MagicMock()
+                        mock_sandbox_dep.return_value = mock_sandbox_service
 
-                    # Verify the result
-                    assert result is True
+                        # Create a mock BackgroundTasks
+                        from fastapi import BackgroundTasks
+                        background_tasks = BackgroundTasks()
 
-                    # Verify V0 logic was used
-                    mock_store.delete_metadata.assert_called_once_with(conversation_id)
-                    mock_runtime_cls.delete.assert_called_once_with(conversation_id)
+                        # Call delete_conversation
+                        result = await delete_conversation(
+                            background_tasks=background_tasks,
+                            conversation_id=conversation_id,
+                            user_id='test_user',
+                            app_conversation_service=mock_service,
+                            sandbox_service=mock_sandbox_service,
+                        )
+
+                        # Verify the result (should be True since V0 conversation exists)
+                        assert result is True
+
+                        # Execute the background task that was scheduled
+                        assert len(background_tasks.tasks) == 1
+                        task_func, task_args, task_kwargs = background_tasks.tasks[0]
+                        await task_func(*task_args, **task_kwargs)
+
+                        # Verify V0 logic was used
+                        mock_store.delete_metadata.assert_called_once_with(conversation_id)
+                        mock_runtime_cls.delete.assert_called_once_with(conversation_id)
 
 
 @pytest.mark.asyncio
@@ -1159,19 +1229,37 @@ async def test_delete_v1_conversation_service_error():
                     mock_runtime_cls.delete = AsyncMock()
                     mock_get_runtime_cls.return_value = mock_runtime_cls
 
-                    # Call delete_conversation
-                    result = await delete_conversation(
-                        conversation_id=conversation_id,
-                        user_id='test_user',
-                        app_conversation_service=mock_service,
-                    )
+                    # Mock sandbox service
+                    with patch(
+                        'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+                    ) as mock_sandbox_dep:
+                        mock_sandbox_service = MagicMock()
+                        mock_sandbox_dep.return_value = mock_sandbox_service
 
-                    # Verify the result (should fallback to V0)
-                    assert result is True
+                        # Create a mock BackgroundTasks
+                        from fastapi import BackgroundTasks
+                        background_tasks = BackgroundTasks()
 
-                    # Verify V0 logic was used
-                    mock_store.delete_metadata.assert_called_once_with(conversation_id)
-                    mock_runtime_cls.delete.assert_called_once_with(conversation_id)
+                        # Call delete_conversation
+                        result = await delete_conversation(
+                            background_tasks=background_tasks,
+                            conversation_id=conversation_id,
+                            user_id='test_user',
+                            app_conversation_service=mock_service,
+                            sandbox_service=mock_sandbox_service,
+                        )
+
+                        # Verify the result (should fallback to V0)
+                        assert result is True
+
+                        # Execute the background task that was scheduled
+                        assert len(background_tasks.tasks) == 1
+                        task_func, task_args, task_kwargs = background_tasks.tasks[0]
+                        await task_func(*task_args, **task_kwargs)
+
+                        # Verify V0 logic was used
+                        mock_store.delete_metadata.assert_called_once_with(conversation_id)
+                        mock_runtime_cls.delete.assert_called_once_with(conversation_id)
 
 
 @pytest.mark.asyncio
@@ -1216,21 +1304,43 @@ async def test_delete_v1_conversation_with_agent_server():
         )
         mock_service.delete_app_conversation = AsyncMock(return_value=True)
 
-        # Call delete_conversation with V1 conversation ID
-        result = await delete_conversation(
-            conversation_id=conversation_id,
-            user_id='test_user',
-            app_conversation_service=mock_service,
-        )
+        # Mock sandbox service
+        with patch(
+            'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+        ) as mock_sandbox_dep:
+            mock_sandbox_service = MagicMock()
+            mock_sandbox_service.delete_sandbox = AsyncMock()
+            mock_sandbox_dep.return_value = mock_sandbox_service
 
-        # Verify the result
-        assert result is True
+            # Create a mock BackgroundTasks
+            from fastapi import BackgroundTasks
+            background_tasks = BackgroundTasks()
 
-        # Verify that get_app_conversation was called
-        mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+            # Call delete_conversation with V1 conversation ID
+            result = await delete_conversation(
+                background_tasks=background_tasks,
+                conversation_id=conversation_id,
+                user_id='test_user',
+                app_conversation_service=mock_service,
+                sandbox_service=mock_sandbox_service,
+            )
 
-        # Verify that delete_app_conversation was called with the conversation ID
-        mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+            # Verify the result (should return True immediately since conversation exists)
+            assert result is True
+
+            # Verify that get_app_conversation was called during the synchronous check
+            mock_service.get_app_conversation.assert_called_once_with(conversation_uuid)
+
+            # Execute the background task that was scheduled
+            assert len(background_tasks.tasks) == 1
+            task_func, task_args, task_kwargs = background_tasks.tasks[0]
+            await task_func(*task_args, **task_kwargs)
+
+            # Verify that delete_app_conversation was called in the background task
+            mock_service.delete_app_conversation.assert_called_once_with(conversation_uuid)
+
+            # Verify that delete_sandbox was called in the background task
+            mock_sandbox_service.delete_sandbox.assert_called_once_with('test-sandbox-id')
 
 
 @pytest.mark.asyncio
