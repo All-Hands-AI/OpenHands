@@ -122,7 +122,7 @@ class V1ConversationService {
   ): Promise<V1AppConversationStartTask[]> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());
-    
+
     // Only get tasks from the last 20 minutes
     const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000);
     params.append("created_at__gte", twentyMinutesAgo.toISOString());

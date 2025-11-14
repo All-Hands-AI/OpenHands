@@ -99,7 +99,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
 
         # Apply created_at__gte filter
         if created_at__gte is not None:
-            query = query.where(StoredAppConversationStartTask.created_at >= created_at__gte)
+            query = query.where(
+                StoredAppConversationStartTask.created_at >= created_at__gte
+            )
 
         # Add sort order
         if sort_order == AppConversationStartTaskSortOrder.CREATED_AT:
@@ -165,7 +167,9 @@ class SQLAppConversationStartTaskService(AppConversationStartTaskService):
 
         # Apply created_at__gte filter
         if created_at__gte is not None:
-            query = query.where(StoredAppConversationStartTask.created_at >= created_at__gte)
+            query = query.where(
+                StoredAppConversationStartTask.created_at >= created_at__gte
+            )
 
         result = await self.session.execute(query)
         count = result.scalar()

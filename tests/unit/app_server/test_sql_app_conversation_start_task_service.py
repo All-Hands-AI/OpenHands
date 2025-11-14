@@ -646,12 +646,13 @@ class TestSQLAppConversationStartTaskService:
         sample_request: AppConversationStartRequest,
     ):
         """Test search with created_at__gte filter."""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+
         from openhands.agent_server.models import utc_now
 
         # Create tasks with different creation times
         base_time = utc_now()
-        
+
         # Task 1: created 2 hours ago
         task1 = AppConversationStartTask(
             id=uuid4(),
@@ -723,7 +724,8 @@ class TestSQLAppConversationStartTaskService:
         sample_request: AppConversationStartRequest,
     ):
         """Test search with both conversation_id and created_at__gte filters."""
-        from datetime import datetime, timedelta
+        from datetime import timedelta
+
         from openhands.agent_server.models import utc_now
 
         conversation_id1 = uuid4()
@@ -766,8 +768,7 @@ class TestSQLAppConversationStartTaskService:
         # Search for tasks with conversation_id1 created in the last hour
         filter_time = base_time - timedelta(hours=1)
         result = await service.search_app_conversation_start_tasks(
-            conversation_id__eq=conversation_id1,
-            created_at__gte=filter_time
+            conversation_id__eq=conversation_id1, created_at__gte=filter_time
         )
 
         # Should return only task2 (conversation_id1 and created within last hour)
@@ -777,7 +778,6 @@ class TestSQLAppConversationStartTaskService:
 
         # Test count with combined filters
         count = await service.count_app_conversation_start_tasks(
-            conversation_id__eq=conversation_id1,
-            created_at__gte=filter_time
+            conversation_id__eq=conversation_id1, created_at__gte=filter_time
         )
         assert count == 1
