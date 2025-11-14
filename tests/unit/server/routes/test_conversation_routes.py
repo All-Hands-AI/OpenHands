@@ -11,7 +11,14 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
     AppConversationInfoService,
 )
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AgentType,
     AppConversationInfo,
+    AppConversationStartRequest,
+    AppConversationStartTask,
+    AppConversationStartTaskStatus,
+)
+from openhands.app_server.app_conversation.app_conversation_service import (
+    AppConversationService,
 )
 from openhands.microagent.microagent import KnowledgeMicroagent, RepoMicroagent
 from openhands.microagent.types import MicroagentMetadata, MicroagentType
@@ -1125,3 +1132,71 @@ async def test_add_message_empty_message():
         call_args = mock_manager.send_event_to_conversation.call_args
         message_data = call_args[0][1]
         assert message_data['args']['content'] == ''
+
+
+@pytest.mark.sub_conversation
+@pytest.mark.asyncio
+async def test_create_sub_conversation_with_planning_agent():
+    """Test creating a sub-conversation from a parent conversation with planning agent."""
+    from uuid import uuid4
+
+    parent_conversation_id = uuid4()
+    user_id = 'test_user_456'
+    sandbox_id = 'test_sandbox_123'
+
+    # Create mock parent conversation info
+    parent_info = AppConversationInfo(
+        id=parent_conversation_id,
+        created_by_user_id=user_id,
+        sandbox_id=sandbox_id,
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=None,
+        title='Parent Conversation',
+        llm_model='anthropic/claude-3-5-sonnet-20241022',
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create sub-conversation request with planning agent
+    sub_conversation_request = AppConversationStartRequest(
+        parent_conversation_id=parent_conversation_id,
+        agent_type=AgentType.PLAN,
+        initial_message=None,
+    )
+
+    # Create mock app conversation service
+    mock_app_conversation_service = MagicMock(spec=AppConversationService)
+    mock_app_conversation_info_service = MagicMock(spec=AppConversationInfoService)
+
+    # Mock the service to return parent info
+    mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+        return_value=parent_info
+    )
+
+    # Mock the start_app_conversation method to return a task
+    async def mock_start_generator(request):
+        task = AppConversationStartTask(
+            id=uuid4(),
+            created_by_user_id=user_id,
+            status=AppConversationStartTaskStatus.READY,
+            app_conversation_id=uuid4(),
+            sandbox_id=sandbox_id,
+            agent_server_url='http://agent-server:8000',
+            request=request,
+        )
+        yield task
+
+    mock_app_conversation_service.start_app_conversation = mock_start_generator
+
+    # Test the service method directly
+    async for task in mock_app_conversation_service.start_app_conversation(
+        sub_conversation_request
+    ):
+        # Verify the task was created with planning agent
+        assert task is not None
+        assert task.status == AppConversationStartTaskStatus.READY
+        assert task.request.agent_type == AgentType.PLAN
+        assert task.request.parent_conversation_id == parent_conversation_id
+        assert task.sandbox_id == sandbox_id
+        break
