@@ -54,7 +54,7 @@ export function ChangeAgentButton() {
     // Set conversation mode to "plan" immediately
     setConversationMode("plan");
 
-    // Check if current conversation mode is "plan" and sub_conversation_ids is not empty
+    // Check if sub_conversation_ids is not empty
     if (
       (conversation?.sub_conversation_ids &&
         conversation.sub_conversation_ids.length > 0) ||
