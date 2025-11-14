@@ -261,7 +261,6 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         )
         result_set = await self.db_session.execute(query)
         result = result_set.scalar_one_or_none()
-
         if result:
             # Fetch sub-conversation IDs
             sub_conversation_ids = await self._get_sub_conversation_ids(conversation_id)
