@@ -15134,5 +15134,21 @@
     "tr": "Hedefleri belirtin, görevleri yapılandırın ve sonraki adımlarınızı belirleyin.",
     "de": "Umreißen Sie Ziele, strukturieren Sie Aufgaben und planen Sie Ihre nächsten Schritte.",
     "uk": "Окресліть цілі, структуруйте завдання та сплануйте наступні кроки."
+  },
+  "PLANNING_AGENTT$PLANNING_AGENT_INITIALIZED": {
+    "en": "Planning agent initialized",
+    "ja": "プランニングエージェントが初期化されました",
+    "zh-CN": "规划代理已初始化",
+    "zh-TW": "規劃代理已初始化",
+    "ko-KR": "계획 에이전트가 초기화되었습니다",
+    "no": "Planleggingsagent er initialisert",
+    "it": "Agente di pianificazione inizializzato",
+    "pt": "Agente de planejamento inicializado",
+    "es": "Agente de planificación inicializado",
+    "ar": "تم تهيئة وكيل التخطيط",
+    "fr": "Agent de planification initialisé",
+    "tr": "Planlama ajanı başlatıldı",
+    "de": "Planungsagent wurde initialisiert",
+    "uk": "Агент планування ініціалізовано"
   }
 }
