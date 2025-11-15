@@ -1,6 +1,7 @@
 import uuid
 
 from openhands.sdk.conversation import visualizer
+from openhands.sdk.security.llm_analyzer import LLMSecurityAnalyzer
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import Agent, BaseConversation, Conversation, Workspace
@@ -80,11 +81,7 @@ def setup_conversation(
 
     agent = load_agent_specs(str(conversation_id), load_user_skills=load_user_skills)
 
-    if not include_security_analyzer:
-        # Remove security analyzer from agent spec
-        agent = agent.model_copy(
-            update={"security_analyzer": None}
-        )
+
 
     # Create conversation - agent context is now set in AgentStore.load()
     conversation: BaseConversation = Conversation(
@@ -96,7 +93,11 @@ def setup_conversation(
         visualizer=CLIVisualizer
     )
 
-    if include_security_analyzer:
+    # Security analyzer is set though conversation API now
+    if not include_security_analyzer:
+        conversation.set_security_analyzer(None)
+    else:
+        conversation.set_security_analyzer(LLMSecurityAnalyzer())
         conversation.set_confirmation_policy(AlwaysConfirm())
 
     print_formatted_text(

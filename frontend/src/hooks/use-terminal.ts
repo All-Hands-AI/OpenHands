@@ -22,7 +22,7 @@ const renderCommand = (
     return;
   }
 
-  const trimmedContent = content.replaceAll("\n", "\r\n").trim();
+  const trimmedContent = (content || "").replaceAll("\n", "\r\n").trim();
   // Only write if there's actual content to avoid empty newlines
   if (trimmedContent) {
     terminal.writeln(parseTerminalOutput(trimmedContent));
