@@ -262,5 +262,4 @@ containers/runtime/code
 test-results
 .sessions
 .eval_sessions
-Miniforge3-Linux-x86_64.sh
 venv/
