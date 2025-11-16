@@ -39,7 +39,7 @@ There are a few ways to work with OpenHands:
 - [OpenHands Web](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) (a la Devin)
     - Runs on your laptop, comes with a REST API and web app
 - [OpenHands Cloud](https://app.all-hands.dev)
-    - A commercial deployment of OpenHands Web, hosted at app.all-hands.dev
+    - A commercial deployment of OpenHands Web
     - Comes with source-available features and integrations:
         - Deeper integrations with GitHub, GitLab, and Bitbucket
         - Integrations with Slack, Jira, and Linear
@@ -48,8 +48,9 @@ There are a few ways to work with OpenHands:
         - Collaboration features (e.g., conversation sharing)
         - Usage reporting
         - Budgeting enforcement
-- OpenHands Enterprise
+- [OpenHands Enterprise](https://openhands.dev/enterprise)
     - A self-hosted version of OpenHands Cloud
     - Runs on Kubernetes
+    - Comes with extended support and access to our research team
 
 You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE)
