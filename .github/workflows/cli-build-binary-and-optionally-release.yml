@@ -71,6 +71,14 @@ jobs:
 
           echo "✅ Build & test finished without ❌ markers"
 
+      - name: Verify binary files exist
+        run: |
+          if ! ls openhands-cli/dist/openhands* 1> /dev/null 2>&1; then
+            echo "❌ No binaries found to upload!"
+            exit 1
+          fi
+          echo "✅ Found binaries to upload."
+
       - name: Upload binary artifact
         uses: actions/upload-artifact@v4
         with:

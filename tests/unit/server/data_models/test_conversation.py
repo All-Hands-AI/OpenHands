@@ -909,6 +909,18 @@ async def test_delete_conversation():
             # Return the mock store from get_instance
             mock_get_instance.return_value = mock_store
 
+            # Create a mock app conversation service
+            mock_app_conversation_service = MagicMock()
+
+            # Create a mock app conversation info service
+            mock_app_conversation_info_service = MagicMock()
+            mock_app_conversation_info_service.get_app_conversation_info = AsyncMock(
+                return_value=None
+            )
+
+            # Create a mock sandbox service
+            mock_sandbox_service = MagicMock()
+
             # Mock the conversation manager
             with patch(
                 'openhands.server.routes.manage_conversations.conversation_manager'
@@ -926,7 +938,12 @@ async def test_delete_conversation():
 
                     # Call delete_conversation
                     result = await delete_conversation(
-                        'some_conversation_id', user_id='12345'
+                        request=MagicMock(),
+                        conversation_id='some_conversation_id',
+                        user_id='12345',
+                        app_conversation_service=mock_app_conversation_service,
+                        app_conversation_info_service=mock_app_conversation_info_service,
+                        sandbox_service=mock_sandbox_service,
                     )
 
                     # Verify the result
@@ -941,6 +958,399 @@ async def test_delete_conversation():
                     mock_runtime_cls.delete.assert_called_once_with(
                         'some_conversation_id'
                     )
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_success():
+    """Test successful deletion of a V1 conversation."""
+    from uuid import uuid4
+
+    from openhands.app_server.app_conversation.app_conversation_models import (
+        AppConversation,
+    )
+    from openhands.app_server.sandbox.sandbox_models import SandboxStatus
+    from openhands.sdk.conversation.state import ConversationExecutionStatus
+
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+
+    # Mock the app conversation service
+    with patch(
+        'openhands.server.routes.manage_conversations.app_conversation_service_dependency'
+    ) as mock_service_dep:
+        mock_service = MagicMock()
+        mock_service_dep.return_value = mock_service
+
+        # Mock the app conversation info service
+        with patch(
+            'openhands.server.routes.manage_conversations.app_conversation_info_service_dependency'
+        ) as mock_info_service_dep:
+            mock_info_service = MagicMock()
+            mock_info_service_dep.return_value = mock_info_service
+
+            # Mock the sandbox service
+            with patch(
+                'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+            ) as mock_sandbox_service_dep:
+                mock_sandbox_service = MagicMock()
+                mock_sandbox_service_dep.return_value = mock_sandbox_service
+
+                # Mock the conversation info exists
+                mock_app_conversation_info = AppConversation(
+                    id=conversation_uuid,
+                    created_by_user_id='test_user',
+                    sandbox_id='test-sandbox-id',
+                    title='Test V1 Conversation',
+                    sandbox_status=SandboxStatus.RUNNING,
+                    execution_status=ConversationExecutionStatus.RUNNING,
+                    session_api_key='test-api-key',
+                    selected_repository='test/repo',
+                    selected_branch='main',
+                    git_provider=ProviderType.GITHUB,
+                    trigger=ConversationTrigger.GUI,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                )
+                mock_info_service.get_app_conversation_info = AsyncMock(
+                    return_value=mock_app_conversation_info
+                )
+                mock_service.delete_app_conversation = AsyncMock(return_value=True)
+
+                # Call delete_conversation with V1 conversation ID
+                result = await delete_conversation(
+                    request=MagicMock(),
+                    conversation_id=conversation_id,
+                    user_id='test_user',
+                    app_conversation_service=mock_service,
+                    app_conversation_info_service=mock_info_service,
+                    sandbox_service=mock_sandbox_service,
+                )
+
+                # Verify the result
+                assert result is True
+
+                # Verify that get_app_conversation_info was called
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
+
+                # Verify that delete_app_conversation was called with the conversation ID
+                mock_service.delete_app_conversation.assert_called_once_with(
+                    conversation_uuid
+                )
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_not_found():
+    """Test deletion of a V1 conversation that doesn't exist."""
+    from uuid import uuid4
+
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+
+    # Mock the app conversation service
+    with patch(
+        'openhands.server.routes.manage_conversations.app_conversation_service_dependency'
+    ) as mock_service_dep:
+        mock_service = MagicMock()
+        mock_service_dep.return_value = mock_service
+
+        # Mock the app conversation info service
+        with patch(
+            'openhands.server.routes.manage_conversations.app_conversation_info_service_dependency'
+        ) as mock_info_service_dep:
+            mock_info_service = MagicMock()
+            mock_info_service_dep.return_value = mock_info_service
+
+            # Mock the sandbox service
+            with patch(
+                'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+            ) as mock_sandbox_service_dep:
+                mock_sandbox_service = MagicMock()
+                mock_sandbox_service_dep.return_value = mock_sandbox_service
+
+                # Mock the conversation doesn't exist
+                mock_info_service.get_app_conversation_info = AsyncMock(
+                    return_value=None
+                )
+                mock_service.delete_app_conversation = AsyncMock(return_value=False)
+
+                # Call delete_conversation with V1 conversation ID
+                result = await delete_conversation(
+                    request=MagicMock(),
+                    conversation_id=conversation_id,
+                    user_id='test_user',
+                    app_conversation_service=mock_service,
+                    app_conversation_info_service=mock_info_service,
+                    sandbox_service=mock_sandbox_service,
+                )
+
+                # Verify the result
+                assert result is False
+
+                # Verify that get_app_conversation_info was called
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
+
+                # Verify that delete_app_conversation was NOT called
+                mock_service.delete_app_conversation.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_invalid_uuid():
+    """Test deletion with invalid UUID falls back to V0 logic."""
+    conversation_id = 'invalid-uuid-format'
+
+    # Mock the app conversation service
+    with patch(
+        'openhands.server.routes.manage_conversations.app_conversation_service_dependency'
+    ) as mock_service_dep:
+        mock_service = MagicMock()
+        mock_service_dep.return_value = mock_service
+
+        # Mock V0 conversation logic
+        with patch(
+            'openhands.server.routes.manage_conversations.ConversationStoreImpl.get_instance'
+        ) as mock_get_instance:
+            mock_store = MagicMock()
+            mock_store.get_metadata = AsyncMock(
+                return_value=ConversationMetadata(
+                    conversation_id=conversation_id,
+                    title='Test V0 Conversation',
+                    created_at=datetime.fromisoformat('2025-01-01T00:00:00+00:00'),
+                    last_updated_at=datetime.fromisoformat('2025-01-01T00:01:00+00:00'),
+                    selected_repository='test/repo',
+                    user_id='test_user',
+                )
+            )
+            mock_store.delete_metadata = AsyncMock()
+            mock_get_instance.return_value = mock_store
+
+            # Mock conversation manager
+            with patch(
+                'openhands.server.routes.manage_conversations.conversation_manager'
+            ) as mock_manager:
+                mock_manager.is_agent_loop_running = AsyncMock(return_value=False)
+                mock_manager.get_connections = AsyncMock(return_value={})
+
+                # Mock runtime
+                with patch(
+                    'openhands.server.routes.manage_conversations.get_runtime_cls'
+                ) as mock_get_runtime_cls:
+                    mock_runtime_cls = MagicMock()
+                    mock_runtime_cls.delete = AsyncMock()
+                    mock_get_runtime_cls.return_value = mock_runtime_cls
+
+                    # Mock the app conversation info service
+                    with patch(
+                        'openhands.server.routes.manage_conversations.app_conversation_info_service_dependency'
+                    ) as mock_info_service_dep:
+                        mock_info_service = MagicMock()
+                        mock_info_service_dep.return_value = mock_info_service
+
+                        # Mock the sandbox service
+                        with patch(
+                            'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+                        ) as mock_sandbox_service_dep:
+                            mock_sandbox_service = MagicMock()
+                            mock_sandbox_service_dep.return_value = mock_sandbox_service
+
+                            # Call delete_conversation
+                            result = await delete_conversation(
+                                request=MagicMock(),
+                                conversation_id=conversation_id,
+                                user_id='test_user',
+                                app_conversation_service=mock_service,
+                                app_conversation_info_service=mock_info_service,
+                                sandbox_service=mock_sandbox_service,
+                            )
+
+                            # Verify the result
+                            assert result is True
+
+                            # Verify V0 logic was used
+                            mock_store.delete_metadata.assert_called_once_with(
+                                conversation_id
+                            )
+                            mock_runtime_cls.delete.assert_called_once_with(
+                                conversation_id
+                            )
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_service_error():
+    """Test deletion when app conversation service raises an error."""
+    from uuid import uuid4
+
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+
+    # Mock the app conversation service
+    with patch(
+        'openhands.server.routes.manage_conversations.app_conversation_service_dependency'
+    ) as mock_service_dep:
+        mock_service = MagicMock()
+        mock_service_dep.return_value = mock_service
+
+        # Mock the app conversation info service
+        with patch(
+            'openhands.server.routes.manage_conversations.app_conversation_info_service_dependency'
+        ) as mock_info_service_dep:
+            mock_info_service = MagicMock()
+            mock_info_service_dep.return_value = mock_info_service
+
+            # Mock the sandbox service
+            with patch(
+                'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+            ) as mock_sandbox_service_dep:
+                mock_sandbox_service = MagicMock()
+                mock_sandbox_service_dep.return_value = mock_sandbox_service
+
+                # Mock service error
+                mock_info_service.get_app_conversation_info = AsyncMock(
+                    side_effect=Exception('Service error')
+                )
+
+                # Mock V0 conversation logic as fallback
+                with patch(
+                    'openhands.server.routes.manage_conversations.ConversationStoreImpl.get_instance'
+                ) as mock_get_instance:
+                    mock_store = MagicMock()
+                    mock_store.get_metadata = AsyncMock(
+                        return_value=ConversationMetadata(
+                            conversation_id=conversation_id,
+                            title='Test V0 Conversation',
+                            created_at=datetime.fromisoformat(
+                                '2025-01-01T00:00:00+00:00'
+                            ),
+                            last_updated_at=datetime.fromisoformat(
+                                '2025-01-01T00:01:00+00:00'
+                            ),
+                            selected_repository='test/repo',
+                            user_id='test_user',
+                        )
+                    )
+                    mock_store.delete_metadata = AsyncMock()
+                    mock_get_instance.return_value = mock_store
+
+                    # Mock conversation manager
+                    with patch(
+                        'openhands.server.routes.manage_conversations.conversation_manager'
+                    ) as mock_manager:
+                        mock_manager.is_agent_loop_running = AsyncMock(
+                            return_value=False
+                        )
+                        mock_manager.get_connections = AsyncMock(return_value={})
+
+                        # Mock runtime
+                        with patch(
+                            'openhands.server.routes.manage_conversations.get_runtime_cls'
+                        ) as mock_get_runtime_cls:
+                            mock_runtime_cls = MagicMock()
+                            mock_runtime_cls.delete = AsyncMock()
+                            mock_get_runtime_cls.return_value = mock_runtime_cls
+
+                            # Call delete_conversation
+                            result = await delete_conversation(
+                                request=MagicMock(),
+                                conversation_id=conversation_id,
+                                user_id='test_user',
+                                app_conversation_service=mock_service,
+                                app_conversation_info_service=mock_info_service,
+                                sandbox_service=mock_sandbox_service,
+                            )
+
+                            # Verify the result (should fallback to V0)
+                            assert result is True
+
+                            # Verify V0 logic was used
+                            mock_store.delete_metadata.assert_called_once_with(
+                                conversation_id
+                            )
+                            mock_runtime_cls.delete.assert_called_once_with(
+                                conversation_id
+                            )
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_with_agent_server():
+    """Test V1 conversation deletion with agent server integration."""
+    from uuid import uuid4
+
+    from openhands.app_server.app_conversation.app_conversation_models import (
+        AppConversation,
+    )
+    from openhands.app_server.sandbox.sandbox_models import SandboxStatus
+    from openhands.sdk.conversation.state import ConversationExecutionStatus
+
+    conversation_uuid = uuid4()
+    conversation_id = str(conversation_uuid)
+
+    # Mock the app conversation service
+    with patch(
+        'openhands.server.routes.manage_conversations.app_conversation_service_dependency'
+    ) as mock_service_dep:
+        mock_service = MagicMock()
+        mock_service_dep.return_value = mock_service
+
+        # Mock the app conversation info service
+        with patch(
+            'openhands.server.routes.manage_conversations.app_conversation_info_service_dependency'
+        ) as mock_info_service_dep:
+            mock_info_service = MagicMock()
+            mock_info_service_dep.return_value = mock_info_service
+
+            # Mock the sandbox service
+            with patch(
+                'openhands.server.routes.manage_conversations.sandbox_service_dependency'
+            ) as mock_sandbox_service_dep:
+                mock_sandbox_service = MagicMock()
+                mock_sandbox_service_dep.return_value = mock_sandbox_service
+
+                # Mock the conversation exists with running sandbox
+                mock_app_conversation_info = AppConversation(
+                    id=conversation_uuid,
+                    created_by_user_id='test_user',
+                    sandbox_id='test-sandbox-id',
+                    title='Test V1 Conversation',
+                    sandbox_status=SandboxStatus.RUNNING,
+                    execution_status=ConversationExecutionStatus.RUNNING,
+                    session_api_key='test-api-key',
+                    selected_repository='test/repo',
+                    selected_branch='main',
+                    git_provider=ProviderType.GITHUB,
+                    trigger=ConversationTrigger.GUI,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                )
+                mock_info_service.get_app_conversation_info = AsyncMock(
+                    return_value=mock_app_conversation_info
+                )
+                mock_service.delete_app_conversation = AsyncMock(return_value=True)
+
+                # Call delete_conversation with V1 conversation ID
+                result = await delete_conversation(
+                    request=MagicMock(),
+                    conversation_id=conversation_id,
+                    user_id='test_user',
+                    app_conversation_service=mock_service,
+                    app_conversation_info_service=mock_info_service,
+                    sandbox_service=mock_sandbox_service,
+                )
+
+                # Verify the result
+                assert result is True
+
+                # Verify that get_app_conversation_info was called
+                mock_info_service.get_app_conversation_info.assert_called_once_with(
+                    conversation_uuid
+                )
+
+                # Verify that delete_app_conversation was called with the conversation ID
+                mock_service.delete_app_conversation.assert_called_once_with(
+                    conversation_uuid
+                )
 
 
 @pytest.mark.asyncio

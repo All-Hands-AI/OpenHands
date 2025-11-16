@@ -4,6 +4,7 @@ Tests for confirmation mode functionality in OpenHands CLI.
 """
 
 import os
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 from unittest.mock import ANY, MagicMock, patch
@@ -44,6 +45,7 @@ class TestConfirmationMode:
                 patch('openhands_cli.setup.print_formatted_text') as mock_print,
                 patch('openhands_cli.setup.HTML'),
                 patch('openhands_cli.setup.uuid') as mock_uuid,
+                patch('openhands_cli.setup.CLIVisualizer') as mock_visualizer,
             ):
                 # Mock dependencies
                 mock_conversation_id = MagicMock()
@@ -60,7 +62,7 @@ class TestConfirmationMode:
                 mock_conversation_instance = MagicMock()
                 mock_conversation_class.return_value = mock_conversation_instance
 
-                result = setup_conversation()
+                result = setup_conversation(mock_conversation_id)
 
                 # Verify conversation was created and returned
                 assert result == mock_conversation_instance
@@ -71,9 +73,8 @@ class TestConfirmationMode:
                     workspace=ANY,
                     persistence_dir=ANY,
                     conversation_id=mock_conversation_id,
+                    visualizer=mock_visualizer
                 )
-                # Verify print_formatted_text was called
-                mock_print.assert_called_once()
 
     def test_setup_conversation_raises_missing_agent_spec(self) -> None:
         """Test that setup_conversation raises MissingAgentSpec when agent is not found."""
@@ -87,7 +88,7 @@ class TestConfirmationMode:
 
             # Should raise MissingAgentSpec
             with pytest.raises(MissingAgentSpec) as exc_info:
-                setup_conversation()
+                setup_conversation(uuid.uuid4())
 
             assert 'Agent specification not found' in str(exc_info.value)
             mock_agent_store_class.assert_called_once()

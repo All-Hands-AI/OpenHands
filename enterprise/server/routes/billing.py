@@ -27,6 +27,8 @@ from storage.saas_settings_store import SaasSettingsStore
 from storage.subscription_access import SubscriptionAccess
 
 from openhands.server.user_auth import get_user_id
+from openhands.utils.http_session import httpx_verify_option
+from openhands.utils.posthog_tracker import track_credits_purchased
 
 stripe.api_key = STRIPE_API_KEY
 billing_router = APIRouter(prefix='/api/billing')
@@ -110,7 +112,7 @@ def calculate_credits(user_info: LiteLlmUserInfo) -> float:
 async def get_credits(user_id: str = Depends(get_user_id)) -> GetCreditsResponse:
     if not stripe_service.STRIPE_API_KEY:
         return GetCreditsResponse()
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
         user_json = await _get_litellm_user(client, user_id)
         credits = calculate_credits(user_json['user_info'])
     return GetCreditsResponse(credits=Decimal('{:.2f}'.format(credits)))
@@ -430,7 +432,7 @@ async def success_callback(session_id: str, request: Request):
             )
             raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
             # Update max budget in litellm
             user_json = await _get_litellm_user(client, billing_session.user_id)
             amount_subtotal = stripe_session.amount_subtotal or 0
@@ -455,6 +457,20 @@ async def success_callback(session_id: str, request: Request):
                 },
             )
             session.commit()
+
+            # Track credits purchased in PostHog
+            try:
+                track_credits_purchased(
+                    user_id=billing_session.user_id,
+                    amount_usd=amount_subtotal / 100,  # Convert cents to dollars
+                    credits_added=add_credits,
+                    stripe_session_id=session_id,
+                )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to track credits purchase: {e}',
+                    extra={'user_id': billing_session.user_id, 'error': str(e)},
+                )
 
     return RedirectResponse(
         f'{request.base_url}settings/billing?checkout=success', status_code=302

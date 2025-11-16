@@ -26,6 +26,7 @@ class AppConversationInfoService(ABC):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 100,
+        include_sub_conversations: bool = False,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations."""
 
@@ -56,6 +57,16 @@ class AppConversationInfoService(ABC):
                 for conversation_id in conversation_ids
             ]
         )
+
+    @abstractmethod
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
+        """Delete a conversation info from the database.
+
+        Args:
+            conversation_id: The ID of the conversation to delete.
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
 
     # Mutators
 

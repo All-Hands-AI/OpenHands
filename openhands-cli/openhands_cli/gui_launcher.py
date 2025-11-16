@@ -104,8 +104,8 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
 
     # Get the current version for the Docker image
     version = get_openhands_version()
-    runtime_image = f'docker.all-hands.dev/openhands/runtime:{version}-nikolaik'
-    app_image = f'docker.all-hands.dev/openhands/openhands:{version}'
+    runtime_image = f'docker.openhands.dev/openhands/runtime:{version}-nikolaik'
+    app_image = f'docker.openhands.dev/openhands/openhands:{version}'
 
     print_formatted_text(HTML('<grey>Pulling required Docker images...</grey>'))
 

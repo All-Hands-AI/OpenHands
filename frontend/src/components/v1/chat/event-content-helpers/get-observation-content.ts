@@ -19,6 +19,10 @@ const getFileEditorObservationContent = (
 ): string => {
   const { observation } = event;
 
+  if (observation.error) {
+    return `**Error:**\n${observation.error}`;
+  }
+
   const successMessage = getObservationResult(event) === "success";
 
   // For view commands or successful edits with content changes, format as code block
@@ -44,6 +48,10 @@ const getExecuteBashObservationContent = (
   const { observation } = event;
 
   let { output } = observation;
+
+  if (!output) {
+    output = "";
+  }
 
   if (output.length > MAX_CONTENT_LENGTH) {
     output = `${output.slice(0, MAX_CONTENT_LENGTH)}...`;
@@ -132,6 +140,7 @@ const getTaskTrackerObservationContent = (
   if (
     "content" in observation &&
     observation.content &&
+    typeof observation.content === "string" &&
     observation.content.trim()
   ) {
     content += `\n\n**Result:** ${observation.content.trim()}`;

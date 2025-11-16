@@ -984,7 +984,12 @@ fi
                             task_list=[],
                             content=f'Failed to read the task list from session directory {task_file_path}. Error: {str(e)}',
                         )
-
+                else:
+                    return TaskTrackingObservation(
+                        command=action.command,
+                        task_list=[],
+                        content=f'Unknown command: {action.command}',
+                    )
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
