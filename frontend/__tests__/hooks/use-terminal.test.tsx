@@ -13,19 +13,34 @@ vi.mock("#/context/ws-client-provider", () => ({
   }),
 }));
 
+// Mock useActiveConversation
+vi.mock("#/hooks/query/use-active-conversation", () => ({
+  useActiveConversation: () => ({
+    data: {
+      id: "test-conversation-id",
+      conversation_version: "V0",
+    },
+    isFetched: true,
+  }),
+}));
+
+// Mock useConversationWebSocket (returns null for V0 conversations)
+vi.mock("#/contexts/conversation-websocket-context", () => ({
+  useConversationWebSocket: () => null,
+}));
+
 function TestTerminalComponent() {
   const ref = useTerminal();
   return <div ref={ref} />;
 }
 
 describe("useTerminal", () => {
+  // Terminal is read-only - no longer tests user input functionality
   const mockTerminal = vi.hoisted(() => ({
     loadAddon: vi.fn(),
     open: vi.fn(),
     write: vi.fn(),
     writeln: vi.fn(),
-    onKey: vi.fn(),
-    attachCustomKeyEventHandler: vi.fn(),
     dispose: vi.fn(),
   }));
 

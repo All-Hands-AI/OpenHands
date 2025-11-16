@@ -27,6 +27,8 @@ export function ConversationCardActions({
   conversationId,
   showOptions,
 }: ConversationCardActionsProps) {
+  const isConversationArchived = conversationStatus === "ARCHIVED";
+
   return (
     <div className="group">
       <button
@@ -37,7 +39,10 @@ export function ConversationCardActions({
           event.stopPropagation();
           onContextMenuToggle(!contextMenuOpen);
         }}
-        className="cursor-pointer w-6 h-6 flex flex-row items-center justify-center translate-x-2.5"
+        className={cn(
+          "cursor-pointer w-6 h-6 flex flex-row items-center justify-center translate-x-2.5",
+          isConversationArchived && "opacity-60",
+        )}
       >
         <EllipsisIcon />
       </button>

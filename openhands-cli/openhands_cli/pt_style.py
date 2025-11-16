@@ -20,7 +20,7 @@ def get_cli_style() -> BaseStyle:
             'prompt': f'{COLOR_GOLD} bold',
             # Ensure good contrast for fuzzy matches on the selected completion row
             # across terminals/themes (e.g., Ubuntu GNOME, Alacritty, Kitty).
-            # See https://github.com/All-Hands-AI/OpenHands/issues/10330
+            # See https://github.com/OpenHands/OpenHands/issues/10330
             'completion-menu.completion.current fuzzymatch.outside': 'fg:#ffffff bg:#888888',
             'selected': COLOR_GOLD,
             'risk-high': '#FF0000 bold',  # Red bold for HIGH risk

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { useParams, useNavigate } from "react-router";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import useMetricsStore from "#/stores/metrics-store";
@@ -8,7 +8,7 @@ import { isSystemMessage, isActionOrObservation } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { useDeleteConversation } from "./mutation/use-delete-conversation";
-import { useStopConversation } from "./mutation/use-stop-conversation";
+import { useUnifiedPauseConversationSandbox } from "./mutation/use-unified-stop-conversation";
 import { useGetTrajectory } from "./mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -29,12 +29,13 @@ export function useConversationNameContextMenu({
   showOptions = false,
   onContextMenuToggle,
 }: UseConversationNameContextMenuProps) {
+  const posthog = usePostHog();
   const { t } = useTranslation();
   const { conversationId: currentConversationId } = useParams();
   const navigate = useNavigate();
   const events = useEventStore((state) => state.events);
   const { mutate: deleteConversation } = useDeleteConversation();
-  const { mutate: stopConversation } = useStopConversation();
+  const { mutate: stopConversation } = useUnifiedPauseConversationSandbox();
   const { mutate: getTrajectory } = useGetTrajectory();
   const metrics = useMetricsStore();
 

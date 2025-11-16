@@ -6,17 +6,22 @@ Provides a conversation interface with an AI agent using OpenHands patterns.
 
 import sys
 from datetime import datetime
+import uuid
 
 from openhands.sdk import (
     Message,
     TextContent,
 )
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands_cli.runner import ConversationRunner
-from openhands_cli.setup import MissingAgentSpec, setup_conversation, start_fresh_conversation
+from openhands_cli.setup import (
+    MissingAgentSpec,
+    setup_conversation,
+    verify_agent_exists_or_setup_agent
+)
 from openhands_cli.tui.settings.mcp_screen import MCPScreen
 from openhands_cli.tui.settings.settings_screen import SettingsScreen
 from openhands_cli.tui.status import display_status
@@ -65,21 +70,33 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
         EOFError: If EOF is encountered
     """
 
+    conversation_id = uuid.uuid4()
+    if resume_conversation_id:
+        try:
+            conversation_id = uuid.UUID(resume_conversation_id)
+        except ValueError as e:
+            print_formatted_text(
+                HTML(
+                    f"<yellow>Warning: '{resume_conversation_id}' is not a valid UUID.</yellow>"
+                )
+            )
+            return
+
     try:
-        conversation = start_fresh_conversation(resume_conversation_id)
+        initialized_agent = verify_agent_exists_or_setup_agent()
     except MissingAgentSpec:
         print_formatted_text(HTML('\n<yellow>Setup is required to use OpenHands CLI.</yellow>'))
         print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
         return
 
 
-    display_welcome(conversation.id, bool(resume_conversation_id))
+    display_welcome(conversation_id, bool(resume_conversation_id))
 
     # Track session start time for uptime calculation
     session_start_time = datetime.now()
 
     # Create conversation runner to handle state machine logic
-    runner = ConversationRunner(conversation)
+    runner = None
     session = get_session_prompter()
 
     # Main chat loop
@@ -106,29 +123,30 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 exit_confirmation = exit_session_confirmation()
                 if exit_confirmation == UserConfirmation.ACCEPT:
                     print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
-                    _print_exit_hint(conversation.id)
+                    _print_exit_hint(conversation_id)
                     break
 
             elif command == '/settings':
-                settings_screen = SettingsScreen(conversation)
+                settings_screen = SettingsScreen(runner.conversation if runner else None)
                 settings_screen.display_settings()
                 continue
 
             elif command == '/mcp':
                 mcp_screen = MCPScreen()
-                mcp_screen.display_mcp_info(conversation.agent)
+                mcp_screen.display_mcp_info(initialized_agent)
                 continue
 
             elif command == '/clear':
-                display_welcome(conversation.id)
+                display_welcome(conversation_id)
                 continue
 
             elif command == '/new':
                 try:
                     # Start a fresh conversation (no resume ID = new conversation)
-                    conversation = setup_conversation()
-                    runner = ConversationRunner(conversation)
-                    display_welcome(conversation.id, resume=False)
+                    conversation_id = uuid.uuid4()
+                    runner = None
+                    conversation = None
+                    display_welcome(conversation_id, resume=False)
                     print_formatted_text(
                         HTML('<green>✓ Started fresh conversation</green>')
                     )
@@ -158,10 +176,17 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 continue
 
             elif command == '/resume':
+                if not runner:
+                    print_formatted_text(
+                        HTML('<yellow>No active conversation running...</yellow>')
+                    )
+                    continue
+
+                conversation = runner.conversation
                 if not (
-                    conversation.state.agent_status == AgentExecutionStatus.PAUSED
-                    or conversation.state.agent_status
-                    == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                    conversation.state.execution_status == ConversationExecutionStatus.PAUSED
+                    or conversation.state.execution_status
+                    == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
                 ):
                     print_formatted_text(
                         HTML('<red>No paused conversation to resume...</red>')
@@ -171,6 +196,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
                 # Resume without new message
                 message = None
 
+            if not runner or not conversation:
+                conversation = setup_conversation(conversation_id)
+                runner = ConversationRunner(conversation)
             runner.process_message(message)
 
             print()  # Add spacing
@@ -179,7 +207,7 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
             exit_confirmation = exit_session_confirmation()
             if exit_confirmation == UserConfirmation.ACCEPT:
                 print_formatted_text(HTML('\n<yellow>Goodbye! 👋</yellow>'))
-                _print_exit_hint(conversation.id)
+                _print_exit_hint(conversation_id)
                 break
 
     # Clean up terminal state

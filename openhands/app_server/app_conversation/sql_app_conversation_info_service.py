@@ -88,6 +88,7 @@ class StoredConversationMetadata(Base):  # type: ignore
 
     conversation_version = Column(String, nullable=False, default='V0', index=True)
     sandbox_id = Column(String, nullable=True, index=True)
+    parent_conversation_id = Column(String, nullable=True, index=True)
 
 
 @dataclass
@@ -110,9 +111,17 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 100,
+        include_sub_conversations: bool = False,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations without permission checks."""
         query = await self._secure_select()
+
+        # Conditionally exclude sub-conversations based on the parameter
+        if not include_sub_conversations:
+            # Exclude sub-conversations (only include top-level conversations)
+            query = query.where(
+                StoredConversationMetadata.parent_conversation_id.is_(None)
+            )
 
         query = self._apply_filters(
             query=query,
@@ -129,9 +138,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         elif sort_order == AppConversationSortOrder.CREATED_AT_DESC:
             query = query.order_by(StoredConversationMetadata.created_at.desc())
         elif sort_order == AppConversationSortOrder.UPDATED_AT:
-            query = query.order_by(StoredConversationMetadata.updated_at)
+            query = query.order_by(StoredConversationMetadata.last_updated_at)
         elif sort_order == AppConversationSortOrder.UPDATED_AT_DESC:
-            query = query.order_by(StoredConversationMetadata.updated_at.desc())
+            query = query.order_by(StoredConversationMetadata.last_updated_at.desc())
         elif sort_order == AppConversationSortOrder.TITLE:
             query = query.order_by(StoredConversationMetadata.title)
         elif sort_order == AppConversationSortOrder.TITLE_DESC:
@@ -180,9 +189,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         query = select(func.count(StoredConversationMetadata.conversation_id))
         user_id = await self.user_context.get_user_id()
         if user_id:
-            query = query.where(
-                StoredConversationMetadata.created_by_user_id == user_id
-            )
+            query = query.where(StoredConversationMetadata.user_id == user_id)
 
         query = self._apply_filters(
             query=query,
@@ -233,6 +240,26 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             query = query.where(*conditions)
         return query
 
+    async def _get_sub_conversation_ids(
+        self, parent_conversation_id: UUID
+    ) -> list[UUID]:
+        """Get all sub-conversation IDs for a given parent conversation.
+
+        Args:
+            parent_conversation_id: The ID of the parent conversation
+
+        Returns:
+            List of sub-conversation IDs
+        """
+        query = await self._secure_select()
+        query = query.where(
+            StoredConversationMetadata.parent_conversation_id
+            == str(parent_conversation_id)
+        )
+        result_set = await self.db_session.execute(query)
+        rows = result_set.scalars().all()
+        return [UUID(row.conversation_id) for row in rows]
+
     async def get_app_conversation_info(
         self, conversation_id: UUID
     ) -> AppConversationInfo | None:
@@ -243,7 +270,9 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         result_set = await self.db_session.execute(query)
         result = result_set.scalar_one_or_none()
         if result:
-            return self._to_info(result)
+            # Fetch sub-conversation IDs
+            sub_conversation_ids = await self._get_sub_conversation_ids(conversation_id)
+            return self._to_info(result, sub_conversation_ids=sub_conversation_ids)
         return None
 
     async def batch_get_app_conversation_info(
@@ -262,8 +291,13 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
+            sub_conversation_ids = await self._get_sub_conversation_ids(
+                UUID(conversation_id)
+            )
             if info:
-                results.append(self._to_info(info))
+                results.append(
+                    self._to_info(info, sub_conversation_ids=sub_conversation_ids)
+                )
             else:
                 results.append(None)
 
@@ -275,11 +309,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         user_id = await self.user_context.get_user_id()
         if user_id:
             query = select(StoredConversationMetadata).where(
-                StoredConversationMetadata.conversation_id == info.id
+                StoredConversationMetadata.conversation_id == str(info.id)
             )
             result = await self.db_session.execute(query)
             existing = result.scalar_one_or_none()
-            assert existing is None or existing.created_by_user_id == user_id
+            assert existing is None or existing.user_id == user_id
 
         metrics = info.metrics or MetricsSnapshot()
         usage = metrics.accumulated_token_usage or TokenUsage()
@@ -309,6 +343,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             llm_model=info.llm_model,
             conversation_version='V1',
             sandbox_id=info.sandbox_id,
+            parent_conversation_id=(
+                str(info.parent_conversation_id)
+                if info.parent_conversation_id
+                else None
+            ),
         )
 
         await self.db_session.merge(stored)
@@ -326,7 +365,11 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             )
         return query
 
-    def _to_info(self, stored: StoredConversationMetadata) -> AppConversationInfo:
+    def _to_info(
+        self,
+        stored: StoredConversationMetadata,
+        sub_conversation_ids: list[UUID] | None = None,
+    ) -> AppConversationInfo:
         # V1 conversations should always have a sandbox_id
         sandbox_id = stored.sandbox_id
         assert sandbox_id is not None
@@ -358,14 +401,20 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             sandbox_id=stored.sandbox_id,
             selected_repository=stored.selected_repository,
             selected_branch=stored.selected_branch,
-            git_provider=ProviderType(stored.git_provider)
-            if stored.git_provider
-            else None,
+            git_provider=(
+                ProviderType(stored.git_provider) if stored.git_provider else None
+            ),
             title=stored.title,
             trigger=ConversationTrigger(stored.trigger) if stored.trigger else None,
             pr_number=stored.pr_number,
             llm_model=stored.llm_model,
             metrics=metrics,
+            parent_conversation_id=(
+                UUID(stored.parent_conversation_id)
+                if stored.parent_conversation_id
+                else None
+            ),
+            sub_conversation_ids=sub_conversation_ids or [],
             created_at=created_at,
             updated_at=updated_at,
         )
@@ -376,6 +425,33 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         if not value.tzinfo:
             value = value.replace(tzinfo=UTC)
         return value
+
+    async def delete_app_conversation_info(self, conversation_id: UUID) -> bool:
+        """Delete a conversation info from the database.
+
+        Args:
+            conversation_id: The ID of the conversation to delete.
+
+        Returns True if the conversation was deleted successfully, False otherwise.
+        """
+        from sqlalchemy import delete
+
+        # Build secure delete query with user context filtering
+        delete_query = delete(StoredConversationMetadata).where(
+            StoredConversationMetadata.conversation_id == str(conversation_id)
+        )
+
+        # Apply user security filtering - only allow deletion of conversations owned by the current user
+        user_id = await self.user_context.get_user_id()
+        if user_id:
+            delete_query = delete_query.where(
+                StoredConversationMetadata.user_id == user_id
+            )
+
+        # Execute the secure delete query
+        result = await self.db_session.execute(delete_query)
+
+        return result.rowcount > 0
 
 
 class SQLAppConversationInfoServiceInjector(AppConversationInfoServiceInjector):

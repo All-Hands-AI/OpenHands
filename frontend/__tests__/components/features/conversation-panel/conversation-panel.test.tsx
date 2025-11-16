@@ -8,6 +8,14 @@ import { ConversationPanel } from "#/components/features/conversation-panel/conv
 import ConversationService from "#/api/conversation-service/conversation-service.api";
 import { Conversation } from "#/api/open-hands.types";
 
+// Mock the unified stop conversation hook
+const mockStopConversationMutate = vi.fn();
+vi.mock("#/hooks/mutation/use-unified-stop-conversation", () => ({
+  useUnifiedPauseConversationSandbox: () => ({
+    mutate: mockStopConversationMutate,
+  }),
+}));
+
 describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
   const RouterStub = createRoutesStub([
@@ -73,7 +81,7 @@ describe("ConversationPanel", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.restoreAllMocks();
+    mockStopConversationMutate.mockClear();
     // Setup default mock for getUserConversations
     vi.spyOn(ConversationService, "getUserConversations").mockResolvedValue({
       results: [...mockConversations],
@@ -430,19 +438,6 @@ describe("ConversationPanel", () => {
       next_page_id: null,
     }));
 
-    const stopConversationSpy = vi.spyOn(
-      ConversationService,
-      "stopConversation",
-    );
-    stopConversationSpy.mockImplementation(async (id: string) => {
-      const conversation = mockData.find((conv) => conv.conversation_id === id);
-      if (conversation) {
-        conversation.status = "STOPPED";
-        return conversation;
-      }
-      return null;
-    });
-
     renderConversationPanel();
 
     const cards = await screen.findAllByTestId("conversation-card");
@@ -465,9 +460,12 @@ describe("ConversationPanel", () => {
       screen.queryByRole("button", { name: /confirm/i }),
     ).not.toBeInTheDocument();
 
-    // Verify the API was called
-    expect(stopConversationSpy).toHaveBeenCalledWith("1");
-    expect(stopConversationSpy).toHaveBeenCalledTimes(1);
+    // Verify the mutation was called
+    expect(mockStopConversationMutate).toHaveBeenCalledWith({
+      conversationId: "1",
+      version: undefined,
+    });
+    expect(mockStopConversationMutate).toHaveBeenCalledTimes(1);
   });
 
   it("should only show stop button for STARTING or RUNNING conversations", async () => {

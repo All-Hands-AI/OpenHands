@@ -14,7 +14,7 @@ from openhands.app_server.sandbox.sandbox_spec_models import (
     SandboxSpecInfo,
 )
 from openhands.app_server.sandbox.sandbox_spec_service import (
-    AGENT_SERVER_VERSION,
+    AGENT_SERVER_IMAGE,
     SandboxSpecService,
     SandboxSpecServiceInjector,
 )
@@ -34,16 +34,16 @@ def get_docker_client() -> docker.DockerClient:
 def get_default_sandbox_specs():
     return [
         SandboxSpecInfo(
-            id=f'ghcr.io/all-hands-ai/agent-server:{AGENT_SERVER_VERSION[:7]}-python',
+            id=AGENT_SERVER_IMAGE,
             command=['--port', '8000'],
             initial_env={
                 'OPENVSCODE_SERVER_ROOT': '/openhands/.openvscode-server',
                 'OH_ENABLE_VNC': '0',
                 'LOG_JSON': 'true',
-                'OH_CONVERSATIONS_PATH': '/home/openhands/conversations',
-                'OH_BASH_EVENTS_DIR': '/home/openhands/bash_events',
+                'OH_CONVERSATIONS_PATH': '/workspace/conversations',
+                'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
             },
-            working_dir='/home/openhands/workspace',
+            working_dir='/workspace/project',
         )
     ]
 

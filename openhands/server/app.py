@@ -90,6 +90,7 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 if server_config.app_mode == AppMode.OSS:
     app.include_router(git_api_router)
-app.include_router(v1_router.router)
+if server_config.enable_v1:
+    app.include_router(v1_router.router)
 app.include_router(trajectory_router)
 add_health_endpoints(app)

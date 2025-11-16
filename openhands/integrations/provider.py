@@ -36,6 +36,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
+from openhands.utils.http_session import httpx_verify_option
 
 
 class ProviderToken(BaseModel):
@@ -174,7 +175,7 @@ class ProviderHandler:
     ) -> SecretStr | None:
         """Get latest token from service"""
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(verify=httpx_verify_option()) as client:
                 resp = await client.get(
                     self.REFRESH_TOKEN_URL,
                     headers={
@@ -294,12 +295,13 @@ class ProviderHandler:
         per_page: int,
         sort: str,
         order: str,
+        app_mode: AppMode,
     ) -> list[Repository]:
         if selected_provider:
             service = self.get_service(selected_provider)
             public = self._is_repository_url(query, selected_provider)
             user_repos = await service.search_repositories(
-                query, per_page, sort, order, public
+                query, per_page, sort, order, public, app_mode
             )
             return self._deduplicate_repositories(user_repos)
 
@@ -309,7 +311,7 @@ class ProviderHandler:
                 service = self.get_service(provider)
                 public = self._is_repository_url(query, provider)
                 service_repos = await service.search_repositories(
-                    query, per_page, sort, order, public
+                    query, per_page, sort, order, public, app_mode
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -448,7 +450,10 @@ class ProviderHandler:
         return f'{provider.value}_token'.lower()
 
     async def verify_repo_provider(
-        self, repository: str, specified_provider: ProviderType | None = None
+        self,
+        repository: str,
+        specified_provider: ProviderType | None = None,
+        is_optional: bool = False,
     ) -> Repository:
         errors = []
 
@@ -467,19 +472,22 @@ class ProviderHandler:
                 errors.append(f'{provider.value}: {str(e)}')
 
         # Log detailed error based on whether we had tokens or not
+        # For optional repositories (like org-level microagents), use debug level
+        log_fn = logger.debug if is_optional else logger.error
+
         if not self.provider_tokens:
-            logger.error(
+            log_fn(
                 f'Failed to access repository {repository}: No provider tokens available. '
                 f'provider_tokens dict is empty.'
             )
         elif errors:
-            logger.error(
+            log_fn(
                 f'Failed to access repository {repository} with all available providers. '
                 f'Tried providers: {list(self.provider_tokens.keys())}. '
                 f'Errors: {"; ".join(errors)}'
             )
         else:
-            logger.error(
+            log_fn(
                 f'Failed to access repository {repository}: Unknown error (no providers tried, no errors recorded)'
             )
         raise AuthenticationError(f'Unable to access repo {repository}')
@@ -625,17 +633,22 @@ class ProviderHandler:
             f'Microagent file {file_path} not found in {repository}'
         )
 
-    async def get_authenticated_git_url(self, repo_name: str) -> str:
+    async def get_authenticated_git_url(
+        self, repo_name: str, is_optional: bool = False
+    ) -> str:
         """Get an authenticated git URL for a repository.
 
         Args:
             repo_name: Repository name (owner/repo)
+            is_optional: If True, logs at debug level instead of error level when repo not found
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
         try:
-            repository = await self.verify_repo_provider(repo_name)
+            repository = await self.verify_repo_provider(
+                repo_name, is_optional=is_optional
+            )
         except AuthenticationError:
             raise Exception('Git provider authentication issue when getting remote URL')
 

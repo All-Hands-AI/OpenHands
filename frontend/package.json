@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.59.0",
+  "version": "0.62.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -11,6 +11,7 @@
     "@heroui/use-infinite-scroll": "^2.2.11",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@posthog/react": "^1.4.0",
     "@react-router/node": "^7.9.3",
     "@react-router/serve": "^7.9.3",
     "@react-types/shared": "^3.32.0",
@@ -37,7 +38,7 @@
     "jose": "^6.1.0",
     "lucide-react": "^0.544.0",
     "monaco-editor": "^0.53.0",
-    "posthog-js": "^1.268.8",
+    "posthog-js": "^1.290.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-highlight": "^0.15.0",

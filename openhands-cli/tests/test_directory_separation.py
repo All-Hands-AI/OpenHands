@@ -37,7 +37,7 @@ class TestToolFix:
         """Test that entire tools list is replaced with default tools when loading agent."""
         # Create a mock agent with different tools and working directories
         mock_agent = Agent(
-            llm=LLM(model='test/model', api_key='test-key', service_id='test-service'),
+            llm=LLM(model='test/model', api_key='test-key', usage_id='test-service'),
             tools=[
                 Tool(name='BashTool'),
                 Tool(name='FileEditorTool'),
@@ -65,6 +65,6 @@ class TestToolFix:
             )  # BashTool, FileEditorTool, TaskTrackerTool
 
             tool_names = [tool.name for tool in loaded_agent.tools]
-            assert 'BashTool' in tool_names
-            assert 'FileEditorTool' in tool_names
-            assert 'TaskTrackerTool' in tool_names
+            assert 'terminal' in tool_names
+            assert 'file_editor' in tool_names
+            assert 'task_tracker' in tool_names

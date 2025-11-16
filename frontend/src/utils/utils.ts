@@ -6,6 +6,7 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { GitRepository } from "#/types/git";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { PRODUCT_URL } from "#/utils/constants";
+import { AgentState } from "#/types/agent-state";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -593,4 +594,82 @@ export const hasOpenHandsSuffix = (
     return repo.full_name.endsWith("/openhands-config");
   }
   return repo.full_name.endsWith("/.openhands");
+};
+
+/**
+ * Build headers for V1 API requests that require session authentication
+ * @param sessionApiKey Session API key for authentication
+ * @returns Headers object with X-Session-API-Key if provided
+ */
+export const buildSessionHeaders = (
+  sessionApiKey?: string | null,
+): Record<string, string> => {
+  const headers: Record<string, string> = {};
+  if (sessionApiKey) {
+    headers["X-Session-API-Key"] = sessionApiKey;
+  }
+  return headers;
+};
+
+/**
+ * Get the appropriate color based on agent status
+ * @param options Configuration object for status color calculation
+ * @param options.isPausing Whether the agent is currently pausing
+ * @param options.isTask Whether we're polling a task
+ * @param options.taskStatus The task status string (e.g., "ERROR", "READY")
+ * @param options.isStartingStatus Whether the agent is in a starting state (LOADING or INIT)
+ * @param options.isStopStatus Whether the conversation status is STOPPED
+ * @param options.curAgentState The current agent state
+ * @returns The hex color code for the status
+ *
+ * @example
+ * getStatusColor({
+ *   isPausing: false,
+ *   isTask: false,
+ *   taskStatus: undefined,
+ *   isStartingStatus: false,
+ *   isStopStatus: false,
+ *   curAgentState: AgentState.RUNNING
+ * }) // Returns "#BCFF8C"
+ */
+export const getStatusColor = (options: {
+  isPausing: boolean;
+  isTask: boolean;
+  taskStatus?: string | null;
+  isStartingStatus: boolean;
+  isStopStatus: boolean;
+  curAgentState: AgentState;
+}): string => {
+  const {
+    isPausing,
+    isTask,
+    taskStatus,
+    isStartingStatus,
+    isStopStatus,
+    curAgentState,
+  } = options;
+
+  // Show pausing status
+  if (isPausing) {
+    return "#FFD600";
+  }
+
+  // Show task status if we're polling a task
+  if (isTask && taskStatus) {
+    if (taskStatus === "ERROR") {
+      return "#FF684E";
+    }
+    return "#FFD600";
+  }
+
+  if (isStartingStatus) {
+    return "#FFD600";
+  }
+  if (isStopStatus) {
+    return "#ffffff";
+  }
+  if (curAgentState === AgentState.ERROR) {
+    return "#FF684E";
+  }
+  return "#BCFF8C";
 };

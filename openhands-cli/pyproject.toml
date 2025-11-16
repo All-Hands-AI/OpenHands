@@ -4,7 +4,7 @@ requires = [ "hatchling>=1.25" ]
 
 [project]
 name = "openhands"
-version = "1.0.1"
+version = "1.0.7"
 description = "OpenHands CLI - Terminal User Interface for OpenHands AI Agent"
 readme = "README.md"
 license = { text = "MIT" }
@@ -18,8 +18,8 @@ classifiers = [
 # Using Git URLs for dependencies so installs from PyPI pull from GitHub
 # TODO: pin package versions once agent-sdk has published PyPI packages
 dependencies = [
-  "openhands-sdk @ git+https://github.com/All-Hands-AI/agent-sdk.git@50b094a92817e448ec4352d2950df4f19edd5a9f#subdirectory=openhands/sdk",
-  "openhands-tools @ git+https://github.com/All-Hands-AI/agent-sdk.git@50b094a92817e448ec4352d2950df4f19edd5a9f#subdirectory=openhands/tools",
+  "openhands-sdk==1.1",
+  "openhands-tools==1.1",
   "prompt-toolkit>=3",
   "typer>=0.17.4",
 ]
@@ -99,6 +99,8 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
 
-[tool.uv.sources]
-openhands-sdk = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/sdk", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }
-openhands-tools = { git = "https://github.com/All-Hands-AI/agent-sdk.git", subdirectory = "openhands/tools", rev = "50b094a92817e448ec4352d2950df4f19edd5a9f" }
+# UNCOMMENT TO USE EXACT COMMIT FROM AGENT-SDK
+
+# [tool.uv.sources]
+# openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "7b695dc519084e75c482b34473e714845d6cef92" }
+# openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "7b695dc519084e75c482b34473e714845d6cef92" }

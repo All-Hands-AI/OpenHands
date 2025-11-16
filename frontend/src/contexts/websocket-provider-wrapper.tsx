@@ -1,6 +1,7 @@
 import React from "react";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { ConversationWebSocketProvider } from "#/contexts/conversation-websocket-context";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 
 interface WebSocketProviderWrapperProps {
   children: React.ReactNode;
@@ -33,6 +34,9 @@ export function WebSocketProviderWrapper({
   conversationId,
   version,
 }: WebSocketProviderWrapperProps) {
+  // Get conversation data for V1 provider
+  const { data: conversation } = useActiveConversation();
+
   if (version === 0) {
     return (
       <WsClientProvider conversationId={conversationId}>
@@ -43,7 +47,11 @@ export function WebSocketProviderWrapper({
 
   if (version === 1) {
     return (
-      <ConversationWebSocketProvider conversationId={conversationId}>
+      <ConversationWebSocketProvider
+        conversationId={conversationId}
+        conversationUrl={conversation?.url}
+        sessionApiKey={conversation?.session_api_key}
+      >
         {children}
       </ConversationWebSocketProvider>
     );

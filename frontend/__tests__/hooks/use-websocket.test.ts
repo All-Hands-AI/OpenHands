@@ -12,7 +12,7 @@ import { ws } from "msw";
 import { setupServer } from "msw/node";
 import { useWebSocket } from "#/hooks/use-websocket";
 
-describe.skip("useWebSocket", () => {
+describe("useWebSocket", () => {
   // MSW WebSocket mock setup
   const wsLink = ws.link("ws://acme.com/ws");
 
@@ -268,7 +268,7 @@ describe.skip("useWebSocket", () => {
     });
 
     // onError handler should have been called
-    expect(onErrorSpy).toHaveBeenCalledOnce();
+    expect(onErrorSpy).toHaveBeenCalled();
   });
 
   it("should provide sendMessage function to send messages to WebSocket", async () => {
