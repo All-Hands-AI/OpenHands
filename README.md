@@ -76,8 +76,6 @@ Enterprise contracts also come with extended support and access to our research 
 
 [Learn more at openhands.dev/enterprise](https://openhands.dev/enterprise)
 
----
-
 ### Everything Else
 
 You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE)
