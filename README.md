@@ -32,9 +32,10 @@
 
 There are a few ways to work with OpenHands:
 
-- The lightweight [Python SDK](https://github.com/All-Hands-AI/agent-sdk/)
+- [OpenHands Software Agent SDK](https://github.com/All-Hands-AI/agent-sdk/)
+    - A composable Python library that contains all of our agentic tech
     - This is the engine that powers everything else below
-    - You can run agents locally, or manage 1000s of agents in the cloud
+    - Define agents in code, then run them locally, or scale to 1000s of agents in the cloud
 - [OpenHands CLI](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) (a la Claude Code)
 - [OpenHands Web](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) (a la Devin)
     - Runs on your laptop, comes with a REST API and web app
