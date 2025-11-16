@@ -27,7 +27,7 @@
 </div>
 
 
-🙌 Welcome to OpenHands, a [community](https://www.notion.so/OpenHands-V1-Readme-26d7be798a17807eb33ce3fe741ec4e5?pvs=21) focused on AI-driven development. We’d love for you to [join us on Slack](https://dub.sh/openhands).
+🙌 Welcome to OpenHands, a [community](COMMUNITY.md) focused on AI-driven development. We’d love for you to [join us on Slack](https://dub.sh/openhands).
 
 There are a few ways to work with OpenHands:
 
