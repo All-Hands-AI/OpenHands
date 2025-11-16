@@ -32,26 +32,41 @@
 
 There are a few ways to work with OpenHands:
 
-- [OpenHands Software Agent SDK](https://github.com/All-Hands-AI/agent-sdk/)
-    - A composable Python library that contains all of our agentic tech
-    - This is the engine that powers everything else below
-    - Define agents in code, then run them locally, or scale to 1000s of agents in the cloud
-- [OpenHands CLI](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) (a la Claude Code)
-- [OpenHands Web](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) (a la Devin)
-    - Runs on your laptop, comes with a REST API and web app
-- [OpenHands Cloud](https://app.all-hands.dev)
-    - A commercial deployment of OpenHands Web
-    - Comes with source-available features and integrations:
-        - Deeper integrations with GitHub, GitLab, and Bitbucket
-        - Integrations with Slack, Jira, and Linear
-        - Multi-user support
-        - RBAC and permissions
-        - Collaboration features (e.g., conversation sharing)
-        - Usage reporting
-        - Budgeting enforcement
-- [OpenHands Enterprise](https://openhands.dev/enterprise)
-    - A self-hosted version of OpenHands Cloud
-    - Runs on Kubernetes
-    - Comes with extended support and access to our research team
+#### [OpenHands Software Agent SDK](https://github.com/All-Hands-AI/agent-sdk/)
+This is a composable Python library that contains all of our agentic tech. The SDK is the engine that powers everything else below.
+
+Define agents in code, then run them locally, or scale to 1000s of agents in the cloud
+
+#### [OpenHands CLI](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) (a la Claude Code)
+This is the easiest way to start using OpenHands. The experience will be familiar to anyone who has worked
+with a CLI-based agent. You can power it with Claude, GPT, or any other LLM.
+
+[View the source](https://github.com/OpenHands/OpenHands-CLI) or [check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode)
+
+#### [OpenHands Web](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) (a la Devin)
+OpenHands Web is a GUI for running agents on your laptop. It comes with a REST API and a single-page application.
+
+#### [OpenHands Cloud](https://app.all-hands.dev)
+This is a commercial deployment of OpenHands Web, running on hosted infrastructure.
+
+OpenHands Cloud comes with source-available features and integrations:
+- Deeper integrations with GitHub, GitLab, and Bitbucket
+- Integrations with Slack, Jira, and Linear
+- Multi-user support
+- RBAC and permissions
+- Collaboration features (e.g., conversation sharing)
+- Usage reporting
+- Budgeting enforcement
+
+#### [OpenHands Enterprise](https://openhands.dev/enterprise)
+Large enterprises can work with us to self-host OpenHands Cloud in their own VPC, via Kubernetes.
+OpenHands Enterprise can also work with the CLI and SDK above.
+
+OpenHands Enterprise is source-available--you can see all the source code here in the enterprise/ directory,
+but you'll need to purchase a license if you want to run it for more than one month.
+
+Enterprise contracts also come with extended support and access to our research team.
+
+#### Everything Else
 
 You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE)
