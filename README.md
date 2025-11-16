@@ -32,22 +32,29 @@
 
 There are a few ways to work with OpenHands:
 
-#### [OpenHands Software Agent SDK](https://github.com/All-Hands-AI/agent-sdk/)
+### OpenHands Software Agent SDK
 This is a composable Python library that contains all of our agentic tech. The SDK is the engine that powers everything else below.
 
 Define agents in code, then run them locally, or scale to 1000s of agents in the cloud
 
-#### [OpenHands CLI](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) (a la Claude Code)
+[Check out the docs](https://docs.openhands.dev/sdk) or [view the source](https://github.com/All-Hands-AI/agent-sdk/)
+
+### OpenHands CLI (a la Claude Code)
 This is the easiest way to start using OpenHands. The experience will be familiar to anyone who has worked
 with a CLI-based agent. You can power it with Claude, GPT, or any other LLM.
 
-[View the source](https://github.com/OpenHands/OpenHands-CLI) or [check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode)
+[Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) or [view the source](https://github.com/OpenHands/OpenHands-CLI)
 
-#### [OpenHands Web](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) (a la Devin)
+### OpenHands Web (a la Devin)
+
 OpenHands Web is a GUI for running agents on your laptop. It comes with a REST API and a single-page application.
 
-#### [OpenHands Cloud](https://app.all-hands.dev)
+[Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) or view the source in this repo.
+
+### OpenHands Cloud
 This is a commercial deployment of OpenHands Web, running on hosted infrastructure.
+
+You can try it with a free $10 credit by [signing in with your GitHub account](https://app.all-hands.dev).
 
 OpenHands Cloud comes with source-available features and integrations:
 - Deeper integrations with GitHub, GitLab, and Bitbucket
@@ -58,7 +65,7 @@ OpenHands Cloud comes with source-available features and integrations:
 - Usage reporting
 - Budgeting enforcement
 
-#### [OpenHands Enterprise](https://openhands.dev/enterprise)
+### OpenHands Enterprise
 Large enterprises can work with us to self-host OpenHands Cloud in their own VPC, via Kubernetes.
 OpenHands Enterprise can also work with the CLI and SDK above.
 
@@ -67,6 +74,10 @@ but you'll need to purchase a license if you want to run it for more than one mo
 
 Enterprise contracts also come with extended support and access to our research team.
 
-#### Everything Else
+[Learn more at openhands.dev/enterprise](https://openhands.dev/enterprise)
+
+---
+
+### Everything Else
 
 You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE)
