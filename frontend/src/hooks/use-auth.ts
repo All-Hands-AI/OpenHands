@@ -1,96 +1,198 @@
+/* eslint max-classes-per-file: "off" */
+
 import {
-  ConnectPontemAccount,
   PontemWindow,
+  SignMessagePayload,
+  SignMessageResponse,
 } from "@pontem/aptos-wallet-adapter";
 import { createContext, useContext } from "react";
 
 declare const window: PontemWindow;
 
-export class AuthState {
-  connected: boolean;
+type SignMessageWithoutSignature = Omit<SignMessageResponse, "signature">;
 
-  token: string | null;
+class Message implements SignMessagePayload {
+  address: boolean = true; // Should we include the address of the account in the message
 
-  account: ConnectPontemAccount | null;
+  application: boolean = true; // Should we include the domain of the dapp
 
-  constructor() {
-    this.connected = false;
+  chainId: boolean = true; // Should we include the current chain id the wallet is connected to
 
-    this.account = null;
-    this.token = null;
+  message: string; // The message to be signed and displayed to the user
 
-    if (window.pontem !== null) this.init();
+  nonce: string; // A nonce the dapp should generate
+
+  constructor(message: string, nonce: string) {
+    this.message = message;
+    this.nonce = nonce;
+  }
+}
+
+class AuthToken {
+  static STORAGE_NAME: string = "auth_token";
+
+  token: string | null = null;
+
+  account: string | null = null;
+
+  verified_token: boolean | false = false;
+
+  constructor(load: boolean = true) {
+    if (!load) return;
+
+    let tokenValue: AuthToken | null = null;
+
+    const tokenValueString = localStorage.getItem(AuthToken.STORAGE_NAME);
+    if (tokenValueString !== null) {
+      try {
+        tokenValue = JSON.parse(tokenValueString);
+      } catch {
+        tokenValue = null;
+      }
+    } else {
+      return;
+    }
+
+    if (tokenValue !== null) {
+      Object.assign(this, tokenValue);
+    } else {
+      // @todo
+      // AuthToken.delete();
+    }
   }
 
-  set_defaults(): AuthState {
-    this.connected = false;
-    this.account = null;
-    this.token = null;
+  async connect(): Promise<boolean> {
+    return (await this.check()) || (await this.new());
+  }
 
+  async disconnect(): Promise<boolean> {
+    this.set_defaults();
+    return true;
+  }
+
+  async check(): Promise<boolean> {
+    if (this.token === null) {
+      this.set_defaults();
+      return false;
+    }
+    const token: AuthToken = await fetch("/api/token/status", {
+      method: "POST",
+      body: JSON.stringify(this),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }).then((r) => r.json());
+
+    Object.assign(this, token);
+    return this.verified_token;
+  }
+
+  async new(): Promise<boolean> {
+    this.set_defaults();
+
+    if (!window.pontem) return false;
+    this.account = await window.pontem?.account();
+
+    const newToken: AuthToken = await fetch("/api/token/new", {
+      method: "POST",
+      body: JSON.stringify(this),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }).then((response) => response.json());
+
+    Object.assign(this, newToken);
+    this.save();
+
+    const newTokenString = JSON.stringify(newToken);
+
+    const { success, result: signMessage } = await window.pontem.signMessage(
+      new Message(
+        newTokenString,
+        Math.floor(Math.random() * 100000).toString(),
+      ),
+      {
+        useNewFormat: true,
+      },
+    );
+
+    if (!success) return false;
+    const signNormalize = (() => {
+      const message: SignMessageWithoutSignature =
+        signMessage as SignMessageWithoutSignature;
+      return {
+        ...message,
+        signature: Array.from(signMessage.signature),
+      };
+    })();
+
+    const verifyToken: AuthToken = await fetch("/api/token/verify", {
+      method: "POST",
+      body: JSON.stringify(signNormalize),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    }).then((response) => response.json());
+
+    Object.assign(this, verifyToken);
+    this.save();
+
+    return verifyToken.verified_token;
+  }
+
+  protected save(): void {
+    localStorage.setItem(AuthToken.STORAGE_NAME, JSON.stringify(this));
+  }
+
+  protected static delete(): void {
+    localStorage.removeItem(AuthToken.STORAGE_NAME);
+  }
+
+  protected set_defaults(): AuthToken {
+    Object.assign(this, new AuthToken(false));
+    this.save();
     return this;
   }
+}
 
-  protected async init(): Promise<AuthState> {
+export class AuthState {
+  connected: boolean = false;
+
+  token: AuthToken = new AuthToken(true);
+
+  async init(): Promise<AuthState> {
     const { pontem } = window;
-    if (
-      !pontem ||
-      !(await pontem.isConnected()) ||
-      !this.load_token().check_token()
-    )
-      return this;
 
-    this.account = await pontem.account();
+    if (!pontem || !(await pontem.isConnected())) return this;
+    if (!(await this.token.check())) return this;
+
     this.connected = true;
 
     return this;
   }
 
-  load_token(): AuthState {
-    this.token = localStorage.getItem("wallet_token");
-    return this;
-  }
-
-  get_new_token(): AuthState {
-    // @todo get token from backend
-    if (this.account === null)
-      throw new Error("There is no connection to the wallet account");
-    this.token = crypto.randomUUID();
-
-    localStorage.setItem("wallet_token", this.token);
-
-    return this;
-  }
-
-  check_token(): boolean {
-    // @todo check token on backend
-    return this.token !== null;
-  }
-
   async connect(): Promise<AuthState> {
+    this.connected = false;
     const { pontem } = window;
-    if (!pontem) return this.set_defaults();
+    if (!pontem) return this;
 
-    if (this.connected && this.check_token()) return this;
+    if (!(await pontem.isConnected())) await pontem.connect();
 
-    if (!(await pontem.isConnected())) {
-      this.account = await pontem.connect();
-    } else if (this.account === null) {
-      this.account = await pontem.account();
-    }
-
-    if (!this.check_token()) this.get_new_token();
-    if (this.token !== null) this.connected = true;
+    this.connected = await this.token.connect();
 
     return this;
   }
 
   async disconnect() {
-    this.set_defaults();
     const { pontem } = window;
-    if (!pontem) return;
-    await pontem.disconnect();
+    if (pontem) await pontem.disconnect();
+
+    Object.assign(this, new AuthState());
   }
 }
 
-const AuthContext = createContext<AuthState>(new AuthState());
+const AuthContext = createContext<AuthState>(await new AuthState().init());
 export const useAuthWallet = (): AuthState => useContext(AuthContext);
