@@ -27,8 +27,10 @@ import {
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
+import { isBudgetOrCreditError } from "#/utils/error-handler";
 import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
 import EventService from "#/api/event-service/event-service.api";
+import { useTracking } from "#/hooks/use-tracking";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type V1_WebSocketConnectionState =
@@ -69,6 +71,7 @@ export function ConversationWebSocketProvider({
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { setExecutionStatus } = useV1ConversationStateStore();
   const { appendInput, appendOutput } = useCommandStore();
+  const { trackCreditLimitReached } = useTracking();
 
   // History loading state
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -132,6 +135,13 @@ export function ConversationWebSocketProvider({
           // Handle AgentErrorEvent specifically
           if (isAgentErrorEvent(event)) {
             setErrorMessage(event.error);
+
+            // Track credit limit reached if the error is budget-related
+            if (isBudgetOrCreditError(event.error)) {
+              trackCreditLimitReached({
+                conversationId: conversationId || "unknown",
+              });
+            }
           }
 
           // Clear optimistic user message when a user message is confirmed

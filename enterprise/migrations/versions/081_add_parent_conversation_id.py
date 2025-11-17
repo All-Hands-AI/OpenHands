@@ -1,7 +1,7 @@
 """add parent_conversation_id to conversation_metadata
 
-Revision ID: 003
-Revises: 002
+Revision ID: 081
+Revises: 080
 Create Date: 2025-11-06 00:00:00.000000
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '003'
-down_revision: Union[str, None] = '002'
+revision: str = '081'
+down_revision: Union[str, None] = '080'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
