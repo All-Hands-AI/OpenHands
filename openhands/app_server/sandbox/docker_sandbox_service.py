@@ -5,6 +5,7 @@ import socket
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncGenerator
+from urllib.parse import urlparse, urlunparse
 
 import base62
 import docker
@@ -32,10 +33,33 @@ from openhands.app_server.sandbox.sandbox_service import (
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
+from openhands.utils.environment import is_running_in_docker
+
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
+
+
+def _replace_localhost_hostname(url: str, replacement: str = 'host.docker.internal') -> str:
+    """Replace localhost hostname in URL with the specified replacement.
+    
+    Only replaces the hostname if it's exactly 'localhost', preserving all other
+    parts of the URL including port, path, query parameters, etc.
+    
+    Args:
+        url: The URL to process
+        replacement: The hostname to replace localhost with
+        
+    Returns:
+        URL with localhost hostname replaced, or original URL if hostname is not localhost
+    """
+    parsed = urlparse(url)
+    if parsed.hostname == 'localhost':
+        # Replace only the hostname part, preserving port and everything else
+        netloc = parsed.netloc.replace('localhost', replacement, 1)
+        return urlunparse(parsed._replace(netloc=netloc))
+    return url
 
 
 class VolumeMount(BaseModel):
@@ -185,8 +209,13 @@ class DockerSandboxService(SandboxService):
                 if exposed_url.name == AGENT_SERVER
             )
             try:
+                # When running in Docker, replace localhost hostname with host.docker.internal for internal requests
+                internal_url = app_server_url
+                if is_running_in_docker():
+                    internal_url = _replace_localhost_hostname(app_server_url)
+                
                 response = await self.httpx_client.get(
-                    f'{app_server_url}{self.health_check_path}'
+                    f'{internal_url}{self.health_check_path}'
                 )
                 response.raise_for_status()
             except asyncio.CancelledError:
