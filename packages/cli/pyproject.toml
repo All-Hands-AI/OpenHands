@@ -89,7 +89,6 @@ omit = [ "tests/*", "**/test_*" ]
 [tool.coverage.paths]
 source = [
   "openhands_cli/",
-  "openhands-cli/openhands_cli/",
 ]
 
 [tool.mypy]
