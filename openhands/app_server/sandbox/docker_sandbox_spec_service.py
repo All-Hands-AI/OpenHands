@@ -81,9 +81,9 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
             try:
                 docker_client.images.get(spec.id)
             except docker.errors.ImageNotFound:
-                _logger.info(f'⬇️ Pulling Docker Image: {spec.id}')
+                _logger.info(f'⬇️  Pulling Docker Image: {spec.id}')
                 await self._pull_with_progress_logging(docker_client, spec.id)
-                _logger.info(f'⬇️ Finished Pulling Docker Image: {spec.id}')
+                _logger.info(f'⬇️  Finished Pulling Docker Image: {spec.id}')
         except docker.errors.APIError as exc:
             raise SandboxError(f'Error Getting Docker Image: {spec.id}') from exc
 
@@ -91,7 +91,7 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         """Pull Docker image with periodic progress logging every 5 seconds."""
         # Event to signal when pull is complete
         pull_complete = asyncio.Event()
-        
+
         async def periodic_logger():
             """Log progress message every 5 seconds until pull is complete."""
             while not pull_complete.is_set():
@@ -101,7 +101,7 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
                 except asyncio.TimeoutError:
                     # 5 seconds elapsed, log progress message
                     _logger.info(f'🔄 Downloading Docker Image: {image_id}...')
-        
+
         async def pull_image():
             """Perform the actual Docker image pull."""
             try:
@@ -109,11 +109,11 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
                 await loop.run_in_executor(None, docker_client.images.pull, image_id)
             finally:
                 pull_complete.set()
-        
+
         # Run both tasks concurrently
         logger_task = asyncio.create_task(periodic_logger())
         pull_task = asyncio.create_task(pull_image())
-        
+
         try:
             # Wait for pull to complete
             await pull_task
