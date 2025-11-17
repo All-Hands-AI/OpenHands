@@ -44,14 +44,14 @@ with e.g. Claude Code or Codex. You can power it with Claude, GPT, or any other 
 
 [Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/cli-mode) or [view the source](https://github.com/OpenHands/OpenHands-CLI)
 
-### OpenHands Web
-OpenHands Web is a GUI for running agents on your laptop. It comes with a REST API and a single-page React application.
-The experience will be familiar to anyone who has used Devin or Jules
+### OpenHands Local GUI
+Use the Local GUI for running agents on your laptop. It comes with a REST API and a single-page React application.
+The experience will be familiar to anyone who has used Devin or Jules.
 
 [Check out the docs](https://docs.openhands.dev/openhands/usage/run-openhands/local-setup) or view the source in this repo.
 
 ### OpenHands Cloud
-This is a commercial deployment of OpenHands Web, running on hosted infrastructure.
+This is a commercial deployment of OpenHands GUI, running on hosted infrastructure.
 
 You can try it with a free $10 credit by [signing in with your GitHub account](https://app.all-hands.dev).
 
