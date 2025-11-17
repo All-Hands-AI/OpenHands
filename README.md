@@ -77,4 +77,11 @@ Enterprise contracts also come with extended support and access to our research 
 
 ### Everything Else
 
-You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE)
+Check out our [Product Roadmap](https://github.com/orgs/openhands/projects/1), and feel free to
+[open up an issue](https://github.com/OpenHands/OpenHands/issues) if there's something you'd like to see!
+
+You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE).
+
+If you need help with anything, or just want to chat, [come find us on Slack](https://dub.sh/openhands).
+
+
