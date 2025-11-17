@@ -82,6 +82,9 @@ Check out our [Product Roadmap](https://github.com/orgs/openhands/projects/1), a
 
 You might also be interested in our [evaluation infrastructure](https://github.com/OpenHands/benchmarks), our [chrome extension](https://github.com/OpenHands/openhands-chrome-extension/), or our [Theory-of-Mind module](https://github.com/OpenHands/ToM-SWE).
 
+All our work is available under the MIT license, except for the `enterprise/` directory in this repository (see the [enterprise license](enterprise/LICENSE) for details).
+The core `openhands` and `agent-server` Docker images are fully MIT-licensed as well.
+
 If you need help with anything, or just want to chat, [come find us on Slack](https://dub.sh/openhands).
 
 
