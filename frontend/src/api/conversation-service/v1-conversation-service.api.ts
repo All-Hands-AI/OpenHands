@@ -60,6 +60,8 @@ class V1ConversationService {
     selected_branch?: string,
     conversationInstructions?: string,
     trigger?: ConversationTrigger,
+    parent_conversation_id?: string,
+    agent_type?: "default" | "plan",
   ): Promise<V1AppConversationStartTask> {
     const body: V1AppConversationStartRequest = {
       selected_repository: selectedRepository,
@@ -67,6 +69,8 @@ class V1ConversationService {
       selected_branch,
       title: conversationInstructions,
       trigger,
+      parent_conversation_id: parent_conversation_id || null,
+      agent_type,
     };
 
     // Add initial message if provided

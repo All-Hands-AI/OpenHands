@@ -192,7 +192,7 @@ class DockerSandboxService(SandboxService):
             except asyncio.CancelledError:
                 raise
             except Exception as exc:
-                _logger.info(f'Sandbox server not running: {exc}')
+                _logger.info(f'Sandbox server not running: {app_server_url} : {exc}')
                 sandbox_info.status = SandboxStatus.ERROR
                 sandbox_info.exposed_urls = None
                 sandbox_info.session_api_key = None
