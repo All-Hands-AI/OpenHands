@@ -21,6 +21,7 @@ from openhands.app_server.sandbox.docker_sandbox_service import (
     DockerSandboxService,
     ExposedPort,
     VolumeMount,
+    _replace_localhost_hostname,
 )
 from openhands.app_server.sandbox.sandbox_models import (
     AGENT_SERVER,
@@ -810,3 +811,166 @@ class TestExposedPort:
         port = ExposedPort(name='test', description='Test port')
         with pytest.raises(ValueError):  # Should raise validation error
             port.name = 'new_name'
+
+
+class TestReplaceLocalhostHostname:
+    """Test cases for _replace_localhost_hostname function."""
+
+    def test_replace_localhost_basic(self):
+        """Test basic localhost replacement."""
+        # Basic HTTP URL
+        result = _replace_localhost_hostname('http://localhost:8080')
+        assert result == 'http://host.docker.internal:8080'
+
+        # HTTPS URL
+        result = _replace_localhost_hostname('https://localhost:443')
+        assert result == 'https://host.docker.internal:443'
+
+        # No port specified
+        result = _replace_localhost_hostname('http://localhost')
+        assert result == 'http://host.docker.internal'
+
+    def test_replace_localhost_with_path_and_query(self):
+        """Test localhost replacement preserving path and query parameters."""
+        # With path
+        result = _replace_localhost_hostname('http://localhost:3000/api/health')
+        assert result == 'http://host.docker.internal:3000/api/health'
+
+        # With query parameters containing localhost
+        result = _replace_localhost_hostname('http://localhost:8080/path?param=localhost&other=value')
+        assert result == 'http://host.docker.internal:8080/path?param=localhost&other=value'
+
+        # With path containing localhost
+        result = _replace_localhost_hostname('http://localhost:9000/localhost/endpoint')
+        assert result == 'http://host.docker.internal:9000/localhost/endpoint'
+
+        # With fragment
+        result = _replace_localhost_hostname('http://localhost:8080/path#localhost')
+        assert result == 'http://host.docker.internal:8080/path#localhost'
+
+    def test_replace_localhost_with_authentication(self):
+        """Test localhost replacement with authentication in URL."""
+        result = _replace_localhost_hostname('http://user:pass@localhost:8080/path')
+        assert result == 'http://user:pass@host.docker.internal:8080/path'
+
+        result = _replace_localhost_hostname('https://admin:secret@localhost:443/admin')
+        assert result == 'https://admin:secret@host.docker.internal:443/admin'
+
+    def test_replace_localhost_different_protocols(self):
+        """Test localhost replacement with different protocols."""
+        # FTP
+        result = _replace_localhost_hostname('ftp://localhost:21/files')
+        assert result == 'ftp://host.docker.internal:21/files'
+
+        # WebSocket
+        result = _replace_localhost_hostname('ws://localhost:8080/socket')
+        assert result == 'ws://host.docker.internal:8080/socket'
+
+        # WebSocket Secure
+        result = _replace_localhost_hostname('wss://localhost:443/secure-socket')
+        assert result == 'wss://host.docker.internal:443/secure-socket'
+
+    def test_no_replacement_for_non_localhost(self):
+        """Test that non-localhost hostnames are not replaced."""
+        # IP address
+        result = _replace_localhost_hostname('http://127.0.0.1:8080')
+        assert result == 'http://127.0.0.1:8080'
+
+        # Different hostname
+        result = _replace_localhost_hostname('http://example.com:8080')
+        assert result == 'http://example.com:8080'
+
+        # Hostname containing localhost but not exact match
+        result = _replace_localhost_hostname('http://mylocalhost:8080')
+        assert result == 'http://mylocalhost:8080'
+
+        # Subdomain of localhost
+        result = _replace_localhost_hostname('http://api.localhost:8080')
+        assert result == 'http://api.localhost:8080'
+
+        # localhost as subdomain
+        result = _replace_localhost_hostname('http://localhost.example.com:8080')
+        assert result == 'http://localhost.example.com:8080'
+
+    def test_custom_replacement_hostname(self):
+        """Test using custom replacement hostname."""
+        result = _replace_localhost_hostname('http://localhost:8080', 'custom.host')
+        assert result == 'http://custom.host:8080'
+
+        result = _replace_localhost_hostname('https://localhost:443/path', 'internal.docker')
+        assert result == 'https://internal.docker:443/path'
+
+    def test_edge_cases(self):
+        """Test edge cases and malformed URLs."""
+        # Empty string
+        result = _replace_localhost_hostname('')
+        assert result == ''
+
+        # Malformed URL (no protocol)
+        result = _replace_localhost_hostname('localhost:8080')
+        assert result == 'localhost:8080'
+
+        # Just hostname
+        result = _replace_localhost_hostname('localhost')
+        assert result == 'localhost'
+
+        # URL with no hostname
+        result = _replace_localhost_hostname('http://:8080/path')
+        assert result == 'http://:8080/path'
+
+        # Invalid URL structure
+        result = _replace_localhost_hostname('not-a-url')
+        assert result == 'not-a-url'
+
+    def test_complex_urls(self):
+        """Test complex URL scenarios."""
+        # Multiple query parameters and fragments
+        complex_url = 'http://localhost:8080/api/v1/health?timeout=30&retry=3&host=localhost#section'
+        result = _replace_localhost_hostname(complex_url)
+        expected = 'http://host.docker.internal:8080/api/v1/health?timeout=30&retry=3&host=localhost#section'
+        assert result == expected
+
+        # URL with encoded characters
+        encoded_url = 'http://localhost:8080/path%20with%20spaces?param=value%20with%20spaces'
+        result = _replace_localhost_hostname(encoded_url)
+        expected = 'http://host.docker.internal:8080/path%20with%20spaces?param=value%20with%20spaces'
+        assert result == expected
+
+    def test_integration_with_docker_detection(self):
+        """Test integration scenario similar to actual usage."""
+        # Simulate the actual usage pattern in the code
+        app_server_url = 'http://localhost:35375'
+        
+        # This is how it's used in the actual code
+        internal_url = _replace_localhost_hostname(app_server_url)
+        
+        assert internal_url == 'http://host.docker.internal:35375'
+        
+        # Test with health check path appended
+        health_check_url = f'{internal_url}/health'
+        assert health_check_url == 'http://host.docker.internal:35375/health'
+
+    def test_preserves_original_url_structure(self):
+        """Test that all URL components are preserved correctly."""
+        original_url = 'https://user:pass@localhost:8443/api/v1/endpoint?param1=value1&param2=value2#fragment'
+        result = _replace_localhost_hostname(original_url)
+        expected = 'https://user:pass@host.docker.internal:8443/api/v1/endpoint?param1=value1&param2=value2#fragment'
+        
+        assert result == expected
+        
+        # Verify each component is preserved
+        from urllib.parse import urlparse
+        original_parsed = urlparse(original_url)
+        result_parsed = urlparse(result)
+        
+        assert original_parsed.scheme == result_parsed.scheme
+        assert original_parsed.username == result_parsed.username
+        assert original_parsed.password == result_parsed.password
+        assert original_parsed.port == result_parsed.port
+        assert original_parsed.path == result_parsed.path
+        assert original_parsed.query == result_parsed.query
+        assert original_parsed.fragment == result_parsed.fragment
+        
+        # Only hostname should be different
+        assert original_parsed.hostname == 'localhost'
+        assert result_parsed.hostname == 'host.docker.internal'
