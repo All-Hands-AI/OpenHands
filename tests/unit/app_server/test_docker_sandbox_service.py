@@ -837,8 +837,13 @@ class TestReplaceLocalhostHostname:
         assert result == 'http://host.docker.internal:3000/api/health'
 
         # With query parameters containing localhost
-        result = _replace_localhost_hostname('http://localhost:8080/path?param=localhost&other=value')
-        assert result == 'http://host.docker.internal:8080/path?param=localhost&other=value'
+        result = _replace_localhost_hostname(
+            'http://localhost:8080/path?param=localhost&other=value'
+        )
+        assert (
+            result
+            == 'http://host.docker.internal:8080/path?param=localhost&other=value'
+        )
 
         # With path containing localhost
         result = _replace_localhost_hostname('http://localhost:9000/localhost/endpoint')
@@ -897,7 +902,9 @@ class TestReplaceLocalhostHostname:
         result = _replace_localhost_hostname('http://localhost:8080', 'custom.host')
         assert result == 'http://custom.host:8080'
 
-        result = _replace_localhost_hostname('https://localhost:443/path', 'internal.docker')
+        result = _replace_localhost_hostname(
+            'https://localhost:443/path', 'internal.docker'
+        )
         assert result == 'https://internal.docker:443/path'
 
     def test_edge_cases(self):
@@ -931,7 +938,9 @@ class TestReplaceLocalhostHostname:
         assert result == expected
 
         # URL with encoded characters
-        encoded_url = 'http://localhost:8080/path%20with%20spaces?param=value%20with%20spaces'
+        encoded_url = (
+            'http://localhost:8080/path%20with%20spaces?param=value%20with%20spaces'
+        )
         result = _replace_localhost_hostname(encoded_url)
         expected = 'http://host.docker.internal:8080/path%20with%20spaces?param=value%20with%20spaces'
         assert result == expected
@@ -940,12 +949,12 @@ class TestReplaceLocalhostHostname:
         """Test integration scenario similar to actual usage."""
         # Simulate the actual usage pattern in the code
         app_server_url = 'http://localhost:35375'
-        
+
         # This is how it's used in the actual code
         internal_url = _replace_localhost_hostname(app_server_url)
-        
+
         assert internal_url == 'http://host.docker.internal:35375'
-        
+
         # Test with health check path appended
         health_check_url = f'{internal_url}/health'
         assert health_check_url == 'http://host.docker.internal:35375/health'
@@ -955,14 +964,15 @@ class TestReplaceLocalhostHostname:
         original_url = 'https://user:pass@localhost:8443/api/v1/endpoint?param1=value1&param2=value2#fragment'
         result = _replace_localhost_hostname(original_url)
         expected = 'https://user:pass@host.docker.internal:8443/api/v1/endpoint?param1=value1&param2=value2#fragment'
-        
+
         assert result == expected
-        
+
         # Verify each component is preserved
         from urllib.parse import urlparse
+
         original_parsed = urlparse(original_url)
         result_parsed = urlparse(result)
-        
+
         assert original_parsed.scheme == result_parsed.scheme
         assert original_parsed.username == result_parsed.username
         assert original_parsed.password == result_parsed.password
@@ -970,7 +980,7 @@ class TestReplaceLocalhostHostname:
         assert original_parsed.path == result_parsed.path
         assert original_parsed.query == result_parsed.query
         assert original_parsed.fragment == result_parsed.fragment
-        
+
         # Only hostname should be different
         assert original_parsed.hostname == 'localhost'
         assert result_parsed.hostname == 'host.docker.internal'
