@@ -87,7 +87,9 @@ class DockerSandboxSpecServiceInjector(SandboxSpecServiceInjector):
         except docker.errors.APIError as exc:
             raise SandboxError(f'Error Getting Docker Image: {spec.id}') from exc
 
-    async def _pull_with_progress_logging(self, docker_client: docker.DockerClient, image_id: str):
+    async def _pull_with_progress_logging(
+        self, docker_client: docker.DockerClient, image_id: str
+    ):
         """Pull Docker image with periodic progress logging every 5 seconds."""
         # Event to signal when pull is complete
         pull_complete = asyncio.Event()
