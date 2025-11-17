@@ -26,7 +26,7 @@ check_tools
 ##
 OPENHANDS_WORKSPACE=$(git rev-parse --show-toplevel)
 
-cd "$OPENHANDS_WORKSPACE/containers/dev/" || exit 1
+cd "$OPENHANDS_WORKSPACE/deployment/docker/dev/" || exit 1
 
 ##
 export BACKEND_HOST="0.0.0.0"

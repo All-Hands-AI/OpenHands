@@ -4,7 +4,7 @@ services:
     privileged: true
     build:
       context: ${OPENHANDS_WORKSPACE:-../../}
-      dockerfile: ./containers/dev/Dockerfile
+      dockerfile: ./deployment/docker/dev/Dockerfile
     image: openhands:dev
     container_name: openhands-dev
     environment:

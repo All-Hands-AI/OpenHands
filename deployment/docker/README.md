@@ -7,6 +7,6 @@ by the `ghcr.yml` workflow.
 ## Building Manually
 
 ```bash
-docker build -f containers/app/Dockerfile -t openhands .
-docker build -f containers/sandbox/Dockerfile -t sandbox .
+docker build -f deployment/docker/app/Dockerfile -t openhands .
+docker build -f deployment/docker/sandbox/Dockerfile -t sandbox .
 ```

@@ -8,7 +8,7 @@ Install [Docker](https://docs.docker.com/engine/install/) on your host machine a
 ```bash
 make docker-dev
 # same as:
-cd ./containers/dev
+cd ./deployment/docker/dev
 ./dev.sh
 ```
 
@@ -51,7 +51,7 @@ You could optionally pass additional options to the build script.
 ```bash
 make docker-dev OPTIONS="--build"
 # or
-./containers/dev/dev.sh --build
+./deployment/docker/dev/dev.sh --build
 ```
 
 See [docker compose run](https://docs.docker.com/reference/cli/docker/compose/run/) for more options.

@@ -78,11 +78,11 @@ fi
 echo "Tags: ${tags[@]}"
 
 if [[ "$image_name" == "openhands" ]]; then
-  dir="./containers/app"
+  dir="./deployment/docker/app"
 elif [[ "$image_name" == "runtime" ]]; then
-  dir="./containers/runtime"
+  dir="./deployment/docker/runtime"
 else
-  dir="./containers/$image_name"
+  dir="./deployment/docker/$image_name"
 fi
 
 if [[ (! -f "$dir/Dockerfile") && "$image_name" != "runtime" ]]; then
