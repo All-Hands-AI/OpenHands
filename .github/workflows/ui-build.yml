@@ -1,14 +1,14 @@
 name: Run UI Component Build
 
 # * Always run on "main"
-# * Run on PRs that have changes in the "openhands-ui" folder or this workflow
+# * Run on PRs that have changes in the "packages/ui" folder or this workflow
 on:
   push:
     branches:
       - main
   pull_request:
     paths:
-      - 'openhands-ui/**'
+      - 'packages/ui/**'
       -  '.github/workflows/ui-build.yml'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
@@ -18,17 +18,17 @@ concurrency:
 
 jobs:
   ui-build:
-    name: Build openhands-ui
+    name: Build packages/ui
     runs-on: blacksmith-4vcpu-ubuntu-2204
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version-file: "openhands-ui/.bun-version"
+          bun-version-file: "packages/ui/.bun-version"
       - name: Install dependencies
-        working-directory: ./openhands-ui
+        working-directory: ./packages/ui
         run: bun install --frozen-lockfile
       - name: Build package
-        working-directory:  ./openhands-ui
+        working-directory:  ./packages/ui
         run: bun run build

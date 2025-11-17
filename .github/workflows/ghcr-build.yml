@@ -82,7 +82,7 @@ jobs:
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
+          ./deployment/docker/build.sh -i openhands -o ${{ env.REPO_OWNER }} --push
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
@@ -124,7 +124,7 @@ jobs:
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
       - name: Create source distribution and Dockerfile
-        run: poetry run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
+        run: poetry run python3 -m openhands.runtime.utils.runtime_build --base_image ${{ matrix.base_image.image }} --build_folder deployment/docker/runtime --force_rebuild
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -136,7 +136,7 @@ jobs:
         shell: bash
         run: |
 
-          ./containers/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
+          ./deployment/docker/build.sh -i runtime -o ${{ env.REPO_OWNER }} -t ${{ matrix.base_image.tag }} --dry
 
           DOCKER_BUILD_JSON=$(jq -c . < docker-build-dry.json)
           echo "DOCKER_TAGS=$(echo "$DOCKER_BUILD_JSON" | jq -r '.tags | join(",")')" >> $GITHUB_ENV
@@ -150,7 +150,7 @@ jobs:
           tags: ${{ env.DOCKER_TAGS }}
           platforms: ${{ env.DOCKER_PLATFORM }}
           build-args: ${{ env.DOCKER_BUILD_ARGS }}
-          context: containers/runtime
+          context: deployment/docker/runtime
           provenance: false
       # Forked repos can't push to GHCR, so we just build in order to populate the cache for rebuilding
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
@@ -158,13 +158,13 @@ jobs:
         uses: useblacksmith/build-push-action@v1
         with:
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
-          context: containers/runtime
+          context: deployment/docker/runtime
       - name: Upload runtime source for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
-          path: containers/runtime
+          path: deployment/docker/runtime
 
   ghcr_build_enterprise:
     name: Push Enterprise Image
@@ -271,7 +271,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
-          path: containers/runtime
+          path: deployment/docker/runtime
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -282,7 +282,7 @@ jobs:
         with:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
-          context: containers/runtime
+          context: deployment/docker/runtime
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
@@ -333,7 +333,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: runtime-src-${{ matrix.base_image.tag }}
-          path: containers/runtime
+          path: deployment/docker/runtime
       - name: Lowercase Repository Owner
         run: |
           echo REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
@@ -344,7 +344,7 @@ jobs:
         with:
           load: true
           tags: ghcr.io/${{ env.REPO_OWNER }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
-          context: containers/runtime
+          context: deployment/docker/runtime
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python

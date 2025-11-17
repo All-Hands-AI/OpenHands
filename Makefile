@@ -160,11 +160,11 @@ install-python-dependencies:
 			poetry run pip install playwright; \
 			poetry run playwright install chromium; \
 		else \
-			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
+			if [ ! -f .cache/playwright_chromium_is_installed.txt ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
 				poetry run playwright install --with-deps chromium; \
 				mkdir -p cache; \
-				touch cache/playwright_chromium_is_installed.txt; \
+				touch .cache/playwright_chromium_is_installed.txt; \
 			else \
 				echo "Setup already done. Skipping playwright installation."; \
 			fi \
@@ -214,7 +214,7 @@ kind:
 		kubectl config use-context kind-$(KIND_CLUSTER_NAME); \
 	else \
 		echo "$(YELLOW)Creating kind cluster '$(KIND_CLUSTER_NAME)'...$(RESET)"; \
-		kind create cluster --name $(KIND_CLUSTER_NAME) --config kind/cluster.yaml; \
+		kind create cluster --name $(KIND_CLUSTER_NAME) --config deployment/kubernetes/cluster.yaml; \
 	fi
 	@echo "$(YELLOW)Checking if mirrord is installed...$(RESET)"
 	@if ! command -v mirrord > /dev/null; then \
@@ -224,7 +224,7 @@ kind:
 		echo "$(BLUE)mirrord $(shell mirrord --version) is already installed.$(RESET)"; \
 	fi
 	@echo "$(YELLOW)Installing k8s mirrord resources...$(RESET)"
-	@kubectl apply -f kind/manifests
+	@kubectl apply -f deployment/kubernetes/manifests
 	@echo "$(GREEN)Mirrord resources installed successfully.$(RESET)"
 	@echo "$(YELLOW)Waiting for Mirrord pod to be ready.$(RESET)"
 	@sleep 5
@@ -341,7 +341,7 @@ docker-dev:
 		exit 0; \
 	else \
 		echo "$(YELLOW)Build and run in Docker $(OPTIONS)...$(RESET)"; \
-		./containers/dev/dev.sh $(OPTIONS); \
+		./deployment/docker/dev/dev.sh $(OPTIONS); \
 	fi
 
 # Clean up all caches

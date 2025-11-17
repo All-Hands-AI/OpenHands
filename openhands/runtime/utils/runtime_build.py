@@ -408,7 +408,7 @@ if __name__ == '__main__':
     if args.build_folder is not None:
         # If a build_folder is provided, we do not actually build the Docker image. We copy the necessary source code
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
-        # then be created using the Dockerfile (most likely using the containers/build.sh script)
+        # then be created using the Dockerfile (most likely using the deployment/docker/build.sh script)
         build_folder = args.build_folder
         assert os.path.exists(build_folder), (
             f'Build folder {build_folder} does not exist'
@@ -448,7 +448,7 @@ if __name__ == '__main__':
         )
 
         # We now update the config.sh in the build_folder to contain the required values. This is used in the
-        # containers/build.sh script which is called to actually build the Docker image
+        # deployment/docker/build.sh script which is called to actually build the Docker image
         with open(os.path.join(build_folder, 'config.sh'), 'a') as file:
             file.write(
                 (

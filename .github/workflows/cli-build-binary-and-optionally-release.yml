@@ -10,7 +10,7 @@ on:
       - "*-cli"
   pull_request:
     paths:
-      - "openhands-cli/**"
+      - "packages/cli/**"
 
 permissions:
   contents: write       # needed to create releases or upload assets
@@ -29,11 +29,11 @@ jobs:
           # Build on Ubuntu 22.04 for maximum GLIBC compatibility (GLIBC 2.31)
           - os: ubuntu-22.04
             platform: linux
-            artifact_name: openhands-cli-linux
+            artifact_name: packages/cli-linux
           # Build on macOS for macOS users
           - os: macos-15
             platform: macos
-            artifact_name: openhands-cli-macos
+            artifact_name: packages/cli-macos
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -53,12 +53,12 @@ jobs:
           version: "latest"
 
       - name: Install dependencies
-        working-directory: openhands-cli
+        working-directory: packages/cli
         run: |
           uv sync
 
       - name: Build binary executable
-        working-directory: openhands-cli
+        working-directory: packages/cli
         run: |
           ./build.sh --install-pyinstaller | tee output.log
           echo "Full output:"
@@ -73,7 +73,7 @@ jobs:
 
       - name: Verify binary files exist
         run: |
-          if ! ls openhands-cli/dist/openhands* 1> /dev/null 2>&1; then
+          if ! ls packages/cli/dist/openhands* 1> /dev/null 2>&1; then
             echo "❌ No binaries found to upload!"
             exit 1
           fi
@@ -83,7 +83,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: openhands-cli/dist/openhands*
+          path: packages/cli/dist/openhands*
           retention-days: 30
 
   create-github-release:
@@ -104,11 +104,11 @@ jobs:
         run: |
           mkdir -p release-assets
           # Copy binaries with appropriate names for release
-          if [ -f artifacts/openhands-cli-linux/openhands ]; then
-            cp artifacts/openhands-cli-linux/openhands release-assets/openhands-linux
+          if [ -f artifacts/packages/cli-linux/openhands ]; then
+            cp artifacts/packages/cli-linux/openhands release-assets/openhands-linux
           fi
-          if [ -f artifacts/openhands-cli-macos/openhands ]; then
-            cp artifacts/openhands-cli-macos/openhands release-assets/openhands-macos
+          if [ -f artifacts/packages/cli-macos/openhands ]; then
+            cp artifacts/packages/cli-macos/openhands release-assets/openhands-macos
           fi
           ls -la release-assets/
 
