@@ -75,7 +75,7 @@ class SaasSettingsStore(OssSettingsStore):
                     session.query(UserSettings)
                     .filter(
                         UserSettings.keycloak_user_id == self.user_id,
-                        UserSettings.migration_status.is_(False),
+                        UserSettings.already_migrated.is_(False),
                     )
                     .first()
                 )

@@ -1,7 +1,7 @@
 """create org tables from pgerd schema
 
-Revision ID: 081
-Revises: 080
+Revision ID: 082
+Revises: 081
 Create Date: 2025-01-07 00:00:00.000000
 
 """
@@ -13,8 +13,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '081'
-down_revision: Union[str, None] = '080'
+revision: str = '082'
+down_revision: Union[str, None] = '081'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,11 +24,11 @@ def upgrade() -> None:
     # Remove current settings table
     op.execute('DROP TABLE IF EXISTS settings')
 
-    # Add migration_status column to user_settings table
+    # Add already_migrated column to user_settings table
     op.add_column(
         'user_settings',
         sa.Column(
-            'migration_status',
+            'already_migrated',
             sa.Boolean,
             nullable=True,
             server_default=sa.text('false'),
@@ -230,8 +230,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Drop migration_status column from user_settings table
-    op.drop_column('user_settings', 'migration_status')
+    # Drop already_migrated column from user_settings table
+    op.drop_column('user_settings', 'already_migrated')
 
     # Drop foreign keys and columns added to existing tables
     op.drop_constraint(

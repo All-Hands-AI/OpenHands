@@ -6,6 +6,9 @@ from cryptography.fernet import Fernet
 from pydantic import SecretStr
 from server.config import get_config
 
+from openhands.app_server.config import get_global_config
+
+_jwt_service = None
 _fernet = None
 
 
@@ -18,7 +21,6 @@ def decrypt_model(decrypt_keys: list, model_instance) -> dict:
 
 
 def encrypt_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
-    fernet = get_fernet()
     for key, value in kwargs.items():
         if value is None:
             continue
@@ -28,29 +30,18 @@ def encrypt_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
             continue
 
         if key in encrypt_keys:
-            if isinstance(value, SecretStr):
-                value = b64encode(
-                    fernet.encrypt(value.get_secret_value().encode())
-                ).decode()
-            else:
-                value = b64encode(fernet.encrypt(value.encode())).decode()
+            value = encrypt_value(value)
             kwargs[key] = value
     return kwargs
 
 
 def decrypt_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
-    fernet = get_fernet()
     for key, value in kwargs.items():
         try:
             if value is None:
                 continue
             if key in encrypt_keys:
-                if isinstance(value, SecretStr):
-                    value = fernet.decrypt(
-                        b64decode(value.get_secret_value().encode())
-                    ).decode()
-                else:
-                    value = fernet.decrypt(b64decode(value.encode())).decode()
+                value = decrypt_value(value)
                 kwargs[key] = value
         except binascii.Error:
             pass  # Key is in legacy format...
@@ -58,15 +49,40 @@ def decrypt_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
 
 
 def encrypt_value(value: str | SecretStr) -> str:
-    if isinstance(value, SecretStr):
-        return b64encode(
-            get_fernet().encrypt(value.get_secret_value().encode())
-        ).decode()
-    else:
-        return b64encode(get_fernet().encrypt(value.encode())).decode()
+    return get_jwt_service().create_jwe_token(
+        {'v': value.get_secret_value() if isinstance(value, SecretStr) else value}
+    )
 
 
 def decrypt_value(value: str | SecretStr) -> str:
+    return get_jwt_service().create_jwe_token(
+        {'v': value.get_secret_value() if isinstance(value, SecretStr) else value}
+    )
+
+
+def get_jwt_service():
+    global _jwt_service
+    if _jwt_service is None:
+        jwt_service_injector = get_global_config().jwt
+        assert jwt_service_injector is not None
+        _jwt_service = jwt_service_injector.get_jwt_service()
+    return _jwt_service
+
+
+def decrypt_legacy_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
+    for key, value in kwargs.items():
+        try:
+            if value is None:
+                continue
+            if key in encrypt_keys:
+                value = decrypt_legacy_value(value)
+                kwargs[key] = value
+        except binascii.Error:
+            pass  # Key is in legacy format...
+    return kwargs
+
+
+def decrypt_legacy_value(value: str | SecretStr) -> str:
     if isinstance(value, SecretStr):
         return (
             get_fernet().decrypt(b64decode(value.get_secret_value().encode())).decode()

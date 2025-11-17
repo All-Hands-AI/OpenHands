@@ -88,7 +88,7 @@ class UserStore:
             return None
 
         # Check if user is already migrated to prevent double migration
-        if user_settings.migration_status is True:
+        if user_settings.already_migrated is True:
             logger.warning(f'User {user_id} already migrated, skipping')
             return UserStore.get_user_by_id(user_id)
         kwargs = decrypt_model(
@@ -159,7 +159,7 @@ class UserStore:
             session.add(org_member)
 
             # Mark the old user_settings as migrated instead of deleting
-            user_settings.migration_status = True
+            user_settings.already_migrated = True
             session.merge(user_settings)
             session.flush()
 
