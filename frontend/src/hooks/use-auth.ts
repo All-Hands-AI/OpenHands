@@ -190,7 +190,10 @@ export class AuthState {
     const { pontem } = window;
     if (pontem) await pontem.disconnect();
 
-    Object.assign(this, new AuthState());
+    const success: boolean = await fetch("/api/token", {
+      method: "DELETE",
+    }).then((response) => response.json());
+    if (success) Object.assign(this, new AuthState());
   }
 }
 
