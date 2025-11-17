@@ -85,7 +85,7 @@ RUN python openhands/core/download.py # No-op to download assets
 RUN find /app \! -group openhands -exec chgrp openhands {} +
 
 COPY --chown=openhands:openhands --chmod=770 --from=frontend-builder /app/build ./frontend/build
-COPY --chown=openhands:openhands --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY --chown=openhands:openhands --chmod=770 ./deployment/docker/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
 

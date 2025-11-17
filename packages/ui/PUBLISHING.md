@@ -7,10 +7,10 @@
 
 # Publishing a New Version
 
-1. **Update the version** in `openhands-ui/package.json`:
+1. **Update the version** in `packages/ui/package.json`:
 
    ```bash
-   cd openhands-ui
+   cd packages/ui
    # For patch release (1.0.0 → 1.0.1)
    npm version patch
 
@@ -40,7 +40,7 @@
 If the automated workflow fails, you can manually publish:
 
 ```bash
-cd openhands-ui
+cd packages/ui
 bun install
 bun run build
 npm publish

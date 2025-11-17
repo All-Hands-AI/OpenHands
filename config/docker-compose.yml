@@ -3,7 +3,7 @@ services:
   openhands:
     build:
       context: ./
-      dockerfile: ./containers/app/Dockerfile
+      dockerfile: ./deployment/docker/app/Dockerfile
     image: openhands:latest
     container_name: openhands-app-${DATE:-}
     environment:
