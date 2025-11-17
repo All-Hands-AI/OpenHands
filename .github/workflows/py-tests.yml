@@ -125,15 +125,15 @@ jobs:
           version: "latest"
 
       - name: Install dependencies
-        working-directory: ./openhands-cli
+        working-directory: ./packages/cli
         run: |
           uv sync --group dev
 
       - name: Run CLI unit tests
-        working-directory: ./openhands-cli
+        working-directory: ./packages/cli
         env:
           # write coverage to repo root so the merge step finds it
-          COVERAGE_FILE: "${{ github.workspace }}/.coverage.openhands-cli.${{ matrix.python-version }}"
+          COVERAGE_FILE: "${{ github.workspace }}/.coverage.packages-cli.${{ matrix.python-version }}"
         run: |
           uv run pytest --forked -n auto -s \
             -p no:ddtrace -p no:ddtrace.pytest_bdd -p no:ddtrace.pytest_benchmark \
@@ -142,8 +142,8 @@ jobs:
       - name: Store coverage file
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-openhands-cli
-          path: ".coverage.openhands-cli.${{ matrix.python-version }}"
+          name: coverage-packages-cli
+          path: ".coverage.packages-cli.${{ matrix.python-version }}"
           include-hidden-files: true
 
   coverage-comment:
@@ -165,7 +165,7 @@ jobs:
           merge-multiple: true
 
       - name: Create symlink for CLI source files
-        run: ln -sf openhands-cli/openhands_cli openhands_cli
+        run: ln -sf packages/cli/openhands_cli openhands_cli
 
       - name: Coverage comment
         id: coverage_comment

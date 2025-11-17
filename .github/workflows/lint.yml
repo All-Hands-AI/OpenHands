@@ -88,5 +88,5 @@ jobs:
       - name: Install pre-commit
         run: pip install pre-commit==4.2.0
       - name: Run pre-commit hooks
-        working-directory: ./openhands-cli
+        working-directory: ./packages/cli
         run: pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml
