@@ -33,34 +33,12 @@ from openhands.app_server.sandbox.sandbox_service import (
 )
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.utils.docker_utils import replace_localhost_hostname
 from openhands.utils.environment import is_running_in_docker
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
 WEBHOOK_CALLBACK_VARIABLE = 'OH_WEBHOOKS_0_BASE_URL'
-
-
-def _replace_localhost_hostname(
-    url: str, replacement: str = 'host.docker.internal'
-) -> str:
-    """Replace localhost hostname in URL with the specified replacement.
-
-    Only replaces the hostname if it's exactly 'localhost', preserving all other
-    parts of the URL including port, path, query parameters, etc.
-
-    Args:
-        url: The URL to process
-        replacement: The hostname to replace localhost with
-
-    Returns:
-        URL with localhost hostname replaced, or original URL if hostname is not localhost
-    """
-    parsed = urlparse(url)
-    if parsed.hostname == 'localhost':
-        # Replace only the hostname part, preserving port and everything else
-        netloc = parsed.netloc.replace('localhost', replacement, 1)
-        return urlunparse(parsed._replace(netloc=netloc))
-    return url
 
 
 class VolumeMount(BaseModel):
@@ -213,7 +191,7 @@ class DockerSandboxService(SandboxService):
                 # When running in Docker, replace localhost hostname with host.docker.internal for internal requests
                 internal_url = app_server_url
                 if is_running_in_docker():
-                    internal_url = _replace_localhost_hostname(app_server_url)
+                    internal_url = replace_localhost_hostname(app_server_url)
 
                 response = await self.httpx_client.get(
                     f'{internal_url}{self.health_check_path}'
