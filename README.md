@@ -74,7 +74,7 @@ but you'll need to purchase a license if you want to run it for more than one mo
 
 Enterprise contracts also come with extended support and access to our research team.
 
-[Learn more at openhands.dev/enterprise](https://openhands.dev/enterprise)
+Learn more at [openhands.dev/enterprise](https://openhands.dev/enterprise)
 
 ### Everything Else
 
