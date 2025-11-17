@@ -5,7 +5,6 @@ import socket
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import AsyncGenerator
-from urllib.parse import urlparse, urlunparse
 
 import base62
 import docker

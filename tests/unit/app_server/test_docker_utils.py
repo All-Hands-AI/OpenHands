@@ -1,5 +1,3 @@
-
-
 from openhands.app_server.utils.docker_utils import replace_localhost_hostname
 
 
