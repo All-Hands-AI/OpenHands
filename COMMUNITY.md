@@ -38,7 +38,7 @@ All Hands was founded by three of the first major contributors to OpenHands:
 - Graham Neubig, a CMU Professor who rallied the academic community around OpenHands
 - Robert Brennan, a software engineer who architected the user-facing features of OpenHands
 
-All Hands is an important part of the OpenHands ecosystem. We’ve raised over $20M—mainly to hire developers and researchers who can work on OpenHands full-time, and to provide them with expensive infrastructure. ([Join us!](https://allhandsai.applytojob.com/apply/))
+All Hands is an important part of the OpenHands ecosystem. We’ve raised over $5M—mainly to hire developers and researchers who can work on OpenHands full-time, and to provide them with expensive infrastructure. ([Join us!](https://allhandsai.applytojob.com/apply/))
 
 But we see OpenHands as much larger, and ultimately more important, than All Hands. When our financial responsibility to investors is at odds with our social responsibility to the community—as it inevitably will be, from time to time—we promise to navigate that conflict thoughtfully and transparently.
 
