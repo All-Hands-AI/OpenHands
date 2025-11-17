@@ -188,12 +188,11 @@ class DockerSandboxService(SandboxService):
             )
             try:
                 # When running in Docker, replace localhost hostname with host.docker.internal for internal requests
-                internal_url = app_server_url
                 if is_running_in_docker():
-                    internal_url = replace_localhost_hostname(app_server_url)
+                    app_server_url = replace_localhost_hostname(app_server_url)
 
                 response = await self.httpx_client.get(
-                    f'{internal_url}{self.health_check_path}'
+                    f'{app_server_url}{self.health_check_path}'
                 )
                 response.raise_for_status()
             except asyncio.CancelledError:
