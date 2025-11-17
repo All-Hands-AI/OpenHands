@@ -4,7 +4,7 @@ USER root
 # For https://github.com/OSU-NLP-Group/ScienceAgentBench/tree/main?tab=readme-ov-file#code-generation-with-agents
 
 RUN micromamba create -n sci-agent-eval python=3.10 pip setuptools wheel
-RUN micromamba run -n sci-agent-eval pip install pip-tools
+RUN micromamba run -n sci-agent-eval pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org pip-tools
 
 RUN mkdir -p /workspace
 WORKDIR /workspace
@@ -15,7 +15,7 @@ RUN git clone https://github.com/OSU-NLP-Group/ScienceAgentBench.git /workspace/
 RUN git checkout 4eddc7db6449a5ade3e37285747c8b208cd54ce7
 
 RUN micromamba create -n sci-agent python=3.10 pip setuptools wheel
-RUN micromamba run -n sci-agent pip install -r requirements.txt
+RUN micromamba run -n sci-agent pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Replace all occurrences of conda with micromamba under the /workspace
 RUN find ./ -type f -exec sed -i 's/conda/micromamba/g' {} \;

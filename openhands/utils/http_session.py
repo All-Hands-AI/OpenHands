@@ -8,7 +8,7 @@ import httpx
 from openhands.core.logger import openhands_logger as logger
 
 _client_lock = Lock()
-_verify_certificates: bool = True
+_verify_certificates: bool = False  # SSL/TLS verification disabled
 _client: httpx.Client | None = None
 
 

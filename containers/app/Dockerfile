@@ -3,6 +3,8 @@ FROM node:24.8-trixie-slim AS frontend-builder
 
 WORKDIR /app
 
+ENV NODE_TLS_REJECT_UNAUTHORIZED=0
+
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 
@@ -18,11 +20,15 @@ ENV PYTHONPATH='/app'
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    PYTHONHTTPSVERIFY=0 \
+    PIP_TRUSTED_HOST="pypi.org pypi.python.org files.pythonhosted.org" \
+    REQUESTS_CA_BUNDLE="" \
+    CURL_CA_BUNDLE=""
 
 RUN apt-get update -y \
     && apt-get install -y curl make git build-essential jq gettext \
-    && python3 -m pip install poetry --break-system-packages
+    && python3 -m pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org poetry --break-system-packages
 
 COPY pyproject.toml poetry.lock ./
 RUN touch README.md
@@ -69,7 +75,11 @@ USER openhands
 
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH='/app'
+    PYTHONPATH='/app' \
+    PYTHONHTTPSVERIFY=0 \
+    PIP_TRUSTED_HOST="pypi.org pypi.python.org files.pythonhosted.org" \
+    REQUESTS_CA_BUNDLE="" \
+    CURL_CA_BUNDLE=""
 
 COPY --chown=openhands:openhands --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

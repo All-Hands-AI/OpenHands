@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     VITE_BACKEND_HOST = "127.0.0.1:3000",
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
-    VITE_INSECURE_SKIP_VERIFY = "false",
+    VITE_INSECURE_SKIP_VERIFY = "true",  // SSL/TLS verification disabled by default
   } = loadEnv(mode, process.cwd());
 
   const USE_TLS = VITE_USE_TLS === "true";
