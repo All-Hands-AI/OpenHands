@@ -33,7 +33,6 @@ from openhands.app_server.sandbox.sandbox_service import (
 from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.utils.docker_utils import replace_localhost_hostname
-from openhands.utils.environment import is_running_in_docker
 
 _logger = logging.getLogger(__name__)
 SESSION_API_KEY_VARIABLE = 'OH_SESSION_API_KEYS_0'
@@ -188,8 +187,7 @@ class DockerSandboxService(SandboxService):
             )
             try:
                 # When running in Docker, replace localhost hostname with host.docker.internal for internal requests
-                if is_running_in_docker():
-                    app_server_url = replace_localhost_hostname(app_server_url)
+                app_server_url = replace_localhost_hostname(app_server_url)
 
                 response = await self.httpx_client.get(
                     f'{app_server_url}{self.health_check_path}'

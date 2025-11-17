@@ -1,5 +1,7 @@
 from urllib.parse import urlparse, urlunparse
 
+from openhands.utils.environment import is_running_in_docker
+
 
 def replace_localhost_hostname(
     url: str, replacement: str = 'host.docker.internal'
@@ -16,6 +18,8 @@ def replace_localhost_hostname(
     Returns:
         URL with localhost hostname replaced, or original URL if hostname is not localhost
     """
+    if not is_running_in_docker():
+        return url
     parsed = urlparse(url)
     if parsed.hostname == 'localhost':
         # Replace only the hostname part, preserving port and everything else
