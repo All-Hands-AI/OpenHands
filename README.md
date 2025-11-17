@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/All-Hands-AI/docs/main/openhands/static/img/logo.png" alt="Logo" width="200">
-  <h1 align="center">OpenHands: Code Less, Make More</h1>
+  <h1 align="center" style="border-bottom: none">OpenHands: AI-Driven Development</h1>
 </div>
 
 
@@ -26,6 +26,7 @@
 
 </div>
 
+<hr>
 
 🙌 Welcome to OpenHands, a [community](COMMUNITY.md) focused on AI-driven development. We’d love for you to [join us on Slack](https://dub.sh/openhands).
 
