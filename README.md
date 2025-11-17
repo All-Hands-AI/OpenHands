@@ -87,5 +87,3 @@ All our work is available under the MIT license, except for the `enterprise/` di
 The core `openhands` and `agent-server` Docker images are fully MIT-licensed as well.
 
 If you need help with anything, or just want to chat, [come find us on Slack](https://dub.sh/openhands).
-
-
