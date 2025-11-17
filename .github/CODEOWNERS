@@ -3,7 +3,7 @@
 
 # Frontend code owners
 /frontend/ @amanape
-/openhands-ui/ @amanape
+/packages/ui/ @amanape
 
 # Evaluation code owners
 /evaluation/ @xingyaoww @neubig

@@ -14,7 +14,7 @@ readme = "README.md"
 repository = "https://github.com/OpenHands/OpenHands"
 packages = [
   { include = "openhands/**/*" },
-  { include = "third_party/**/*" },
+  { include = "vendor/**/*" },
   { include = "pyproject.toml", to = "openhands" },
   { include = "poetry.lock", to = "openhands" },
 ]

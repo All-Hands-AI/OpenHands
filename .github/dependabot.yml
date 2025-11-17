@@ -75,6 +75,6 @@ updates:
 
   - package-ecosystem: "docker"
     directories:
-      - "containers/*"
+      - "deployment/docker/*"
     schedule:
       interval: "weekly"

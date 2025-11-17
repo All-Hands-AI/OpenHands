@@ -25,20 +25,20 @@ _THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
 
 # Dynamically discover and import third-party runtimes
 
-# Check if third_party package exists and discover runtimes
+# Check if vendor package exists and discover runtimes
 try:
-    import third_party.runtime.impl
+    import vendor.runtime.impl
 
-    third_party_base = 'third_party.runtime.impl'
+    vendor_base = 'vendor.runtime.impl'
 
     # List of potential third-party runtime modules to try
-    # These are discovered from the third_party directory structure
+    # These are discovered from the vendor directory structure
     potential_runtimes = []
     try:
         import pkgutil
 
         for importer, modname, ispkg in pkgutil.iter_modules(
-            third_party.runtime.impl.__path__
+            vendor.runtime.impl.__path__
         ):
             if ispkg:
                 potential_runtimes.append(modname)
@@ -49,7 +49,7 @@ try:
     # Try to import each discovered runtime
     for runtime_name in potential_runtimes:
         try:
-            module_path = f'{third_party_base}.{runtime_name}.{runtime_name}_runtime'
+            module_path = f'{vendor_base}.{runtime_name}.{runtime_name}_runtime'
             module = importlib.import_module(module_path)
 
             # Try different class name patterns
@@ -80,7 +80,7 @@ try:
             pass
 
 except ImportError:
-    # third_party package not available
+    # vendor package not available
     pass
 
 # Combine core and third-party runtimes

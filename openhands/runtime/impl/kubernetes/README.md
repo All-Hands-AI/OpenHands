@@ -76,7 +76,7 @@ make kind # target is stateless and will check for an existing kind cluster or m
 This command will:
 
 1. **Check Dependencies**: Verify that `kind`, `kubectl`, and `mirrord` are installed
-2. **Create KIND Cluster**: Create a local Kubernetes cluster named "local-hands" using the configuration in `kind/cluster.yaml`
+2. **Create KIND Cluster**: Create a local Kubernetes cluster named "local-hands" using the configuration in `deployment/kubernetes/cluster.yaml`
 3. **Deploy Infrastructure**: Apply Kubernetes manifests including:
    - Ubuntu development pod for runtime execution
    - Nginx ingress controller for HTTP routing
