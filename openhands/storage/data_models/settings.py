@@ -28,6 +28,8 @@ class Settings(BaseModel):
     llm_model: str | None = None
     llm_api_key: SecretStr | None = None
     llm_base_url: str | None = None
+    llm_vertex_ai_project: str | None = None
+    llm_vertex_ai_location: str | None = None
     remote_runtime_resource_factor: int | None = None
     # Planned to be removed from settings
     secrets_store: Secrets = Field(default_factory=Secrets, frozen=True)
