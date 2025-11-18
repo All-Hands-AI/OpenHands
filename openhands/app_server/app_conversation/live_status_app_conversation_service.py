@@ -493,7 +493,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         selected_repository: str | None,
         working_dir: str,
     ) -> list:
-        """Load microagents from all sources and merge them.
+        """Load skills from all sources and merge them.
 
         Args:
             remote_workspace: AsyncRemoteWorkspace for loading repo microagents
