@@ -30,6 +30,10 @@ RUN apt-get update -y \
     && apt-get install -y curl make git build-essential jq gettext \
     && python3 -m pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org poetry --break-system-packages
 
+# Set up pip configuration to disable SSL verification globally
+COPY pip.conf /etc/pip.conf
+ENV PIP_CONFIG_FILE=/etc/pip.conf
+
 COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 RUN export PYTHONHTTPSVERIFY=0 && \
@@ -42,6 +46,10 @@ RUN export PYTHONHTTPSVERIFY=0 && \
 FROM base AS openhands-app
 
 WORKDIR /app
+
+# Set up pip configuration to disable SSL verification globally
+COPY pip.conf /etc/pip.conf
+ENV PIP_CONFIG_FILE=/etc/pip.conf
 
 # re-declare for this section
 ARG OPENHANDS_BUILD_VERSION

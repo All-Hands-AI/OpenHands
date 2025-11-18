@@ -142,8 +142,11 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	@echo "$(YELLOW)Configuring Poetry to disable SSL verification...$(RESET)"
-	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
+	@echo "$(YELLOW)Configuring pip and Poetry to disable SSL verification...$(RESET)"
+	@mkdir -p ~/.config/pip ~/.pip
+	@cp pip.conf ~/.config/pip/pip.conf 2>/dev/null || true
+	@cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
+	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
@@ -152,10 +155,10 @@ install-python-dependencies:
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
