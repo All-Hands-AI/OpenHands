@@ -16,7 +16,7 @@ mkdir -p ~/.pip
 cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
 
 echo "Installing build tools..."
-pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org build wheel setuptools
+pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org --break-system-packages build wheel setuptools
 
 echo "Building package using python -m build (no isolation to avoid SSL issues)..."
 # Create/clean dist directory
