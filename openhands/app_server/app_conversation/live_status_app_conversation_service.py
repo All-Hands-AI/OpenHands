@@ -389,7 +389,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         if app_conversation_info is None:
             return None
         sandbox_status = sandbox.status if sandbox else SandboxStatus.MISSING
-        conversation_status = conversation_info.conversation_status if conversation_info else None
+        execution_status = conversation_info.execution_status if conversation_info else None
         conversation_url = None
         session_api_key = None
         if sandbox and sandbox.exposed_urls:
@@ -408,7 +408,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         return AppConversation(
             **app_conversation_info.model_dump(),
             sandbox_status=sandbox_status,
-            conversation_status=conversation_status,
+            execution_status=execution_status,
             conversation_url=conversation_url,
             session_api_key=session_api_key,
         )

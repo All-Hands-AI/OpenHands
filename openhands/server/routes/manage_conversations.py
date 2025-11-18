@@ -1445,7 +1445,7 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
             ConversationExecutionStatus.STUCK: RuntimeStatus.ERROR,
         }
         runtime_status = runtime_status_mapping.get(
-            app_conversation.conversation_status, RuntimeStatus.ERROR
+            app_conversation.execution_status, RuntimeStatus.ERROR
         )
     else:
         runtime_status = None

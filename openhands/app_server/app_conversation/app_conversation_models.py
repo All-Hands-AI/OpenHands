@@ -67,7 +67,7 @@ class AppConversation(AppConversationInfo):  # type: ignore
         default=SandboxStatus.MISSING,
         description='Current sandbox status. Will be MISSING if the sandbox does not exist.',
     )
-    conversation_status: ConversationExecutionStatus | None = Field(
+    execution_status: ConversationExecutionStatus | None = Field(
         default=None,
         description='Current agent status. Will be None if the sandbox_status is not RUNNING',
     )
