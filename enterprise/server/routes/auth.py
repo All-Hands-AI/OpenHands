@@ -363,7 +363,26 @@ async def accept_tos(request: Request):
     redirect_url = body.get('redirect_url', str(request.base_url))
 
     # Update user settings with TOS acceptance
+    accepted_tos: datetime = datetime.now(timezone.utc)
     with session_maker() as session:
+        user_settings = (
+            session.query(UserSettings)
+            .filter(UserSettings.keycloak_user_id == user_id)
+            .first()
+        )
+
+        if user_settings:
+            user_settings.accepted_tos = accepted_tos
+            session.merge(user_settings)
+        else:
+            # Create user settings if they don't exist
+            user_settings = UserSettings(
+                keycloak_user_id=user_id,
+                accepted_tos=accepted_tos,
+                user_version=0,  # This will trigger a migration to the latest version on next load
+            )
+            session.add(user_settings)
+
         user = session.query(User).filter(User.id == uuid.UUID(user_id)).first()
         if not user:
             session.rollback()
@@ -372,16 +391,15 @@ async def accept_tos(request: Request):
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'error': 'User does not exist'},
             )
-        user.accepted_tos = datetime.now(timezone.utc)
+        user.accepted_tos = accepted_tos
         session.commit()
-        signup_timestamp = user.accepted_tos.isoformat()
 
     logger.info(f'User {user_id} accepted TOS')
 
     # Track user signup completion in PostHog
     track_user_signup_completed(
         user_id=user_id,
-        signup_timestamp=signup_timestamp,
+        signup_timestamp=accepted_tos.isoformat(),
     )
 
     response = JSONResponse(

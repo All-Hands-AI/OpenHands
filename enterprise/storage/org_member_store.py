@@ -60,6 +60,13 @@ class OrgMemberStore:
             return session.query(OrgMember).filter(OrgMember.org_id == org_id).all()
 
     @staticmethod
+    def update_org_member(org_member: OrgMember) -> None:
+        """Update an organization-member relationship."""
+        with session_maker() as session:
+            session.merge(org_member)
+            session.commit()
+
+    @staticmethod
     def update_user_role_in_org(
         org_id: UUID, user_id: int, role_id: int, status: Optional[str] = None
     ) -> Optional[OrgMember]:

@@ -4,7 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, field_validator
 from storage.api_key_store import ApiKeyStore
 from storage.lite_llm_manager import LiteLlmManager
+from storage.org_member import OrgMember
+from storage.org_member_store import OrgMemberStore
 from storage.org_store import OrgStore
+from storage.user_store import UserStore
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.user_auth import get_user_id
@@ -16,7 +19,22 @@ async def get_byor_key_from_db(user_id: str) -> str | None:
     """Get the BYOR key from the database for a user."""
 
     def _get_byor_key():
-        org = OrgStore.get_current_org_from_keycloak_user_id(user_id)
+        user = UserStore.get_user_by_id(user_id)
+        if not user:
+            return None
+
+        current_org_id = user.current_org_id
+        current_org_member: OrgMember = None
+        for org_member in user.org_members:
+            if org_member.org_id == current_org_id:
+                current_org_member = org_member
+                break
+        if not current_org_member:
+            return None
+        if current_org_member.llm_api_key_for_byor:
+            return current_org_member.llm_api_key_for_byor.get_secret_value()
+
+        org = OrgStore.get_org_by_id(current_org_id)
         if not org:
             return None
         return (
@@ -32,14 +50,19 @@ async def store_byor_key_in_db(user_id: str, key: str) -> None:
     """Store the BYOR key in the database for a user."""
 
     def _update_user_settings():
-        org = OrgStore.get_current_org_from_keycloak_user_id(user_id)
-        if not org:
-            logger.warning(
-                'Org not found when trying to store BYOR key for user',
-                extra={'user_id': user_id},
-            )
-            return
-        OrgStore.update_org(org.id, {'default_llm_api_key_for_byor': key})
+        user = UserStore.get_user_by_id(user_id)
+        if not user:
+            return None
+
+        current_org_id = user.current_org_id
+        current_org_member: OrgMember = None
+        for org_member in user.org_members:
+            if org_member.org_id == current_org_id:
+                current_org_member = org_member
+                break
+        if not current_org_member:
+            return None
+        OrgMemberStore.update_org_member(current_org_member)
 
     await call_sync_from_async(_update_user_settings)
 
