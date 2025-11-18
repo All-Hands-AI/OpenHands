@@ -5765,7 +5765,7 @@ subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-ai"
-version = "0.0.0-post.5478+1a443d1f6"
+version = "0.0.0-post.5480+15d3b6b94"
 description = "OpenHands: Code Less, Make More"
 optional = false
 python-versions = "^3.12,<3.14"
@@ -5782,6 +5782,7 @@ bashlex = "^0.18"
 boto3 = "*"
 browsergym-core = "0.13.3"
 deprecated = "*"
+deprecation = "^2.1.0"
 dirhash = "*"
 docker = "*"
 fastapi = "*"

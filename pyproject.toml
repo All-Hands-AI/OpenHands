@@ -123,6 +123,7 @@ python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
 pg8000 = "^1.31.5"
 asyncpg = "^0.30.0"
+deprecation = "^2.1.0"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]
