@@ -62,6 +62,7 @@ async def store_byor_key_in_db(user_id: str, key: str) -> None:
                 break
         if not current_org_member:
             return None
+        current_org_member.llm_api_key_for_byor = key
         OrgMemberStore.update_org_member(current_org_member)
 
     await call_sync_from_async(_update_user_settings)
