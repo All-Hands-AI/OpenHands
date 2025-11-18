@@ -503,7 +503,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         Returns:
             List of merged Skill objects from all sources
         """
-        _logger.debug('Loading microagents for V1 conversation')
+        _logger.debug('Loading skills for V1 conversation')
 
         # Load microagents from all sources
         global_skills = load_global_microagents()
