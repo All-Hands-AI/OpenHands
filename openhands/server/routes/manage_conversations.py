@@ -9,13 +9,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 import base62
+import httpx
 from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import httpx
 from openhands.app_server.app_conversation.app_conversation_info_service import (
     AppConversationInfoService,
 )
@@ -34,7 +34,9 @@ from openhands.app_server.config import (
 )
 from openhands.app_server.sandbox.sandbox_service import SandboxService
 from openhands.app_server.services.db_session_injector import set_db_session_keep_open
-from openhands.app_server.services.httpx_client_injector import set_httpx_client_keep_open
+from openhands.app_server.services.httpx_client_injector import (
+    set_httpx_client_keep_open,
+)
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
@@ -543,7 +545,10 @@ async def _try_delete_v1_conversation(
             # Delete the sandbox in the background
             asyncio.create_task(
                 _delete_sandbox_and_close_connections(
-                    sandbox_service, app_conversation_info.sandbox_id, db_session, httpx_client
+                    sandbox_service,
+                    app_conversation_info.sandbox_id,
+                    db_session,
+                    httpx_client,
                 )
             )
     except (ValueError, TypeError):
@@ -557,16 +562,21 @@ async def _try_delete_v1_conversation(
 
 
 async def _delete_sandbox_and_close_connections(
-    sandbox_service: SandboxService, sandbox_id: str, db_session: AsyncSession, httpx_client: httpx.AsyncClient
+    sandbox_service: SandboxService,
+    sandbox_id: str,
+    db_session: AsyncSession,
+    httpx_client: httpx.AsyncClient,
 ):
     try:
         await sandbox_service.delete_sandbox(sandbox_id)
         await db_session.commit()
     finally:
-        await asyncio.gather(*[
-            db_session.aclose(),
-            httpx_client.aclose(),
-        ])
+        await asyncio.gather(
+            *[
+                db_session.aclose(),
+                httpx_client.aclose(),
+            ]
+        )
 
 
 async def _delete_v0_conversation(conversation_id: str, user_id: str | None) -> bool:
