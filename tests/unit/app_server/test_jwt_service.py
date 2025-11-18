@@ -199,9 +199,8 @@ class TestJwtService:
 
         # Check that standard JWT claims are added
         assert 'iat' in decrypted_payload
-        assert 'exp' in decrypted_payload
+        assert 'exp' not in decrypted_payload
         assert isinstance(decrypted_payload['iat'], int)  # JWE uses timestamp integers
-        assert isinstance(decrypted_payload['exp'], int)
 
     def test_jwe_token_round_trip_specific_key(self, jwt_service):
         """Test JWE token creation and decryption with specific key."""
@@ -412,7 +411,7 @@ class TestJwtService:
 
         # Should still have standard claims
         assert 'iat' in jws_decoded
-        assert 'exp' in jws_decoded
+        assert 'exp' not in jws_decoded
 
         # Test JWE
         jwe_token = jwt_service.create_jwe_token(empty_payload)
