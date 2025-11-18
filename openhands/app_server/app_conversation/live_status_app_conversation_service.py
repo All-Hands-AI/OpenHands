@@ -487,7 +487,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
 
-    async def _load_and_merge_all_microagents(
+    async def _load_and_merge_all_skills(
         self,
         remote_workspace: AsyncRemoteWorkspace,
         selected_repository: str | None,
