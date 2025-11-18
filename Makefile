@@ -143,23 +143,25 @@ install-python-dependencies:
 		export TZ="UTC"; \
 	fi
 	@echo "$(YELLOW)Configuring Poetry to disable SSL verification...$(RESET)"
-	@poetry config certificates.default.cert false 2>/dev/null || true
-	@poetry config certificates.default.verify false 2>/dev/null || true
+	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
-		export HNSWLIB_NO_NATIVE=1; \
+		export HNSWLIB_NO_NATIVE=1 PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 		poetry run pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 			poetry run pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org playwright; \
 			poetry run playwright install chromium; \
 		else \
