@@ -6,8 +6,6 @@ from cryptography.fernet import Fernet
 from pydantic import SecretStr
 from server.config import get_config
 
-from openhands.app_server.config import get_global_config
-
 _jwt_service = None
 _fernet = None
 
@@ -62,6 +60,8 @@ def decrypt_value(value: str | SecretStr) -> str:
 
 
 def get_jwt_service():
+    from openhands.app_server.config import get_global_config
+
     global _jwt_service
     if _jwt_service is None:
         jwt_service_injector = get_global_config().jwt
