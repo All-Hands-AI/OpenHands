@@ -55,9 +55,10 @@ def encrypt_value(value: str | SecretStr) -> str:
 
 
 def decrypt_value(value: str | SecretStr) -> str:
-    return get_jwt_service().create_jwe_token(
-        {'v': value.get_secret_value() if isinstance(value, SecretStr) else value}
+    token = get_jwt_service().decrypt_jwe_token(
+        value.get_secret_value() if isinstance(value, SecretStr) else value
     )
+    return token['v']
 
 
 def get_jwt_service():
@@ -67,6 +68,10 @@ def get_jwt_service():
         assert jwt_service_injector is not None
         _jwt_service = jwt_service_injector.get_jwt_service()
     return _jwt_service
+
+
+def decrypt_legacy_model(decrypt_keys: list, model_instance) -> dict:
+    return decrypt_legacy_kwargs(decrypt_keys, model_to_kwargs(model_instance))
 
 
 def decrypt_legacy_kwargs(encrypt_keys: list, kwargs: dict) -> dict:

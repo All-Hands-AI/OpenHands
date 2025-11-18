@@ -9,7 +9,7 @@ from server.logger import logger
 from sqlalchemy import text
 from sqlalchemy.orm import joinedload
 from storage.database import session_maker
-from storage.encrypt_utils import decrypt_model
+from storage.encrypt_utils import decrypt_legacy_model
 from storage.org import Org
 from storage.org_member import OrgMember
 from storage.role_store import RoleStore
@@ -91,7 +91,7 @@ class UserStore:
         if user_settings.already_migrated is True:
             logger.warning(f'User {user_id} already migrated, skipping')
             return UserStore.get_user_by_id(user_id)
-        kwargs = decrypt_model(
+        kwargs = decrypt_legacy_model(
             [
                 'llm_api_key',
                 'llm_api_key_for_byor',
