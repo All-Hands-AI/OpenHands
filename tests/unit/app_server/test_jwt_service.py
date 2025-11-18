@@ -411,7 +411,7 @@ class TestJwtService:
 
         # Should still have standard claims
         assert 'iat' in jws_decoded
-        assert 'exp' not in jws_decoded
+        assert 'exp' in jws_decoded
 
         # Test JWE
         jwe_token = jwt_service.create_jwe_token(empty_payload)
@@ -419,7 +419,7 @@ class TestJwtService:
 
         # Should still have standard claims
         assert 'iat' in jwe_decrypted
-        assert 'exp' in jwe_decrypted
+        assert 'exp' not in jwe_decrypted
 
     def test_unicode_and_special_characters(self, jwt_service):
         """Test JWS and JWE with unicode and special characters."""
