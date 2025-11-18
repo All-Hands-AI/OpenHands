@@ -11,7 +11,7 @@ from openhands.app_server.event_callback.event_callback_models import (
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 from openhands.integrations.service_types import ProviderType
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from openhands.sdk.llm import MetricsSnapshot
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 
@@ -57,7 +57,7 @@ class AppConversation(AppConversationInfo):  # type: ignore
         default=SandboxStatus.MISSING,
         description='Current sandbox status. Will be MISSING if the sandbox does not exist.',
     )
-    agent_status: AgentExecutionStatus | None = Field(
+    conversation_status: ConversationExecutionStatus | None = Field(
         default=None,
         description='Current agent status. Will be None if the sandbox_status is not RUNNING',
     )

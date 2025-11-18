@@ -50,7 +50,7 @@ from openhands.integrations.service_types import (
 )
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
@@ -1141,16 +1141,16 @@ def _to_conversation_info(app_conversation: AppConversation) -> ConversationInfo
 
     if conversation_status == ConversationStatus.RUNNING:
         runtime_status_mapping = {
-            AgentExecutionStatus.ERROR: RuntimeStatus.ERROR,
-            AgentExecutionStatus.IDLE: RuntimeStatus.READY,
-            AgentExecutionStatus.RUNNING: RuntimeStatus.READY,
-            AgentExecutionStatus.PAUSED: RuntimeStatus.READY,
-            AgentExecutionStatus.WAITING_FOR_CONFIRMATION: RuntimeStatus.READY,
-            AgentExecutionStatus.FINISHED: RuntimeStatus.READY,
-            AgentExecutionStatus.STUCK: RuntimeStatus.ERROR,
+            ConversationExecutionStatus.ERROR: RuntimeStatus.ERROR,
+            ConversationExecutionStatus.IDLE: RuntimeStatus.READY,
+            ConversationExecutionStatus.RUNNING: RuntimeStatus.READY,
+            ConversationExecutionStatus.PAUSED: RuntimeStatus.READY,
+            ConversationExecutionStatus.WAITING_FOR_CONFIRMATION: RuntimeStatus.READY,
+            ConversationExecutionStatus.FINISHED: RuntimeStatus.READY,
+            ConversationExecutionStatus.STUCK: RuntimeStatus.ERROR,
         }
         runtime_status = runtime_status_mapping.get(
-            app_conversation.agent_status, RuntimeStatus.ERROR
+            app_conversation.conversation_status, RuntimeStatus.ERROR
         )
     else:
         runtime_status = None

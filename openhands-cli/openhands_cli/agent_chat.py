@@ -12,7 +12,7 @@ from openhands.sdk import (
     Message,
     TextContent,
 )
-from openhands.sdk.conversation.state import AgentExecutionStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
