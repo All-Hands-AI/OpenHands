@@ -26,6 +26,14 @@ from storage.proactive_conversation_store import ProactiveConversationStore
 from storage.saas_secrets_store import SaasSecretsStore
 from storage.saas_settings_store import SaasSettingsStore
 
+from openhands.agent_server.models import SendMessageRequest
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartRequest,
+    AppConversationStartTask,
+    AppConversationStartTaskStatus,
+)
+from openhands.app_server.config import get_app_conversation_service
+from openhands.app_server.services.injector import InjectorState
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
@@ -74,6 +82,35 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
         return False
 
     return settings.enable_proactive_conversation_starters
+
+
+async def get_user_v1_enabled_setting(user_id: str | None) -> bool:
+    """Get the user's V1 conversation API setting.
+
+    Args:
+        user_id: The keycloak user ID
+
+    Returns:
+        True if V1 conversations are enabled for this user, False otherwise
+    """
+
+    # If no user ID is provided, we can't check user settings
+    if not user_id:
+        return False
+
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+
+    settings = await call_sync_from_async(
+        settings_store.get_user_settings_by_keycloak_id, user_id
+    )
+
+    if not settings or settings.v1_enabled is None:
+        return False
+
+    return settings.v1_enabled
 
 
 # =================================================
@@ -159,6 +196,23 @@ class GithubIssue(ResolverViewInterface):
         git_provider_tokens: PROVIDER_TOKEN_TYPE,
         conversation_metadata: ConversationMetadata,
     ):
+        # Check if user has V1 conversations enabled
+        v1_enabled = await get_user_v1_enabled_setting(self.user_info.keycloak_user_id)
+        
+        if v1_enabled:
+            # Use V1 app conversation service
+            await self._create_v1_conversation(jinja_env, git_provider_tokens, conversation_metadata)
+        else:
+            # Use existing V0 conversation service
+            await self._create_v0_conversation(jinja_env, git_provider_tokens, conversation_metadata)
+
+    async def _create_v0_conversation(
+        self,
+        jinja_env: Environment,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE,
+        conversation_metadata: ConversationMetadata,
+    ):
+        """Create conversation using the legacy V0 system."""
         custom_secrets = await self._get_user_secrets()
 
         user_instructions, conversation_instructions = await self._get_instructions(
@@ -176,6 +230,48 @@ class GithubIssue(ResolverViewInterface):
             conversation_metadata=conversation_metadata,
             conversation_instructions=conversation_instructions,
         )
+
+    async def _create_v1_conversation(
+        self,
+        jinja_env: Environment,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE,
+        conversation_metadata: ConversationMetadata,
+    ):
+        """Create conversation using the new V1 app conversation system."""
+        user_instructions, conversation_instructions = await self._get_instructions(
+            jinja_env
+        )
+
+        # Create the initial message request
+        initial_message = SendMessageRequest(
+            message=user_instructions,
+            images=None,
+        )
+
+        # Create the V1 conversation start request
+        start_request = AppConversationStartRequest(
+            initial_message=initial_message,
+            selected_repository=self.full_repo_name,
+            git_provider=ProviderType.GITHUB,
+            title=f"GitHub Issue #{self.issue_number}: {self.title}",
+            trigger=ConversationTrigger.RESOLVER,
+        )
+
+        # Get the app conversation service and start the conversation
+        injector_state = InjectorState()
+        async with get_app_conversation_service(injector_state) as app_conversation_service:
+            async for task in app_conversation_service.start_app_conversation(start_request):
+                if task.status == AppConversationStartTaskStatus.READY:
+                    # Update our conversation_id to the V1 conversation ID
+                    self.conversation_id = str(task.app_conversation_id)
+                    logger.info(f"V1 conversation started with ID: {self.conversation_id}")
+                    break
+                elif task.status == AppConversationStartTaskStatus.ERROR:
+                    logger.error(f"Failed to start V1 conversation: {task.detail}")
+                    raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
+                else:
+                    logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
+                    # Continue waiting for the conversation to be ready
 
 
 @dataclass
