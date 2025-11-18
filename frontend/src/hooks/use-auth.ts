@@ -48,17 +48,13 @@ class AuthToken {
         tokenValue = JSON.parse(tokenValueString);
       } catch {
         tokenValue = null;
+        AuthToken.delete();
       }
     } else {
       return;
     }
 
-    if (tokenValue !== null) {
-      Object.assign(this, tokenValue);
-    } else {
-      // @todo
-      // AuthToken.delete();
-    }
+    if (tokenValue !== null) Object.assign(this, tokenValue);
   }
 
   async connect(): Promise<boolean> {

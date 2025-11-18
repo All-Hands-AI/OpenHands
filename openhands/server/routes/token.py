@@ -1,10 +1,6 @@
-import json
-from types import SimpleNamespace
 import uuid
-from venv import logger
 from fastapi import APIRouter, Depends
 from groq import BaseModel
-from enterprise.storage import user_settings
 from openhands.server.dependencies import get_dependencies
 from openhands.server.user_auth import get_user_settings_store
 from openhands.storage.data_models.settings import AuthWallet, Settings
