@@ -1,4 +1,4 @@
-"""Utilities for loading microagents and converting them to Skills for V1 conversations.
+"""Utilities for loading Skills.
 
 This module provides functions to load microagents from various sources:
 - Global microagents from OpenHands/microagents/
