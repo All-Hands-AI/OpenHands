@@ -344,7 +344,7 @@ class WebSession:
             ):
                 self.logger.error(
                     f'Agent status error: {event.reason}',
-                    extra={'signal': 'conversation_status_error'},
+                    extra={'signal': 'agent_status_error'},
                 )
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
@@ -444,7 +444,7 @@ class WebSession:
                 await controller.set_agent_state_to(AgentState.ERROR)
             self.logger.error(
                 f'Agent status error: {message}',
-                extra={'signal': 'conversation_status_error'},
+                extra={'signal': 'agent_status_error'},
             )
         await self.send(
             {
