@@ -45,11 +45,7 @@ class FakeAgent(AgentBase):
     ) -> None:
         self.step_count += 1
         if self.step_count == self.finish_on_step:
-<<<<<<< HEAD
-            conversation.state.agent_status = ConversationExecutionStatus.FINISHED
-=======
             conversation.state.execution_status = ConversationExecutionStatus.FINISHED
->>>>>>> main
 
 
 @pytest.fixture()
