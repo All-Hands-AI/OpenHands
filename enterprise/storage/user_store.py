@@ -82,7 +82,7 @@ class UserStore:
     async def migrate_user(
         user_id: str,
         user_settings: UserSettings,
-        user_info: dict,
+        user_info: dict | None = None,
     ) -> User:
         if not user_id or not user_settings:
             return None
@@ -103,11 +103,19 @@ class UserStore:
         decrypted_user_settings = UserSettings(**kwargs)
         with session_maker() as session:
             # create personal org
+            contact_name = (
+                user_info['preferred_username']
+                if user_info
+                else decrypted_user_settings.email.split('@')[0]
+            )
+            contact_email = (
+                user_info['email'] if user_info else decrypted_user_settings.email
+            )
             org = Org(
                 id=uuid.UUID(user_id),
                 name=f'user_{user_id}_org',
-                contact_name=user_info['preferred_username'],
-                contact_email=user_info['email'],
+                contact_name=contact_name,
+                contact_email=contact_email,
             )
             session.add(org)
 
