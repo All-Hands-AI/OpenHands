@@ -34,9 +34,14 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 )
 from openhands.app_server.config import get_app_conversation_service
 from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
+from openhands.app_server.user.user_context import UserContext
+from openhands.app_server.user.user_models import UserInfo
+from openhands.integrations.provider import ProviderType
+from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import Comment
 from openhands.server.services.conversation_service import (
     initialize_conversation,
@@ -49,6 +54,40 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.utils.async_utils import call_sync_from_async
 
 OH_LABEL, INLINE_OH_LABEL = get_oh_labels(HOST)
+
+
+class GithubUserContext(UserContext):
+    """User context for GitHub integration that provides user info without web request."""
+    
+    def __init__(self, keycloak_user_id: str, git_provider_tokens: PROVIDER_TOKEN_TYPE):
+        self.keycloak_user_id = keycloak_user_id
+        self.git_provider_tokens = git_provider_tokens
+    
+    async def get_user_id(self) -> str | None:
+        return self.keycloak_user_id
+    
+    async def get_user_info(self) -> UserInfo:
+        # For GitHub integration, we need minimal user info
+        # The V1 system mainly needs the user ID for conversation management
+        # UserInfo extends Settings, so we provide the user ID and let other fields use defaults
+        return UserInfo(
+            id=self.keycloak_user_id,
+        )
+    
+    async def get_authenticated_git_url(self, repository: str) -> str:
+        # This would need to be implemented based on the git provider tokens
+        # For now, return a basic HTTPS URL
+        return f"https://github.com/{repository}.git"
+    
+    async def get_latest_token(self, provider_type: ProviderType) -> str | None:
+        # Return the appropriate token from git_provider_tokens
+        if provider_type == ProviderType.GITHUB and self.git_provider_tokens:
+            return self.git_provider_tokens.get(ProviderType.GITHUB)
+        return None
+    
+    async def get_secrets(self) -> dict[str, SecretSource]:
+        # Return empty dict for now - GitHub integration handles secrets separately
+        return {}
 
 
 async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
@@ -259,6 +298,14 @@ class GithubIssue(ResolverViewInterface):
 
         # Get the app conversation service and start the conversation
         injector_state = InjectorState()
+        
+        # Set up the GitHub user context for the V1 system
+        github_user_context = GithubUserContext(
+            keycloak_user_id=self.user_info.keycloak_user_id,
+            git_provider_tokens=git_provider_tokens
+        )
+        setattr(injector_state, USER_CONTEXT_ATTR, github_user_context)
+        
         async with get_app_conversation_service(injector_state) as app_conversation_service:
             async for task in app_conversation_service.start_app_conversation(start_request):
                 if task.status == AppConversationStartTaskStatus.READY:
