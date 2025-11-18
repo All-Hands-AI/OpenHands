@@ -145,19 +145,20 @@ install-python-dependencies:
 	@mkdir -p ~/.config/pip ~/.pip
 	@cp pip.conf ~/.config/pip/pip.conf 2>/dev/null || true
 	@cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
-	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
+	@poetry config installer.modern-installation false --local 2>/dev/null || true
+	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
-		export HNSWLIB_NO_NATIVE=1 PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
+		export HNSWLIB_NO_NATIVE=1 PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry run pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
