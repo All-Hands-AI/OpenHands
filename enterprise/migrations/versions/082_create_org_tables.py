@@ -20,7 +20,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute('CREATE EXTENSION IF NOT EXISTS pgcrypto;')
     # Remove current settings table
     op.execute('DROP TABLE IF EXISTS settings')
 
@@ -59,7 +58,6 @@ def upgrade() -> None:
             'id',
             postgresql.UUID(as_uuid=True),
             primary_key=True,
-            server_default=sa.text('gen_random_uuid()'),
         ),
         sa.Column('name', sa.String, nullable=False),
         sa.Column('contact_name', sa.String, nullable=True),
@@ -117,7 +115,6 @@ def upgrade() -> None:
             'id',
             postgresql.UUID(as_uuid=True),
             primary_key=True,
-            server_default=sa.text('gen_random_uuid()'),
         ),
         sa.Column('current_org_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('role_id', sa.Integer, nullable=True),

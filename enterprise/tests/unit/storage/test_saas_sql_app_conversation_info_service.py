@@ -203,6 +203,7 @@ class TestSaasSQLAppConversationInfoService:
         # Create mock metadata objects
         stored_metadata = MagicMock(spec=StoredConversationMetadata)
         stored_metadata.conversation_id = '12345678-1234-5678-1234-567812345678'
+        stored_metadata.parent_conversation_id = None
         stored_metadata.title = 'Test Conversation'
         stored_metadata.sandbox_id = 'test-sandbox'
         stored_metadata.selected_repository = None
