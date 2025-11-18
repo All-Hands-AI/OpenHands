@@ -1,0 +1,6 @@
+[certificates]
+# Disable SSL/TLS certificate verification
+verify = false
+
+[repositories]
+# Configure PyPI without SSL verification

@@ -27,7 +27,7 @@ if [[ "$INSTALL_THIRD_PARTY_RUNTIMES" == "true" ]]; then
   echo "Downloading and installing third_party_runtimes..."
   echo "Warning: Third-party runtimes are provided as-is, not actively supported and may be removed in future releases."
 
-  if pip install 'openhands-ai[third_party_runtimes]' -qqq 2> >(tee /dev/stderr); then
+  if pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org 'openhands-ai[third_party_runtimes]' -qqq 2> >(tee /dev/stderr); then
     echo "third_party_runtimes installed successfully."
   else
     echo "Failed to install third_party_runtimes." >&2
