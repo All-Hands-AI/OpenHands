@@ -1,14 +1,10 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import BaseConversation, Message
-<<<<<<< HEAD
-from openhands.sdk.conversation.state import ConversationExecutionStatus, ConversationState
-=======
 from openhands.sdk.conversation.state import (
     ConversationExecutionStatus,
     ConversationState,
 )
->>>>>>> main
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     ConfirmationPolicyBase,
