@@ -201,23 +201,14 @@ files = [
 
 [[package]]
 name = "anthropic"
-<<<<<<< HEAD
-version = "0.73.0"
-=======
 version = "0.72.0"
->>>>>>> main
 description = "The official Python library for the anthropic API"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-<<<<<<< HEAD
-    {file = "anthropic-0.73.0-py3-none-any.whl", hash = "sha256:0d56cd8b3ca3fea9c9b5162868bdfd053fbc189b8b56d4290bd2d427b56db769"},
-    {file = "anthropic-0.73.0.tar.gz", hash = "sha256:30f0d7d86390165f86af6ca7c3041f8720bb2e1b0e12a44525c8edfdbd2c5239"},
-=======
     {file = "anthropic-0.72.0-py3-none-any.whl", hash = "sha256:0e9f5a7582f038cab8efbb4c959e49ef654a56bfc7ba2da51b5a7b8a84de2e4d"},
     {file = "anthropic-0.72.0.tar.gz", hash = "sha256:8971fe76dcffc644f74ac3883069beb1527641115ae0d6eb8fa21c1ce4082f7a"},
->>>>>>> main
 ]
 
 [package.dependencies]
@@ -4618,23 +4609,14 @@ files = [
 
 [[package]]
 name = "lmnr"
-<<<<<<< HEAD
-version = "0.7.22"
-=======
 version = "0.7.20"
->>>>>>> main
 description = "Python SDK for Laminar"
 optional = false
 python-versions = "<4,>=3.10"
 groups = ["main"]
 files = [
-<<<<<<< HEAD
-    {file = "lmnr-0.7.22-py3-none-any.whl", hash = "sha256:a344b9b7f96333e9f9657e086f0cd5b8f0fa2c979bb41ef7975d14ab8ac4684f"},
-    {file = "lmnr-0.7.22.tar.gz", hash = "sha256:9a9fe89b3ecdda6e9fefa58f52143f2e34b5ec678b63e4ce077241fec132ad8d"},
-=======
     {file = "lmnr-0.7.20-py3-none-any.whl", hash = "sha256:5f9fa7444e6f96c25e097f66484ff29e632bdd1de0e9346948bf5595f4a8af38"},
     {file = "lmnr-0.7.20.tar.gz", hash = "sha256:1f484cd618db2d71af65f90a0b8b36d20d80dc91a5138b811575c8677bf7c4fd"},
->>>>>>> main
 ]
 
 [package.dependencies]
@@ -4657,22 +4639,14 @@ tqdm = ">=4.0"
 
 [package.extras]
 alephalpha = ["opentelemetry-instrumentation-alephalpha (>=0.47.1)"]
-<<<<<<< HEAD
-all = ["opentelemetry-instrumentation-alephalpha (>=0.47.1)", "opentelemetry-instrumentation-bedrock (>=0.47.1)", "opentelemetry-instrumentation-chromadb (>=0.47.1)", "opentelemetry-instrumentation-cohere (>=0.47.1)", "opentelemetry-instrumentation-crewai (>=0.47.1)", "opentelemetry-instrumentation-haystack (>=0.47.1)", "opentelemetry-instrumentation-lancedb (>=0.47.1)", "opentelemetry-instrumentation-langchain (>=0.47.1,<0.48.0)", "opentelemetry-instrumentation-llamaindex (>=0.47.1)", "opentelemetry-instrumentation-marqo (>=0.47.1)", "opentelemetry-instrumentation-mcp (>=0.47.1)", "opentelemetry-instrumentation-milvus (>=0.47.1)", "opentelemetry-instrumentation-mistralai (>=0.47.1)", "opentelemetry-instrumentation-ollama (>=0.47.1)", "opentelemetry-instrumentation-pinecone (>=0.47.1)", "opentelemetry-instrumentation-qdrant (>=0.47.1)", "opentelemetry-instrumentation-replicate (>=0.47.1)", "opentelemetry-instrumentation-sagemaker (>=0.47.1)", "opentelemetry-instrumentation-together (>=0.47.1)", "opentelemetry-instrumentation-transformers (>=0.47.1)", "opentelemetry-instrumentation-vertexai (>=0.47.1)", "opentelemetry-instrumentation-watsonx (>=0.47.1)", "opentelemetry-instrumentation-weaviate (>=0.47.1)"]
-=======
 all = ["opentelemetry-instrumentation-alephalpha (>=0.47.1)", "opentelemetry-instrumentation-bedrock (>=0.47.1)", "opentelemetry-instrumentation-chromadb (>=0.47.1)", "opentelemetry-instrumentation-cohere (>=0.47.1)", "opentelemetry-instrumentation-crewai (>=0.47.1)", "opentelemetry-instrumentation-haystack (>=0.47.1)", "opentelemetry-instrumentation-lancedb (>=0.47.1)", "opentelemetry-instrumentation-langchain (>=0.47.1)", "opentelemetry-instrumentation-llamaindex (>=0.47.1)", "opentelemetry-instrumentation-marqo (>=0.47.1)", "opentelemetry-instrumentation-mcp (>=0.47.1)", "opentelemetry-instrumentation-milvus (>=0.47.1)", "opentelemetry-instrumentation-mistralai (>=0.47.1)", "opentelemetry-instrumentation-ollama (>=0.47.1)", "opentelemetry-instrumentation-pinecone (>=0.47.1)", "opentelemetry-instrumentation-qdrant (>=0.47.1)", "opentelemetry-instrumentation-replicate (>=0.47.1)", "opentelemetry-instrumentation-sagemaker (>=0.47.1)", "opentelemetry-instrumentation-together (>=0.47.1)", "opentelemetry-instrumentation-transformers (>=0.47.1)", "opentelemetry-instrumentation-vertexai (>=0.47.1)", "opentelemetry-instrumentation-watsonx (>=0.47.1)", "opentelemetry-instrumentation-weaviate (>=0.47.1)"]
->>>>>>> main
 bedrock = ["opentelemetry-instrumentation-bedrock (>=0.47.1)"]
 chromadb = ["opentelemetry-instrumentation-chromadb (>=0.47.1)"]
 cohere = ["opentelemetry-instrumentation-cohere (>=0.47.1)"]
 crewai = ["opentelemetry-instrumentation-crewai (>=0.47.1)"]
 haystack = ["opentelemetry-instrumentation-haystack (>=0.47.1)"]
 lancedb = ["opentelemetry-instrumentation-lancedb (>=0.47.1)"]
-<<<<<<< HEAD
-langchain = ["opentelemetry-instrumentation-langchain (>=0.47.1,<0.48.0)"]
-=======
 langchain = ["opentelemetry-instrumentation-langchain (>=0.47.1)"]
->>>>>>> main
 llamaindex = ["opentelemetry-instrumentation-llamaindex (>=0.47.1)"]
 marqo = ["opentelemetry-instrumentation-marqo (>=0.47.1)"]
 mcp = ["opentelemetry-instrumentation-mcp (>=0.47.1)"]
@@ -5855,6 +5829,7 @@ files = [
     {file = "openhands_agent_server-1.1.0-py3-none-any.whl", hash = "sha256:59a856883df23488c0723e47655ef21649a321fcd4709a25a4690866eff6ac88"},
     {file = "openhands_agent_server-1.1.0.tar.gz", hash = "sha256:e39bebd39afd45cfcfd765005e7c4e5409e46678bd7612ae20bae79f7057b935"},
 ]
+develop = false
 
 [package.dependencies]
 aiosqlite = ">=0.19"
@@ -5867,7 +5842,6 @@ uvicorn = ">=0.31.1"
 websockets = ">=12"
 wsproto = ">=1.2.0"
 
-<<<<<<< HEAD
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
@@ -5877,12 +5851,7 @@ subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-ai"
-version = "0.0.0-post.5481+d2df9c03f"
-=======
-[[package]]
-name = "openhands-ai"
-version = "0.0.0-post.5525+0b6631523"
->>>>>>> main
+version = "0.0.0-post.5571+bf640cff3"
 description = "OpenHands: Code Less, Make More"
 optional = false
 python-versions = "^3.12,<3.14"
@@ -5924,15 +5893,9 @@ memory-profiler = "^0.61.0"
 numpy = "*"
 openai = "1.99.9"
 openhands-aci = "0.3.2"
-<<<<<<< HEAD
-openhands-agent-server = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c", subdirectory = "openhands-agent-server"}
-openhands-sdk = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c", subdirectory = "openhands-sdk"}
-openhands-tools = {git = "https://github.com/OpenHands/agent-sdk.git", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c", subdirectory = "openhands-tools"}
-=======
 openhands-agent-server = "1.1.0"
 openhands-sdk = "1.1.0"
 openhands-tools = "1.1.0"
->>>>>>> main
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 pathspec = "^0.12.1"
@@ -5997,6 +5960,7 @@ files = [
     {file = "openhands_sdk-1.1.0-py3-none-any.whl", hash = "sha256:4a984ce1687a48cf99a67fdf3d37b116f8b2840743d4807810b5024af6a1d57e"},
     {file = "openhands_sdk-1.1.0.tar.gz", hash = "sha256:855e0d8f3657205e4119e50520c17e65b3358b1a923f7a051a82512a54bf426c"},
 ]
+develop = false
 
 [package.dependencies]
 deprecation = ">=2.1.0"
@@ -6013,7 +5977,6 @@ websockets = ">=12"
 [package.extras]
 boto3 = ["boto3 (>=1.35.0)"]
 
-<<<<<<< HEAD
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
@@ -6021,8 +5984,6 @@ reference = "88cc031bd62808ef72b5898796c4535fcf26d26c"
 resolved_reference = "88cc031bd62808ef72b5898796c4535fcf26d26c"
 subdirectory = "openhands-sdk"
 
-=======
->>>>>>> main
 [[package]]
 name = "openhands-tools"
 version = "1.1.0"
@@ -6034,6 +5995,7 @@ files = [
     {file = "openhands_tools-1.1.0-py3-none-any.whl", hash = "sha256:767d6746f05edade49263aa24450a037485a3dc23379f56917ef19aad22033f9"},
     {file = "openhands_tools-1.1.0.tar.gz", hash = "sha256:c2fadaa4f4e16e9a3df5781ea847565dcae7171584f09ef7c0e1d97c8dfc83f6"},
 ]
+develop = false
 
 [package.dependencies]
 bashlex = ">=0.18"
@@ -6045,7 +6007,6 @@ libtmux = ">=0.46.2"
 openhands-sdk = "*"
 pydantic = ">=2.11.7"
 
-<<<<<<< HEAD
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
@@ -6053,8 +6014,6 @@ reference = "88cc031bd62808ef72b5898796c4535fcf26d26c"
 resolved_reference = "88cc031bd62808ef72b5898796c4535fcf26d26c"
 subdirectory = "openhands-tools"
 
-=======
->>>>>>> main
 [[package]]
 name = "openpyxl"
 version = "3.1.5"
