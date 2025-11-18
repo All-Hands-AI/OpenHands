@@ -1,0 +1,868 @@
+"""Tests for microagent_loader module.
+
+This module tests the loading and conversion of microagents from various sources
+(global, user, and repository-level) into SDK Skill objects for V1 conversations.
+"""
+
+import tempfile
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
+
+from openhands.app_server.app_conversation.microagent_loader import (
+    _create_skill_from_content,
+    _determine_repo_root,
+    _find_global_microagent_files,
+    _find_microagent_md_files,
+    _load_global_microagent_files,
+    _load_microagent_md_files,
+    _load_special_files,
+    _read_file_from_workspace,
+    load_global_microagents,
+    load_repo_microagents,
+    load_user_microagents,
+    merge_skills,
+)
+
+# ===== Test Fixtures =====
+
+
+@pytest.fixture
+def mock_skill():
+    """Create a mock Skill object."""
+    skill = Mock()
+    skill.name = 'test_skill'
+    skill.content = 'Test content'
+    return skill
+
+
+@pytest.fixture
+def mock_skills_list():
+    """Create a list of mock Skill objects."""
+    skills = []
+    for i in range(3):
+        skill = Mock()
+        skill.name = f'skill_{i}'
+        skill.content = f'Content {i}'
+        skills.append(skill)
+    return skills
+
+
+@pytest.fixture
+def mock_async_remote_workspace():
+    """Create a mock AsyncRemoteWorkspace."""
+    workspace = AsyncMock()
+    return workspace
+
+
+@pytest.fixture
+def temp_microagents_dir():
+    """Create a temporary directory with test microagent files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+
+        # Create test microagent files
+        test_microagent = """---
+name: test_microagent
+triggers:
+  - test
+  - testing
+---
+
+# Test Microagent
+
+This is a test microagent for testing purposes.
+"""
+        (root / 'test_microagent.md').write_text(test_microagent)
+
+        another_microagent = """---
+name: another_microagent
+---
+
+# Another Microagent
+
+Another test microagent.
+"""
+        (root / 'another_microagent.md').write_text(another_microagent)
+
+        # Create README.md which should be ignored
+        (root / 'README.md').write_text('# README\n\nThis should be ignored.')
+
+        yield root
+
+
+@pytest.fixture
+def command_result_success():
+    """Create a successful command result."""
+    result = Mock()
+    result.exit_code = 0
+    result.stdout = 'test output'
+    return result
+
+
+@pytest.fixture
+def command_result_failure():
+    """Create a failed command result."""
+    result = Mock()
+    result.exit_code = 1
+    result.stdout = ''
+    return result
+
+
+# ===== Tests for Helper Functions =====
+
+
+class TestDetermineRepoRoot:
+    """Test _determine_repo_root helper function."""
+
+    def test_with_selected_repository(self):
+        """Test determining repo root with selected repository."""
+        result = _determine_repo_root('/workspace/project', 'owner/repo-name')
+        assert result == '/workspace/project/repo-name'
+
+    def test_without_selected_repository(self):
+        """Test determining repo root without selected repository."""
+        result = _determine_repo_root('/workspace/project', None)
+        assert result == '/workspace/project'
+
+    def test_with_complex_repository_name(self):
+        """Test with complex repository name."""
+        result = _determine_repo_root('/workspace', 'org-name/complex-repo-123')
+        assert result == '/workspace/complex-repo-123'
+
+
+class TestReadFileFromWorkspace:
+    """Test _read_file_from_workspace helper function."""
+
+    @pytest.mark.asyncio
+    async def test_successful_read(
+        self, mock_async_remote_workspace, command_result_success
+    ):
+        """Test successfully reading a file from workspace."""
+        command_result_success.stdout = 'file content\n'
+        mock_async_remote_workspace.execute_command.return_value = (
+            command_result_success
+        )
+
+        result = await _read_file_from_workspace(
+            mock_async_remote_workspace, '/path/to/file.md', '/workspace'
+        )
+
+        assert result == 'file content\n'
+        mock_async_remote_workspace.execute_command.assert_called_once_with(
+            'cat /path/to/file.md', cwd='/workspace', timeout=10.0
+        )
+
+    @pytest.mark.asyncio
+    async def test_file_not_found(
+        self, mock_async_remote_workspace, command_result_failure
+    ):
+        """Test reading a non-existent file."""
+        mock_async_remote_workspace.execute_command.return_value = (
+            command_result_failure
+        )
+
+        result = await _read_file_from_workspace(
+            mock_async_remote_workspace, '/nonexistent/file.md', '/workspace'
+        )
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_empty_file(self, mock_async_remote_workspace):
+        """Test reading an empty file."""
+        result_obj = Mock()
+        result_obj.exit_code = 0
+        result_obj.stdout = '   '  # Only whitespace
+        mock_async_remote_workspace.execute_command.return_value = result_obj
+
+        result = await _read_file_from_workspace(
+            mock_async_remote_workspace, '/empty/file.md', '/workspace'
+        )
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_command_exception(self, mock_async_remote_workspace):
+        """Test handling exception during file read."""
+        mock_async_remote_workspace.execute_command.side_effect = Exception(
+            'Connection error'
+        )
+
+        result = await _read_file_from_workspace(
+            mock_async_remote_workspace, '/path/to/file.md', '/workspace'
+        )
+
+        assert result is None
+
+
+class TestCreateSkillFromContent:
+    """Test _create_skill_from_content helper function."""
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Skill')
+    def test_successful_skill_creation(self, mock_skill_class, mock_skill):
+        """Test successfully creating a skill from content."""
+        mock_skill_class.load.return_value = mock_skill
+
+        content = '---\nname: test\n---\n# Test\n'
+        result = _create_skill_from_content('test.md', content)
+
+        assert result == mock_skill
+        mock_skill_class.load.assert_called_once_with(
+            path='test.md', skill_dir=None, file_content=content
+        )
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Skill')
+    def test_skill_creation_failure(self, mock_skill_class):
+        """Test handling error during skill creation."""
+        mock_skill_class.load.side_effect = Exception('Parse error')
+
+        content = 'invalid content'
+        result = _create_skill_from_content('invalid.md', content)
+
+        assert result is None
+
+
+class TestLoadSpecialFiles:
+    """Test _load_special_files helper function."""
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._read_file_from_workspace'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._create_skill_from_content'
+    )
+    async def test_load_all_special_files(
+        self,
+        mock_create_skill,
+        mock_read_file,
+        mock_async_remote_workspace,
+        mock_skills_list,
+    ):
+        """Test loading all special files successfully."""
+        # Mock reading files - return content for each special file
+        mock_read_file.side_effect = [
+            'cursorrules content',
+            'agents.md content',
+            'agent.md content',
+        ]
+
+        # Mock skill creation
+        mock_create_skill.side_effect = mock_skills_list
+
+        result = await _load_special_files(
+            mock_async_remote_workspace, '/repo', '/workspace'
+        )
+
+        assert len(result) == 3
+        assert result == mock_skills_list
+        assert mock_read_file.call_count == 3
+        assert mock_create_skill.call_count == 3
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._read_file_from_workspace'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._create_skill_from_content'
+    )
+    async def test_load_partial_special_files(
+        self, mock_create_skill, mock_read_file, mock_async_remote_workspace, mock_skill
+    ):
+        """Test loading when only some special files exist."""
+        # Only .cursorrules exists
+        mock_read_file.side_effect = ['cursorrules content', None, None]
+        mock_create_skill.return_value = mock_skill
+
+        result = await _load_special_files(
+            mock_async_remote_workspace, '/repo', '/workspace'
+        )
+
+        assert len(result) == 1
+        assert result[0] == mock_skill
+        assert mock_read_file.call_count == 3
+        assert mock_create_skill.call_count == 1
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._read_file_from_workspace'
+    )
+    async def test_load_no_special_files(
+        self, mock_read_file, mock_async_remote_workspace
+    ):
+        """Test when no special files exist."""
+        mock_read_file.return_value = None
+
+        result = await _load_special_files(
+            mock_async_remote_workspace, '/repo', '/workspace'
+        )
+
+        assert len(result) == 0
+
+
+class TestFindMicroagentMdFiles:
+    """Test _find_microagent_md_files helper function."""
+
+    @pytest.mark.asyncio
+    async def test_find_files_success(self, mock_async_remote_workspace):
+        """Test successfully finding microagent .md files."""
+        result_obj = Mock()
+        result_obj.exit_code = 0
+        result_obj.stdout = '/repo/.openhands/microagents/test1.md\n/repo/.openhands/microagents/test2.md\n'
+        mock_async_remote_workspace.execute_command.return_value = result_obj
+
+        result = await _find_microagent_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/microagents', '/workspace'
+        )
+
+        assert len(result) == 2
+        assert '/repo/.openhands/microagents/test1.md' in result
+        assert '/repo/.openhands/microagents/test2.md' in result
+
+    @pytest.mark.asyncio
+    async def test_find_files_excludes_readme(self, mock_async_remote_workspace):
+        """Test that README.md files are excluded."""
+        result_obj = Mock()
+        result_obj.exit_code = 0
+        result_obj.stdout = '/repo/.openhands/microagents/test.md\n/repo/.openhands/microagents/README.md\n'
+        mock_async_remote_workspace.execute_command.return_value = result_obj
+
+        result = await _find_microagent_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/microagents', '/workspace'
+        )
+
+        assert len(result) == 1
+        assert '/repo/.openhands/microagents/test.md' in result
+        assert any('README.md' in f for f in result) is False
+
+    @pytest.mark.asyncio
+    async def test_find_files_no_results(
+        self, mock_async_remote_workspace, command_result_failure
+    ):
+        """Test when no files are found."""
+        mock_async_remote_workspace.execute_command.return_value = (
+            command_result_failure
+        )
+
+        result = await _find_microagent_md_files(
+            mock_async_remote_workspace, '/nonexistent', '/workspace'
+        )
+
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_find_files_exception(self, mock_async_remote_workspace):
+        """Test handling exception during file search."""
+        mock_async_remote_workspace.execute_command.side_effect = Exception(
+            'Command error'
+        )
+
+        result = await _find_microagent_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/microagents', '/workspace'
+        )
+
+        assert len(result) == 0
+
+
+class TestLoadMicroagentMdFiles:
+    """Test _load_microagent_md_files helper function."""
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._read_file_from_workspace'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._create_skill_from_content'
+    )
+    async def test_load_md_files_success(
+        self,
+        mock_create_skill,
+        mock_read_file,
+        mock_async_remote_workspace,
+        mock_skills_list,
+    ):
+        """Test successfully loading microagent .md files."""
+        file_paths = [
+            '/repo/.openhands/microagents/test1.md',
+            '/repo/.openhands/microagents/test2.md',
+        ]
+
+        mock_read_file.side_effect = ['content1', 'content2']
+        mock_create_skill.side_effect = mock_skills_list[:2]
+
+        result = await _load_microagent_md_files(
+            mock_async_remote_workspace,
+            file_paths,
+            '/repo/.openhands/microagents',
+            '/workspace',
+        )
+
+        assert len(result) == 2
+        assert result == mock_skills_list[:2]
+
+        # Verify relative paths are used
+        assert mock_create_skill.call_args_list[0][0][0] == 'test1.md'
+        assert mock_create_skill.call_args_list[1][0][0] == 'test2.md'
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._read_file_from_workspace'
+    )
+    async def test_load_md_files_some_missing(
+        self, mock_read_file, mock_async_remote_workspace
+    ):
+        """Test loading when some files fail to read."""
+        file_paths = [
+            '/repo/.openhands/microagents/test1.md',
+            '/repo/.openhands/microagents/missing.md',
+        ]
+
+        mock_read_file.side_effect = ['content1', None]
+
+        with patch(
+            'openhands.app_server.app_conversation.microagent_loader._create_skill_from_content'
+        ) as mock_create_skill:
+            mock_skill = Mock()
+            mock_create_skill.return_value = mock_skill
+
+            result = await _load_microagent_md_files(
+                mock_async_remote_workspace,
+                file_paths,
+                '/repo/.openhands/microagents',
+                '/workspace',
+            )
+
+            assert len(result) == 1
+            assert mock_create_skill.call_count == 1
+
+
+class TestFindGlobalMicroagentFiles:
+    """Test _find_global_microagent_files helper function."""
+
+    def test_find_global_files(self, temp_microagents_dir):
+        """Test finding global microagent files."""
+        result = _find_global_microagent_files(temp_microagents_dir)
+
+        # Should find .md files but not README.md
+        assert len(result) == 2
+        filenames = [f.name for f in result]
+        assert 'test_microagent.md' in filenames
+        assert 'another_microagent.md' in filenames
+        assert 'README.md' not in filenames
+
+    def test_find_global_files_empty_dir(self, tmp_path):
+        """Test finding files in empty directory."""
+        result = _find_global_microagent_files(tmp_path)
+        assert len(result) == 0
+
+    def test_find_global_files_nonexistent_dir(self):
+        """Test finding files in non-existent directory."""
+        nonexistent = Path('/nonexistent/path')
+        result = _find_global_microagent_files(nonexistent)
+        assert len(result) == 0
+
+
+class TestLoadGlobalMicroagentFiles:
+    """Test _load_global_microagent_files helper function."""
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Skill')
+    def test_load_global_files_success(
+        self, mock_skill_class, temp_microagents_dir, mock_skills_list
+    ):
+        """Test successfully loading global microagent files."""
+        file_paths = list(temp_microagents_dir.glob('*.md'))
+        file_paths = [f for f in file_paths if f.name.lower() != 'readme.md']
+
+        mock_skill_class.load.side_effect = mock_skills_list[: len(file_paths)]
+
+        result = _load_global_microagent_files(file_paths, temp_microagents_dir)
+
+        assert len(result) == len(file_paths)
+        assert mock_skill_class.load.call_count == len(file_paths)
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Skill')
+    def test_load_global_files_with_errors(
+        self, mock_skill_class, temp_microagents_dir, mock_skill
+    ):
+        """Test loading when some files fail to parse."""
+        file_paths = list(temp_microagents_dir.glob('*.md'))
+        file_paths = [f for f in file_paths if f.name.lower() != 'readme.md']
+
+        # First file succeeds, second file fails
+        mock_skill_class.load.side_effect = [mock_skill, Exception('Parse error')]
+
+        result = _load_global_microagent_files(file_paths, temp_microagents_dir)
+
+        assert len(result) == 1
+        assert result[0] == mock_skill
+
+
+# ===== Tests for Main Loader Functions =====
+
+
+class TestLoadGlobalMicroagents:
+    """Test load_global_microagents main function."""
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Path')
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._find_global_microagent_files'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_global_microagent_files'
+    )
+    def test_load_global_microagents_success(
+        self,
+        mock_load_files,
+        mock_find_files,
+        mock_path_class,
+        temp_microagents_dir,
+        mock_skills_list,
+    ):
+        """Test successfully loading global microagents."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path_class.return_value = mock_path_obj
+
+        mock_find_files.return_value = [
+            temp_microagents_dir / 'test1.md',
+            temp_microagents_dir / 'test2.md',
+        ]
+        mock_load_files.return_value = mock_skills_list
+
+        result = load_global_microagents()
+
+        assert len(result) == len(mock_skills_list)
+        assert result == mock_skills_list
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Path')
+    def test_load_global_microagents_dir_not_exists(self, mock_path_class):
+        """Test when global microagents directory doesn't exist."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = False
+        mock_path_class.return_value = mock_path_obj
+
+        result = load_global_microagents()
+
+        assert len(result) == 0
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.Path')
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._find_global_microagent_files'
+    )
+    def test_load_global_microagents_exception(self, mock_find_files, mock_path_class):
+        """Test handling exception during global microagent loading."""
+        mock_path_obj = MagicMock()
+        mock_path_obj.exists.return_value = True
+        mock_path_class.return_value = mock_path_obj
+
+        mock_find_files.side_effect = Exception('File system error')
+
+        result = load_global_microagents()
+
+        assert len(result) == 0
+
+
+class TestLoadUserMicroagents:
+    """Test load_user_microagents main function."""
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.load_user_skills')
+    def test_load_user_microagents_success(
+        self, mock_load_user_skills, mock_skills_list
+    ):
+        """Test successfully loading user microagents."""
+        mock_load_user_skills.return_value = mock_skills_list
+
+        result = load_user_microagents()
+
+        assert len(result) == len(mock_skills_list)
+        assert result == mock_skills_list
+        mock_load_user_skills.assert_called_once()
+
+    @patch('openhands.app_server.app_conversation.microagent_loader.load_user_skills')
+    def test_load_user_microagents_exception(self, mock_load_user_skills):
+        """Test handling exception during user microagent loading."""
+        mock_load_user_skills.side_effect = Exception('Load error')
+
+        result = load_user_microagents()
+
+        assert len(result) == 0
+
+
+class TestLoadRepoMicroagents:
+    """Test load_repo_microagents main function."""
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_special_files'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._find_microagent_md_files'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_microagent_md_files'
+    )
+    async def test_load_repo_microagents_success(
+        self,
+        mock_load_md_files,
+        mock_find_md_files,
+        mock_load_special,
+        mock_async_remote_workspace,
+        mock_skills_list,
+    ):
+        """Test successfully loading repo microagents."""
+        special_skills = [mock_skills_list[0]]
+        md_skills = [mock_skills_list[1], mock_skills_list[2]]
+
+        mock_load_special.return_value = special_skills
+        mock_find_md_files.return_value = ['/repo/.openhands/microagents/test.md']
+        mock_load_md_files.return_value = md_skills
+
+        result = await load_repo_microagents(
+            mock_async_remote_workspace, 'owner/repo', '/workspace/project'
+        )
+
+        assert len(result) == 3
+        assert result == special_skills + md_skills
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_special_files'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._find_microagent_md_files'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_microagent_md_files'
+    )
+    async def test_load_repo_microagents_no_selected_repository(
+        self,
+        mock_load_md_files,
+        mock_find_md_files,
+        mock_load_special,
+        mock_async_remote_workspace,
+        mock_skills_list,
+    ):
+        """Test loading repo microagents without selected repository."""
+        mock_load_special.return_value = [mock_skills_list[0]]
+        mock_find_md_files.return_value = []
+        mock_load_md_files.return_value = []
+
+        result = await load_repo_microagents(
+            mock_async_remote_workspace, None, '/workspace/project'
+        )
+
+        assert len(result) == 1
+        # Verify repo root is working_dir when no repository selected
+        mock_load_special.assert_called_once_with(
+            mock_async_remote_workspace, '/workspace/project', '/workspace/project'
+        )
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader._load_special_files'
+    )
+    async def test_load_repo_microagents_exception(
+        self, mock_load_special, mock_async_remote_workspace
+    ):
+        """Test handling exception during repo microagent loading."""
+        mock_load_special.side_effect = Exception('Workspace error')
+
+        result = await load_repo_microagents(
+            mock_async_remote_workspace, 'owner/repo', '/workspace/project'
+        )
+
+        assert len(result) == 0
+
+
+class TestMergeSkills:
+    """Test merge_skills function."""
+
+    def test_merge_skills_no_duplicates(self):
+        """Test merging skills with no duplicates."""
+        skill1 = Mock()
+        skill1.name = 'skill1'
+        skill2 = Mock()
+        skill2.name = 'skill2'
+        skill3 = Mock()
+        skill3.name = 'skill3'
+
+        result = merge_skills([[skill1], [skill2], [skill3]])
+
+        assert len(result) == 3
+        names = {s.name for s in result}
+        assert names == {'skill1', 'skill2', 'skill3'}
+
+    def test_merge_skills_with_duplicates(self):
+        """Test merging skills with duplicates - later takes precedence."""
+        skill1_v1 = Mock()
+        skill1_v1.name = 'skill1'
+        skill1_v1.version = 'v1'
+
+        skill1_v2 = Mock()
+        skill1_v2.name = 'skill1'
+        skill1_v2.version = 'v2'
+
+        skill2 = Mock()
+        skill2.name = 'skill2'
+
+        result = merge_skills([[skill1_v1, skill2], [skill1_v2]])
+
+        assert len(result) == 2
+        names = {s.name for s in result}
+        assert names == {'skill1', 'skill2'}
+
+        # Verify later version takes precedence
+        skill1_result = next(s for s in result if s.name == 'skill1')
+        assert skill1_result.version == 'v2'
+
+    def test_merge_skills_empty_lists(self):
+        """Test merging empty skill lists."""
+        result = merge_skills([[], [], []])
+        assert len(result) == 0
+
+    def test_merge_skills_single_list(self):
+        """Test merging single skill list."""
+        skill1 = Mock()
+        skill1.name = 'skill1'
+        skill2 = Mock()
+        skill2.name = 'skill2'
+
+        result = merge_skills([[skill1, skill2]])
+
+        assert len(result) == 2
+
+    def test_merge_skills_precedence_order(self):
+        """Test that skill precedence follows list order."""
+        # Create three versions of the same skill
+        skill_v1 = Mock()
+        skill_v1.name = 'test_skill'
+        skill_v1.priority = 'low'
+
+        skill_v2 = Mock()
+        skill_v2.name = 'test_skill'
+        skill_v2.priority = 'medium'
+
+        skill_v3 = Mock()
+        skill_v3.name = 'test_skill'
+        skill_v3.priority = 'high'
+
+        # List order: low -> medium -> high
+        # Should result in high priority (last one)
+        result = merge_skills([[skill_v1], [skill_v2], [skill_v3]])
+
+        assert len(result) == 1
+        assert result[0].priority == 'high'
+
+    def test_merge_skills_mixed_empty_and_filled(self):
+        """Test merging with mix of empty and filled lists."""
+        skill1 = Mock()
+        skill1.name = 'skill1'
+        skill2 = Mock()
+        skill2.name = 'skill2'
+
+        result = merge_skills([[], [skill1], [], [skill2], []])
+
+        assert len(result) == 2
+
+
+# ===== Integration Tests =====
+
+
+class TestMicroagentLoaderIntegration:
+    """Integration tests for the microagent loader."""
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_global_microagents'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_user_microagents'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_repo_microagents'
+    )
+    async def test_full_loading_workflow(
+        self,
+        mock_load_repo,
+        mock_load_user,
+        mock_load_global,
+        mock_async_remote_workspace,
+    ):
+        """Test the full workflow of loading all microagent types."""
+        # Create distinct mock skills for each source
+        global_skill = Mock()
+        global_skill.name = 'global_skill'
+
+        user_skill = Mock()
+        user_skill.name = 'user_skill'
+
+        repo_skill = Mock()
+        repo_skill.name = 'repo_skill'
+
+        mock_load_global.return_value = [global_skill]
+        mock_load_user.return_value = [user_skill]
+        mock_load_repo.return_value = [repo_skill]
+
+        # Simulate loading all sources
+        global_skills = mock_load_global()
+        user_skills = mock_load_user()
+        repo_skills = await mock_load_repo(
+            mock_async_remote_workspace, 'owner/repo', '/workspace'
+        )
+
+        # Merge all skills
+        all_skills = merge_skills([global_skills, user_skills, repo_skills])
+
+        assert len(all_skills) == 3
+        names = {s.name for s in all_skills}
+        assert names == {'global_skill', 'user_skill', 'repo_skill'}
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_global_microagents'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_user_microagents'
+    )
+    @patch(
+        'openhands.app_server.app_conversation.microagent_loader.load_repo_microagents'
+    )
+    async def test_loading_with_override_precedence(
+        self,
+        mock_load_repo,
+        mock_load_user,
+        mock_load_global,
+        mock_async_remote_workspace,
+    ):
+        """Test that repo skills override user skills, and user skills override global."""
+        # Create skills with same name but different sources
+        global_skill = Mock()
+        global_skill.name = 'common_skill'
+        global_skill.source = 'global'
+
+        user_skill = Mock()
+        user_skill.name = 'common_skill'
+        user_skill.source = 'user'
+
+        repo_skill = Mock()
+        repo_skill.name = 'common_skill'
+        repo_skill.source = 'repo'
+
+        mock_load_global.return_value = [global_skill]
+        mock_load_user.return_value = [user_skill]
+        mock_load_repo.return_value = [repo_skill]
+
+        # Load and merge in correct precedence order
+        global_skills = mock_load_global()
+        user_skills = mock_load_user()
+        repo_skills = await mock_load_repo(
+            mock_async_remote_workspace, 'owner/repo', '/workspace'
+        )
+
+        all_skills = merge_skills([global_skills, user_skills, repo_skills])
+
+        # Should have only one skill with repo source (highest precedence)
+        assert len(all_skills) == 1
+        assert all_skills[0].source == 'repo'

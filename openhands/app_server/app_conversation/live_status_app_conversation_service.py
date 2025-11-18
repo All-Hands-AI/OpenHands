@@ -40,6 +40,12 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
 from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
+from openhands.app_server.app_conversation.microagent_loader import (
+    load_global_microagents,
+    load_repo_microagents,
+    load_user_microagents,
+    merge_skills,
+)
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
 )
@@ -69,6 +75,7 @@ from openhands.app_server.utils.docker_utils import (
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
+from openhands.sdk.context.agent_context import AgentContext
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
@@ -213,12 +220,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             assert sandbox_spec is not None
 
             # Run setup scripts
-            workspace = AsyncRemoteWorkspace(
+            remote_workspace = AsyncRemoteWorkspace(
                 host=agent_server_url,
                 api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(task, workspace):
+            async for updated_task in self.run_setup_scripts(task, remote_workspace):
                 yield updated_task
 
             # Build the start request
@@ -229,6 +236,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     sandbox_spec.working_dir,
                     request.agent_type,
                     request.llm_model,
+                    remote_workspace=remote_workspace,
+                    selected_repository=request.selected_repository,
                 )
             )
 
@@ -478,6 +487,96 @@ class LiveStatusAppConversationService(GitAppConversationService):
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
 
+    async def _load_and_merge_all_microagents(
+        self,
+        remote_workspace: AsyncRemoteWorkspace,
+        selected_repository: str | None,
+        working_dir: str,
+    ) -> list:
+        """Load microagents from all sources and merge them.
+
+        Args:
+            remote_workspace: AsyncRemoteWorkspace for loading repo microagents
+            selected_repository: Repository name or None
+            working_dir: Working directory path
+
+        Returns:
+            List of merged Skill objects from all sources
+        """
+        _logger.debug('Loading microagents for V1 conversation')
+
+        # Load microagents from all sources
+        global_skills = load_global_microagents()
+        user_skills = load_user_microagents()
+        repo_skills = await load_repo_microagents(
+            remote_workspace, selected_repository, working_dir
+        )
+
+        # Merge all skills (later lists override earlier ones)
+        all_skills = merge_skills([global_skills, user_skills, repo_skills])
+
+        _logger.info(
+            f'Loaded {len(all_skills)} total skills: {[s.name for s in all_skills]}'
+        )
+
+        return all_skills
+
+    def _create_agent_with_skills(self, agent, skills: list):
+        """Create or update agent with skills in its context.
+
+        Args:
+            agent: The agent to update
+            skills: List of Skill objects to add to agent context
+
+        Returns:
+            Updated agent with skills in context
+        """
+        if agent.agent_context:
+            # Merge with existing context
+            existing_skills = agent.agent_context.skills
+            all_skills = merge_skills([skills, existing_skills])
+            agent = agent.model_copy(
+                update={
+                    'agent_context': agent.agent_context.model_copy(
+                        update={'skills': all_skills}
+                    )
+                }
+            )
+        else:
+            # Create new context
+            agent_context = AgentContext(skills=skills)
+            agent = agent.model_copy(update={'agent_context': agent_context})
+
+        return agent
+
+    async def _load_microagents_and_update_agent(
+        self,
+        agent,
+        remote_workspace: AsyncRemoteWorkspace,
+        selected_repository: str | None,
+        working_dir: str,
+    ):
+        """Load all microagents and update agent with them.
+
+        Args:
+            agent: The agent to update
+            remote_workspace: AsyncRemoteWorkspace for loading repo microagents
+            selected_repository: Repository name or None
+            working_dir: Working directory path
+
+        Returns:
+            Updated agent with microagents loaded into context
+        """
+        # Load and merge all microagents
+        all_skills = await self._load_and_merge_all_microagents(
+            remote_workspace, selected_repository, working_dir
+        )
+
+        # Update agent with skills
+        agent = self._create_agent_with_skills(agent, all_skills)
+
+        return agent
+
     def _inherit_configuration_from_parent(
         self, request: AppConversationStartRequest, parent_info: AppConversationInfo
     ) -> None:
@@ -515,6 +614,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
         working_dir: str,
         agent_type: AgentType = AgentType.DEFAULT,
         llm_model: str | None = None,
+        remote_workspace: AsyncRemoteWorkspace | None = None,
+        selected_repository: str | None = None,
     ) -> StartConversationRequest:
         user = await self.user_context.get_user_info()
 
@@ -564,6 +665,16 @@ class LiveStatusAppConversationService(GitAppConversationService):
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
+
+        # Load and merge all microagents/skills if remote_workspace is available
+        if remote_workspace:
+            try:
+                agent = await self._load_microagents_and_update_agent(
+                    agent, remote_workspace, selected_repository, working_dir
+                )
+            except Exception as e:
+                _logger.warning(f'Failed to load microagents: {e}', exc_info=True)
+                # Continue without microagents - don't fail conversation startup
 
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,
