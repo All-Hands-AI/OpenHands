@@ -6,6 +6,18 @@ FROM ${BASE}:${OPENHANDS_VERSION}
 LABEL com.datadoghq.tags.service="deploy"
 LABEL com.datadoghq.tags.env="${DD_ENV}"
 
+# Set up pip configuration to disable SSL verification
+RUN echo "[global]" > /etc/pip.conf && \
+    echo "trusted-host = pypi.org" >> /etc/pip.conf && \
+    echo "               pypi.python.org" >> /etc/pip.conf && \
+    echo "               files.pythonhosted.org" >> /etc/pip.conf && \
+    echo "" >> /etc/pip.conf && \
+    echo "[install]" >> /etc/pip.conf && \
+    echo "trusted-host = pypi.org" >> /etc/pip.conf && \
+    echo "               pypi.python.org" >> /etc/pip.conf && \
+    echo "               files.pythonhosted.org" >> /etc/pip.conf
+ENV PIP_CONFIG_FILE=/etc/pip.conf
+
 # Disable SSL/TLS verification
 ENV PYTHONHTTPSVERIFY=0 \
     PIP_TRUSTED_HOST="pypi.org pypi.python.org files.pythonhosted.org" \

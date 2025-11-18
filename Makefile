@@ -82,10 +82,9 @@ check-npm:
 check-nodejs:
 	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
 	@if command -v node > /dev/null; then \
-		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
-		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
-		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 22 ]; then \
-			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
+		NODE_MAJOR=$$(node --version | cut -d'.' -f1 | sed 's/v//'); \
+		if [ "$$NODE_MAJOR" -ge 22 ] 2>/dev/null; then \
+			echo "$(BLUE)Node.js $$(node --version) is already installed.$(RESET)"; \
 		else \
 			echo "$(RED)Node.js 22.x or later is required. Please install Node.js 22.x or later to continue.$(RESET)"; \
 			exit 1; \
@@ -142,24 +141,30 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	@echo "$(YELLOW)Configuring Poetry to disable SSL verification...$(RESET)"
-	@poetry config certificates.default.cert false 2>/dev/null || true
-	@poetry config certificates.default.verify false 2>/dev/null || true
+	@echo "$(YELLOW)Configuring pip and Poetry to disable SSL verification...$(RESET)"
+	@mkdir -p ~/.config/pip ~/.pip
+	@cp pip.conf ~/.config/pip/pip.conf 2>/dev/null || true
+	@cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
+	@poetry config installer.modern-installation false --local 2>/dev/null || true
+	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
-		export HNSWLIB_NO_NATIVE=1; \
+		export HNSWLIB_NO_NATIVE=1 PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry run pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
+		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE=""; \
 			poetry run pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org playwright; \
 			poetry run playwright install chromium; \
 		else \
