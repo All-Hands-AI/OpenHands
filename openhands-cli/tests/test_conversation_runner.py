@@ -113,10 +113,10 @@ class TestConversationRunner:
             agent.finish_on_step = 1
 
         convo = Conversation(agent)
-        
+
         # Set security analyzer using the new API to enable confirmation mode
         convo.set_security_analyzer(MagicMock())
-        
+
         convo.state.execution_status = (
             ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
         )
@@ -127,7 +127,7 @@ class TestConversationRunner:
             cr, '_handle_confirmation_request', return_value=confirmation
         ) as mock_confirmation_request:
             cr.process_message(message=None)
-        
+
         mock_confirmation_request.assert_called_once()
         assert agent.step_count == expected_run_calls
         assert convo.state.execution_status == final_status
