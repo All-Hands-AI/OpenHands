@@ -32,7 +32,7 @@ def mock_runner():
     return MagicMock()
 
 
-def run_resume_command_test(commands, conversation_status=None, expect_runner_created=True):
+def run_resume_command_test(commands, agent_status=None, expect_runner_created=True):
     """Helper function to run resume command tests with common setup."""
     with patch('openhands_cli.agent_chat.exit_session_confirmation') as mock_exit_confirm, \
          patch('openhands_cli.agent_chat.get_session_prompter') as mock_get_session_prompter, \
@@ -50,8 +50,8 @@ def run_resume_command_test(commands, conversation_status=None, expect_runner_cr
         # Mock conversation setup
         conv = MagicMock()
         conv.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
-        if conversation_status:
-            conv.state.conversation_status = conversation_status
+        if agent_status:
+            conv.state.agent_status = agent_status
         mock_setup_conversation.return_value = conv
 
         # Mock runner
@@ -93,10 +93,10 @@ def run_resume_command_test(commands, conversation_status=None, expect_runner_cr
 def test_resume_command_warnings(commands, expected_warning, expect_runner_created):
     """Test /resume command shows appropriate warnings."""
     # Set agent status to FINISHED for the "conversation exists but not paused" test
-    conversation_status = ConversationExecutionStatus.FINISHED if expect_runner_created else None
+    agent_status = ConversationExecutionStatus.FINISHED if expect_runner_created else None
 
     mock_runner_cls, runner, mock_print = run_resume_command_test(
-        commands, conversation_status=conversation_status, expect_runner_created=expect_runner_created
+        commands, agent_status=agent_status, expect_runner_created=expect_runner_created
     )
 
     # Verify warning message was printed
@@ -115,18 +115,18 @@ def test_resume_command_warnings(commands, expected_warning, expect_runner_creat
 # ---------- Successful resume tests (parametrized) ----------
 
 @pytest.mark.parametrize(
-    "conversation_status",
+    "agent_status",
     [
         ConversationExecutionStatus.PAUSED,
         ConversationExecutionStatus.WAITING_FOR_CONFIRMATION,
     ],
 )
-def test_resume_command_successful_resume(conversation_status):
+def test_resume_command_successful_resume(agent_status):
     """Test /resume command successfully resumes paused/waiting conversations."""
     commands = "hello\r/resume\r/exit\r"
 
     mock_runner_cls, runner, mock_print = run_resume_command_test(
-        commands, conversation_status=conversation_status, expect_runner_created=True
+        commands, agent_status=agent_status, expect_runner_created=True
     )
 
     # Verify runner was created and process_message was called
