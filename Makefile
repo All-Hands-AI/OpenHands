@@ -82,7 +82,7 @@ check-npm:
 check-nodejs:
 	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
 	@if command -v node > /dev/null; then \
-		NODE_VERSION=$(shell node --version | sed -E 's/v//g'); \
+		NODE_VERSION=$$(node --version | sed -E 's/v//g'); \
 		IFS='.' read -r -a NODE_VERSION_ARRAY <<< "$$NODE_VERSION"; \
 		if [ "$${NODE_VERSION_ARRAY[0]}" -ge 22 ]; then \
 			echo "$(BLUE)Node.js $$NODE_VERSION is already installed.$(RESET)"; \
