@@ -1,10 +1,10 @@
 import { useTranslation } from "react-i18next";
-import posthog from "posthog-js";
 import ArrowUpIcon from "#/icons/u-arrow-up.svg?react";
 import { cn, getGitPushPrompt } from "#/utils/utils";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { I18nKey } from "#/i18n/declaration";
 import { Provider } from "#/types/settings";
+import { useTracking } from "#/hooks/use-tracking";
 
 interface GitControlBarPushButtonProps {
   onSuggestionsClick: (value: string) => void;
@@ -20,6 +20,7 @@ export function GitControlBarPushButton({
   isConversationReady = true,
 }: GitControlBarPushButtonProps) {
   const { t } = useTranslation();
+  const { trackPushButtonClick } = useTracking();
 
   const { providers } = useUserProviders();
 
@@ -28,7 +29,7 @@ export function GitControlBarPushButton({
     providersAreSet && hasRepository && isConversationReady;
 
   const handlePushClick = () => {
-    posthog.capture("push_button_clicked");
+    trackPushButtonClick();
     onSuggestionsClick(getGitPushPrompt(currentGitProvider));
   };
 

@@ -15,6 +15,7 @@ const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
+const PlannerTab = lazy(() => import("#/routes/planner-tab"));
 
 export function ConversationTabContent() {
   const { selectedTab, shouldShownAgentLoading } = useConversationStore();
@@ -28,6 +29,7 @@ export function ConversationTabContent() {
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
   const isTerminalActive = selectedTab === "terminal";
+  const isPlannerActive = selectedTab === "planner";
 
   // Define tab configurations
   const tabs = [
@@ -43,6 +45,11 @@ export function ConversationTabContent() {
       key: "terminal",
       component: Terminal,
       isActive: isTerminalActive,
+    },
+    {
+      key: "planner",
+      component: PlannerTab,
+      isActive: isPlannerActive,
     },
   ];
 
@@ -62,6 +69,9 @@ export function ConversationTabContent() {
     if (isTerminalActive) {
       return t(I18nKey.COMMON$TERMINAL);
     }
+    if (isPlannerActive) {
+      return t(I18nKey.COMMON$PLANNER);
+    }
     return "";
   }, [
     isEditorActive,
@@ -69,6 +79,7 @@ export function ConversationTabContent() {
     isServedActive,
     isVSCodeActive,
     isTerminalActive,
+    isPlannerActive,
   ]);
 
   if (shouldShownAgentLoading) {

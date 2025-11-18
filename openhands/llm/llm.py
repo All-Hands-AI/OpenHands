@@ -155,7 +155,8 @@ class LLM(RetryMixin, DebugMixin):
                 # don't send reasoning_effort to specific Claude Sonnet/Haiku 4.5 variants
                 kwargs.pop('reasoning_effort', None)
             else:
-                kwargs['reasoning_effort'] = self.config.reasoning_effort
+                if self.config.reasoning_effort is not None:
+                    kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models

@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.60.0"
+version = "0.62.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -113,17 +113,18 @@ e2b-code-interpreter = { version = "^2.0.0", optional = true }
 pybase62 = "^1.0.0"
 
 # V1 dependencies
-openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
-openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
-openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
-#openhands-sdk = "1.0.0a5"
-#openhands-agent-server = "1.0.0a5"
-#openhands-tools = "1.0.0a5"
+#openhands-agent-server = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-agent-server", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
+#openhands-sdk = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-sdk", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
+#openhands-tools = { git = "https://github.com/OpenHands/agent-sdk.git", subdirectory = "openhands-tools", rev = "88cc031bd62808ef72b5898796c4535fcf26d26c" }
+openhands-sdk = "1.1.0"
+openhands-agent-server = "1.1.0"
+openhands-tools = "1.1.0"
 python-jose = { version = ">=3.3", extras = [ "cryptography" ] }
 sqlalchemy = { extras = [ "asyncio" ], version = "^2.0.40" }
 pg8000 = "^1.31.5"
 asyncpg = "^0.30.0"
 deprecation = "^2.1.0"
+lmnr = "^0.7.20"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b-code-interpreter", "modal", "runloop-api-client", "daytona" ]

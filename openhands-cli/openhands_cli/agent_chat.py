@@ -184,9 +184,9 @@ def run_cli_entry(resume_conversation_id: str | None = None) -> None:
 
                 conversation = runner.conversation
                 if not (
-                    conversation.state.agent_status == AgentExecutionStatus.PAUSED
-                    or conversation.state.agent_status
-                    == AgentExecutionStatus.WAITING_FOR_CONFIRMATION
+                    conversation.state.execution_status == ConversationExecutionStatus.PAUSED
+                    or conversation.state.execution_status
+                    == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
                 ):
                     print_formatted_text(
                         HTML('<red>No paused conversation to resume...</red>')

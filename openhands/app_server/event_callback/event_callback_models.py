@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
@@ -28,6 +29,13 @@ else:
     EventKind = Literal[tuple(c.__name__ for c in get_known_concrete_subclasses(Event))]
 
 
+class EventCallbackStatus(Enum):
+    ACTIVE = 'ACTIVE'
+    DISABLED = 'DISABLED'
+    COMPLETED = 'COMPLETED'
+    ERROR = 'ERROR'
+
+
 class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
     @abstractmethod
     async def __call__(
@@ -35,7 +43,7 @@ class EventCallbackProcessor(DiscriminatedUnionMixin, ABC):
         conversation_id: UUID,
         callback: EventCallback,
         event: Event,
-    ) -> EventCallbackResult:
+    ) -> EventCallbackResult | None:
         """Process an event."""
 
 
@@ -75,7 +83,9 @@ class CreateEventCallbackRequest(OpenHandsModel):
 
 class EventCallback(CreateEventCallbackRequest):
     id: OpenHandsUUID = Field(default_factory=uuid4)
+    status: EventCallbackStatus = Field(default=EventCallbackStatus.ACTIVE)
     created_at: datetime = Field(default_factory=utc_now)
+    updated_at: datetime = Field(default_factory=utc_now)
 
 
 class EventCallbackPage(OpenHandsModel):

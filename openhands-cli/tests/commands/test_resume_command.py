@@ -51,7 +51,7 @@ def run_resume_command_test(commands, agent_status=None, expect_runner_created=T
         conv = MagicMock()
         conv.id = UUID('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')
         if agent_status:
-            conv.state.agent_status = agent_status
+            conv.state.execution_status = agent_status
         mock_setup_conversation.return_value = conv
 
         # Mock runner

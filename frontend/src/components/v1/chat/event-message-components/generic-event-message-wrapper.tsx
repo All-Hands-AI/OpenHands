@@ -16,6 +16,13 @@ export function GenericEventMessageWrapper({
 }: GenericEventMessageWrapperProps) {
   const { title, details } = getEventContent(event);
 
+  if (
+    isObservationEvent(event) &&
+    event.observation.kind === "TaskTrackerObservation"
+  ) {
+    return <div>{details}</div>;
+  }
+
   return (
     <div>
       <GenericEventMessage

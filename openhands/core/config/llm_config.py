@@ -179,10 +179,7 @@ class LLMConfig(BaseModel):
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
-        # Set reasoning_effort to 'high' by default for non-Gemini models
-        # Gemini models use optimized thinking budget when reasoning_effort is None
-        if self.reasoning_effort is None and 'gemini-2.5-pro' not in self.model:
-            self.reasoning_effort = 'high'
+        # Do not set a default reasoning_effort. Leave as None unless user-configured.
 
         # Set an API version by default for Azure models
         # Required for newer models.

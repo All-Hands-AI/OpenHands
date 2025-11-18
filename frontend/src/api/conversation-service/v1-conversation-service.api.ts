@@ -11,7 +11,6 @@ import type {
   V1AppConversationStartTask,
   V1AppConversationStartTaskPage,
   V1AppConversation,
-  V1SandboxInfo,
 } from "./v1-conversation-service.types";
 
 class V1ConversationService {
@@ -61,6 +60,8 @@ class V1ConversationService {
     selected_branch?: string,
     conversationInstructions?: string,
     trigger?: ConversationTrigger,
+    parent_conversation_id?: string,
+    agent_type?: "default" | "plan",
   ): Promise<V1AppConversationStartTask> {
     const body: V1AppConversationStartRequest = {
       selected_repository: selectedRepository,
@@ -68,6 +69,8 @@ class V1ConversationService {
       selected_branch,
       title: conversationInstructions,
       trigger,
+      parent_conversation_id: parent_conversation_id || null,
+      agent_type,
     };
 
     // Add initial message if provided
@@ -112,17 +115,21 @@ class V1ConversationService {
    * Search for start tasks (ongoing tasks that haven't completed yet)
    * Use this to find tasks that were started but the user navigated away
    *
-   * Note: Backend only supports filtering by limit. To filter by repository/trigger,
+   * Note: Backend supports filtering by limit and created_at__gte. To filter by repository/trigger,
    * filter the results client-side after fetching.
    *
    * @param limit Maximum number of tasks to return (max 100)
-   * @returns Array of start tasks
+   * @returns Array of start tasks from the last 20 minutes
    */
   static async searchStartTasks(
     limit: number = 100,
   ): Promise<V1AppConversationStartTask[]> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());
+
+    // Only get tasks from the last 20 minutes
+    const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000);
+    params.append("created_at__gte", twentyMinutesAgo.toISOString());
 
     const { data } = await openHands.get<V1AppConversationStartTaskPage>(
       `/api/v1/app-conversations/start-tasks/search?${params.toString()}`,
@@ -214,36 +221,6 @@ class V1ConversationService {
   }
 
   /**
-   * Pause a V1 sandbox
-   * Calls the /api/v1/sandboxes/{id}/pause endpoint
-   *
-   * @param sandboxId The sandbox ID to pause
-   * @returns Success response
-   */
-  static async pauseSandbox(sandboxId: string): Promise<{ success: boolean }> {
-    const { data } = await openHands.post<{ success: boolean }>(
-      `/api/v1/sandboxes/${sandboxId}/pause`,
-      {},
-    );
-    return data;
-  }
-
-  /**
-   * Resume a V1 sandbox
-   * Calls the /api/v1/sandboxes/{id}/resume endpoint
-   *
-   * @param sandboxId The sandbox ID to resume
-   * @returns Success response
-   */
-  static async resumeSandbox(sandboxId: string): Promise<{ success: boolean }> {
-    const { data } = await openHands.post<{ success: boolean }>(
-      `/api/v1/sandboxes/${sandboxId}/resume`,
-      {},
-    );
-    return data;
-  }
-
-  /**
    * Batch get V1 app conversations by their IDs
    * Returns null for any missing conversations
    *
@@ -265,32 +242,6 @@ class V1ConversationService {
 
     const { data } = await openHands.get<(V1AppConversation | null)[]>(
       `/api/v1/app-conversations?${params.toString()}`,
-    );
-    return data;
-  }
-
-  /**
-   * Batch get V1 sandboxes by their IDs
-   * Returns null for any missing sandboxes
-   *
-   * @param ids Array of sandbox IDs (max 100)
-   * @returns Array of sandboxes or null for missing ones
-   */
-  static async batchGetSandboxes(
-    ids: string[],
-  ): Promise<(V1SandboxInfo | null)[]> {
-    if (ids.length === 0) {
-      return [];
-    }
-    if (ids.length > 100) {
-      throw new Error("Cannot request more than 100 sandboxes at once");
-    }
-
-    const params = new URLSearchParams();
-    ids.forEach((id) => params.append("id", id));
-
-    const { data } = await openHands.get<(V1SandboxInfo | null)[]>(
-      `/api/v1/sandboxes?${params.toString()}`,
     );
     return data;
   }
@@ -343,24 +294,6 @@ class V1ConversationService {
   ): Promise<{ runtime_id: string }> {
     const url = `/api/conversations/${conversationId}/config`;
     const { data } = await openHands.get<{ runtime_id: string }>(url);
-    return data;
-  }
-
-  /**
-   * Get the count of events for a conversation
-   * Uses the V1 API endpoint: GET /api/v1/events/count
-   *
-   * @param conversationId The conversation ID to get event count for
-   * @returns The number of events in the conversation
-   */
-  static async getEventCount(conversationId: string): Promise<number> {
-    const params = new URLSearchParams();
-    params.append("conversation_id__eq", conversationId);
-
-    const { data } = await openHands.get<number>(
-      `/api/v1/events/count?${params.toString()}`,
-    );
-
     return data;
   }
 }

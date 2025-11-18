@@ -51,7 +51,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for 
 
 ## ☁️ OpenHands Cloud
 The easiest way to get started with OpenHands is on [OpenHands Cloud](https://app.all-hands.dev),
-which comes with $20 in free credits for new users.
+which comes with $10 in free credits for new users.
 
 ## 💻 Running OpenHands Locally
 
@@ -82,17 +82,17 @@ You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) 
 You can also run OpenHands directly with Docker:
 
 ```bash
-docker pull docker.openhands.dev/openhands/runtime:0.60-nikolaik
+docker pull docker.openhands.dev/openhands/runtime:0.62-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.openhands.dev/openhands/runtime:0.60-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.openhands.dev/openhands/runtime:0.62-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.openhands.dev/openhands/openhands:0.60
+    docker.openhands.dev/openhands/openhands:0.62
 ```
 
 </details>

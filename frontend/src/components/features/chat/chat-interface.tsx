@@ -1,5 +1,5 @@
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -60,6 +60,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
+  const posthog = usePostHog();
   const { setMessageToSend } = useConversationStore();
   const { data: conversation } = useActiveConversation();
   const { errorMessage } = useErrorMessageStore();
@@ -97,24 +98,29 @@ export function ChatInterface() {
 
   const isV1Conversation = conversation?.conversation_version === "V1";
 
-  // Instantly scroll to bottom when history loading completes
-  const prevLoadingHistoryRef = React.useRef(
+  // Track when we should show V1 messages (after DOM has rendered)
+  const [showV1Messages, setShowV1Messages] = React.useState(false);
+  const prevV1LoadingRef = React.useRef(
     conversationWebSocket?.isLoadingHistory,
   );
+
+  // Wait for DOM to render before showing V1 messages
   React.useEffect(() => {
-    const wasLoading = prevLoadingHistoryRef.current;
+    const wasLoading = prevV1LoadingRef.current;
     const isLoading = conversationWebSocket?.isLoadingHistory;
 
-    // When history loading transitions from true to false, instantly scroll to bottom
-    if (wasLoading && !isLoading && scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "instant",
+    if (wasLoading && !isLoading) {
+      // Loading just finished - wait for next frame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        setShowV1Messages(true);
       });
+    } else if (isLoading) {
+      // Reset when loading starts
+      setShowV1Messages(false);
     }
 
-    prevLoadingHistoryRef.current = isLoading;
-  }, [conversationWebSocket?.isLoadingHistory, scrollRef]);
+    prevV1LoadingRef.current = isLoading;
+  }, [conversationWebSocket?.isLoadingHistory]);
 
   // Filter V0 events
   const v0Events = storeEvents
@@ -252,7 +258,7 @@ export function ChatInterface() {
             </div>
           )}
 
-          {conversationWebSocket?.isLoadingHistory &&
+          {(conversationWebSocket?.isLoadingHistory || !showV1Messages) &&
             isV1Conversation &&
             !isTask && (
               <div className="flex justify-center">
@@ -269,7 +275,7 @@ export function ChatInterface() {
             />
           )}
 
-          {!conversationWebSocket?.isLoadingHistory && v1UserEventsExist && (
+          {showV1Messages && v1UserEventsExist && (
             <V1Messages messages={v1UiEvents} allEvents={v1FullEvents} />
           )}
         </div>

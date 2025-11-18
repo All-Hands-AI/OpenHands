@@ -1,7 +1,14 @@
 from prompt_toolkit import HTML, print_formatted_text
 
 from openhands.sdk import BaseConversation, Message
+<<<<<<< HEAD
 from openhands.sdk.conversation.state import ConversationExecutionStatus, ConversationState
+=======
+from openhands.sdk.conversation.state import (
+    ConversationExecutionStatus,
+    ConversationState,
+)
+>>>>>>> main
 from openhands.sdk.security.confirmation_policy import (
     AlwaysConfirm,
     ConfirmationPolicyBase,
@@ -51,7 +58,14 @@ class ConversationRunner:
 
     def _print_run_status(self) -> None:
         print_formatted_text('')
+<<<<<<< HEAD
         if self.conversation.state.agent_status == ConversationExecutionStatus.PAUSED:
+=======
+        if (
+            self.conversation.state.execution_status
+            == ConversationExecutionStatus.PAUSED
+        ):
+>>>>>>> main
             print_formatted_text(
                 HTML(
                     '<yellow>Resuming paused conversation...</yellow><grey> (Press Ctrl-P to pause)</grey>'
@@ -91,7 +105,11 @@ class ConversationRunner:
     def _run_with_confirmation(self) -> None:
         # If agent was paused, resume with confirmation request
         if (
+<<<<<<< HEAD
             self.conversation.state.agent_status
+=======
+            self.conversation.state.execution_status
+>>>>>>> main
             == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
         ):
             user_confirmation = self._handle_confirmation_request()
@@ -106,11 +124,22 @@ class ConversationRunner:
                     break
 
             # In confirmation mode, agent either finishes or waits for user confirmation
+<<<<<<< HEAD
             if self.conversation.state.agent_status == ConversationExecutionStatus.FINISHED:
                 break
 
             elif (
                 self.conversation.state.agent_status
+=======
+            if (
+                self.conversation.state.execution_status
+                == ConversationExecutionStatus.FINISHED
+            ):
+                break
+
+            elif (
+                self.conversation.state.execution_status
+>>>>>>> main
                 == ConversationExecutionStatus.WAITING_FOR_CONFIRMATION
             ):
                 user_confirmation = self._handle_confirmation_request()

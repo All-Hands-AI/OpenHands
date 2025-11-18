@@ -22,7 +22,7 @@ import { ConversationSubscriptionsProvider } from "#/context/conversation-subscr
 import { useUserProviders } from "#/hooks/use-user-providers";
 
 import { ConversationMain } from "#/components/features/conversation/conversation-main/conversation-main";
-import { ConversationName } from "#/components/features/conversation/conversation-name";
+import { ConversationNameWithStatus } from "#/components/features/conversation/conversation-name-with-status";
 
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 import { WebSocketProviderWrapper } from "#/contexts/websocket-provider-wrapper";
@@ -160,7 +160,7 @@ function AppContent() {
           className="p-3 md:p-0 flex flex-col h-full gap-3"
         >
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4.5 pt-2 lg:pt-0">
-            <ConversationName />
+            <ConversationNameWithStatus />
             <ConversationTabs />
           </div>
 
