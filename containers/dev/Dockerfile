@@ -91,6 +91,13 @@ EOF
 ###
 FROM openhands AS dev
 
+# Disable SSL/TLS verification
+ENV PYTHONHTTPSVERIFY=0 \
+    PIP_TRUSTED_HOST="pypi.org pypi.python.org files.pythonhosted.org" \
+    REQUESTS_CA_BUNDLE="" \
+    CURL_CA_BUNDLE="" \
+    NODE_TLS_REJECT_UNAUTHORIZED=0
+
 RUN apt-get update && apt-get install -y \
 	dnsutils \
 	file \

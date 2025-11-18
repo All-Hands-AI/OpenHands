@@ -10,6 +10,12 @@ services:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-docker.openhands.dev/openhands/runtime:0.62-nikolaik}
       #- SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} # enable this only if you want a specific non-root sandbox user but you will have to manually adjust permissions of ~/.openhands for this user
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      # Disable SSL/TLS verification
+      - PYTHONHTTPSVERIFY=0
+      - PIP_TRUSTED_HOST=pypi.org pypi.python.org files.pythonhosted.org
+      - REQUESTS_CA_BUNDLE=
+      - CURL_CA_BUNDLE=
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     ports:
       - "3000:3000"
     extra_hosts:

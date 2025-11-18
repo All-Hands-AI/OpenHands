@@ -42,7 +42,7 @@ def get_keycloak_admin(external=False) -> KeycloakAdmin:
             password=KEYCLOAK_ADMIN_PASSWORD,
             realm_name='master',
             client_id='admin-cli',
-            verify=True,
+            verify=False,  # SSL/TLS verification disabled
         )
         keycloak_admin.get_realm(KEYCLOAK_REALM_NAME)
         keycloak_admin.change_current_realm(KEYCLOAK_REALM_NAME)

@@ -94,6 +94,7 @@ class GraySwanAnalyzer(SecurityAnalyzer):
                     'x-grayswan-api-key': self.api_key,
                     'Content-Type': 'application/json',
                 },
+                connector=aiohttp.TCPConnector(ssl=False),  # SSL/TLS verification disabled
             )
         elif hasattr(self.session, 'closed') and self.session.closed:
             self.session = aiohttp.ClientSession(
@@ -103,6 +104,7 @@ class GraySwanAnalyzer(SecurityAnalyzer):
                     'x-grayswan-api-key': self.api_key,
                     'Content-Type': 'application/json',
                 },
+                connector=aiohttp.TCPConnector(ssl=False),  # SSL/TLS verification disabled
             )
         return self.session
 
