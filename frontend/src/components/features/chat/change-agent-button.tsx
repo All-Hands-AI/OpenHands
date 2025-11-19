@@ -14,6 +14,7 @@ import { AgentState } from "#/types/agent-state";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
 
 export function ChangeAgentButton() {
   const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
@@ -25,6 +26,10 @@ export function ChangeAgentButton() {
   const setConversationMode = useConversationStore(
     (state) => state.setConversationMode,
   );
+
+  const webSocketStatus = useUnifiedWebSocketStatus();
+
+  const isWebSocketConnected = webSocketStatus === "CONNECTED";
 
   const shouldUsePlanningAgent = USE_PLANNING_AGENT();
 
@@ -40,10 +45,10 @@ export function ChangeAgentButton() {
 
   // Close context menu when agent starts running
   useEffect(() => {
-    if (isAgentRunning && contextMenuOpen) {
+    if ((isAgentRunning || !isWebSocketConnected) && contextMenuOpen) {
       setContextMenuOpen(false);
     }
-  }, [isAgentRunning, contextMenuOpen]);
+  }, [isAgentRunning, contextMenuOpen, isWebSocketConnected]);
 
   const handlePlanClick = (
     event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
@@ -79,9 +84,15 @@ export function ChangeAgentButton() {
     );
   };
 
+  const isButtonDisabled =
+    isAgentRunning ||
+    isCreatingConversation ||
+    !isWebSocketConnected ||
+    !shouldUsePlanningAgent;
+
   // Handle Shift + Tab keyboard shortcut to cycle through modes
   useEffect(() => {
-    if (!shouldUsePlanningAgent || isAgentRunning) {
+    if (isButtonDisabled) {
       return undefined;
     }
 
@@ -108,10 +119,10 @@ export function ChangeAgentButton() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [
-    shouldUsePlanningAgent,
-    isAgentRunning,
+    isButtonDisabled,
     conversationMode,
     setConversationMode,
+    handlePlanClick,
   ]);
 
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -141,8 +152,6 @@ export function ChangeAgentButton() {
     }
     return <LessonPlanIcon width={18} height={18} color="#ffffff" />;
   }, [isExecutionAgent]);
-
-  const isButtonDisabled = isAgentRunning || isCreatingConversation;
 
   if (!shouldUsePlanningAgent) {
     return null;
