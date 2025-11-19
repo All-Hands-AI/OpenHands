@@ -47,13 +47,19 @@ const getExecuteBashObservationContent = (
 ): string => {
   const { observation } = event;
 
-  let { output } = observation;
+  // Extract text content from the observation
+  const textContent = observation.content
+    .filter((c) => c.type === "text")
+    .map((c) => c.text)
+    .join("\n");
 
-  if (output.length > MAX_CONTENT_LENGTH) {
-    output = `${output.slice(0, MAX_CONTENT_LENGTH)}...`;
+  let content = textContent || "";
+
+  if (content.length > MAX_CONTENT_LENGTH) {
+    content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
   }
 
-  return `Output:\n\`\`\`sh\n${output.trim() || i18n.t("OBSERVATION$COMMAND_NO_OUTPUT")}\n\`\`\``;
+  return `Output:\n\`\`\`sh\n${content.trim() || i18n.t("OBSERVATION$COMMAND_NO_OUTPUT")}\n\`\`\``;
 };
 
 // Tool Observations
@@ -136,6 +142,7 @@ const getTaskTrackerObservationContent = (
   if (
     "content" in observation &&
     observation.content &&
+    typeof observation.content === "string" &&
     observation.content.trim()
   ) {
     content += `\n\n**Result:** ${observation.content.trim()}`;

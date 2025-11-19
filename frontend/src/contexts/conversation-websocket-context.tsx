@@ -24,11 +24,14 @@ import {
   isAgentStatusConversationStateUpdateEvent,
   isExecuteBashActionEvent,
   isExecuteBashObservationEvent,
+  isConversationErrorEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
+import { isBudgetOrCreditError } from "#/utils/error-handler";
 import type { V1SendMessageRequest } from "#/api/conversation-service/v1-conversation-service.types";
 import EventService from "#/api/event-service/event-service.api";
+import { useTracking } from "#/hooks/use-tracking";
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type V1_WebSocketConnectionState =
@@ -69,6 +72,7 @@ export function ConversationWebSocketProvider({
   const { removeOptimisticUserMessage } = useOptimisticUserMessageStore();
   const { setExecutionStatus } = useV1ConversationStateStore();
   const { appendInput, appendOutput } = useCommandStore();
+  const { trackCreditLimitReached } = useTracking();
 
   // History loading state
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -129,9 +133,21 @@ export function ConversationWebSocketProvider({
         if (isV1Event(event)) {
           addEvent(event);
 
+          // Handle ConversationErrorEvent specifically
+          if (isConversationErrorEvent(event)) {
+            setErrorMessage(event.detail);
+          }
+
           // Handle AgentErrorEvent specifically
           if (isAgentErrorEvent(event)) {
             setErrorMessage(event.error);
+
+            // Track credit limit reached if the error is budget-related
+            if (isBudgetOrCreditError(event.error)) {
+              trackCreditLimitReached({
+                conversationId: conversationId || "unknown",
+              });
+            }
           }
 
           // Clear optimistic user message when a user message is confirmed
@@ -168,7 +184,12 @@ export function ConversationWebSocketProvider({
 
           // Handle ExecuteBashObservation events - add output to terminal
           if (isExecuteBashObservationEvent(event)) {
-            appendOutput(event.observation.output);
+            // Extract text content from the observation content array
+            const textContent = event.observation.content
+              .filter((c) => c.type === "text")
+              .map((c) => c.text)
+              .join("\n");
+            appendOutput(textContent);
           }
         }
       } catch (error) {

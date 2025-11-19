@@ -56,9 +56,9 @@ export interface BrowserObservation
 export interface ExecuteBashObservation
   extends ObservationBase<"ExecuteBashObservation"> {
   /**
-   * The raw output from the tool.
+   * Content returned from the tool as a list of TextContent/ImageContent objects.
    */
-  output: string;
+  content: Array<TextContent | ImageContent>;
   /**
    * The bash command that was executed. Can be empty string if the observation is from a previous command that hit soft timeout and is not yet finished.
    */

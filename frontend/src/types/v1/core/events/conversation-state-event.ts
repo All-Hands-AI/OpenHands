@@ -45,3 +45,21 @@ export interface ConversationStateUpdateEventAgentStatus
 export type ConversationStateUpdateEvent =
   | ConversationStateUpdateEventFullState
   | ConversationStateUpdateEventAgentStatus;
+
+// Conversation error event - contains error information
+export interface ConversationErrorEvent extends BaseEvent {
+  /**
+   * The source is always "environment" for conversation error events
+   */
+  source: "environment";
+
+  /**
+   * Error code (e.g., "AuthenticationError")
+   */
+  code: string;
+
+  /**
+   * Detailed error message
+   */
+  detail: string;
+}
