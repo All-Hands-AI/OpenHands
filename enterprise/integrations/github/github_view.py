@@ -80,22 +80,12 @@ class GithubUserContext(UserContext):
         return self.keycloak_user_id
 
     async def get_user_info(self) -> UserInfo:
-        # Get the user's full settings from the database using the store.load() method
-        # The V1 system needs proper LLM configuration to work
-        try:
-            # Load user settings - this already handles the conversion to Settings format
-            user_settings = await self.settings_store.load()
-
-            # Create UserInfo with the loaded settings and user ID
-            return UserInfo(
-                id=self.keycloak_user_id,
-                **user_settings.model_dump()
-            )
-
-        except Exception as e:
-            logger.warning(f"Failed to load user settings for {self.keycloak_user_id}: {e}")
-            # Fallback to default settings
-            return UserInfo(id=self.keycloak_user_id)
+        user_settings = await self.settings_store.load()
+        print("model_api_key_set", user_settings.llm_api_key.get_secret_value()[0:3] if user_settings.llm_api_key else 'no api key set')
+        return UserInfo(
+            id=self.keycloak_user_id,
+            **user_settings.model_dump()
+        )
 
     async def get_authenticated_git_url(self, repository: str) -> str:
         # This would need to be implemented based on the git provider tokens
