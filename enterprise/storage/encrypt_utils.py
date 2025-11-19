@@ -2,7 +2,7 @@ import binascii
 import hashlib
 from base64 import b64decode, b64encode
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
 from server.config import get_config
 
@@ -84,6 +84,8 @@ def decrypt_legacy_kwargs(encrypt_keys: list, kwargs: dict) -> dict:
                 kwargs[key] = value
         except binascii.Error:
             pass  # Key is in legacy format...
+        except InvalidToken:
+            pass  # Key not encrypted...
     return kwargs
 
 
