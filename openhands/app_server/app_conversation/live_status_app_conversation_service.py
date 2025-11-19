@@ -34,16 +34,11 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceInjector,
 )
+from openhands.app_server.app_conversation.app_conversation_service_base import (
+    AppConversationServiceBase,
+)
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
-)
-from openhands.app_server.app_conversation.git_app_conversation_service import (
-    GitAppConversationService,
-)
-from openhands.app_server.app_conversation.skill_loader import (
-    load_global_skills,
-    load_repo_skills,
-    merge_skills,
 )
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
@@ -74,8 +69,6 @@ from openhands.app_server.utils.docker_utils import (
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
-from openhands.sdk.context.agent_context import AgentContext
-from openhands.sdk.context.skills import load_user_skills
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
@@ -89,7 +82,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
-class LiveStatusAppConversationService(GitAppConversationService):
+class LiveStatusAppConversationService(AppConversationServiceBase):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_context: UserContext
@@ -486,106 +479,6 @@ class LiveStatusAppConversationService(GitAppConversationService):
         )
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
-
-    async def _load_and_merge_all_skills(
-        self,
-        remote_workspace: AsyncRemoteWorkspace,
-        selected_repository: str | None,
-        working_dir: str,
-    ) -> list:
-        """Load skills from all sources and merge them.
-
-        Args:
-            remote_workspace: AsyncRemoteWorkspace for loading repo skills
-            selected_repository: Repository name or None
-            working_dir: Working directory path
-
-        Returns:
-            List of merged Skill objects from all sources
-        """
-        _logger.debug('Loading skills for V1 conversation')
-
-        # Load skills from all sources
-        global_skills = load_global_skills()
-        # Load user skills from ~/.openhands/skills/ directory
-        # Uses the SDK's load_user_skills() function which handles loading from
-        # ~/.openhands/skills/ and ~/.openhands/microagents/ (for backward compatibility)
-        try:
-            user_skills = load_user_skills()
-            _logger.info(
-                f'Loaded {len(user_skills)} user skills: {[s.name for s in user_skills]}'
-            )
-        except Exception as e:
-            _logger.warning(f'Failed to load user skills: {str(e)}')
-            user_skills = []
-        repo_skills = await load_repo_skills(
-            remote_workspace, selected_repository, working_dir
-        )
-
-        # Merge all skills (later lists override earlier ones)
-        all_skills = merge_skills([global_skills, user_skills, repo_skills])
-
-        _logger.info(
-            f'Loaded {len(all_skills)} total skills: {[s.name for s in all_skills]}'
-        )
-
-        return all_skills
-
-    def _create_agent_with_skills(self, agent, skills: list):
-        """Create or update agent with skills in its context.
-
-        Args:
-            agent: The agent to update
-            skills: List of Skill objects to add to agent context
-
-        Returns:
-            Updated agent with skills in context
-        """
-        if agent.agent_context:
-            # Merge with existing context
-            existing_skills = agent.agent_context.skills
-            all_skills = merge_skills([skills, existing_skills])
-            agent = agent.model_copy(
-                update={
-                    'agent_context': agent.agent_context.model_copy(
-                        update={'skills': all_skills}
-                    )
-                }
-            )
-        else:
-            # Create new context
-            agent_context = AgentContext(skills=skills)
-            agent = agent.model_copy(update={'agent_context': agent_context})
-
-        return agent
-
-    async def _load_skills_and_update_agent(
-        self,
-        agent,
-        remote_workspace: AsyncRemoteWorkspace,
-        selected_repository: str | None,
-        working_dir: str,
-    ):
-        """Load all skills and update agent with them.
-
-        Args:
-            agent: The agent to update
-            remote_workspace: AsyncRemoteWorkspace for loading repo skills
-            selected_repository: Repository name or None
-            working_dir: Working directory path
-
-        Returns:
-            Updated agent with skills loaded into context
-        """
-        # Load and merge all skills
-        all_skills = await self._load_and_merge_all_skills(
-            remote_workspace, selected_repository, working_dir
-        )
-
-        # Update agent with skills
-        agent = self._create_agent_with_skills(agent, all_skills)
-
-        return agent
 
     def _inherit_configuration_from_parent(
         self, request: AppConversationStartRequest, parent_info: AppConversationInfo

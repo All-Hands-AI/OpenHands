@@ -7039,6 +7039,22 @@
     "ja": "git フックを設定中...",
     "uk": "Налаштування git-хуків..."
   },
+  "STATUS$SETTING_UP_SKILLS": {
+    "en": "Setting up skills...",
+    "zh-CN": "正在设置技能...",
+    "zh-TW": "正在設置技能...",
+    "de": "Fähigkeiten werden eingerichtet...",
+    "ko-KR": "기술을 설정하는 중...",
+    "no": "Setter opp ferdigheter...",
+    "it": "Configurazione delle competenze...",
+    "pt": "Configurando habilidades...",
+    "es": "Configurando habilidades...",
+    "ar": "جاري إعداد المهارات...",
+    "fr": "Configuration des compétences...",
+    "tr": "Yetenekler ayarlanıyor...",
+    "ja": "スキルを設定中...",
+    "uk": "Налаштування навичок..."
+  },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
     "es": "Desconectar",
