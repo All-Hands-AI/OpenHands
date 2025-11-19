@@ -16,6 +16,8 @@ import openhands
 from openhands.sdk.context.skills import Skill
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo
+
 _logger = logging.getLogger(__name__)
 
 # Path to global skills directory
@@ -55,6 +57,12 @@ def _find_and_load_global_skill_files(skill_dir: Path) -> list[Skill]:
         _logger.debug(f'Failed to find global skill files: {str(e)}')
 
     return skills
+
+
+def load_sandbox_skills(sandbox: SandboxInfo) -> list[Skill]:
+    """Load skills specific to the sandbox """
+    return [
+    ]
 
 
 def load_global_skills() -> list[Skill]:
