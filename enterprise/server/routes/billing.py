@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from integrations import stripe_service
 from pydantic import BaseModel
-from openhands.utils.async_utils import call_sync_from_async
 from server.constants import (
     STRIPE_API_KEY,
 )
@@ -19,6 +18,7 @@ from storage.lite_llm_manager import LiteLlmManager
 from storage.user_store import UserStore
 
 from openhands.server.user_auth import get_user_id
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.posthog_tracker import track_credits_purchased
 
 stripe.api_key = STRIPE_API_KEY

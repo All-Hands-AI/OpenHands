@@ -8,7 +8,6 @@ import posthog
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import SecretStr
-from openhands.utils.async_utils import call_sync_from_async
 from server.auth.auth_utils import user_verifier
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
@@ -33,6 +32,7 @@ from openhands.server.services.conversation_service import create_provider_token
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token
 from openhands.server.user_auth.user_auth import get_user_auth
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.posthog_tracker import track_user_signup_completed
 
 with warnings.catch_warnings():

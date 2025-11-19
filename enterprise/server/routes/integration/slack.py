@@ -15,7 +15,6 @@ from integrations.slack.slack_manager import SlackManager
 from integrations.utils import (
     HOST_URL,
 )
-from openhands.utils.async_utils import call_sync_from_async
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
@@ -35,11 +34,11 @@ from slack_sdk.web.async_client import AsyncWebClient
 from storage.database import session_maker
 from storage.slack_team_store import SlackTeamStore
 from storage.slack_user import SlackUser
-from storage.user_settings import UserSettings
 from storage.user_store import UserStore
 
 from openhands.integrations.service_types import ProviderType
 from openhands.server.shared import config, sio
+from openhands.utils.async_utils import call_sync_from_async
 
 signature_verifier = SignatureVerifier(signing_secret=SLACK_SIGNING_SECRET)
 slack_router = APIRouter(prefix='/slack')

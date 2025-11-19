@@ -8,7 +8,6 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 from pydantic import SecretStr
-from openhands.utils.async_utils import call_sync_from_async
 from server.auth.token_manager import TokenManager
 from server.constants import (
     DEFAULT_INITIAL_BUDGET,
@@ -22,6 +21,7 @@ from server.logger import logger
 from storage.user_settings import UserSettings
 
 from openhands.server.settings import Settings
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class LiteLlmManager:
