@@ -336,7 +336,6 @@ class GithubIssue(ResolverViewInterface):
                 # if task.status == AppConversationStartTaskStatus.READY:
                 #     # Update our conversation_id to the V1 conversation ID
                 #     self.conversation_id = str(task.app_conversation_id)
-                self.conversation_id = task.id
                 logger.info(f"V1 conversation started with ID: {self.conversation_id}")
                 logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
                 #     break

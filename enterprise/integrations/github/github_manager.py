@@ -295,7 +295,7 @@ class GithubManager(Manager):
 
                 from openhands.server.shared import config, ConversationStoreImpl
                 conversation_store = await ConversationStoreImpl.get_instance(config, github_view.user_info.keycloak_user_id)
-                metadata = conversation_store.get_metadata(conversation_id)
+                metadata = await conversation_store.get_metadata(conversation_id)
                 print("does metadata exist", metadata)
 
 
