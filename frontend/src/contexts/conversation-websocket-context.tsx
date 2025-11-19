@@ -24,6 +24,7 @@ import {
   isAgentStatusConversationStateUpdateEvent,
   isExecuteBashActionEvent,
   isExecuteBashObservationEvent,
+  isConversationErrorEvent,
 } from "#/types/v1/type-guards";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
@@ -131,6 +132,11 @@ export function ConversationWebSocketProvider({
         // Use type guard to validate v1 event structure
         if (isV1Event(event)) {
           addEvent(event);
+
+          // Handle ConversationErrorEvent specifically
+          if (isConversationErrorEvent(event)) {
+            setErrorMessage(event.detail);
+          }
 
           // Handle AgentErrorEvent specifically
           if (isAgentErrorEvent(event)) {
