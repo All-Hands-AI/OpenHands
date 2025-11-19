@@ -41,7 +41,6 @@ from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
 from openhands.app_server.app_conversation.skill_loader import (
-    load_all_user_skills,
     load_global_skills,
     load_repo_skills,
     merge_skills,
@@ -76,6 +75,7 @@ from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.context.agent_context import AgentContext
+from openhands.sdk.context.skills import load_user_skills
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
@@ -507,7 +507,17 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         # Load skills from all sources
         global_skills = load_global_skills()
-        user_skills = load_all_user_skills()
+        # Load user skills from ~/.openhands/skills/ directory
+        # Uses the SDK's load_user_skills() function which handles loading from
+        # ~/.openhands/skills/ and ~/.openhands/microagents/ (for backward compatibility)
+        try:
+            user_skills = load_user_skills()
+            _logger.info(
+                f'Loaded {len(user_skills)} user skills: {[s.name for s in user_skills]}'
+            )
+        except Exception as e:
+            _logger.warning(f'Failed to load user skills: {str(e)}')
+            user_skills = []
         repo_skills = await load_repo_skills(
             remote_workspace, selected_repository, working_dir
         )

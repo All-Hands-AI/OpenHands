@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 import openhands
-from openhands.sdk.context.skills import Skill, load_user_skills
+from openhands.sdk.context.skills import Skill
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
 _logger = logging.getLogger(__name__)
@@ -97,25 +97,6 @@ def load_global_skills() -> list[Skill]:
         return []
 
 
-def load_all_user_skills() -> list[Skill]:
-    """Load user skills from ~/.openhands/skills/ directory.
-
-    Uses the SDK's load_user_skills() function which handles loading from
-    ~/.openhands/skills/ and ~/.openhands/microagents/ (for backward compatibility).
-
-    Returns:
-        List of Skill objects loaded from user directories.
-        Returns empty list if no skills found or on errors.
-    """
-    try:
-        skills = load_user_skills()
-        _logger.info(f'Loaded {len(skills)} user skills: {[s.name for s in skills]}')
-        return skills
-    except Exception as e:
-        _logger.warning(f'Failed to load user skills: {str(e)}')
-        return []
-
-
 def _determine_repo_root(working_dir: str, selected_repository: str | None) -> str:
     """Determine the repository root directory.
 
@@ -157,25 +138,6 @@ async def _read_file_from_workspace(
         return None
 
 
-def _create_skill_from_content(filename: str, content: str) -> Skill | None:
-    """Create a Skill object from file content.
-
-    Args:
-        filename: Name of the file (used for skill name derivation)
-        content: File content to parse
-
-    Returns:
-        Skill object, or None if parsing fails
-    """
-    try:
-        # Use simple string path to avoid Path filesystem operations
-        skill = Skill.load(path=filename, skill_dir=None, file_content=content)
-        return skill
-    except Exception as e:
-        _logger.warning(f'Failed to create skill from {filename}: {str(e)}')
-        return None
-
-
 async def _load_special_files(
     workspace: AsyncRemoteWorkspace, repo_root: str, working_dir: str
 ) -> list[Skill]:
@@ -199,10 +161,13 @@ async def _load_special_files(
         content = await _read_file_from_workspace(workspace, file_path, working_dir)
 
         if content:
-            skill = _create_skill_from_content(filename, content)
-            if skill:
+            try:
+                # Use simple string path to avoid Path filesystem operations
+                skill = Skill.load(path=filename, skill_dir=None, file_content=content)
                 skills.append(skill)
                 _logger.debug(f'Loaded special file skill: {skill.name}')
+            except Exception as e:
+                _logger.warning(f'Failed to create skill from {filename}: {str(e)}')
 
     return skills
 
@@ -266,11 +231,13 @@ async def _load_skill_md_files(
         if content:
             # Calculate relative path for skill name
             rel_path = file_path.replace(f'{skill_dir}/', '')
-            skill = _create_skill_from_content(rel_path, content)
-
-            if skill:
+            try:
+                # Use simple string path to avoid Path filesystem operations
+                skill = Skill.load(path=rel_path, skill_dir=None, file_content=content)
                 skills.append(skill)
                 _logger.debug(f'Loaded repo skill: {skill.name}')
+            except Exception as e:
+                _logger.warning(f'Failed to create skill from {rel_path}: {str(e)}')
 
     return skills
 

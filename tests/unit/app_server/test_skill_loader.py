@@ -11,7 +11,6 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 import pytest
 
 from openhands.app_server.app_conversation.skill_loader import (
-    _create_skill_from_content,
     _determine_repo_root,
     _find_global_skill_files,
     _find_skill_md_files,
@@ -19,7 +18,6 @@ from openhands.app_server.app_conversation.skill_loader import (
     _load_skill_md_files,
     _load_special_files,
     _read_file_from_workspace,
-    load_all_user_skills,
     load_global_skills,
     load_repo_skills,
     merge_skills,
@@ -197,33 +195,6 @@ class TestReadFileFromWorkspace:
         assert result is None
 
 
-class TestCreateSkillFromContent:
-    """Test _create_skill_from_content helper function."""
-
-    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
-    def test_successful_skill_creation(self, mock_skill_class, mock_skill):
-        """Test successfully creating a skill from content."""
-        mock_skill_class.load.return_value = mock_skill
-
-        content = '---\nname: test\n---\n# Test\n'
-        result = _create_skill_from_content('test.md', content)
-
-        assert result == mock_skill
-        mock_skill_class.load.assert_called_once_with(
-            path='test.md', skill_dir=None, file_content=content
-        )
-
-    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
-    def test_skill_creation_failure(self, mock_skill_class):
-        """Test handling error during skill creation."""
-        mock_skill_class.load.side_effect = Exception('Parse error')
-
-        content = 'invalid content'
-        result = _create_skill_from_content('invalid.md', content)
-
-        assert result is None
-
-
 class TestLoadSpecialFiles:
     """Test _load_special_files helper function."""
 
@@ -231,12 +202,10 @@ class TestLoadSpecialFiles:
     @patch(
         'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
     )
-    @patch(
-        'openhands.app_server.app_conversation.skill_loader._create_skill_from_content'
-    )
+    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
     async def test_load_all_special_files(
         self,
-        mock_create_skill,
+        mock_skill_class,
         mock_read_file,
         mock_async_remote_workspace,
         mock_skills_list,
@@ -250,7 +219,7 @@ class TestLoadSpecialFiles:
         ]
 
         # Mock skill creation
-        mock_create_skill.side_effect = mock_skills_list
+        mock_skill_class.load.side_effect = mock_skills_list
 
         result = await _load_special_files(
             mock_async_remote_workspace, '/repo', '/workspace'
@@ -259,22 +228,20 @@ class TestLoadSpecialFiles:
         assert len(result) == 3
         assert result == mock_skills_list
         assert mock_read_file.call_count == 3
-        assert mock_create_skill.call_count == 3
+        assert mock_skill_class.load.call_count == 3
 
     @pytest.mark.asyncio
     @patch(
         'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
     )
-    @patch(
-        'openhands.app_server.app_conversation.skill_loader._create_skill_from_content'
-    )
+    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
     async def test_load_partial_special_files(
-        self, mock_create_skill, mock_read_file, mock_async_remote_workspace, mock_skill
+        self, mock_skill_class, mock_read_file, mock_async_remote_workspace, mock_skill
     ):
         """Test loading when only some special files exist."""
         # Only .cursorrules exists
         mock_read_file.side_effect = ['cursorrules content', None, None]
-        mock_create_skill.return_value = mock_skill
+        mock_skill_class.load.return_value = mock_skill
 
         result = await _load_special_files(
             mock_async_remote_workspace, '/repo', '/workspace'
@@ -283,7 +250,7 @@ class TestLoadSpecialFiles:
         assert len(result) == 1
         assert result[0] == mock_skill
         assert mock_read_file.call_count == 3
-        assert mock_create_skill.call_count == 1
+        assert mock_skill_class.load.call_count == 1
 
     @pytest.mark.asyncio
     @patch(
@@ -377,12 +344,10 @@ class TestLoadSkillMdFiles:
     @patch(
         'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
     )
-    @patch(
-        'openhands.app_server.app_conversation.skill_loader._create_skill_from_content'
-    )
+    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
     async def test_load_md_files_success(
         self,
-        mock_create_skill,
+        mock_skill_class,
         mock_read_file,
         mock_async_remote_workspace,
         mock_skills_list,
@@ -394,7 +359,7 @@ class TestLoadSkillMdFiles:
         ]
 
         mock_read_file.side_effect = ['content1', 'content2']
-        mock_create_skill.side_effect = mock_skills_list[:2]
+        mock_skill_class.load.side_effect = mock_skills_list[:2]
 
         result = await _load_skill_md_files(
             mock_async_remote_workspace,
@@ -407,8 +372,8 @@ class TestLoadSkillMdFiles:
         assert result == mock_skills_list[:2]
 
         # Verify relative paths are used
-        assert mock_create_skill.call_args_list[0][0][0] == 'test1.md'
-        assert mock_create_skill.call_args_list[1][0][0] == 'test2.md'
+        assert mock_skill_class.load.call_args_list[0][1]['path'] == 'test1.md'
+        assert mock_skill_class.load.call_args_list[1][1]['path'] == 'test2.md'
 
     @pytest.mark.asyncio
     @patch(
@@ -426,10 +391,10 @@ class TestLoadSkillMdFiles:
         mock_read_file.side_effect = ['content1', None]
 
         with patch(
-            'openhands.app_server.app_conversation.skill_loader._create_skill_from_content'
-        ) as mock_create_skill:
+            'openhands.app_server.app_conversation.skill_loader.Skill'
+        ) as mock_skill_class:
             mock_skill = Mock()
-            mock_create_skill.return_value = mock_skill
+            mock_skill_class.load.return_value = mock_skill
 
             result = await _load_skill_md_files(
                 mock_async_remote_workspace,
@@ -439,7 +404,7 @@ class TestLoadSkillMdFiles:
             )
 
             assert len(result) == 1
-            assert mock_create_skill.call_count == 1
+            assert mock_skill_class.load.call_count == 1
 
 
 class TestFindGlobalSkillFiles:
@@ -564,30 +529,6 @@ class TestLoadGlobalSkills:
         mock_find_files.side_effect = Exception('File system error')
 
         result = load_global_skills()
-
-        assert len(result) == 0
-
-
-class TestLoadUserSkills:
-    """Test load_all_user_skills main function."""
-
-    @patch('openhands.app_server.app_conversation.skill_loader.load_user_skills')
-    def test_load_user_skills_success(self, mock_load_user_skills, mock_skills_list):
-        """Test successfully loading user skills."""
-        mock_load_user_skills.return_value = mock_skills_list
-
-        result = load_all_user_skills()
-
-        assert len(result) == len(mock_skills_list)
-        assert result == mock_skills_list
-        mock_load_user_skills.assert_called_once()
-
-    @patch('openhands.app_server.app_conversation.skill_loader.load_user_skills')
-    def test_load_user_skills_exception(self, mock_load_user_skills):
-        """Test handling exception during user skill loading."""
-        mock_load_user_skills.side_effect = Exception('Load error')
-
-        result = load_all_user_skills()
 
         assert len(result) == 0
 
@@ -763,7 +704,7 @@ class TestSkillLoaderIntegration:
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.app_conversation.skill_loader.load_global_skills')
-    @patch('openhands.app_server.app_conversation.skill_loader.load_all_user_skills')
+    @patch('openhands.sdk.context.skills.load_user_skills')
     @patch('openhands.app_server.app_conversation.skill_loader.load_repo_skills')
     async def test_full_loading_workflow(
         self,
@@ -803,7 +744,7 @@ class TestSkillLoaderIntegration:
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.app_conversation.skill_loader.load_global_skills')
-    @patch('openhands.app_server.app_conversation.skill_loader.load_all_user_skills')
+    @patch('openhands.sdk.context.skills.load_user_skills')
     @patch('openhands.app_server.app_conversation.skill_loader.load_repo_skills')
     async def test_loading_with_override_precedence(
         self,
