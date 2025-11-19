@@ -84,7 +84,7 @@ class GithubUserContext(UserContext):
         print("model_api_key_set", user_settings.llm_api_key.get_secret_value()[0:3] if user_settings.llm_api_key else 'no api key set')
         return UserInfo(
             id=self.keycloak_user_id,
-            **user_settings.model_dump()
+            **user_settings.model_dump(context={"expose_secrets": True})
         )
 
     async def get_authenticated_git_url(self, repository: str) -> str:
