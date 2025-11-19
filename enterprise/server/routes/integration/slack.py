@@ -15,6 +15,7 @@ from integrations.slack.slack_manager import SlackManager
 from integrations.utils import (
     HOST_URL,
 )
+from openhands.utils.async_utils import call_sync_from_async
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
@@ -197,7 +198,7 @@ async def keycloak_callback(
 
     user_info = await token_manager.get_user_info(keycloak_access_token)
     keycloak_user_id = user_info['sub']
-    user = UserStore.get_user_by_id(keycloak_user_id)
+    user = await call_sync_from_async(UserStore.get_user_by_id, keycloak_user_id)
     if not user:
         return _html_response(
             title='Failed to authenticate.',

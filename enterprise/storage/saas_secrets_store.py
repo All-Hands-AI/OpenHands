@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from cryptography.fernet import Fernet
 from sqlalchemy.orm import sessionmaker
+from openhands.utils.async_utils import call_sync_from_async
 from storage.database import session_maker
 from storage.stored_custom_secrets import StoredCustomSecrets
 from storage.user_store import UserStore
@@ -25,7 +26,7 @@ class SaasSecretsStore(SecretsStore):
     async def load(self) -> Secrets | None:
         if not self.user_id:
             return None
-        user = UserStore.get_user_by_id(self.user_id)
+        user = await call_sync_from_async(UserStore.get_user_by_id, self.user_id)
         org_id = user.current_org_id if user else None
 
         with self.session_maker() as session:
@@ -52,7 +53,7 @@ class SaasSecretsStore(SecretsStore):
             return Secrets(custom_secrets=kwargs)  # type: ignore[arg-type]
 
     async def store(self, item: Secrets):
-        user = UserStore.get_user_by_id(self.user_id)
+        user = await call_sync_from_async(UserStore.get_user_by_id, self.user_id)
         org_id = user.current_org_id
         with self.session_maker() as session:
             # Incoming secrets are always the most updated ones

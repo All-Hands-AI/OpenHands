@@ -8,6 +8,7 @@ from typing import Any, Awaitable, Callable
 
 import httpx
 from pydantic import SecretStr
+from openhands.utils.async_utils import call_sync_from_async
 from server.auth.token_manager import TokenManager
 from server.constants import (
     DEFAULT_INITIAL_BUDGET,
@@ -546,7 +547,7 @@ class LiteLlmManager:
         if LITE_LLM_API_KEY is None or LITE_LLM_API_URL is None:
             logger.warning('LiteLLM API configuration not found')
             return None
-        user = UserStore.get_user_by_id(keycloak_user_id)
+        user = await call_sync_from_async(UserStore.get_user_by_id, keycloak_user_id)
         if not user:
             return {}
 

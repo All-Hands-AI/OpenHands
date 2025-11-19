@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from integrations import stripe_service
 from pydantic import BaseModel
+from openhands.utils.async_utils import call_sync_from_async
 from server.constants import (
     STRIPE_API_KEY,
 )
@@ -89,7 +90,7 @@ def calculate_credits(user_info: LiteLlmUserInfo) -> float:
 async def get_credits(user_id: str = Depends(get_user_id)) -> GetCreditsResponse:
     if not stripe_service.STRIPE_API_KEY:
         return GetCreditsResponse()
-    user = UserStore.get_user_by_id(user_id)
+    user = await call_sync_from_async(UserStore.get_user_by_id, user_id)
     user_team_info = await LiteLlmManager.get_user_team_info(
         user_id, str(user.current_org_id)
     )
@@ -215,7 +216,9 @@ async def success_callback(session_id: str, request: Request):
             )
             raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
-        user = UserStore.get_user_by_id(billing_session.user_id)
+        user = await call_sync_from_async(
+            UserStore.get_user_by_id, billing_session.user_id
+        )
         user_team_info = await LiteLlmManager.get_user_team_info(
             billing_session.user_id, str(user.current_org_id)
         )

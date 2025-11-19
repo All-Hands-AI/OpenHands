@@ -8,6 +8,7 @@ import posthog
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import SecretStr
+from openhands.utils.async_utils import call_sync_from_async
 from server.auth.auth_utils import user_verifier
 from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
@@ -143,7 +144,7 @@ async def keycloak_callback(
         )
 
     user_id = user_info['sub']
-    user = UserStore.get_user_by_id(user_id)
+    user = await call_sync_from_async(UserStore.get_user_by_id, user_id)
     if not user:
         user = await UserStore.create_user(user_id, user_info)
 

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 from cryptography.fernet import Fernet
 from pydantic import SecretStr
+from openhands.utils.async_utils import call_sync_from_async
 from server.logger import logger
 from sqlalchemy.orm import joinedload, sessionmaker
 from storage.database import session_maker
@@ -66,7 +67,7 @@ class SaasSettingsStore(OssSettingsStore):
         return _get_settings()
 
     async def load(self) -> Settings | None:
-        user = UserStore.get_user_by_id(self.user_id)
+        user = await call_sync_from_async(UserStore.get_user_by_id, self.user_id)
         if not user:
             logger.error(f'User not found for ID {self.user_id}')
             return None
