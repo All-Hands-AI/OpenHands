@@ -63,6 +63,17 @@ class GithubUserContext(UserContext):
     def __init__(self, keycloak_user_id: str, git_provider_tokens: PROVIDER_TOKEN_TYPE):
         self.keycloak_user_id = keycloak_user_id
         self.git_provider_tokens = git_provider_tokens
+        self.settings_store = SaasSettingsStore(
+            user_id=self.keycloak_user_id,
+            session_maker=session_maker,
+            config=get_config(),
+        )
+
+        self.secrets_store = SaasSecretsStore(
+            self.keycloak_user_id,
+            session_maker,
+            get_config()
+        )
 
     async def get_user_id(self) -> str | None:
         return self.keycloak_user_id
@@ -70,15 +81,9 @@ class GithubUserContext(UserContext):
     async def get_user_info(self) -> UserInfo:
         # Get the user's full settings from the database using the store.load() method
         # The V1 system needs proper LLM configuration to work
-        store = SaasSettingsStore(
-            user_id=self.keycloak_user_id,
-            session_maker=session_maker,
-            config=get_config(),
-        )
-
         try:
             # Load user settings - this already handles the conversion to Settings format
-            user_settings = await store.load()
+            user_settings = await self.settings_store.load()
 
             # Create UserInfo with the loaded settings and user ID
             return UserInfo(
@@ -104,7 +109,8 @@ class GithubUserContext(UserContext):
 
     async def get_secrets(self) -> dict[str, SecretSource]:
         # Return empty dict for now - GitHub integration handles secrets separately
-        return {}
+        user_secrets = await self.secrets_store.load()
+        return user_secrets.custom_secrets if user_secrets else {}
 
 
 async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
