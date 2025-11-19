@@ -568,6 +568,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         else:
             agent = get_default_agent(llm=llm)
 
+        print("cross check", user.llm_api_key.get_secret_value()[0:3] if user.llm_api_key else 'no key set')
         agent_context = AgentContext(system_message_suffix=system_message_suffix)
         agent = agent.model_copy(update={'agent_context': agent_context})
 
