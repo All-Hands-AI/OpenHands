@@ -110,7 +110,7 @@ class GithubUserContext(UserContext):
     async def get_secrets(self) -> dict[str, SecretSource]:
         # Return empty dict for now - GitHub integration handles secrets separately
         user_secrets = await self.secrets_store.load()
-        return user_secrets.custom_secrets if user_secrets else {}
+        return dict(user_secrets.custom_secrets) if user_secrets else {}
 
 
 async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
