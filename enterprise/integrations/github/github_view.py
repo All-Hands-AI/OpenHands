@@ -68,68 +68,26 @@ class GithubUserContext(UserContext):
         return self.keycloak_user_id
     
     async def get_user_info(self) -> UserInfo:
-        # Get the user's full settings from the database
+        # Get the user's full settings from the database using the store.load() method
         # The V1 system needs proper LLM configuration to work
-        config = get_config()
-        settings_store = SaasSettingsStore(
-            user_id=self.keycloak_user_id, 
-            session_maker=session_maker, 
-            config=config
+        store = SaasSettingsStore(
+            user_id=self.keycloak_user_id,
+            session_maker=session_maker,
+            config=get_config(),
         )
         
         try:
-            # Get user settings from database
-            user_settings = await call_sync_from_async(
-                settings_store.get_user_settings_by_keycloak_id, 
-                self.keycloak_user_id
-            )
+            # Load user settings - this already handles the conversion to Settings format
+            user_settings = await store.load()
             
-            if user_settings:
-                # Convert UserSettings to Settings format for UserInfo
-                settings_dict = {
-                    'language': user_settings.language,
-                    'agent': user_settings.agent,
-                    'max_iterations': user_settings.max_iterations,
-                    'security_analyzer': user_settings.security_analyzer,
-                    'confirmation_mode': user_settings.confirmation_mode,
-                    'llm_model': user_settings.llm_model,
-                    'llm_api_key': user_settings.llm_api_key,
-                    'llm_base_url': user_settings.llm_base_url,
-                    'remote_runtime_resource_factor': user_settings.remote_runtime_resource_factor,
-                    'enable_default_condenser': user_settings.enable_default_condenser,
-                    'enable_sound_notifications': user_settings.enable_sound_notifications,
-                    'enable_proactive_conversation_starters': user_settings.enable_proactive_conversation_starters,
-                    'enable_solvability_analysis': user_settings.enable_solvability_analysis,
-                    'user_consents_to_analytics': user_settings.user_consents_to_analytics,
-                    'sandbox_base_container_image': user_settings.sandbox_base_container_image,
-                    'sandbox_runtime_container_image': user_settings.sandbox_runtime_container_image,
-                    'mcp_config': user_settings.mcp_config,
-                    'search_api_key': user_settings.search_api_key,
-                    'sandbox_api_key': user_settings.sandbox_api_key,
-                    'max_budget_per_task': user_settings.max_budget_per_task,
-                    'condenser_max_size': user_settings.condenser_max_size,
-                    'email': user_settings.email,
-                    'email_verified': user_settings.email_verified,
-                    'git_user_name': user_settings.git_user_name,
-                    'git_user_email': user_settings.git_user_email,
-                    'v1_enabled': user_settings.v1_enabled,
-                }
-                
-                # Filter out None values to let defaults apply
-                settings_dict = {k: v for k, v in settings_dict.items() if v is not None}
-                
-                # Create UserInfo with full settings
-                return UserInfo(
-                    id=self.keycloak_user_id,
-                    **settings_dict
-                )
-            else:
-                logger.warning(f"No user settings found for {self.keycloak_user_id}, using defaults")
-                # Fallback to default settings if user not found
-                return UserInfo(id=self.keycloak_user_id)
+            # Create UserInfo with the loaded settings and user ID
+            return UserInfo(
+                id=self.keycloak_user_id,
+                **user_settings.model_dump()
+            )
                 
         except Exception as e:
-            logger.warning(f"Failed to get user settings for {self.keycloak_user_id}: {e}")
+            logger.warning(f"Failed to load user settings for {self.keycloak_user_id}: {e}")
             # Fallback to default settings
             return UserInfo(id=self.keycloak_user_id)
     
