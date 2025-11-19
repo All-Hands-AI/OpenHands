@@ -178,7 +178,12 @@ export function ConversationWebSocketProvider({
 
           // Handle ExecuteBashObservation events - add output to terminal
           if (isExecuteBashObservationEvent(event)) {
-            appendOutput(event.observation.output);
+            // Extract text content from the observation content array
+            const textContent = event.observation.content
+              .filter((c) => c.type === "text")
+              .map((c) => c.text)
+              .join("\n");
+            appendOutput(textContent);
           }
         }
       } catch (error) {
