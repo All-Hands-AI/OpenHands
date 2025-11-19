@@ -306,6 +306,8 @@ class GithubIssue(ResolverViewInterface):
 
         # Create the V1 conversation start request
         start_request = AppConversationStartRequest(
+            conversation_id=conversation_metadata.conversation_id,
+            system_message_suffix=conversation_instructions,
             initial_message=initial_message,
             selected_repository=self.full_repo_name,
             git_provider=ProviderType.GITHUB,
