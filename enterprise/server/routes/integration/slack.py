@@ -199,20 +199,11 @@ async def keycloak_callback(
     keycloak_user_id = user_info['sub']
     user = UserStore.get_user_by_id(keycloak_user_id)
     if not user:
-        user_settings = None
-        with session_maker() as session:
-            user_settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == keycloak_user_id)
-                .first()
-            )
-        if not user_settings:
-            return _html_response(
-                title='Failed to authenticate.',
-                description=f'Please re-login into <a href="{HOST_URL}" style="color:#ecedee;text-decoration:underline;">OpenHands Cloud</a>. Then try <a href="https://docs.all-hands.dev/usage/cloud/slack-installation" style="color:#ecedee;text-decoration:underline;">installing the OpenHands Slack App</a> again',
-                status_code=400,
-            )
-        user = await UserStore.migrate_user(keycloak_user_id, user_settings, user_info)
+        return _html_response(
+            title='Failed to authenticate.',
+            description=f'Please re-login into <a href="{HOST_URL}" style="color:#ecedee;text-decoration:underline;">OpenHands Cloud</a>. Then try <a href="https://docs.all-hands.dev/usage/cloud/slack-installation" style="color:#ecedee;text-decoration:underline;">installing the OpenHands Slack App</a> again',
+            status_code=400,
+        )
 
     # These tokens are offline access tokens - store them!
     await token_manager.store_offline_token(keycloak_user_id, keycloak_refresh_token)

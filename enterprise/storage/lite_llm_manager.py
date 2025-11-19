@@ -85,6 +85,7 @@ class LiteLlmManager:
         org_id: str,
         keycloak_user_id: str,
         user_settings: UserSettings,
+        keycloak_user_info: dict,
     ) -> UserSettings | None:
         logger.info(
             'SettingsStore:umigrate_lite_llm_entries:start',
@@ -97,11 +98,6 @@ class LiteLlmManager:
         key = LITE_LLM_API_KEY
         if not local_deploy:
             # Get user info to add to litellm
-            token_manager = TokenManager()
-            keycloak_user_info = (
-                await token_manager.get_user_info_from_user_id(keycloak_user_id) or {}
-            )
-
             async with httpx.AsyncClient(
                 headers={
                     'x-goog-api-key': LITE_LLM_API_KEY,

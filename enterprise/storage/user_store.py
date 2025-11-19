@@ -5,9 +5,11 @@ Store class for managing users.
 import uuid
 from typing import Optional
 
-from server.logger import logger
+from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 from sqlalchemy import text
 from sqlalchemy.orm import joinedload
+
+from server.logger import logger
 from storage.database import session_maker
 from storage.encrypt_utils import decrypt_legacy_model
 from storage.org import Org
@@ -82,15 +84,11 @@ class UserStore:
     async def migrate_user(
         user_id: str,
         user_settings: UserSettings,
-        user_info: dict | None = None,
+        user_info: dict,
     ) -> User:
         if not user_id or not user_settings:
             return None
 
-        # Check if user is already migrated to prevent double migration
-        if user_settings.already_migrated is True:
-            logger.warning(f'User {user_id} already migrated, skipping')
-            return UserStore.get_user_by_id(user_id)
         kwargs = decrypt_legacy_model(
             [
                 'llm_api_key',
@@ -103,26 +101,18 @@ class UserStore:
         decrypted_user_settings = UserSettings(**kwargs)
         with session_maker() as session:
             # create personal org
-            contact_name = (
-                user_info['preferred_username']
-                if user_info
-                else decrypted_user_settings.email.split('@')[0]
-            )
-            contact_email = (
-                user_info['email'] if user_info else decrypted_user_settings.email
-            )
             org = Org(
                 id=uuid.UUID(user_id),
                 name=f'user_{user_id}_org',
-                contact_name=contact_name,
-                contact_email=contact_email,
+                contact_name=user_info['username'],
+                contact_email=user_info['email'],
             )
             session.add(org)
 
             from storage.lite_llm_manager import LiteLlmManager
 
             await LiteLlmManager.migrate_entries(
-                str(org.id), user_id, decrypted_user_settings
+                str(org.id), user_id, decrypted_user_settings, user_info
             )
 
             # avoids circular reference. This migrate method is temprorary until all users are migrated.
@@ -243,12 +233,44 @@ class UserStore:
     def get_user_by_id(user_id: str) -> Optional[User]:
         """Get user by Keycloak user ID."""
         with session_maker() as session:
-            return (
+            user = (
                 session.query(User)
                 .options(joinedload(User.org_members))
                 .filter(User.id == uuid.UUID(user_id))
                 .first()
             )
+            if user:
+                return user
+
+            # Check if we need to migrate from user_settings
+            user_settings = (
+                session.query(UserSettings)
+                .filter(
+                    UserSettings.keycloak_user_id == user_id,
+                    UserSettings.already_migrated.is_(False),
+                )
+                .first()
+            )
+            if user_settings:
+                from server.auth.token_manager import TokenManager
+
+                token_manager = TokenManager()
+                token_manager.get_user_info_from_user_id(user_id)
+                user_info = call_async_from_sync(
+                    token_manager.get_user_info_from_user_id,
+                    GENERAL_TIMEOUT,
+                    user_id,
+                )
+                user = call_async_from_sync(
+                    UserStore.migrate_user,
+                    GENERAL_TIMEOUT,
+                    user_id,
+                    user_settings,
+                    user_info,
+                )
+                return user
+            else:
+                return None
 
     @staticmethod
     def list_users() -> list[User]:

@@ -68,22 +68,8 @@ class SaasSettingsStore(OssSettingsStore):
     async def load(self) -> Settings | None:
         user = UserStore.get_user_by_id(self.user_id)
         if not user:
-            # Check if we need to migrate from user_settings
-            user_settings = None
-            with session_maker() as session:
-                user_settings = (
-                    session.query(UserSettings)
-                    .filter(
-                        UserSettings.keycloak_user_id == self.user_id,
-                        UserSettings.already_migrated.is_(False),
-                    )
-                    .first()
-                )
-            if user_settings:
-                user = await UserStore.migrate_user(self.user_id, user_settings)
-            else:
-                logger.error(f'User not found for ID {self.user_id}')
-                return None
+            logger.error(f'User not found for ID {self.user_id}')
+            return None
 
         org_id = user.current_org_id
         org_member: OrgMember = None

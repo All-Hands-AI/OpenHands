@@ -145,18 +145,7 @@ async def keycloak_callback(
     user_id = user_info['sub']
     user = UserStore.get_user_by_id(user_id)
     if not user:
-        user_settings = None
-        with session_maker() as session:
-            user_settings = (
-                session.query(UserSettings)
-                .filter(UserSettings.keycloak_user_id == user_id)
-                .first()
-            )
-        if user_settings:
-            user = await UserStore.migrate_user(user_id, user_settings, user_info)
-        else:
-            # new user
-            user = await UserStore.create_user(user_id, user_info)
+        user = await UserStore.create_user(user_id, user_info)
 
     if not user:
         logger.error(f'Failed to authenticate user {user_info["preferred_username"]}')
