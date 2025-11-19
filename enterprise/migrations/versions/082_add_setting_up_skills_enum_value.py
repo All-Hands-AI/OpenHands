@@ -24,10 +24,12 @@ def upgrade() -> None:
     # This handles the case where the enum was created with the value already included
     connection = op.get_bind()
     result = connection.execute(
-        text("SELECT 1 FROM pg_enum WHERE enumlabel = 'SETTING_UP_SKILLS' "
-             "AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'appconversationstarttaskstatus')")
+        text(
+            "SELECT 1 FROM pg_enum WHERE enumlabel = 'SETTING_UP_SKILLS' "
+            "AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'appconversationstarttaskstatus')"
+        )
     )
-    
+
     if not result.fetchone():
         # Add the new enum value only if it doesn't already exist
         op.execute(
