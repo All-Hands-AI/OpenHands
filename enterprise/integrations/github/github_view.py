@@ -2,6 +2,7 @@ from uuid import UUID, uuid4
 
 from github import Github, GithubIntegration
 from github.Issue import Issue
+from openhands.sdk import TextContent
 from integrations.github.github_types import (
     WorkflowRun,
     WorkflowRunGroup,
@@ -306,8 +307,10 @@ class GithubIssue(ResolverViewInterface):
 
         # Create the initial message request
         initial_message = SendMessageRequest(
-            message=user_instructions,
-            images=None,
+            role="user",
+            content=[
+                TextContent(text=user_instructions)
+            ]
         )
 
         # Create the V1 conversation start request
