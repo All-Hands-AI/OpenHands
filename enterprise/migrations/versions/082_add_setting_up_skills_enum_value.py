@@ -27,7 +27,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Remove SETTING_UP_SKILLS enum value from appconversationstarttaskstatus.
-    
+
     Note: PostgreSQL doesn't support removing enum values directly.
     This would require recreating the enum type and updating all references.
     For safety, this downgrade is not implemented.
