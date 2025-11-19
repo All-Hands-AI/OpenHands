@@ -9,7 +9,6 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
-from openhands.agent_server.build.lib.openhands.sdk.event.llm_convertible import system
 from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -69,8 +68,7 @@ from openhands.app_server.utils.docker_utils import (
 )
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
-from openhands.sdk import AgentContext
-from openhands.sdk import LocalWorkspace
+from openhands.sdk import AgentContext, LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
@@ -566,14 +564,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
         else:
             agent = get_default_agent(llm=llm)
 
-        agent_context = AgentContext(
-            system_message_suffix=system_message_suffix
-        )
-        agent = agent.model_copy(
-            update={
-                    "agent_context": agent_context
-                }
-        )
+        agent_context = AgentContext(system_message_suffix=system_message_suffix)
+        agent = agent.model_copy(update={'agent_context': agent_context})
 
         conversation_id = conversation_id or uuid4()
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
