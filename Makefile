@@ -368,6 +368,16 @@ clean:
 	@rm -rf openhands/.cache
 	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
 
+# Clean up Poetry virtualenvs
+clean-venv:
+	@echo "$(YELLOW)Removing Poetry virtualenvs...$(RESET)"
+	@rm -rf /root/.cache/pypoetry/virtualenvs/openhands-ai-*
+	@echo "$(GREEN)Virtualenvs removed successfully.$(RESET)"
+
+# Clean everything (caches + virtualenvs)
+clean-all: clean clean-venv
+	@echo "$(GREEN)All caches and virtualenvs cleaned successfully.$(RESET)"
+
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
@@ -382,8 +392,11 @@ help:
 	@echo "                        Backend Log file will be stored in the 'logs' directory."
 	@echo "  $(GREEN)docker-dev$(RESET)          - Build and run the OpenHands application in Docker."
 	@echo "  $(GREEN)docker-run$(RESET)          - Run the OpenHands application, starting both backend and frontend servers in Docker."
+	@echo "  $(GREEN)clean$(RESET)               - Clean up application caches."
+	@echo "  $(GREEN)clean-venv$(RESET)          - Remove Poetry virtualenvs for a fresh rebuild."
+	@echo "  $(GREEN)clean-all$(RESET)           - Clean up all caches and virtualenvs."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean clean-venv clean-all help
 .PHONY: kind
