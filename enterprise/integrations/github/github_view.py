@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from github import Github, GithubIntegration
 from github.Issue import Issue
@@ -312,7 +312,7 @@ class GithubIssue(ResolverViewInterface):
 
         # Create the V1 conversation start request
         start_request = AppConversationStartRequest(
-            conversation_id=conversation_metadata.conversation_id,
+            conversation_id=UUID(conversation_metadata.conversation_id),
             system_message_suffix=conversation_instructions,
             initial_message=initial_message,
             selected_repository=self.full_repo_name,
@@ -338,12 +338,13 @@ class GithubIssue(ResolverViewInterface):
                 #     self.conversation_id = str(task.app_conversation_id)
                 self.conversation_id = task.id
                 logger.info(f"V1 conversation started with ID: {self.conversation_id}")
+                logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
                 #     break
                 # elif task.status == AppConversationStartTaskStatus.ERROR:
                 #     logger.error(f"Failed to start V1 conversation: {task.detail}")
                 #     raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
                 # else:
-                #     logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
+
                 #     # Continue waiting for the conversation to be ready
 
 
