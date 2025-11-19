@@ -40,10 +40,10 @@ from openhands.app_server.app_conversation.app_conversation_start_task_service i
 from openhands.app_server.app_conversation.git_app_conversation_service import (
     GitAppConversationService,
 )
-from openhands.app_server.app_conversation.microagent_loader import (
-    load_global_microagents,
-    load_repo_microagents,
-    load_user_microagents,
+from openhands.app_server.app_conversation.skill_loader import (
+    load_all_user_skills,
+    load_global_skills,
+    load_repo_skills,
     merge_skills,
 )
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
@@ -487,28 +487,28 @@ class LiveStatusAppConversationService(GitAppConversationService):
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
 
-    async def _load_and_merge_all_microagents(
+    async def _load_and_merge_all_skills(
         self,
         remote_workspace: AsyncRemoteWorkspace,
         selected_repository: str | None,
         working_dir: str,
     ) -> list:
-        """Load microagents from all sources and merge them.
+        """Load skills from all sources and merge them.
 
         Args:
-            remote_workspace: AsyncRemoteWorkspace for loading repo microagents
+            remote_workspace: AsyncRemoteWorkspace for loading repo skills
             selected_repository: Repository name or None
             working_dir: Working directory path
 
         Returns:
             List of merged Skill objects from all sources
         """
-        _logger.debug('Loading microagents for V1 conversation')
+        _logger.debug('Loading skills for V1 conversation')
 
-        # Load microagents from all sources
-        global_skills = load_global_microagents()
-        user_skills = load_user_microagents()
-        repo_skills = await load_repo_microagents(
+        # Load skills from all sources
+        global_skills = load_global_skills()
+        user_skills = load_all_user_skills()
+        repo_skills = await load_repo_skills(
             remote_workspace, selected_repository, working_dir
         )
 
@@ -549,26 +549,26 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         return agent
 
-    async def _load_microagents_and_update_agent(
+    async def _load_skills_and_update_agent(
         self,
         agent,
         remote_workspace: AsyncRemoteWorkspace,
         selected_repository: str | None,
         working_dir: str,
     ):
-        """Load all microagents and update agent with them.
+        """Load all skills and update agent with them.
 
         Args:
             agent: The agent to update
-            remote_workspace: AsyncRemoteWorkspace for loading repo microagents
+            remote_workspace: AsyncRemoteWorkspace for loading repo skills
             selected_repository: Repository name or None
             working_dir: Working directory path
 
         Returns:
-            Updated agent with microagents loaded into context
+            Updated agent with skills loaded into context
         """
-        # Load and merge all microagents
-        all_skills = await self._load_and_merge_all_microagents(
+        # Load and merge all skills
+        all_skills = await self._load_and_merge_all_skills(
             remote_workspace, selected_repository, working_dir
         )
 
@@ -666,15 +666,15 @@ class LiveStatusAppConversationService(GitAppConversationService):
             user.id, conversation_id, agent
         )
 
-        # Load and merge all microagents/skills if remote_workspace is available
+        # Load and merge all skills if remote_workspace is available
         if remote_workspace:
             try:
-                agent = await self._load_microagents_and_update_agent(
+                agent = await self._load_skills_and_update_agent(
                     agent, remote_workspace, selected_repository, working_dir
                 )
             except Exception as e:
-                _logger.warning(f'Failed to load microagents: {e}', exc_info=True)
-                # Continue without microagents - don't fail conversation startup
+                _logger.warning(f'Failed to load skills: {e}', exc_info=True)
+                # Continue without skills - don't fail conversation startup
 
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,

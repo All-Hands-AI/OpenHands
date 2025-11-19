@@ -1,11 +1,11 @@
-"""Utilities for loading microagents and converting them to Skills for V1 conversations.
+"""Utilities for loading skills for V1 conversations.
 
-This module provides functions to load microagents from various sources:
-- Global microagents from OpenHands/microagents/
-- User microagents from ~/.openhands/microagents/
-- Repository-level microagents from the workspace
+This module provides functions to load skills from various sources:
+- Global skills from OpenHands/skills/
+- User skills from ~/.openhands/skills/
+- Repository-level skills from the workspace
 
-All microagents are converted to SDK Skill objects for use in V1 conversations.
+All skills are used in V1 conversations.
 """
 
 import logging
@@ -18,40 +18,36 @@ from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWor
 
 _logger = logging.getLogger(__name__)
 
-# Path to global microagents directory
-GLOBAL_MICROAGENTS_DIR = os.path.join(
+# Path to global skills directory
+GLOBAL_SKILLS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
-    'microagents',
+    'skills',
 )
 
 
-def _find_global_microagent_files(microagent_dir: Path) -> list[Path]:
-    """Find all .md files in the global microagents directory.
+def _find_global_skill_files(skill_dir: Path) -> list[Path]:
+    """Find all .md files in the global skills directory.
 
     Args:
-        microagent_dir: Path to the global microagents directory
+        skill_dir: Path to the global skills directory
 
     Returns:
         List of Path objects to .md files (excluding README.md)
     """
     try:
-        md_files = [
-            f for f in microagent_dir.glob('*.md') if f.name.lower() != 'readme.md'
-        ]
+        md_files = [f for f in skill_dir.glob('*.md') if f.name.lower() != 'readme.md']
         return md_files
     except Exception as e:
-        _logger.debug(f'Failed to find global microagent files: {str(e)}')
+        _logger.debug(f'Failed to find global skill files: {str(e)}')
         return []
 
 
-def _load_global_microagent_files(
-    file_paths: list[Path], microagent_dir: Path
-) -> list[Skill]:
-    """Load skills from a list of global microagent files.
+def _load_global_skill_files(file_paths: list[Path], skill_dir: Path) -> list[Skill]:
+    """Load skills from a list of global skill files.
 
     Args:
         file_paths: List of file paths to load
-        microagent_dir: Base microagents directory (for skill_dir parameter)
+        skill_dir: Base skills directory (for skill_dir parameter)
 
     Returns:
         List of Skill objects loaded from the files
@@ -60,53 +56,49 @@ def _load_global_microagent_files(
 
     for file_path in file_paths:
         try:
-            skill = Skill.load(file_path, microagent_dir)
+            skill = Skill.load(file_path, skill_dir)
             skills.append(skill)
-            _logger.debug(f'Loaded global microagent: {skill.name} from {file_path}')
+            _logger.debug(f'Loaded global skill: {skill.name} from {file_path}')
         except Exception as e:
-            _logger.warning(
-                f'Failed to load global microagent from {file_path}: {str(e)}'
-            )
+            _logger.warning(f'Failed to load global skill from {file_path}: {str(e)}')
 
     return skills
 
 
-def load_global_microagents() -> list[Skill]:
-    """Load global microagents from OpenHands/microagents/ directory.
+def load_global_skills() -> list[Skill]:
+    """Load global skills from OpenHands/skills/ directory.
 
     Returns:
-        List of Skill objects loaded from global microagents directory.
+        List of Skill objects loaded from global skills directory.
         Returns empty list if directory doesn't exist or on errors.
     """
-    microagent_dir = Path(GLOBAL_MICROAGENTS_DIR)
+    skill_dir = Path(GLOBAL_SKILLS_DIR)
 
     # Check if directory exists
-    if not microagent_dir.exists():
-        _logger.debug(f'Global microagents directory does not exist: {microagent_dir}')
+    if not skill_dir.exists():
+        _logger.debug(f'Global skills directory does not exist: {skill_dir}')
         return []
 
     try:
-        _logger.info(f'Loading global microagents from {microagent_dir}')
+        _logger.info(f'Loading global skills from {skill_dir}')
 
         # Find all .md files in the directory
-        md_files = _find_global_microagent_files(microagent_dir)
+        md_files = _find_global_skill_files(skill_dir)
 
         # Load skills from the found files
-        skills = _load_global_microagent_files(md_files, microagent_dir)
+        skills = _load_global_skill_files(md_files, skill_dir)
 
-        _logger.info(
-            f'Loaded {len(skills)} global microagents: {[s.name for s in skills]}'
-        )
+        _logger.info(f'Loaded {len(skills)} global skills: {[s.name for s in skills]}')
 
         return skills
 
     except Exception as e:
-        _logger.warning(f'Failed to load global microagents: {str(e)}')
+        _logger.warning(f'Failed to load global skills: {str(e)}')
         return []
 
 
-def load_user_microagents() -> list[Skill]:
-    """Load user microagents from ~/.openhands/microagents/ directory.
+def load_all_user_skills() -> list[Skill]:
+    """Load user skills from ~/.openhands/skills/ directory.
 
     Uses the SDK's load_user_skills() function which handles loading from
     ~/.openhands/skills/ and ~/.openhands/microagents/ (for backward compatibility).
@@ -117,12 +109,10 @@ def load_user_microagents() -> list[Skill]:
     """
     try:
         skills = load_user_skills()
-        _logger.info(
-            f'Loaded {len(skills)} user microagents: {[s.name for s in skills]}'
-        )
+        _logger.info(f'Loaded {len(skills)} user skills: {[s.name for s in skills]}')
         return skills
     except Exception as e:
-        _logger.warning(f'Failed to load user microagents: {str(e)}')
+        _logger.warning(f'Failed to load user skills: {str(e)}')
         return []
 
 
@@ -189,7 +179,7 @@ def _create_skill_from_content(filename: str, content: str) -> Skill | None:
 async def _load_special_files(
     workspace: AsyncRemoteWorkspace, repo_root: str, working_dir: str
 ) -> list[Skill]:
-    """Load special microagent files from repository root.
+    """Load special skill files from repository root.
 
     Loads: .cursorrules, agents.md, agent.md
 
@@ -212,19 +202,19 @@ async def _load_special_files(
             skill = _create_skill_from_content(filename, content)
             if skill:
                 skills.append(skill)
-                _logger.debug(f'Loaded special file microagent: {skill.name}')
+                _logger.debug(f'Loaded special file skill: {skill.name}')
 
     return skills
 
 
-async def _find_microagent_md_files(
-    workspace: AsyncRemoteWorkspace, microagent_dir: str, working_dir: str
+async def _find_skill_md_files(
+    workspace: AsyncRemoteWorkspace, skill_dir: str, working_dir: str
 ) -> list[str]:
-    """Find all .md files in the microagents directory.
+    """Find all .md files in the skills directory.
 
     Args:
         workspace: AsyncRemoteWorkspace to execute commands
-        microagent_dir: Path to microagents directory
+        skill_dir: Path to skills directory
         working_dir: Working directory for command execution
 
     Returns:
@@ -232,7 +222,7 @@ async def _find_microagent_md_files(
     """
     try:
         result = await workspace.execute_command(
-            f"find {microagent_dir} -type f -name '*.md' 2>/dev/null || true",
+            f"find {skill_dir} -type f -name '*.md' 2>/dev/null || true",
             cwd=working_dir,
             timeout=10.0,
         )
@@ -247,22 +237,22 @@ async def _find_microagent_md_files(
 
         return []
     except Exception as e:
-        _logger.debug(f'Failed to find microagent files in {microagent_dir}: {str(e)}')
+        _logger.debug(f'Failed to find skill files in {skill_dir}: {str(e)}')
         return []
 
 
-async def _load_microagent_md_files(
+async def _load_skill_md_files(
     workspace: AsyncRemoteWorkspace,
     file_paths: list[str],
-    microagent_dir: str,
+    skill_dir: str,
     working_dir: str,
 ) -> list[Skill]:
-    """Load skills from a list of microagent .md files.
+    """Load skills from a list of skill .md files.
 
     Args:
         workspace: AsyncRemoteWorkspace to execute commands
         file_paths: List of file paths to load
-        microagent_dir: Base microagents directory (for calculating relative paths)
+        skill_dir: Base skills directory (for calculating relative paths)
         working_dir: Working directory for command execution
 
     Returns:
@@ -275,26 +265,26 @@ async def _load_microagent_md_files(
 
         if content:
             # Calculate relative path for skill name
-            rel_path = file_path.replace(f'{microagent_dir}/', '')
+            rel_path = file_path.replace(f'{skill_dir}/', '')
             skill = _create_skill_from_content(rel_path, content)
 
             if skill:
                 skills.append(skill)
-                _logger.debug(f'Loaded repo microagent: {skill.name}')
+                _logger.debug(f'Loaded repo skill: {skill.name}')
 
     return skills
 
 
-async def load_repo_microagents(
+async def load_repo_skills(
     workspace: AsyncRemoteWorkspace,
     selected_repository: str | None,
     working_dir: str,
 ) -> list[Skill]:
-    """Load repository-level microagents from the workspace.
+    """Load repository-level skills from the workspace.
 
-    Loads microagents from:
+    Loads skills from:
     1. Special files in repo root: .cursorrules, agents.md, agent.md
-    2. .md files in .openhands/microagents/ directory
+    2. .md files in .openhands/skills/ directory
 
     Args:
         workspace: AsyncRemoteWorkspace to execute commands in the sandbox
@@ -308,31 +298,29 @@ async def load_repo_microagents(
     try:
         # Determine repository root directory
         repo_root = _determine_repo_root(working_dir, selected_repository)
-        _logger.info(f'Loading repo microagents from {repo_root}')
+        _logger.info(f'Loading repo skills from {repo_root}')
 
         # Load special files from repo root
         special_skills = await _load_special_files(workspace, repo_root, working_dir)
 
-        # Load .md files from .openhands/microagents/ directory
-        microagent_dir = f'{repo_root}/.openhands/microagents'
-        md_file_paths = await _find_microagent_md_files(
-            workspace, microagent_dir, working_dir
-        )
-        md_skills = await _load_microagent_md_files(
-            workspace, md_file_paths, microagent_dir, working_dir
+        # Load .md files from .openhands/skills/ directory
+        skill_dir = f'{repo_root}/.openhands/skills'
+        md_file_paths = await _find_skill_md_files(workspace, skill_dir, working_dir)
+        md_skills = await _load_skill_md_files(
+            workspace, md_file_paths, skill_dir, working_dir
         )
 
         # Combine all loaded skills
         all_skills = special_skills + md_skills
 
         _logger.info(
-            f'Loaded {len(all_skills)} repo microagents: {[s.name for s in all_skills]}'
+            f'Loaded {len(all_skills)} repo skills: {[s.name for s in all_skills]}'
         )
 
         return all_skills
 
     except Exception as e:
-        _logger.warning(f'Failed to load repo microagents: {str(e)}')
+        _logger.warning(f'Failed to load repo skills: {str(e)}')
         return []
 
 
