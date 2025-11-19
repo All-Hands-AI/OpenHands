@@ -146,6 +146,7 @@ install-python-dependencies:
 	@cp pip.conf ~/.config/pip/pip.conf 2>/dev/null || true
 	@cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
 	@poetry config certificates.PyPI.cert false 2>/dev/null || true
+	@poetry config certificates.files-pythonhosted-org.cert false 2>/dev/null || true
 	@if [ -f "$(shell pwd)/sitecustomize.py" ]; then \
 		POETRY_PYTHON=$$(which poetry | xargs head -1 | cut -d'!' -f2); \
 		if [ -n "$$POETRY_PYTHON" ] && [ -f "$$POETRY_PYTHON" ]; then \
