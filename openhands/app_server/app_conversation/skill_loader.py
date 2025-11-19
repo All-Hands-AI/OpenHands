@@ -25,42 +25,34 @@ GLOBAL_SKILLS_DIR = os.path.join(
 )
 
 
-def _find_global_skill_files(skill_dir: Path) -> list[Path]:
-    """Find all .md files in the global skills directory.
+def _find_and_load_global_skill_files(skill_dir: Path) -> list[Skill]:
+    """Find and load all .md files from the global skills directory.
 
     Args:
         skill_dir: Path to the global skills directory
 
     Returns:
-        List of Path objects to .md files (excluding README.md)
-    """
-    try:
-        md_files = [f for f in skill_dir.glob('*.md') if f.name.lower() != 'readme.md']
-        return md_files
-    except Exception as e:
-        _logger.debug(f'Failed to find global skill files: {str(e)}')
-        return []
-
-
-def _load_global_skill_files(file_paths: list[Path], skill_dir: Path) -> list[Skill]:
-    """Load skills from a list of global skill files.
-
-    Args:
-        file_paths: List of file paths to load
-        skill_dir: Base skills directory (for skill_dir parameter)
-
-    Returns:
-        List of Skill objects loaded from the files
+        List of Skill objects loaded from the files (excluding README.md)
     """
     skills = []
 
-    for file_path in file_paths:
-        try:
-            skill = Skill.load(file_path, skill_dir)
-            skills.append(skill)
-            _logger.debug(f'Loaded global skill: {skill.name} from {file_path}')
-        except Exception as e:
-            _logger.warning(f'Failed to load global skill from {file_path}: {str(e)}')
+    try:
+        # Find all .md files in the directory (excluding README.md)
+        md_files = [f for f in skill_dir.glob('*.md') if f.name.lower() != 'readme.md']
+
+        # Load skills from the found files
+        for file_path in md_files:
+            try:
+                skill = Skill.load(file_path, skill_dir)
+                skills.append(skill)
+                _logger.debug(f'Loaded global skill: {skill.name} from {file_path}')
+            except Exception as e:
+                _logger.warning(
+                    f'Failed to load global skill from {file_path}: {str(e)}'
+                )
+
+    except Exception as e:
+        _logger.debug(f'Failed to find global skill files: {str(e)}')
 
     return skills
 
@@ -82,11 +74,8 @@ def load_global_skills() -> list[Skill]:
     try:
         _logger.info(f'Loading global skills from {skill_dir}')
 
-        # Find all .md files in the directory
-        md_files = _find_global_skill_files(skill_dir)
-
-        # Load skills from the found files
-        skills = _load_global_skill_files(md_files, skill_dir)
+        # Find and load all .md files from the directory
+        skills = _find_and_load_global_skill_files(skill_dir)
 
         _logger.info(f'Loaded {len(skills)} global skills: {[s.name for s in skills]}')
 
@@ -172,10 +161,10 @@ async def _load_special_files(
     return skills
 
 
-async def _find_skill_md_files(
+async def _find_and_load_skill_md_files(
     workspace: AsyncRemoteWorkspace, skill_dir: str, working_dir: str
-) -> list[str]:
-    """Find all .md files in the skills directory.
+) -> list[Skill]:
+    """Find and load all .md files from a skills directory in the workspace.
 
     Args:
         workspace: AsyncRemoteWorkspace to execute commands
@@ -183,9 +172,12 @@ async def _find_skill_md_files(
         working_dir: Working directory for command execution
 
     Returns:
-        List of file paths to .md files (excluding README.md)
+        List of Skill objects loaded from the files (excluding README.md)
     """
+    skills = []
+
     try:
+        # Find all .md files in the directory
         result = await workspace.execute_command(
             f"find {skill_dir} -type f -name '*.md' 2>/dev/null || true",
             cwd=working_dir,
@@ -198,48 +190,62 @@ async def _find_skill_md_files(
                 for f in result.stdout.strip().split('\n')
                 if f.strip() and 'README.md' not in f
             ]
-            return file_paths
 
-        return []
+            # Load skills from the found files
+            for file_path in file_paths:
+                content = await _read_file_from_workspace(
+                    workspace, file_path, working_dir
+                )
+
+                if content:
+                    # Calculate relative path for skill name
+                    rel_path = file_path.replace(f'{skill_dir}/', '')
+                    try:
+                        # Use simple string path to avoid Path filesystem operations
+                        skill = Skill.load(
+                            path=rel_path, skill_dir=None, file_content=content
+                        )
+                        skills.append(skill)
+                        _logger.debug(f'Loaded repo skill: {skill.name}')
+                    except Exception as e:
+                        _logger.warning(
+                            f'Failed to create skill from {rel_path}: {str(e)}'
+                        )
+
     except Exception as e:
         _logger.debug(f'Failed to find skill files in {skill_dir}: {str(e)}')
-        return []
-
-
-async def _load_skill_md_files(
-    workspace: AsyncRemoteWorkspace,
-    file_paths: list[str],
-    skill_dir: str,
-    working_dir: str,
-) -> list[Skill]:
-    """Load skills from a list of skill .md files.
-
-    Args:
-        workspace: AsyncRemoteWorkspace to execute commands
-        file_paths: List of file paths to load
-        skill_dir: Base skills directory (for calculating relative paths)
-        working_dir: Working directory for command execution
-
-    Returns:
-        List of Skill objects loaded from the files
-    """
-    skills = []
-
-    for file_path in file_paths:
-        content = await _read_file_from_workspace(workspace, file_path, working_dir)
-
-        if content:
-            # Calculate relative path for skill name
-            rel_path = file_path.replace(f'{skill_dir}/', '')
-            try:
-                # Use simple string path to avoid Path filesystem operations
-                skill = Skill.load(path=rel_path, skill_dir=None, file_content=content)
-                skills.append(skill)
-                _logger.debug(f'Loaded repo skill: {skill.name}')
-            except Exception as e:
-                _logger.warning(f'Failed to create skill from {rel_path}: {str(e)}')
 
     return skills
+
+
+def _merge_repo_skills_with_precedence(
+    special_skills: list[Skill],
+    skills_dir_skills: list[Skill],
+    microagents_dir_skills: list[Skill],
+) -> list[Skill]:
+    """Merge repository skills with precedence order.
+
+    Precedence (highest to lowest):
+    1. Special files (repo root)
+    2. .openhands/skills/ directory
+    3. .openhands/microagents/ directory (backward compatibility)
+
+    Args:
+        special_skills: Skills from special files in repo root
+        skills_dir_skills: Skills from .openhands/skills/ directory
+        microagents_dir_skills: Skills from .openhands/microagents/ directory
+
+    Returns:
+        Deduplicated list of skills with proper precedence
+    """
+    # Use a dict to deduplicate by name, with earlier sources taking precedence
+    skills_by_name = {}
+    for skill in special_skills + skills_dir_skills + microagents_dir_skills:
+        # Only add if not already present (earlier sources win)
+        if skill.name not in skills_by_name:
+            skills_by_name[skill.name] = skill
+
+    return list(skills_by_name.values())
 
 
 async def load_repo_skills(
@@ -251,7 +257,8 @@ async def load_repo_skills(
 
     Loads skills from:
     1. Special files in repo root: .cursorrules, agents.md, agent.md
-    2. .md files in .openhands/skills/ directory
+    2. .md files in .openhands/skills/ directory (preferred)
+    3. .md files in .openhands/microagents/ directory (for backward compatibility)
 
     Args:
         workspace: AsyncRemoteWorkspace to execute commands in the sandbox
@@ -270,15 +277,22 @@ async def load_repo_skills(
         # Load special files from repo root
         special_skills = await _load_special_files(workspace, repo_root, working_dir)
 
-        # Load .md files from .openhands/skills/ directory
-        skill_dir = f'{repo_root}/.openhands/skills'
-        md_file_paths = await _find_skill_md_files(workspace, skill_dir, working_dir)
-        md_skills = await _load_skill_md_files(
-            workspace, md_file_paths, skill_dir, working_dir
+        # Load .md files from .openhands/skills/ directory (preferred)
+        skills_dir = f'{repo_root}/.openhands/skills'
+        skills_dir_skills = await _find_and_load_skill_md_files(
+            workspace, skills_dir, working_dir
         )
 
-        # Combine all loaded skills
-        all_skills = special_skills + md_skills
+        # Load .md files from .openhands/microagents/ directory (backward compatibility)
+        microagents_dir = f'{repo_root}/.openhands/microagents'
+        microagents_dir_skills = await _find_and_load_skill_md_files(
+            workspace, microagents_dir, working_dir
+        )
+
+        # Merge all loaded skills with proper precedence
+        all_skills = _merge_repo_skills_with_precedence(
+            special_skills, skills_dir_skills, microagents_dir_skills
+        )
 
         _logger.info(
             f'Loaded {len(all_skills)} repo skills: {[s.name for s in all_skills]}'

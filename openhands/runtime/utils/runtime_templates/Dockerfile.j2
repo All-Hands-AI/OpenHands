@@ -22,29 +22,29 @@ ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
-        coreutils util-linux procps findutils grep sed \
-        libasound2-plugins libatomic1 && \
-        (apt-get install -y --no-install-recommends libgl1 || apt-get install -y --no-install-recommends libgl1-mesa-glx) && \
-        # Install Docker dependencies
-        apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl gnupg lsb-release && \
+    wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+    coreutils util-linux procps findutils grep sed \
+    libasound2-plugins libatomic1 && \
+    (apt-get install -y --no-install-recommends libgl1 || apt-get install -y --no-install-recommends libgl1-mesa-glx) && \
+    # Install Docker dependencies
+    apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl gnupg lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
-        {%- if ('mswebench' in base_image) -%}
-        apt-get install -y --no-install-recommends nodejs python3 python-is-python3 python3-pip python3-venv
-        {%- else %}
-        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv
-        {% endif -%}
+    {%- if ('mswebench' in base_image) -%}
+apt-get install -y --no-install-recommends nodejs python3 python-is-python3 python3-pip python3-venv
+{%- else %}
+apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv
+{% endif -%}
 {% endif %}
 
 {% if (('ubuntu' not in base_image) and ('mswebench' not in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
-        coreutils util-linux procps findutils grep sed \
-        libasound2-plugins libatomic1 && \
+    wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+    coreutils util-linux procps findutils grep sed \
+    libasound2-plugins libatomic1 && \
     (apt-get install -y --no-install-recommends libgl1 || apt-get install -y --no-install-recommends libgl1-mesa-glx) && \
-        # Install Docker dependencies
+    # Install Docker dependencies
     apt-get install -y --no-install-recommends apt-transport-https ca-certificates curl gnupg lsb-release
 {% endif %}
 
@@ -67,14 +67,14 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 
 # Create openhands group and user (with fallback IDs if 1000 is taken)
 RUN (if getent group 1000 >/dev/null 2>&1; then \
-        groupadd openhands; \
+    groupadd openhands; \
     else \
-        groupadd -g 1000 openhands; \
+    groupadd -g 1000 openhands; \
     fi) && \
     (if getent passwd 1000 >/dev/null 2>&1; then \
-        useradd -g openhands -m -s /bin/bash openhands; \
+    useradd -g openhands -m -s /bin/bash openhands; \
     else \
-        useradd -u 1000 -g openhands -m -s /bin/bash openhands; \
+    useradd -u 1000 -g openhands -m -s /bin/bash openhands; \
     fi) && \
     usermod -aG sudo openhands && \
     echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
@@ -103,26 +103,26 @@ RUN \
     # Determine OS type and install accordingly
     if [[ "{{ base_image }}" == *"ubuntu"* || "{{ base_image }}" == *"betty1202"* ]]; then \
     # 'betty1202' for sweperf
-        # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
-        # Add Docker's official GPG key
-        apt-get update && \
-        apt-get install -y ca-certificates curl && \
-        install -m 0755 -d /etc/apt/keyrings && \
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
-        chmod a+r /etc/apt/keyrings/docker.asc && \
-        # Add the repository to Apt sources
-        # For Ubuntu 24.04 (noble), use jammy repository as noble isn't supported yet
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
+    # Add Docker's official GPG key
+    apt-get update && \
+    apt-get install -y ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    # Add the repository to Apt sources
+    # For Ubuntu 24.04 (noble), use jammy repository as noble isn't supported yet
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
     else \
-        # Handle Debian (following https://docs.docker.com/engine/install/debian/)
-        # Add Docker's official GPG key
-        apt-get update && \
-        apt-get install -y ca-certificates curl && \
-        install -m 0755 -d /etc/apt/keyrings && \
-        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
-        chmod a+r /etc/apt/keyrings/docker.asc && \
-        # Add the repository to Apt sources (default to bookworm for stability)
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    # Handle Debian (following https://docs.docker.com/engine/install/debian/)
+    # Add Docker's official GPG key
+    apt-get update && \
+    apt-get install -y ca-certificates curl && \
+    install -m 0755 -d /etc/apt/keyrings && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+    chmod a+r /etc/apt/keyrings/docker.asc && \
+    # Add the repository to Apt sources (default to bookworm for stability)
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
     fi && \
     # Install Docker Engine, containerd, and Docker Compose
     apt-get update && \
@@ -156,16 +156,16 @@ ARG RELEASE_ORG="gitpod-io"
 # ARG USER_GID=1000
 
 RUN if [ -z "${RELEASE_TAG}" ]; then \
-        echo "The RELEASE_TAG build arg must be set." >&2 && \
-        exit 1; \
+    echo "The RELEASE_TAG build arg must be set." >&2 && \
+    exit 1; \
     fi && \
     arch=$(uname -m) && \
     if [ "${arch}" = "x86_64" ]; then \
-        arch="x64"; \
+    arch="x64"; \
     elif [ "${arch}" = "aarch64" ]; then \
-        arch="arm64"; \
+    arch="arm64"; \
     elif [ "${arch}" = "armv7l" ]; then \
-        arch="armhf"; \
+    arch="armhf"; \
     fi && \
     wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
     tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
@@ -197,11 +197,11 @@ RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,
 USER root
 RUN \
     {% if enable_browser %}
-    # Install system dependencies for Playwright (requires root)
-    apt-get update && \
+# Install system dependencies for Playwright (requires root)
+apt-get update && \
     apt-get install -y --no-install-recommends \
-        libnss3 libnspr4 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 \
-        libxdamage1 libxrandr2 libgbm1 libxss1 && \
+    libnss3 libnspr4 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 \
+    libxdamage1 libxrandr2 libgbm1 libxss1 && \
     # Install libasound2 - try new package name first (Ubuntu 24.04+), fallback to old name
     (apt-get install -y --no-install-recommends libasound2t64 || apt-get install -y --no-install-recommends libasound2) && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
@@ -220,8 +220,8 @@ RUN \
     # Set environment variable for all users
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment && \
     {% endif %}
-    # Set environment variables (requires root)
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
+# Set environment variables (requires root)
+/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     # Set permissions for shared read-only access
     chmod -R 755 /openhands/poetry && \
     chmod -R 755 /openhands/micromamba && \
@@ -315,11 +315,11 @@ USER root
 RUN \
     # Ensure group exists (prefer GID 1000 if available)
     if ! getent group openhands >/dev/null 2>&1; then \
-        if getent group 1000 >/dev/null 2>&1; then groupadd openhands; else groupadd -g 1000 openhands; fi; \
+    if getent group 1000 >/dev/null 2>&1; then groupadd openhands; else groupadd -g 1000 openhands; fi; \
     fi && \
     # Ensure user exists (prefer UID 1000 if available)
     if ! id -u openhands >/dev/null 2>&1; then \
-        if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g openhands openhands; else useradd -u 1000 -g openhands -m -s /bin/bash openhands; fi; \
+    if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g openhands openhands; else useradd -u 1000 -g openhands -m -s /bin/bash openhands; fi; \
     fi && \
     # Ensure home and required directories exist before later steps
     mkdir -p /home/openhands && \
@@ -336,8 +336,8 @@ RUN \
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code/
-RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagents; fi
-COPY --chown=openhands:openhands ./code/microagents /openhands/code/microagents
+RUN if [ -d /openhands/code/skills ]; then rm -rf /openhands/code/skills; fi
+COPY --chown=openhands:openhands ./code/skills /openhands/code/skills
 COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
     chown -R openhands:openhands /openhands/code

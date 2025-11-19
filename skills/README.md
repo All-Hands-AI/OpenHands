@@ -7,14 +7,17 @@ Microagents are specialized prompts that enhance OpenHands with domain-specific 
 OpenHands loads microagents from two sources:
 
 ### 1. Shareable Microagents (Public)
-This directory (`OpenHands/microagents/`) contains shareable microagents that are:
+
+This directory (`OpenHands/skills/`) contains shareable microagents that are:
+
 - Available to all OpenHands users
 - Maintained in the OpenHands repository
 - Perfect for reusable knowledge and common workflows
 
 Directory structure:
+
 ```
-OpenHands/microagents/
+OpenHands/skills/
 ├── # Keyword-triggered expertise
 │   ├── git.md         # Git operations
 │   ├── testing.md     # Testing practices
@@ -26,12 +29,15 @@ OpenHands/microagents/
 ```
 
 ### 2. Repository Instructions (Private)
+
 Each repository can have its own instructions in `.openhands/microagents/repo.md`. These instructions are:
+
 - Private to that repository
 - Automatically loaded when working with that repository
 - Perfect for repository-specific guidelines and team practices
 
 Example repository structure:
+
 ```
 your-repository/
 └── .openhands/
@@ -40,10 +46,10 @@ your-repository/
         └── ...        # Private micro-agents that are only available inside this repo
 ```
 
-
 ## Loading Order
 
 When OpenHands works with a repository, it:
+
 1. Loads repository-specific instructions from `.openhands/microagents/repo.md` if present
 2. Loads relevant knowledge agents based on keywords in conversations
 
@@ -51,32 +57,35 @@ When OpenHands works with a repository, it:
 
 Most microagents use markdown files with YAML frontmatter. For repository agents (repo.md), the frontmatter is optional - if not provided, the file will be loaded with default settings as a repository agent.
 
-
 ### 1. Knowledge Agents
 
 Knowledge agents provide specialized expertise that's triggered by keywords in conversations. They help with:
+
 - Language best practices
 - Framework guidelines
 - Common patterns
 - Tool usage
 
 Key characteristics:
+
 - **Trigger-based**: Activated by specific keywords in conversations
 - **Context-aware**: Provide relevant advice based on file types and content
 - **Reusable**: Knowledge can be applied across multiple projects
 - **Versioned**: Support multiple versions of tools/frameworks
 
-You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/OpenHands/OpenHands/tree/main/microagents/github.md).
+You can see an example of a knowledge-based agent in [OpenHands's github microagent](https://github.com/OpenHands/OpenHands/tree/main/skills/github.md).
 
 ### 2. Repository Agents
 
 Repository agents provide repository-specific knowledge and guidelines. They are:
+
 - Loaded from `.openhands/microagents/repo.md`
 - Specific to individual repositories
 - Automatically activated for their repository
 - Perfect for team practices and project conventions
 
 Key features:
+
 - **Project-specific**: Contains guidelines unique to the repository
 - **Team-focused**: Enforces team conventions and practices
 - **Always active**: Automatically loaded for the repository
@@ -84,17 +93,16 @@ Key features:
 
 You can see an example of a repo agent in [the agent for the OpenHands repo itself](https://github.com/OpenHands/OpenHands/blob/main/.openhands/microagents/repo.md).
 
-
 ## Contributing
 
 ### When to Contribute
 
 1. **Knowledge Agents** - When you have:
+
    - Language/framework best practices
    - Tool usage patterns
    - Common problem solutions
    - General development guidelines
-
 
 2. **Repository Agents** - When you need:
    - Project-specific guidelines
@@ -105,12 +113,12 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
 ### Best Practices
 
 1. **For Knowledge Agents**:
+
    - Choose distinctive triggers
    - Focus on one area of expertise
    - Include practical examples
    - Use file patterns when relevant
    - Keep knowledge general and reusable
-
 
 2. **For Repository Agents**:
    - Document clear setup instructions
@@ -126,11 +134,10 @@ You can see an example of a repo agent in [the agent for the OpenHands repo itse
 ### Submission Process
 
 1. Create your agent file in the appropriate directory:
-   - `microagents/` for expertise (public, shareable)
+   - `skills/` for expertise (public, shareable)
    - Note: Repository-specific agents should remain in their respective repositories' `.openhands/microagents/` directory
 2. Test thoroughly
 3. Submit a pull request to OpenHands
-
 
 ## License
 

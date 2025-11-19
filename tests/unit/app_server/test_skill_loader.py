@@ -12,10 +12,8 @@ import pytest
 
 from openhands.app_server.app_conversation.skill_loader import (
     _determine_repo_root,
-    _find_global_skill_files,
-    _find_skill_md_files,
-    _load_global_skill_files,
-    _load_skill_md_files,
+    _find_and_load_global_skill_files,
+    _find_and_load_skill_md_files,
     _load_special_files,
     _read_file_from_workspace,
     load_global_skills,
@@ -269,12 +267,22 @@ class TestLoadSpecialFiles:
         assert len(result) == 0
 
 
-class TestFindSkillMdFiles:
-    """Test _find_skill_md_files helper function."""
+class TestFindAndLoadSkillMdFiles:
+    """Test _find_and_load_skill_md_files helper function."""
 
     @pytest.mark.asyncio
-    async def test_find_files_success(self, mock_async_remote_workspace):
-        """Test successfully finding skill .md files."""
+    @patch(
+        'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
+    )
+    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
+    async def test_find_and_load_files_success(
+        self,
+        mock_skill_class,
+        mock_read_file,
+        mock_async_remote_workspace,
+        mock_skills_list,
+    ):
+        """Test successfully finding and loading skill .md files."""
         result_obj = Mock()
         result_obj.exit_code = 0
         result_obj.stdout = (
@@ -282,90 +290,11 @@ class TestFindSkillMdFiles:
         )
         mock_async_remote_workspace.execute_command.return_value = result_obj
 
-        result = await _find_skill_md_files(
-            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
-        )
-
-        assert len(result) == 2
-        assert '/repo/.openhands/skills/test1.md' in result
-        assert '/repo/.openhands/skills/test2.md' in result
-
-    @pytest.mark.asyncio
-    async def test_find_files_excludes_readme(self, mock_async_remote_workspace):
-        """Test that README.md files are excluded."""
-        result_obj = Mock()
-        result_obj.exit_code = 0
-        result_obj.stdout = (
-            '/repo/.openhands/skills/test.md\n/repo/.openhands/skills/README.md\n'
-        )
-        mock_async_remote_workspace.execute_command.return_value = result_obj
-
-        result = await _find_skill_md_files(
-            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
-        )
-
-        assert len(result) == 1
-        assert '/repo/.openhands/skills/test.md' in result
-        assert any('README.md' in f for f in result) is False
-
-    @pytest.mark.asyncio
-    async def test_find_files_no_results(
-        self, mock_async_remote_workspace, command_result_failure
-    ):
-        """Test when no files are found."""
-        mock_async_remote_workspace.execute_command.return_value = (
-            command_result_failure
-        )
-
-        result = await _find_skill_md_files(
-            mock_async_remote_workspace, '/nonexistent', '/workspace'
-        )
-
-        assert len(result) == 0
-
-    @pytest.mark.asyncio
-    async def test_find_files_exception(self, mock_async_remote_workspace):
-        """Test handling exception during file search."""
-        mock_async_remote_workspace.execute_command.side_effect = Exception(
-            'Command error'
-        )
-
-        result = await _find_skill_md_files(
-            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
-        )
-
-        assert len(result) == 0
-
-
-class TestLoadSkillMdFiles:
-    """Test _load_skill_md_files helper function."""
-
-    @pytest.mark.asyncio
-    @patch(
-        'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
-    )
-    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
-    async def test_load_md_files_success(
-        self,
-        mock_skill_class,
-        mock_read_file,
-        mock_async_remote_workspace,
-        mock_skills_list,
-    ):
-        """Test successfully loading skill .md files."""
-        file_paths = [
-            '/repo/.openhands/skills/test1.md',
-            '/repo/.openhands/skills/test2.md',
-        ]
-
         mock_read_file.side_effect = ['content1', 'content2']
         mock_skill_class.load.side_effect = mock_skills_list[:2]
 
-        result = await _load_skill_md_files(
-            mock_async_remote_workspace,
-            file_paths,
-            '/repo/.openhands/skills',
-            '/workspace',
+        result = await _find_and_load_skill_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
         )
 
         assert len(result) == 2
@@ -379,14 +308,72 @@ class TestLoadSkillMdFiles:
     @patch(
         'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
     )
-    async def test_load_md_files_some_missing(
+    @patch('openhands.app_server.app_conversation.skill_loader.Skill')
+    async def test_find_and_load_excludes_readme(
+        self, mock_skill_class, mock_read_file, mock_async_remote_workspace, mock_skill
+    ):
+        """Test that README.md files are excluded."""
+        result_obj = Mock()
+        result_obj.exit_code = 0
+        result_obj.stdout = (
+            '/repo/.openhands/skills/test.md\n/repo/.openhands/skills/README.md\n'
+        )
+        mock_async_remote_workspace.execute_command.return_value = result_obj
+
+        mock_read_file.return_value = 'content'
+        mock_skill_class.load.return_value = mock_skill
+
+        result = await _find_and_load_skill_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
+        )
+
+        assert len(result) == 1
+        assert result[0] == mock_skill
+        # Verify README.md was not processed
+        assert mock_read_file.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_find_and_load_no_results(
+        self, mock_async_remote_workspace, command_result_failure
+    ):
+        """Test when no files are found."""
+        mock_async_remote_workspace.execute_command.return_value = (
+            command_result_failure
+        )
+
+        result = await _find_and_load_skill_md_files(
+            mock_async_remote_workspace, '/nonexistent', '/workspace'
+        )
+
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_find_and_load_exception(self, mock_async_remote_workspace):
+        """Test handling exception during file search."""
+        mock_async_remote_workspace.execute_command.side_effect = Exception(
+            'Command error'
+        )
+
+        result = await _find_and_load_skill_md_files(
+            mock_async_remote_workspace, '/repo/.openhands/skills', '/workspace'
+        )
+
+        assert len(result) == 0
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.app_server.app_conversation.skill_loader._read_file_from_workspace'
+    )
+    async def test_find_and_load_some_missing(
         self, mock_read_file, mock_async_remote_workspace
     ):
         """Test loading when some files fail to read."""
-        file_paths = [
-            '/repo/.openhands/skills/test1.md',
-            '/repo/.openhands/skills/missing.md',
-        ]
+        result_obj = Mock()
+        result_obj.exit_code = 0
+        result_obj.stdout = (
+            '/repo/.openhands/skills/test1.md\n/repo/.openhands/skills/missing.md\n'
+        )
+        mock_async_remote_workspace.execute_command.return_value = result_obj
 
         mock_read_file.side_effect = ['content1', None]
 
@@ -396,9 +383,8 @@ class TestLoadSkillMdFiles:
             mock_skill = Mock()
             mock_skill_class.load.return_value = mock_skill
 
-            result = await _load_skill_md_files(
+            result = await _find_and_load_skill_md_files(
                 mock_async_remote_workspace,
-                file_paths,
                 '/repo/.openhands/skills',
                 '/workspace',
             )
@@ -407,52 +393,29 @@ class TestLoadSkillMdFiles:
             assert mock_skill_class.load.call_count == 1
 
 
-class TestFindGlobalSkillFiles:
-    """Test _find_global_skill_files helper function."""
-
-    def test_find_global_files(self, temp_skills_dir):
-        """Test finding global skill files."""
-        result = _find_global_skill_files(temp_skills_dir)
-
-        # Should find .md files but not README.md
-        assert len(result) == 2
-        filenames = [f.name for f in result]
-        assert 'test_skill.md' in filenames
-        assert 'another_skill.md' in filenames
-        assert 'README.md' not in filenames
-
-    def test_find_global_files_empty_dir(self, tmp_path):
-        """Test finding files in empty directory."""
-        result = _find_global_skill_files(tmp_path)
-        assert len(result) == 0
-
-    def test_find_global_files_nonexistent_dir(self):
-        """Test finding files in non-existent directory."""
-        nonexistent = Path('/nonexistent/path')
-        result = _find_global_skill_files(nonexistent)
-        assert len(result) == 0
-
-
-class TestLoadGlobalSkillFiles:
-    """Test _load_global_skill_files helper function."""
+class TestFindAndLoadGlobalSkillFiles:
+    """Test _find_and_load_global_skill_files helper function."""
 
     @patch('openhands.app_server.app_conversation.skill_loader.Skill')
-    def test_load_global_files_success(
+    def test_find_and_load_global_files_success(
         self, mock_skill_class, temp_skills_dir, mock_skills_list
     ):
-        """Test successfully loading global skill files."""
+        """Test successfully finding and loading global skill files."""
         file_paths = list(temp_skills_dir.glob('*.md'))
         file_paths = [f for f in file_paths if f.name.lower() != 'readme.md']
 
         mock_skill_class.load.side_effect = mock_skills_list[: len(file_paths)]
 
-        result = _load_global_skill_files(file_paths, temp_skills_dir)
+        result = _find_and_load_global_skill_files(temp_skills_dir)
 
+        # Should find and load .md files but not README.md
         assert len(result) == len(file_paths)
         assert mock_skill_class.load.call_count == len(file_paths)
+        skill_names = [s.name for s in result]
+        assert len(skill_names) == len(file_paths)
 
     @patch('openhands.app_server.app_conversation.skill_loader.Skill')
-    def test_load_global_files_with_errors(
+    def test_find_and_load_global_files_with_errors(
         self, mock_skill_class, temp_skills_dir, mock_skill
     ):
         """Test loading when some files fail to parse."""
@@ -462,10 +425,21 @@ class TestLoadGlobalSkillFiles:
         # First file succeeds, second file fails
         mock_skill_class.load.side_effect = [mock_skill, Exception('Parse error')]
 
-        result = _load_global_skill_files(file_paths, temp_skills_dir)
+        result = _find_and_load_global_skill_files(temp_skills_dir)
 
         assert len(result) == 1
         assert result[0] == mock_skill
+
+    def test_find_and_load_global_files_empty_dir(self, tmp_path):
+        """Test finding and loading files in empty directory."""
+        result = _find_and_load_global_skill_files(tmp_path)
+        assert len(result) == 0
+
+    def test_find_and_load_global_files_nonexistent_dir(self):
+        """Test finding and loading files in non-existent directory."""
+        nonexistent = Path('/nonexistent/path')
+        result = _find_and_load_global_skill_files(nonexistent)
+        assert len(result) == 0
 
 
 # ===== Tests for Main Loader Functions =====
@@ -476,15 +450,11 @@ class TestLoadGlobalSkills:
 
     @patch('openhands.app_server.app_conversation.skill_loader.Path')
     @patch(
-        'openhands.app_server.app_conversation.skill_loader._find_global_skill_files'
-    )
-    @patch(
-        'openhands.app_server.app_conversation.skill_loader._load_global_skill_files'
+        'openhands.app_server.app_conversation.skill_loader._find_and_load_global_skill_files'
     )
     def test_load_global_skills_success(
         self,
-        mock_load_files,
-        mock_find_files,
+        mock_find_and_load,
         mock_path_class,
         temp_skills_dir,
         mock_skills_list,
@@ -494,11 +464,7 @@ class TestLoadGlobalSkills:
         mock_path_obj.exists.return_value = True
         mock_path_class.return_value = mock_path_obj
 
-        mock_find_files.return_value = [
-            temp_skills_dir / 'test1.md',
-            temp_skills_dir / 'test2.md',
-        ]
-        mock_load_files.return_value = mock_skills_list
+        mock_find_and_load.return_value = mock_skills_list
 
         result = load_global_skills()
 
@@ -518,15 +484,15 @@ class TestLoadGlobalSkills:
 
     @patch('openhands.app_server.app_conversation.skill_loader.Path')
     @patch(
-        'openhands.app_server.app_conversation.skill_loader._find_global_skill_files'
+        'openhands.app_server.app_conversation.skill_loader._find_and_load_global_skill_files'
     )
-    def test_load_global_skills_exception(self, mock_find_files, mock_path_class):
+    def test_load_global_skills_exception(self, mock_find_and_load, mock_path_class):
         """Test handling exception during global skill loading."""
         mock_path_obj = MagicMock()
         mock_path_obj.exists.return_value = True
         mock_path_class.return_value = mock_path_obj
 
-        mock_find_files.side_effect = Exception('File system error')
+        mock_find_and_load.side_effect = Exception('File system error')
 
         result = load_global_skills()
 
@@ -538,47 +504,50 @@ class TestLoadRepoSkills:
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.app_conversation.skill_loader._load_special_files')
-    @patch('openhands.app_server.app_conversation.skill_loader._find_skill_md_files')
-    @patch('openhands.app_server.app_conversation.skill_loader._load_skill_md_files')
+    @patch(
+        'openhands.app_server.app_conversation.skill_loader._find_and_load_skill_md_files'
+    )
     async def test_load_repo_skills_success(
         self,
-        mock_load_md_files,
-        mock_find_md_files,
+        mock_find_and_load,
         mock_load_special,
         mock_async_remote_workspace,
         mock_skills_list,
     ):
         """Test successfully loading repo skills."""
         special_skills = [mock_skills_list[0]]
-        md_skills = [mock_skills_list[1], mock_skills_list[2]]
+        skills_dir_skills = [mock_skills_list[1]]
+        microagents_dir_skills = [mock_skills_list[2]]
 
         mock_load_special.return_value = special_skills
-        mock_find_md_files.return_value = ['/repo/.openhands/skills/test.md']
-        mock_load_md_files.return_value = md_skills
+        # Mock loading from both directories
+        mock_find_and_load.side_effect = [skills_dir_skills, microagents_dir_skills]
 
         result = await load_repo_skills(
             mock_async_remote_workspace, 'owner/repo', '/workspace/project'
         )
 
         assert len(result) == 3
-        assert result == special_skills + md_skills
+        # Verify all skills are present (merged with precedence)
+        assert special_skills[0] in result
+        assert skills_dir_skills[0] in result
+        assert microagents_dir_skills[0] in result
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.app_conversation.skill_loader._load_special_files')
-    @patch('openhands.app_server.app_conversation.skill_loader._find_skill_md_files')
-    @patch('openhands.app_server.app_conversation.skill_loader._load_skill_md_files')
+    @patch(
+        'openhands.app_server.app_conversation.skill_loader._find_and_load_skill_md_files'
+    )
     async def test_load_repo_skills_no_selected_repository(
         self,
-        mock_load_md_files,
-        mock_find_md_files,
+        mock_find_and_load,
         mock_load_special,
         mock_async_remote_workspace,
         mock_skills_list,
     ):
         """Test loading repo skills without selected repository."""
         mock_load_special.return_value = [mock_skills_list[0]]
-        mock_find_md_files.return_value = []
-        mock_load_md_files.return_value = []
+        mock_find_and_load.return_value = []
 
         result = await load_repo_skills(
             mock_async_remote_workspace, None, '/workspace/project'
@@ -589,6 +558,8 @@ class TestLoadRepoSkills:
         mock_load_special.assert_called_once_with(
             mock_async_remote_workspace, '/workspace/project', '/workspace/project'
         )
+        # Verify both directories were checked
+        assert mock_find_and_load.call_count == 2
 
     @pytest.mark.asyncio
     @patch('openhands.app_server.app_conversation.skill_loader._load_special_files')
