@@ -59,14 +59,14 @@ OH_LABEL, INLINE_OH_LABEL = get_oh_labels(HOST)
 
 class GithubUserContext(UserContext):
     """User context for GitHub integration that provides user info without web request."""
-    
+
     def __init__(self, keycloak_user_id: str, git_provider_tokens: PROVIDER_TOKEN_TYPE):
         self.keycloak_user_id = keycloak_user_id
         self.git_provider_tokens = git_provider_tokens
-    
+
     async def get_user_id(self) -> str | None:
         return self.keycloak_user_id
-    
+
     async def get_user_info(self) -> UserInfo:
         # Get the user's full settings from the database using the store.load() method
         # The V1 system needs proper LLM configuration to work
@@ -75,33 +75,33 @@ class GithubUserContext(UserContext):
             session_maker=session_maker,
             config=get_config(),
         )
-        
+
         try:
             # Load user settings - this already handles the conversion to Settings format
             user_settings = await store.load()
-            
+
             # Create UserInfo with the loaded settings and user ID
             return UserInfo(
                 id=self.keycloak_user_id,
                 **user_settings.model_dump()
             )
-                
+
         except Exception as e:
             logger.warning(f"Failed to load user settings for {self.keycloak_user_id}: {e}")
             # Fallback to default settings
             return UserInfo(id=self.keycloak_user_id)
-    
+
     async def get_authenticated_git_url(self, repository: str) -> str:
         # This would need to be implemented based on the git provider tokens
         # For now, return a basic HTTPS URL
         return f"https://github.com/{repository}.git"
-    
+
     async def get_latest_token(self, provider_type: ProviderType) -> str | None:
         # Return the appropriate token from git_provider_tokens
         if provider_type == ProviderType.GITHUB and self.git_provider_tokens:
             return self.git_provider_tokens.get(ProviderType.GITHUB)
         return None
-    
+
     async def get_secrets(self) -> dict[str, SecretSource]:
         # Return empty dict for now - GitHub integration handles secrets separately
         return {}
@@ -254,7 +254,7 @@ class GithubIssue(ResolverViewInterface):
     ):
         # Check if user has V1 conversations enabled
         v1_enabled = await get_user_v1_enabled_setting(self.user_info.keycloak_user_id)
-        
+
         if v1_enabled:
             # Use V1 app conversation service
             await self._create_v1_conversation(jinja_env, git_provider_tokens, conversation_metadata)
@@ -315,27 +315,28 @@ class GithubIssue(ResolverViewInterface):
 
         # Get the app conversation service and start the conversation
         injector_state = InjectorState()
-        
+
         # Set up the GitHub user context for the V1 system
         github_user_context = GithubUserContext(
             keycloak_user_id=self.user_info.keycloak_user_id,
             git_provider_tokens=git_provider_tokens
         )
         setattr(injector_state, USER_CONTEXT_ATTR, github_user_context)
-        
+
         async with get_app_conversation_service(injector_state) as app_conversation_service:
             async for task in app_conversation_service.start_app_conversation(start_request):
-                if task.status == AppConversationStartTaskStatus.READY:
-                    # Update our conversation_id to the V1 conversation ID
-                    self.conversation_id = str(task.app_conversation_id)
-                    logger.info(f"V1 conversation started with ID: {self.conversation_id}")
-                    break
-                elif task.status == AppConversationStartTaskStatus.ERROR:
-                    logger.error(f"Failed to start V1 conversation: {task.detail}")
-                    raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
-                else:
-                    logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
-                    # Continue waiting for the conversation to be ready
+                # if task.status == AppConversationStartTaskStatus.READY:
+                #     # Update our conversation_id to the V1 conversation ID
+                #     self.conversation_id = str(task.app_conversation_id)
+                self.conversation_id = task.id
+                logger.info(f"V1 conversation started with ID: {self.conversation_id}")
+                #     break
+                # elif task.status == AppConversationStartTaskStatus.ERROR:
+                #     logger.error(f"Failed to start V1 conversation: {task.detail}")
+                #     raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
+                # else:
+                #     logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
+                #     # Continue waiting for the conversation to be ready
 
 
 @dataclass

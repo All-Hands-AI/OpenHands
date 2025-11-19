@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 
 import httpx
 from fastapi import Request
+from openhands.agent_server.build.lib.openhands.sdk.event.llm_convertible import system
 from pydantic import Field, TypeAdapter
 
 from openhands.agent_server.models import (
@@ -68,6 +69,7 @@ from openhands.app_server.utils.docker_utils import (
 )
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
+from openhands.sdk import AgentContext
 from openhands.sdk import LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
@@ -225,10 +227,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
                     request.initial_message,
+                    request.system_message_suffix,
                     request.git_provider,
                     sandbox_spec.working_dir,
                     request.agent_type,
                     request.llm_model,
+                    request.conversation_id,
                 )
             )
 
@@ -511,10 +515,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
     async def _build_start_conversation_request_for_user(
         self,
         initial_message: SendMessageRequest | None,
+        system_message_suffix: str | None,
         git_provider: ProviderType | None,
         working_dir: str,
         agent_type: AgentType = AgentType.DEFAULT,
         llm_model: str | None = None,
+        conversation_id: UUID | None = None,
     ) -> StartConversationRequest:
         user = await self.user_context.get_user_info()
 
@@ -560,7 +566,16 @@ class LiveStatusAppConversationService(GitAppConversationService):
         else:
             agent = get_default_agent(llm=llm)
 
-        conversation_id = uuid4()
+        agent_context = AgentContext(
+            system_message_suffix=system_message_suffix
+        )
+        agent = agent.model_copy(
+            update={
+                    "agent_context": agent_context
+                }
+        )
+
+        conversation_id = conversation_id or uuid4()
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
