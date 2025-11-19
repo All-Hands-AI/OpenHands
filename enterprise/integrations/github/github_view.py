@@ -336,8 +336,9 @@ class GithubIssue(ResolverViewInterface):
                 # if task.status == AppConversationStartTaskStatus.READY:
                 #     # Update our conversation_id to the V1 conversation ID
                 #     self.conversation_id = str(task.app_conversation_id)
-                logger.info(f"V1 conversation started with ID: {self.conversation_id}")
+                logger.info(f"V1 conversation started with ID: {self.conversation_id}:")
                 logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
+                logger.info(f"Reported ID from app server: {task.app_conversation_id}")
                 #     break
                 # elif task.status == AppConversationStartTaskStatus.ERROR:
                 #     logger.error(f"Failed to start V1 conversation: {task.detail}")
