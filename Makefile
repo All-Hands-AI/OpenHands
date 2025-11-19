@@ -145,8 +145,18 @@ install-python-dependencies:
 	@mkdir -p ~/.config/pip ~/.pip
 	@cp pip.conf ~/.config/pip/pip.conf 2>/dev/null || true
 	@cp pip.conf ~/.pip/pip.conf 2>/dev/null || true
-	@poetry config installer.modern-installation false --local 2>/dev/null || true
-	@export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
+	@poetry config certificates.PyPI.cert false 2>/dev/null || true
+	@if [ -f "$(shell pwd)/sitecustomize.py" ]; then \
+		POETRY_PYTHON=$$(which poetry | xargs head -1 | cut -d'!' -f2); \
+		if [ -n "$$POETRY_PYTHON" ] && [ -f "$$POETRY_PYTHON" ]; then \
+			POETRY_SITE_PACKAGES=$$($$POETRY_PYTHON -c "import site; print(site.getsitepackages()[0])" 2>/dev/null); \
+			if [ -n "$$POETRY_SITE_PACKAGES" ]; then \
+				echo "Installing sitecustomize.py to Poetry's site-packages..."; \
+				cp $(shell pwd)/sitecustomize.py $$POETRY_SITE_PACKAGES/sitecustomize.py 2>/dev/null || true; \
+			fi; \
+		fi; \
+	fi
+	@export PYTHONHTTPSVERIFY=0 PYTHONWARNINGS="ignore:Unverified HTTPS request" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
@@ -155,10 +165,10 @@ install-python-dependencies:
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
 		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
+		export PYTHONHTTPSVERIFY=0 PYTHONWARNINGS="ignore:Unverified HTTPS request" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
-		export PYTHONHTTPSVERIFY=0 REQUESTS_CA_BUNDLE="" CURL_CA_BUNDLE="" SSL_CERT_FILE="" PIP_CONFIG_FILE="$(shell pwd)/pip.conf" POETRY_INSTALLER_MODERN_INSTALLATION=false; \
+		export PYTHONHTTPSVERIFY=0 PYTHONWARNINGS="ignore:Unverified HTTPS request" PIP_CONFIG_FILE="$(shell pwd)/pip.conf"; \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
