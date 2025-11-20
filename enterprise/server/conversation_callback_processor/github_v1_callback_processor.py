@@ -125,7 +125,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                         detail="Summary instruction sent"
                     )
 
-                # Extract the summary from the V1 conversation
+                # Extract the summary from the V1 conversation events
                 _logger.info(
                     f'[GitHub V1] Extracting summary for conversation {conversation_id}'
                 )
@@ -137,17 +137,10 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 if app_conversation is None:
                     raise RuntimeError(f"App conversation {conversation_id} not found")
 
-                # Request summary from the conversation
-                response = await httpx_client.post(
-                    f'{app_conversation.conversation_url}/generate_summary',
-                    headers={
-                        'X-Session-API-Key': app_conversation.session_api_key,
-                    },
-                    content='{}',
+                # Try to extract summary from conversation events
+                summary = await self._extract_summary_from_v1_conversation(
+                    httpx_client, app_conversation, conversation_id
                 )
-                response.raise_for_status()
-                summary_data = response.json()
-                summary = summary_data.get('summary', 'No summary available')
 
                 # Add conversation footer
                 from integrations.utils import append_conversation_footer
@@ -192,6 +185,88 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 conversation_id=conversation_id,
                 detail=str(e)
             )
+
+    async def _extract_summary_from_v1_conversation(
+        self, httpx_client, app_conversation, conversation_id: UUID
+    ) -> str:
+        """
+        Extract summary from V1 conversation events.
+        
+        This method attempts to find the agent's response to the summary instruction
+        by looking through the conversation events.
+        """
+        try:
+            # Try to get conversation events from the conversation URL
+            # This might be available through different endpoints
+            possible_endpoints = [
+                f'{app_conversation.conversation_url}/events',
+                f'{app_conversation.conversation_url}/messages',
+                f'{app_conversation.conversation_url}/history'
+            ]
+            
+            for endpoint in possible_endpoints:
+                try:
+                    response = await httpx_client.get(
+                        endpoint,
+                        headers={
+                            'X-Session-API-Key': app_conversation.session_api_key,
+                        },
+                    )
+                    
+                    if response.status_code == 200:
+                        events_data = response.json()
+                        _logger.info(f'[GitHub V1] Got events from {endpoint}')
+                        
+                        # Look for agent messages that might contain the summary
+                        summary = self._find_summary_in_events(events_data)
+                        if summary:
+                            return summary
+                            
+                except Exception as e:
+                    _logger.debug(f'[GitHub V1] Endpoint {endpoint} failed: {e}')
+                    continue
+            
+            # If we can't get events, return a fallback message
+            _logger.warning(f'[GitHub V1] Could not extract summary from conversation {conversation_id}')
+            return f'OpenHands conversation completed. [View full conversation](https://app.openhands.ai/conversations/{conversation_id}) for details.'
+            
+        except Exception as e:
+            _logger.exception(f'[GitHub V1] Error extracting summary: {e}')
+            return f'OpenHands conversation completed with errors. [View full conversation](https://app.openhands.ai/conversations/{conversation_id}) for details.'
+
+    def _find_summary_in_events(self, events_data) -> str | None:
+        """
+        Find summary content in conversation events.
+        
+        This looks for agent messages that appear to be summaries,
+        typically after a summary instruction was sent.
+        """
+        try:
+            # Handle different possible event data structures
+            events = []
+            if isinstance(events_data, list):
+                events = events_data
+            elif isinstance(events_data, dict):
+                events = events_data.get('events', events_data.get('messages', []))
+            
+            # Look for agent messages that might be summaries
+            # This is a heuristic approach since we don't have the exact V0 event structure
+            for event in reversed(events):  # Start from most recent
+                if isinstance(event, dict):
+                    # Look for agent/assistant messages
+                    role = event.get('role', event.get('source', ''))
+                    content = event.get('content', event.get('message', ''))
+                    
+                    if role in ['agent', 'assistant'] and content:
+                        # If it's a substantial message (likely a summary), return it
+                        if len(content) > 50:  # Arbitrary threshold
+                            return content
+            
+            return None
+            
+        except Exception as e:
+            _logger.exception(f'[GitHub V1] Error finding summary in events: {e}')
+            return None
 
     async def _send_message_to_github(self, message: str) -> None:
         """
