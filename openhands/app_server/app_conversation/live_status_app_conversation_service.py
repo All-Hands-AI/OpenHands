@@ -218,12 +218,15 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(task, remote_workspace):
+            async for updated_task in self.run_setup_scripts(
+                task, sandbox, remote_workspace
+            ):
                 yield updated_task
 
             # Build the start request
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
+                    sandbox,
                     request.initial_message,
                     request.git_provider,
                     sandbox_spec.working_dir,
@@ -512,6 +515,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
 
     async def _build_start_conversation_request_for_user(
         self,
+        sandbox: SandboxInfo,
         initial_message: SendMessageRequest | None,
         git_provider: ProviderType | None,
         working_dir: str,
@@ -558,6 +562,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             api_key=user.llm_api_key,
             usage_id='agent',
         )
+        # The agent gets passed initial instructions
         # Select agent based on agent_type
         if agent_type == AgentType.PLAN:
             agent = get_planning_agent(llm=llm)
@@ -573,7 +578,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         if remote_workspace:
             try:
                 agent = await self._load_skills_and_update_agent(
-                    agent, remote_workspace, selected_repository, working_dir
+                    sandbox, agent, remote_workspace, selected_repository, working_dir
                 )
             except Exception as e:
                 _logger.warning(f'Failed to load skills: {e}', exc_info=True)
