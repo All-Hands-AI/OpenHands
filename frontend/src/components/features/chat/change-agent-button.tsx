@@ -15,17 +15,17 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
+import { useSubConversationTaskPolling } from "#/hooks/query/use-sub-conversation-task-polling";
 
 export function ChangeAgentButton() {
   const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
 
-  const conversationMode = useConversationStore(
-    (state) => state.conversationMode,
-  );
-
-  const setConversationMode = useConversationStore(
-    (state) => state.setConversationMode,
-  );
+  const {
+    conversationMode,
+    setConversationMode,
+    setSubConversationTaskId,
+    subConversationTaskId,
+  } = useConversationStore();
 
   const webSocketStatus = useUnifiedWebSocketStatus();
 
@@ -42,6 +42,12 @@ export function ChangeAgentButton() {
   const { data: conversation } = useActiveConversation();
   const { mutate: createConversation, isPending: isCreatingConversation } =
     useCreateConversation();
+
+  // Poll sub-conversation task and invalidate parent conversation when ready
+  useSubConversationTaskPolling(
+    subConversationTaskId,
+    conversation?.conversation_id || null,
+  );
 
   // Close context menu when agent starts running
   useEffect(() => {
@@ -76,10 +82,15 @@ export function ChangeAgentButton() {
         agentType: "plan",
       },
       {
-        onSuccess: () =>
+        onSuccess: (data) => {
           displaySuccessToast(
             t(I18nKey.PLANNING_AGENTT$PLANNING_AGENT_INITIALIZED),
-          ),
+          );
+          // Track the task ID to poll for sub-conversation creation
+          if (data.v1_task_id) {
+            setSubConversationTaskId(data.v1_task_id);
+          }
+        },
       },
     );
   };
