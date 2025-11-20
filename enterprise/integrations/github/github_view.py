@@ -346,31 +346,12 @@ class GithubIssue(ResolverViewInterface):
 
     def _create_github_v1_callback_processor(self):
         """Create a V1 callback processor for GitHub integration."""
-        from server.conversation_callback_processor.github_v1_callback_processor import (
+        from openhands.app_server.event_callback.github_v1_callback_processor import (
             GithubV1CallbackProcessor,
         )
 
-        # Create serializable data from the GitHub view
-        github_view_data = {
-            'issue_number': self.issue_number,
-            'installation_id': self.installation_id,
-            'full_repo_name': self.full_repo_name,
-            'is_public_repo': self.is_public_repo,
-            'conversation_id': self.conversation_id,
-            'uuid': self.uuid,
-            'title': getattr(self, 'title', ''),
-            'description': getattr(self, 'description', ''),
-            'username': self.user_info.username,
-            'user_id': self.user_info.user_id,
-            'keycloak_user_id': self.user_info.keycloak_user_id,
-            'git_provider_tokens': {}  # Will be populated as needed
-        }
-
         # Create and return the GitHub V1 callback processor
-        return GithubV1CallbackProcessor(
-            github_view_data=github_view_data,
-            send_summary_instruction=True,
-        )
+        return GithubV1CallbackProcessor()
 
 
 @dataclass
