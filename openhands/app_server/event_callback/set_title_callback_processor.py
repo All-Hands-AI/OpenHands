@@ -15,9 +15,10 @@ from openhands.app_server.event_callback.event_callback_result_models import (
 )
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.specifiy_user_context import ADMIN, USER_CONTEXT_ATTR
+from openhands.app_server.utils.docker_utils import (
+    replace_localhost_hostname_for_docker,
+)
 from openhands.sdk import Event, MessageEvent
-
-from openhands.app_server.utils.docker_utils import replace_localhost_hostname_for_docker
 
 _logger = logging.getLogger(__name__)
 
@@ -57,7 +58,9 @@ class SetTitleCallbackProcessor(EventCallbackProcessor):
             assert app_conversation is not None
             app_conversation_url = app_conversation.conversation_url
             assert app_conversation_url is not None
-            app_conversation_url = replace_localhost_hostname_for_docker(app_conversation_url)
+            app_conversation_url = replace_localhost_hostname_for_docker(
+                app_conversation_url
+            )
             response = await httpx_client.post(
                 f'{app_conversation_url}/generate_title',
                 headers={
