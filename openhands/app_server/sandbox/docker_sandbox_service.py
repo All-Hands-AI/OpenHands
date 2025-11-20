@@ -162,6 +162,7 @@ class DockerSandboxService(SandboxService):
                                 ExposedUrl(
                                     name=exposed_port.name,
                                     url=url,
+                                    port=host_port,
                                 )
                             )
 

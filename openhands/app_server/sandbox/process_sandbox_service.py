@@ -208,6 +208,7 @@ class ProcessSandboxService(SandboxService):
                         ExposedUrl(
                             name=AGENT_SERVER,
                             url=f'http://localhost:{process_info.port}',
+                            port=process_info.port,
                         ),
                     ]
                     session_api_key = process_info.session_api_key
