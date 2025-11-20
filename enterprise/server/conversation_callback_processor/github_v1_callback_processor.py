@@ -190,43 +190,44 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         self, httpx_client, app_conversation, conversation_id: UUID
     ) -> str:
         """
-        Extract summary from V1 conversation events.
+        Extract summary from V1 conversation events using the correct API endpoint.
         
-        This method attempts to find the agent's response to the summary instruction
-        by looking through the conversation events.
+        This method uses the documented /events/search endpoint to find the agent's 
+        response to the summary instruction.
         """
         try:
-            # Try to get conversation events from the conversation URL
-            # This might be available through different endpoints
-            possible_endpoints = [
-                f'{app_conversation.conversation_url}/events',
-                f'{app_conversation.conversation_url}/messages',
-                f'{app_conversation.conversation_url}/history'
-            ]
+            # Use the correct V1 API endpoint for searching conversation events
+            search_url = f'{app_conversation.conversation_url}/events/search'
             
-            for endpoint in possible_endpoints:
-                try:
-                    response = await httpx_client.get(
-                        endpoint,
-                        headers={
-                            'X-Session-API-Key': app_conversation.session_api_key,
-                        },
-                    )
-                    
-                    if response.status_code == 200:
-                        events_data = response.json()
-                        _logger.info(f'[GitHub V1] Got events from {endpoint}')
-                        
-                        # Look for agent messages that might contain the summary
-                        summary = self._find_summary_in_events(events_data)
-                        if summary:
-                            return summary
-                            
-                except Exception as e:
-                    _logger.debug(f'[GitHub V1] Endpoint {endpoint} failed: {e}')
-                    continue
+            # Search for MessageEvents from the agent, sorted by most recent first
+            params = {
+                'kind': 'MessageEvent',
+                'sort_order': 'TIMESTAMP_DESC',
+                'limit': 10  # Get last 10 message events to find the summary
+            }
             
-            # If we can't get events, return a fallback message
+            response = await httpx_client.get(
+                search_url,
+                params=params,
+                headers={
+                    'X-Session-API-Key': app_conversation.session_api_key,
+                },
+            )
+            
+            if response.status_code == 200:
+                events_data = response.json()
+                _logger.info(f'[GitHub V1] Got {len(events_data.get("items", []))} events from search endpoint')
+                
+                # Look for the most recent agent message (likely the summary)
+                summary = self._find_agent_summary_in_events(events_data.get('items', []))
+                if summary:
+                    return summary
+                else:
+                    _logger.warning(f'[GitHub V1] No agent summary found in recent events')
+            else:
+                _logger.warning(f'[GitHub V1] Events search failed with status {response.status_code}: {response.text}')
+            
+            # If we can't get the summary, return a fallback message
             _logger.warning(f'[GitHub V1] Could not extract summary from conversation {conversation_id}')
             return f'OpenHands conversation completed. [View full conversation](https://app.openhands.ai/conversations/{conversation_id}) for details.'
             
@@ -234,38 +235,52 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             _logger.exception(f'[GitHub V1] Error extracting summary: {e}')
             return f'OpenHands conversation completed with errors. [View full conversation](https://app.openhands.ai/conversations/{conversation_id}) for details.'
 
-    def _find_summary_in_events(self, events_data) -> str | None:
+    def _find_agent_summary_in_events(self, events: list) -> str | None:
         """
-        Find summary content in conversation events.
+        Find the agent's summary response in the conversation events.
         
-        This looks for agent messages that appear to be summaries,
-        typically after a summary instruction was sent.
+        Looks for MessageEvents with source='agent' that contain substantial content,
+        which should be the agent's response to the summary instruction.
         """
         try:
-            # Handle different possible event data structures
-            events = []
-            if isinstance(events_data, list):
-                events = events_data
-            elif isinstance(events_data, dict):
-                events = events_data.get('events', events_data.get('messages', []))
-            
-            # Look for agent messages that might be summaries
-            # This is a heuristic approach since we don't have the exact V0 event structure
-            for event in reversed(events):  # Start from most recent
-                if isinstance(event, dict):
-                    # Look for agent/assistant messages
-                    role = event.get('role', event.get('source', ''))
-                    content = event.get('content', event.get('message', ''))
+            for event in events:  # Events are already sorted by timestamp desc
+                if not isinstance(event, dict):
+                    continue
+                
+                # Check if this is a MessageEvent from the agent
+                if (event.get('kind') == 'MessageEvent' and 
+                    event.get('source') == 'agent'):
                     
-                    if role in ['agent', 'assistant'] and content:
-                        # If it's a substantial message (likely a summary), return it
-                        if len(content) > 50:  # Arbitrary threshold
-                            return content
+                    # Extract the message content from llm_message
+                    llm_message = event.get('llm_message', {})
+                    if isinstance(llm_message, dict):
+                        # The content might be in different formats
+                        content = llm_message.get('content', '')
+                        
+                        # Handle different content formats (string or list)
+                        if isinstance(content, list):
+                            # Extract text from content list (common format)
+                            text_parts = []
+                            for item in content:
+                                if isinstance(item, dict) and item.get('type') == 'text':
+                                    text_parts.append(item.get('text', ''))
+                            content = '\n'.join(text_parts)
+                        elif isinstance(content, str):
+                            # Content is already a string
+                            pass
+                        else:
+                            # Try to get content from other possible fields
+                            content = str(llm_message.get('text', llm_message.get('message', '')))
+                        
+                        # If we found substantial content, this is likely the summary
+                        if content and len(content.strip()) > 50:  # Reasonable threshold for summary
+                            _logger.info(f'[GitHub V1] Found agent summary with {len(content)} characters')
+                            return content.strip()
             
             return None
             
         except Exception as e:
-            _logger.exception(f'[GitHub V1] Error finding summary in events: {e}')
+            _logger.exception(f'[GitHub V1] Error finding agent summary in events: {e}')
             return None
 
     async def _send_message_to_github(self, message: str) -> None:
