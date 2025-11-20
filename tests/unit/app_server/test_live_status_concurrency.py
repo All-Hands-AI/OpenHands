@@ -11,9 +11,6 @@ from openhands.app_server.app_conversation.live_status_app_conversation_service 
     LiveStatusAppConversationService,
 )
 from openhands.app_server.event_callback.event_callback_models import EventCallback
-from openhands.app_server.event_callback.github_v1_callback_processor import (
-    GithubV1CallbackProcessor,
-)
 from openhands.app_server.event_callback.set_title_callback_processor import (
     SetTitleCallbackProcessor,
 )
@@ -66,9 +63,9 @@ class TestLiveStatusConcurrency:
             access_token_hard_timeout=None,
         )
 
-        # Create test processors (similar to what would be used in GitHub integration)
+        # Create test processors (multiple processors to test concurrency)
         processors = [
-            GithubV1CallbackProcessor(),
+            SetTitleCallbackProcessor(),
             SetTitleCallbackProcessor(),
         ]
 
@@ -126,7 +123,7 @@ class TestLiveStatusConcurrency:
 
         # Create test processors
         processors = [
-            GithubV1CallbackProcessor(),
+            SetTitleCallbackProcessor(),
             SetTitleCallbackProcessor(),
         ]
 
