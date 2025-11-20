@@ -27,7 +27,7 @@ from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
     ConversationTrigger,
 )
-from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.data_models.secrets import Secrets
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 
@@ -232,7 +232,7 @@ async def setup_init_conversation_settings(
     settings = await settings_store.load()
 
     secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
-    user_secrets: UserSecrets | None = await secrets_store.load()
+    user_secrets: Secrets | None = await secrets_store.load()
 
     if not settings:
         from socketio.exceptions import ConnectionRefusedError

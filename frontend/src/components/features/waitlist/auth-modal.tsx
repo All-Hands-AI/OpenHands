@@ -11,6 +11,7 @@ import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/option-service/option.types";
 import { Provider } from "#/types/settings";
+import { useTracking } from "#/hooks/use-tracking";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
@@ -26,6 +27,7 @@ export function AuthModal({
   providersConfigured,
 }: AuthModalProps) {
   const { t } = useTranslation();
+  const { trackLoginButtonClick } = useTracking();
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
@@ -47,6 +49,7 @@ export function AuthModal({
 
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
+      trackLoginButtonClick({ provider: "github" });
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = githubAuthUrl;
     }
@@ -54,6 +57,7 @@ export function AuthModal({
 
   const handleGitLabAuth = () => {
     if (gitlabAuthUrl) {
+      trackLoginButtonClick({ provider: "gitlab" });
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = gitlabAuthUrl;
     }
@@ -61,6 +65,7 @@ export function AuthModal({
 
   const handleBitbucketAuth = () => {
     if (bitbucketAuthUrl) {
+      trackLoginButtonClick({ provider: "bitbucket" });
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = bitbucketAuthUrl;
     }
@@ -68,6 +73,7 @@ export function AuthModal({
 
   const handleEnterpriseSsoAuth = () => {
     if (enterpriseSsoUrl) {
+      trackLoginButtonClick({ provider: "enterprise_sso" });
       // Always start the OIDC flow, let the backend handle TOS check
       window.location.href = enterpriseSsoUrl;
     }

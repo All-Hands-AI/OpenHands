@@ -50,7 +50,10 @@ export const useUnifiedPauseConversationSandbox = () => {
       return stopV0Conversation(variables.conversationId);
     },
     onMutate: async () => {
-      toast.loading(t(I18nKey.TOAST$STOPPING_CONVERSATION), TOAST_OPTIONS);
+      const toastId = toast.loading(
+        t(I18nKey.TOAST$STOPPING_CONVERSATION),
+        TOAST_OPTIONS,
+      );
 
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([
@@ -58,10 +61,12 @@ export const useUnifiedPauseConversationSandbox = () => {
         "conversations",
       ]);
 
-      return { previousConversations };
+      return { previousConversations, toastId };
     },
     onError: (_, __, context) => {
-      toast.dismiss();
+      if (context?.toastId) {
+        toast.dismiss(context.toastId);
+      }
       toast.error(t(I18nKey.TOAST$FAILED_TO_STOP_CONVERSATION), TOAST_OPTIONS);
 
       if (context?.previousConversations) {
@@ -74,8 +79,10 @@ export const useUnifiedPauseConversationSandbox = () => {
     onSettled: (_, __, variables) => {
       invalidateConversationQueries(queryClient, variables.conversationId);
     },
-    onSuccess: (_, variables) => {
-      toast.dismiss();
+    onSuccess: (_, variables, context) => {
+      if (context?.toastId) {
+        toast.dismiss(context.toastId);
+      }
       toast.success(t(I18nKey.TOAST$CONVERSATION_STOPPED), TOAST_OPTIONS);
 
       updateConversationStatusInCache(

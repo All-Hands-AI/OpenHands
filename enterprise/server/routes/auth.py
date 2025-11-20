@@ -17,10 +17,11 @@ from server.auth.constants import (
 from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth
 from server.auth.token_manager import TokenManager
-from server.config import sign_token
+from server.config import get_config, sign_token
 from server.constants import IS_FEATURE_ENV
 from server.routes.event_webhook import _get_session_api_key, _get_user_id
 from storage.database import session_maker
+from storage.saas_settings_store import SaasSettingsStore
 from storage.user_settings import UserSettings
 
 from openhands.core.logger import openhands_logger as logger
@@ -30,6 +31,7 @@ from openhands.server.services.conversation_service import create_provider_token
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token
 from openhands.server.user_auth.user_auth import get_user_auth
+from openhands.utils.posthog_tracker import track_user_signup_completed
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -219,16 +221,14 @@ async def keycloak_callback(
             f'&state={state}'
         )
 
-    has_accepted_tos = False
-    with session_maker() as session:
-        user_settings = (
-            session.query(UserSettings)
-            .filter(UserSettings.keycloak_user_id == user_id)
-            .first()
-        )
-        has_accepted_tos = (
-            user_settings is not None and user_settings.accepted_tos is not None
-        )
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+    user_settings = settings_store.get_user_settings_by_keycloak_id(user_id)
+    has_accepted_tos = (
+        user_settings is not None and user_settings.accepted_tos is not None
+    )
 
     # If the user hasn't accepted the TOS, redirect to the TOS page
     if not has_accepted_tos:
@@ -369,6 +369,12 @@ async def accept_tos(request: Request):
         session.commit()
 
     logger.info(f'User {user_id} accepted TOS')
+
+    # Track user signup completion in PostHog
+    track_user_signup_completed(
+        user_id=user_id,
+        signup_timestamp=user_settings.accepted_tos.isoformat(),
+    )
 
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'redirect_url': redirect_url}

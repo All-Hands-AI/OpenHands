@@ -12,7 +12,9 @@ import {
   ConversationStateUpdateEvent,
   ConversationStateUpdateEventAgentStatus,
   ConversationStateUpdateEventFullState,
+  ConversationErrorEvent,
 } from "./core/events/conversation-state-event";
+import { SystemPromptEvent } from "./core/events/system-event";
 import type { OpenHandsParsedEvent } from "../core/index";
 
 /**
@@ -109,6 +111,18 @@ export const isExecuteBashObservationEvent = (
   event.observation.kind === "ExecuteBashObservation";
 
 /**
+ * Type guard function to check if an event is a system prompt event
+ */
+export const isSystemPromptEvent = (
+  event: OpenHandsEvent,
+): event is SystemPromptEvent =>
+  event.source === "agent" &&
+  "system_prompt" in event &&
+  "tools" in event &&
+  typeof event.system_prompt === "object" &&
+  Array.isArray(event.tools);
+
+/**
  * Type guard function to check if an event is a conversation state update event
  */
 export const isConversationStateUpdateEvent = (
@@ -123,7 +137,15 @@ export const isFullStateConversationStateUpdateEvent = (
 export const isAgentStatusConversationStateUpdateEvent = (
   event: ConversationStateUpdateEvent,
 ): event is ConversationStateUpdateEventAgentStatus =>
-  event.key === "agent_status";
+  event.key === "execution_status";
+
+/**
+ * Type guard function to check if an event is a conversation error event
+ */
+export const isConversationErrorEvent = (
+  event: OpenHandsEvent,
+): event is ConversationErrorEvent =>
+  "kind" in event && event.kind === "ConversationErrorEvent";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

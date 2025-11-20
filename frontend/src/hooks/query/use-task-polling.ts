@@ -68,5 +68,11 @@ export const useTaskPolling = () => {
     taskDetail: taskQuery.data?.detail,
     taskError: taskQuery.error,
     isLoadingTask: taskQuery.isLoading,
+    // Repository information from task request
+    repositoryInfo: {
+      selectedRepository: taskQuery.data?.request?.selected_repository,
+      selectedBranch: taskQuery.data?.request?.selected_branch,
+      gitProvider: taskQuery.data?.request?.git_provider,
+    },
   };
 };
