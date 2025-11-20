@@ -560,6 +560,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             api_key=user.llm_api_key,
             usage_id='agent',
         )
+        # The agent gets passed initial instructions
         # Select agent based on agent_type
         if agent_type == AgentType.PLAN:
             agent = get_planning_agent(llm=llm)
