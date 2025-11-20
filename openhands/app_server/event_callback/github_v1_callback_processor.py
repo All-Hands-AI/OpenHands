@@ -25,7 +25,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     ) -> EventCallbackResult | None:
         """Process events for GitHub V1 integration."""
         _logger.info(f'GitHub V1 Callback {callback.id} invoked for event {event}')
-        
+
         # TODO: Implement GitHub integration logic here
         # For now, just return success
         return EventCallbackResult(
