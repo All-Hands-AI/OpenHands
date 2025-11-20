@@ -193,11 +193,11 @@ class TestExperimentManagerIntegration:
         )
 
         sandbox = SandboxInfo(
-            id="mock-sandbox-id",
-            created_by_user_id="mock-user-id",
-            sandbox_spec_id="mock-sandbox-spec-id",
+            id='mock-sandbox-id',
+            created_by_user_id='mock-user-id',
+            sandbox_spec_id='mock-sandbox-spec-id',
             status=SandboxStatus.RUNNING,
-            session_api_key="mock-session-api-key",
+            session_api_key='mock-session-api-key',
         )
 
         # Patch the pieces invoked by the service
