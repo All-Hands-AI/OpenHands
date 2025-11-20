@@ -287,17 +287,6 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 processors.append(SetTitleCallbackProcessor())
 
             # Save processors
-            # await asyncio.gather(
-            #     *[
-            #         self.event_callback_service.save_event_callback(
-            #             EventCallback(
-            #                 conversation_id=info.id,
-            #                 processor=processor,
-            #             )
-            #         )
-            #         for processor in processors
-            #     ]
-            # )
             for processor in processors:
                 await self.event_callback_service.save_event_callback(
                     EventCallback(
@@ -582,12 +571,6 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         else:
             agent = get_default_agent(llm=llm)
 
-        print(
-            'cross check',
-            user.llm_api_key.get_secret_value()[0:3]
-            if user.llm_api_key
-            else 'no key set',
-        )
         agent_context = AgentContext(system_message_suffix=system_message_suffix)
         agent = agent.model_copy(update={'agent_context': agent_context})
 
