@@ -295,7 +295,6 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                     )
                 )
 
-
             # Update the start task
             task.status = AppConversationStartTaskStatus.READY
             task.app_conversation_id = info.id

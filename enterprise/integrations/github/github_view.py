@@ -306,6 +306,9 @@ class GithubIssue(ResolverViewInterface):
         # Create the GitHub V1 callback processor
         github_callback_processor = self._create_github_v1_callback_processor()
 
+        # Get the app conversation service and start the conversation
+        injector_state = InjectorState()
+
         # Create the V1 conversation start request with the callback processor
         start_request = AppConversationStartRequest(
             conversation_id=UUID(conversation_metadata.conversation_id),
@@ -317,9 +320,6 @@ class GithubIssue(ResolverViewInterface):
             trigger=ConversationTrigger.RESOLVER,
             processors=[github_callback_processor],  # Pass the callback processor directly
         )
-
-        # Get the app conversation service and start the conversation
-        injector_state = InjectorState()
 
         # Set up the GitHub user context for the V1 system
         github_user_context = GithubUserContext(
@@ -351,7 +351,14 @@ class GithubIssue(ResolverViewInterface):
         )
 
         # Create and return the GitHub V1 callback processor
-        return GithubV1CallbackProcessor()
+        return GithubV1CallbackProcessor(
+            github_view_data={
+                'issue_number': self.issue_number,
+                'full_repo_name': self.full_repo_name,
+                'installation_id': self.installation_id,
+            },
+            send_summary_instruction=self.send_summary_instruction,
+        )
 
 
 @dataclass
