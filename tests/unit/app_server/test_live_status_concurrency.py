@@ -10,7 +10,10 @@ from sqlalchemy.exc import InvalidRequestError
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
-from openhands.app_server.event_callback.event_callback_models import EventCallback
+from openhands.app_server.event_callback.event_callback_models import (
+    EventCallback,
+    LoggingCallbackProcessor,
+)
 from openhands.app_server.event_callback.set_title_callback_processor import (
     SetTitleCallbackProcessor,
 )
@@ -63,10 +66,10 @@ class TestLiveStatusConcurrency:
             access_token_hard_timeout=None,
         )
 
-        # Create test processors (multiple processors to test concurrency)
+        # Create test processors (different types to test concurrency)
         processors = [
             SetTitleCallbackProcessor(),
-            SetTitleCallbackProcessor(),
+            LoggingCallbackProcessor(),
         ]
 
         conversation_id = uuid4()
@@ -121,10 +124,10 @@ class TestLiveStatusConcurrency:
             access_token_hard_timeout=None,
         )
 
-        # Create test processors
+        # Create test processors (different types)
         processors = [
             SetTitleCallbackProcessor(),
-            SetTitleCallbackProcessor(),
+            LoggingCallbackProcessor(),
         ]
 
         conversation_id = uuid4()
