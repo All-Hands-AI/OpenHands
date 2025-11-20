@@ -28,7 +28,6 @@ import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
 import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
-import { useLlmApiKey } from "#/hooks/query/use-llm-api-key";
 
 interface OpenHandsApiKeyHelpProps {
   testId: string;
@@ -70,7 +69,6 @@ function LlmSettingsScreen() {
   const { data: resources } = useAIConfigOptions();
   const { data: settings, isLoading, isFetching } = useSettings();
   const { data: config } = useConfig();
-  const { data: llmApiKey } = useLlmApiKey();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
 
@@ -112,13 +110,13 @@ function LlmSettingsScreen() {
     resources?.models || [],
   );
 
-  // Determine if we should hide the API key input and use BYOR key (when using OpenHands provider in SaaS mode)
+  // Determine if we should hide the API key input and use OpenHands-managed key (when using OpenHands provider in SaaS mode)
   const currentModel = currentSelectedModel || settings?.LLM_MODEL;
   const isOpenHandsProvider =
     (view === "basic" && selectedProvider === "openhands") ||
     (view === "advanced" && currentModel?.startsWith("openhands/"));
   const isSaasMode = config?.APP_MODE === "saas";
-  const shouldUseBYORKey = isOpenHandsProvider && isSaasMode;
+  const shouldUseOpenHandsKey = isOpenHandsProvider && isSaasMode;
 
   React.useEffect(() => {
     const determineWhetherToToggleAdvancedSettings = () => {
@@ -210,8 +208,8 @@ function LlmSettingsScreen() {
 
     const fullLlmModel = provider && model && `${provider}/${model}`;
 
-    // Use BYOR key for OpenHands provider in SaaS mode
-    const finalApiKey = shouldUseBYORKey ? llmApiKey?.key : apiKey;
+    // Use OpenHands-managed key for OpenHands provider in SaaS mode
+    const finalApiKey = shouldUseOpenHandsKey ? null : apiKey;
 
     saveSettings(
       {
@@ -261,8 +259,8 @@ function LlmSettingsScreen() {
       .get("security-analyzer-input")
       ?.toString();
 
-    // Use BYOR key for OpenHands provider in SaaS mode
-    const finalApiKey = shouldUseBYORKey ? llmApiKey?.key : apiKey;
+    // Use OpenHands-managed key for OpenHands provider in SaaS mode
+    const finalApiKey = shouldUseOpenHandsKey ? null : apiKey;
 
     saveSettings(
       {
@@ -496,7 +494,7 @@ function LlmSettingsScreen() {
                 </>
               )}
 
-              {!shouldUseBYORKey && (
+              {!shouldUseOpenHandsKey && (
                 <>
                   <SettingsInput
                     testId="llm-api-key-input"
@@ -555,7 +553,7 @@ function LlmSettingsScreen() {
                 onChange={handleBaseUrlIsDirty}
               />
 
-              {!shouldUseBYORKey && (
+              {!shouldUseOpenHandsKey && (
                 <>
                   <SettingsInput
                     testId="llm-api-key-input"
