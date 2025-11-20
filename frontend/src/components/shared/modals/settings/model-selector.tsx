@@ -21,7 +21,7 @@ interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   currentModel?: string;
-  onChange?: (model: string | null) => void;
+  onChange?: (provider: string | null, model: string | null) => void;
   wrapperClassName?: string;
   labelClassName?: string;
 }
@@ -56,6 +56,7 @@ export function ModelSelector({
       setLitellmId(currentModel);
       setSelectedProvider(provider);
       setSelectedModel(model);
+      onChange?.(provider, model);
     }
   }, [currentModel]);
 
@@ -65,6 +66,7 @@ export function ModelSelector({
 
     const separator = models[provider]?.separator || "";
     setLitellmId(provider + separator);
+    onChange?.(provider, null);
   };
 
   const handleChangeModel = (model: string) => {
@@ -76,7 +78,7 @@ export function ModelSelector({
     }
     setLitellmId(fullModel);
     setSelectedModel(model);
-    onChange?.(fullModel);
+    onChange?.(selectedProvider, model);
   };
 
   const clear = () => {
