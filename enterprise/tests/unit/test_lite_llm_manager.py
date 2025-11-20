@@ -41,6 +41,15 @@ class TestLiteLlmManager:
         return user_settings
 
     @pytest.fixture
+    def mock_user_info(self):
+        """Create a mock user info object."""
+        user_info = {
+            'username': 'testuser',
+            'email': 'testuser@test.com',
+        }
+        return user_info
+
+    @pytest.fixture
     def mock_http_client(self):
         """Create a mock HTTP client."""
         client = AsyncMock(spec=httpx.AsyncClient)
@@ -174,18 +183,25 @@ class TestLiteLlmManager:
                             )  # create_team, create_user, add_user_to_team, generate_key
 
     @pytest.mark.asyncio
-    async def test_migrate_entries_missing_config(self, mock_user_settings):
+    async def test_migrate_entries_missing_config(
+        self, mock_user_settings, mock_user_info
+    ):
         """Test migrate_entries when LiteLLM config is missing."""
         with patch.dict(os.environ, {'LITE_LLM_API_KEY': '', 'LITE_LLM_API_URL': ''}):
             with patch('storage.lite_llm_manager.LITE_LLM_API_KEY', None):
                 with patch('storage.lite_llm_manager.LITE_LLM_API_URL', None):
                     result = await LiteLlmManager.migrate_entries(
-                        'test-org-id', 'test-user-id', mock_user_settings
+                        'test-org-id',
+                        'test-user-id',
+                        mock_user_settings,
+                        mock_user_info,
                     )
                     assert result is None
 
     @pytest.mark.asyncio
-    async def test_migrate_entries_local_deployment(self, mock_user_settings):
+    async def test_migrate_entries_local_deployment(
+        self, mock_user_settings, mock_user_info
+    ):
         """Test migrate_entries in local deployment mode."""
         with patch.dict(os.environ, {'LOCAL_DEPLOYMENT': '1'}):
             with patch('storage.lite_llm_manager.LITE_LLM_API_KEY', 'test-key'):
@@ -193,7 +209,10 @@ class TestLiteLlmManager:
                     'storage.lite_llm_manager.LITE_LLM_API_URL', 'http://test.com'
                 ):
                     result = await LiteLlmManager.migrate_entries(
-                        'test-org-id', 'test-user-id', mock_user_settings
+                        'test-org-id',
+                        'test-user-id',
+                        mock_user_settings,
+                        mock_user_info,
                     )
 
                     assert result is not None
@@ -203,7 +222,9 @@ class TestLiteLlmManager:
                     assert result.llm_base_url == 'http://test.com'
 
     @pytest.mark.asyncio
-    async def test_migrate_entries_no_user_found(self, mock_user_settings):
+    async def test_migrate_entries_no_user_found(
+        self, mock_user_settings, mock_user_info
+    ):
         """Test migrate_entries when user is not found."""
         with patch.dict(os.environ, {'LOCAL_DEPLOYMENT': ''}):
             with patch('storage.lite_llm_manager.LITE_LLM_API_KEY', 'test-key'):
@@ -224,14 +245,17 @@ class TestLiteLlmManager:
                             mock_get_user.return_value = None
 
                             result = await LiteLlmManager.migrate_entries(
-                                'test-org-id', 'test-user-id', mock_user_settings
+                                'test-org-id',
+                                'test-user-id',
+                                mock_user_settings,
+                                mock_user_info,
                             )
 
                             assert result is None
 
     @pytest.mark.asyncio
     async def test_migrate_entries_already_migrated(
-        self, mock_user_settings, mock_user_response
+        self, mock_user_settings, mock_user_info, mock_user_response
     ):
         """Test migrate_entries when user is already migrated (no max_budget)."""
         mock_user_response.json.return_value = {
@@ -261,14 +285,17 @@ class TestLiteLlmManager:
                             mock_client.get.return_value = mock_user_response
 
                             result = await LiteLlmManager.migrate_entries(
-                                'test-org-id', 'test-user-id', mock_user_settings
+                                'test-org-id',
+                                'test-user-id',
+                                mock_user_settings,
+                                mock_user_info,
                             )
 
                             assert result is None
 
     @pytest.mark.asyncio
     async def test_migrate_entries_successful_migration(
-        self, mock_user_settings, mock_user_response, mock_response
+        self, mock_user_settings, mock_user_info, mock_user_response, mock_response
     ):
         """Test successful migrate_entries operation."""
         with patch.dict(os.environ, {'LOCAL_DEPLOYMENT': ''}):
@@ -292,7 +319,10 @@ class TestLiteLlmManager:
                             mock_client.post.return_value = mock_response
 
                             result = await LiteLlmManager.migrate_entries(
-                                'test-org-id', 'test-user-id', mock_user_settings
+                                'test-org-id',
+                                'test-user-id',
+                                mock_user_settings,
+                                mock_user_info,
                             )
 
                             assert result is not None
