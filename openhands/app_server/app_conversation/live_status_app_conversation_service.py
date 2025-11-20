@@ -34,11 +34,11 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceInjector,
 )
+from openhands.app_server.app_conversation.app_conversation_service_base import (
+    AppConversationServiceBase,
+)
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
-)
-from openhands.app_server.app_conversation.git_app_conversation_service import (
-    GitAppConversationService,
 )
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
@@ -82,7 +82,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
-class LiveStatusAppConversationService(GitAppConversationService):
+class LiveStatusAppConversationService(AppConversationServiceBase):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_context: UserContext
@@ -213,12 +213,12 @@ class LiveStatusAppConversationService(GitAppConversationService):
             assert sandbox_spec is not None
 
             # Run setup scripts
-            workspace = AsyncRemoteWorkspace(
+            remote_workspace = AsyncRemoteWorkspace(
                 host=agent_server_url,
                 api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(task, workspace):
+            async for updated_task in self.run_setup_scripts(task, remote_workspace):
                 yield updated_task
 
             # Build the start request
@@ -229,6 +229,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
                     sandbox_spec.working_dir,
                     request.agent_type,
                     request.llm_model,
+                    remote_workspace=remote_workspace,
+                    selected_repository=request.selected_repository,
                 )
             )
 
@@ -515,6 +517,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
         working_dir: str,
         agent_type: AgentType = AgentType.DEFAULT,
         llm_model: str | None = None,
+        remote_workspace: AsyncRemoteWorkspace | None = None,
+        selected_repository: str | None = None,
     ) -> StartConversationRequest:
         user = await self.user_context.get_user_info()
 
@@ -564,6 +568,16 @@ class LiveStatusAppConversationService(GitAppConversationService):
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
+
+        # Load and merge all skills if remote_workspace is available
+        if remote_workspace:
+            try:
+                agent = await self._load_skills_and_update_agent(
+                    agent, remote_workspace, selected_repository, working_dir
+                )
+            except Exception as e:
+                _logger.warning(f'Failed to load skills: {e}', exc_info=True)
+                # Continue without skills - don't fail conversation startup
 
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,
