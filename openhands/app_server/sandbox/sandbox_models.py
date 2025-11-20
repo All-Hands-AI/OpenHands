@@ -17,6 +17,7 @@ class SandboxStatus(Enum):
 
 class ExposedUrl(BaseModel):
     """URL to access some named service within the container."""
+
     name: str
     url: str
     port: int

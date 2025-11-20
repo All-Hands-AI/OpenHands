@@ -2150,7 +2150,9 @@ async def test_delete_v1_conversation_with_sub_conversations():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 
@@ -2269,7 +2271,9 @@ async def test_delete_v1_conversation_with_no_sub_conversations():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 
@@ -2418,7 +2422,9 @@ async def test_delete_v1_conversation_sub_conversation_deletion_error():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 

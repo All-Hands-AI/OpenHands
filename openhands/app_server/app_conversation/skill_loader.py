@@ -13,10 +13,9 @@ import os
 from pathlib import Path
 
 import openhands
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.sdk.context.skills import Skill
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
-
-from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 
 _logger = logging.getLogger(__name__)
 
@@ -65,16 +64,14 @@ def load_sandbox_skills(sandbox: SandboxInfo) -> list[Skill]:
     """Load skills specific to the sandbox, including exposed ports / urls."""
     if not sandbox.exposed_urls:
         return []
-    urls = [url for url in sandbox.exposed_urls if url.name.startswith("WORKER_")]
+    urls = [url for url in sandbox.exposed_urls if url.name.startswith('WORKER_')]
     if not urls:
         return []
     content_list = [WORK_HOSTS_SKILL]
     for url in urls:
-        content_list.append(f"* {url.url} (port {url.port})")
-    content = "\n".join(content_list)
-    return [
-        Skill(name="work_hosts", content=content, trigger=None)
-    ]
+        content_list.append(f'* {url.url} (port {url.port})')
+    content = '\n'.join(content_list)
+    return [Skill(name='work_hosts', content=content, trigger=None)]
 
 
 def load_global_skills() -> list[Skill]:

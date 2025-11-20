@@ -142,17 +142,29 @@ class RemoteSandboxService(SandboxService):
                 exposed_urls = []
                 url = runtime.get('url', None)
                 if url:
-                    exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url, port=AGENT_SERVER_PORT))
+                    exposed_urls.append(
+                        ExposedUrl(name=AGENT_SERVER, url=url, port=AGENT_SERVER_PORT)
+                    )
                     vscode_url = (
                         _build_service_url(url, 'vscode')
                         + f'/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject'
                     )
-                    exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url, port=VSCODE_PORT))
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'), port=WORKER_1_PORT)
+                        ExposedUrl(name=VSCODE, url=vscode_url, port=VSCODE_PORT)
                     )
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'), port=WORKER_2_PORT)
+                        ExposedUrl(
+                            name=WORKER_1,
+                            url=_build_service_url(url, 'work-1'),
+                            port=WORKER_1_PORT,
+                        )
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(
+                            name=WORKER_2,
+                            url=_build_service_url(url, 'work-2'),
+                            port=WORKER_2_PORT,
+                        )
                     )
             else:
                 exposed_urls = None

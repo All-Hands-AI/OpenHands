@@ -218,7 +218,9 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(task, sandbox, remote_workspace):
+            async for updated_task in self.run_setup_scripts(
+                task, sandbox, remote_workspace
+            ):
                 yield updated_task
 
             # Build the start request

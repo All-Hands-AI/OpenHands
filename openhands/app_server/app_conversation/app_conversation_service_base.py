@@ -84,7 +84,9 @@ class AppConversationServiceBase(AppConversationService, ABC):
             )
 
             # Merge all skills (later lists override earlier ones)
-            all_skills = merge_skills([sandbox_skills, global_skills, user_skills, repo_skills])
+            all_skills = merge_skills(
+                [sandbox_skills, global_skills, user_skills, repo_skills]
+            )
 
             _logger.info(
                 f'Loaded {len(all_skills)} total skills: {[s.name for s in all_skills]}'
