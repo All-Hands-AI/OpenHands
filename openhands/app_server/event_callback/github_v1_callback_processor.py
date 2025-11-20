@@ -46,6 +46,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         _logger.info(f'[GitHub V1] Callback agent state was {event.agent_state}')
 
         # TODO: Implement GitHub integration logic here
+        # 1. Make sure this class has a reference to the agent_server ID, etc
+        # 2. Send message to conversation via conversation manager perhaps
+
         # For now, just return success
         return EventCallbackResult(
             status=EventCallbackResultStatus.SUCCESS,
