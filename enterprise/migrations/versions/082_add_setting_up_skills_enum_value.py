@@ -9,6 +9,7 @@ Create Date: 2025-11-19 12:00:00.000000
 from typing import Sequence, Union
 
 from alembic import op
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision: str = '082'
@@ -19,10 +20,21 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add SETTING_UP_SKILLS enum value to appconversationstarttaskstatus."""
-    # Add the new enum value to the existing enum type
-    op.execute(
-        "ALTER TYPE appconversationstarttaskstatus ADD VALUE 'SETTING_UP_SKILLS'"
+    # Check if the enum value already exists before adding it
+    # This handles the case where the enum was created with the value already included
+    connection = op.get_bind()
+    result = connection.execute(
+        text(
+            "SELECT 1 FROM pg_enum WHERE enumlabel = 'SETTING_UP_SKILLS' "
+            "AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'appconversationstarttaskstatus')"
+        )
     )
+
+    if not result.fetchone():
+        # Add the new enum value only if it doesn't already exist
+        op.execute(
+            "ALTER TYPE appconversationstarttaskstatus ADD VALUE 'SETTING_UP_SKILLS'"
+        )
 
 
 def downgrade() -> None:
