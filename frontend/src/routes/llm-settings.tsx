@@ -317,6 +317,14 @@ function LlmSettingsScreen() {
     setSelectedProvider(provider);
   };
 
+  const onDefaultValuesChanged = (
+    provider: string | null,
+    model: string | null,
+  ) => {
+    setSelectedProvider(provider);
+    setCurrentSelectedModel(model);
+  };
+
   const handleApiKeyIsDirty = (apiKey: string) => {
     const apiKeyIsDirty = apiKey !== "";
     setDirtyInputs((prev) => ({
@@ -485,6 +493,7 @@ function LlmSettingsScreen() {
                     models={modelsAndProviders}
                     currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
                     onChange={handleModelIsDirty}
+                    onDefaultValuesChanged={onDefaultValuesChanged}
                     wrapperClassName="!flex-col !gap-6"
                   />
                   {(settings.LLM_MODEL?.startsWith("openhands/") ||
