@@ -7039,6 +7039,22 @@
     "ja": "git フックを設定中...",
     "uk": "Налаштування git-хуків..."
   },
+  "STATUS$SETTING_UP_SKILLS": {
+    "en": "Setting up skills...",
+    "zh-CN": "正在设置技能...",
+    "zh-TW": "正在設置技能...",
+    "de": "Fähigkeiten werden eingerichtet...",
+    "ko-KR": "기술을 설정하는 중...",
+    "no": "Setter opp ferdigheter...",
+    "it": "Configurazione delle competenze...",
+    "pt": "Configurando habilidades...",
+    "es": "Configurando habilidades...",
+    "ar": "جاري إعداد المهارات...",
+    "fr": "Configuration des compétences...",
+    "tr": "Yetenekler ayarlanıyor...",
+    "ja": "スキルを設定中...",
+    "uk": "Налаштування навичок..."
+  },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
     "es": "Desconectar",
@@ -15150,5 +15166,21 @@
     "tr": "Hedefleri belirtin, görevleri yapılandırın ve sonraki adımlarınızı belirleyin.",
     "de": "Umreißen Sie Ziele, strukturieren Sie Aufgaben und planen Sie Ihre nächsten Schritte.",
     "uk": "Окресліть цілі, структуруйте завдання та сплануйте наступні кроки."
+  },
+  "PLANNING_AGENTT$PLANNING_AGENT_INITIALIZED": {
+    "en": "Planning agent initialized",
+    "ja": "プランニングエージェントが初期化されました",
+    "zh-CN": "规划代理已初始化",
+    "zh-TW": "規劃代理已初始化",
+    "ko-KR": "계획 에이전트가 초기화되었습니다",
+    "no": "Planleggingsagent er initialisert",
+    "it": "Agente di pianificazione inizializzato",
+    "pt": "Agente de planejamento inicializado",
+    "es": "Agente de planificación inicializado",
+    "ar": "تم تهيئة وكيل التخطيط",
+    "fr": "Agent de planification initialisé",
+    "tr": "Planlama ajanı başlatıldı",
+    "de": "Planungsagent wurde initialisiert",
+    "uk": "Агент планування ініціалізовано"
   }
 }

@@ -111,9 +111,17 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 100,
+        include_sub_conversations: bool = False,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations without permission checks."""
         query = await self._secure_select()
+
+        # Conditionally exclude sub-conversations based on the parameter
+        if not include_sub_conversations:
+            # Exclude sub-conversations (only include top-level conversations)
+            query = query.where(
+                StoredConversationMetadata.parent_conversation_id.is_(None)
+            )
 
         query = self._apply_filters(
             query=query,
@@ -232,7 +240,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
             query = query.where(*conditions)
         return query
 
-    async def _get_sub_conversation_ids(
+    async def get_sub_conversation_ids(
         self, parent_conversation_id: UUID
     ) -> list[UUID]:
         """Get all sub-conversation IDs for a given parent conversation.
@@ -263,7 +271,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         result = result_set.scalar_one_or_none()
         if result:
             # Fetch sub-conversation IDs
-            sub_conversation_ids = await self._get_sub_conversation_ids(conversation_id)
+            sub_conversation_ids = await self.get_sub_conversation_ids(conversation_id)
             return self._to_info(result, sub_conversation_ids=sub_conversation_ids)
         return None
 
@@ -283,7 +291,7 @@ class SQLAppConversationInfoService(AppConversationInfoService):
         results: list[AppConversationInfo | None] = []
         for conversation_id in conversation_id_strs:
             info = info_by_id.get(conversation_id)
-            sub_conversation_ids = await self._get_sub_conversation_ids(
+            sub_conversation_ids = await self.get_sub_conversation_ids(
                 UUID(conversation_id)
             )
             if info:

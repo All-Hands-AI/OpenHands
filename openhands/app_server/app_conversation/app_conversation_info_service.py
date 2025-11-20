@@ -26,6 +26,7 @@ class AppConversationInfoService(ABC):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 100,
+        include_sub_conversations: bool = False,
     ) -> AppConversationInfoPage:
         """Search for sandboxed conversations."""
 
@@ -65,6 +66,19 @@ class AppConversationInfoService(ABC):
             conversation_id: The ID of the conversation to delete.
 
         Returns True if the conversation was deleted successfully, False otherwise.
+        """
+
+    @abstractmethod
+    async def get_sub_conversation_ids(
+        self, parent_conversation_id: UUID
+    ) -> list[UUID]:
+        """Get all sub-conversation IDs for a given parent conversation.
+
+        Args:
+            parent_conversation_id: The ID of the parent conversation
+
+        Returns:
+            List of sub-conversation IDs
         """
 
     # Mutators
