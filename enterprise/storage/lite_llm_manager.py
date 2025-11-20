@@ -97,6 +97,7 @@ class LiteLlmManager:
             return None
         local_deploy = os.environ.get('LOCAL_DEPLOYMENT', None)
         key = LITE_LLM_API_KEY
+        byor_key = LITE_LLM_API_KEY
         if not local_deploy:
             # Get user info to add to litellm
             async with httpx.AsyncClient(

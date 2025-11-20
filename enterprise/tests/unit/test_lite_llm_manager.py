@@ -335,7 +335,7 @@ class TestLiteLlmManager:
 
                             # Verify migration steps were called
                             assert (
-                                mock_client.post.call_count == 5
+                                mock_client.post.call_count == 6
                             )  # create_team, delete_user, create_user, add_user_to_team, generate_key
 
     @pytest.mark.asyncio
