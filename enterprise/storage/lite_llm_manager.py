@@ -137,11 +137,20 @@ class LiteLlmManager:
                     None,
                 )
 
+                byor_key = await LiteLlmManager._generate_key(
+                    client,
+                    keycloak_user_id,
+                    org_id,
+                    f'BYOR Key - user {keycloak_user_id}',
+                    {'type': 'byor'},
+                )
+
         user_settings.agent = 'CodeActAgent'
         # Use the model corresponding to the current user settings version
         user_settings.llm_model = get_default_litellm_model()
         user_settings.llm_api_key = SecretStr(key)
         user_settings.llm_base_url = LITE_LLM_API_URL
+        user_settings.llm_api_key_for_byor = SecretStr(byor_key)
         return user_settings
 
     @staticmethod
