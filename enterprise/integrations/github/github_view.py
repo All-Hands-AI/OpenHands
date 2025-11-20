@@ -303,7 +303,10 @@ class GithubIssue(ResolverViewInterface):
             ]
         )
 
-        # Create the V1 conversation start request
+        # Create the GitHub V1 callback processor
+        github_callback_processor = self._create_github_v1_callback_processor()
+
+        # Create the V1 conversation start request with the callback processor
         start_request = AppConversationStartRequest(
             conversation_id=UUID(conversation_metadata.conversation_id),
             system_message_suffix=conversation_instructions,
@@ -312,6 +315,7 @@ class GithubIssue(ResolverViewInterface):
             git_provider=ProviderType.GITHUB,
             title=f"GitHub Issue #{self.issue_number}: {self.title}",
             trigger=ConversationTrigger.RESOLVER,
+            processors=[github_callback_processor],  # Pass the callback processor directly
         )
 
         # Get the app conversation service and start the conversation
@@ -339,6 +343,34 @@ class GithubIssue(ResolverViewInterface):
                 # else:
 
                 #     # Continue waiting for the conversation to be ready
+
+    def _create_github_v1_callback_processor(self):
+        """Create a V1 callback processor for GitHub integration."""
+        from server.conversation_callback_processor.github_v1_callback_processor import (
+            GithubV1CallbackProcessor,
+        )
+
+        # Create serializable data from the GitHub view
+        github_view_data = {
+            'issue_number': self.issue_number,
+            'installation_id': self.installation_id,
+            'full_repo_name': self.full_repo_name,
+            'is_public_repo': self.is_public_repo,
+            'conversation_id': self.conversation_id,
+            'uuid': self.uuid,
+            'title': getattr(self, 'title', ''),
+            'description': getattr(self, 'description', ''),
+            'username': self.user_info.username,
+            'user_id': self.user_info.user_id,
+            'keycloak_user_id': self.user_info.keycloak_user_id,
+            'git_provider_tokens': {}  # Will be populated as needed
+        }
+
+        # Create and return the GitHub V1 callback processor
+        return GithubV1CallbackProcessor(
+            github_view_data=github_view_data,
+            send_summary_instruction=True,
+        )
 
 
 @dataclass

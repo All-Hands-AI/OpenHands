@@ -276,9 +276,15 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             )
 
             # Setup default processors
-            processors = request.processors
-            if processors is None:
-                processors = [SetTitleCallbackProcessor()]
+            processors = request.processors or []
+
+            # Always ensure SetTitleCallbackProcessor is included
+            has_set_title_processor = any(
+                isinstance(processor, SetTitleCallbackProcessor)
+                for processor in processors
+            )
+            if not has_set_title_processor:
+                processors.append(SetTitleCallbackProcessor())
 
             # Save processors
             await asyncio.gather(
@@ -568,7 +574,12 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         else:
             agent = get_default_agent(llm=llm)
 
-        print("cross check", user.llm_api_key.get_secret_value()[0:3] if user.llm_api_key else 'no key set')
+        print(
+            'cross check',
+            user.llm_api_key.get_secret_value()[0:3]
+            if user.llm_api_key
+            else 'no key set',
+        )
         agent_context = AgentContext(system_message_suffix=system_message_suffix)
         agent = agent.model_copy(update={'agent_context': agent_context})
 
