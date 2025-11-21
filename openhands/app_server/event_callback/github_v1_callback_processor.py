@@ -223,12 +223,13 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             str: The content of the last agent message, or empty string if none found
         """
         try:
-            # Get the latest events from the conversation (last 10 in reverse order)
-            url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id}/events'
+            # Get the latest events from the conversation using the events search endpoint
+            url = f'{agent_server_url.rstrip("/")}/events/search'
             headers = {'X-Session-API-Key': session_api_key}
             params = {
+                'conversation_id__eq': str(conversation_id),
                 'limit': 10,
-                'reverse': True,  # Get most recent events first
+                'sort_order': 'TIMESTAMP',  # Get events in chronological order
             }
 
             _logger.debug(
@@ -244,12 +245,12 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             response.raise_for_status()
 
             events_data = response.json()
-            events = events_data.get('events', [])
+            events = events_data.get('items', [])
 
             _logger.debug(f'[GitHub V1] Retrieved {len(events)} events')
 
-            # Look for the most recent agent message
-            for event in events:
+            # Look for the most recent agent message (reverse order since we want the latest)
+            for event in reversed(events):
                 # Check if this is an agent message action
                 if (
                     event.get('source') == 'agent'

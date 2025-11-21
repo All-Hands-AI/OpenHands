@@ -212,9 +212,7 @@ class SQLEventCallbackService(EventCallbackService):
 
             # Persist any new changes callbacks may have made to itself
             for callback in callbacks:
-                await self.save_event_callback(
-                    callback
-                )
+                await self.save_event_callback(callback)
             await self.db_session.commit()
 
     async def execute_callback(
