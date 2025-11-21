@@ -173,7 +173,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         """Send a message to the agent server via the V1 API."""
         # Prepare the message request
         send_message_request = SendMessageRequest(
-            role='system',
+            role='user',
             content=[TextContent(text=message_content)],
             run=True,  # Automatically run the agent after sending the message
         )
