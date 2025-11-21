@@ -1,10 +1,10 @@
 import logging
-from typing import Literal
 from uuid import UUID
 
 import httpx
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from openhands.agent_server.models import SendMessageRequest
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackProcessor,
@@ -17,32 +17,8 @@ from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxSta
 from openhands.app_server.utils.docker_utils import (
     replace_localhost_hostname_for_docker,
 )
-from openhands.core.schema.agent import AgentState
-from openhands.events.observation.agent import AgentStateChangedObservation
-from openhands.sdk import Event
+from openhands.sdk import Event, TextContent
 from openhands.sdk.event import ConversationStateUpdateEvent
-
-
-class TextContent(BaseModel):
-    """Text content for messages."""
-
-    type: Literal['text'] = 'text'
-    text: str
-
-
-class SendMessageRequest(BaseModel):
-    """Payload to send a message to the agent.
-
-    This is a simplified version of the SDK's SendMessageRequest.
-    """
-
-    role: Literal['user', 'system', 'assistant', 'tool'] = 'user'
-    content: list[TextContent] = Field(default_factory=list)
-    run: bool = Field(
-        default=False,
-        description='Whether the agent loop should automatically run if not running',
-    )
-
 
 _logger = logging.getLogger(__name__)
 
@@ -66,7 +42,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         if not isinstance(event, ConversationStateUpdateEvent):
             return None
 
-        if event.key != "execution_status" and event.value != "finished":
+        if event.key != 'execution_status' and event.value != 'finished':
             return None
 
         _logger.info(f'[GitHub V1] Callback agent state was {event}')
@@ -133,7 +109,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 agent_server_url = self._get_agent_server_url(sandbox)
 
                 # Prepare message based on agent state
-                message_content = "Summarize your work"
+                message_content = 'Summarize your work'
 
                 # Validate session API key
                 if not sandbox.session_api_key:
@@ -186,7 +162,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
 
-
     async def _send_message_to_agent_server(
         self,
         httpx_client: httpx.AsyncClient,
@@ -200,7 +175,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         send_message_request = SendMessageRequest(
             role='system',
             content=[TextContent(text=message_content)],
-            run=False,  # Don't automatically run the agent
+            run=True,  # Automatically run the agent after sending the message
         )
 
         # Send the message to the agent server
@@ -208,15 +183,52 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id}/events'
         )
         headers = {'X-Session-API-Key': session_api_key}
+        payload = send_message_request.model_dump()
 
-        response = await httpx_client.post(
-            url,
-            json=send_message_request.model_dump(),
-            headers=headers,
-            timeout=30.0,
-        )
-        response.raise_for_status()
+        _logger.debug(f'[GitHub V1] Sending message to {url} with payload: {payload}')
 
-        _logger.info(
-            f'[GitHub V1] Successfully sent message to conversation {conversation_id}'
-        )
+        try:
+            response = await httpx_client.post(
+                url,
+                json=payload,
+                headers=headers,
+                timeout=30.0,
+            )
+            response.raise_for_status()
+
+            _logger.info(
+                f'[GitHub V1] Successfully sent message to conversation {conversation_id}'
+            )
+        except httpx.HTTPStatusError as e:
+            error_detail = f'HTTP {e.response.status_code} error'
+            try:
+                # Try to get more detailed error information from response body
+                error_body = e.response.text
+                if error_body:
+                    error_detail += f': {error_body}'
+            except Exception:
+                # If we can't read the response body, just use the basic error
+                pass
+
+            _logger.error(
+                f'[GitHub V1] HTTP error sending message to {url}: {error_detail}. '
+                f'Request payload: {payload}. Response headers: {dict(e.response.headers)}',
+                exc_info=True,
+            )
+            raise httpx.HTTPStatusError(
+                f'Failed to send message to agent server: {error_detail}',
+                request=e.request,
+                response=e.response,
+            ) from e
+        except httpx.TimeoutException as e:
+            error_detail = f'Request timeout after 30 seconds to {url}'
+            _logger.error(
+                f'[GitHub V1] {error_detail}. Request payload: {payload}', exc_info=True
+            )
+            raise httpx.TimeoutException(error_detail) from e
+        except httpx.RequestError as e:
+            error_detail = f'Request error to {url}: {str(e)}'
+            _logger.error(
+                f'[GitHub V1] {error_detail}. Request payload: {payload}', exc_info=True
+            )
+            raise httpx.RequestError(error_detail) from e
