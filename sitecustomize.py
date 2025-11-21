@@ -3,8 +3,9 @@ Site customization to disable SSL verification for all Python SSL connections.
 This is used in environments with SSL/TLS inspection.
 WARNING: This disables SSL verification globally and should only be used in controlled environments.
 """
-import ssl
 import os
+import pathlib
+import ssl
 
 # Disable SSL verification globally
 try:
@@ -20,3 +21,8 @@ else:
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 os.environ['CURL_CA_BUNDLE'] = ''
 os.environ['REQUESTS_CA_BUNDLE'] = ''
+
+# Ensure pip picks up the co-located insecure pip.conf when present
+pip_conf = pathlib.Path(__file__).with_name("pip.conf")
+if pip_conf.exists():
+    os.environ.setdefault("PIP_CONFIG_FILE", str(pip_conf))
