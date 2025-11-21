@@ -2,10 +2,61 @@ import { BaseEvent } from "../base/event";
 import { V1ExecutionStatus } from "../base/common";
 
 /**
+ * Token usage metrics for LLM calls
+ */
+export interface TokenUsage {
+  model: string;
+  prompt_tokens: number;
+  completion_tokens: number;
+  cache_read_tokens: number;
+  cache_write_tokens: number;
+  reasoning_tokens: number;
+  context_window: number;
+  per_turn_token: number;
+  response_id: string;
+}
+
+/**
+ * LLM metrics for a specific component (agent or condenser)
+ */
+export interface LLMMetrics {
+  model_name: string;
+  accumulated_cost: number;
+  accumulated_token_usage: TokenUsage;
+  costs: Array<{
+    model: string;
+    cost: number;
+    timestamp: number;
+  }>;
+  response_latencies: Array<{
+    model: string;
+    latency: number;
+    response_id: string;
+  }>;
+  token_usages: TokenUsage[];
+}
+
+/**
+ * Usage metrics mapping for different components
+ */
+export interface UsageToMetrics {
+  agent: LLMMetrics;
+  condenser: LLMMetrics;
+}
+
+/**
+ * Stats containing usage metrics
+ */
+export interface ConversationStats {
+  usage_to_metrics: UsageToMetrics;
+}
+
+/**
  * Conversation state value types
  */
 export interface ConversationState {
   execution_status: V1ExecutionStatus;
+  stats?: ConversationStats;
   // Add other conversation state fields here as needed
 }
 
