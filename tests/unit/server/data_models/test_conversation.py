@@ -2535,9 +2535,7 @@ async def test_get_conversation_plan_success():
         'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
     ) as mock_workspace_class:
         mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
-        mock_workspace.execute_command = AsyncMock(
-            return_value=mock_command_result
-        )
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
         mock_workspace_class.return_value = mock_workspace
 
         # Call the endpoint
@@ -2555,9 +2553,7 @@ async def test_get_conversation_plan_success():
         mock_app_conversation_service.get_app_conversation.assert_called_once_with(
             conversation_id
         )
-        mock_sandbox_service.get_sandbox.assert_called_once_with(
-            'test-sandbox-id'
-        )
+        mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
         mock_sandbox_spec_service.get_sandbox_spec.assert_called_once_with(
             'test-spec-id'
         )
@@ -2578,9 +2574,7 @@ async def test_get_conversation_plan_conversation_not_found():
 
     # Mock services
     mock_app_conversation_service = MagicMock()
-    mock_app_conversation_service.get_app_conversation = AsyncMock(
-        return_value=None
-    )
+    mock_app_conversation_service.get_app_conversation = AsyncMock(return_value=None)
 
     mock_sandbox_service = MagicMock()
     mock_sandbox_spec_service = MagicMock()
@@ -2780,9 +2774,7 @@ async def test_get_conversation_plan_sandbox_spec_not_found():
         conversation_id
     )
     mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
-    mock_sandbox_spec_service.get_sandbox_spec.assert_called_once_with(
-        'test-spec-id'
-    )
+    mock_sandbox_spec_service.get_sandbox_spec.assert_called_once_with('test-spec-id')
 
 
 @pytest.mark.asyncio
@@ -2988,9 +2980,7 @@ async def test_get_conversation_plan_file_not_found():
         'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
     ) as mock_workspace_class:
         mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
-        mock_workspace.execute_command = AsyncMock(
-            return_value=mock_command_result
-        )
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
         mock_workspace_class.return_value = mock_workspace
 
         # Call the endpoint
@@ -3074,9 +3064,7 @@ async def test_get_conversation_plan_empty_file():
         'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
     ) as mock_workspace_class:
         mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
-        mock_workspace.execute_command = AsyncMock(
-            return_value=mock_command_result
-        )
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
         mock_workspace_class.return_value = mock_workspace
 
         # Call the endpoint
