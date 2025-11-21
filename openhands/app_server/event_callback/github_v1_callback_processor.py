@@ -240,9 +240,8 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id.hex}/events/search'
             headers = {'X-Session-API-Key': session_api_key}
             params = {
-                'conversation_id__eq': str(conversation_id),
                 'limit': 10,
-                'sort_order': 'TIMESTAMP',  # Get events in chronological order
+                'sort_order': 'TIMESTAMP_DESC',
             }
 
             _logger.debug(
