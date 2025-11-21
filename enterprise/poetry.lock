@@ -5845,13 +5845,13 @@ wsproto = ">=1.2.0"
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
-resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+reference = "ed9f80469b1614523782f57343fa498ddafb2324"
+resolved_reference = "ed9f80469b1614523782f57343fa498ddafb2324"
 subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-ai"
-version = "0.0.0-post.5576+ed2ac6040"
+version = "0.0.0-post.5576+da8a4b117"
 description = "OpenHands: Code Less, Make More"
 optional = false
 python-versions = "^3.12,<3.14"
@@ -5980,8 +5980,8 @@ boto3 = ["boto3 (>=1.35.0)"]
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
-resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+reference = "ed9f80469b1614523782f57343fa498ddafb2324"
+resolved_reference = "ed9f80469b1614523782f57343fa498ddafb2324"
 subdirectory = "openhands-sdk"
 
 [[package]]
@@ -6010,8 +6010,8 @@ pydantic = ">=2.11.7"
 [package.source]
 type = "git"
 url = "https://github.com/OpenHands/agent-sdk.git"
-reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
-resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+reference = "ed9f80469b1614523782f57343fa498ddafb2324"
+resolved_reference = "ed9f80469b1614523782f57343fa498ddafb2324"
 subdirectory = "openhands-tools"
 
 [[package]]
