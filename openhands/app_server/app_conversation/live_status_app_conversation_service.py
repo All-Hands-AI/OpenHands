@@ -68,13 +68,13 @@ from openhands.app_server.utils.docker_utils import (
 )
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
-from openhands.sdk import LocalWorkspace
+from openhands.sdk import Agent, LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
-from openhands.tools.preset.default import get_default_agent
-from openhands.tools.preset.planning import get_planning_agent
+from openhands.tools.preset.default import get_default_agent, get_default_condenser, get_default_tools
+from openhands.tools.preset.planning import format_plan_structure, get_planning_agent, get_planning_condenser, get_planning_tools
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
@@ -562,12 +562,41 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             api_key=user.llm_api_key,
             usage_id='agent',
         )
+        mcp_config = {
+            "default": {
+                "url": "https://llm-proxy.staging.all-hands.dev/mcp",
+                "headers": {
+                    "x-litellm-api-key": f"Bearer {user.llm_api_key}"
+                }
+            }
+        }
+
         # The agent gets passed initial instructions
         # Select agent based on agent_type
         if agent_type == AgentType.PLAN:
             agent = get_planning_agent(llm=llm)
+            agent = Agent(
+                llm=llm,
+                tools=get_planning_tools(),
+                system_prompt_filename="system_prompt_planning.j2",
+                system_prompt_kwargs={"plan_structure": format_plan_structure()},
+                condenser=get_planning_condenser(
+                    llm=llm.model_copy(update={"usage_id": "planning_condenser"})
+                ),
+                security_analyzer=None,
+                mcp_config=mcp_config,
+            )
         else:
             agent = get_default_agent(llm=llm)
+            agent = Agent(
+                llm=llm,
+                tools=get_default_tools(enable_browser=True),
+                system_prompt_kwargs={"cli_mode": False},
+                condenser=get_default_condenser(
+                    llm=llm.model_copy(update={"usage_id": "condenser"})
+                ),
+                mcp_config=mcp_config,
+            )
 
         conversation_id = uuid4()
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
