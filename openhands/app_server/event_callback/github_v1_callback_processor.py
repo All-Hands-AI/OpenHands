@@ -19,8 +19,9 @@ from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxSta
 from openhands.app_server.utils.docker_utils import (
     replace_localhost_hostname_for_docker,
 )
-from openhands.sdk import Event, TextContent
+from openhands.sdk import Event, TextContent, conversation
 from openhands.sdk.event import ConversationStateUpdateEvent
+from openhands.agent_server.models import EventPage
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +75,18 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 ADMIN,
                 USER_CONTEXT_ATTR,
             )
+
+            from openhands.server.shared import conversation_manager
+
+            # agent_loop_infos = await conversation_manager.get_agent_loop_info(
+            #     filter_to_sids={conversation_id.}
+            # )
+            # event_store = agent_loop_infos[0].event_store
+            # events: list = event_store.get_matching_events(
+            #     limit=10,
+            #     reverse=True,
+            # )
+
 
             try:
                 # Create injector state for dependency injection
@@ -224,7 +237,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         """
         try:
             # Get the latest events from the conversation using the events search endpoint
-            url = f'{agent_server_url.rstrip("/")}/events/search'
+            url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id.hex}/events/search'
             headers = {'X-Session-API-Key': session_api_key}
             params = {
                 'conversation_id__eq': str(conversation_id),
@@ -244,50 +257,42 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
             response.raise_for_status()
 
-            events_data = response.json()
-            events = events_data.get('items', [])
+            page = EventPage.model_validate(response.json())
 
-            _logger.debug(f'[GitHub V1] Retrieved {len(events)} events')
-            _logger.debug(f'[GitHub V1] Full response data: {events_data}')
+            events = page.items
+            for event in events:
+                print('event fetched', event)
 
-            # Log details about each event for debugging
-            for i, event in enumerate(events):
-                _logger.debug(
-                    f'[GitHub V1] Event {i}: source={event.get("source")}, '
-                    f'action={event.get("action")}, '
-                    f'timestamp={event.get("timestamp")}, '
-                    f'keys={list(event.keys())}'
-                )
 
             # Look for the most recent agent message (reverse order since we want the latest)
-            agent_messages_found = 0
-            for event in reversed(events):
-                # Check if this is an agent message action
-                if event.get('source') == 'agent':
-                    agent_messages_found += 1
-                    _logger.debug(
-                        f'[GitHub V1] Found agent event: action={event.get("action")}, keys={list(event.keys())}'
-                    )
+            # agent_messages_found = 0
+            # for event in reversed(events):
+            #     # Check if this is an agent message action
+            #     if event.get('source') == 'agent':
+            #         agent_messages_found += 1
+            #         _logger.debug(
+            #             f'[GitHub V1] Found agent event: action={event.get("action")}, keys={list(event.keys())}'
+            #         )
 
-                    if event.get('action') == 'message':
-                        # Try different possible content fields
-                        content = None
-                        if 'content' in event:
-                            content = event['content']
-                        elif 'message' in event:
-                            content = event['message']
-                        elif hasattr(event, 'content'):
-                            content = getattr(event, 'content')
+            #         if event.get('action') == 'message':
+            #             # Try different possible content fields
+            #             content = None
+            #             if 'content' in event:
+            #                 content = event['content']
+            #             elif 'message' in event:
+            #                 content = event['message']
+            #             elif hasattr(event, 'content'):
+            #                 content = getattr(event, 'content')
 
-                        if content:
-                            _logger.info(
-                                f'[GitHub V1] Found agent message: {content[:100]}...'
-                            )
-                            return content
-                        else:
-                            _logger.debug(
-                                f'[GitHub V1] Agent message event found but no content field: {event}'
-                            )
+            #             if content:
+            #                 _logger.info(
+            #                     f'[GitHub V1] Found agent message: {content[:100]}...'
+            #                 )
+            #                 return content
+            #             else:
+            #                 _logger.debug(
+            #                     f'[GitHub V1] Agent message event found but no content field: {event}'
+            #                 )
 
             _logger.warning(
                 f'[GitHub V1] No agent messages found in recent events (found {agent_messages_found} agent events total)'
