@@ -39,9 +39,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         event: Event,
     ) -> EventCallbackResult | None:
         """Process events for GitHub V1 integration."""
-
-        _logger.info(f'[GitHub V1] Callback event {event}')
-
         if not isinstance(event, ConversationStateUpdateEvent):
             return None
 
@@ -49,6 +46,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             return None
 
         _logger.info(f'[GitHub V1] Callback agent state was {event}')
+        _logger.info(f'[GitHub V1] Is summary sent: {self.send_summary_instruction}')
 
         if self.send_summary_instruction:
             self.send_summary_instruction = False
