@@ -133,12 +133,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 agent_server_url = self._get_agent_server_url(sandbox)
 
                 # Prepare message based on agent state
-                if event.agent_state == AgentState.FINISHED:
-                    message_content = self._create_summary_message()
-                elif event.agent_state == AgentState.AWAITING_USER_INPUT:
-                    message_content = self._create_status_update_message()
-                else:
-                    return None  # Should not reach here due to earlier filter
+                message_content = "Summarize your work"
 
                 # Validate session API key
                 if not sandbox.session_api_key:
@@ -191,15 +186,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
 
-    def _create_summary_message(self) -> str:
-        """Create a summary message when the agent finishes."""
-        if self.send_summary_instruction:
-            return 'Please provide a summary of what was accomplished in this conversation.'
-        return 'Task completed.'
-
-    def _create_status_update_message(self) -> str:
-        """Create a status update message when the agent is awaiting input."""
-        return 'Agent is awaiting user input. Please provide further instructions.'
 
     async def _send_message_to_agent_server(
         self,
