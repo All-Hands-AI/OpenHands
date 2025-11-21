@@ -60,6 +60,8 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     ) -> EventCallbackResult | None:
         """Process events for GitHub V1 integration."""
 
+        _logger.info(f'[GitHub V1] Callback event {event}')
+
         if not isinstance(event, AgentStateChangedObservation):
             return None
 
