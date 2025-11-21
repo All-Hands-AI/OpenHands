@@ -19,7 +19,7 @@ from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxSta
 from openhands.app_server.utils.docker_utils import (
     replace_localhost_hostname_for_docker,
 )
-from openhands.sdk import Event, TextContent, conversation
+from openhands.sdk import Event, MessageEvent, TextContent, conversation
 from openhands.sdk.event import ConversationStateUpdateEvent
 from openhands.agent_server.models import EventPage
 
@@ -240,8 +240,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             url = f'{agent_server_url.rstrip("/")}/api/conversations/{conversation_id.hex}/events/search'
             headers = {'X-Session-API-Key': session_api_key}
             params = {
-                'limit': 10,
+                'limit': 1,
                 'sort_order': 'TIMESTAMP_DESC',
+                'kind': 'MessageEvent'
             }
 
             _logger.debug(
@@ -261,6 +262,10 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             events = page.items
             for event in events:
                 print('event fetched', event)
+
+            if len(events) > 0:
+                event: MessageEvent = events[0]
+                self._post_summary_to_github(str(event.llm_message))
 
 
             # Look for the most recent agent message (reverse order since we want the latest)
@@ -293,9 +298,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             #                     f'[GitHub V1] Agent message event found but no content field: {event}'
             #                 )
 
-            _logger.warning(
-                f'[GitHub V1] No agent messages found in recent events (found {agent_messages_found} agent events total)'
-            )
 
             # If no agent messages found, log a sample of events for debugging
             if events:
