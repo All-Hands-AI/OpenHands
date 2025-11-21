@@ -1,10 +1,12 @@
 import logging
+import os
 from uuid import UUID
 
 import httpx
 from pydantic import Field
 
 from openhands.agent_server.models import SendMessageRequest
+from sympy import N
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackProcessor,
@@ -19,6 +21,8 @@ from openhands.app_server.utils.docker_utils import (
 )
 from openhands.sdk import Event, TextContent
 from openhands.sdk.event import ConversationStateUpdateEvent
+from github import Github, GithubIntegration
+
 
 _logger = logging.getLogger(__name__)
 
@@ -28,6 +32,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
     github_view_data: dict = Field(default_factory=dict)
     send_summary_instruction: bool = Field(default=True)
+    should_extract: bool = Field(default=True)
 
     async def __call__(
         self,
@@ -47,6 +52,74 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
         _logger.info(f'[GitHub V1] Callback agent state was {event}')
 
+
+
+        if self.send_summary_instruction:
+            self.send_summary_instruction = False
+            _logger.info(f'[GitHub V1] Sending summary instruction: {conversation_id}')
+            return self._send_summary_instruction(
+                conversation_id,
+                callback,
+                event,
+            )
+
+
+        if self.should_extract:
+            self.should_extract = False
+            summary = self._extract_summary()
+            return self._post_summary_to_github(
+                summary
+            )
+
+
+    def _get_installation_access_token(
+        self,
+    ) -> str:
+        installation_id = self.github_view_data.get('installation_id')
+
+        if not installation_id:
+            raise ValueError(f'Missing installation ID for Github Payload: {self.github_view_data}')
+
+        GITHUB_APP_CLIENT_ID = os.getenv('GITHUB_APP_CLIENT_ID', '').strip()
+        GITHUB_APP_PRIVATE_KEY = os.getenv('GITHUB_APP_PRIVATE_KEY', '').replace('\\n', '\n')
+
+
+
+        github_integration = GithubIntegration(
+            GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
+        )
+        token_data = github_integration.get_access_token(
+            installation_id
+        )
+        return token_data.token
+
+
+
+    async def _extract_summary(
+        self
+    ):
+        return ""
+
+    async def _post_summary_to_github(
+        self,
+        summary: str
+    ):
+        installation_token = self._get_installation_access_token()
+
+        full_repo_name = self.github_view_data["full_repo_name"]
+        issue_number = self.github_view_data["issue_number"]
+
+        with Github(installation_token) as github_client:
+            repo = github_client.get_repo(full_repo_name)
+            issue = repo.get_issue(number=issue_number)
+            issue.create_comment(summary)
+
+    async def _send_summary_instruction(
+        self,
+        conversation_id: UUID,
+        callback: EventCallback,
+        event: Event,
+    ):
         # Import services within the method to avoid circular imports
         from openhands.app_server.config import (
             get_app_conversation_info_service,
