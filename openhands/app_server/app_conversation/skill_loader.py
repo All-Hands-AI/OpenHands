@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 import openhands
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.sdk.context.skills import Skill
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 
@@ -23,6 +24,8 @@ GLOBAL_SKILLS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(openhands.__file__)),
     'skills',
 )
+WORK_HOSTS_SKILL = """The user has access to the following hosts for accessing a web application,
+each of which has a corresponding port:"""
 
 
 def _find_and_load_global_skill_files(skill_dir: Path) -> list[Skill]:
@@ -55,6 +58,20 @@ def _find_and_load_global_skill_files(skill_dir: Path) -> list[Skill]:
         _logger.debug(f'Failed to find global skill files: {str(e)}')
 
     return skills
+
+
+def load_sandbox_skills(sandbox: SandboxInfo) -> list[Skill]:
+    """Load skills specific to the sandbox, including exposed ports / urls."""
+    if not sandbox.exposed_urls:
+        return []
+    urls = [url for url in sandbox.exposed_urls if url.name.startswith('WORKER_')]
+    if not urls:
+        return []
+    content_list = [WORK_HOSTS_SKILL]
+    for url in urls:
+        content_list.append(f'* {url.url} (port {url.port})')
+    content = '\n'.join(content_list)
+    return [Skill(name='work_hosts', content=content, trigger=None)]
 
 
 def load_global_skills() -> list[Skill]:

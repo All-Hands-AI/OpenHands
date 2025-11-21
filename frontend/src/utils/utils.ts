@@ -612,6 +612,22 @@ export const buildSessionHeaders = (
 };
 
 /**
+ * Check if a task is currently being polled (loading state)
+ * @param taskStatus The task status string (e.g., "WORKING", "ERROR", "READY")
+ * @returns True if the task is in a loading state (not ERROR and not READY)
+ *
+ * @example
+ * isTaskPolling("WORKING") // Returns true
+ * isTaskPolling("PREPARING_REPOSITORY") // Returns true
+ * isTaskPolling("READY") // Returns false
+ * isTaskPolling("ERROR") // Returns false
+ * isTaskPolling(null) // Returns false
+ * isTaskPolling(undefined) // Returns false
+ */
+export const isTaskPolling = (taskStatus: string | null | undefined): boolean =>
+  !!taskStatus && taskStatus !== "ERROR" && taskStatus !== "READY";
+
+/**
  * Get the appropriate color based on agent status
  * @param options Configuration object for status color calculation
  * @param options.isPausing Whether the agent is currently pausing

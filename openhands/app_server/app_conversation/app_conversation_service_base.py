@@ -18,9 +18,12 @@ from openhands.app_server.app_conversation.app_conversation_service import (
 from openhands.app_server.app_conversation.skill_loader import (
     load_global_skills,
     load_repo_skills,
+    load_sandbox_skills,
     merge_skills,
 )
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.user.user_context import UserContext
+from openhands.sdk import Agent
 from openhands.sdk.context.agent_context import AgentContext
 from openhands.sdk.context.skills import load_user_skills
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
@@ -41,6 +44,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
 
     async def _load_and_merge_all_skills(
         self,
+        sandbox: SandboxInfo,
         remote_workspace: AsyncRemoteWorkspace,
         selected_repository: str | None,
         working_dir: str,
@@ -62,6 +66,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
             _logger.debug('Loading skills for V1 conversation')
 
             # Load skills from all sources
+            sandbox_skills = load_sandbox_skills(sandbox)
             global_skills = load_global_skills()
             # Load user skills from ~/.openhands/skills/ directory
             # Uses the SDK's load_user_skills() function which handles loading from
@@ -79,7 +84,9 @@ class AppConversationServiceBase(AppConversationService, ABC):
             )
 
             # Merge all skills (later lists override earlier ones)
-            all_skills = merge_skills([global_skills, user_skills, repo_skills])
+            all_skills = merge_skills(
+                [sandbox_skills, global_skills, user_skills, repo_skills]
+            )
 
             _logger.info(
                 f'Loaded {len(all_skills)} total skills: {[s.name for s in all_skills]}'
@@ -121,7 +128,8 @@ class AppConversationServiceBase(AppConversationService, ABC):
 
     async def _load_skills_and_update_agent(
         self,
-        agent,
+        sandbox: SandboxInfo,
+        agent: Agent,
         remote_workspace: AsyncRemoteWorkspace,
         selected_repository: str | None,
         working_dir: str,
@@ -139,7 +147,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
         """
         # Load and merge all skills
         all_skills = await self._load_and_merge_all_skills(
-            remote_workspace, selected_repository, working_dir
+            sandbox, remote_workspace, selected_repository, working_dir
         )
 
         # Update agent with skills
@@ -150,6 +158,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
     async def run_setup_scripts(
         self,
         task: AppConversationStartTask,
+        sandbox: SandboxInfo,
         workspace: AsyncRemoteWorkspace,
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         task.status = AppConversationStartTaskStatus.PREPARING_REPOSITORY
@@ -167,6 +176,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
         task.status = AppConversationStartTaskStatus.SETTING_UP_SKILLS
         yield task
         await self._load_and_merge_all_skills(
+            sandbox,
             workspace,
             task.request.selected_repository,
             workspace.working_dir,
