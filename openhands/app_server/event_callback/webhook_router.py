@@ -188,7 +188,6 @@ async def _run_callbacks_in_bg_and_close(
         # We don't use asynio.gather here because callbacks must be run in sequence.
         for event in events:
             await event_callback_service.execute_callbacks(conversation_id, event)
-            await event_callback_service.save_event_callback()
 
 
 def _import_all_tools():
