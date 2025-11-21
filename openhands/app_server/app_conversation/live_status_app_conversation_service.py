@@ -562,6 +562,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             api_key=user.llm_api_key,
             usage_id='agent',
         )
+        # MCP Config
         mcp_config = {
             "default": {
                 "url": "https://llm-proxy.staging.all-hands.dev/mcp",
