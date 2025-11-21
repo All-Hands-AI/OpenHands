@@ -29,6 +29,13 @@ def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsCo
         base_url_to_use,
         llm_config.custom_llm_provider,
     )
+
+    # Set Vertex AI configuration if provided
+    if settings.llm_vertex_ai_project:
+        llm_config.vertex_ai_project = settings.llm_vertex_ai_project
+    if settings.llm_vertex_ai_location:
+        llm_config.vertex_ai_location = settings.llm_vertex_ai_location
+
     config.set_llm_config(llm_config)
     return config
 

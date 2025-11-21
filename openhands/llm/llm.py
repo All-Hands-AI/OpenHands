@@ -201,6 +201,12 @@ class LLM(RetryMixin, DebugMixin):
         if self.config.completion_kwargs is not None:
             kwargs.update(self.config.completion_kwargs)
 
+        # Add Vertex AI parameters if configured
+        if self.config.vertex_ai_project:
+            kwargs['vertex_ai_project'] = self.config.vertex_ai_project
+        if self.config.vertex_ai_location:
+            kwargs['vertex_ai_location'] = self.config.vertex_ai_location
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
