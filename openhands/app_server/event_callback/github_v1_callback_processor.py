@@ -20,6 +20,7 @@ from openhands.app_server.utils.docker_utils import (
 from openhands.core.schema.agent import AgentState
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.sdk import Event
+from openhands.sdk.event import ConversationStateUpdateEvent
 
 
 class TextContent(BaseModel):
@@ -62,16 +63,13 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
         _logger.info(f'[GitHub V1] Callback event {event}')
 
-        if not isinstance(event, AgentStateChangedObservation):
+        if not isinstance(event, ConversationStateUpdateEvent):
             return None
 
-        if event.agent_state not in (
-            AgentState.AWAITING_USER_INPUT,
-            AgentState.FINISHED,
-        ):
+        if event.key != "execution_status" and event.value != "finished":
             return None
 
-        _logger.info(f'[GitHub V1] Callback agent state was {event.agent_state}')
+        _logger.info(f'[GitHub V1] Callback agent state was {event}')
 
         # Import services within the method to avoid circular imports
         from openhands.app_server.config import (
