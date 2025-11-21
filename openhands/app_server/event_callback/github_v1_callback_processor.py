@@ -49,17 +49,8 @@ _logger = logging.getLogger(__name__)
 class GithubV1CallbackProcessor(EventCallbackProcessor):
     """Callback processor for GitHub V1 integrations."""
 
-    github_view_data: dict
-    send_summary_instruction: bool = True
-
-    def __init__(
-        self,
-        github_view_data: dict | None = None,
-        send_summary_instruction: bool = True,
-    ):
-        """Initialize the GitHub V1 callback processor."""
-        self.github_view_data = github_view_data or {}
-        self.send_summary_instruction = send_summary_instruction
+    github_view_data: dict = Field(default_factory=dict)
+    send_summary_instruction: bool = Field(default=True)
 
     async def __call__(
         self,
