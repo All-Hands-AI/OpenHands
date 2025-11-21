@@ -248,20 +248,55 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             events = events_data.get('items', [])
 
             _logger.debug(f'[GitHub V1] Retrieved {len(events)} events')
+            _logger.debug(f'[GitHub V1] Full response data: {events_data}')
+
+            # Log details about each event for debugging
+            for i, event in enumerate(events):
+                _logger.debug(
+                    f'[GitHub V1] Event {i}: source={event.get("source")}, '
+                    f'action={event.get("action")}, '
+                    f'timestamp={event.get("timestamp")}, '
+                    f'keys={list(event.keys())}'
+                )
 
             # Look for the most recent agent message (reverse order since we want the latest)
+            agent_messages_found = 0
             for event in reversed(events):
                 # Check if this is an agent message action
-                if (
-                    event.get('source') == 'agent'
-                    and event.get('action') == 'message'
-                    and 'content' in event
-                ):
-                    content = event['content']
-                    _logger.info(f'[GitHub V1] Found agent message: {content[:100]}...')
-                    return content
+                if event.get('source') == 'agent':
+                    agent_messages_found += 1
+                    _logger.debug(
+                        f'[GitHub V1] Found agent event: action={event.get("action")}, keys={list(event.keys())}'
+                    )
 
-            _logger.warning('[GitHub V1] No agent messages found in recent events')
+                    if event.get('action') == 'message':
+                        # Try different possible content fields
+                        content = None
+                        if 'content' in event:
+                            content = event['content']
+                        elif 'message' in event:
+                            content = event['message']
+                        elif hasattr(event, 'content'):
+                            content = getattr(event, 'content')
+
+                        if content:
+                            _logger.info(
+                                f'[GitHub V1] Found agent message: {content[:100]}...'
+                            )
+                            return content
+                        else:
+                            _logger.debug(
+                                f'[GitHub V1] Agent message event found but no content field: {event}'
+                            )
+
+            _logger.warning(
+                f'[GitHub V1] No agent messages found in recent events (found {agent_messages_found} agent events total)'
+            )
+
+            # If no agent messages found, log a sample of events for debugging
+            if events:
+                _logger.debug(f'[GitHub V1] Sample event structure: {events[0]}')
+
             return ''
 
         except httpx.HTTPStatusError as e:
