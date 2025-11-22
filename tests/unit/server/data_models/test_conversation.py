@@ -15,6 +15,9 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversation,
     AppConversationPage,
 )
+from openhands.app_server.app_conversation.app_conversation_router import (
+    read_conversation_file,
+)
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
@@ -27,6 +30,7 @@ from openhands.app_server.sandbox.sandbox_models import (
     SandboxInfo,
     SandboxStatus,
 )
+from openhands.app_server.sandbox.sandbox_spec_models import SandboxSpecInfo
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -37,6 +41,10 @@ from openhands.integrations.service_types import (
 )
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.sdk.conversation.state import ConversationExecutionStatus
+from openhands.sdk.workspace.models import CommandResult
+from openhands.sdk.workspace.remote.async_remote_workspace import (
+    AsyncRemoteWorkspace,
+)
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -980,14 +988,6 @@ async def test_delete_conversation():
 @pytest.mark.asyncio
 async def test_delete_v1_conversation_success():
     """Test successful deletion of a V1 conversation."""
-    from uuid import uuid4
-
-    from openhands.app_server.app_conversation.app_conversation_models import (
-        AppConversation,
-    )
-    from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-    from openhands.sdk.conversation.state import ConversationExecutionStatus
-
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
 
@@ -1060,8 +1060,6 @@ async def test_delete_v1_conversation_success():
 @pytest.mark.asyncio
 async def test_delete_v1_conversation_not_found():
     """Test deletion of a V1 conversation that doesn't exist."""
-    from uuid import uuid4
-
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
 
@@ -1198,8 +1196,6 @@ async def test_delete_v1_conversation_invalid_uuid():
 @pytest.mark.asyncio
 async def test_delete_v1_conversation_service_error():
     """Test deletion when app conversation service raises an error."""
-    from uuid import uuid4
-
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
 
@@ -1293,14 +1289,6 @@ async def test_delete_v1_conversation_service_error():
 @pytest.mark.asyncio
 async def test_delete_v1_conversation_with_agent_server():
     """Test V1 conversation deletion with agent server integration."""
-    from uuid import uuid4
-
-    from openhands.app_server.app_conversation.app_conversation_models import (
-        AppConversation,
-    )
-    from openhands.app_server.sandbox.sandbox_models import SandboxStatus
-    from openhands.sdk.conversation.state import ConversationExecutionStatus
-
     conversation_uuid = uuid4()
     conversation_id = str(conversation_uuid)
 
@@ -2150,7 +2138,9 @@ async def test_delete_v1_conversation_with_sub_conversations():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000')],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 
@@ -2269,7 +2259,9 @@ async def test_delete_v1_conversation_with_no_sub_conversations():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000')],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 
@@ -2418,7 +2410,9 @@ async def test_delete_v1_conversation_sub_conversation_deletion_error():
         sandbox_spec_id='test-spec-id',
         status=SandboxStatus.RUNNING,
         session_api_key='test-api-key',
-        exposed_urls=[ExposedUrl(name=AGENT_SERVER, url='http://agent:8000')],
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
     )
     mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
 
@@ -2469,3 +2463,825 @@ async def test_delete_v1_conversation_sub_conversation_deletion_error():
     assert sub2_uuid in delete_calls
     assert parent_uuid in delete_calls
     assert sub1_uuid not in delete_calls  # Failed before deletion
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_success():
+    """Test successfully retrieving file content from conversation workspace."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+    file_content = '# Project Plan\n\n## Phase 1\n- Task 1\n- Task 2\n'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Mock AsyncRemoteWorkspace
+    import shlex
+
+    escaped_path = shlex.quote(file_path)
+    mock_command_result = CommandResult(
+        command=f'cat {escaped_path}',
+        exit_code=0,
+        stdout=file_content,
+        stderr='',
+        timeout_occurred=False,
+    )
+
+    with patch(
+        'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
+    ) as mock_workspace_class:
+        mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
+        mock_workspace_class.return_value = mock_workspace
+
+        # Call the endpoint
+        result = await read_conversation_file(
+            conversation_id=conversation_id,
+            file_path=file_path,
+            app_conversation_service=mock_app_conversation_service,
+            sandbox_service=mock_sandbox_service,
+            sandbox_spec_service=mock_sandbox_spec_service,
+        )
+
+        # Verify result
+        assert result == file_content
+
+        # Verify services were called correctly
+        mock_app_conversation_service.get_app_conversation.assert_called_once_with(
+            conversation_id
+        )
+        mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
+        mock_sandbox_spec_service.get_sandbox_spec.assert_called_once_with(
+            'test-spec-id'
+        )
+
+        # Verify workspace was created and command executed with escaped file path
+        mock_workspace_class.assert_called_once()
+        # The file path should be escaped using shlex.quote
+        # (escaped_path already computed above)
+        mock_workspace.execute_command.assert_called_once_with(
+            f'cat {escaped_path}',
+            cwd='/workspace',
+            timeout=10.0,
+        )
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_different_path():
+    """Test successfully retrieving file content from a different file path."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/src/main.py'
+    file_content = 'def main():\n    print("Hello, World!")\n'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Mock AsyncRemoteWorkspace
+    import shlex
+
+    escaped_path = shlex.quote(file_path)
+    mock_command_result = CommandResult(
+        command=f'cat {escaped_path}',
+        exit_code=0,
+        stdout=file_content,
+        stderr='',
+        timeout_occurred=False,
+    )
+
+    with patch(
+        'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
+    ) as mock_workspace_class:
+        mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
+        mock_workspace_class.return_value = mock_workspace
+
+        # Call the endpoint
+        result = await read_conversation_file(
+            conversation_id=conversation_id,
+            file_path=file_path,
+            app_conversation_service=mock_app_conversation_service,
+            sandbox_service=mock_sandbox_service,
+            sandbox_spec_service=mock_sandbox_spec_service,
+        )
+
+        # Verify result
+        assert result == file_content
+
+        # Verify workspace was created and command executed with escaped file path
+        mock_workspace_class.assert_called_once()
+        escaped_path = shlex.quote(file_path)
+        mock_workspace.execute_command.assert_called_once_with(
+            f'cat {escaped_path}',
+            cwd='/workspace',
+            timeout=10.0,
+        )
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_conversation_not_found():
+    """Test when conversation doesn't exist."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(return_value=None)
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_spec_service = MagicMock()
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+    # Verify only conversation service was called
+    mock_app_conversation_service.get_app_conversation.assert_called_once_with(
+        conversation_id
+    )
+    mock_sandbox_service.get_sandbox.assert_not_called()
+    mock_sandbox_spec_service.get_sandbox_spec.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_sandbox_not_found():
+    """Test when sandbox doesn't exist."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=None)
+
+    mock_sandbox_spec_service = MagicMock()
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+    # Verify services were called
+    mock_app_conversation_service.get_app_conversation.assert_called_once_with(
+        conversation_id
+    )
+    mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
+    mock_sandbox_spec_service.get_sandbox_spec.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_sandbox_not_running():
+    """Test when sandbox is not in RUNNING status."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.PAUSED,
+        execution_status=None,
+        session_api_key=None,
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.PAUSED,
+        session_api_key=None,
+        exposed_urls=None,
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+    # Verify services were called
+    mock_app_conversation_service.get_app_conversation.assert_called_once_with(
+        conversation_id
+    )
+    mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
+    mock_sandbox_spec_service.get_sandbox_spec.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_sandbox_spec_not_found():
+    """Test when sandbox spec doesn't exist."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(return_value=None)
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+    # Verify services were called
+    mock_app_conversation_service.get_app_conversation.assert_called_once_with(
+        conversation_id
+    )
+    mock_sandbox_service.get_sandbox.assert_called_once_with('test-sandbox-id')
+    mock_sandbox_spec_service.get_sandbox_spec.assert_called_once_with('test-spec-id')
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_no_exposed_urls():
+    """Test when sandbox has no exposed URLs."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox with no exposed URLs
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=None,
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_no_agent_server_url():
+    """Test when sandbox has exposed URLs but no AGENT_SERVER."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox with exposed URLs but no AGENT_SERVER
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name='OTHER_SERVICE', url='http://other:9000', port=9000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Call the endpoint
+    result = await read_conversation_file(
+        conversation_id=conversation_id,
+        file_path=file_path,
+        app_conversation_service=mock_app_conversation_service,
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=mock_sandbox_spec_service,
+    )
+
+    # Verify result
+    assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_file_not_found():
+    """Test when file doesn't exist."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Mock CommandResult for file not found (non-zero exit code)
+    import shlex
+
+    escaped_path = shlex.quote(file_path)
+    mock_command_result = CommandResult(
+        command=f'cat {escaped_path}',
+        exit_code=1,
+        stdout='',
+        stderr=f'cat: {file_path}: No such file or directory',
+        timeout_occurred=False,
+    )
+
+    with patch(
+        'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
+    ) as mock_workspace_class:
+        mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
+        mock_workspace_class.return_value = mock_workspace
+
+        # Call the endpoint
+        result = await read_conversation_file(
+            conversation_id=conversation_id,
+            file_path=file_path,
+            app_conversation_service=mock_app_conversation_service,
+            sandbox_service=mock_sandbox_service,
+            sandbox_spec_service=mock_sandbox_spec_service,
+        )
+
+        # Verify result
+        assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_empty_file():
+    """Test when file exists but is empty."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Mock CommandResult for empty file
+    import shlex
+
+    escaped_path = shlex.quote(file_path)
+    mock_command_result = CommandResult(
+        command=f'cat {escaped_path}',
+        exit_code=0,
+        stdout='',  # Empty stdout
+        stderr='',
+        timeout_occurred=False,
+    )
+
+    with patch(
+        'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
+    ) as mock_workspace_class:
+        mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
+        mock_workspace.execute_command = AsyncMock(return_value=mock_command_result)
+        mock_workspace_class.return_value = mock_workspace
+
+        # Call the endpoint
+        result = await read_conversation_file(
+            conversation_id=conversation_id,
+            file_path=file_path,
+            app_conversation_service=mock_app_conversation_service,
+            sandbox_service=mock_sandbox_service,
+            sandbox_spec_service=mock_sandbox_spec_service,
+        )
+
+        # Verify result (empty string when stdout is empty)
+        assert result == ''
+
+
+@pytest.mark.asyncio
+async def test_read_conversation_file_command_exception():
+    """Test when command execution raises an exception."""
+    conversation_id = uuid4()
+    file_path = '/workspace/project/PLAN.md'
+
+    # Mock conversation
+    mock_conversation = AppConversation(
+        id=conversation_id,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Test Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sandbox
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+
+    # Mock sandbox spec
+    mock_sandbox_spec = SandboxSpecInfo(
+        id='test-spec-id',
+        command=None,
+        working_dir='/workspace',
+        created_at=datetime.now(timezone.utc),
+    )
+
+    # Mock services
+    mock_app_conversation_service = MagicMock()
+    mock_app_conversation_service.get_app_conversation = AsyncMock(
+        return_value=mock_conversation
+    )
+
+    mock_sandbox_service = MagicMock()
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    mock_sandbox_spec_service = MagicMock()
+    mock_sandbox_spec_service.get_sandbox_spec = AsyncMock(
+        return_value=mock_sandbox_spec
+    )
+
+    # Mock AsyncRemoteWorkspace to raise exception
+    with patch(
+        'openhands.app_server.app_conversation.app_conversation_router.AsyncRemoteWorkspace'
+    ) as mock_workspace_class:
+        mock_workspace = MagicMock(spec=AsyncRemoteWorkspace)
+        mock_workspace.execute_command = AsyncMock(
+            side_effect=Exception('Connection timeout')
+        )
+        mock_workspace_class.return_value = mock_workspace
+
+        # Call the endpoint
+        result = await read_conversation_file(
+            conversation_id=conversation_id,
+            file_path=file_path,
+            app_conversation_service=mock_app_conversation_service,
+            sandbox_service=mock_sandbox_service,
+            sandbox_spec_service=mock_sandbox_spec_service,
+        )
+
+        # Verify result (empty string on exception)
+        assert result == ''
