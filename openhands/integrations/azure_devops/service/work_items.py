@@ -225,3 +225,9 @@ class AzureDevOpsWorkItemsMixin(AzureDevOpsMixinBase):
         # Sort by creation date and limit
         all_comments.sort(key=lambda c: c.created_at)
         return all_comments[:max_comments]
+
+    async def add_work_item_reaction(
+        self, repository: str, work_item_id: int, reaction_type: str = ':thumbsup:'
+    ) -> dict:
+        comment_text = f'{reaction_type} OpenHands is processing this work item...'
+        return await self.add_work_item_comment(repository, work_item_id, comment_text)

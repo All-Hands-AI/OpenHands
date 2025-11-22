@@ -1,7 +1,7 @@
 """create azure_devops_webhook table
 
-Revision ID: 080
-Revises: 079
+Revision ID: 083
+Revises: 082
 Create Date: 2025-10-25 00:00:00.000000
 
 """
