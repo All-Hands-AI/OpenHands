@@ -1,6 +1,7 @@
 """Sandboxed Conversation router for OpenHands Server."""
 
 import asyncio
+import shlex
 import sys
 from datetime import datetime
 from typing import Annotated, AsyncGenerator
@@ -303,24 +304,29 @@ async def batch_get_app_conversation_start_tasks(
     return start_tasks
 
 
-@router.get('/{conversation_id}/plan')
-async def get_conversation_plan(
+@router.get('/{conversation_id}/file')
+async def read_conversation_file(
     conversation_id: UUID,
+    file_path: Annotated[
+        str,
+        Query(title='Path to the file to read within the sandbox workspace'),
+    ],
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
     sandbox_service: SandboxService = sandbox_service_dependency,
     sandbox_spec_service: SandboxSpecService = sandbox_spec_service_dependency,
 ) -> str:
-    """Get the PLAN.md file content for a specific conversation.
+    """Read a file from a specific conversation's sandbox workspace.
 
-    Returns the content of /workspace/project/PLAN.md if it exists, otherwise returns an empty string.
+    Returns the content of the file at the specified path if it exists, otherwise returns an empty string.
 
     Args:
         conversation_id: The UUID of the conversation
+        file_path: Path to the file to read within the sandbox workspace
 
     Returns:
-        The content of PLAN.md or an empty string if the file doesn't exist
+        The content of the file or an empty string if the file doesn't exist
     """
     # Get the conversation info
     conversation = await app_conversation_service.get_app_conversation(conversation_id)
@@ -359,11 +365,12 @@ async def get_conversation_plan(
         working_dir=sandbox_spec.working_dir,
     )
 
-    # Read the PLAN.md file
-    plan_file_path = '/workspace/project/PLAN.md'
+    # Read the file at the specified path
     try:
+        # Escape the file path to prevent command injection
+        escaped_file_path = shlex.quote(file_path)
         result = await remote_workspace.execute_command(
-            f'cat {plan_file_path}', cwd=sandbox_spec.working_dir, timeout=10.0
+            f'cat {escaped_file_path}', cwd=sandbox_spec.working_dir, timeout=10.0
         )
         if result.exit_code == 0 and result.stdout:
             return result.stdout
