@@ -24,6 +24,7 @@ from integrations.utils import (
 )
 from jinja2 import Environment, FileSystemLoader
 from pydantic import SecretStr
+from openhands.server.routes import conversation
 from server.auth.constants import GITHUB_APP_CLIENT_ID, GITHUB_APP_PRIVATE_KEY
 from server.auth.token_manager import TokenManager
 from server.utils.conversation_callback_utils import register_callback_processor
@@ -182,6 +183,33 @@ class GithubManager(Manager):
             self._add_reaction(github_view, 'eyes', installation_token)
             await self.start_job(github_view)
 
+    async def send_message_via_installation_id(
+        self,
+        installation_id: int,
+        message: str,
+        full_repo_name: str,
+        issue_number: int,
+        destination: str,
+    ):
+
+        installation_token = self.token_manager.load_org_token(
+            installation_id
+        )
+
+        if destination == "PRComment":
+            pass
+
+        if (destination == "issue_comment" \
+            or destination == "pr_comment"
+        ):
+
+            with Github(installation_token) as github_client:
+                repo = github_client.get_repo(full_repo_name)
+                issue = repo.get_issue(number=issue_number)
+                issue.create_comment(message)
+
+
+
     async def send_message(self, message: Message, github_view: ResolverViewInterface):
         installation_token = self.token_manager.load_org_token(
             github_view.installation_id
@@ -291,6 +319,12 @@ class GithubManager(Manager):
                 logger.info(
                     f'[GitHub] Created conversation {conversation_id} for user {user_info.username}'
                 )
+
+                from openhands.server.shared import config, ConversationStoreImpl
+                conversation_store = await ConversationStoreImpl.get_instance(config, github_view.user_info.keycloak_user_id)
+                metadata = await conversation_store.get_metadata(conversation_id)
+                print("does metadata exist", metadata)
+
 
                 # Create a GithubCallbackProcessor
                 processor = GithubCallbackProcessor(
