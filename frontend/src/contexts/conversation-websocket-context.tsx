@@ -343,7 +343,12 @@ export function ConversationWebSocketProvider({
 
         // Use type guard to validate v1 event structure
         if (isV1Event(event)) {
-          addEvent(event);
+          // Mark this event as coming from the planning agent
+          const eventWithPlanningFlag = {
+            ...event,
+            isFromPlanningAgent: true,
+          };
+          addEvent(eventWithPlanningFlag);
 
           // Handle AgentErrorEvent specifically
           if (isAgentErrorEvent(event)) {

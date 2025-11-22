@@ -19,7 +19,7 @@ import {
 } from "./event-message-components";
 
 interface EventMessageProps {
-  event: OpenHandsEvent;
+  event: OpenHandsEvent & { isFromPlanningAgent?: boolean };
   messages: OpenHandsEvent[];
   isLastMessage: boolean;
   microagentStatus?: MicroagentStatus | null;
@@ -51,6 +51,9 @@ export function EventMessage({
   const feedbackData = { exists: false };
   const isCheckingFeedback = false;
 
+  // Read isFromPlanningAgent directly from the event object
+  const isFromPlanningAgent = event.isFromPlanningAgent || false;
+
   // Common props for components that need them
   const commonProps = {
     microagentStatus,
@@ -62,6 +65,7 @@ export function EventMessage({
     config,
     isCheckingFeedback,
     feedbackData,
+    isFromPlanningAgent,
   };
 
   // Agent error events
