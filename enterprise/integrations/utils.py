@@ -38,6 +38,7 @@ HOST = WEB_HOST
 HOST_URL = f'https://{HOST}'
 GITHUB_WEBHOOK_URL = f'{HOST_URL}/integration/github/events'
 GITLAB_WEBHOOK_URL = f'{HOST_URL}/integration/gitlab/events'
+AZURE_DEVOPS_WEBHOOK_URL = f'{HOST_URL}/integration/azure-devops/events'
 conversation_prefix = 'conversations/{}'
 CONVERSATION_URL = f'{HOST_URL}/{conversation_prefix}'
 
