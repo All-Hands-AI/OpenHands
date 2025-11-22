@@ -201,19 +201,20 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.65.0"
+version = "0.72.0"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "anthropic-0.65.0-py3-none-any.whl", hash = "sha256:ba9d9f82678046c74ddf5698ca06d9f5b0f599cfac922ab0d5921638eb448d98"},
-    {file = "anthropic-0.65.0.tar.gz", hash = "sha256:6b6b6942574e54342050dfd42b8d856a8366b171daec147df3b80be4722733b9"},
+    {file = "anthropic-0.72.0-py3-none-any.whl", hash = "sha256:0e9f5a7582f038cab8efbb4c959e49ef654a56bfc7ba2da51b5a7b8a84de2e4d"},
+    {file = "anthropic-0.72.0.tar.gz", hash = "sha256:8971fe76dcffc644f74ac3883069beb1527641115ae0d6eb8fa21c1ce4082f7a"},
 ]
 
 [package.dependencies]
 anyio = ">=3.5.0,<5"
 distro = ">=1.7.0,<2"
+docstring-parser = ">=0.15,<1"
 google-auth = {version = ">=2,<3", extras = ["requests"], optional = true, markers = "extra == \"vertex\""}
 httpx = ">=0.25.0,<1"
 jiter = ">=0.4.0,<1"
@@ -222,7 +223,7 @@ sniffio = "*"
 typing-extensions = ">=4.10,<5"
 
 [package.extras]
-aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.8)"]
+aiohttp = ["aiohttp", "httpx-aiohttp (>=0.1.9)"]
 bedrock = ["boto3 (>=1.28.57)", "botocore (>=1.31.57)"]
 vertex = ["google-auth[requests] (>=2,<3)"]
 
@@ -681,31 +682,34 @@ crt = ["awscrt (==0.27.6)"]
 
 [[package]]
 name = "browser-use"
-version = "0.7.10"
+version = "0.9.5"
 description = "Make websites accessible for AI agents"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "browser_use-0.7.10-py3-none-any.whl", hash = "sha256:669e12571a0c0c4c93e5fd26abf9e2534eb9bacbc510328aedcab795bd8906a9"},
-    {file = "browser_use-0.7.10.tar.gz", hash = "sha256:f93ce59e06906c12d120360dee4aa33d83618ddf7c9a575dd0ac517d2de7ccbc"},
+    {file = "browser_use-0.9.5-py3-none-any.whl", hash = "sha256:4a2e92847204d1ded269026a99cb0cc0e60e38bd2751fa3f58aedd78f00b4e67"},
+    {file = "browser_use-0.9.5.tar.gz", hash = "sha256:f8285fe253b149d01769a7084883b4cf4db351e2f38e26302c157bcbf14a703f"},
 ]
 
 [package.dependencies]
 aiohttp = "3.12.15"
-anthropic = ">=0.58.2,<1.0.0"
+anthropic = ">=0.68.1,<1.0.0"
 anyio = ">=4.9.0"
 authlib = ">=1.6.0"
 bubus = ">=1.5.6"
 cdp-use = ">=1.4.0"
+click = ">=8.1.8"
+cloudpickle = ">=3.1.1"
 google-api-core = ">=2.25.0"
 google-api-python-client = ">=2.174.0"
 google-auth = ">=2.40.3"
 google-auth-oauthlib = ">=1.2.2"
 google-genai = ">=1.29.0,<2.0.0"
 groq = ">=0.30.0"
-html2text = ">=2025.4.15"
 httpx = ">=0.28.1"
+inquirerpy = ">=0.3.4"
+markdownify = ">=1.2.0"
 mcp = ">=1.10.1"
 ollama = ">=0.5.1"
 openai = ">=1.99.2,<2.0.0"
@@ -720,16 +724,20 @@ pypdf = ">=5.7.0"
 python-dotenv = ">=1.0.1"
 reportlab = ">=4.0.0"
 requests = ">=2.32.3"
+rich = ">=14.0.0"
 screeninfo = {version = ">=0.8.1", markers = "platform_system != \"darwin\""}
 typing-extensions = ">=4.12.2"
 uuid7 = ">=0.1.0"
 
 [package.extras]
-all = ["agentmail (>=0.0.53)", "boto3 (>=1.38.45)", "botocore (>=1.37.23)", "click (>=8.1.8)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)", "rich (>=14.0.0)", "textual (>=3.2.0)"]
+all = ["agentmail (==0.0.59)", "boto3 (>=1.38.45)", "botocore (>=1.37.23)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)", "oci (>=2.126.4)", "textual (>=3.2.0)"]
 aws = ["boto3 (>=1.38.45)"]
-cli = ["click (>=8.1.8)", "rich (>=14.0.0)", "textual (>=3.2.0)"]
-eval = ["anyio (>=4.9.0)", "browserbase (==1.4.0)", "datamodel-code-generator (>=0.26.0)", "hyperbrowser (==0.47.0)", "lmnr[all] (==0.7.10)", "psutil (>=7.0.0)"]
-examples = ["agentmail (>=0.0.53)", "botocore (>=1.37.23)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)"]
+cli = ["textual (>=3.2.0)"]
+cli-oci = ["oci (>=2.126.4)", "textual (>=3.2.0)"]
+code = ["matplotlib (>=3.9.0)", "numpy (>=2.3.2)", "pandas (>=2.2.0)", "tabulate (>=0.9.0)"]
+eval = ["anyio (>=4.9.0)", "datamodel-code-generator (>=0.26.0)", "lmnr[all] (==0.7.17)", "psutil (>=7.0.0)"]
+examples = ["agentmail (==0.0.59)", "botocore (>=1.37.23)", "imgcat (>=0.6.0)", "langchain-openai (>=0.3.26)"]
+oci = ["oci (>=2.126.4)"]
 video = ["imageio[ffmpeg] (>=2.37.0)", "numpy (>=2.3.2)"]
 
 [[package]]
@@ -3526,6 +3534,25 @@ files = [
 ]
 
 [[package]]
+name = "inquirerpy"
+version = "0.3.4"
+description = "Python port of Inquirer.js (A collection of common interactive command-line user interfaces)"
+optional = false
+python-versions = ">=3.7,<4.0"
+groups = ["main"]
+files = [
+    {file = "InquirerPy-0.3.4-py3-none-any.whl", hash = "sha256:c65fdfbac1fa00e3ee4fb10679f4d3ed7a012abf4833910e63c295827fe2a7d4"},
+    {file = "InquirerPy-0.3.4.tar.gz", hash = "sha256:89d2ada0111f337483cb41ae31073108b2ec1e618a49d7110b0d7ade89fc197e"},
+]
+
+[package.dependencies]
+pfzy = ">=0.3.1,<0.4.0"
+prompt-toolkit = ">=3.0.1,<4.0.0"
+
+[package.extras]
+docs = ["Sphinx (>=4.1.2,<5.0.0)", "furo (>=2021.8.17-beta.43,<2022.0.0)", "myst-parser (>=0.15.1,<0.16.0)", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.4.0,<0.5.0)"]
+
+[[package]]
 name = "installer"
 version = "0.7.0"
 description = "A library for installing Python wheels."
@@ -4579,6 +4606,62 @@ files = [
     {file = "llvmlite-0.44.0-cp313-cp313-win_amd64.whl", hash = "sha256:2fb7c4f2fb86cbae6dca3db9ab203eeea0e22d73b99bc2341cdf9de93612e930"},
     {file = "llvmlite-0.44.0.tar.gz", hash = "sha256:07667d66a5d150abed9157ab6c0b9393c9356f229784a4385c02f99e94fc94d4"},
 ]
+
+[[package]]
+name = "lmnr"
+version = "0.7.20"
+description = "Python SDK for Laminar"
+optional = false
+python-versions = "<4,>=3.10"
+groups = ["main"]
+files = [
+    {file = "lmnr-0.7.20-py3-none-any.whl", hash = "sha256:5f9fa7444e6f96c25e097f66484ff29e632bdd1de0e9346948bf5595f4a8af38"},
+    {file = "lmnr-0.7.20.tar.gz", hash = "sha256:1f484cd618db2d71af65f90a0b8b36d20d80dc91a5138b811575c8677bf7c4fd"},
+]
+
+[package.dependencies]
+grpcio = ">=1"
+httpx = ">=0.24.0"
+opentelemetry-api = ">=1.33.0"
+opentelemetry-exporter-otlp-proto-grpc = ">=1.33.0"
+opentelemetry-exporter-otlp-proto-http = ">=1.33.0"
+opentelemetry-instrumentation = ">=0.54b0"
+opentelemetry-instrumentation-threading = ">=0.57b0"
+opentelemetry-sdk = ">=1.33.0"
+opentelemetry-semantic-conventions = ">=0.54b0"
+opentelemetry-semantic-conventions-ai = ">=0.4.13"
+orjson = ">=3.0.0"
+packaging = ">=22.0"
+pydantic = ">=2.0.3,<3.0.0"
+python-dotenv = ">=1.0"
+tenacity = ">=8.0"
+tqdm = ">=4.0"
+
+[package.extras]
+alephalpha = ["opentelemetry-instrumentation-alephalpha (>=0.47.1)"]
+all = ["opentelemetry-instrumentation-alephalpha (>=0.47.1)", "opentelemetry-instrumentation-bedrock (>=0.47.1)", "opentelemetry-instrumentation-chromadb (>=0.47.1)", "opentelemetry-instrumentation-cohere (>=0.47.1)", "opentelemetry-instrumentation-crewai (>=0.47.1)", "opentelemetry-instrumentation-haystack (>=0.47.1)", "opentelemetry-instrumentation-lancedb (>=0.47.1)", "opentelemetry-instrumentation-langchain (>=0.47.1)", "opentelemetry-instrumentation-llamaindex (>=0.47.1)", "opentelemetry-instrumentation-marqo (>=0.47.1)", "opentelemetry-instrumentation-mcp (>=0.47.1)", "opentelemetry-instrumentation-milvus (>=0.47.1)", "opentelemetry-instrumentation-mistralai (>=0.47.1)", "opentelemetry-instrumentation-ollama (>=0.47.1)", "opentelemetry-instrumentation-pinecone (>=0.47.1)", "opentelemetry-instrumentation-qdrant (>=0.47.1)", "opentelemetry-instrumentation-replicate (>=0.47.1)", "opentelemetry-instrumentation-sagemaker (>=0.47.1)", "opentelemetry-instrumentation-together (>=0.47.1)", "opentelemetry-instrumentation-transformers (>=0.47.1)", "opentelemetry-instrumentation-vertexai (>=0.47.1)", "opentelemetry-instrumentation-watsonx (>=0.47.1)", "opentelemetry-instrumentation-weaviate (>=0.47.1)"]
+bedrock = ["opentelemetry-instrumentation-bedrock (>=0.47.1)"]
+chromadb = ["opentelemetry-instrumentation-chromadb (>=0.47.1)"]
+cohere = ["opentelemetry-instrumentation-cohere (>=0.47.1)"]
+crewai = ["opentelemetry-instrumentation-crewai (>=0.47.1)"]
+haystack = ["opentelemetry-instrumentation-haystack (>=0.47.1)"]
+lancedb = ["opentelemetry-instrumentation-lancedb (>=0.47.1)"]
+langchain = ["opentelemetry-instrumentation-langchain (>=0.47.1)"]
+llamaindex = ["opentelemetry-instrumentation-llamaindex (>=0.47.1)"]
+marqo = ["opentelemetry-instrumentation-marqo (>=0.47.1)"]
+mcp = ["opentelemetry-instrumentation-mcp (>=0.47.1)"]
+milvus = ["opentelemetry-instrumentation-milvus (>=0.47.1)"]
+mistralai = ["opentelemetry-instrumentation-mistralai (>=0.47.1)"]
+ollama = ["opentelemetry-instrumentation-ollama (>=0.47.1)"]
+pinecone = ["opentelemetry-instrumentation-pinecone (>=0.47.1)"]
+qdrant = ["opentelemetry-instrumentation-qdrant (>=0.47.1)"]
+replicate = ["opentelemetry-instrumentation-replicate (>=0.47.1)"]
+sagemaker = ["opentelemetry-instrumentation-sagemaker (>=0.47.1)"]
+together = ["opentelemetry-instrumentation-together (>=0.47.1)"]
+transformers = ["opentelemetry-instrumentation-transformers (>=0.47.1)"]
+vertexai = ["opentelemetry-instrumentation-vertexai (>=0.47.1)"]
+watsonx = ["opentelemetry-instrumentation-watsonx (>=0.47.1)"]
+weaviate = ["opentelemetry-instrumentation-weaviate (>=0.47.1)"]
 
 [[package]]
 name = "lxml"
@@ -5737,12 +5820,15 @@ llama = ["llama-index (>=0.12.29,<0.13.0)", "llama-index-core (>=0.12.29,<0.13.0
 
 [[package]]
 name = "openhands-agent-server"
-version = "1.0.0a3"
+version = "1.1.0"
 description = "OpenHands Agent Server - REST/WebSocket interface for OpenHands AI Agent"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
+files = [
+    {file = "openhands_agent_server-1.1.0-py3-none-any.whl", hash = "sha256:59a856883df23488c0723e47655ef21649a321fcd4709a25a4690866eff6ac88"},
+    {file = "openhands_agent_server-1.1.0.tar.gz", hash = "sha256:e39bebd39afd45cfcfd765005e7c4e5409e46678bd7612ae20bae79f7057b935"},
+]
 develop = false
 
 [package.dependencies]
@@ -5758,14 +5844,14 @@ wsproto = ">=1.2.0"
 
 [package.source]
 type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+url = "https://github.com/OpenHands/agent-sdk.git"
+reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
 subdirectory = "openhands-agent-server"
 
 [[package]]
 name = "openhands-ai"
-version = "0.59.0"
+version = "0.0.0-post.5576+ed2ac6040"
 description = "OpenHands: Code Less, Make More"
 optional = false
 python-versions = "^3.12,<3.14"
@@ -5782,6 +5868,7 @@ bashlex = "^0.18"
 boto3 = "*"
 browsergym-core = "0.13.3"
 deprecated = "*"
+deprecation = "^2.1.0"
 dirhash = "*"
 docker = "*"
 fastapi = "*"
@@ -5801,13 +5888,14 @@ jupyter_kernel_gateway = "*"
 kubernetes = "^33.1.0"
 libtmux = ">=0.46.2"
 litellm = ">=1.74.3, <1.78.0, !=1.64.4, !=1.67.*"
+lmnr = "^0.7.20"
 memory-profiler = "^0.61.0"
 numpy = "*"
 openai = "1.99.9"
 openhands-aci = "0.3.2"
-openhands-agent-server = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e", subdirectory = "openhands-agent-server"}
-openhands-sdk = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e", subdirectory = "openhands-sdk"}
-openhands-tools = {git = "https://github.com/All-Hands-AI/agent-sdk.git", rev = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e", subdirectory = "openhands-tools"}
+openhands-agent-server = "1.1.0"
+openhands-sdk = "1.1.0"
+openhands-tools = "1.1.0"
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 pathspec = "^0.12.1"
@@ -5863,18 +5951,23 @@ url = ".."
 
 [[package]]
 name = "openhands-sdk"
-version = "1.0.0a3"
+version = "1.1.0"
 description = "OpenHands SDK - Core functionality for building AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
+files = [
+    {file = "openhands_sdk-1.1.0-py3-none-any.whl", hash = "sha256:4a984ce1687a48cf99a67fdf3d37b116f8b2840743d4807810b5024af6a1d57e"},
+    {file = "openhands_sdk-1.1.0.tar.gz", hash = "sha256:855e0d8f3657205e4119e50520c17e65b3358b1a923f7a051a82512a54bf426c"},
+]
 develop = false
 
 [package.dependencies]
+deprecation = ">=2.1.0"
 fastmcp = ">=2.11.3"
 httpx = ">=0.27.0"
 litellm = ">=1.77.7.dev9"
+lmnr = ">=0.7.20"
 pydantic = ">=2.11.7"
 python-frontmatter = ">=1.1.0"
 python-json-logger = ">=3.3.0"
@@ -5886,25 +5979,28 @@ boto3 = ["boto3 (>=1.35.0)"]
 
 [package.source]
 type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+url = "https://github.com/OpenHands/agent-sdk.git"
+reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
 subdirectory = "openhands-sdk"
 
 [[package]]
 name = "openhands-tools"
-version = "1.0.0a3"
+version = "1.1.0"
 description = "OpenHands Tools - Runtime tools for AI agents"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
-files = []
+files = [
+    {file = "openhands_tools-1.1.0-py3-none-any.whl", hash = "sha256:767d6746f05edade49263aa24450a037485a3dc23379f56917ef19aad22033f9"},
+    {file = "openhands_tools-1.1.0.tar.gz", hash = "sha256:c2fadaa4f4e16e9a3df5781ea847565dcae7171584f09ef7c0e1d97c8dfc83f6"},
+]
 develop = false
 
 [package.dependencies]
 bashlex = ">=0.18"
 binaryornot = ">=0.4.4"
-browser-use = ">=0.7.7"
+browser-use = ">=0.8.0"
 cachetools = "*"
 func-timeout = ">=4.3.5"
 libtmux = ">=0.46.2"
@@ -5913,9 +6009,9 @@ pydantic = ">=2.11.7"
 
 [package.source]
 type = "git"
-url = "https://github.com/All-Hands-AI/agent-sdk.git"
-reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
-resolved_reference = "8d8134ca5a87cc3e90e3ff968327a7f4c961e22e"
+url = "https://github.com/OpenHands/agent-sdk.git"
+reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
+resolved_reference = "15f565b8ac38876e40dc05c08e2b04ccaae4a66d"
 subdirectory = "openhands-tools"
 
 [[package]]
@@ -5989,6 +6085,62 @@ opentelemetry-sdk = ">=1.36.0,<1.37.0"
 typing-extensions = ">=4.6.0"
 
 [[package]]
+name = "opentelemetry-exporter-otlp-proto-http"
+version = "1.36.0"
+description = "OpenTelemetry Collector Protobuf over HTTP Exporter"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_exporter_otlp_proto_http-1.36.0-py3-none-any.whl", hash = "sha256:3d769f68e2267e7abe4527f70deb6f598f40be3ea34c6adc35789bea94a32902"},
+    {file = "opentelemetry_exporter_otlp_proto_http-1.36.0.tar.gz", hash = "sha256:dd3637f72f774b9fc9608ab1ac479f8b44d09b6fb5b2f3df68a24ad1da7d356e"},
+]
+
+[package.dependencies]
+googleapis-common-protos = ">=1.52,<2.0"
+opentelemetry-api = ">=1.15,<2.0"
+opentelemetry-exporter-otlp-proto-common = "1.36.0"
+opentelemetry-proto = "1.36.0"
+opentelemetry-sdk = ">=1.36.0,<1.37.0"
+requests = ">=2.7,<3.0"
+typing-extensions = ">=4.5.0"
+
+[[package]]
+name = "opentelemetry-instrumentation"
+version = "0.57b0"
+description = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_instrumentation-0.57b0-py3-none-any.whl", hash = "sha256:9109280f44882e07cec2850db28210b90600ae9110b42824d196de357cbddf7e"},
+    {file = "opentelemetry_instrumentation-0.57b0.tar.gz", hash = "sha256:f2a30135ba77cdea2b0e1df272f4163c154e978f57214795d72f40befd4fcf05"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.4,<2.0"
+opentelemetry-semantic-conventions = "0.57b0"
+packaging = ">=18.0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[[package]]
+name = "opentelemetry-instrumentation-threading"
+version = "0.57b0"
+description = "Thread context propagation support for OpenTelemetry"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_instrumentation_threading-0.57b0-py3-none-any.whl", hash = "sha256:adfd64857c8c78d6111cf80552311e1713bad64272dd81abdd61f07b892a161b"},
+    {file = "opentelemetry_instrumentation_threading-0.57b0.tar.gz", hash = "sha256:06fa4c98d6bfe4670e7532497670ac202db42afa647ff770aedce0e422421c6e"},
+]
+
+[package.dependencies]
+opentelemetry-api = ">=1.12,<2.0"
+opentelemetry-instrumentation = "0.57b0"
+wrapt = ">=1.0.0,<2.0.0"
+
+[[package]]
 name = "opentelemetry-proto"
 version = "1.36.0"
 description = "OpenTelemetry Python Proto"
@@ -6035,6 +6187,115 @@ files = [
 [package.dependencies]
 opentelemetry-api = "1.36.0"
 typing-extensions = ">=4.5.0"
+
+[[package]]
+name = "opentelemetry-semantic-conventions-ai"
+version = "0.4.13"
+description = "OpenTelemetry Semantic Conventions Extension for Large Language Models"
+optional = false
+python-versions = "<4,>=3.9"
+groups = ["main"]
+files = [
+    {file = "opentelemetry_semantic_conventions_ai-0.4.13-py3-none-any.whl", hash = "sha256:883a30a6bb5deaec0d646912b5f9f6dcbb9f6f72557b73d0f2560bf25d13e2d5"},
+    {file = "opentelemetry_semantic_conventions_ai-0.4.13.tar.gz", hash = "sha256:94efa9fb4ffac18c45f54a3a338ffeb7eedb7e1bb4d147786e77202e159f0036"},
+]
+
+[[package]]
+name = "orjson"
+version = "3.11.4"
+description = "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "orjson-3.11.4-cp310-cp310-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:e3aa2118a3ece0d25489cbe48498de8a5d580e42e8d9979f65bf47900a15aba1"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a69ab657a4e6733133a3dca82768f2f8b884043714e8d2b9ba9f52b6efef5c44"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3740bffd9816fc0326ddc406098a3a8f387e42223f5f455f2a02a9f834ead80c"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:65fd2f5730b1bf7f350c6dc896173d3460d235c4be007af73986d7cd9a2acd23"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:9fdc3ae730541086158d549c97852e2eea6820665d4faf0f41bf99df41bc11ea"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:e10b4d65901da88845516ce9f7f9736f9638d19a1d483b3883dc0182e6e5edba"},
+    {file = "orjson-3.11.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fb6a03a678085f64b97f9d4a9ae69376ce91a3a9e9b56a82b1580d8e1d501aff"},
+    {file = "orjson-3.11.4-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:2c82e4f0b1c712477317434761fbc28b044c838b6b1240d895607441412371ac"},
+    {file = "orjson-3.11.4-cp310-cp310-musllinux_1_2_armv7l.whl", hash = "sha256:d58c166a18f44cc9e2bad03a327dc2d1a3d2e85b847133cfbafd6bfc6719bd79"},
+    {file = "orjson-3.11.4-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:94f206766bf1ea30e1382e4890f763bd1eefddc580e08fec1ccdc20ddd95c827"},
+    {file = "orjson-3.11.4-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:41bf25fb39a34cf8edb4398818523277ee7096689db352036a9e8437f2f3ee6b"},
+    {file = "orjson-3.11.4-cp310-cp310-win32.whl", hash = "sha256:fa9627eba4e82f99ca6d29bc967f09aba446ee2b5a1ea728949ede73d313f5d3"},
+    {file = "orjson-3.11.4-cp310-cp310-win_amd64.whl", hash = "sha256:23ef7abc7fca96632d8174ac115e668c1e931b8fe4dde586e92a500bf1914dcc"},
+    {file = "orjson-3.11.4-cp311-cp311-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:5e59d23cd93ada23ec59a96f215139753fbfe3a4d989549bcb390f8c00370b39"},
+    {file = "orjson-3.11.4-cp311-cp311-macosx_15_0_arm64.whl", hash = "sha256:5c3aedecfc1beb988c27c79d52ebefab93b6c3921dbec361167e6559aba2d36d"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:da9e5301f1c2caa2a9a4a303480d79c9ad73560b2e7761de742ab39fe59d9175"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:8873812c164a90a79f65368f8f96817e59e35d0cc02786a5356f0e2abed78040"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5d7feb0741ebb15204e748f26c9638e6665a5fa93c37a2c73d64f1669b0ddc63"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:01ee5487fefee21e6910da4c2ee9eef005bee568a0879834df86f888d2ffbdd9"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:3d40d46f348c0321df01507f92b95a377240c4ec31985225a6668f10e2676f9a"},
+    {file = "orjson-3.11.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:95713e5fc8af84d8edc75b785d2386f653b63d62b16d681687746734b4dfc0be"},
+    {file = "orjson-3.11.4-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:ad73ede24f9083614d6c4ca9a85fe70e33be7bf047ec586ee2363bc7418fe4d7"},
+    {file = "orjson-3.11.4-cp311-cp311-musllinux_1_2_armv7l.whl", hash = "sha256:842289889de515421f3f224ef9c1f1efb199a32d76d8d2ca2706fa8afe749549"},
+    {file = "orjson-3.11.4-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:3b2427ed5791619851c52a1261b45c233930977e7de8cf36de05636c708fa905"},
+    {file = "orjson-3.11.4-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:3c36e524af1d29982e9b190573677ea02781456b2e537d5840e4538a5ec41907"},
+    {file = "orjson-3.11.4-cp311-cp311-win32.whl", hash = "sha256:87255b88756eab4a68ec61837ca754e5d10fa8bc47dc57f75cedfeaec358d54c"},
+    {file = "orjson-3.11.4-cp311-cp311-win_amd64.whl", hash = "sha256:e2d5d5d798aba9a0e1fede8d853fa899ce2cb930ec0857365f700dffc2c7af6a"},
+    {file = "orjson-3.11.4-cp311-cp311-win_arm64.whl", hash = "sha256:6bb6bb41b14c95d4f2702bce9975fda4516f1db48e500102fc4d8119032ff045"},
+    {file = "orjson-3.11.4-cp312-cp312-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:d4371de39319d05d3f482f372720b841c841b52f5385bd99c61ed69d55d9ab50"},
+    {file = "orjson-3.11.4-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:e41fd3b3cac850eaae78232f37325ed7d7436e11c471246b87b2cd294ec94853"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:600e0e9ca042878c7fdf189cf1b028fe2c1418cc9195f6cb9824eb6ed99cb938"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:7bbf9b333f1568ef5da42bc96e18bf30fd7f8d54e9ae066d711056add508e415"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4806363144bb6e7297b8e95870e78d30a649fdc4e23fc84daa80c8ebd366ce44"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:ad355e8308493f527d41154e9053b86a5be892b3b359a5c6d5d95cda23601cb2"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:c8a7517482667fb9f0ff1b2f16fe5829296ed7a655d04d68cd9711a4d8a4e708"},
+    {file = "orjson-3.11.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:97eb5942c7395a171cbfecc4ef6701fc3c403e762194683772df4c54cfbb2210"},
+    {file = "orjson-3.11.4-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:149d95d5e018bdd822e3f38c103b1a7c91f88d38a88aada5c4e9b3a73a244241"},
+    {file = "orjson-3.11.4-cp312-cp312-musllinux_1_2_armv7l.whl", hash = "sha256:624f3951181eb46fc47dea3d221554e98784c823e7069edb5dbd0dc826ac909b"},
+    {file = "orjson-3.11.4-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:03bfa548cf35e3f8b3a96c4e8e41f753c686ff3d8e182ce275b1751deddab58c"},
+    {file = "orjson-3.11.4-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:525021896afef44a68148f6ed8a8bf8375553d6066c7f48537657f64823565b9"},
+    {file = "orjson-3.11.4-cp312-cp312-win32.whl", hash = "sha256:b58430396687ce0f7d9eeb3dd47761ca7d8fda8e9eb92b3077a7a353a75efefa"},
+    {file = "orjson-3.11.4-cp312-cp312-win_amd64.whl", hash = "sha256:c6dbf422894e1e3c80a177133c0dda260f81428f9de16d61041949f6a2e5c140"},
+    {file = "orjson-3.11.4-cp312-cp312-win_arm64.whl", hash = "sha256:d38d2bc06d6415852224fcc9c0bfa834c25431e466dc319f0edd56cca81aa96e"},
+    {file = "orjson-3.11.4-cp313-cp313-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:2d6737d0e616a6e053c8b4acc9eccea6b6cce078533666f32d140e4f85002534"},
+    {file = "orjson-3.11.4-cp313-cp313-macosx_15_0_arm64.whl", hash = "sha256:afb14052690aa328cc118a8e09f07c651d301a72e44920b887c519b313d892ff"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:38aa9e65c591febb1b0aed8da4d469eba239d434c218562df179885c94e1a3ad"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:f2cf4dfaf9163b0728d061bebc1e08631875c51cd30bf47cb9e3293bfbd7dcd5"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:89216ff3dfdde0e4070932e126320a1752c9d9a758d6a32ec54b3b9334991a6a"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:9daa26ca8e97fae0ce8aa5d80606ef8f7914e9b129b6b5df9104266f764ce436"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:5c8b2769dc31883c44a9cd126560327767f848eb95f99c36c9932f51090bfce9"},
+    {file = "orjson-3.11.4-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1469d254b9884f984026bd9b0fa5bbab477a4bfe558bba6848086f6d43eb5e73"},
+    {file = "orjson-3.11.4-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:68e44722541983614e37117209a194e8c3ad07838ccb3127d96863c95ec7f1e0"},
+    {file = "orjson-3.11.4-cp313-cp313-musllinux_1_2_armv7l.whl", hash = "sha256:8e7805fda9672c12be2f22ae124dcd7b03928d6c197544fe12174b86553f3196"},
+    {file = "orjson-3.11.4-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:04b69c14615fb4434ab867bf6f38b2d649f6f300af30a6705397e895f7aec67a"},
+    {file = "orjson-3.11.4-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:639c3735b8ae7f970066930e58cf0ed39a852d417c24acd4a25fc0b3da3c39a6"},
+    {file = "orjson-3.11.4-cp313-cp313-win32.whl", hash = "sha256:6c13879c0d2964335491463302a6ca5ad98105fc5db3565499dcb80b1b4bd839"},
+    {file = "orjson-3.11.4-cp313-cp313-win_amd64.whl", hash = "sha256:09bf242a4af98732db9f9a1ec57ca2604848e16f132e3f72edfd3c5c96de009a"},
+    {file = "orjson-3.11.4-cp313-cp313-win_arm64.whl", hash = "sha256:a85f0adf63319d6c1ba06fb0dbf997fced64a01179cf17939a6caca662bf92de"},
+    {file = "orjson-3.11.4-cp314-cp314-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:42d43a1f552be1a112af0b21c10a5f553983c2a0938d2bbb8ecd8bc9fb572803"},
+    {file = "orjson-3.11.4-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:26a20f3fbc6c7ff2cb8e89c4c5897762c9d88cf37330c6a117312365d6781d54"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6e3f20be9048941c7ffa8fc523ccbd17f82e24df1549d1d1fe9317712d19938e"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:aac364c758dc87a52e68e349924d7e4ded348dedff553889e4d9f22f74785316"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d5c54a6d76e3d741dcc3f2707f8eeb9ba2a791d3adbf18f900219b62942803b1"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:f28485bdca8617b79d44627f5fb04336897041dfd9fa66d383a49d09d86798bc"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:bfc2a484cad3585e4ba61985a6062a4c2ed5c7925db6d39f1fa267c9d166487f"},
+    {file = "orjson-3.11.4-cp314-cp314-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e34dbd508cb91c54f9c9788923daca129fe5b55c5b4eebe713bf5ed3791280cf"},
+    {file = "orjson-3.11.4-cp314-cp314-musllinux_1_2_aarch64.whl", hash = "sha256:b13c478fa413d4b4ee606ec8e11c3b2e52683a640b006bb586b3041c2ca5f606"},
+    {file = "orjson-3.11.4-cp314-cp314-musllinux_1_2_armv7l.whl", hash = "sha256:724ca721ecc8a831b319dcd72cfa370cc380db0bf94537f08f7edd0a7d4e1780"},
+    {file = "orjson-3.11.4-cp314-cp314-musllinux_1_2_i686.whl", hash = "sha256:977c393f2e44845ce1b540e19a786e9643221b3323dae190668a98672d43fb23"},
+    {file = "orjson-3.11.4-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:1e539e382cf46edec157ad66b0b0872a90d829a6b71f17cb633d6c160a223155"},
+    {file = "orjson-3.11.4-cp314-cp314-win32.whl", hash = "sha256:d63076d625babab9db5e7836118bdfa086e60f37d8a174194ae720161eb12394"},
+    {file = "orjson-3.11.4-cp314-cp314-win_amd64.whl", hash = "sha256:0a54d6635fa3aaa438ae32e8570b9f0de36f3f6562c308d2a2a452e8b0592db1"},
+    {file = "orjson-3.11.4-cp314-cp314-win_arm64.whl", hash = "sha256:78b999999039db3cf58f6d230f524f04f75f129ba3d1ca2ed121f8657e575d3d"},
+    {file = "orjson-3.11.4-cp39-cp39-macosx_10_15_x86_64.macosx_11_0_arm64.macosx_10_15_universal2.whl", hash = "sha256:405261b0a8c62bcbd8e2931c26fdc08714faf7025f45531541e2b29e544b545b"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:af02ff34059ee9199a3546f123a6ab4c86caf1708c79042caf0820dc290a6d4f"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:0b2eba969ea4203c177c7b38b36c69519e6067ee68c34dc37081fac74c796e10"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0baa0ea43cfa5b008a28d3c07705cf3ada40e5d347f0f44994a64b1b7b4b5350"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:80fd082f5dcc0e94657c144f1b2a3a6479c44ad50be216cf0c244e567f5eae19"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:1e3704d35e47d5bee811fb1cbd8599f0b4009b14d451c4c57be5a7e25eb89a13"},
+    {file = "orjson-3.11.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:caa447f2b5356779d914658519c874cf3b7629e99e63391ed519c28c8aea4919"},
+    {file = "orjson-3.11.4-cp39-cp39-musllinux_1_2_aarch64.whl", hash = "sha256:bba5118143373a86f91dadb8df41d9457498226698ebdf8e11cbb54d5b0e802d"},
+    {file = "orjson-3.11.4-cp39-cp39-musllinux_1_2_armv7l.whl", hash = "sha256:622463ab81d19ef3e06868b576551587de8e4d518892d1afab71e0fbc1f9cffc"},
+    {file = "orjson-3.11.4-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:3e0a700c4b82144b72946b6629968df9762552ee1344bfdb767fecdd634fbd5a"},
+    {file = "orjson-3.11.4-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:6e18a5c15e764e5f3fc569b47872450b4bcea24f2a6354c0a0e95ad21045d5a9"},
+    {file = "orjson-3.11.4-cp39-cp39-win32.whl", hash = "sha256:fb1c37c71cad991ef4d89c7a634b5ffb4447dbd7ae3ae13e8f5ee7f1775e7ab1"},
+    {file = "orjson-3.11.4-cp39-cp39-win_amd64.whl", hash = "sha256:e2985ce8b8c42d00492d0ed79f2bd2b6460d00f2fa671dfde4bf2e02f49bf5c6"},
+    {file = "orjson-3.11.4.tar.gz", hash = "sha256:39485f4ab4c9b30a3943cfe99e1a213c4776fb69e8abd68f66b83d5a0b0fdc6d"},
+]
 
 [[package]]
 name = "packaging"
@@ -6251,6 +6512,21 @@ files = [
 
 [package.dependencies]
 ptyprocess = ">=0.5"
+
+[[package]]
+name = "pfzy"
+version = "0.3.4"
+description = "Python port of the fzy fuzzy string matching algorithm"
+optional = false
+python-versions = ">=3.7,<4.0"
+groups = ["main"]
+files = [
+    {file = "pfzy-0.3.4-py3-none-any.whl", hash = "sha256:5f50d5b2b3207fa72e7ec0ef08372ef652685470974a107d0d4999fc5a903a96"},
+    {file = "pfzy-0.3.4.tar.gz", hash = "sha256:717ea765dd10b63618e7298b2d98efd819e0b30cd5905c9707223dceeb94b3f1"},
+]
+
+[package.extras]
+docs = ["Sphinx (>=4.1.2,<5.0.0)", "furo (>=2021.8.17-beta.43,<2022.0.0)", "myst-parser (>=0.15.1,<0.16.0)", "sphinx-autobuild (>=2021.3.14,<2022.0.0)", "sphinx-copybutton (>=0.4.0,<0.5.0)"]
 
 [[package]]
 name = "pg8000"

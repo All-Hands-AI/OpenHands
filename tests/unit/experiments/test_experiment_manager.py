@@ -9,6 +9,7 @@ import pytest
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxStatus
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.sdk import Agent
 from openhands.sdk.llm import LLM
@@ -169,6 +170,7 @@ class TestExperimentManagerIntegration:
         # The service requires a lot of deps, but for this test we won't exercise them.
         app_conversation_info_service = Mock()
         app_conversation_start_task_service = Mock()
+        event_callback_service = Mock()
         sandbox_service = Mock()
         sandbox_spec_service = Mock()
         jwt_service = Mock()
@@ -179,6 +181,7 @@ class TestExperimentManagerIntegration:
             user_context=user_context,
             app_conversation_info_service=app_conversation_info_service,
             app_conversation_start_task_service=app_conversation_start_task_service,
+            event_callback_service=event_callback_service,
             sandbox_service=sandbox_service,
             sandbox_spec_service=sandbox_spec_service,
             jwt_service=jwt_service,
@@ -187,6 +190,14 @@ class TestExperimentManagerIntegration:
             httpx_client=httpx_client,
             web_url=None,
             access_token_hard_timeout=None,
+        )
+
+        sandbox = SandboxInfo(
+            id='mock-sandbox-id',
+            created_by_user_id='mock-user-id',
+            sandbox_spec_id='mock-sandbox-spec-id',
+            status=SandboxStatus.RUNNING,
+            session_api_key='mock-session-api-key',
         )
 
         # Patch the pieces invoked by the service
@@ -202,6 +213,7 @@ class TestExperimentManagerIntegration:
         ):
             # --- Act: build the start request
             start_req = await service._build_start_conversation_request_for_user(
+                sandbox=sandbox,
                 initial_message=None,
                 git_provider=None,  # Keep secrets path simple
                 working_dir='/tmp/project',  # Arbitrary path

@@ -85,14 +85,14 @@ This command pulls and runs the OpenHands container using Docker. Once executed,
 #### Mac/Linux:
 ```bash
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/openhands/runtime:${OPENHANDS_VERSION}-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.openhands.dev/openhands/runtime:${OPENHANDS_VERSION}-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -e RUNTIME=daytona \
     -e DAYTONA_API_KEY=${DAYTONA_API_KEY} \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --name openhands-app \
-    docker.all-hands.dev/openhands/openhands:${OPENHANDS_VERSION}
+    docker.openhands.dev/openhands/openhands:${OPENHANDS_VERSION}
 ```
 
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
@@ -100,14 +100,14 @@ docker run -it --rm --pull=always \
 #### Windows:
 ```powershell
 docker run -it --rm --pull=always `
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/openhands/runtime:${env:OPENHANDS_VERSION}-nikolaik `
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.openhands.dev/openhands/runtime:${env:OPENHANDS_VERSION}-nikolaik `
     -e LOG_ALL_EVENTS=true `
     -e RUNTIME=daytona `
     -e DAYTONA_API_KEY=${env:DAYTONA_API_KEY} `
     -v ~/.openhands:/.openhands `
     -p 3000:3000 `
     --name openhands-app `
-    docker.all-hands.dev/openhands/openhands:${env:OPENHANDS_VERSION}
+    docker.openhands.dev/openhands/openhands:${env:OPENHANDS_VERSION}
 ```
 
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.

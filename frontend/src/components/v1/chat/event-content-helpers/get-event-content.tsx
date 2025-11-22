@@ -1,10 +1,13 @@
 import { Trans } from "react-i18next";
-import { OpenHandsEvent } from "#/types/v1/core";
+import React from "react";
+import { OpenHandsEvent, ObservationEvent } from "#/types/v1/core";
 import { isActionEvent, isObservationEvent } from "#/types/v1/type-guards";
 import { MonoComponent } from "../../../features/chat/mono-component";
 import { PathComponent } from "../../../features/chat/path-component";
 import { getActionContent } from "./get-action-content";
 import { getObservationContent } from "./get-observation-content";
+import { TaskTrackingObservationContent } from "../task-tracking/task-tracking-observation-content";
+import { TaskTrackerObservation } from "#/types/v1/core/base/observation";
 import i18n from "#/i18n";
 
 const trimText = (text: string, maxLength: number): string => {
@@ -134,9 +137,16 @@ const getObservationEventTitle = (event: OpenHandsEvent): React.ReactNode => {
     case "BrowserObservation":
       observationKey = "OBSERVATION_MESSAGE$BROWSE";
       break;
-    case "TaskTrackerObservation":
-      observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING";
+    case "TaskTrackerObservation": {
+      const { command } = event.observation;
+      if (command === "plan") {
+        observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING_PLAN";
+      } else {
+        // command === "view"
+        observationKey = "OBSERVATION_MESSAGE$TASK_TRACKING_VIEW";
+      }
       break;
+    }
     default:
       // For unknown observations, use the type name
       return observationType.replace("Observation", "").toUpperCase();
@@ -151,14 +161,24 @@ const getObservationEventTitle = (event: OpenHandsEvent): React.ReactNode => {
 
 export const getEventContent = (event: OpenHandsEvent) => {
   let title: React.ReactNode = "";
-  let details: string = "";
+  let details: string | React.ReactNode = "";
 
   if (isActionEvent(event)) {
     title = getActionEventTitle(event);
     details = getActionContent(event);
   } else if (isObservationEvent(event)) {
     title = getObservationEventTitle(event);
-    details = getObservationContent(event);
+
+    // For TaskTrackerObservation, use React component instead of markdown
+    if (event.observation.kind === "TaskTrackerObservation") {
+      details = (
+        <TaskTrackingObservationContent
+          event={event as ObservationEvent<TaskTrackerObservation>}
+        />
+      );
+    } else {
+      details = getObservationContent(event);
+    }
   }
 
   return {

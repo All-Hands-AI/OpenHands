@@ -12,6 +12,7 @@ import {
   ConversationStateUpdateEvent,
   ConversationStateUpdateEventAgentStatus,
   ConversationStateUpdateEventFullState,
+  ConversationErrorEvent,
 } from "./core/events/conversation-state-event";
 import { SystemPromptEvent } from "./core/events/system-event";
 import type { OpenHandsParsedEvent } from "../core/index";
@@ -136,7 +137,15 @@ export const isFullStateConversationStateUpdateEvent = (
 export const isAgentStatusConversationStateUpdateEvent = (
   event: ConversationStateUpdateEvent,
 ): event is ConversationStateUpdateEventAgentStatus =>
-  event.key === "agent_status";
+  event.key === "execution_status";
+
+/**
+ * Type guard function to check if an event is a conversation error event
+ */
+export const isConversationErrorEvent = (
+  event: OpenHandsEvent,
+): event is ConversationErrorEvent =>
+  "kind" in event && event.kind === "ConversationErrorEvent";
 
 // =============================================================================
 // TEMPORARY COMPATIBILITY TYPE GUARDS

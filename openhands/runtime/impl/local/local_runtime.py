@@ -42,6 +42,7 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.http_session import httpx_verify_option
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -760,7 +761,7 @@ def _create_warm_server(
         )
 
         # Wait for the server to be ready
-        session = httpx.Client(timeout=30)
+        session = httpx.Client(timeout=30, verify=httpx_verify_option())
 
         # Use tenacity to retry the connection
         @tenacity.retry(

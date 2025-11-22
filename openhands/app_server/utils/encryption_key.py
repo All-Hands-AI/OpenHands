@@ -21,7 +21,7 @@ class EncryptionKey(BaseModel):
     @field_serializer('key')
     def serialize_key(self, key: SecretStr, info: Any):
         """Conditionally serialize the key based on context."""
-        if info.context and info.context.get('reveal_secrets'):
+        if info.context and info.context.get('expose_secrets'):
             return key.get_secret_value()
         return str(key)  # Returns '**********' by default
 
