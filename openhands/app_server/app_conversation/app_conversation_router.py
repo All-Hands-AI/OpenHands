@@ -310,7 +310,7 @@ async def read_conversation_file(
     file_path: Annotated[
         str,
         Query(title='Path to the file to read within the sandbox workspace'),
-    ],
+    ] = '/workspace/project/PLAN.md',
     app_conversation_service: AppConversationService = (
         app_conversation_service_dependency
     ),
