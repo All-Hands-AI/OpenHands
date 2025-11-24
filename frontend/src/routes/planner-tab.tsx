@@ -1,3 +1,4 @@
+import React from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -17,15 +18,23 @@ import {
   h5,
   h6,
 } from "#/components/features/markdown/headings";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 
 function PlannerTab() {
   const { t } = useTranslation();
+  const { scrollRef: scrollContainerRef, onChatBodyScroll } = useScrollToBottom(
+    React.useRef<HTMLDivElement>(null),
+  );
 
   const { planContent, setConversationMode } = useConversationStore();
 
-  if (planContent) {
+  if (planContent !== null && planContent !== undefined) {
     return (
-      <div className="flex flex-col w-full h-full p-4 overflow-auto">
+      <div
+        ref={scrollContainerRef}
+        onScroll={(e) => onChatBodyScroll(e.currentTarget)}
+        className="flex flex-col w-full h-full p-4 overflow-auto"
+      >
         <Markdown
           components={{
             code,
