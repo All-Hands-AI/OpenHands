@@ -25,16 +25,13 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.stream import EventSource, EventStream
 from openhands.storage import get_file_store
 
-# [Adicionar estes mocks no nível do módulo (fora da classe)]
-# Mocks de Ações/Obs Par (Padrão A)
+# Reusable action/observation mocks for stuck-pattern tests
 Ap = CmdRunAction(command='ls')
 Op = CmdOutputObservation(command='ls', content='file1.txt')
 
-# Mocks de Ações/Obs Ímpar (Padrão B)
 Ai = FileReadAction(path='file1.txt')
 Oi = FileReadObservation(content='File content', path='file1.txt')
 
-# Mocks "Diferentes" para quebrar o padrão
 Adp = CmdRunAction(command='pwd')
 Adi = FileReadAction(path='file2.txt')
 
@@ -42,9 +39,8 @@ Odp = CmdOutputObservation(command='ls_DIFFERENT', content='file1.txt')
 Odi = FileReadObservation(content='File content', path='file2.txt')
 
 
-# Mock para evento "Outro" (nem Ação nem Observação)
 class MockOtherEvent(Event):
-    pass
+    """Event type used to verify non-action/observation events are ignored."""
 
 
 E_outro = MockOtherEvent()
