@@ -327,17 +327,17 @@ class GithubManager(Manager):
 
 
                 # Create a GithubCallbackProcessor
-                processor = GithubCallbackProcessor(
-                    github_view=github_view,
-                    send_summary_instruction=True,
-                )
+                # processor = GithubCallbackProcessor(
+                #     github_view=github_view,
+                #     send_summary_instruction=True,
+                # )
 
                 # Register the callback processor
-                register_callback_processor(conversation_id, processor)
+                # register_callback_processor(conversation_id, processor)
 
-                logger.info(
-                    f'[Github] Registered callback processor for conversation {conversation_id}'
-                )
+                # logger.info(
+                #     f'[Github] Registered callback processor for conversation {conversation_id}'
+                # )
 
                 # Send message with conversation link
                 conversation_link = CONVERSATION_URL.format(conversation_id)
