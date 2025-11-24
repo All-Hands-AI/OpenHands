@@ -76,17 +76,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 USER_CONTEXT_ATTR,
             )
 
-            from openhands.server.shared import conversation_manager
-
-            # agent_loop_infos = await conversation_manager.get_agent_loop_info(
-            #     filter_to_sids={conversation_id.}
-            # )
-            # event_store = agent_loop_infos[0].event_store
-            # events: list = event_store.get_matching_events(
-            #     limit=10,
-            #     reverse=True,
-            # )
-
 
             try:
                 # Create injector state for dependency injection
@@ -265,7 +254,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
             if len(events) > 0:
                 event: MessageEvent = events[0]
-                self._post_summary_to_github(str(event.llm_message))
+                return str(event.llm_message)
 
 
             # Look for the most recent agent message (reverse order since we want the latest)
