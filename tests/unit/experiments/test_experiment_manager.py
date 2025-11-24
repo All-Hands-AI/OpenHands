@@ -9,6 +9,7 @@ import pytest
 from openhands.app_server.app_conversation.live_status_app_conversation_service import (
     LiveStatusAppConversationService,
 )
+from openhands.app_server.sandbox.sandbox_models import SandboxInfo, SandboxStatus
 from openhands.experiments.experiment_manager import ExperimentManager
 from openhands.sdk import Agent
 from openhands.sdk.llm import LLM
@@ -191,6 +192,14 @@ class TestExperimentManagerIntegration:
             access_token_hard_timeout=None,
         )
 
+        sandbox = SandboxInfo(
+            id='mock-sandbox-id',
+            created_by_user_id='mock-user-id',
+            sandbox_spec_id='mock-sandbox-spec-id',
+            status=SandboxStatus.RUNNING,
+            session_api_key='mock-session-api-key',
+        )
+
         # Patch the pieces invoked by the service
         with (
             patch(
@@ -204,6 +213,7 @@ class TestExperimentManagerIntegration:
         ):
             # --- Act: build the start request
             start_req = await service._build_start_conversation_request_for_user(
+                sandbox=sandbox,
                 initial_message=None,
                 git_provider=None,  # Keep secrets path simple
                 working_dir='/tmp/project',  # Arbitrary path
