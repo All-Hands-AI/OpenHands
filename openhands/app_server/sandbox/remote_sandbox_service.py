@@ -64,6 +64,10 @@ STATUS_MAPPING = {
     'starting': SandboxStatus.STARTING,
     'error': SandboxStatus.ERROR,
 }
+AGENT_SERVER_PORT = 60000
+VSCODE_PORT = 60001
+WORKER_1_PORT = 12000
+WORKER_2_PORT = 12001
 
 
 class StoredRemoteSandbox(Base):  # type: ignore
@@ -138,17 +142,29 @@ class RemoteSandboxService(SandboxService):
                 exposed_urls = []
                 url = runtime.get('url', None)
                 if url:
-                    exposed_urls.append(ExposedUrl(name=AGENT_SERVER, url=url))
+                    exposed_urls.append(
+                        ExposedUrl(name=AGENT_SERVER, url=url, port=AGENT_SERVER_PORT)
+                    )
                     vscode_url = (
                         _build_service_url(url, 'vscode')
                         + f'/?tkn={session_api_key}&folder=%2Fworkspace%2Fproject'
                     )
-                    exposed_urls.append(ExposedUrl(name=VSCODE, url=vscode_url))
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_1, url=_build_service_url(url, 'work-1'))
+                        ExposedUrl(name=VSCODE, url=vscode_url, port=VSCODE_PORT)
                     )
                     exposed_urls.append(
-                        ExposedUrl(name=WORKER_2, url=_build_service_url(url, 'work-2'))
+                        ExposedUrl(
+                            name=WORKER_1,
+                            url=_build_service_url(url, 'work-1'),
+                            port=WORKER_1_PORT,
+                        )
+                    )
+                    exposed_urls.append(
+                        ExposedUrl(
+                            name=WORKER_2,
+                            url=_build_service_url(url, 'work-2'),
+                            port=WORKER_2_PORT,
+                        )
                     )
             else:
                 exposed_urls = None
@@ -318,7 +334,6 @@ class RemoteSandboxService(SandboxService):
                 created_at=utc_now(),
             )
             self.db_session.add(stored_sandbox)
-            await self.db_session.commit()
 
             # Prepare environment variables
             environment = await self._init_environment(sandbox_spec, sandbox_id)
@@ -407,7 +422,6 @@ class RemoteSandboxService(SandboxService):
             if not stored_sandbox:
                 return False
             await self.db_session.delete(stored_sandbox)
-            await self.db_session.commit()
             runtime_data = await self._get_runtime(sandbox_id)
             response = await self._send_runtime_api_request(
                 'POST',

@@ -12,6 +12,7 @@ from server.auth.constants import (
     KEYCLOAK_CLIENT_ID,
     KEYCLOAK_REALM_NAME,
     KEYCLOAK_SERVER_URL_EXT,
+    ROLE_CHECK_ENABLED,
 )
 from server.auth.gitlab_sync import schedule_gitlab_repo_sync
 from server.auth.saas_user_auth import SaasUserAuth
@@ -30,6 +31,7 @@ from openhands.server.services.conversation_service import create_provider_token
 from openhands.server.shared import config
 from openhands.server.user_auth import get_access_token
 from openhands.server.user_auth.user_auth import get_user_auth
+from openhands.utils.posthog_tracker import track_user_signup_completed
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -132,6 +134,12 @@ async def keycloak_callback(
 
     user_info = await token_manager.get_user_info(keycloak_access_token)
     logger.debug(f'user_info: {user_info}')
+    if ROLE_CHECK_ENABLED and 'roles' not in user_info:
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Missing required role'},
+        )
+
     if 'sub' not in user_info or 'preferred_username' not in user_info:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -361,6 +369,12 @@ async def accept_tos(request: Request):
         session.commit()
 
     logger.info(f'User {user_id} accepted TOS')
+
+    # Track user signup completion in PostHog
+    track_user_signup_completed(
+        user_id=user_id,
+        signup_timestamp=user_settings.accepted_tos.isoformat(),
+    )
 
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'redirect_url': redirect_url}

@@ -21,6 +21,7 @@ from openhands.app_server.app_conversation.app_conversation_info_service import 
     AppConversationInfoService,
 )
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AgentType,
     AppConversation,
     AppConversationInfo,
     AppConversationPage,
@@ -33,11 +34,11 @@ from openhands.app_server.app_conversation.app_conversation_service import (
     AppConversationService,
     AppConversationServiceInjector,
 )
+from openhands.app_server.app_conversation.app_conversation_service_base import (
+    AppConversationServiceBase,
+)
 from openhands.app_server.app_conversation.app_conversation_start_task_service import (
     AppConversationStartTaskService,
-)
-from openhands.app_server.app_conversation.git_app_conversation_service import (
-    GitAppConversationService,
 )
 from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
     SQLAppConversationInfoService,
@@ -62,6 +63,9 @@ from openhands.app_server.sandbox.sandbox_spec_service import SandboxSpecService
 from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.services.jwt_service import JwtService
 from openhands.app_server.user.user_context import UserContext
+from openhands.app_server.utils.docker_utils import (
+    replace_localhost_hostname_for_docker,
+)
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
@@ -70,6 +74,7 @@ from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
 from openhands.tools.preset.default import get_default_agent
+from openhands.tools.preset.planning import get_planning_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
@@ -77,7 +82,7 @@ GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
-class LiveStatusAppConversationService(GitAppConversationService):
+class LiveStatusAppConversationService(AppConversationServiceBase):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_context: UserContext
@@ -103,6 +108,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
         sort_order: AppConversationSortOrder = AppConversationSortOrder.CREATED_AT_DESC,
         page_id: str | None = None,
         limit: int = 20,
+        include_sub_conversations: bool = False,
     ) -> AppConversationPage:
         """Search for sandboxed conversations."""
         page = await self.app_conversation_info_service.search_app_conversation_info(
@@ -114,6 +120,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
             sort_order=sort_order,
             page_id=page_id,
             limit=limit,
+            include_sub_conversations=include_sub_conversations,
         )
         conversations: list[AppConversation] = await self._build_app_conversations(
             page.items
@@ -168,6 +175,20 @@ class LiveStatusAppConversationService(GitAppConversationService):
     ) -> AsyncGenerator[AppConversationStartTask, None]:
         # Create and yield the start task
         user_id = await self.user_context.get_user_id()
+
+        # Validate and inherit from parent conversation if provided
+        if request.parent_conversation_id:
+            parent_info = (
+                await self.app_conversation_info_service.get_app_conversation_info(
+                    request.parent_conversation_id
+                )
+            )
+            if parent_info is None:
+                raise ValueError(
+                    f'Parent conversation not found: {request.parent_conversation_id}'
+                )
+            self._inherit_configuration_from_parent(request, parent_info)
+
         task = AppConversationStartTask(
             created_by_user_id=user_id,
             request=request,
@@ -192,20 +213,27 @@ class LiveStatusAppConversationService(GitAppConversationService):
             assert sandbox_spec is not None
 
             # Run setup scripts
-            workspace = AsyncRemoteWorkspace(
+            remote_workspace = AsyncRemoteWorkspace(
                 host=agent_server_url,
                 api_key=sandbox.session_api_key,
                 working_dir=sandbox_spec.working_dir,
             )
-            async for updated_task in self.run_setup_scripts(task, workspace):
+            async for updated_task in self.run_setup_scripts(
+                task, sandbox, remote_workspace
+            ):
                 yield updated_task
 
             # Build the start request
             start_conversation_request = (
                 await self._build_start_conversation_request_for_user(
+                    sandbox,
                     request.initial_message,
                     request.git_provider,
                     sandbox_spec.working_dir,
+                    request.agent_type,
+                    request.llm_model,
+                    remote_workspace=remote_workspace,
+                    selected_repository=request.selected_repository,
                 )
             )
 
@@ -224,6 +252,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 headers={'X-Session-API-Key': sandbox.session_api_key},
                 timeout=self.sandbox_startup_timeout,
             )
+
             response.raise_for_status()
             info = ConversationInfo.model_validate(response.json())
 
@@ -241,6 +270,7 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 git_provider=request.git_provider,
                 trigger=request.trigger,
                 pr_number=request.pr_number,
+                parent_conversation_id=request.parent_conversation_id,
             )
             await self.app_conversation_info_service.save_app_conversation_info(
                 app_conversation_info
@@ -450,13 +480,49 @@ class LiveStatusAppConversationService(GitAppConversationService):
             for exposed_url in exposed_urls
             if exposed_url.name == AGENT_SERVER
         )
+        agent_server_url = replace_localhost_hostname_for_docker(agent_server_url)
         return agent_server_url
+
+    def _inherit_configuration_from_parent(
+        self, request: AppConversationStartRequest, parent_info: AppConversationInfo
+    ) -> None:
+        """Inherit configuration from parent conversation if not explicitly provided.
+
+        This ensures sub-conversations automatically inherit:
+        - Sandbox ID (to share the same workspace/environment)
+        - Git parameters (repository, branch, provider)
+        - LLM model
+
+        Args:
+            request: The conversation start request to modify
+            parent_info: The parent conversation info to inherit from
+        """
+        # Inherit sandbox_id from parent to share the same workspace/environment
+        if not request.sandbox_id:
+            request.sandbox_id = parent_info.sandbox_id
+
+        # Inherit git parameters from parent if not provided
+        if not request.selected_repository:
+            request.selected_repository = parent_info.selected_repository
+        if not request.selected_branch:
+            request.selected_branch = parent_info.selected_branch
+        if not request.git_provider:
+            request.git_provider = parent_info.git_provider
+
+        # Inherit LLM model from parent if not provided
+        if not request.llm_model and parent_info.llm_model:
+            request.llm_model = parent_info.llm_model
 
     async def _build_start_conversation_request_for_user(
         self,
+        sandbox: SandboxInfo,
         initial_message: SendMessageRequest | None,
         git_provider: ProviderType | None,
         working_dir: str,
+        agent_type: AgentType = AgentType.DEFAULT,
+        llm_model: str | None = None,
+        remote_workspace: AsyncRemoteWorkspace | None = None,
+        selected_repository: str | None = None,
     ) -> StartConversationRequest:
         user = await self.user_context.get_user_info()
 
@@ -488,18 +554,35 @@ class LiveStatusAppConversationService(GitAppConversationService):
 
         workspace = LocalWorkspace(working_dir=working_dir)
 
+        # Use provided llm_model if available, otherwise fall back to user's default
+        model = llm_model or user.llm_model
         llm = LLM(
-            model=user.llm_model,
+            model=model,
             base_url=user.llm_base_url,
             api_key=user.llm_api_key,
             usage_id='agent',
         )
-        agent = get_default_agent(llm=llm)
+        # The agent gets passed initial instructions
+        # Select agent based on agent_type
+        if agent_type == AgentType.PLAN:
+            agent = get_planning_agent(llm=llm)
+        else:
+            agent = get_default_agent(llm=llm)
 
         conversation_id = uuid4()
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
+
+        # Load and merge all skills if remote_workspace is available
+        if remote_workspace:
+            try:
+                agent = await self._load_skills_and_update_agent(
+                    sandbox, agent, remote_workspace, selected_repository, working_dir
+                )
+            except Exception as e:
+                _logger.warning(f'Failed to load skills: {e}', exc_info=True)
+                # Continue without skills - don't fail conversation startup
 
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,
@@ -564,6 +647,8 @@ class LiveStatusAppConversationService(GitAppConversationService):
     async def delete_app_conversation(self, conversation_id: UUID) -> bool:
         """Delete a V1 conversation and all its associated data.
 
+        This method will also cascade delete all sub-conversations of the parent.
+
         Args:
             conversation_id: The UUID of the conversation to delete.
         """
@@ -587,6 +672,10 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 )
                 return False
 
+            # Delete all sub-conversations first (to maintain referential integrity)
+            await self._delete_sub_conversations(conversation_id)
+
+            # Now delete the parent conversation
             # Delete from agent server if sandbox is running
             await self._delete_from_agent_server(app_conversation)
 
@@ -601,6 +690,41 @@ class LiveStatusAppConversationService(GitAppConversationService):
                 exc_info=True,
             )
             return False
+
+    async def _delete_sub_conversations(self, parent_conversation_id: UUID) -> None:
+        """Delete all sub-conversations of a parent conversation.
+
+        This method handles errors gracefully, continuing to delete remaining
+        sub-conversations even if one fails.
+
+        Args:
+            parent_conversation_id: The UUID of the parent conversation.
+        """
+        sub_conversation_ids = (
+            await self.app_conversation_info_service.get_sub_conversation_ids(
+                parent_conversation_id
+            )
+        )
+
+        for sub_id in sub_conversation_ids:
+            try:
+                sub_conversation = await self.get_app_conversation(sub_id)
+                if sub_conversation:
+                    # Delete from agent server if sandbox is running
+                    await self._delete_from_agent_server(sub_conversation)
+                    # Delete from database
+                    await self._delete_from_database(sub_conversation)
+                    _logger.info(
+                        f'Successfully deleted sub-conversation {sub_id}',
+                        extra={'conversation_id': str(sub_id)},
+                    )
+            except Exception as e:
+                # Log error but continue deleting remaining sub-conversations
+                _logger.warning(
+                    f'Error deleting sub-conversation {sub_id}: {e}',
+                    extra={'conversation_id': str(sub_id)},
+                    exc_info=True,
+                )
 
     async def _delete_from_agent_server(
         self, app_conversation: AppConversation

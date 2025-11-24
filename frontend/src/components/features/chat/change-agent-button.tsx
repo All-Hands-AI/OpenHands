@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Typography } from "#/ui/typography";
 import { I18nKey } from "#/i18n/declaration";
@@ -11,31 +11,130 @@ import { cn } from "#/utils/utils";
 import { USE_PLANNING_AGENT } from "#/utils/feature-flags";
 import { useAgentState } from "#/hooks/use-agent-state";
 import { AgentState } from "#/types/agent-state";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { useUnifiedWebSocketStatus } from "#/hooks/use-unified-websocket-status";
+import { useSubConversationTaskPolling } from "#/hooks/query/use-sub-conversation-task-polling";
 
 export function ChangeAgentButton() {
-  const { t } = useTranslation();
-  const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+  const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
 
-  const conversationMode = useConversationStore(
-    (state) => state.conversationMode,
-  );
+  const {
+    conversationMode,
+    setConversationMode,
+    setSubConversationTaskId,
+    subConversationTaskId,
+  } = useConversationStore();
 
-  const setConversationMode = useConversationStore(
-    (state) => state.setConversationMode,
-  );
+  const webSocketStatus = useUnifiedWebSocketStatus();
+
+  const isWebSocketConnected = webSocketStatus === "CONNECTED";
 
   const shouldUsePlanningAgent = USE_PLANNING_AGENT();
 
   const { curAgentState } = useAgentState();
 
+  const { t } = useTranslation();
+
   const isAgentRunning = curAgentState === AgentState.RUNNING;
+
+  const { data: conversation } = useActiveConversation();
+  const { mutate: createConversation, isPending: isCreatingConversation } =
+    useCreateConversation();
+
+  // Poll sub-conversation task and invalidate parent conversation when ready
+  useSubConversationTaskPolling(
+    subConversationTaskId,
+    conversation?.conversation_id || null,
+  );
 
   // Close context menu when agent starts running
   useEffect(() => {
-    if (isAgentRunning && contextMenuOpen) {
+    if ((isAgentRunning || !isWebSocketConnected) && contextMenuOpen) {
       setContextMenuOpen(false);
     }
-  }, [isAgentRunning, contextMenuOpen]);
+  }, [isAgentRunning, contextMenuOpen, isWebSocketConnected]);
+
+  const handlePlanClick = (
+    event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
+  ) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    // Set conversation mode to "plan" immediately
+    setConversationMode("plan");
+
+    // Check if sub_conversation_ids is not empty
+    if (
+      (conversation?.sub_conversation_ids &&
+        conversation.sub_conversation_ids.length > 0) ||
+      !conversation?.conversation_id
+    ) {
+      // Do nothing if both conditions are true
+      return;
+    }
+
+    // Create a new sub-conversation if we have a current conversation ID
+    createConversation(
+      {
+        parentConversationId: conversation.conversation_id,
+        agentType: "plan",
+      },
+      {
+        onSuccess: (data) => {
+          displaySuccessToast(
+            t(I18nKey.PLANNING_AGENTT$PLANNING_AGENT_INITIALIZED),
+          );
+          // Track the task ID to poll for sub-conversation creation
+          if (data.v1_task_id) {
+            setSubConversationTaskId(data.v1_task_id);
+          }
+        },
+      },
+    );
+  };
+
+  const isButtonDisabled =
+    isAgentRunning ||
+    isCreatingConversation ||
+    !isWebSocketConnected ||
+    !shouldUsePlanningAgent;
+
+  // Handle Shift + Tab keyboard shortcut to cycle through modes
+  useEffect(() => {
+    if (isButtonDisabled) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Shift + Tab combination
+      if (event.shiftKey && event.key === "Tab") {
+        // Prevent default tab navigation behavior
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Cycle between modes: code -> plan -> code
+        const nextMode = conversationMode === "code" ? "plan" : "code";
+        if (nextMode === "plan") {
+          handlePlanClick(event);
+        } else {
+          setConversationMode(nextMode);
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    isButtonDisabled,
+    conversationMode,
+    setConversationMode,
+    handlePlanClick,
+  ]);
 
   const handleButtonClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -47,12 +146,6 @@ export function ChangeAgentButton() {
     event.preventDefault();
     event.stopPropagation();
     setConversationMode("code");
-  };
-
-  const handlePlanClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setConversationMode("plan");
   };
 
   const isExecutionAgent = conversationMode === "code";
@@ -80,11 +173,11 @@ export function ChangeAgentButton() {
       <button
         type="button"
         onClick={handleButtonClick}
-        disabled={isAgentRunning}
+        disabled={isButtonDisabled}
         className={cn(
           "flex items-center border border-[#4B505F] rounded-[100px] transition-opacity",
           !isExecutionAgent && "border-[#597FF4] bg-[#4A67BD]",
-          isAgentRunning
+          isButtonDisabled
             ? "opacity-50 cursor-not-allowed"
             : "cursor-pointer hover:opacity-80",
         )}
