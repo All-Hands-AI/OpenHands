@@ -58,7 +58,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
 
         if self.send_summary_instruction:
-            return self._request_summary(
+            return await self._request_summary(
                 conversation_id,
                 callback,
                 event
