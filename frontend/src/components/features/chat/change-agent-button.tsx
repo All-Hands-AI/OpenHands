@@ -25,6 +25,8 @@ export function ChangeAgentButton() {
     setConversationMode,
     setSubConversationTaskId,
     subConversationTaskId,
+    isCreateAPlanClicked,
+    setIsCreateAPlanClicked,
   } = useConversationStore();
 
   const webSocketStatus = useUnifiedWebSocketStatus();
@@ -57,10 +59,10 @@ export function ChangeAgentButton() {
   }, [isAgentRunning, contextMenuOpen, isWebSocketConnected]);
 
   const handlePlanClick = (
-    event: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
+    event?: React.MouseEvent<HTMLButtonElement> | KeyboardEvent,
   ) => {
-    event.preventDefault();
-    event.stopPropagation();
+    event?.preventDefault();
+    event?.stopPropagation();
 
     // Set conversation mode to "plan" immediately
     setConversationMode("plan");
@@ -94,6 +96,15 @@ export function ChangeAgentButton() {
       },
     );
   };
+
+  // Trigger handlePlanClick when isCreateAPlanClicked becomes true
+  useEffect(() => {
+    if (isCreateAPlanClicked) {
+      handlePlanClick();
+      // Reset the flag after triggering
+      setIsCreateAPlanClicked(false);
+    }
+  }, [isCreateAPlanClicked, setIsCreateAPlanClicked, handlePlanClick]);
 
   const isButtonDisabled =
     isAgentRunning ||
