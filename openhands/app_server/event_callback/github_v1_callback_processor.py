@@ -45,6 +45,8 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         event: Event,
     ) -> EventCallbackResult | None:
         """Process events for GitHub V1 integration."""
+
+        _logger.info(f'[GitHub V1] Callback invoked')
         if not isinstance(event, ConversationStateUpdateEvent):
             return None
 
@@ -56,11 +58,13 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
 
         if self.send_summary_instruction:
-            summary = self._request_summary(
+            return self._request_summary(
                 conversation_id,
                 callback,
                 event
             )
+
+        return None
 
 
     def _get_installation_access_token(
