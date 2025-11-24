@@ -15,6 +15,7 @@ class AzureDevOpsMixinBase(BaseGitService, HTTPClient):
     """Declares common attributes and method signatures used across Azure DevOps mixins."""
 
     organization: str
+    project: str = ''
 
     @property
     @abstractmethod

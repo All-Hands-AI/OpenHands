@@ -61,6 +61,7 @@ class AzureDevOpsServiceImpl(
     token: SecretStr = SecretStr('')
     refresh = False
     organization: str = ''
+    project: str = ''
 
     def __init__(
         self,
@@ -92,6 +93,9 @@ class AzureDevOpsServiceImpl(
             parts = domain_path.split('/')
             if len(parts) >= 1:
                 self.organization = parts[0]
+
+            if len(parts) >= 2:
+                self.project = parts[1]  # dev.azure.com/org/project -> project
 
     async def get_installations(self) -> list[str]:
         """Get Azure DevOps organizations.
