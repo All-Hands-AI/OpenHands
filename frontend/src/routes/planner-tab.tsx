@@ -23,7 +23,7 @@ function PlannerTab() {
 
   const { planContent, setConversationMode } = useConversationStore();
 
-  if (planContent) {
+  if (planContent !== null && planContent !== undefined) {
     return (
       <div className="flex flex-col w-full h-full p-4 overflow-auto">
         <Markdown

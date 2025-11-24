@@ -5,7 +5,8 @@ type EventType =
   | "ExecuteBash"
   | "FileEditor"
   | "StrReplaceEditor"
-  | "TaskTracker";
+  | "TaskTracker"
+  | "PlanningFileEditor";
 
 type ActionOnlyType =
   | "BrowserNavigate"
