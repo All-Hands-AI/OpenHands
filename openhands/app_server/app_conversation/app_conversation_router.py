@@ -383,7 +383,7 @@ async def read_conversation_file(
             # Read the content from the temporary file
             with open(temp_file_path, 'rb') as f:
                 content = f.read()
-            # Decode bytes to string, assuming UTF-8 encoding
+            # Decode bytes to string
             return content.decode('utf-8')
     except Exception:
         # If there's any error reading the file, return empty string
