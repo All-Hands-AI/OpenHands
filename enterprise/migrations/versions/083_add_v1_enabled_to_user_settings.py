@@ -1,7 +1,7 @@
 """Add v1_enabled column to user_settings
 
-Revision ID: 082
-Revises: 081
+Revision ID: 083
+Revises: 082
 Create Date: 2025-11-18 00:00:00.000000
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '082'
-down_revision: Union[str, None] = '081'
+revision: str = '083'
+down_revision: Union[str, None] = '082'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
