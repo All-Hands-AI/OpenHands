@@ -43,6 +43,10 @@ def get_default_sandbox_specs():
                 'OH_CONVERSATIONS_PATH': '/workspace/conversations',
                 'OH_BASH_EVENTS_DIR': '/workspace/bash_events',
                 'PYTHONUNBUFFERED': '1',
+                # Setting this to true causes logs in the container to break -
+                # After the initial logs, it just stops.
+                "LOG_AUTO_CONFIG": "0",
+                "ENV_LOG_LEVEL": "20",
             },
             working_dir='/workspace/project',
         )
