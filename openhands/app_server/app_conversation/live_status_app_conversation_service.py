@@ -78,7 +78,6 @@ from openhands.tools.preset.planning import get_planning_agent
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
-GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
@@ -529,6 +528,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         # Set up a secret for the git token
         secrets = await self.user_context.get_secrets()
         if git_provider:
+            secret_name = f'{git_provider.name}_TOKEN'
             if self.web_url:
                 # If there is a web url, then we create an access token to access it.
                 # For security reasons, we are explicit here - only this user, and
@@ -540,7 +540,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                     },
                     expires_in=self.access_token_hard_timeout,
                 )
-                secrets[GIT_TOKEN] = LookupSecret(
+                secrets[secret_name] = LookupSecret(
                     url=self.web_url + '/api/v1/webhooks/secrets',
                     headers={'X-Access-Token': access_token},
                 )
@@ -550,7 +550,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 # on the type, this may eventually expire.
                 static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
-                    secrets[GIT_TOKEN] = StaticSecret(value=static_token)
+                    secrets[secret_name] = StaticSecret(value=static_token)
 
         workspace = LocalWorkspace(working_dir=working_dir)
 
