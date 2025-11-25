@@ -1,8 +1,10 @@
 import json
+import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from types import MappingProxyType
 from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
 
 import pytest
 from fastapi import FastAPI
@@ -10,8 +12,22 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 
 from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversation,
     AppConversationPage,
 )
+from openhands.app_server.app_conversation.live_status_app_conversation_service import (
+    LiveStatusAppConversationService,
+)
+from openhands.app_server.app_conversation.sql_app_conversation_info_service import (
+    SQLAppConversationInfoService,
+)
+from openhands.app_server.sandbox.sandbox_models import (
+    AGENT_SERVER,
+    ExposedUrl,
+    SandboxInfo,
+    SandboxStatus,
+)
+from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.service_types import (
     AuthenticationError,
     CreateMicroagent,
@@ -20,6 +36,7 @@ from openhands.integrations.service_types import (
     TaskType,
 )
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.sdk.conversation.state import ConversationExecutionStatus
 from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
@@ -2039,3 +2056,422 @@ async def test_search_conversations_multiple_with_pr_numbers():
                     # Check third conversation
                     assert result_set.results[2].conversation_id == 'conversation_3'
                     assert result_set.results[2].pr_number == [300]
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_with_sub_conversations():
+    """Test V1 conversation deletion cascades to delete all sub-conversations."""
+    parent_uuid = uuid4()
+    str(parent_uuid)
+    sub1_uuid = uuid4()
+    sub2_uuid = uuid4()
+
+    # Create a real service instance to test the cascade deletion logic
+    mock_info_service = MagicMock(spec=SQLAppConversationInfoService)
+    mock_start_task_service = MagicMock()
+    mock_sandbox_service = MagicMock()
+    mock_httpx_client = MagicMock()
+
+    # Mock parent conversation
+    parent_conversation = AppConversation(
+        id=parent_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Parent Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sub-conversations
+    sub1_conversation = AppConversation(
+        id=sub1_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',  # Same sandbox as parent
+        title='Sub Conversation 1',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key-sub1',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    sub2_conversation = AppConversation(
+        id=sub2_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',  # Same sandbox as parent
+        title='Sub Conversation 2',
+        sandbox_status=SandboxStatus.PAUSED,
+        execution_status=None,
+        session_api_key=None,
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock get_app_conversation to return conversations
+    async def mock_get_app_conversation(conv_id):
+        if conv_id == parent_uuid:
+            return parent_conversation
+        elif conv_id == sub1_uuid:
+            return sub1_conversation
+        elif conv_id == sub2_uuid:
+            return sub2_conversation
+        return None
+
+    # Mock get_sub_conversation_ids to return sub-conversation IDs
+    mock_info_service.get_sub_conversation_ids = AsyncMock(
+        return_value=[sub1_uuid, sub2_uuid]
+    )
+
+    # Mock delete methods
+    mock_info_service.delete_app_conversation_info = AsyncMock(return_value=True)
+    mock_start_task_service.delete_app_conversation_start_tasks = AsyncMock(
+        return_value=True
+    )
+
+    # Mock sandbox service - use actual SandboxInfo model
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    # Mock httpx client for agent server calls
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_httpx_client.delete = AsyncMock(return_value=mock_response)
+
+    # Create service instance
+    mock_user_context = MagicMock(spec=UserContext)
+    mock_user_context.get_user_id = AsyncMock(return_value='test_user')
+
+    service = LiveStatusAppConversationService(
+        init_git_in_empty_workspace=True,
+        user_context=mock_user_context,
+        app_conversation_info_service=mock_info_service,
+        app_conversation_start_task_service=mock_start_task_service,
+        event_callback_service=MagicMock(),
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=MagicMock(),
+        jwt_service=MagicMock(),
+        sandbox_startup_timeout=120,
+        sandbox_startup_poll_frequency=2,
+        httpx_client=mock_httpx_client,
+        web_url=None,
+        access_token_hard_timeout=None,
+    )
+
+    # Mock get_app_conversation method
+    service.get_app_conversation = mock_get_app_conversation
+
+    # Execute deletion
+    result = await service.delete_app_conversation(parent_uuid)
+
+    # Verify result
+    assert result is True
+
+    # Verify get_sub_conversation_ids was called with parent ID
+    mock_info_service.get_sub_conversation_ids.assert_called_once_with(parent_uuid)
+
+    # Verify sub-conversations were deleted (from database)
+    assert (
+        mock_info_service.delete_app_conversation_info.call_count == 3
+    )  # 2 subs + 1 parent
+    delete_calls = [
+        call_args[0][0]
+        for call_args in mock_info_service.delete_app_conversation_info.call_args_list
+    ]
+    assert sub1_uuid in delete_calls
+    assert sub2_uuid in delete_calls
+    assert parent_uuid in delete_calls
+
+    # Verify sub-conversation start tasks were deleted
+    assert mock_start_task_service.delete_app_conversation_start_tasks.call_count == 3
+    task_delete_calls = [
+        call_args[0][0]
+        for call_args in mock_start_task_service.delete_app_conversation_start_tasks.call_args_list
+    ]
+    assert sub1_uuid in task_delete_calls
+    assert sub2_uuid in task_delete_calls
+    assert parent_uuid in task_delete_calls
+
+    # Verify agent server was called for running sub-conversations
+    # sub1 has session_api_key and is running, so it should be deleted from agent server
+    # sub2 is paused (no session_api_key), so no agent server call
+    # parent is running, so it should be deleted from agent server
+    assert mock_httpx_client.delete.call_count == 2  # sub1 + parent
+    delete_urls = [
+        call_args[0][0] for call_args in mock_httpx_client.delete.call_args_list
+    ]
+    # The URL format is: http://agent:8000/api/conversations/{uuid}
+    # UUID is converted to string in the URL
+    assert any(f'/api/conversations/{sub1_uuid}' in url for url in delete_urls)
+    assert any(f'/api/conversations/{parent_uuid}' in url for url in delete_urls)
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_with_no_sub_conversations():
+    """Test V1 conversation deletion when there are no sub-conversations."""
+    parent_uuid = uuid4()
+
+    # Create a real service instance
+    mock_info_service = MagicMock(spec=SQLAppConversationInfoService)
+    mock_start_task_service = MagicMock()
+    mock_sandbox_service = MagicMock()
+    mock_httpx_client = MagicMock()
+
+    # Mock parent conversation
+    parent_conversation = AppConversation(
+        id=parent_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Parent Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock no sub-conversations
+    mock_info_service.get_sub_conversation_ids = AsyncMock(return_value=[])
+    mock_info_service.delete_app_conversation_info = AsyncMock(return_value=True)
+    mock_start_task_service.delete_app_conversation_start_tasks = AsyncMock(
+        return_value=True
+    )
+
+    # Mock sandbox service - use actual SandboxInfo model
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    # Mock httpx client
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_httpx_client.delete = AsyncMock(return_value=mock_response)
+
+    # Create service instance
+    mock_user_context = MagicMock(spec=UserContext)
+    mock_user_context.get_user_id = AsyncMock(return_value='test_user')
+
+    service = LiveStatusAppConversationService(
+        init_git_in_empty_workspace=True,
+        user_context=mock_user_context,
+        app_conversation_info_service=mock_info_service,
+        app_conversation_start_task_service=mock_start_task_service,
+        event_callback_service=MagicMock(),
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=MagicMock(),
+        jwt_service=MagicMock(),
+        sandbox_startup_timeout=120,
+        sandbox_startup_poll_frequency=2,
+        httpx_client=mock_httpx_client,
+        web_url=None,
+        access_token_hard_timeout=None,
+    )
+
+    # Mock get_app_conversation method
+    service.get_app_conversation = AsyncMock(return_value=parent_conversation)
+
+    # Execute deletion
+    result = await service.delete_app_conversation(parent_uuid)
+
+    # Verify result
+    assert result is True
+
+    # Verify get_sub_conversation_ids was called
+    mock_info_service.get_sub_conversation_ids.assert_called_once_with(parent_uuid)
+
+    # Verify only parent was deleted
+    mock_info_service.delete_app_conversation_info.assert_called_once_with(parent_uuid)
+    mock_start_task_service.delete_app_conversation_start_tasks.assert_called_once_with(
+        parent_uuid
+    )
+
+    # Verify agent server was called for parent
+    mock_httpx_client.delete.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_delete_v1_conversation_sub_conversation_deletion_error():
+    """Test that deletion continues even if one sub-conversation fails to delete."""
+    parent_uuid = uuid4()
+    sub1_uuid = uuid4()
+    sub2_uuid = uuid4()
+
+    # Create a real service instance
+    mock_info_service = MagicMock(spec=SQLAppConversationInfoService)
+    mock_start_task_service = MagicMock()
+    mock_sandbox_service = MagicMock()
+    mock_httpx_client = MagicMock()
+
+    # Mock parent conversation
+    parent_conversation = AppConversation(
+        id=parent_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Parent Conversation',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock sub-conversations
+    AppConversation(
+        id=sub1_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Sub Conversation 1',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key-sub1',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    sub2_conversation = AppConversation(
+        id=sub2_uuid,
+        created_by_user_id='test_user',
+        sandbox_id='test-sandbox-id',
+        title='Sub Conversation 2',
+        sandbox_status=SandboxStatus.RUNNING,
+        execution_status=ConversationExecutionStatus.RUNNING,
+        session_api_key='test-api-key-sub2',
+        selected_repository='test/repo',
+        selected_branch='main',
+        git_provider=ProviderType.GITHUB,
+        trigger=ConversationTrigger.GUI,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+
+    # Mock get_sub_conversation_ids
+    mock_info_service.get_sub_conversation_ids = AsyncMock(
+        return_value=[sub1_uuid, sub2_uuid]
+    )
+
+    # Mock get_app_conversation to raise error for sub1, but work for sub2
+    async def mock_get_app_conversation(conv_id):
+        if conv_id == parent_uuid:
+            return parent_conversation
+        elif conv_id == sub1_uuid:
+            raise Exception('Failed to get sub-conversation 1')
+        elif conv_id == sub2_uuid:
+            return sub2_conversation
+        return None
+
+    # Mock delete methods - sub1 will fail, sub2 and parent should succeed
+    def mock_delete_info(conv_id: uuid.UUID):
+        if conv_id == sub1_uuid:
+            raise Exception('Failed to delete sub-conversation 1')
+        return True
+
+    mock_info_service.delete_app_conversation_info = AsyncMock(
+        side_effect=mock_delete_info
+    )
+    mock_start_task_service.delete_app_conversation_start_tasks = AsyncMock(
+        return_value=True
+    )
+
+    # Mock sandbox service - use actual SandboxInfo model
+    mock_sandbox = SandboxInfo(
+        id='test-sandbox-id',
+        created_by_user_id='test_user',
+        sandbox_spec_id='test-spec-id',
+        status=SandboxStatus.RUNNING,
+        session_api_key='test-api-key',
+        exposed_urls=[
+            ExposedUrl(name=AGENT_SERVER, url='http://agent:8000', port=8000)
+        ],
+    )
+    mock_sandbox_service.get_sandbox = AsyncMock(return_value=mock_sandbox)
+
+    # Mock httpx client
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock()
+    mock_httpx_client.delete = AsyncMock(return_value=mock_response)
+
+    # Create service instance
+    mock_user_context = MagicMock(spec=UserContext)
+    mock_user_context.get_user_id = AsyncMock(return_value='test_user')
+
+    service = LiveStatusAppConversationService(
+        init_git_in_empty_workspace=True,
+        user_context=mock_user_context,
+        app_conversation_info_service=mock_info_service,
+        app_conversation_start_task_service=mock_start_task_service,
+        event_callback_service=MagicMock(),
+        sandbox_service=mock_sandbox_service,
+        sandbox_spec_service=MagicMock(),
+        jwt_service=MagicMock(),
+        sandbox_startup_timeout=120,
+        sandbox_startup_poll_frequency=2,
+        httpx_client=mock_httpx_client,
+        web_url=None,
+        access_token_hard_timeout=None,
+    )
+
+    # Mock get_app_conversation method
+    service.get_app_conversation = mock_get_app_conversation
+
+    # Execute deletion - should succeed despite sub1 failure
+    result = await service.delete_app_conversation(parent_uuid)
+
+    # Verify result - should still succeed
+    assert result is True
+
+    # Verify get_sub_conversation_ids was called
+    mock_info_service.get_sub_conversation_ids.assert_called_once_with(parent_uuid)
+
+    # Verify sub2 and parent were deleted (sub1 failed but didn't stop the process)
+    # The delete_app_conversation_info should be called for sub2 and parent
+    # (sub1 fails in get_app_conversation, so it never gets to delete)
+    delete_calls = [
+        call_args[0][0]
+        for call_args in mock_info_service.delete_app_conversation_info.call_args_list
+    ]
+    assert sub2_uuid in delete_calls
+    assert parent_uuid in delete_calls
+    assert sub1_uuid not in delete_calls  # Failed before deletion
