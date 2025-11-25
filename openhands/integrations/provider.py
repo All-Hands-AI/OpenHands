@@ -10,6 +10,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    PlainValidator,
     SecretStr,
     WithJsonSchema,
 )
@@ -97,12 +98,22 @@ class CustomSecret(BaseModel):
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
+
+
+# Custom validator that accepts the MappingProxyType as-is
+def _validate_mapping_proxy(value: Any) -> Any:
+    """Validator that passes through MappingProxyType values unchanged."""
+    return value
+
+
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
+    PlainValidator(_validate_mapping_proxy),
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
 CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
     CUSTOM_SECRETS_TYPE,
+    PlainValidator(_validate_mapping_proxy),
     WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
 ]
 

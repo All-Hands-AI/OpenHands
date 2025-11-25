@@ -45,8 +45,8 @@ def get_default_sandbox_specs():
                 'PYTHONUNBUFFERED': '1',
                 # Setting this to true causes logs in the container to break -
                 # After the initial logs, it just stops.
-                "LOG_AUTO_CONFIG": "0",
-                "ENV_LOG_LEVEL": "20",
+                'LOG_AUTO_CONFIG': '0',
+                'ENV_LOG_LEVEL': '20',
             },
             working_dir='/workspace/project',
         )
