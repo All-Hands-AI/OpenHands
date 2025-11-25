@@ -323,21 +323,20 @@ class GithubManager(Manager):
                 from openhands.server.shared import config, ConversationStoreImpl
                 conversation_store = await ConversationStoreImpl.get_instance(config, github_view.user_info.keycloak_user_id)
                 metadata = await conversation_store.get_metadata(conversation_id)
-                print("does metadata exist", metadata)
 
+                if metadata.conversation_version != 'v1':
+                    # Create a GithubCallbackProcessor
+                    processor = GithubCallbackProcessor(
+                        github_view=github_view,
+                        send_summary_instruction=True,
+                    )
 
-                # Create a GithubCallbackProcessor
-                # processor = GithubCallbackProcessor(
-                #     github_view=github_view,
-                #     send_summary_instruction=True,
-                # )
+                    # Register the callback processor
+                    register_callback_processor(conversation_id, processor)
 
-                # Register the callback processor
-                # register_callback_processor(conversation_id, processor)
-
-                # logger.info(
-                #     f'[Github] Registered callback processor for conversation {conversation_id}'
-                # )
+                    logger.info(
+                        f'[Github] Registered callback processor for conversation {conversation_id}'
+                    )
 
                 # Send message with conversation link
                 conversation_link = CONVERSATION_URL.format(conversation_id)

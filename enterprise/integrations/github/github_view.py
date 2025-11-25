@@ -330,19 +330,9 @@ class GithubIssue(ResolverViewInterface):
 
         async with get_app_conversation_service(injector_state) as app_conversation_service:
             async for task in app_conversation_service.start_app_conversation(start_request):
-                # if task.status == AppConversationStartTaskStatus.READY:
-                #     # Update our conversation_id to the V1 conversation ID
-                #     self.conversation_id = str(task.app_conversation_id)
-                logger.info(f"V1 conversation started with ID: {self.conversation_id}:")
-                logger.info(f"V1 conversation start status: {task.status} - {task.detail}")
-                logger.info(f"Reported ID from app server: {task.app_conversation_id}")
-                #     break
-                # elif task.status == AppConversationStartTaskStatus.ERROR:
-                #     logger.error(f"Failed to start V1 conversation: {task.detail}")
-                #     raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
-                # else:
-
-                #     # Continue waiting for the conversation to be ready
+                if task.status == AppConversationStartTaskStatus.ERROR:
+                    logger.error(f"Failed to start V1 conversation: {task.detail}")
+                    raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
 
     def _create_github_v1_callback_processor(self):
         """Create a V1 callback processor for GitHub integration."""

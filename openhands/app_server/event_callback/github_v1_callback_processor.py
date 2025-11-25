@@ -114,6 +114,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         """Post a summary comment to the configured GitHub issue."""
         installation_token = self._get_installation_access_token()
 
+        if not installation_token:
+            raise RuntimeError("Missing GitHub credentials")
+
         full_repo_name = self.github_view_data["full_repo_name"]
         issue_number = self.github_view_data["issue_number"]
 
@@ -125,6 +128,15 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     # -------------------------------------------------------------------------
     # Agent / sandbox helpers
     # -------------------------------------------------------------------------
+
+    def _get_summary_instruction(self) -> str:
+        from jinja2 import Environment, FileSystemLoader
+
+        jinja_env = Environment(loader=FileSystemLoader('openhands/integrations/templates/resolver/'))
+        summary_instruction_template = jinja_env.get_template('summary_prompt.j2')
+        summary_instruction = summary_instruction_template.render()
+        return summary_instruction
+
 
     def _get_agent_server_url(self, sandbox) -> str:
         """Get agent server URL for a running sandbox."""
@@ -275,10 +287,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             agent_server_url = self._get_agent_server_url(sandbox)
 
             # Prepare message based on agent state
-            message_content = (
-                "Please summarize your work. "
-                "Give a concise 2-3 sentence description."
-            )
+            message_content = self._get_summary_instruction()
 
             # Ask the agent and return the response text
             return await self._ask_question(
