@@ -174,7 +174,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
             response.raise_for_status()
 
-            agent_response = AskAgentReponse.model_validate(response.json())
+            agent_response = AskAgentResponse.model_validate(response.json())
             return agent_response.response
 
         except httpx.HTTPStatusError as e:
