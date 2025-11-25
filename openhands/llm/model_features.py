@@ -69,6 +69,8 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'claude-3.5-haiku*',
     'claude-3-5-haiku*',
     'claude-sonnet-4*',
+    'anthropic.claude-sonnet-4*',
+    'us.anthropic.claude-sonnet-4*',
     'claude-opus-4*',
     # OpenAI families
     'gpt-4o*',
@@ -117,6 +119,8 @@ PROMPT_CACHE_PATTERNS: list[str] = [
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
     'claude-sonnet-4*',
+    'anthropic.claude-sonnet-4*',
+    'us.anthropic.claude-sonnet-4*',
     'claude-opus-4*',
 ]
 
