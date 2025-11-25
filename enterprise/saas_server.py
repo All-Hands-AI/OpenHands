@@ -10,7 +10,6 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
 from server.auth.auth_error import ExpiredError, NoCredentialsError  # noqa: E402
 from server.auth.constants import (  # noqa: E402
-    ENABLE_AZURE_DEVOPS,
     ENABLE_JIRA,
     ENABLE_JIRA_DC,
     ENABLE_LINEAR,
