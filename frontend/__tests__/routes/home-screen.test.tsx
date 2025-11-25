@@ -404,6 +404,7 @@ describe("Settings 404", () => {
         ENABLE_JIRA: false,
         ENABLE_JIRA_DC: false,
         ENABLE_LINEAR: false,
+        ENABLE_AZURE_DEVOPS: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
@@ -429,6 +430,7 @@ describe("Setup Payment modal", () => {
         ENABLE_JIRA: false,
         ENABLE_JIRA_DC: false,
         ENABLE_LINEAR: false,
+        ENABLE_AZURE_DEVOPS: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
