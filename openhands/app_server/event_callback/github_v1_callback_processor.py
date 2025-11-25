@@ -46,12 +46,12 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             return None
 
         # Only act when execution has finished
-        if not (event.key == "execution_status" and event.value == "finished"):
+        if not (event.key == 'execution_status' and event.value == 'finished'):
             return None
 
-        _logger.info("[GitHub V1] Callback agent state was %s", event)
+        _logger.info('[GitHub V1] Callback agent state was %s', event)
         _logger.info(
-            "[GitHub V1] Should request summary: %s", self.should_request_summary
+            '[GitHub V1] Should request summary: %s', self.should_request_summary
         )
 
         if not self.should_request_summary:
@@ -62,7 +62,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         try:
             # _request_summary now returns a string (agent response text)
             summary = await self._request_summary(conversation_id)
-            print("work summarized\n\n", summary)
+            print('work summarized\n\n', summary)
 
             await self._post_summary_to_github(summary)
 
@@ -74,7 +74,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 detail=summary,
             )
         except Exception as exc:  # noqa: BLE001
-            _logger.exception("[GitHub V1] Error processing callback: %s", exc)
+            _logger.exception('[GitHub V1] Error processing callback: %s', exc)
             return EventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
@@ -88,20 +88,20 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     # -------------------------------------------------------------------------
 
     def _get_installation_access_token(self) -> str:
-        installation_id = self.github_view_data.get("installation_id")
+        installation_id = self.github_view_data.get('installation_id')
 
         if not installation_id:
             raise ValueError(
-                f"Missing installation ID for GitHub payload: {self.github_view_data}"
+                f'Missing installation ID for GitHub payload: {self.github_view_data}'
             )
 
-        github_app_client_id = os.getenv("GITHUB_APP_CLIENT_ID", "").strip()
-        github_app_private_key = os.getenv("GITHUB_APP_PRIVATE_KEY", "").replace(
-            "\\n", "\n"
+        github_app_client_id = os.getenv('GITHUB_APP_CLIENT_ID', '').strip()
+        github_app_private_key = os.getenv('GITHUB_APP_PRIVATE_KEY', '').replace(
+            '\\n', '\n'
         )
 
         if not github_app_client_id or not github_app_private_key:
-            raise ValueError("GitHub App credentials are not configured")
+            raise ValueError('GitHub App credentials are not configured')
 
         github_integration = GithubIntegration(
             github_app_client_id,
@@ -115,10 +115,10 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         installation_token = self._get_installation_access_token()
 
         if not installation_token:
-            raise RuntimeError("Missing GitHub credentials")
+            raise RuntimeError('Missing GitHub credentials')
 
-        full_repo_name = self.github_view_data["full_repo_name"]
-        issue_number = self.github_view_data["issue_number"]
+        full_repo_name = self.github_view_data['full_repo_name']
+        issue_number = self.github_view_data['issue_number']
 
         with Github(installation_token) as github_client:
             repo = github_client.get_repo(full_repo_name)
@@ -132,19 +132,18 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     def _get_summary_instruction(self) -> str:
         from jinja2 import Environment, FileSystemLoader
 
-        jinja_env = Environment(loader=FileSystemLoader('openhands/integrations/templates/resolver/'))
+        jinja_env = Environment(
+            loader=FileSystemLoader('openhands/integrations/templates/resolver/')
+        )
         summary_instruction_template = jinja_env.get_template('summary_prompt.j2')
         summary_instruction = summary_instruction_template.render()
         return summary_instruction
-
 
     def _get_agent_server_url(self, sandbox) -> str:
         """Get agent server URL for a running sandbox."""
         exposed_urls = sandbox.exposed_urls
         if not exposed_urls:
-            raise RuntimeError(
-                f"No exposed URLs configured for sandbox {sandbox.id!r}"
-            )
+            raise RuntimeError(f'No exposed URLs configured for sandbox {sandbox.id!r}')
 
         try:
             agent_server_url = next(
@@ -154,7 +153,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
         except StopIteration:
             raise RuntimeError(
-                f"No {AGENT_SERVER!r} URL found for sandbox {sandbox.id!r}"
+                f'No {AGENT_SERVER!r} URL found for sandbox {sandbox.id!r}'
             ) from None
 
         return replace_localhost_hostname_for_docker(agent_server_url)
@@ -171,10 +170,10 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         send_message_request = AskAgentRequest(question=message_content)
 
         url = (
-            f"{agent_server_url.rstrip('/')}"
-            f"/api/conversations/{conversation_id}/ask_agent"
+            f'{agent_server_url.rstrip("/")}'
+            f'/api/conversations/{conversation_id}/ask_agent'
         )
-        headers = {"X-Session-API-Key": session_api_key}
+        headers = {'X-Session-API-Key': session_api_key}
         payload = send_message_request.model_dump()
 
         try:
@@ -190,17 +189,17 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             return agent_response.response
 
         except httpx.HTTPStatusError as e:
-            error_detail = f"HTTP {e.response.status_code} error"
+            error_detail = f'HTTP {e.response.status_code} error'
             try:
                 error_body = e.response.text
                 if error_body:
-                    error_detail += f": {error_body}"
+                    error_detail += f': {error_body}'
             except Exception:  # noqa: BLE001
                 pass
 
             _logger.error(
-                "[GitHub V1] HTTP error sending message to %s: %s. "
-                "Request payload: %s. Response headers: %s",
+                '[GitHub V1] HTTP error sending message to %s: %s. '
+                'Request payload: %s. Response headers: %s',
                 url,
                 error_detail,
                 payload,
@@ -208,22 +207,28 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 exc_info=True,
             )
             raise httpx.HTTPStatusError(
-                f"Failed to send message to agent server: {error_detail}",
+                f'Failed to send message to agent server: {error_detail}',
                 request=e.request,
                 response=e.response,
             ) from e
 
         except httpx.TimeoutException as e:
-            error_detail = f"Request timeout after 30 seconds to {url}"
+            error_detail = f'Request timeout after 30 seconds to {url}'
             _logger.error(
-                "[GitHub V1] %s. Request payload: %s", error_detail, payload, exc_info=True
+                '[GitHub V1] %s. Request payload: %s',
+                error_detail,
+                payload,
+                exc_info=True,
             )
             raise httpx.TimeoutException(error_detail) from e
 
         except httpx.RequestError as e:
-            error_detail = f"Request error to {url}: {str(e)}"
+            error_detail = f'Request error to {url}: {str(e)}'
             _logger.error(
-                "[GitHub V1] %s. Request payload: %s", error_detail, payload, exc_info=True
+                '[GitHub V1] %s. Request payload: %s',
+                error_detail,
+                payload,
+                exc_info=True,
             )
             raise httpx.RequestError(error_detail) from e
 
@@ -267,7 +272,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 )
             )
             if not app_conversation_info:
-                raise RuntimeError(f"Conversation not found: {conversation_id}")
+                raise RuntimeError(f'Conversation not found: {conversation_id}')
 
             # Get sandbox info to find agent server URL
             sandbox = await sandbox_service.get_sandbox(
@@ -275,13 +280,11 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
             if not sandbox or sandbox.status != SandboxStatus.RUNNING:
                 raise RuntimeError(
-                    f"Sandbox not running: {app_conversation_info.sandbox_id}"
+                    f'Sandbox not running: {app_conversation_info.sandbox_id}'
                 )
 
             if not sandbox.session_api_key:
-                raise RuntimeError(
-                    f"No session API key for sandbox: {sandbox.id}"
-                )
+                raise RuntimeError(f'No session API key for sandbox: {sandbox.id}')
 
             # Get agent server URL
             agent_server_url = self._get_agent_server_url(sandbox)
