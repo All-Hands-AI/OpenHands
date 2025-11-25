@@ -2,7 +2,6 @@ from uuid import UUID, uuid4
 
 from github import Github, GithubIntegration
 from github.Issue import Issue
-from openhands.sdk import TextContent
 from integrations.github.github_types import (
     WorkflowRun,
     WorkflowRunGroup,
@@ -30,7 +29,6 @@ from storage.saas_settings_store import SaasSettingsStore
 from openhands.agent_server.models import SendMessageRequest
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationStartRequest,
-    AppConversationStartTask,
     AppConversationStartTaskStatus,
 )
 from openhands.app_server.config import get_app_conversation_service
@@ -38,13 +36,12 @@ from openhands.app_server.services.injector import InjectorState
 from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
 from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.user.user_models import UserInfo
-from openhands.integrations.provider import ProviderType
-from openhands.sdk.conversation.secret_source import SecretSource
-from openhands.storage.data_models.settings import Settings
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.github_service import GithubServiceImpl
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
 from openhands.integrations.service_types import Comment
+from openhands.sdk import TextContent
+from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.server.services.conversation_service import (
     initialize_conversation,
     start_conversation,
@@ -71,9 +68,7 @@ class GithubUserContext(UserContext):
         )
 
         self.secrets_store = SaasSecretsStore(
-            self.keycloak_user_id,
-            session_maker,
-            get_config()
+            self.keycloak_user_id, session_maker, get_config()
         )
 
     async def get_user_id(self) -> str | None:
@@ -81,16 +76,21 @@ class GithubUserContext(UserContext):
 
     async def get_user_info(self) -> UserInfo:
         user_settings = await self.settings_store.load()
-        print("model_api_key_set", user_settings.llm_api_key.get_secret_value()[0:3] if user_settings.llm_api_key else 'no api key set')
+        print(
+            'model_api_key_set',
+            user_settings.llm_api_key.get_secret_value()[0:3]
+            if user_settings.llm_api_key
+            else 'no api key set',
+        )
         return UserInfo(
             id=self.keycloak_user_id,
-            **user_settings.model_dump(context={"expose_secrets": True})
+            **user_settings.model_dump(context={'expose_secrets': True}),
         )
 
     async def get_authenticated_git_url(self, repository: str) -> str:
         # This would need to be implemented based on the git provider tokens
         # For now, return a basic HTTPS URL
-        return f"https://github.com/{repository}.git"
+        return f'https://github.com/{repository}.git'
 
     async def get_latest_token(self, provider_type: ProviderType) -> str | None:
         # Return the appropriate token from git_provider_tokens
@@ -254,10 +254,14 @@ class GithubIssue(ResolverViewInterface):
 
         if v1_enabled:
             # Use V1 app conversation service
-            await self._create_v1_conversation(jinja_env, git_provider_tokens, conversation_metadata)
+            await self._create_v1_conversation(
+                jinja_env, git_provider_tokens, conversation_metadata
+            )
         else:
             # Use existing V0 conversation service
-            await self._create_v0_conversation(jinja_env, git_provider_tokens, conversation_metadata)
+            await self._create_v0_conversation(
+                jinja_env, git_provider_tokens, conversation_metadata
+            )
 
     async def _create_v0_conversation(
         self,
@@ -297,10 +301,7 @@ class GithubIssue(ResolverViewInterface):
 
         # Create the initial message request
         initial_message = SendMessageRequest(
-            role="user",
-            content=[
-                TextContent(text=user_instructions)
-            ]
+            role='user', content=[TextContent(text=user_instructions)]
         )
 
         # Create the GitHub V1 callback processor
@@ -316,23 +317,31 @@ class GithubIssue(ResolverViewInterface):
             initial_message=initial_message,
             selected_repository=self.full_repo_name,
             git_provider=ProviderType.GITHUB,
-            title=f"GitHub Issue #{self.issue_number}: {self.title}",
+            title=f'GitHub Issue #{self.issue_number}: {self.title}',
             trigger=ConversationTrigger.RESOLVER,
-            processors=[github_callback_processor],  # Pass the callback processor directly
+            processors=[
+                github_callback_processor
+            ],  # Pass the callback processor directly
         )
 
         # Set up the GitHub user context for the V1 system
         github_user_context = GithubUserContext(
             keycloak_user_id=self.user_info.keycloak_user_id,
-            git_provider_tokens=git_provider_tokens
+            git_provider_tokens=git_provider_tokens,
         )
         setattr(injector_state, USER_CONTEXT_ATTR, github_user_context)
 
-        async with get_app_conversation_service(injector_state) as app_conversation_service:
-            async for task in app_conversation_service.start_app_conversation(start_request):
+        async with get_app_conversation_service(
+            injector_state
+        ) as app_conversation_service:
+            async for task in app_conversation_service.start_app_conversation(
+                start_request
+            ):
                 if task.status == AppConversationStartTaskStatus.ERROR:
-                    logger.error(f"Failed to start V1 conversation: {task.detail}")
-                    raise RuntimeError(f"Failed to start V1 conversation: {task.detail}")
+                    logger.error(f'Failed to start V1 conversation: {task.detail}')
+                    raise RuntimeError(
+                        f'Failed to start V1 conversation: {task.detail}'
+                    )
 
     def _create_github_v1_callback_processor(self):
         """Create a V1 callback processor for GitHub integration."""

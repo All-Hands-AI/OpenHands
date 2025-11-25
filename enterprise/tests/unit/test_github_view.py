@@ -1,5 +1,5 @@
 from unittest import TestCase, mock
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from integrations.github.github_view import GithubFactory, GithubIssue, get_oh_labels
 from integrations.models import Message, SourceType
@@ -89,7 +89,7 @@ class TestGithubV1ConversationRouting(TestCase):
             issue_number=123,
             branch_name='main',
             installation_id=456,
-            conversation_id='test-conversation-id'
+            conversation_id='test-conversation-id',
         )
 
     @patch('integrations.github.github_view.get_user_v1_enabled_setting')
