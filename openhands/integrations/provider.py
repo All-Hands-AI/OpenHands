@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Mapping
 from types import MappingProxyType
-from typing import Any, Coroutine, Literal, cast, overload
+from typing import Annotated, Any, Coroutine, Literal, cast, overload
 from urllib.parse import quote
 
 import httpx
@@ -12,6 +11,7 @@ from pydantic import (
     ConfigDict,
     Field,
     SecretStr,
+    WithJsonSchema,
 )
 
 from openhands.core.logger import openhands_logger as logger
@@ -95,8 +95,16 @@ class CustomSecret(BaseModel):
             raise ValueError('Unsupport Provider token type')
 
 
-PROVIDER_TOKEN_TYPE = Mapping[ProviderType, ProviderToken]
-CUSTOM_SECRETS_TYPE = Mapping[str, CustomSecret]
+PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
+CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
+PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
+    PROVIDER_TOKEN_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
+CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
+    CUSTOM_SECRETS_TYPE,
+    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+]
 
 
 class ProviderHandler:

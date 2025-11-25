@@ -14,7 +14,9 @@ from pydantic.json import pydantic_encoder
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
+    CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
+    PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA,
     CustomSecret,
     ProviderToken,
 )
@@ -22,11 +24,11 @@ from openhands.integrations.service_types import ProviderType
 
 
 class Secrets(BaseModel):
-    provider_tokens: PROVIDER_TOKEN_TYPE = Field(
+    provider_tokens: PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
-    custom_secrets: CUSTOM_SECRETS_TYPE = Field(
+    custom_secrets: CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Field(
         default_factory=lambda: MappingProxyType({})
     )
 
