@@ -73,6 +73,7 @@ from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.server.types import AppMode
 from openhands.tools.preset.default import get_default_agent
 from openhands.tools.preset.planning import get_planning_agent
 
@@ -96,6 +97,8 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
     httpx_client: httpx.AsyncClient
     web_url: str | None
     access_token_hard_timeout: timedelta | None
+    app_mode: str | None = None
+    keycloak_auth_cookie: str | None = None
 
     async def search_app_conversations(
         self,
@@ -540,9 +543,15 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                     },
                     expires_in=self.access_token_hard_timeout,
                 )
+                headers = {'X-Access-Token': access_token}
+
+                # Include keycloak_auth cookie in headers if app_mode is SaaS
+                if self.app_mode == 'saas' and self.keycloak_auth_cookie:
+                    headers['Cookie'] = f'keycloak_auth={self.keycloak_auth_cookie}'
+
                 secrets[secret_name] = LookupSecret(
                     url=self.web_url + '/api/v1/webhooks/secrets',
-                    headers={'X-Access-Token': access_token},
+                    headers=headers,
                 )
             else:
                 # If there is no URL specified where the sandbox can access the app server
@@ -841,6 +850,21 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 if isinstance(sandbox_service, DockerSandboxService):
                     web_url = f'http://host.docker.internal:{sandbox_service.host_port}'
 
+            # Get app_mode and keycloak_auth cookie for SaaS mode
+            app_mode = None
+            keycloak_auth_cookie = None
+            try:
+                from openhands.server.shared import server_config
+
+                app_mode = (
+                    server_config.app_mode.value if server_config.app_mode else None
+                )
+                if request and server_config.app_mode == AppMode.SAAS:
+                    keycloak_auth_cookie = request.cookies.get('keycloak_auth')
+            except (ImportError, AttributeError):
+                # If server_config is not available (e.g., in tests), continue without it
+                pass
+
             yield LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_context=user_context,
@@ -855,4 +879,6 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 httpx_client=httpx_client,
                 web_url=web_url,
                 access_token_hard_timeout=access_token_hard_timeout,
+                app_mode=app_mode,
+                keycloak_auth_cookie=keycloak_auth_cookie,
             )
