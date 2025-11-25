@@ -7,7 +7,7 @@ import httpx
 from github import Github, GithubIntegration
 from pydantic import Field
 
-from openhands.agent_server.models import AskAgentRequest
+from openhands.agent_server.models import AskAgentRequest, AskAgentResponse
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackProcessor,
@@ -63,6 +63,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             # _request_summary now returns a string (agent response text)
             summary = await self._request_summary(conversation_id)
             print("work summarized\n\n", summary)
+
+            await self._post_summary_to_github(summary)
+
             return EventCallbackResult(
                 status=EventCallbackResultStatus.SUCCESS,
                 event_callback_id=callback.id,
@@ -171,8 +174,8 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
             response.raise_for_status()
 
-            _logger.info("[GitHub V1] Response %s", response.text)
-            return response.text
+            agent_response = AskAgentReponse.model_validate(response.json())
+            return agent_response.response
 
         except httpx.HTTPStatusError as e:
             error_detail = f"HTTP {e.response.status_code} error"
