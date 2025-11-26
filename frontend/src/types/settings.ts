@@ -63,6 +63,7 @@ export type Settings = {
   EMAIL_VERIFIED?: boolean;
   GIT_USER_NAME?: string;
   GIT_USER_EMAIL?: string;
+  V1_ENABLED: boolean;
 };
 
 export type PostSettings = Settings & {
@@ -70,4 +71,5 @@ export type PostSettings = Settings & {
   llm_api_key?: string | null;
   search_api_key?: string;
   mcp_config?: MCPConfig;
+  v1_enabled: boolean;
 };
