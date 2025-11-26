@@ -2,7 +2,12 @@ from dataclasses import dataclass
 
 from integrations.models import Message
 from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
-from integrations.utils import CONVERSATION_URL, get_final_agent_observation, get_user_v1_enabled_setting
+from integrations.utils import (
+    CONVERSATION_URL,
+    ResolverUserContext,
+    get_final_agent_observation,
+    get_user_v1_enabled_setting
+)
 from jinja2 import Environment
 from slack_sdk import WebClient
 from storage.slack_conversation import SlackConversation
@@ -27,59 +32,20 @@ from openhands.server.shared import ConversationStoreImpl, config, conversation_
 from openhands.server.user_auth.user_auth import UserAuth
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
-
-# =================================================
-# SECTION: Slack user context
-# =================================================
-
-
-class SlackUserContext(UserContext):
-    """User context for Slack integration that provides user info without web request."""
-
-    def __init__(self, keycloak_user_id: str, git_provider_tokens, custom_secrets=None):
-        from server.config import get_config
-        from storage.database import session_maker
-        from storage.saas_secrets_store import SaasSecretsStore
-        from storage.saas_settings_store import SaasSettingsStore
-
-        self.keycloak_user_id = keycloak_user_id
-        self.git_provider_tokens = git_provider_tokens
-        self.custom_secrets = custom_secrets or {}
-        self.settings_store = SaasSettingsStore(
-            user_id=self.keycloak_user_id,
-            session_maker=session_maker,
-            config=get_config(),
-        )
-
-        self.secrets_store = SaasSecretsStore(
-            self.keycloak_user_id, session_maker, get_config()
-        )
-
-    async def get_user_id(self) -> str | None:
-        return self.keycloak_user_id
-
-    async def get_user_info(self) -> UserInfo:
-        user_settings = await self.settings_store.load()
-        return UserInfo(
-            id=self.keycloak_user_id,
-            **user_settings.model_dump(context={'expose_secrets': True}),
-        )
-
-    async def get_authenticated_git_url(self, repository: str) -> str:
-        # This would need to be implemented based on the git provider tokens
-        # For now, return a basic HTTPS URL
-        return f'https://github.com/{repository}.git'
-
-    async def get_latest_token(self, provider_type: ProviderType) -> str | None:
-        # Return the appropriate token from git_provider_tokens
-        if self.git_provider_tokens:
-            return self.git_provider_tokens.get(provider_type)
-        return None
-
-    async def get_secrets(self) -> dict[str, SecretSource]:
-        # Return custom secrets passed in
-        return self.custom_secrets
-
+from uuid import uuid4
+from openhands.app_server.config import get_app_conversation_service
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartRequest,
+    AppConversationStartTaskStatus,
+    SendMessageRequest,
+)
+from openhands.sdk import TextContent
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.specifiy_user_context import (
+    USER_CONTEXT_ATTR
+)
+from openhands.integrations.provider import ProviderHandler
+from openhands.integrations.service_types import ProviderType
 
 # =================================================
 # SECTION: Slack view types
@@ -312,21 +278,7 @@ class SlackNewConversationView(SlackViewInterface):
         self, jinja: Environment, provider_tokens, user_secrets
     ) -> None:
         """Create conversation using the new V1 app conversation system."""
-        from uuid import uuid4
-        from openhands.app_server.config import get_app_conversation_service
-        from openhands.app_server.models import (
-            AppConversationStartRequest,
-            AppConversationStartTaskStatus,
-            SendMessageRequest,
-            TextContent,
-        )
-        from openhands.app_server.services.injector import InjectorState
-        from openhands.app_server.user.specifiy_user_context import (
-            USER_CONTEXT_ATTR,
-            SlackUserContext,
-        )
-        from openhands.integrations.provider import ProviderHandler
-        from openhands.integrations.service_types import ProviderType
+
 
         user_instructions, conversation_instructions = self._get_instructions(jinja)
 
@@ -366,7 +318,7 @@ class SlackNewConversationView(SlackViewInterface):
         )
 
         # Set up the Slack user context for the V1 system
-        slack_user_context = SlackUserContext(
+        slack_user_context = ResolverUserContext(
             keycloak_user_id=self.slack_to_openhands_user.keycloak_user_id,
             git_provider_tokens=provider_tokens,
             custom_secrets=user_secrets.custom_secrets if user_secrets else None,
