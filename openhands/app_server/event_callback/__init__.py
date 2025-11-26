@@ -13,8 +13,6 @@ from .github_v1_callback_processor import GithubV1CallbackProcessor
 
 # Note: SetTitleCallbackProcessor is not imported here to avoid circular imports
 # It will be registered when imported elsewhere in the application
-# Note: SlackV1CallbackProcessor is in enterprise/integrations/slack/ and will be
-# registered when imported from there
 
 __all__ = [
     'EventCallbackProcessor',

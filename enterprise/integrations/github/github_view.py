@@ -134,7 +134,6 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
 
 
 
-
 # =================================================
 # SECTION: Github view types
 # =================================================
