@@ -29,8 +29,8 @@ import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 import { cn, isMobileDevice } from "#/utils/utils";
-import { WalletButton } from "#/components/wallet/wallet";
 import { useAuthWallet } from "#/hooks/use-auth";
+import { WalletPanel } from "#/components/wallet/walletPanel";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -222,7 +222,7 @@ export default function MainApp() {
         isMobileDevice() && "overflow-hidden",
       )}
     >
-      <WalletButton />
+      <WalletPanel />
       <Sidebar />
 
       <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">

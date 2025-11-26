@@ -30,7 +30,7 @@ export function WalletButton() {
   if (!auth.connected) {
     return (
       <button
-        className="pontem_wallet connect"
+        className="pontem_wallet_button connect"
         type="button"
         onClick={async () => {
           try {
@@ -50,7 +50,7 @@ export function WalletButton() {
 
   return (
     <button
-      className="pontem_wallet disconnect"
+      className="pontem_wallet_button disconnect"
       type="button"
       onClick={async () => {
         try {
