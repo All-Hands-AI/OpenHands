@@ -24,6 +24,15 @@ const getFileEditorObservationContent = (
     return `**Error:**\n${observation.error}`;
   }
 
+  // Extract text content from the observation if it exists
+  const textContent =
+    "content" in observation && Array.isArray(observation.content)
+      ? observation.content
+          .filter((c) => c.type === "text")
+          .map((c) => c.text)
+          .join("\n")
+      : null;
+
   const successMessage = getObservationResult(event) === "success";
 
   // For view commands or successful edits with content changes, format as code block
@@ -35,11 +44,13 @@ const getFileEditorObservationContent = (
       observation.new_content) ||
     observation.command === "view"
   ) {
-    return `\`\`\`\n${observation.output}\n\`\`\``;
+    // Prefer content over output for view commands, fallback to output if content is not available
+    const displayContent = textContent || observation.output;
+    return `\`\`\`\n${displayContent}\n\`\`\``;
   }
 
-  // For other commands, return the output as-is
-  return observation.output;
+  // For other commands, prefer content if available, otherwise use output
+  return textContent || observation.output;
 };
 
 // Command Observations
