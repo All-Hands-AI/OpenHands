@@ -4,7 +4,10 @@ import tempfile
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any, AsyncGenerator
+
+if TYPE_CHECKING:
+    from openhands.core.config.openhands_config import OpenHandsConfig
 from urllib.parse import urlparse
 
 import base62
@@ -29,7 +32,6 @@ from openhands.core.config.mcp_config import (
     MCPStdioServerConfig,
     OpenHandsMCPConfigImpl,
 )
-from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.sdk import Agent
 from openhands.sdk.context.agent_context import AgentContext
 from openhands.sdk.context.skills import load_user_skills
@@ -48,7 +50,6 @@ class AppConversationServiceBase(AppConversationService, ABC):
 
     init_git_in_empty_workspace: bool
     user_context: UserContext
-    global_config: OpenHandsConfig
 
     async def _load_and_merge_all_skills(
         self,
@@ -152,8 +153,61 @@ class AppConversationServiceBase(AppConversationService, ABC):
 
         return {'mcpServers': mcp_servers}
 
+    def _load_openhands_config_with_search_key(
+        self, search_api_key: str | None, app_mode: str | None = None
+    ) -> 'OpenHandsConfig | None':  # type: ignore[name-defined]
+        """Load OpenHandsConfig and merge user's search_api_key if provided.
+
+        In SaaS mode, returns None immediately as the config is not needed.
+        In OSS mode, loads the config and merges the user's search_api_key.
+
+        Args:
+            search_api_key: Optional user's search API key from settings.
+                          If provided, will be merged into the config.
+            app_mode: Optional app mode. If 'saas', returns None immediately.
+
+        Returns:
+            OpenHandsConfig with merged search_api_key, or None if SaaS mode or loading fails.
+        """
+        # In SaaS mode, config is not needed for MCP setup
+        if app_mode == 'saas':
+            _logger.debug(
+                'SaaS mode detected, skipping OpenHandsConfig load for MCP setup'
+            )
+            return None
+
+        try:
+            from pydantic import SecretStr
+
+            from openhands.core.config.utils import load_openhands_config
+
+            openhands_config = load_openhands_config(set_logging_levels=False)
+            # Merge user's search_api_key into the config if provided
+            # This mirrors V0's behavior: self.config.search_api_key = settings.search_api_key
+            # The user's search_api_key from settings.json needs to be in the config
+            # for add_search_engine() to detect and add the Tavily search engine
+            if search_api_key and openhands_config:
+                openhands_config = openhands_config.model_copy(
+                    update={'search_api_key': SecretStr(search_api_key)}
+                )
+                _logger.debug(
+                    'Merged user search_api_key into OpenHandsConfig for MCP setup'
+                )
+            return openhands_config
+        except Exception as e:
+            _logger.debug(
+                f'Could not load OpenHandsConfig for MCP setup: {e}. '
+                'This is expected in SaaS mode where config is not needed.'
+            )
+            return None
+
     def _add_openhands_mcp_config_to_agent(
-        self, agent: Agent, web_url: str | None, user_id: str | None = None
+        self,
+        agent: Agent,
+        web_url: str | None,
+        user_id: str | None = None,
+        search_api_key: str | None = None,
+        app_mode: str | None = None,
     ) -> Agent:
         """Add OpenHands MCP server configuration to an agent.
 
@@ -165,45 +219,57 @@ class AppConversationServiceBase(AppConversationService, ABC):
             web_url: The web URL where the OpenHands MCP server is accessible.
                     If None, the agent is returned unchanged.
             user_id: Optional user ID for MCP API key generation (required in SaaS mode).
+            search_api_key: Optional user's search API key from settings.
+                          If provided, will be merged into the config for search engine detection.
+            app_mode: Optional app mode. If 'saas', config loading is skipped.
 
         Returns:
             Updated agent with OpenHands MCP server configuration, or the original
             agent if web_url is None or configuration fails.
         """
+        if not web_url:
+            return agent
+
         try:
-            host = self.global_config.mcp_host
+            # Extract host from web_url (hostname:port format)
+            # This matches what OpenHandsMCPConfigImpl.create_default_mcp_server_config expects
+            parsed_url = urlparse(web_url)
+            host = parsed_url.netloc
+            if not host:
+                _logger.warning(f'Could not extract host from web_url: {web_url}')
+                return agent
+
+            # Load OpenHandsConfig for OSS mode (needed for search engine detection)
+            # In SaaS mode, this returns None immediately
+            openhands_config = self._load_openhands_config_with_search_key(
+                search_api_key, app_mode
+            )
 
             # Use OpenHandsMCPConfigImpl to create MCP server config
             # This handles both OSS and SaaS scenarios (API key generation, search MCP, etc.)
+            # Pass None for config if we couldn't load it - SaaS implementation doesn't use it
             openhands_mcp_server, stdio_servers = (
                 OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                     host,
-                    self.global_config,
+                    openhands_config,  # type: ignore[arg-type]
                     user_id,
                 )
             )
 
             if not openhands_mcp_server:
-                if not web_url:
-                    _logger.warning(
-                        'OpenHandsMCPConfigImpl did not return an MCP server config'
-                        ' and no web_url fallback is available'
-                    )
-                    return agent
-
+                _logger.warning(
+                    'OpenHandsMCPConfigImpl did not return an MCP server config. '
+                    'Falling back to direct web_url construction.'
+                )
                 # Fallback to direct web_url construction (legacy behavior)
-                parsed_url = urlparse(web_url)
-                if not parsed_url.netloc or not parsed_url.scheme:
+                if not parsed_url.scheme:
                     _logger.warning(
                         f'Unable to construct MCP server URL from web_url: {web_url}'
                     )
                     return agent
 
-                _logger.info(
-                    'Falling back to constructing MCP server URL from web_url for MCP config'
-                )
                 openhands_mcp_server = MCPSHTTPServerConfig(
-                    url=f'{parsed_url.scheme}://{parsed_url.netloc}/mcp/mcp',
+                    url=f'{parsed_url.scheme}://{host}/mcp/mcp',
                     api_key=None,
                 )
                 stdio_servers = []
