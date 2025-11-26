@@ -22,11 +22,12 @@ import {
   isConversationStateUpdateEvent,
   isFullStateConversationStateUpdateEvent,
   isAgentStatusConversationStateUpdateEvent,
+  isStatsConversationStateUpdateEvent,
   isExecuteBashActionEvent,
   isExecuteBashObservationEvent,
   isConversationErrorEvent,
 } from "#/types/v1/type-guards";
-import { ConversationStateUpdateEventFullState } from "#/types/v1/core/events/conversation-state-event";
+import { ConversationStateUpdateEventStats } from "#/types/v1/core/events/conversation-state-event";
 import { handleActionEventCacheInvalidation } from "#/utils/cache-utils";
 import { buildWebSocketUrl } from "#/utils/websocket-url";
 import type {
@@ -107,14 +108,14 @@ export function ConversationWebSocketProvider({
   const receivedEventCountRefMain = useRef(0);
   const receivedEventCountRefPlanning = useRef(0);
 
-  // Helper function to update metrics from full state event
-  const updateMetricsFromFullState = useCallback(
-    (event: ConversationStateUpdateEventFullState) => {
-      if (event.value.stats?.usage_to_metrics?.agent) {
-        const agentMetrics = event.value.stats.usage_to_metrics.agent;
+  // Helper function to update metrics from stats event
+  const updateMetricsFromStats = useCallback(
+    (event: ConversationStateUpdateEventStats) => {
+      if (event.value.usage_to_metrics?.agent) {
+        const agentMetrics = event.value.usage_to_metrics.agent;
         const metrics = {
           cost: agentMetrics.accumulated_cost,
-          max_budget_per_task: null, // Not available in V1 full state events
+          max_budget_per_task: agentMetrics.max_budget_per_task ?? null,
           usage: agentMetrics.accumulated_token_usage
             ? {
                 prompt_tokens:
@@ -316,10 +317,12 @@ export function ConversationWebSocketProvider({
           if (isConversationStateUpdateEvent(event)) {
             if (isFullStateConversationStateUpdateEvent(event)) {
               setExecutionStatus(event.value.execution_status);
-              updateMetricsFromFullState(event);
             }
             if (isAgentStatusConversationStateUpdateEvent(event)) {
               setExecutionStatus(event.value);
+            }
+            if (isStatsConversationStateUpdateEvent(event)) {
+              updateMetricsFromStats(event);
             }
           }
 
@@ -354,7 +357,7 @@ export function ConversationWebSocketProvider({
       setExecutionStatus,
       appendInput,
       appendOutput,
-      updateMetricsFromFullState,
+      updateMetricsFromStats,
     ],
   );
 
@@ -412,10 +415,12 @@ export function ConversationWebSocketProvider({
           if (isConversationStateUpdateEvent(event)) {
             if (isFullStateConversationStateUpdateEvent(event)) {
               setExecutionStatus(event.value.execution_status);
-              updateMetricsFromFullState(event);
             }
             if (isAgentStatusConversationStateUpdateEvent(event)) {
               setExecutionStatus(event.value);
+            }
+            if (isStatsConversationStateUpdateEvent(event)) {
+              updateMetricsFromStats(event);
             }
           }
 
@@ -450,7 +455,7 @@ export function ConversationWebSocketProvider({
       setExecutionStatus,
       appendInput,
       appendOutput,
-      updateMetricsFromFullState,
+      updateMetricsFromStats,
     ],
   );
 

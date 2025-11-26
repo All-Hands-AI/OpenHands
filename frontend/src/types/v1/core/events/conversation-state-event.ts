@@ -22,6 +22,7 @@ export interface TokenUsage {
 export interface LLMMetrics {
   model_name: string;
   accumulated_cost: number;
+  max_budget_per_task: number | null;
   accumulated_token_usage: TokenUsage;
   costs: Array<{
     model: string;
@@ -70,12 +71,12 @@ interface ConversationStateUpdateEventBase extends BaseEvent {
    * Unique key for this state update event.
    * Can be "full_state" for full state snapshots or field names for partial updates.
    */
-  key: "full_state" | "execution_status"; // Extend with other keys as needed
+  key: "full_state" | "execution_status" | "stats"; // Extend with other keys as needed
 
   /**
    * Conversation state updates
    */
-  value: ConversationState | V1ExecutionStatus;
+  value: ConversationState | V1ExecutionStatus | ConversationStats;
 }
 
 // Narrowed interfaces for full state update event
@@ -92,10 +93,18 @@ export interface ConversationStateUpdateEventAgentStatus
   value: V1ExecutionStatus;
 }
 
+// Narrowed interface for stats update event
+export interface ConversationStateUpdateEventStats
+  extends ConversationStateUpdateEventBase {
+  key: "stats";
+  value: ConversationStats;
+}
+
 // Conversation state update event - contains conversation state updates
 export type ConversationStateUpdateEvent =
   | ConversationStateUpdateEventFullState
-  | ConversationStateUpdateEventAgentStatus;
+  | ConversationStateUpdateEventAgentStatus
+  | ConversationStateUpdateEventStats;
 
 // Conversation error event - contains error information
 export interface ConversationErrorEvent extends BaseEvent {
