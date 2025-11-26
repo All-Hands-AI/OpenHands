@@ -17,6 +17,7 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
 )
 from openhands.app_server.event_callback.util import (
+    CONVERSATION_URL,
     ensure_conversation_found,
     ensure_running_sandbox,
     get_agent_server_url_from_sandbox,
@@ -75,11 +76,25 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
         except Exception as e:
             _logger.exception('[GitHub V1] Error processing callback: %s', e)
-            await self._post_summary_to_github(
-                f'OpenHands encountered an error: **{str(e)}**.\n\n'
-                '[See the conversation]({CONVERSATION_URL.format(conversation_id)})'
-                'for more information.'
-            )
+
+            # Only try to post error to GitHub if we have basic requirements
+            try:
+                # Check if we have installation ID and credentials before posting
+                if (
+                    self.github_view_data.get('installation_id')
+                    and os.getenv('GITHUB_APP_CLIENT_ID')
+                    and os.getenv('GITHUB_APP_PRIVATE_KEY')
+                ):
+                    await self._post_summary_to_github(
+                        f'OpenHands encountered an error: **{str(e)}**.\n\n'
+                        f'[See the conversation]({CONVERSATION_URL.format(conversation_id)})'
+                        'for more information.'
+                    )
+            except Exception as post_error:
+                _logger.warning(
+                    '[GitHub V1] Failed to post error message to GitHub: %s', post_error
+                )
+
             return EventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
