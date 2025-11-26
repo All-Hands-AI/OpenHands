@@ -8,6 +8,7 @@ import {
   ThinkObservation,
   BrowserObservation,
   ExecuteBashObservation,
+  TerminalObservation,
   FileEditorObservation,
   StrReplaceEditorObservation,
   TaskTrackerObservation,
@@ -42,8 +43,8 @@ const getFileEditorObservationContent = (
 };
 
 // Command Observations
-const getExecuteBashObservationContent = (
-  event: ObservationEvent<ExecuteBashObservation>,
+const getTerminalObservationContent = (
+  event: ObservationEvent<ExecuteBashObservation | TerminalObservation>,
 ): string => {
   const { observation } = event;
 
@@ -179,8 +180,9 @@ export const getObservationContent = (event: ObservationEvent): string => {
       );
 
     case "ExecuteBashObservation":
-      return getExecuteBashObservationContent(
-        event as ObservationEvent<ExecuteBashObservation>,
+    case "TerminalObservation":
+      return getTerminalObservationContent(
+        event as ObservationEvent<ExecuteBashObservation | TerminalObservation>,
       );
 
     case "BrowserObservation":
