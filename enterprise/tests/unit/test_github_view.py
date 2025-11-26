@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from integrations.github.github_view import GithubFactory, GithubIssue, get_oh_labels
 from integrations.models import Message, SourceType
+from integrations.types import UserData
 
 
 class TestGithubLabels(TestCase):
@@ -83,13 +84,38 @@ class TestGithubV1ConversationRouting(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
+        # Create a proper UserData instance instead of MagicMock
+        user_data = UserData(
+            user_id=123,
+            username='testuser',
+            keycloak_user_id='test-keycloak-id'
+        )
+        
+        # Create a mock raw_payload
+        raw_payload = Message(
+            source=SourceType.GITHUB,
+            message={
+                'payload': {
+                    'action': 'opened',
+                    'issue': {'number': 123},
+                }
+            },
+        )
+        
         self.github_issue = GithubIssue(
-            user_info=MagicMock(),
+            user_info=user_data,
             full_repo_name='test/repo',
             issue_number=123,
-            branch_name='main',
             installation_id=456,
             conversation_id='test-conversation-id',
+            should_extract=True,
+            send_summary_instruction=False,
+            is_public_repo=True,
+            raw_payload=raw_payload,
+            uuid='test-uuid',
+            title='Test Issue',
+            description='Test issue description',
+            previous_comments=[]
         )
 
     @patch('integrations.github.github_view.get_user_v1_enabled_setting')
