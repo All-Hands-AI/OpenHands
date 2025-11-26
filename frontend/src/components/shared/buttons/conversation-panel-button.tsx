@@ -3,6 +3,7 @@ import { I18nKey } from "#/i18n/declaration";
 import ListIcon from "#/icons/list.svg?react";
 import { TooltipButton } from "./tooltip-button";
 import { cn } from "#/utils/utils";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 interface ConversationPanelButtonProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export function ConversationPanelButton({
   disabled = false,
 }: ConversationPanelButtonProps) {
   const { t } = useTranslation();
+  if (!useAuthWallet().connected) return null;
 
   return (
     <TooltipButton

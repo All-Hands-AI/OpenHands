@@ -3,7 +3,6 @@
     "files.eol": "\n",
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
-
     "python.defaultInterpreterPath": "./.venv/bin/python",
     "python.terminal.activateEnvironment": true,
     "python.analysis.autoImportCompletions": true,
@@ -19,4 +18,12 @@
         }
     ],
     "python.analysis.stubPath": "./.venv/lib/python3.12/site-packages",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": "explicit"
+    },
+    "cSpell.words": [
+        "lumio",
+        "openhands",
+        "pontem"
+    ]
 }

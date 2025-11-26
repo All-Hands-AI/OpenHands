@@ -1,0 +1,71 @@
+.wallet_panel {
+  position: absolute;
+  right: 5px;
+  top: 15px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  z-index: 99;
+}
+
+.wallet_panel>* {
+  margin: 0 10px;
+}
+
+.wallet_panel button {
+  opacity: 80%;
+
+  padding: calc(var(--spacing) * 2);
+  border-radius: var(--radius-sm);
+  --tw-font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+  line-height: var(--tw-leading, var(--text-sm--line-height));
+  cursor: pointer;
+}
+
+.pontem_wallet_button {
+  color: #0D0F11;
+  background-color: var(--color-primary);
+
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+}
+
+.pontem_wallet_button.connect {
+  opacity: 80%;
+}
+
+.pontem_wallet_button.disconnect {
+  opacity: 60%;
+}
+
+.pontem_wallet_button:hover {
+  opacity: 100;
+}
+
+.pontem_wallet_button svg {
+  height: 20px;
+  width: auto;
+  margin-right: 5px;
+
+}
+
+.wallet_panel .top_up_balance {
+  background-color: var(--color-primary);
+
+  background: transparent;
+  border: 2px solid var(--color-primary);
+}
+
+.wallet_panel .wallet_view_balance .label {
+  margin-right: 5px;
+}
+
+.wallet_panel .wallet_view_balance .value {
+  font-weight: bold;
+  color: var(--color-primary);
+}

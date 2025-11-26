@@ -31,6 +31,9 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
+from openhands.server.routes.token import (
+    app as token_api_router,
+)
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
@@ -86,6 +89,7 @@ app.include_router(security_api_router)
 app.include_router(feedback_api_router)
 app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
+app.include_router(token_api_router)
 app.include_router(settings_router)
 app.include_router(secrets_router)
 if server_config.app_mode == AppMode.OSS:

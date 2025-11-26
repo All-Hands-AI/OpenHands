@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -15,6 +16,16 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.utils import load_openhands_config
 from openhands.storage.data_models.secrets import Secrets
+
+
+
+def default_auth_wallet() -> AuthWallet:
+    return AuthWallet()
+
+class AuthWallet(BaseModel):
+    token: str | None = None
+    account: str | None = None
+    verified_token: bool = False
 
 
 class Settings(BaseModel):
@@ -48,6 +59,7 @@ class Settings(BaseModel):
     email_verified: bool | None = None
     git_user_name: str | None = None
     git_user_email: str | None = None
+    wallet: AuthWallet = Field(default_factory=default_auth_wallet, frozen=False)
 
     model_config = ConfigDict(
         validate_assignment=True,

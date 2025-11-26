@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 import RobotIcon from "#/icons/robot.svg?react";
+import { useAuthWallet } from "#/hooks/use-auth";
 
 interface MicroagentManagementButtonProps {
   disabled?: boolean;
@@ -11,6 +12,8 @@ export function MicroagentManagementButton({
   disabled = false,
 }: MicroagentManagementButtonProps) {
   const { t } = useTranslation();
+
+  if (!useAuthWallet().connected) return null;
 
   const microagentManagement = t(I18nKey.MICROAGENT_MANAGEMENT$TITLE);
 

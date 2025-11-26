@@ -11,6 +11,7 @@
     "@heroui/use-infinite-scroll": "^2.2.11",
     "@microlink/react-json-view": "^1.26.2",
     "@monaco-editor/react": "^4.7.0-rc.0",
+    "@pontem/aptos-wallet-adapter": "github:vladimirovmm/wallet-adapter#lumio",
     "@react-router/node": "^7.9.3",
     "@react-router/serve": "^7.9.3",
     "@react-types/shared": "^3.32.0",

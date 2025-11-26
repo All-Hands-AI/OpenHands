@@ -29,6 +29,8 @@ import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 import { cn, isMobileDevice } from "#/utils/utils";
+import { useAuthWallet } from "#/hooks/use-auth";
+import { WalletPanel } from "#/components/wallet/walletPanel";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -79,6 +81,8 @@ export default function MainApp() {
     isError: isAuthError,
   } = useIsAuthed();
 
+  const isWalletAuth = useAuthWallet().connected;
+
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
@@ -116,6 +120,14 @@ export default function MainApp() {
       setConsentFormIsOpen(consentFormModalIsOpen);
     }
   }, [settings, isOnTosPage]);
+
+  React.useEffect(() => {
+    if (!isWalletAuth && pathname !== "/auth") {
+      navigate("/auth");
+    } else if (isWalletAuth && pathname === "/auth") {
+      navigate("/");
+    }
+  }, [isWalletAuth, pathname]);
 
   React.useEffect(() => {
     // Don't migrate user consent when on TOS page
@@ -210,6 +222,7 @@ export default function MainApp() {
         isMobileDevice() && "overflow-hidden",
       )}
     >
+      <WalletPanel />
       <Sidebar />
 
       <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">

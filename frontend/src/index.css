@@ -66,3 +66,12 @@ code {
   scroll-behavior: smooth;
   scroll-timeline: 100ms;
 }
+
+#conversation_head {
+  margin-top: 15px;
+  align-items: start;
+}
+
+#conversation_head_right {
+  margin-top: 65px;
+}

@@ -21,10 +21,7 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
 
   return (
     <Link to={`/conversations/${conversation.conversation_id}`}>
-      <button
-        type="button"
-        className="flex flex-col gap-1 p-[14px] cursor-pointer w-full rounded-lg hover:bg-[#5C5D62] transition-all duration-300 text-left"
-      >
+      <div className="flex flex-col gap-1 p-[14px] cursor-pointer w-full rounded-lg hover:bg-[#5C5D62] transition-all duration-300 text-left">
         <div className="flex items-center gap-2 pl-1">
           <ConversationStatusIndicator
             conversationStatus={conversation.status}
@@ -74,7 +71,7 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
             {t(I18nKey.CONVERSATION$AGO)}
           </span>
         </div>
-      </button>
+      </div>
     </Link>
   );
 }
