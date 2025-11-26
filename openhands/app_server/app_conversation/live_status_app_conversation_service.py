@@ -284,17 +284,16 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 processors = [SetTitleCallbackProcessor()]
 
             # Save processors
-            await asyncio.gather(
-                *[
-                    self.event_callback_service.save_event_callback(
-                        EventCallback(
-                            conversation_id=info.id,
-                            processor=processor,
-                        )
+            # Save processors sequentially to avoid concurrent database session usage
+            # This is a simple database operation (upsert) that's very fast, so the
+            # performance impact of sequential vs parallel is negligible
+            for processor in processors:
+                await self.event_callback_service.save_event_callback(
+                    EventCallback(
+                        conversation_id=info.id,
+                        processor=processor,
                     )
-                    for processor in processors
-                ]
-            )
+                )
 
             # Update the start task
             task.status = AppConversationStartTaskStatus.READY
