@@ -14,6 +14,7 @@ import {
   ConversationStateUpdateEvent,
   ConversationStateUpdateEventAgentStatus,
   ConversationStateUpdateEventFullState,
+  ConversationStateUpdateEventStats,
   ConversationErrorEvent,
 } from "./core/events/conversation-state-event";
 import { SystemPromptEvent } from "./core/events/system-event";
@@ -143,6 +144,10 @@ export const isAgentStatusConversationStateUpdateEvent = (
   event: ConversationStateUpdateEvent,
 ): event is ConversationStateUpdateEventAgentStatus =>
   event.key === "execution_status";
+
+export const isStatsConversationStateUpdateEvent = (
+  event: ConversationStateUpdateEvent,
+): event is ConversationStateUpdateEventStats => event.key === "stats";
 
 /**
  * Type guard function to check if an event is a conversation error event
