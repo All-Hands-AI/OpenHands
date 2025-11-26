@@ -199,7 +199,6 @@ class SlackNewConversationView(SlackViewInterface):
         """Create a SlackV1CallbackProcessor for V1 conversation handling."""
         return SlackV1CallbackProcessor(
             slack_view_data={
-                'bot_access_token': self.bot_access_token,
                 'channel_id': self.channel_id,
                 'message_ts': self.message_ts,
                 'thread_ts': self.thread_ts,

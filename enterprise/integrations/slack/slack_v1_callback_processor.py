@@ -4,6 +4,7 @@ from uuid import UUID
 
 import httpx
 from pydantic import Field
+from enterprise.storage.slack_team_store import SlackTeamStore
 from slack_sdk import WebClient
 
 from openhands.agent_server.models import AskAgentRequest, AskAgentResponse
@@ -32,8 +33,6 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
     """Callback processor for Slack V1 integrations."""
 
     slack_view_data: dict[str, Any] = Field(default_factory=dict)
-    should_request_summary: bool = Field(default=True)
-    should_extract: bool = Field(default=True)
 
     async def __call__(
         self,
@@ -52,14 +51,6 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
             return None
 
         _logger.info('[Slack V1] Callback agent state was %s', event)
-        _logger.info(
-            '[Slack V1] Should request summary: %s', self.should_request_summary
-        )
-
-        if not self.should_request_summary:
-            return None
-
-        self.should_request_summary = False
 
         try:
             summary = await self._request_summary(conversation_id)
@@ -78,7 +69,10 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
             # Only try to post error to Slack if we have basic requirements
             try:
                 # Check if we have bot token before posting
-                if self.slack_view_data.get('bot_access_token'):
+                slack_team_store = SlackTeamStore.get_instance()
+                bot_access_token = slack_team_store.get_team_bot_token(self.slack_view_data.get('team_id', ''))
+
+                if bot_access_token:
                     await self._post_summary_to_slack(
                         f'OpenHands encountered an error: **{str(e)}**.\n\n'
                         f'[See the conversation]({get_conversation_url().format(conversation_id)})'
