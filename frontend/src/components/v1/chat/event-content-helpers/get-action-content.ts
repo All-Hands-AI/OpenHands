@@ -4,6 +4,7 @@ import i18n from "#/i18n";
 import { SecurityRisk } from "#/types/v1/core/base/common";
 import {
   ExecuteBashAction,
+  TerminalAction,
   FileEditorAction,
   StrReplaceEditorAction,
   MCPToolAction,
@@ -58,7 +59,7 @@ const getFileEditorActionContent = (
 
 // Command Actions
 const getExecuteBashActionContent = (
-  event: ActionEvent<ExecuteBashAction>,
+  event: ActionEvent<ExecuteBashAction | TerminalAction>,
 ): string => {
   let content = `Command:\n\`${event.action.command}\``;
 
@@ -164,8 +165,9 @@ export const getActionContent = (event: ActionEvent): string => {
       return getFileEditorActionContent(action);
 
     case "ExecuteBashAction":
+    case "TerminalAction":
       return getExecuteBashActionContent(
-        event as ActionEvent<ExecuteBashAction>,
+        event as ActionEvent<ExecuteBashAction | TerminalAction>,
       );
 
     case "MCPToolAction":
