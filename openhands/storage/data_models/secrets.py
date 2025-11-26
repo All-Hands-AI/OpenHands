@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any
 
@@ -7,6 +8,7 @@ from pydantic import (
     Field,
     SerializationInfo,
     field_serializer,
+    field_validator,
     model_validator,
 )
 from pydantic.json import pydantic_encoder
@@ -35,6 +37,11 @@ class Secrets(BaseModel):
         validate_assignment=True,
         arbitrary_types_allowed=True,
     )
+
+    @field_validator('provider_tokens', 'custom_secrets')
+    @classmethod
+    def immutable_validator(cls, value: Mapping) -> MappingProxyType:
+        return MappingProxyType(value)
 
     @field_serializer('provider_tokens')
     def provider_tokens_serializer(
