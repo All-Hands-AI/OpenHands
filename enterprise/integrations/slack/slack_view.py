@@ -1,12 +1,14 @@
 from dataclasses import dataclass
+from uuid import uuid4
 
 from integrations.models import Message
 from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
+from integrations.slack.slack_v1_callback_processor import SlackV1CallbackProcessor
 from integrations.utils import (
     CONVERSATION_URL,
     ResolverUserContext,
     get_final_agent_observation,
-    get_user_v1_enabled_setting
+    get_user_v1_enabled_setting,
 )
 from jinja2 import Environment
 from slack_sdk import WebClient
@@ -15,15 +17,20 @@ from storage.slack_conversation_store import SlackConversationStore
 from storage.slack_team_store import SlackTeamStore
 from storage.slack_user import SlackUser
 
-from integrations.slack.slack_v1_callback_processor import SlackV1CallbackProcessor
-from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.user.user_models import UserInfo
+from openhands.app_server.app_conversation.app_conversation_models import (
+    AppConversationStartRequest,
+    AppConversationStartTaskStatus,
+    SendMessageRequest,
+)
+from openhands.app_server.config import get_app_conversation_service
+from openhands.app_server.services.injector import InjectorState
+from openhands.app_server.user.specifiy_user_context import USER_CONTEXT_ATTR
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.serialization.event import event_to_dict
 from openhands.integrations.provider import ProviderHandler, ProviderType
-from openhands.sdk.conversation.secret_source import SecretSource
+from openhands.sdk import TextContent
 from openhands.server.services.conversation_service import (
     create_new_conversation,
     setup_init_conversation_settings,
@@ -32,20 +39,6 @@ from openhands.server.shared import ConversationStoreImpl, config, conversation_
 from openhands.server.user_auth.user_auth import UserAuth
 from openhands.storage.data_models.conversation_metadata import ConversationTrigger
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
-from uuid import uuid4
-from openhands.app_server.config import get_app_conversation_service
-from openhands.app_server.app_conversation.app_conversation_models import (
-    AppConversationStartRequest,
-    AppConversationStartTaskStatus,
-    SendMessageRequest,
-)
-from openhands.sdk import TextContent
-from openhands.app_server.services.injector import InjectorState
-from openhands.app_server.user.specifiy_user_context import (
-    USER_CONTEXT_ATTR
-)
-from openhands.integrations.provider import ProviderHandler
-from openhands.integrations.service_types import ProviderType
 
 # =================================================
 # SECTION: Slack view types
@@ -227,7 +220,9 @@ class SlackNewConversationView(SlackViewInterface):
         user_secrets = await self.saas_user_auth.get_secrets()
 
         # Check if V1 conversations are enabled for this user
-        v1_enabled = await get_user_v1_enabled_setting(self.slack_to_openhands_user.keycloak_user_id)
+        v1_enabled = await get_user_v1_enabled_setting(
+            self.slack_to_openhands_user.keycloak_user_id
+        )
 
         if v1_enabled:
             try:
@@ -236,7 +231,9 @@ class SlackNewConversationView(SlackViewInterface):
                 return self.conversation_id
 
             except Exception as e:
-                logger.warning(f'Error creating V1 conversation, falling back to V0: {e}')
+                logger.warning(
+                    f'Error creating V1 conversation, falling back to V0: {e}'
+                )
 
         # Use existing V0 conversation service
         await self._create_v0_conversation(jinja, provider_tokens, user_secrets)
@@ -278,7 +275,6 @@ class SlackNewConversationView(SlackViewInterface):
         self, jinja: Environment, provider_tokens, user_secrets
     ) -> None:
         """Create conversation using the new V1 app conversation system."""
-
 
         user_instructions, conversation_instructions = self._get_instructions(jinja)
 

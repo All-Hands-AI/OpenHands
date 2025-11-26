@@ -41,7 +41,6 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderType
 from openhands.integrations.service_types import Comment
 from openhands.sdk import TextContent
-from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.server.services.conversation_service import (
     initialize_conversation,
     start_conversation,
@@ -86,8 +85,6 @@ async def get_user_proactive_conversation_setting(user_id: str | None) -> bool:
         return False
 
     return settings.enable_proactive_conversation_starters
-
-
 
 
 # =================================================

@@ -6,10 +6,6 @@ import re
 from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader
-from openhands.sdk.conversation.secret_source import SecretSource
-from openhands.app_server.user.user_context import UserContext
-from openhands.app_server.user.user_models import UserInfo
-from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE
 from server.config import get_config
 from server.constants import WEB_HOST
 from storage.database import session_maker
@@ -19,6 +15,8 @@ from storage.stored_repository import StoredRepository
 from storage.user_repo_map import UserRepositoryMap
 from storage.user_repo_map_store import UserRepositoryMapStore
 
+from openhands.app_server.user.user_context import UserContext
+from openhands.app_server.user.user_models import UserInfo
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
@@ -29,7 +27,9 @@ from openhands.events.action import (
 )
 from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType, Repository
+from openhands.sdk.conversation.secret_source import SecretSource
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -594,13 +594,8 @@ def markdown_to_jira_markup(markdown_text: str) -> str:
         return markdown_text or ''
 
 
-
 class ResolverUserContext(UserContext):
-    def __init__(
-        self,
-        keycloak_user_id: str,
-        git_provider_tokens: PROVIDER_TOKEN_TYPE
-    ):
+    def __init__(self, keycloak_user_id: str, git_provider_tokens: PROVIDER_TOKEN_TYPE):
         from server.config import get_config
         from storage.database import session_maker
         from storage.saas_secrets_store import SaasSecretsStore

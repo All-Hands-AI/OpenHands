@@ -9,12 +9,14 @@ Covers:
 - Low-level helper methods
 """
 
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import httpx
 import pytest
+from integrations.slack.slack_v1_callback_processor import (
+    SlackV1CallbackProcessor,
+)
 
 from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationInfo,
@@ -22,9 +24,6 @@ from openhands.app_server.app_conversation.app_conversation_models import (
 from openhands.app_server.event_callback.event_callback_models import EventCallback
 from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
-)
-from integrations.slack.slack_v1_callback_processor import (
-    SlackV1CallbackProcessor,
 )
 from openhands.app_server.sandbox.sandbox_models import (
     ExposedUrl,
@@ -118,9 +117,7 @@ class TestSlackV1CallbackProcessor:
         self, slack_callback_processor, wrong_event, event_callback
     ):
         """Test that the processor ignores events it shouldn't process."""
-        result = await slack_callback_processor(
-            uuid4(), event_callback, wrong_event
-        )
+        result = await slack_callback_processor(uuid4(), event_callback, wrong_event)
         assert result is None
 
     async def test_call_with_wrong_state_event(
@@ -235,12 +232,13 @@ class TestSlackV1CallbackProcessor:
             should_request_summary=True,
         )
 
-        with patch('openhands.app_server.config.get_httpx_client'), \
-             patch('openhands.app_server.config.get_sandbox_service'), \
-             patch('openhands.app_server.config.get_app_conversation_info_service'):
-            
+        with patch('openhands.app_server.config.get_httpx_client'), patch(
+            'openhands.app_server.config.get_sandbox_service'
+        ), patch('openhands.app_server.config.get_app_conversation_info_service'):
             # Mock successful summary generation
-            with patch.object(processor, '_request_summary', return_value='Test summary'):
+            with patch.object(
+                processor, '_request_summary', return_value='Test summary'
+            ):
                 result = await processor(
                     uuid4(), event_callback, conversation_state_update_event
                 )
@@ -262,16 +260,19 @@ class TestSlackV1CallbackProcessor:
         mock_slack_client = MagicMock()
         mock_slack_client.chat_postMessage.return_value = {
             'ok': False,
-            'error': 'channel_not_found'
+            'error': 'channel_not_found',
         }
         mock_web_client.return_value = mock_slack_client
 
-        with patch('openhands.app_server.config.get_httpx_client'), \
-             patch('openhands.app_server.config.get_sandbox_service'), \
-             patch('openhands.app_server.config.get_app_conversation_info_service'):
-            
+        with patch('openhands.app_server.config.get_httpx_client'), patch(
+            'openhands.app_server.config.get_sandbox_service'
+        ), patch('openhands.app_server.config.get_app_conversation_info_service'):
             # Mock successful summary generation
-            with patch.object(slack_callback_processor, '_request_summary', return_value='Test summary'):
+            with patch.object(
+                slack_callback_processor,
+                '_request_summary',
+                return_value='Test summary',
+            ):
                 result = await slack_callback_processor(
                     uuid4(), event_callback, conversation_state_update_event
                 )

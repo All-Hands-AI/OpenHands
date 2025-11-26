@@ -1,5 +1,4 @@
 import logging
-import os
 from typing import Any
 from uuid import UUID
 
@@ -105,15 +104,17 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
     async def _post_summary_to_slack(self, summary: str) -> None:
         """Post a summary message to the configured Slack channel."""
         bot_access_token = self.slack_view_data.get('bot_access_token')
-        
+
         if not bot_access_token:
             raise RuntimeError('Missing Slack bot access token')
 
         channel_id = self.slack_view_data['channel_id']
-        thread_ts = self.slack_view_data.get('thread_ts') or self.slack_view_data.get('message_ts')
+        thread_ts = self.slack_view_data.get('thread_ts') or self.slack_view_data.get(
+            'message_ts'
+        )
 
         client = WebClient(token=bot_access_token)
-        
+
         try:
             # Post the summary as a threaded reply
             response = client.chat_postMessage(
@@ -123,12 +124,16 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
                 unfurl_links=False,
                 unfurl_media=False,
             )
-            
+
             if not response['ok']:
-                raise RuntimeError(f"Slack API error: {response.get('error', 'Unknown error')}")
-                
-            _logger.info('[Slack V1] Successfully posted summary to channel %s', channel_id)
-            
+                raise RuntimeError(
+                    f"Slack API error: {response.get('error', 'Unknown error')}"
+                )
+
+            _logger.info(
+                '[Slack V1] Successfully posted summary to channel %s', channel_id
+            )
+
         except Exception as e:
             _logger.error('[Slack V1] Failed to post message to Slack: %s', e)
             raise
@@ -254,9 +259,9 @@ class SlackV1CallbackProcessor(EventCallbackProcessor):
                 app_conversation_info.sandbox_id,
             )
 
-            assert sandbox.session_api_key is not None, (
-                f'No session API key for sandbox: {sandbox.id}'
-            )
+            assert (
+                sandbox.session_api_key is not None
+            ), f'No session API key for sandbox: {sandbox.id}'
 
             # 3. URL + instruction
             agent_server_url = get_agent_server_url_from_sandbox(sandbox)
