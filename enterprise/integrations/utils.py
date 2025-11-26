@@ -6,8 +6,11 @@ import re
 from typing import TYPE_CHECKING
 
 from jinja2 import Environment, FileSystemLoader
+from server.config import get_config
 from server.constants import WEB_HOST
+from storage.database import session_maker
 from storage.repository_store import RepositoryStore
+from storage.saas_settings_store import SaasSettingsStore
 from storage.stored_repository import StoredRepository
 from storage.user_repo_map import UserRepositoryMap
 from storage.user_repo_map_store import UserRepositoryMapStore
@@ -24,6 +27,7 @@ from openhands.events.event_store_abc import EventStoreABC
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.integrations.service_types import Repository
 from openhands.storage.data_models.conversation_status import ConversationStatus
+from openhands.utils.async_utils import call_sync_from_async
 
 if TYPE_CHECKING:
     from openhands.server.conversation_manager.conversation_manager import (
@@ -78,6 +82,35 @@ def get_summary_instruction():
     summary_instruction_template = jinja_env.get_template('summary_prompt.j2')
     summary_instruction = summary_instruction_template.render()
     return summary_instruction
+
+
+async def get_user_v1_enabled_setting(user_id: str | None) -> bool:
+    """Get the user's V1 conversation API setting.
+
+    Args:
+        user_id: The keycloak user ID
+
+    Returns:
+        True if V1 conversations are enabled for this user, False otherwise
+    """
+
+    # If no user ID is provided, we can't check user settings
+    if not user_id:
+        return False
+
+    config = get_config()
+    settings_store = SaasSettingsStore(
+        user_id=user_id, session_maker=session_maker, config=config
+    )
+
+    settings = await call_sync_from_async(
+        settings_store.get_user_settings_by_keycloak_id, user_id
+    )
+
+    if not settings or settings.v1_enabled is None:
+        return False
+
+    return settings.v1_enabled
 
 
 def has_exact_mention(text: str, mention: str) -> bool:
