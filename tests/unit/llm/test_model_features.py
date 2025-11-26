@@ -23,6 +23,8 @@ from openhands.llm.model_features import (
             'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
             'anthropic.claude-3-5-sonnet-20241022-v2',
         ),
+        ('global.anthropic.claude-sonnet-4', 'global.anthropic.claude-sonnet-4'),
+        ('us.anthropic.claude-sonnet-4', 'us.anthropic.claude-sonnet-4'),
         ('', ''),
         (None, ''),  # type: ignore[arg-type]
     ],
@@ -177,6 +179,8 @@ def test_get_features(model, expect):
         'claude-3-5-haiku-20241022',
         'claude-sonnet-4-latest',
         'claude-opus-4-1-20250805',
+        'global.anthropic.claude-sonnet-4',
+        'us.anthropic.claude-sonnet-4',
         # OpenAI families
         'gpt-4o',
         'gpt-4.1',
@@ -240,6 +244,8 @@ def test_deepseek_reasoning_effort_models(model):
         'claude-3-haiku-20240307',
         'claude-3-opus-20240229',
         'claude-sonnet-4-latest',
+        'global.anthropic.claude-sonnet-4',
+        'us.anthropic.claude-sonnet-4',
     ],
 )
 def test_prompt_cache_models(model):

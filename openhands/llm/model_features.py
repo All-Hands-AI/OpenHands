@@ -71,6 +71,7 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'claude-sonnet-4*',
     'anthropic.claude-sonnet-4*',
     'us.anthropic.claude-sonnet-4*',
+    'global.anthropic.claude-sonnet-4*',
     'claude-opus-4*',
     # OpenAI families
     'gpt-4o*',
@@ -121,6 +122,7 @@ PROMPT_CACHE_PATTERNS: list[str] = [
     'claude-sonnet-4*',
     'anthropic.claude-sonnet-4*',
     'us.anthropic.claude-sonnet-4*',
+    'global.anthropic.claude-sonnet-4*',
     'claude-opus-4*',
 ]
 
