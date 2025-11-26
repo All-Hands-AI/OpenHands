@@ -540,3 +540,16 @@ type = "noop"
 # - "noop_router" (default): No routing, always uses primary LLM
 # - "multimodal_router": A router that switches between primary and secondary models, depending on whether the input is multimodal or not
 #router_name = "noop_router"
+
+#################################### Lumio Blockchain ############################
+# Configuration for Lumio blockchain integration (Vibe Balance)
+##############################################################################
+[lumio]
+# Lumio testnet RPC URL
+#rpc_url = "https://api.testnet.lumio.io/"
+
+# Vibe Balance contract address (set after deployment)
+#vibe_balance_contract = ""
+
+# Admin private key for contract operations (keep secure!)
+#admin_private_key = ""

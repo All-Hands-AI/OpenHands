@@ -7,7 +7,7 @@ authors = []
 vibe_balance = "_"
 
 [dev-addresses]
-vibe_balance = "0xCAFE"
+# vibe_balance = "0xCAFE"  # Commented out - using named-addresses instead
 
 [dependencies.LumioFramework]
 git = "https://github.com/pontem-network/lumio-framework.git"
