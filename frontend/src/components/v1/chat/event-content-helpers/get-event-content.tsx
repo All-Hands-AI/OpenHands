@@ -50,6 +50,7 @@ const getActionEventTitle = (event: OpenHandsEvent): React.ReactNode => {
 
   switch (actionType) {
     case "ExecuteBashAction":
+    case "TerminalAction":
       actionKey = "ACTION_MESSAGE$RUN";
       actionValues = {
         command: trimText(event.action.command, 80),
@@ -111,6 +112,7 @@ const getObservationEventTitle = (event: OpenHandsEvent): React.ReactNode => {
 
   switch (observationType) {
     case "ExecuteBashObservation":
+    case "TerminalObservation":
       observationKey = "OBSERVATION_MESSAGE$RUN";
       observationValues = {
         command: event.observation.command
