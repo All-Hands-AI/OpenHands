@@ -249,26 +249,24 @@ class GithubIssue(ResolverViewInterface):
         git_provider_tokens: PROVIDER_TOKEN_TYPE,
         conversation_metadata: ConversationMetadata,
     ):
-        try:
-            # Check if user has V1 conversations enabled
-            v1_enabled = await get_user_v1_enabled_setting(self.user_info.keycloak_user_id)
 
-            if v1_enabled:
+        v1_enabled = await get_user_v1_enabled_setting(self.user_info.keycloak_user_id)
+
+        if v1_enabled:
+            try:
                 # Use V1 app conversation service
                 await self._create_v1_conversation(
                     jinja_env, git_provider_tokens, conversation_metadata
                 )
-            else:
-                # Use existing V0 conversation service
-                await self._create_v0_conversation(
-                    jinja_env, git_provider_tokens, conversation_metadata
-                )
-        except Exception as e:
-            # If there's any error checking V1 settings, fall back to V0
-            logger.warning(f"Error checking V1 settings, falling back to V0: {e}")
-            await self._create_v0_conversation(
-                jinja_env, git_provider_tokens, conversation_metadata
-            )
+                return
+
+            except Exception as e:
+                logger.warning(f"Error checking V1 settings, falling back to V0: {e}")
+
+        # Use existing V0 conversation service
+        await self._create_v0_conversation(
+            jinja_env, git_provider_tokens, conversation_metadata
+        )
 
     async def _create_v0_conversation(
         self,
