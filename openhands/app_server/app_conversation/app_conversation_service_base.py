@@ -4,7 +4,8 @@ import tempfile
 from abc import ABC
 from dataclasses import dataclass
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
+from urllib.parse import urlparse
 
 import base62
 
@@ -23,6 +24,12 @@ from openhands.app_server.app_conversation.skill_loader import (
 )
 from openhands.app_server.sandbox.sandbox_models import SandboxInfo
 from openhands.app_server.user.user_context import UserContext
+from openhands.core.config.mcp_config import (
+    MCPSHTTPServerConfig,
+    MCPStdioServerConfig,
+    OpenHandsMCPConfigImpl,
+)
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.sdk import Agent
 from openhands.sdk.context.agent_context import AgentContext
 from openhands.sdk.context.skills import load_user_skills
@@ -41,6 +48,7 @@ class AppConversationServiceBase(AppConversationService, ABC):
 
     init_git_in_empty_workspace: bool
     user_context: UserContext
+    global_config: OpenHandsConfig
 
     async def _load_and_merge_all_skills(
         self,
@@ -97,6 +105,133 @@ class AppConversationServiceBase(AppConversationService, ABC):
             _logger.warning(f'Failed to load skills: {e}', exc_info=True)
             # Return empty list on failure - skills will be loaded again later if needed
             return []
+
+    def _convert_mcp_config_to_sdk_format(
+        self,
+        shttp_servers: list[MCPSHTTPServerConfig],
+        stdio_servers: list[MCPStdioServerConfig],
+    ) -> dict[str, dict[str, Any]]:
+        """Convert OpenHands MCP config format to SDK's expected format.
+
+        Args:
+            shttp_servers: List of SHTTP MCP server configs
+            stdio_servers: List of stdio MCP server configs
+
+        Returns:
+            Dictionary in SDK's mcp_config format: {"mcpServers": {...}}
+        """
+        mcp_servers: dict[str, dict[str, Any]] = {}
+
+        # Convert SHTTP servers to HTTP transport format
+        for idx, shttp_server in enumerate(shttp_servers):
+            # Use a descriptive name for the first server, numbered for subsequent ones
+            if idx == 0:
+                server_name = 'openhands'
+            else:
+                server_name = f'openhands_{idx}'
+            server_config: dict[str, Any] = {
+                'transport': 'http',
+                'url': shttp_server.url,
+            }
+            if shttp_server.api_key:
+                server_config['headers'] = {
+                    'Authorization': f'Bearer {shttp_server.api_key}'
+                }
+            mcp_servers[server_name] = server_config
+
+        # Convert stdio servers to stdio transport format
+        for stdio_server in stdio_servers:
+            stdio_server_config: dict[str, Any] = {
+                'transport': 'stdio',
+                'command': stdio_server.command,
+                'args': stdio_server.args,
+            }
+            if stdio_server.env:
+                stdio_server_config['env'] = stdio_server.env
+            mcp_servers[stdio_server.name] = stdio_server_config
+
+        return {'mcpServers': mcp_servers}
+
+    def _add_openhands_mcp_config_to_agent(
+        self, agent: Agent, web_url: str | None, user_id: str | None = None
+    ) -> Agent:
+        """Add OpenHands MCP server configuration to an agent.
+
+        Uses OpenHandsMCPConfigImpl to create the MCP server configuration, which
+        handles SaaS mode API key generation and other environment-specific logic.
+
+        Args:
+            agent: The agent to update with MCP configuration
+            web_url: The web URL where the OpenHands MCP server is accessible.
+                    If None, the agent is returned unchanged.
+            user_id: Optional user ID for MCP API key generation (required in SaaS mode).
+
+        Returns:
+            Updated agent with OpenHands MCP server configuration, or the original
+            agent if web_url is None or configuration fails.
+        """
+        try:
+            host = self.global_config.mcp_host
+
+            # Use OpenHandsMCPConfigImpl to create MCP server config
+            # This handles both OSS and SaaS scenarios (API key generation, search MCP, etc.)
+            openhands_mcp_server, stdio_servers = (
+                OpenHandsMCPConfigImpl.create_default_mcp_server_config(
+                    host,
+                    self.global_config,
+                    user_id,
+                )
+            )
+
+            if not openhands_mcp_server:
+                if not web_url:
+                    _logger.warning(
+                        'OpenHandsMCPConfigImpl did not return an MCP server config'
+                        ' and no web_url fallback is available'
+                    )
+                    return agent
+
+                # Fallback to direct web_url construction (legacy behavior)
+                parsed_url = urlparse(web_url)
+                if not parsed_url.netloc or not parsed_url.scheme:
+                    _logger.warning(
+                        f'Unable to construct MCP server URL from web_url: {web_url}'
+                    )
+                    return agent
+
+                _logger.info(
+                    'Falling back to constructing MCP server URL from web_url for MCP config'
+                )
+                openhands_mcp_server = MCPSHTTPServerConfig(
+                    url=f'{parsed_url.scheme}://{parsed_url.netloc}/mcp/mcp',
+                    api_key=None,
+                )
+                stdio_servers = []
+
+            # Convert to SDK format
+            sdk_mcp_config = self._convert_mcp_config_to_sdk_format(
+                [openhands_mcp_server], stdio_servers
+            )
+
+            # Merge with existing mcp_config if any
+            existing_mcp_config = agent.mcp_config or {}
+            existing_servers = existing_mcp_config.get('mcpServers', {})
+            sdk_mcp_config['mcpServers'].update(existing_servers)
+
+            # Create a new agent instance with updated mcp_config
+            # Since AgentBase is frozen, we use model_copy to create a new instance
+            agent = agent.model_copy(update={'mcp_config': sdk_mcp_config})
+            _logger.info(
+                f'Added OpenHands MCP server to agent: {openhands_mcp_server.url}'
+            )
+            return agent
+        except Exception as e:
+            _logger.warning(
+                f'Failed to add OpenHands MCP server configuration: {e}',
+                exc_info=True,
+            )
+            # Continue without MCP config - don't fail conversation startup
+            return agent
 
     def _create_agent_with_skills(self, agent, skills: list):
         """Create or update agent with skills in its context.

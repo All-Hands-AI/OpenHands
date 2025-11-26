@@ -66,6 +66,7 @@ from openhands.app_server.user.user_context import UserContext
 from openhands.app_server.utils.docker_utils import (
     replace_localhost_hostname_for_docker,
 )
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import LocalWorkspace
@@ -86,6 +87,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
     """AppConversationService which combines live status info from the sandbox with stored data."""
 
     user_context: UserContext
+    global_config: OpenHandsConfig
     app_conversation_info_service: AppConversationInfoService
     app_conversation_start_task_service: AppConversationStartTaskService
     event_callback_service: EventCallbackService
@@ -593,6 +595,12 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 _logger.warning(f'Failed to load skills: {e}', exc_info=True)
                 # Continue without skills - don't fail conversation startup
 
+        # Add OpenHands MCP server configuration to the agent
+        # Pass user.id for API key generation in SaaS mode
+        agent = self._add_openhands_mcp_config_to_agent(
+            agent, self.web_url, user_id=user.id
+        )
+
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,
             agent=agent,
@@ -868,6 +876,7 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
             yield LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_context=user_context,
+                global_config=config,
                 sandbox_service=sandbox_service,
                 sandbox_spec_service=sandbox_spec_service,
                 app_conversation_info_service=app_conversation_info_service,
