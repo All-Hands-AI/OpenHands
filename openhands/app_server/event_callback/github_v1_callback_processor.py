@@ -8,6 +8,7 @@ from github import Github, GithubIntegration
 from pydantic import Field
 
 from openhands.agent_server.models import AskAgentRequest, AskAgentResponse
+from enterprise.integrations.github import github_view
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackProcessor,
@@ -17,7 +18,8 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
 )
 from openhands.app_server.event_callback.util import (
-    ensure_conversation_found, ensure_running_sandbox,
+    ensure_conversation_found,
+    ensure_running_sandbox,
     get_agent_server_url_from_sandbox,
     get_prompt_template
 )
@@ -34,6 +36,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     github_view_data: dict[str, Any] = Field(default_factory=dict)
     should_request_summary: bool = Field(default=True)
     should_extract: bool = Field(default=True)
+    inline_pr_comment: bool = Field(default=False)
 
     async def __call__(
         self,
@@ -121,6 +124,17 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
 
         full_repo_name = self.github_view_data['full_repo_name']
         issue_number = self.github_view_data['issue_number']
+
+        if self.inline_pr_comment:
+            with Github(installation_token) as github_client:
+                repo = github_client.get_repo(full_repo_name)
+                pr = repo.get_pull(issue_number)
+                pr.create_review_comment_reply(
+                    comment_id=self.github_view_data.get('comment_id', ''),
+                    body=summary
+                )
+            return
+
 
         with Github(installation_token) as github_client:
             repo = github_client.get_repo(full_repo_name)

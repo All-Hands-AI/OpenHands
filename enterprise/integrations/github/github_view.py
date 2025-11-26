@@ -76,12 +76,6 @@ class GithubUserContext(UserContext):
 
     async def get_user_info(self) -> UserInfo:
         user_settings = await self.settings_store.load()
-        print(
-            'model_api_key_set',
-            user_settings.llm_api_key.get_secret_value()[0:3]
-            if user_settings.llm_api_key
-            else 'no api key set',
-        )
         return UserInfo(
             id=self.keycloak_user_id,
             **user_settings.model_dump(context={'expose_secrets': True}),
@@ -477,6 +471,25 @@ class GithubInlinePRComment(GithubPRComment):
         )
 
         return user_instructions, conversation_instructions
+
+
+    def _create_github_v1_callback_processor(self):
+        """Create a V1 callback processor for GitHub integration."""
+        from openhands.app_server.event_callback.github_v1_callback_processor import (
+            GithubV1CallbackProcessor,
+        )
+
+        # Create and return the GitHub V1 callback processor
+        return GithubV1CallbackProcessor(
+            github_view_data={
+                'issue_number': self.issue_number,
+                'full_repo_name': self.full_repo_name,
+                'installation_id': self.installation_id,
+                'comment_id': self.comment_id,
+            },
+            inline_pr_comment=True,
+            send_summary_instruction=self.send_summary_instruction,
+        )
 
 
 @dataclass
