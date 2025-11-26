@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from time import time
-from typing import AsyncGenerator, Sequence
+from typing import Any, AsyncGenerator, Sequence
 from uuid import UUID, uuid4
 
 import httpx
@@ -572,14 +572,15 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             usage_id='agent',
         )
         # MCP Config
-        mcp_config = {
-            "default": {
-                "url": "https://llm-proxy.staging.all-hands.dev/mcp",
-                "headers": {
-                    "x-litellm-api-key": f"Bearer {user.llm_api_key}"
-                }
-            }
-        }
+        # mcp_config = {
+        #     "default": {
+        #         "url": "https://llm-proxy.staging.all-hands.dev/mcp",
+        #         "headers": {
+        #             "x-litellm-api-key": f"Bearer {user.llm_api_key}"
+        #         }
+        #     }
+        # }
+        mcp_config: dict[str, Any] = {}
 
         # The agent gets passed initial instructions
         # Select agent based on agent_type
