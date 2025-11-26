@@ -58,7 +58,7 @@ by implementing the [interface specified here](https://github.com/OpenHands/Open
 
 #### Testing
 When you write code, it is also good to write tests. Please navigate to the [`./tests`](./tests) folder to see existing test suites.
-At the moment, we have two kinds of tests: [`unit`](./tests/unit) and [`integration`](./evaluation/integration_tests). Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
+At the moment, we have these kinds of tests: [`unit`](./tests/unit), [`runtime`](./tests/runtime), and [`end-to-end (e2e)`](./tests/e2e). Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
 
 ## Sending Pull Requests to OpenHands
 
