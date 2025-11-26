@@ -26,8 +26,6 @@ def upgrade() -> None:
             'v1_enabled',
             sa.Boolean(),
             nullable=True,
-            default=False,
-            server_default='FALSE',
         ),
     )
 
