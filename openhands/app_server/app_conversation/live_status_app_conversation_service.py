@@ -597,8 +597,9 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         # Pass user.id for API key generation in SaaS mode
         # Pass user.search_api_key so it can be merged into the config for search engine detection
         # This mirrors V0's behavior where settings.search_api_key is set on config before MCP setup
+        search_api_key_attr = getattr(user, 'search_api_key', None)
         user_search_api_key = (
-            user.search_api_key.get_secret_value() if user.search_api_key else None
+            search_api_key_attr.get_secret_value() if search_api_key_attr else None
         )
         agent = self._add_openhands_mcp_config_to_agent(
             agent,
