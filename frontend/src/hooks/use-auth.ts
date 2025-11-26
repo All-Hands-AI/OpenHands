@@ -9,7 +9,38 @@ import { createContext, useContext } from "react";
 
 declare const window: PontemWindow;
 
+const LUMIO_RPC = "https://api.testnet.lumio.io/v1";
+const CHAIN_ID = 2;
+const DECIMALS = 8;
+const NUMBER_OF_DECIMALS = 4;
+const COIN_TYPE = "0x1::lumio_coin::LumioCoin";
+
 type SignMessageWithoutSignature = Omit<SignMessageResponse, "signature">;
+
+async function lumioBalance(account: string): Promise<number> {
+  const balanceResponse: number[] = await fetch(`${LUMIO_RPC}/view`, {
+    method: "POST",
+    body: JSON.stringify({
+      function: "0x1::coin::balance",
+      type_arguments: [COIN_TYPE],
+      arguments: [account],
+    }),
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  }).then((r) => r.json());
+
+  if (balanceResponse.constructor === Array) {
+    const balance: number =
+      Math.round(balanceResponse[0] / 10 ** (DECIMALS - NUMBER_OF_DECIMALS)) /
+      10 ** NUMBER_OF_DECIMALS;
+
+    return balance;
+  }
+
+  return 0.0;
+}
 
 class Message implements SignMessagePayload {
   address: boolean = true; // Should we include the address of the account in the message
@@ -190,6 +221,39 @@ export class AuthState {
       method: "DELETE",
     }).then((response) => response.json());
     if (success) Object.assign(this, new AuthState());
+  }
+
+  async balance(): Promise<number> {
+    const { pontem } = window;
+    if (!this.connected || !pontem) return 0;
+    const { account } = this.token;
+
+    return account ? lumioBalance(account.toString()) : 0.0;
+  }
+
+  async topUpBalance(): Promise<void> {
+    const { pontem } = window;
+    if (!this.connected || !pontem) return;
+    const network = await pontem.network();
+
+    if (
+      network.api !== LUMIO_RPC ||
+      !network.chainId ||
+      parseInt(network.chainId, 10) !== CHAIN_ID
+    ) {
+      throw new Error(
+        `Please connect to the Lumio network and switch to the correct chain.
+
+        RPC: ${LUMIO_RPC}
+        CHAIN ID: ${CHAIN_ID}`,
+      );
+    }
+
+    // const result = await pontem.signTransaction({
+    //   function: "0x1::coin::transfer",
+    //   type_arguments: [COIN_TYPE],
+    //   arguments: ["0x1", "100"],
+    // });
   }
 }
 

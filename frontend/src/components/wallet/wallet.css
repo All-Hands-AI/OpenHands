@@ -64,3 +64,8 @@
 .wallet_panel .wallet_view_balance .label {
   margin-right: 5px;
 }
+
+.wallet_panel .wallet_view_balance .value {
+  font-weight: bold;
+  color: var(--color-primary);
+}
