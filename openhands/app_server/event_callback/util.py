@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -17,7 +16,6 @@ if TYPE_CHECKING:
     from openhands.app_server.app_conversation.app_conversation_models import (
         AppConversationInfo,
     )
-
 
 
 def get_conversation_url() -> str:
