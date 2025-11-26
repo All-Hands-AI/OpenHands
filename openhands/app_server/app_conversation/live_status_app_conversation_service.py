@@ -73,12 +73,12 @@ from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
 from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWorkspace
+from openhands.server.types import AppMode
 from openhands.tools.preset.default import get_default_agent, get_default_condenser, get_default_tools
 from openhands.tools.preset.planning import format_plan_structure, get_planning_agent, get_planning_condenser, get_planning_tools
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
-GIT_TOKEN = 'GIT_TOKEN'
 
 
 @dataclass
@@ -97,6 +97,8 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
     httpx_client: httpx.AsyncClient
     web_url: str | None
     access_token_hard_timeout: timedelta | None
+    app_mode: str | None = None
+    keycloak_auth_cookie: str | None = None
 
     async def search_app_conversations(
         self,
@@ -529,6 +531,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         # Set up a secret for the git token
         secrets = await self.user_context.get_secrets()
         if git_provider:
+            secret_name = f'{git_provider.name}_TOKEN'
             if self.web_url:
                 # If there is a web url, then we create an access token to access it.
                 # For security reasons, we are explicit here - only this user, and
@@ -540,9 +543,15 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                     },
                     expires_in=self.access_token_hard_timeout,
                 )
-                secrets[GIT_TOKEN] = LookupSecret(
+                headers = {'X-Access-Token': access_token}
+
+                # Include keycloak_auth cookie in headers if app_mode is SaaS
+                if self.app_mode == 'saas' and self.keycloak_auth_cookie:
+                    headers['Cookie'] = f'keycloak_auth={self.keycloak_auth_cookie}'
+
+                secrets[secret_name] = LookupSecret(
                     url=self.web_url + '/api/v1/webhooks/secrets',
-                    headers={'X-Access-Token': access_token},
+                    headers=headers,
                 )
             else:
                 # If there is no URL specified where the sandbox can access the app server
@@ -550,7 +559,7 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 # on the type, this may eventually expire.
                 static_token = await self.user_context.get_latest_token(git_provider)
                 if static_token:
-                    secrets[GIT_TOKEN] = StaticSecret(value=static_token)
+                    secrets[secret_name] = StaticSecret(value=static_token)
 
         workspace = LocalWorkspace(working_dir=working_dir)
 
@@ -871,6 +880,21 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 if isinstance(sandbox_service, DockerSandboxService):
                     web_url = f'http://host.docker.internal:{sandbox_service.host_port}'
 
+            # Get app_mode and keycloak_auth cookie for SaaS mode
+            app_mode = None
+            keycloak_auth_cookie = None
+            try:
+                from openhands.server.shared import server_config
+
+                app_mode = (
+                    server_config.app_mode.value if server_config.app_mode else None
+                )
+                if request and server_config.app_mode == AppMode.SAAS:
+                    keycloak_auth_cookie = request.cookies.get('keycloak_auth')
+            except (ImportError, AttributeError):
+                # If server_config is not available (e.g., in tests), continue without it
+                pass
+
             yield LiveStatusAppConversationService(
                 init_git_in_empty_workspace=self.init_git_in_empty_workspace,
                 user_context=user_context,
@@ -885,4 +909,6 @@ class LiveStatusAppConversationServiceInjector(AppConversationServiceInjector):
                 httpx_client=httpx_client,
                 web_url=web_url,
                 access_token_hard_timeout=access_token_hard_timeout,
+                app_mode=app_mode,
+                keycloak_auth_cookie=keycloak_auth_cookie,
             )
