@@ -11,11 +11,13 @@ import { I18nKey } from "#/i18n/declaration";
 interface ConfirmDeleteModalProps {
   onConfirm: () => void;
   onCancel: () => void;
+  conversationTitle?: string;
 }
 
 export function ConfirmDeleteModal({
   onConfirm,
   onCancel,
+  conversationTitle,
 }: ConfirmDeleteModalProps) {
   const { t } = useTranslation();
 
@@ -27,6 +29,11 @@ export function ConfirmDeleteModal({
           <BaseModalDescription
             description={t(I18nKey.CONVERSATION$DELETE_WARNING)}
           />
+          {conversationTitle && (
+            <div className="text-sm text-white font-medium">
+              {conversationTitle}
+            </div>
+          )}
         </div>
         <div
           className="flex flex-col gap-2 w-full"
