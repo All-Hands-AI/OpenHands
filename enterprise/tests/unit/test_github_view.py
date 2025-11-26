@@ -86,11 +86,9 @@ class TestGithubV1ConversationRouting(TestCase):
         """Set up test fixtures."""
         # Create a proper UserData instance instead of MagicMock
         user_data = UserData(
-            user_id=123,
-            username='testuser',
-            keycloak_user_id='test-keycloak-id'
+            user_id=123, username='testuser', keycloak_user_id='test-keycloak-id'
         )
-        
+
         # Create a mock raw_payload
         raw_payload = Message(
             source=SourceType.GITHUB,
@@ -101,7 +99,7 @@ class TestGithubV1ConversationRouting(TestCase):
                 }
             },
         )
-        
+
         self.github_issue = GithubIssue(
             user_info=user_data,
             full_repo_name='test/repo',
@@ -115,7 +113,7 @@ class TestGithubV1ConversationRouting(TestCase):
             uuid='test-uuid',
             title='Test Issue',
             description='Test issue description',
-            previous_comments=[]
+            previous_comments=[],
         )
 
     @patch('integrations.github.github_view.get_user_v1_enabled_setting')

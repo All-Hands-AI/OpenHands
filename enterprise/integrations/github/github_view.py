@@ -249,7 +249,6 @@ class GithubIssue(ResolverViewInterface):
         git_provider_tokens: PROVIDER_TOKEN_TYPE,
         conversation_metadata: ConversationMetadata,
     ):
-
         v1_enabled = await get_user_v1_enabled_setting(self.user_info.keycloak_user_id)
 
         if v1_enabled:
@@ -261,7 +260,7 @@ class GithubIssue(ResolverViewInterface):
                 return
 
             except Exception as e:
-                logger.warning(f"Error checking V1 settings, falling back to V0: {e}")
+                logger.warning(f'Error checking V1 settings, falling back to V0: {e}')
 
         # Use existing V0 conversation service
         await self._create_v0_conversation(
