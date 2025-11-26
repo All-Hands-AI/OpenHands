@@ -9,11 +9,11 @@ from integrations.github.github_types import (
 )
 from integrations.models import Message
 from integrations.types import ResolverViewInterface, UserData
+from integrations.resolver_user_context import ResolverUserContext
 from integrations.utils import (
     ENABLE_PROACTIVE_CONVERSATION_STARTERS,
     HOST,
     HOST_URL,
-    ResolverUserContext,
     get_oh_labels,
     get_user_v1_enabled_setting,
     has_exact_mention,

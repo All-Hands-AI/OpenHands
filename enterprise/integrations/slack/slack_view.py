@@ -4,9 +4,9 @@ from uuid import uuid4
 from integrations.models import Message
 from integrations.slack.slack_types import SlackViewInterface, StartingConvoException
 from integrations.slack.slack_v1_callback_processor import SlackV1CallbackProcessor
+from integrations.resolver_user_context import ResolverUserContext
 from integrations.utils import (
     CONVERSATION_URL,
-    ResolverUserContext,
     get_final_agent_observation,
     get_user_v1_enabled_setting,
 )
