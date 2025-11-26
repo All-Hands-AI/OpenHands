@@ -17,10 +17,10 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResultStatus,
 )
 from openhands.app_server.event_callback.util import (
-    CONVERSATION_URL,
     ensure_conversation_found,
     ensure_running_sandbox,
     get_agent_server_url_from_sandbox,
+    get_conversation_url,
     get_prompt_template,
 )
 from openhands.sdk import Event
@@ -87,7 +87,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 ):
                     await self._post_summary_to_github(
                         f'OpenHands encountered an error: **{str(e)}**.\n\n'
-                        f'[See the conversation]({CONVERSATION_URL.format(conversation_id)})'
+                        f'[See the conversation]({get_conversation_url().format(conversation_id)})'
                         'for more information.'
                     )
             except Exception as post_error:

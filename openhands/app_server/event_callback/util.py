@@ -18,10 +18,15 @@ if TYPE_CHECKING:
         AppConversationInfo,
     )
 
-HOST = os.getenv('WEB_HOST', 'app.all-hands.dev').strip()
-HOST_URL = f'https://{HOST}'
-conversation_prefix = 'conversations/{}'
-CONVERSATION_URL = f'{HOST_URL}/{conversation_prefix}'
+
+
+def get_conversation_url() -> str:
+    from openhands.app_server.config import get_global_config
+
+    web_url = get_global_config().web_url
+    conversation_prefix = 'conversations/{}'
+    conversation_url = f'{web_url}/{conversation_prefix}'
+    return conversation_url
 
 
 def ensure_conversation_found(
