@@ -4,7 +4,7 @@ from uuid import UUID
 
 import httpx
 from pydantic import Field
-from enterprise.storage.slack_team_store import SlackTeamStore
+from storage.slack_team_store import SlackTeamStore
 from slack_sdk import WebClient
 
 from openhands.agent_server.models import AskAgentRequest, AskAgentResponse
