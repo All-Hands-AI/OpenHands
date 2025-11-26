@@ -180,11 +180,12 @@ class TestGithubV1ConversationRouting(TestCase):
     async def test_create_new_conversation_fallback_on_v1_setting_error(
         self, mock_create_v1, mock_create_v0, mock_get_v1_setting
     ):
-        """Test that conversation creation falls back to V0 when v1_enabled check fails."""
-        # Mock v1_enabled check to raise an exception
-        mock_get_v1_setting.side_effect = Exception('Database error')
+        """Test that conversation creation falls back to V0 when _create_v1_conversation fails."""
+        # Mock v1_enabled as True so V1 is attempted
+        mock_get_v1_setting.return_value = True
+        # Mock _create_v1_conversation to raise an exception
+        mock_create_v1.side_effect = Exception('V1 conversation creation failed')
         mock_create_v0.return_value = None
-        mock_create_v1.return_value = None
 
         # Mock parameters
         jinja_env = MagicMock()
@@ -196,8 +197,10 @@ class TestGithubV1ConversationRouting(TestCase):
             jinja_env, git_provider_tokens, conversation_metadata
         )
 
-        # Verify V0 was called as fallback and V1 was not
+        # Verify V1 was attempted first, then V0 was called as fallback
+        mock_create_v1.assert_called_once_with(
+            jinja_env, git_provider_tokens, conversation_metadata
+        )
         mock_create_v0.assert_called_once_with(
             jinja_env, git_provider_tokens, conversation_metadata
         )
-        mock_create_v1.assert_not_called()
