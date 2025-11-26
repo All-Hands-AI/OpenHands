@@ -16,10 +16,12 @@ from openhands.app_server.event_callback.event_callback_result_models import (
     EventCallbackResult,
     EventCallbackResultStatus,
 )
-from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxStatus
-from openhands.app_server.utils.docker_utils import (
-    replace_localhost_hostname_for_docker,
+from openhands.app_server.event_callback.util import (
+    ensure_conversation_found, ensure_running_sandbox,
+    get_agent_server_url_from_sandbox,
+    get_prompt_template
 )
+from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 from openhands.sdk import Event
 from openhands.sdk.event import ConversationStateUpdateEvent
 
@@ -73,14 +75,14 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 conversation_id=conversation_id,
                 detail=summary,
             )
-        except Exception as exc:  # noqa: BLE001
-            _logger.exception('[GitHub V1] Error processing callback: %s', exc)
+        except Exception as e:
+            _logger.exception('[GitHub V1] Error processing callback: %s', e)
             return EventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
                 event_id=event.id,
                 conversation_id=conversation_id,
-                detail=str(exc),
+                detail=str(e),
             )
 
     # -------------------------------------------------------------------------
@@ -128,35 +130,6 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
     # -------------------------------------------------------------------------
     # Agent / sandbox helpers
     # -------------------------------------------------------------------------
-
-    def _get_summary_instruction(self) -> str:
-        from jinja2 import Environment, FileSystemLoader
-
-        jinja_env = Environment(
-            loader=FileSystemLoader('openhands/integrations/templates/resolver/')
-        )
-        summary_instruction_template = jinja_env.get_template('summary_prompt.j2')
-        summary_instruction = summary_instruction_template.render()
-        return summary_instruction
-
-    def _get_agent_server_url(self, sandbox) -> str:
-        """Get agent server URL for a running sandbox."""
-        exposed_urls = sandbox.exposed_urls
-        if not exposed_urls:
-            raise RuntimeError(f'No exposed URLs configured for sandbox {sandbox.id!r}')
-
-        try:
-            agent_server_url = next(
-                exposed_url.url
-                for exposed_url in exposed_urls
-                if exposed_url.name == AGENT_SERVER
-            )
-        except StopIteration:
-            raise RuntimeError(
-                f'No {AGENT_SERVER!r} URL found for sandbox {sandbox.id!r}'
-            ) from None
-
-        return replace_localhost_hostname_for_docker(agent_server_url)
 
     async def _ask_question(
         self,
@@ -265,32 +238,26 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             get_sandbox_service(state) as sandbox_service,
             get_httpx_client(state) as httpx_client,
         ):
-            # Get conversation info to find the sandbox
-            app_conversation_info = (
+            # 1. Conversation lookup
+            app_conversation_info = ensure_conversation_found(
                 await app_conversation_info_service.get_app_conversation_info(
                     conversation_id
-                )
+                ),
+                conversation_id,
             )
-            if not app_conversation_info:
-                raise RuntimeError(f'Conversation not found: {conversation_id}')
 
-            # Get sandbox info to find agent server URL
-            sandbox = await sandbox_service.get_sandbox(
-                app_conversation_info.sandbox_id
+            # 2. Sandbox lookup + validation
+            sandbox = ensure_running_sandbox(
+                await sandbox_service.get_sandbox(app_conversation_info.sandbox_id),
+                app_conversation_info.sandbox_id,
             )
-            if not sandbox or sandbox.status != SandboxStatus.RUNNING:
-                raise RuntimeError(
-                    f'Sandbox not running: {app_conversation_info.sandbox_id}'
-                )
 
-            if not sandbox.session_api_key:
-                raise RuntimeError(f'No session API key for sandbox: {sandbox.id}')
-
-            # Get agent server URL
-            agent_server_url = self._get_agent_server_url(sandbox)
+            # 3. URL + instruction
+            agent_server_url = get_agent_server_url_from_sandbox(sandbox)
+            agent_server_url = get_agent_server_url_from_sandbox(sandbox)
 
             # Prepare message based on agent state
-            message_content = self._get_summary_instruction()
+            message_content = get_prompt_template('summary_prompt.j2')
 
             # Ask the agent and return the response text
             return await self._ask_question(

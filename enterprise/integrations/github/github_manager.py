@@ -182,25 +182,6 @@ class GithubManager(Manager):
             self._add_reaction(github_view, 'eyes', installation_token)
             await self.start_job(github_view)
 
-    async def send_message_via_installation_id(
-        self,
-        installation_id: int,
-        message: str,
-        full_repo_name: str,
-        issue_number: int,
-        destination: str,
-    ):
-        installation_token = self.token_manager.load_org_token(installation_id)
-
-        if destination == 'PRComment':
-            pass
-
-        if destination == 'issue_comment' or destination == 'pr_comment':
-            with Github(installation_token) as github_client:
-                repo = github_client.get_repo(full_repo_name)
-                issue = repo.get_issue(number=issue_number)
-                issue.create_comment(message)
-
     async def send_message(self, message: Message, github_view: ResolverViewInterface):
         installation_token = self.token_manager.load_org_token(
             github_view.installation_id
