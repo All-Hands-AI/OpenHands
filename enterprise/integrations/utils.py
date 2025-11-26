@@ -10,7 +10,6 @@ from server.config import get_config
 from server.constants import WEB_HOST
 from storage.database import session_maker
 from storage.repository_store import RepositoryStore
-from storage.saas_settings_store import SaasSettingsStore
 from storage.stored_repository import StoredRepository
 from storage.user_repo_map import UserRepositoryMap
 from storage.user_repo_map_store import UserRepositoryMapStore
@@ -102,6 +101,8 @@ async def get_user_v1_enabled_setting(user_id: str | None) -> bool:
     if not user_id:
         return False
 
+    from storage.saas_settings_store import SaasSettingsStore
+    
     config = get_config()
     settings_store = SaasSettingsStore(
         user_id=user_id, session_maker=session_maker, config=config
