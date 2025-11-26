@@ -1,0 +1,17 @@
+[package]
+name = "vibe-balance"
+version = "1.0.0"
+authors = []
+
+[addresses]
+vibe_balance = "_"
+
+[dev-addresses]
+vibe_balance = "0xCAFE"
+
+[dependencies.LumioFramework]
+git = "https://github.com/pontem-network/lumio-framework.git"
+rev = "mainnet"
+subdir = "lumio-framework"
+
+[dev-dependencies]
