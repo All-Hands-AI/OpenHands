@@ -8,7 +8,6 @@ from github import Github, GithubIntegration
 from pydantic import Field
 
 from openhands.agent_server.models import AskAgentRequest, AskAgentResponse
-from enterprise.integrations.github import github_view
 from openhands.app_server.event_callback.event_callback_models import (
     EventCallback,
     EventCallbackProcessor,
@@ -21,9 +20,8 @@ from openhands.app_server.event_callback.util import (
     ensure_conversation_found,
     ensure_running_sandbox,
     get_agent_server_url_from_sandbox,
-    get_prompt_template
+    get_prompt_template,
 )
-from openhands.app_server.sandbox.sandbox_models import SandboxStatus
 from openhands.sdk import Event
 from openhands.sdk.event import ConversationStateUpdateEvent
 
@@ -130,11 +128,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 repo = github_client.get_repo(full_repo_name)
                 pr = repo.get_pull(issue_number)
                 pr.create_review_comment_reply(
-                    comment_id=self.github_view_data.get('comment_id', ''),
-                    body=summary
+                    comment_id=self.github_view_data.get('comment_id', ''), body=summary
                 )
             return
-
 
         with Github(installation_token) as github_client:
             repo = github_client.get_repo(full_repo_name)
@@ -264,6 +260,10 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             sandbox = ensure_running_sandbox(
                 await sandbox_service.get_sandbox(app_conversation_info.sandbox_id),
                 app_conversation_info.sandbox_id,
+            )
+
+            assert sandbox.session_api_key is not None, (
+                f'No session API key for sandbox: {sandbox.id}'
             )
 
             # 3. URL + instruction

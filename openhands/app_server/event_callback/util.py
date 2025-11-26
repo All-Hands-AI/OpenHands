@@ -1,7 +1,11 @@
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from openhands.app_server.sandbox.sandbox_models import AGENT_SERVER, SandboxInfo, SandboxStatus
+from openhands.app_server.sandbox.sandbox_models import (
+    AGENT_SERVER,
+    SandboxInfo,
+    SandboxStatus,
+)
 from openhands.app_server.utils.docker_utils import (
     replace_localhost_hostname_for_docker,
 )
@@ -13,8 +17,7 @@ if TYPE_CHECKING:
 
 
 def ensure_conversation_found(
-    app_conversation_info: AppConversationInfo | None,
-    conversation_id: UUID
+    app_conversation_info: AppConversationInfo | None, conversation_id: UUID
 ) -> AppConversationInfo:
     """Ensure conversation info exists, otherwise raise a clear error."""
     if not app_conversation_info:
@@ -22,10 +25,7 @@ def ensure_conversation_found(
     return app_conversation_info
 
 
-def ensure_running_sandbox(
-    sandbox: SandboxInfo | None,
-    sandbox_id: UUID
-) -> SandboxInfo:
+def ensure_running_sandbox(sandbox: SandboxInfo | None, sandbox_id: str) -> SandboxInfo:
     """Ensure sandbox exists, is running, and has a session API key."""
     if not sandbox:
         raise RuntimeError(f'Sandbox not found: {sandbox_id}')
@@ -39,9 +39,7 @@ def ensure_running_sandbox(
     return sandbox
 
 
-def get_agent_server_url_from_sandbox(
-    sandbox: SandboxInfo
-) -> str:
+def get_agent_server_url_from_sandbox(sandbox: SandboxInfo) -> str:
     """Return the agent server URL from sandbox exposed URLs."""
     exposed_urls = sandbox.exposed_urls
     if not exposed_urls:
@@ -59,7 +57,6 @@ def get_agent_server_url_from_sandbox(
         ) from None
 
     return replace_localhost_hostname_for_docker(agent_server_url)
-
 
 
 def get_prompt_template(template_name: str) -> str:
