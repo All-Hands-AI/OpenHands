@@ -63,10 +63,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
         self.should_request_summary = False
 
         try:
-            # _request_summary now returns a string (agent response text)
             summary = await self._request_summary(conversation_id)
-            print('work summarized\n\n', summary)
-
             await self._post_summary_to_github(summary)
 
             return EventCallbackResult(
@@ -78,6 +75,11 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
             )
         except Exception as e:
             _logger.exception('[GitHub V1] Error processing callback: %s', e)
+            await self._post_summary_to_github(
+                f'OpenHands encountered an error: **{str(e)}**.\n\n'
+                '[See the conversation]({CONVERSATION_URL.format(conversation_id)})'
+                'for more information.'
+            )
             return EventCallbackResult(
                 status=EventCallbackResultStatus.ERROR,
                 event_callback_id=callback.id,
@@ -189,13 +191,9 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 dict(e.response.headers),
                 exc_info=True,
             )
-            raise httpx.HTTPStatusError(
-                f'Failed to send message to agent server: {error_detail}',
-                request=e.request,
-                response=e.response,
-            ) from e
+            raise Exception(f'Failed to send message to agent server: {error_detail}')
 
-        except httpx.TimeoutException as e:
+        except httpx.TimeoutException:
             error_detail = f'Request timeout after 30 seconds to {url}'
             _logger.error(
                 '[GitHub V1] %s. Request payload: %s',
@@ -203,7 +201,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 payload,
                 exc_info=True,
             )
-            raise httpx.TimeoutException(error_detail) from e
+            raise Exception(error_detail)
 
         except httpx.RequestError as e:
             error_detail = f'Request error to {url}: {str(e)}'
@@ -213,7 +211,7 @@ class GithubV1CallbackProcessor(EventCallbackProcessor):
                 payload,
                 exc_info=True,
             )
-            raise httpx.RequestError(error_detail) from e
+            raise Exception(error_detail)
 
     # -------------------------------------------------------------------------
     # Summary orchestration

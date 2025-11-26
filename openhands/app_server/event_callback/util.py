@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -16,6 +17,11 @@ if TYPE_CHECKING:
     from openhands.app_server.app_conversation.app_conversation_models import (
         AppConversationInfo,
     )
+
+HOST = os.getenv('WEB_HOST', 'app.all-hands.dev').strip()
+HOST_URL = f'https://{HOST}'
+conversation_prefix = 'conversations/{}'
+CONVERSATION_URL = f'{HOST_URL}/{conversation_prefix}'
 
 
 def ensure_conversation_found(
