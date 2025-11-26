@@ -68,7 +68,7 @@ from openhands.app_server.utils.docker_utils import (
 )
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import ProviderType
-from openhands.sdk import LocalWorkspace
+from openhands.sdk import AgentContext, LocalWorkspace
 from openhands.sdk.conversation.secret_source import LookupSecret, StaticSecret
 from openhands.sdk.llm import LLM
 from openhands.sdk.security.confirmation_policy import AlwaysConfirm
@@ -230,10 +230,12 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 await self._build_start_conversation_request_for_user(
                     sandbox,
                     request.initial_message,
+                    request.system_message_suffix,
                     request.git_provider,
                     sandbox_spec.working_dir,
                     request.agent_type,
                     request.llm_model,
+                    request.conversation_id,
                     remote_workspace=remote_workspace,
                     selected_repository=request.selected_repository,
                 )
@@ -279,22 +281,24 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             )
 
             # Setup default processors
-            processors = request.processors
-            if processors is None:
-                processors = [SetTitleCallbackProcessor()]
+            processors = request.processors or []
+
+            # Always ensure SetTitleCallbackProcessor is included
+            has_set_title_processor = any(
+                isinstance(processor, SetTitleCallbackProcessor)
+                for processor in processors
+            )
+            if not has_set_title_processor:
+                processors.append(SetTitleCallbackProcessor())
 
             # Save processors
-            await asyncio.gather(
-                *[
-                    self.event_callback_service.save_event_callback(
-                        EventCallback(
-                            conversation_id=info.id,
-                            processor=processor,
-                        )
+            for processor in processors:
+                await self.event_callback_service.save_event_callback(
+                    EventCallback(
+                        conversation_id=info.id,
+                        processor=processor,
                     )
-                    for processor in processors
-                ]
-            )
+                )
 
             # Update the start task
             task.status = AppConversationStartTaskStatus.READY
@@ -519,10 +523,12 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         self,
         sandbox: SandboxInfo,
         initial_message: SendMessageRequest | None,
+        system_message_suffix: str | None,
         git_provider: ProviderType | None,
         working_dir: str,
         agent_type: AgentType = AgentType.DEFAULT,
         llm_model: str | None = None,
+        conversation_id: UUID | None = None,
         remote_workspace: AsyncRemoteWorkspace | None = None,
         selected_repository: str | None = None,
     ) -> StartConversationRequest:
@@ -578,7 +584,10 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
         else:
             agent = get_default_agent(llm=llm)
 
-        conversation_id = uuid4()
+        agent_context = AgentContext(system_message_suffix=system_message_suffix)
+        agent = agent.model_copy(update={'agent_context': agent_context})
+
+        conversation_id = conversation_id or uuid4()
         agent = ExperimentManagerImpl.run_agent_variant_tests__v1(
             user.id, conversation_id, agent
         )
