@@ -69,6 +69,7 @@ from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.types import AppMode
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
@@ -895,6 +896,113 @@ fi
 
         return loaded_microagents
 
+    def get_microagents_from_all_orgs(self) -> list[BaseMicroagent]:
+        """Load microagents from all organizations the user has access to.
+
+        This method attempts to discover organizations by:
+        1. Getting user repositories and extracting unique organization names
+        2. For each organization, trying to load microagents from {org}/.openhands or {org}/openhands-config
+
+        Returns:
+            A list of loaded microagents from all accessible organizations
+        """
+        loaded_microagents: list[BaseMicroagent] = []
+
+        self.log(
+            'info',
+            'No repository selected - attempting to load org-level microagents from all accessible organizations',
+        )
+
+        try:
+            # Get organizations from user's repositories
+            organizations = self._get_user_organizations()
+
+            self.log(
+                'info',
+                f'Found {len(organizations)} organizations to check for microagents: {organizations}',
+            )
+
+            # Try to load microagents from each organization
+            for org in organizations:
+                try:
+                    # Create a fake repository path to reuse existing logic
+                    fake_repo_path = f'{org}/dummy-repo'
+                    org_microagents = self.get_microagents_from_org_or_user(
+                        fake_repo_path
+                    )
+                    loaded_microagents.extend(org_microagents)
+
+                    if org_microagents:
+                        self.log(
+                            'info',
+                            f'Loaded {len(org_microagents)} microagents from organization {org}',
+                        )
+                except Exception as e:
+                    self.log(
+                        'debug',
+                        f'Failed to load microagents from organization {org}: {str(e)}',
+                    )
+
+        except Exception as e:
+            self.log(
+                'warning',
+                f'Failed to discover organizations for org-level microagents: {str(e)}',
+            )
+
+        self.log(
+            'info',
+            f'Loaded {len(loaded_microagents)} org-level microagents from all organizations',
+        )
+
+        return loaded_microagents
+
+    def _get_user_organizations(self) -> list[str]:
+        """Get a list of organizations the user has access to.
+
+        This method extracts organization names from the user's repositories.
+
+        Returns:
+            A list of unique organization names
+        """
+        organizations: set[str] = set()
+
+        try:
+            if not self.provider_handler:
+                self.log(
+                    'debug', 'No provider handler available for organization discovery'
+                )
+                return list(organizations)
+
+            # Get user repositories to extract organizations
+            repositories = call_async_from_sync(
+                self.provider_handler.get_repositories,
+                GENERAL_TIMEOUT,
+                sort='pushed',
+                app_mode=AppMode.OSS,  # Use OSS mode to get all repos
+                selected_provider=None,
+                page=1,
+                per_page=100,  # Get first 100 repos to discover organizations
+            )
+
+            # Extract unique organization names from repository full names
+            for repo in repositories:
+                if repo.full_name and '/' in repo.full_name:
+                    org_name = repo.full_name.split('/')[0]
+                    organizations.add(org_name)
+
+            self.log(
+                'debug',
+                f'Extracted {len(organizations)} organizations from {len(repositories)} repositories',
+            )
+
+        except Exception as e:
+            self.log(
+                'debug',
+                f'Failed to get user repositories for organization discovery: {str(e)}',
+            )
+
+        return list(organizations)
+
     def get_microagents_from_selected_repo(
         self, selected_repository: str | None
     ) -> list[BaseMicroagent]:
@@ -909,20 +1017,27 @@ fi
         For GitLab repositories, it will use openhands-config instead of .openhands
         since GitLab doesn't support repository names starting with non-alphanumeric
         characters.
+
+        When no repository is selected, this method will attempt to load org-level
+        microagents from all organizations the user has access to.
         """
         loaded_microagents: list[BaseMicroagent] = []
         microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
 
-        # Check for user/org level microagents if a repository is selected
+        # Check for user/org level microagents
         if selected_repository:
-            # Load microagents from the org/user level repository
+            # Load microagents from the org/user level repository for the selected repo
             org_microagents = self.get_microagents_from_org_or_user(selected_repository)
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
             repo_root = self.workspace_root / selected_repository.split('/')[-1]
             microagents_dir = repo_root / '.openhands' / 'microagents'
+        else:
+            # No repository selected - try to load org-level microagents from all accessible organizations
+            org_microagents = self.get_microagents_from_all_orgs()
+            loaded_microagents.extend(org_microagents)
 
         self.log(
             'info',
