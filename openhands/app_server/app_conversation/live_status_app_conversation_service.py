@@ -572,15 +572,21 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             usage_id='agent',
         )
         # MCP Config
-        # mcp_config = {
-        #     "default": {
-        #         "url": "https://llm-proxy.staging.all-hands.dev/mcp",
-        #         "headers": {
-        #             "x-litellm-api-key": f"Bearer {user.llm_api_key}"
-        #         }
-        #     }
-        # }
-        mcp_config: dict[str, Any] = {}
+        mcp_config = {
+            "default": {
+                # The URL will differ depending on the type of sandbox.
+                # If we have a web host, we use that
+                # Else if the sandbox is docker, we use host.docker.internal and the port
+                # Else if the sandbox is process we use localhost and the port
+                # Else no config
+                "url": "http://host.docker.internal:3000/mcp/mcp",
+                # "url": "https://llm-proxy.staging.all-hands.dev/mcp",
+                #"headers": {
+                #    "x-litellm-api-key": f"Bearer {user.llm_api_key}"
+                #}
+            }
+        }
+        # mcp_config: dict[str, Any] = {}
 
         # The agent gets passed initial instructions
         # Select agent based on agent_type
