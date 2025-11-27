@@ -201,6 +201,9 @@ class TestExperimentManagerIntegration:
         # Patch the pieces invoked by the service
         with (
             patch(
+                'openhands.app_server.app_conversation.live_status_app_conversation_service.LLM'
+            ) as mock_llm_class,
+            patch(
                 'openhands.app_server.app_conversation.live_status_app_conversation_service.get_default_agent',
                 return_value=mock_agent,
             ),
@@ -212,6 +215,8 @@ class TestExperimentManagerIntegration:
                 'openhands.app_server.app_conversation.live_status_app_conversation_service.ExperimentManagerImpl'
             ) as mock_experiment_manager,
         ):
+            # Configure the LLM mock to return our mock_llm when instantiated
+            mock_llm_class.return_value = mock_llm
             # Configure the experiment manager mock to return the same agent
             mock_experiment_manager.run_agent_variant_tests__v1.return_value = (
                 mock_agent
