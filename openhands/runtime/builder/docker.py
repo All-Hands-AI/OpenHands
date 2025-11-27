@@ -20,7 +20,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
         self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
+            version_info.get('Components')[0].get('Name').startswith('Podman')  # type: ignore[index]
         )
         if (
             tuple(map(int, server_version.split('.')[:2])) < (18, 9)
@@ -80,7 +80,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
         self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
+            version_info.get('Components')[0].get('Name').startswith('Podman')  # type: ignore[index]
         )
         if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(

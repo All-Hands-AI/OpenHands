@@ -1,28 +1,12 @@
-type Network = "testnet" | "mainnet";
-
-interface NetworkConfig {
+interface LumioConfig {
   rpcUrl: string;
   contractAddress: string;
 }
 
-const NETWORK_CONFIG: Record<Network, NetworkConfig> = {
-  testnet: {
-    rpcUrl:
-      import.meta.env.VITE_LUMIO_RPC_TESTNET || "https://api.testnet.lumio.io/",
-    contractAddress: import.meta.env.VITE_VIBE_BALANCE_CONTRACT_TESTNET || "",
-  },
-  mainnet: {
-    rpcUrl: import.meta.env.VITE_LUMIO_RPC_MAINNET || "https://api.lumio.io/",
-    contractAddress: import.meta.env.VITE_VIBE_BALANCE_CONTRACT_MAINNET || "",
-  },
-};
-
-const getCurrentNetwork = (): Network => {
-  const network = import.meta.env.VITE_LUMIO_NETWORK || "testnet";
-  return network as Network;
-};
-
-const getConfig = (): NetworkConfig => NETWORK_CONFIG[getCurrentNetwork()];
+const getConfig = (): LumioConfig => ({
+  rpcUrl: import.meta.env.VITE_LUMIO_RPC_URL || "https://api.testnet.lumio.io/",
+  contractAddress: import.meta.env.VITE_VIBE_BALANCE_CONTRACT || "",
+});
 
 const buildViewRequest = (functionName: string, args: string[] = []) => {
   const { contractAddress } = getConfig();
@@ -53,7 +37,6 @@ const callView = async <T>(
 };
 
 export const vibeBalance = {
-  getNetwork: getCurrentNetwork,
   getConfig,
 
   isConfigured: (): boolean => {

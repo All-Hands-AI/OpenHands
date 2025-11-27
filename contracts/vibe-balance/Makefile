@@ -1,7 +1,8 @@
-LUMIO_BIN ?= /Users/dimaakusev/Documents/projects/lumio/lumio-node/target/debug/lumio
-CONTRACT ?= 0xac1f48e2c77b95f2646c37ff629dbd27fa1a1f0857f7260ddf59ed14a13063fb
+LUMIO_BIN ?= lumio
+CONTRACT ?= $(shell cat deployed_address_*.txt 2>/dev/null | head -1 || echo "")
+RPC_URL ?= https://api.testnet.lumio.io/
 
-.PHONY: build test deploy-testnet deploy-mainnet init-testnet init-mainnet \
+.PHONY: build test deploy deploy-init \
         deposit balance whitelist-add whitelist-remove whitelist-check \
         deduct set-price get-price
 
@@ -13,17 +14,12 @@ test:
 	$(LUMIO_BIN) move test --named-addresses vibe_balance=$$($(LUMIO_BIN) account lookup-address | grep -oE '0x[a-fA-F0-9]+' | head -1)
 
 # Deploy
-deploy-testnet:
-	LUMIO_NETWORK=testnet ./scripts/deploy.sh
+# Usage: make deploy LUMIO_NETWORK=testnet (or mainnet)
+deploy:
+	./scripts/deploy.sh
 
-deploy-mainnet:
-	LUMIO_NETWORK=mainnet ./scripts/deploy.sh
-
-init-testnet:
-	LUMIO_NETWORK=testnet ./scripts/deploy.sh --init
-
-init-mainnet:
-	LUMIO_NETWORK=mainnet ./scripts/deploy.sh --init
+deploy-init:
+	./scripts/deploy.sh --init
 
 # Deposit (amount in micro-coins, e.g., 1000000 = 1 coin)
 # Usage: make deposit AMOUNT=1000000
@@ -35,7 +31,7 @@ deposit:
 # Usage: make balance ADDRESS=0x...
 balance:
 	@if [ -z "$(ADDRESS)" ]; then echo "Usage: make balance ADDRESS=<address>"; exit 1; fi
-	@curl -s -X POST "https://api.testnet.lumio.io/v1/view" \
+	@curl -s -X POST "$(RPC_URL)v1/view" \
 		-H "Content-Type: application/json" \
 		-d '{"function":"$(CONTRACT)::vibe_balance::get_balance","type_arguments":[],"arguments":["$(ADDRESS)"]}' \
 		| jq -r '.[0]'
@@ -54,7 +50,7 @@ whitelist-remove:
 # Usage: make whitelist-check ADDRESS=0x...
 whitelist-check:
 	@if [ -z "$(ADDRESS)" ]; then echo "Usage: make whitelist-check ADDRESS=<address>"; exit 1; fi
-	@curl -s -X POST "https://api.testnet.lumio.io/v1/view" \
+	@curl -s -X POST "$(RPC_URL)v1/view" \
 		-H "Content-Type: application/json" \
 		-d '{"function":"$(CONTRACT)::vibe_balance::is_whitelisted","type_arguments":[],"arguments":["$(ADDRESS)"]}' \
 		| jq -r '.[0]'
@@ -73,7 +69,7 @@ set-price:
 	$(LUMIO_BIN) move run --function-id "$(CONTRACT)::vibe_balance::set_token_price" --args "u64:$(PRICE)" --assume-yes
 
 get-price:
-	@curl -s -X POST "https://api.testnet.lumio.io/v1/view" \
+	@curl -s -X POST "$(RPC_URL)v1/view" \
 		-H "Content-Type: application/json" \
 		-d '{"function":"$(CONTRACT)::vibe_balance::get_token_price","type_arguments":[],"arguments":[]}' \
 		| jq -r '.[0]'

@@ -4,7 +4,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONTRACT_DIR="$(dirname "$SCRIPT_DIR")"
 PROJECT_ROOT="$(dirname "$(dirname "$CONTRACT_DIR")")"
-ENV_FILE="$PROJECT_ROOT/frontend/.env.sample"
+FRONTEND_ENV_FILE="$PROJECT_ROOT/frontend/.env.sample"
+SERVER_ENV_FILE="$PROJECT_ROOT/.env"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -54,27 +55,42 @@ echo -e "\n${GREEN}======== Deployed ========${NC}"
 echo -e "Address: ${GREEN}$PACKAGE_ADDRESS${NC}"
 echo "$PACKAGE_ADDRESS" > "$CONTRACT_DIR/deployed_address_${NETWORK}.txt"
 
-update_env_contract() {
-    local network=$1
-    local address=$2
-    local network_upper=$(echo "$network" | tr '[:lower:]' '[:upper:]')
-    local env_var="VITE_VIBE_BALANCE_CONTRACT_${network_upper}"
+update_env_var() {
+    local env_file=$1
+    local var_name=$2
+    local value=$3
 
-    if [ -f "$ENV_FILE" ]; then
-        if grep -q "^${env_var}=" "$ENV_FILE"; then
+    if [ -f "$env_file" ]; then
+        if grep -q "^${var_name}=" "$env_file"; then
             if [[ "$OSTYPE" == "darwin"* ]]; then
-                sed -i '' "s|^${env_var}=.*|${env_var}=\"${address}\"|" "$ENV_FILE"
+                sed -i '' "s|^${var_name}=.*|${var_name}=\"${value}\"|" "$env_file"
             else
-                sed -i "s|^${env_var}=.*|${env_var}=\"${address}\"|" "$ENV_FILE"
+                sed -i "s|^${var_name}=.*|${var_name}=\"${value}\"|" "$env_file"
             fi
         else
-            echo "${env_var}=\"${address}\"" >> "$ENV_FILE"
+            echo "${var_name}=\"${value}\"" >> "$env_file"
         fi
-        echo -e "Updated ${ENV_FILE}: ${env_var}=\"${address}\""
+        echo -e "Updated ${env_file}: ${var_name}=\"${value}\""
     fi
 }
 
-update_env_contract "$NETWORK" "$PACKAGE_ADDRESS"
+# Determine RPC URL based on network
+if [ "$NETWORK" == "mainnet" ]; then
+    RPC_URL="https://api.lumio.io/"
+else
+    RPC_URL="https://api.testnet.lumio.io/"
+fi
+
+# Update frontend env
+update_env_var "$FRONTEND_ENV_FILE" "VITE_VIBE_BALANCE_CONTRACT" "$PACKAGE_ADDRESS"
+update_env_var "$FRONTEND_ENV_FILE" "VITE_LUMIO_RPC_URL" "$RPC_URL"
+
+# Update server env (create if not exists)
+if [ ! -f "$SERVER_ENV_FILE" ]; then
+    touch "$SERVER_ENV_FILE"
+fi
+update_env_var "$SERVER_ENV_FILE" "VIBE_BALANCE_CONTRACT" "$PACKAGE_ADDRESS"
+update_env_var "$SERVER_ENV_FILE" "LUMIO_RPC_URL" "$RPC_URL"
 
 if [[ "$1" == "--init" ]]; then
     echo -e "\n${YELLOW}Initializing...${NC}"
