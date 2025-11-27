@@ -5,7 +5,6 @@ import json
 import multiprocessing
 import os
 import tempfile
-import docker
 from typing import Any, Literal
 
 import pandas as pd
@@ -16,9 +15,6 @@ import openhands.agenthub
 from evaluation.benchmarks.swe_bench.binary_patch_utils import (
     remove_binary_diffs,
     remove_binary_files_from_git,
-)
-from evaluation.benchmarks.swe_bench.resource.mapping import (
-    get_instance_resource_factor,
 )
 from evaluation.utils.shared import (
     EvalException,
@@ -39,8 +35,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
-    get_llm_config_arg,
     get_evaluation_parser,
+    get_llm_config_arg,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -114,11 +110,10 @@ Please remember that you should not change the implementation of the `workload()
     return MessageAction(content=instruction)
 
 
-
 def get_instance_docker_image(
     instance_id: str,
 ) -> str:
-    return f"ghcr.io/swefficiency/swefficiency-images:{instance_id}"
+    return f'ghcr.io/swefficiency/swefficiency-images:{instance_id}'
 
 
 def get_config(
@@ -150,7 +145,7 @@ def get_config(
     sandbox_config.remote_runtime_resource_factor = 4.0
     sandbox_config.runtime_startup_env_vars.update(
         {
-            "NO_CHANGE_TIMEOUT_SECONDS": '900',  # 15 minutes
+            'NO_CHANGE_TIMEOUT_SECONDS': '900',  # 15 minutes
         }
     )
 
@@ -158,9 +153,9 @@ def get_config(
         print(f'Configuring Docker runtime with CPU group: {cpu_group}')
         sandbox_config.docker_runtime_kwargs = {
             # HACK: Use the cpu_group if provided, otherwise use all available CPUs
-            "cpuset_cpus": ','.join(map(str, cpu_group)),
-            "nano_cpus": int(1e9 * len(cpu_group)),  # optional: hard cap to vCPU count
-            "mem_limit": "16g",
+            'cpuset_cpus': ','.join(map(str, cpu_group)),
+            'nano_cpus': int(1e9 * len(cpu_group)),  # optional: hard cap to vCPU count
+            'mem_limit': '16g',
         }
 
     # Note: We keep rm_all_containers = False for worker process safety
@@ -296,7 +291,6 @@ def initialize_runtime(
         obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
-
 
     action = CmdRunAction(command='git reset --hard')
     action.set_hard_timeout(600)
@@ -497,6 +491,7 @@ def complete_runtime(
     logger.info('-' * 30)
     return {'git_patch': git_patch}
 
+
 class CPUGroupManager:
     def __init__(self, cpu_groups_queue: multiprocessing.Queue):
         self.cpu_groups_queue = cpu_groups_queue
@@ -524,12 +519,11 @@ def cleanup_docker_resources_for_worker():
     interfering with other workers. Container cleanup is handled
     by the DockerRuntime.close() method based on configuration.
     """
-    import os
-    import tempfile
 
     # Clean up any stale port locks from crashed processes
     try:
         from openhands.runtime.utils.port_lock import cleanup_stale_locks
+
         cleanup_stale_locks(max_age_seconds=300)  # Clean up locks older than 5 minutes
     except Exception as e:
         logger.debug(f'Error cleaning up stale port locks: {e}')
@@ -555,7 +549,6 @@ def process_instance(
             reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
         else:
             logger.info(f'Starting evaluation for instance {instance.instance_id}.')
-
 
         metadata = copy.deepcopy(metadata)
         metadata.details['runtime_failure_count'] = runtime_failure_count
@@ -596,14 +589,18 @@ def process_instance(
             )
         except Exception as e:
             # Log the error but don't let it crash other workers
-            logger.error(f'Error in worker processing instance {instance.instance_id}: {str(e)}')
+            logger.error(
+                f'Error in worker processing instance {instance.instance_id}: {str(e)}'
+            )
             raise
         finally:
             # Ensure runtime is properly closed to prevent cascade failures
             try:
                 runtime.close()
             except Exception as e:
-                logger.warning(f'Error closing runtime for {instance.instance_id}: {str(e)}')
+                logger.warning(
+                    f'Error closing runtime for {instance.instance_id}: {str(e)}'
+                )
                 # Don't re-raise - we want to continue cleanup
 
         # ==========================================
@@ -628,7 +625,9 @@ def process_instance(
         instruction = message_action.content
         if message_action.image_urls:
             instruction += (
-                '\n\n<image_urls>' + '\n'.join(message_action.image_urls) + '</image_urls>'
+                '\n\n<image_urls>'
+                + '\n'.join(message_action.image_urls)
+                + '</image_urls>'
             )
         output = EvalOutput(
             instance_id=instance.instance_id,
@@ -684,19 +683,20 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=0)
     except AttributeError:
         # os.sched_getaffinity not available on all platforms
         import multiprocessing
+
         current_cpus = list(range(multiprocessing.cpu_count()))
 
     num_cpus = len(current_cpus)
     if num_workers <= 0:
-        raise ValueError("Number of workers must be greater than 0")
+        raise ValueError('Number of workers must be greater than 0')
 
     # Chec that num worers and num_cpus_per_worker fit into available CPUs
     total_cpus_needed = num_workers * num_cpus_per_worker + num_to_skip
     if total_cpus_needed > num_cpus:
         raise ValueError(
-            f"Not enough CPUs available. Requested {total_cpus_needed} "
-            f"CPUs (num_workers={num_workers}, num_cpus_per_worker={num_cpus_per_worker}, "
-            f"num_to_skip={num_to_skip}), but only {num_cpus} CPUs are available."
+            f'Not enough CPUs available. Requested {total_cpus_needed} '
+            f'CPUs (num_workers={num_workers}, num_cpus_per_worker={num_cpus_per_worker}, '
+            f'num_to_skip={num_to_skip}), but only {num_cpus} CPUs are available.'
         )
 
     # Divide this into groups, skipping the first `num_to_skip` CPUs.
@@ -705,11 +705,12 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=0)
         available_cpus[i * num_cpus_per_worker : (i + 1) * num_cpus_per_worker]
         for i in range(num_workers)
     ]
-    print(f"Divided {num_cpus} CPUs into {num_workers} groups, each with {num_cpus_per_worker} CPUs.")
-    print(f"CPU groups: {cpu_groups}")
+    print(
+        f'Divided {num_cpus} CPUs into {num_workers} groups, each with {num_cpus_per_worker} CPUs.'
+    )
+    print(f'CPU groups: {cpu_groups}')
 
     return cpu_groups
-
 
 
 if __name__ == '__main__':

@@ -63,4 +63,3 @@ then your command would be:
 ### 2. Run the SWE-fficiency benchmark official evaluation
 
 Once the output is converted, use the [official SWE-fficiency benchmark evaluation](https://github.com/swefficiency/swefficiency) to evaluate it.
-
