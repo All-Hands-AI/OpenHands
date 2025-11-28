@@ -43,6 +43,7 @@ from openhands.app_server.user.specifiy_user_context import (
 from openhands.app_server.user.user_context import UserContext
 from openhands.integrations.provider import ProviderType
 from openhands.sdk import Event
+from openhands.sdk.conversation.conversation_stats import ConversationStats
 from openhands.sdk.event import ConversationStateUpdateEvent
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.server.user_auth.user_auth import (
@@ -138,20 +139,28 @@ async def _process_stats_event(
         app_conversation_info_service: Service for updating conversation info
     """
     try:
-        # Extract usage_to_metrics from event value
-        # event.value can be a dict or an object with attributes
+        # Parse event value into ConversationStats model for type safety
+        # event.value can be a dict (from JSON deserialization) or a ConversationStats object
         event_value = event.value
-        usage_to_metrics = None
+        conversation_stats: ConversationStats | None = None
 
-        if isinstance(event_value, dict):
-            usage_to_metrics = event_value.get('usage_to_metrics')
+        if isinstance(event_value, ConversationStats):
+            # Already a ConversationStats object
+            conversation_stats = event_value
+        elif isinstance(event_value, dict):
+            # Parse dict into ConversationStats model
+            # This validates the structure and ensures type safety
+            conversation_stats = ConversationStats.model_validate(event_value)
         elif hasattr(event_value, 'usage_to_metrics'):
-            usage_to_metrics = event_value.usage_to_metrics
+            # Handle objects with usage_to_metrics attribute (e.g., from tests)
+            # Convert to dict first, then validate
+            stats_dict = {'usage_to_metrics': event_value.usage_to_metrics}
+            conversation_stats = ConversationStats.model_validate(stats_dict)
 
-        if usage_to_metrics:
-            stats_data = {'usage_to_metrics': usage_to_metrics}
+        if conversation_stats and conversation_stats.usage_to_metrics:
+            # Pass ConversationStats object directly for type safety
             await app_conversation_info_service.update_conversation_statistics(
-                conversation_id, stats_data
+                conversation_id, conversation_stats
             )
     except Exception:
         _logger.exception(

@@ -23,7 +23,9 @@ from openhands.app_server.app_conversation.sql_app_conversation_info_service imp
 from openhands.app_server.event_callback.webhook_router import _process_stats_event
 from openhands.app_server.user.specifiy_user_context import SpecifyUserContext
 from openhands.app_server.utils.sql_utils import Base
+from openhands.sdk.conversation.conversation_stats import ConversationStats
 from openhands.sdk.event import ConversationStateUpdateEvent
+from openhands.sdk.llm.utils.metrics import Metrics, TokenUsage
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -162,23 +164,22 @@ class TestUpdateConversationStatistics:
         """Test successfully updating conversation statistics."""
         conversation_id, stored = v1_conversation_metadata
 
-        stats = {
-            'usage_to_metrics': {
-                'agent': {
-                    'accumulated_cost': 0.03411525,
-                    'max_budget_per_task': 10.0,
-                    'accumulated_token_usage': {
-                        'prompt_tokens': 8770,
-                        'completion_tokens': 82,
-                        'cache_read_tokens': 0,
-                        'cache_write_tokens': 8767,
-                        'reasoning_tokens': 0,
-                        'context_window': 0,
-                        'per_turn_token': 8852,
-                    },
-                }
-            }
-        }
+        agent_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.03411525,
+            max_budget_per_task=10.0,
+            accumulated_token_usage=TokenUsage(
+                model='test-model',
+                prompt_tokens=8770,
+                completion_tokens=82,
+                cache_read_tokens=0,
+                cache_write_tokens=8767,
+                reasoning_tokens=0,
+                context_window=0,
+                per_turn_token=8852,
+            ),
+        )
+        stats = ConversationStats(usage_to_metrics={'agent': agent_metrics})
 
         await service.update_conversation_statistics(conversation_id, stats)
 
@@ -207,17 +208,16 @@ class TestUpdateConversationStatistics:
         stored.prompt_tokens = 100
         await async_session.commit()
 
-        stats = {
-            'usage_to_metrics': {
-                'agent': {
-                    'accumulated_cost': 0.05,
-                    'accumulated_token_usage': {
-                        'prompt_tokens': 200,
-                        # completion_tokens not provided
-                    },
-                }
-            }
-        }
+        agent_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.05,
+            accumulated_token_usage=TokenUsage(
+                model='test-model',
+                prompt_tokens=200,
+                completion_tokens=0,  # Default value
+            ),
+        )
+        stats = ConversationStats(usage_to_metrics={'agent': agent_metrics})
 
         await service.update_conversation_statistics(conversation_id, stats)
 
@@ -236,13 +236,11 @@ class TestUpdateConversationStatistics:
         conversation_id, stored = v1_conversation_metadata
         original_cost = stored.accumulated_cost
 
-        stats = {
-            'usage_to_metrics': {
-                'condenser': {
-                    'accumulated_cost': 0.1,
-                }
-            }
-        }
+        condenser_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.1,
+        )
+        stats = ConversationStats(usage_to_metrics={'condenser': condenser_metrics})
 
         await service.update_conversation_statistics(conversation_id, stats)
 
@@ -253,13 +251,11 @@ class TestUpdateConversationStatistics:
     async def test_update_statistics_conversation_not_found(self, service):
         """Test that update is skipped when conversation doesn't exist."""
         nonexistent_id = uuid4()
-        stats = {
-            'usage_to_metrics': {
-                'agent': {
-                    'accumulated_cost': 0.1,
-                }
-            }
-        }
+        agent_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.1,
+        )
+        stats = ConversationStats(usage_to_metrics={'agent': agent_metrics})
 
         # Should not raise an exception
         await service.update_conversation_statistics(nonexistent_id, stats)
@@ -285,13 +281,11 @@ class TestUpdateConversationStatistics:
 
         original_cost = stored.accumulated_cost
 
-        stats = {
-            'usage_to_metrics': {
-                'agent': {
-                    'accumulated_cost': 0.1,
-                }
-            }
-        }
+        agent_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.1,
+        )
+        stats = ConversationStats(usage_to_metrics={'agent': agent_metrics})
 
         await service.update_conversation_statistics(conversation_id, stats)
 
@@ -312,18 +306,17 @@ class TestUpdateConversationStatistics:
         stored.prompt_tokens = 100
         await async_session.commit()
 
-        stats = {
-            'usage_to_metrics': {
-                'agent': {
-                    'accumulated_cost': 0.05,
-                    'max_budget_per_task': None,  # None value
-                    'accumulated_token_usage': {
-                        'prompt_tokens': 200,
-                        'completion_tokens': None,  # None value
-                    },
-                }
-            }
-        }
+        agent_metrics = Metrics(
+            model_name='test-model',
+            accumulated_cost=0.05,
+            max_budget_per_task=None,  # None value
+            accumulated_token_usage=TokenUsage(
+                model='test-model',
+                prompt_tokens=200,
+                completion_tokens=0,  # Default value (None is not valid for int)
+            ),
+        )
+        stats = ConversationStats(usage_to_metrics={'agent': agent_metrics})
 
         await service.update_conversation_statistics(conversation_id, stats)
 
@@ -361,8 +354,8 @@ class TestProcessStatsEvent:
         mock_service.update_conversation_statistics.assert_called_once()
         call_args = mock_service.update_conversation_statistics.call_args
         assert call_args[0][0] == conversation_id
-        assert 'usage_to_metrics' in call_args[0][1]
-        assert 'agent' in call_args[0][1]['usage_to_metrics']
+        assert isinstance(call_args[0][1], ConversationStats)
+        assert 'agent' in call_args[0][1].usage_to_metrics
 
     @pytest.mark.asyncio
     async def test_process_stats_event_with_object_value(
@@ -380,7 +373,7 @@ class TestProcessStatsEvent:
         mock_service.update_conversation_statistics.assert_called_once()
         call_args = mock_service.update_conversation_statistics.call_args
         assert call_args[0][0] == conversation_id
-        assert 'usage_to_metrics' in call_args[0][1]
+        assert isinstance(call_args[0][1], ConversationStats)
 
     @pytest.mark.asyncio
     async def test_process_stats_event_no_usage_to_metrics(
