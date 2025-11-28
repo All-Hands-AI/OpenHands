@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from os import replace
 from time import time
 from typing import Any, AsyncGenerator, Sequence
 from uuid import UUID, uuid4
@@ -578,21 +579,29 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
             usage_id='agent',
         )
         # MCP Config
-        mcp_config = {
-            "default": {
-                # The URL will differ depending on the type of sandbox.
-                # If we have a web host, we use that
-                # Else if the sandbox is docker, we use host.docker.internal and the port
-                # Else if the sandbox is process we use localhost and the port
-                # Else no config
-                "url": "http://host.docker.internal:3000/mcp/mcp",
-                # "url": "https://llm-proxy.staging.all-hands.dev/mcp",
-                #"headers": {
-                #    "x-litellm-api-key": f"Bearer {user.llm_api_key}"
-                #}
-            }
-        }
-        # mcp_config: dict[str, Any] = {}
+        mcp_config = {}
+        if self.web_url:
+            mcp_url = f"{replace_localhost_hostname_for_docker(self.web_url)}/mcp/mcp"
+
+            mcp_api_key = await self.user_context.get_mcp_api_key()
+            if mcp_api_key:
+                mcp_config = {
+                    "default": {
+                        # The URL will differ depending on the type of sandbox.
+                        # If we have a web host, we use that
+                        # Else if the sandbox is docker, we use host.docker.internal and the port
+                        # Else if the sandbox is process we use localhost and the port
+                        # Else no config
+                        "url": mcp_url,
+                        # "url": "https://llm-proxy.staging.all-hands.dev/mcp",
+                        "headers": {
+                        #    "x-litellm-api-key": f"Bearer {user.llm_api_key}",
+                            "X-Session-API-Key": mcp_api_key,
+                            # IF we are saas, we need an API key for the user here...
+                        }
+                    }
+                }
+
 
         # The agent gets passed initial instructions
         # Select agent based on agent_type
