@@ -20,6 +20,8 @@ class LLMConfig(BaseModel):
         aws_access_key_id: The AWS access key ID.
         aws_secret_access_key: The AWS secret access key.
         aws_region_name: The AWS region name.
+        vertex_ai_project: The Google Cloud project ID for Vertex AI.
+        vertex_ai_location: The Google Cloud region for Vertex AI.
         num_retries: The number of retries to attempt.
         retry_multiplier: The multiplier for the exponential backoff.
         retry_min_wait: The minimum time to wait between retries, in seconds. This is exponential backoff minimum. For models with very low limits, this can be set to 15-20.
@@ -57,6 +59,8 @@ class LLMConfig(BaseModel):
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
+    vertex_ai_project: str | None = Field(default=None)
+    vertex_ai_location: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
     # total wait time: 8 + 16 + 32 + 64 = 120 seconds
