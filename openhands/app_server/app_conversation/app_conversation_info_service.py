@@ -9,6 +9,7 @@ from openhands.app_server.app_conversation.app_conversation_models import (
     AppConversationSortOrder,
 )
 from openhands.app_server.services.injector import Injector
+from openhands.sdk.conversation.conversation_stats import ConversationStats
 from openhands.sdk.utils.models import DiscriminatedUnionMixin
 
 
@@ -90,6 +91,17 @@ class AppConversationInfoService(ABC):
         """Store the sandboxed conversation info object given.
 
         Return the stored info
+        """
+
+    @abstractmethod
+    async def update_conversation_statistics(
+        self, conversation_id: UUID, stats: ConversationStats
+    ) -> None:
+        """Update conversation statistics from stats event data.
+
+        Args:
+            conversation_id: The ID of the conversation to update
+            stats: ConversationStats object containing usage_to_metrics data from stats event
         """
 
 
