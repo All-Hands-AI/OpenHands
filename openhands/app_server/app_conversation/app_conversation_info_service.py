@@ -92,6 +92,17 @@ class AppConversationInfoService(ABC):
         Return the stored info
         """
 
+    @abstractmethod
+    async def update_conversation_statistics(
+        self, conversation_id: UUID, stats: dict
+    ) -> None:
+        """Update conversation statistics from stats event data.
+
+        Args:
+            conversation_id: The ID of the conversation to update
+            stats: Dictionary containing usage_to_metrics data from stats event
+        """
+
 
 class AppConversationInfoServiceInjector(
     DiscriminatedUnionMixin, Injector[AppConversationInfoService], ABC
