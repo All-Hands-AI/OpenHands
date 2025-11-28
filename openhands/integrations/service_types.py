@@ -179,6 +179,12 @@ class RateLimitError(ValueError):
     pass
 
 
+class ForbiddenError(ValueError):
+    """Raised when access to a resource is forbidden (permissions issue)."""
+
+    pass
+
+
 class ResourceNotFoundError(ValueError):
     """Raised when a requested resource (file, directory, etc.) is not found."""
 
