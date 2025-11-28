@@ -602,6 +602,22 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
                 _logger.warning(f'Failed to load skills: {e}', exc_info=True)
                 # Continue without skills - don't fail conversation startup
 
+        # Add OpenHands MCP server configuration to the agent
+        # Pass user.id for API key generation in SaaS mode
+        # Pass user.search_api_key so it can be merged into the config for search engine detection
+        # This mirrors V0's behavior where settings.search_api_key is set on config before MCP setup
+        search_api_key_attr = getattr(user, 'search_api_key', None)
+        user_search_api_key = (
+            search_api_key_attr.get_secret_value() if search_api_key_attr else None
+        )
+        agent = self._add_openhands_mcp_config_to_agent(
+            agent,
+            self.web_url,
+            user_id=user.id,
+            search_api_key=user_search_api_key,
+            app_mode=self.app_mode,
+        )
+
         start_conversation_request = StartConversationRequest(
             conversation_id=conversation_id,
             agent=agent,
