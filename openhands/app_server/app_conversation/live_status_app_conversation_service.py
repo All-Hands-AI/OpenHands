@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -76,6 +78,15 @@ from openhands.sdk.workspace.remote.async_remote_workspace import AsyncRemoteWor
 from openhands.server.types import AppMode
 from openhands.tools.preset.default import get_default_agent
 from openhands.tools.preset.planning import get_planning_agent
+
+# Lightweight environment detection (mirrors enterprise.server.constants)
+WEB_HOST = os.getenv('WEB_HOST', 'app.all-hands.dev').strip()
+IS_LOCAL_ENV = WEB_HOST == 'localhost:3030'
+IS_STAGING_ENV = bool(
+    re.match(r'^.+\.staging\.all-hands\.dev$', WEB_HOST)
+    or WEB_HOST == 'staging.all-hands.dev'
+)
+IS_FEATURE_ENV = IS_STAGING_ENV and WEB_HOST != 'staging.all-hands.dev'
 
 _conversation_info_type_adapter = TypeAdapter(list[ConversationInfo | None])
 _logger = logging.getLogger(__name__)
@@ -571,11 +582,19 @@ class LiveStatusAppConversationService(AppConversationServiceBase):
 
         # Use provided llm_model if available, otherwise fall back to user's default
         model = llm_model or user.llm_model
+        # Determine environment: staging (SaaS + staging/local) or production
+        env = (
+            'staging'
+            if self.app_mode == 'saas'
+            and (IS_STAGING_ENV or IS_LOCAL_ENV or IS_FEATURE_ENV)
+            else 'prod'
+        )
         llm = LLM(
             model=model,
             base_url=user.llm_base_url,
             api_key=user.llm_api_key,
             usage_id='agent',
+            env=env,
         )
         # The agent gets passed initial instructions
         # Select agent based on agent_type
