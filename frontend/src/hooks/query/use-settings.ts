@@ -35,6 +35,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     GIT_USER_NAME: apiSettings.git_user_name || DEFAULT_SETTINGS.GIT_USER_NAME,
     GIT_USER_EMAIL:
       apiSettings.git_user_email || DEFAULT_SETTINGS.GIT_USER_EMAIL,
+    V1_ENABLED: apiSettings.v1_enabled,
     IS_NEW_USER: false,
   };
 };
