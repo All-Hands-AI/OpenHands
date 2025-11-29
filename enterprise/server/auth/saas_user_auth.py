@@ -207,7 +207,9 @@ class SaasUserAuth(UserAuth):
         api_key_store = ApiKeyStore.get_instance()
         mcp_api_key = api_key_store.retrieve_mcp_api_key(self.user_id)
         if not mcp_api_key:
-            mcp_api_key = api_key_store.create_api_key(self.user_id, 'MCP_API_KEY', None)
+            mcp_api_key = api_key_store.create_api_key(
+                self.user_id, 'MCP_API_KEY', None
+            )
         return mcp_api_key
 
     @classmethod
