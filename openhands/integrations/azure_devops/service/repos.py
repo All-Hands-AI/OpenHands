@@ -47,16 +47,19 @@ class AzureDevOpsReposMixin(AzureDevOpsMixinBase):
         """Get repositories for the authenticated user."""
         MAX_REPOS = 1000
 
-        # Get all projects first
-        projects_url = f'{self.base_url}/_apis/projects?api-version=7.1'
-        projects_response, _ = await self._make_request(projects_url)
-        projects = projects_response.get('value', [])
-
+        projects = []
         all_repos = []
+        # Get all projects first
+        if self.project:
+            projects = [{'name': self.project}]
+        else:
+            projects_url = f'{self.base_url}/_apis/projects?api-version=7.1'
+            projects_response, _ = await self._make_request(projects_url)
+            projects = projects_response.get('value', [])
 
         # For each project, get its repositories
         for project in projects:
-            project_name = project.get('name')
+            project_name = str(project.get('name', ''))
             project_enc = self._encode_url_component(project_name)
             repos_url = (
                 f'{self.base_url}/{project_enc}/_apis/git/repositories?api-version=7.1'

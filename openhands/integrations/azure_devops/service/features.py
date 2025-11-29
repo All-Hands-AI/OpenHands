@@ -42,9 +42,13 @@ class AzureDevOpsFeaturesMixin(AzureDevOpsMixinBase):
         # Azure DevOps requires querying each project separately for PRs and work items
         # Since we no longer specify a single project, we need to query all projects
         # Get all projects first
-        projects_url = f'{self.base_url}/_apis/projects?api-version=7.1'
-        projects_response, _ = await self._make_request(projects_url)
-        projects = projects_response.get('value', [])
+        projects = []
+        if self.project:
+            projects = [{'name': self.project}]
+        else:
+            projects_url = f'{self.base_url}/_apis/projects?api-version=7.1'
+            projects_response, _ = await self._make_request(projects_url)
+            projects = projects_response.get('value', [])
 
         # Get user info
         user = await self.get_user()
@@ -52,7 +56,7 @@ class AzureDevOpsFeaturesMixin(AzureDevOpsMixinBase):
 
         # Query each project for pull requests and work items
         for project in projects:
-            project_name = project.get('name')
+            project_name = str(project.get('name', ''))
 
             try:
                 # URL-encode project name to handle spaces and special characters
