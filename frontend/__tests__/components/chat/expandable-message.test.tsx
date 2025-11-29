@@ -123,6 +123,7 @@ describe("ExpandableMessage", () => {
         ENABLE_JIRA: false,
         ENABLE_JIRA_DC: false,
         ENABLE_LINEAR: false,
+        ENABLE_AZURE_DEVOPS: false,
       },
     });
     const RouterStub = createRoutesStub([

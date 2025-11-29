@@ -127,6 +127,9 @@ function GitSettingsScreen() {
     !bitbucketHostInputHasValue &&
     !azureDevOpsHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
+  const shouldRenderAzureDevOpsSection =
+    shouldRenderExternalConfigureButtons &&
+    config?.FEATURE_FLAGS?.ENABLE_AZURE_DEVOPS;
   const shouldRenderProjectManagementIntegrations =
     config?.FEATURE_FLAGS?.ENABLE_JIRA ||
     config?.FEATURE_FLAGS?.ENABLE_JIRA_DC ||
@@ -152,7 +155,7 @@ function GitSettingsScreen() {
             </>
           )}
 
-          {shouldRenderExternalConfigureButtons && !isLoading && (
+          {shouldRenderAzureDevOpsSection && !isLoading && (
             <>
               <div className="pb-1 mt-6 flex flex-col">
                 <h3 className="text-xl font-medium text-white">

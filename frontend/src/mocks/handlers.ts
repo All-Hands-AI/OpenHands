@@ -180,6 +180,7 @@ export const handlers = [
         ENABLE_JIRA: false,
         ENABLE_JIRA_DC: false,
         ENABLE_LINEAR: false,
+        ENABLE_AZURE_DEVOPS: false,
       },
       // Uncomment the following to test the maintenance banner
       // MAINTENANCE: {

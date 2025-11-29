@@ -13,6 +13,7 @@ export interface GetConfigResponse {
     ENABLE_JIRA: boolean;
     ENABLE_JIRA_DC: boolean;
     ENABLE_LINEAR: boolean;
+    ENABLE_AZURE_DEVOPS: boolean;
   };
   MAINTENANCE?: {
     startTime: string;

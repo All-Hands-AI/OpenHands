@@ -8,7 +8,9 @@ import jwt
 import requests  # type: ignore
 from fastapi import HTTPException
 from server.auth.constants import (
+    AZURE_DEVOPS_APP_CLIENT_ID,
     BITBUCKET_APP_CLIENT_ID,
+    ENABLE_AZURE_DEVOPS,
     ENABLE_ENTERPRISE_SSO,
     ENABLE_JIRA,
     ENABLE_JIRA_DC,
@@ -84,6 +86,7 @@ class SaaSServerConfig(ServerConfig):
     maintenance_start_time: str = os.environ.get(
         'MAINTENANCE_START_TIME', ''
     )  # Timestamp in EST e.g 2025-07-29T14:18:01.219616-04:00
+    enable_azure_devops = ENABLE_AZURE_DEVOPS
     enable_jira = ENABLE_JIRA
     enable_jira_dc = ENABLE_JIRA_DC
     enable_linear = ENABLE_LINEAR
@@ -160,6 +163,9 @@ class SaaSServerConfig(ServerConfig):
         if BITBUCKET_APP_CLIENT_ID:
             providers_configured.append(ProviderType.BITBUCKET)
 
+        if AZURE_DEVOPS_APP_CLIENT_ID:
+            providers_configured.append(ProviderType.AZURE_DEVOPS)
+
         if ENABLE_ENTERPRISE_SSO:
             providers_configured.append(ProviderType.ENTERPRISE_SSO)
 
@@ -171,6 +177,7 @@ class SaaSServerConfig(ServerConfig):
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,
                 'HIDE_LLM_SETTINGS': self.hide_llm_settings,
+                'ENABLE_AZURE_DEVOPS': self.enable_azure_devops,
                 'ENABLE_JIRA': self.enable_jira,
                 'ENABLE_JIRA_DC': self.enable_jira_dc,
                 'ENABLE_LINEAR': self.enable_linear,
