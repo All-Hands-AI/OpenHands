@@ -214,6 +214,13 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             setConfirmDeleteModalVisible(false);
           }}
           onCancel={() => setConfirmDeleteModalVisible(false)}
+          conversationTitle={
+            selectedConversationId
+              ? conversations.find(
+                  (c) => c.conversation_id === selectedConversationId,
+                )?.title
+              : undefined
+          }
         />
       )}
 
